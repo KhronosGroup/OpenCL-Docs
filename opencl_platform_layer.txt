@@ -1,0 +1,1939 @@
+// Copyright 2017 The Khronos Group. 
+//
+//  Khronos licenses this file to you under the Creative Commons Attribution 4.0 
+//  International (CC BY 4.0) License (the "License"); you may not use this file 
+//  except in compliance with the License.  You may obtain a copy of the License 
+//  at https://creativecommons.org/licenses/by/4.0/
+//
+//  Unless required by applicable law or agreed to in writing, material distributed 
+//  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+//  CONDITIONS OF ANY KIND, either express or implied. If all or a portion of this 
+//  material is re-used, notice substantially similar to the following must be included:
+//
+//  This specification includes material developed at The Khronos Group 
+//  (http://www.khronos.org/). Khronos supplied such material on an "AS IS" BASIS, 
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, under 
+//  the terms of the Creative Commons Attribution 4.0 International (CC BY 4.0) 
+//  License (the "License"), available at https://creativecommons.org/licenses/by/4.0/. 
+//  All use of such material is governed by the term of the License. Khronos bears 
+//  no responsibility whatsoever for additions or modifications to its material.
+
+== The OpenCL Platform Layer
+This section describes the OpenCL platform layer which implements
+platform-specific features that allow applications to query OpenCL
+devices, device configuration information, and to create OpenCL contexts
+using one or more devices.
+
+=== Querying Platform Info
+The list of platforms available can be obtained using the following
+function.
+
+----
+cl_int clGetPlatformIDs(cl_uint num_entries,
+                        cl_platform_id *platforms, 
+                        cl_uint *num_platforms)
+----
+
+_num_entries_ is the number of cl_platform_id entries that can be added
+to _platforms._If _platforms_ is not NULL, the _num_entries_ must be
+greater than zero.
+{empty} +
+{empty} +
+_platforms_ returns a list of OpenCL platforms found. The
+cl_platform_id values returned in _platforms_can be used to identify a
+specific OpenCL platform. If _platforms_ argument is NULL, this
+argument is ignored. The number of OpenCL platforms returned is the
+minimum of the value specified by _num_entries_ or the number of OpenCL
+platforms available.
+{empty} +
+{empty} +
+_num_platforms_ returns the number of OpenCL platforms available. If
+_num_platforms_ is NULL, this argument is ignored.
+{empty} +
+{empty} +
+*clGetPlatformIDs* returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:
+
+* CL_INVALID_VALUE if
+_num_entries_ is equal to zero and _platforms_ is not NULL or if both
+_num_platforms_ and _platforms_ are NULL.
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+
+
+The function
+----
+cl_int clGetPlatformInfo(cl_platform_id platform,
+                         cl_platform_info param_name,
+                         size_t param_value_size,
+                         void *param_value,
+                         size_t *param_value_size_ret)
+----
+
+ 
+
+gets specific information about the OpenCL platform. The information
+that can be queried using *clGetPlatformInfo* is specified in _table
+4.1_.
+{empty} +
+{empty} +
+_platform_ refers to the platform ID returned by *clGetPlatformIDs* or
+can be NULL. If _platform_ is NULL, the behavior is
+implementation-defined.
+{empty} +
+{empty} +
+_param_name_ is an enumeration constant that identifies the platform
+information being queried. It can be one of the following values as
+specified in _table 4.1_.
+{empty} +
+{empty} +
+_param_value_ is a pointer to memory location where appropriate values
+for a given _param_name_ as specified in _table_ _4.1_ will be
+returned. If _param_value_ is NULL, it is ignored.
+{empty} +
+{empty} +
+_param_value_size_ specifies the size in bytes of memory pointed to by
+_param_value_. This size in bytes must be >= size of return type
+specified in _table 4.1._
+{empty} +
+{empty} +
+_param_value_size_ret_ returns the actual size in bytes of data being
+queried by _param_name_. If _param_value_size_ret_ is NULL, it is
+ignored.
+
+._OpenCL Platform Queries_
+[width="100%",cols="<50%,<10%,<40%",]
+|=======================================================================
+|*cl_platform_info* |*Return Type* |*Description*
+
+|*CL_PLATFORM_PROFILE* |char[]footnote:[A null terminated string is returned by OpenCL query function calls if the return type of the information being queried is a char[\].]
+|OpenCL profile string. Returns the
+profile name supported by the
+implementation. The profile name
+returned can be one of the following
+strings:
+{empty} +
+{empty} +
+FULL_PROFILE – if the implementation
+supports the OpenCL specification
+(functionality defined as part of the core
+specification and does not require any
+extensions to be supported).
+{empty} +
+{empty} +
+EMBEDDED_PROFILE - if the
+CL_PLATFORM_VERSION
+char[]
+implementation supports the OpenCL
+embedded profile. The embedded profile
+is defined to be a subset for each version
+of OpenCL. The embedded profile for
+OpenCL 2.2 is described in _section 7_.
+
+|*CL_PLATFORM_VERSION* |char[] |OpenCL version string. Returns the
+OpenCL version supported by the
+implementation. This version string has
+the following format:
+{empty} +
+{empty} +
+__OpenCL<space><major_version.minor_
+version><space><platform-specific
+information>__
+{empty} +
+{empty} +
+The __major_version.minor_version__ value
+returned will be 2.2.
+
+|*CL_PLATFORM_NAME* |char[] |Platform name string.
+
+|*CL_PLATFORM_VENDOR* |char[] |Platform vendor string.
+
+|*CL_PLATFORM_EXTENSIONS* |char[] |Returns a space separated list of extension
+names (the extension names themselves
+do not contain any spaces) supported by
+the platform. Each extension that is
+supported by all devices associated with
+this platform must be reported here.
+
+|*CL_PLATFORM_HOST_TIMER_RESOLUTION* |cl_ulong |Returns the resolution
+of the host timer in nanoseconds as used by *clGetDeviceAndHostTimer*.
+|=======================================================================
+
+*clGetPlatformInfo* returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following
+errors.footnote:[The OpenCL specification does not describe the order of precedence for error codes returned by API calls.]:
+
+* CL_INVALID_PLATFORM if
+_platform_ is not a valid platform.
+
+* CL_INVALID_VALUE if
+_param_name_ is not one of the supported values or if size in bytes
+specified by _param_value_size_ is < size of return type as specified in
+_table 4.1_ and _param_value_ is not a NULL value.
+
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+
+=== Querying Devices
+The list of devices available on a platform can be obtained using the
+following function.footnote:[*clGetDeviceIDs* may returnal all or a subset of the actual physical devices present in the platform and that maths __device_type__].
+
+----
+cl_int clGetDeviceIDs(cl_platform_id platform,
+                      cl_device_type device_type,
+                      cl_uint num_entries,
+                      cl_device_id * devices,
+                      cl_uint *num_devices)
+----
+
+
+_platform_ refers to the platform ID returned by *clGetPlatformIDs* or
+can be NULL. If _platform_ is NULL, the behavior is
+implementation-defined.
+
+_device_type_ is a bitfield that identifies the type of OpenCL device.
+The _device_type_ can be used to query specific OpenCL devices or all
+OpenCL devices available. The valid values for _device_type_ are
+specified in _table 4.2_.
+
+
+
+[width="100%",cols="<50%,<50%",]
+|=======================================================================
+|*cl_device_type* |*Description*
+
+|*CL_DEVICE_TYPE_CPU* |An OpenCL device that is the host processor. The
+host processor runs the OpenCL implementations and is a single or
+multi-core CPU.
+
+|*CL_DEVICE_TYPE_GPU* |An OpenCL device that is a GPU. By this we mean
+that the device can also be used to accelerate a 3D API such as OpenGL
+or DirectX.
+
+|*CL_DEVICE_TYPE_ACCELERATOR* |Dedicated OpenCL accelerators (for
+example the IBM CELL Blade). These devices communicate with the host
+processor using a peripheral interconnect such as PCIe.
+
+|*CL_DEVICE_TYPE_CUSTOM* |Dedicated accelerators that do not support
+programs written in an OpenCL kernel language,
+
+|*CL_DEVICE_TYPE_DEFAULT* |The default OpenCL device in the system.
+The default device cannot be a *CL_DEVICE_TYPE_CUSTOM* device.
+
+|*CL_DEVICE_TYPE_ALL* |All OpenCL devices available in the system except
+*CL_DEVICE_TYPE_CUSTOM* devices..
+|=======================================================================
+
+
+_num_entries_ is the number of cl_device_id entries that can be added to
+_devices._If _devices_ is not NULL, the _num_entries_ must be greater
+than zero.
+{empty} +
+{empty} +
+_devices_ returns a list of OpenCL devices found. The cl_device_id
+values returned in _devices_can be used to identify a specific OpenCL
+device. If _devices_ argument is NULL, this argument is ignored. The
+number of OpenCL devices returned is the minimum of the value specified
+by _num_entries_ or the number of OpenCL devices whose type matches
+_device_type_.
+{empty} +
+{empty} +
+_num_devices_ returns the number of OpenCL devices available that match
+_device_type_. If _num_devices_ is NULL, this argument is ignored.
+
+*clGetDeviceIDs* returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:
+
+* CL_INVALID_PLATFORM if
+_platform_ is not a valid platform.
+
+* CL_INVALID_DEVICE_TYPE if
+_device_type_ is not a valid value.
+
+* CL_INVALID_VALUE if
+_num_entries_ is equal to zero and _devices_ is not NULL or if both
+_num_devices_ and _devices_ are NULL.
+
+* CL_DEVICE_NOT_FOUND if no
+OpenCL devices that matched _device_type_ were found.
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+The application can query specific capabilities of the OpenCL device(s)
+returned by *clGetDeviceIDs*. This can be used by the application to
+determine which device(s) to use.
+
+The function
+----
+cl_int clGetDeviceInfo(cl_device_id device,
+                       cl_device_info param_name,
+                       size_t param_value_size,
+                       void *param_value,
+                       size_t *param_value_size_ret)
+----
+gets specific information about an OpenCL device.
+{empty} +
+{empty} +
+_device_ may be a device returned by *clGetDeviceIDs* or a sub-device
+created by *clCreateSubDevices*. If _device_ is a sub-device, the
+specific information for the sub-device will be returned. The
+information that can be queried using *clGetDeviceInfo* is specified in
+_table 4.3_.
+{empty} +
+{empty} +
+_param_name_ is an enumeration constant that identifies the device
+information being queried. It can be one of the following values as
+specified in _table 4.3_.
+{empty} +
+{empty} +
+_param_value_ is a pointer to memory location where appropriate values
+for a given _param_name_ as specified in _table_ _4.3_ will be
+returned. If _param_value_ is NULL, it is ignored.
+{empty} +
+{empty} +
+_param_value_size_ specifies the size in bytes of memory pointed to by
+_param_value_. This size in bytes must be >= size of return type
+specified in _table 4.3._
+{empty} +
+{empty} +
+_param_value_size_ret_ returns the actual size in bytes of data being
+queried by _param_name_. If _param_value_size_ret_ is NULL, it is
+ignored.
+
+._OpenCL Device Queries_
+[width="100%",cols="<30%,<20%,<50%",]
+|=======================================================================
+|*cl_device_info* |*Return Type* |*Description*
+
+|CL_DEVICE_TYPE |cl_device_type |The OpenCL device type. Currently supported values are: 
+{empty} +
+{empty} +
+CL_DEVICE_TYPE_CPU, 
+CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_DEFAULT, a combination of the above types or 
+CL_DEVICE_TYPE_CUSTOM.
+|CL_DEVICE_VENDOR_ID |cl_uint |A unique device vendor identifier. An example of a unique device identifier could be the PCIe ID.
+
+|CL_DEVICE_MAX_ COMPUTE_UNITS|cl_uint |The number of parallel compute
+units on the OpenCL device. A work-group executes on a single compute
+unit. The minimum value is 1.
+
+|CL_DEIVCE_MAX_ WORK_ITEM_DIMENSIONS |cl_uint| Maximum dimensions that specify the global and
+local work-item IDs used by the data parallel execution model. (Refer to
+*clEnqueueNDRangeKernel*). The minimum value is 3 for devices that are
+not of type CL_DEVICE_TYPE_CUSTOM.
+
+|CL_DEVICE_MAX_ WORK_ITEM_SIZES |size_t [] |Maximum number of work-items that can
+be specified in each dimension of the work-group to *clEnqueueNDRangeKernel*.
+{empty} +
+{empty} +
+Returns n size_t entries, where n is the
+value returned by the query for
+CL_DEVICE_MAX_WORK_ITEM_DIMEN
+SIONS.
+{empty} +
+{empty} +
+The minimum value is (1, 1, 1) for devices
+that are not of type
+CL_DEVICE_TYPE_CUSTOM .
+
+|CL_DEVICE_MAX_ WORK_GROUP_SIZE |size_t |Maximum number of work-items in a
+work-group that a device is capable of
+executing on a single compute unit, for any
+given kernel-instance running on the
+device. (Refer also to
+*clEnqueueNDRangeKernel and CL_KERNEL_WORK_GROUP_SIZE* ). The minimum value is 1.
+
+| CL_DEVICE_PREFERRED_ VECTOR_WIDTH_CHAR 
+{empty} +
+{empty} +
+CL_DEVICE_PREFERRED_
+VECTOR_WIDTH_SHORT
+{empty} +
+{empty} +
+CL_DEVICE_PREFERRED_
+VECTOR_WIDTH_INT
+{empty} +
+{empty} +
+CL_DEVICE_PREFERRED_
+VECTOR_WIDTH_LONG
+{empty} +
+{empty} +
+CL_DEVICE_PREFERRED_
+VECTOR_WIDTH_FLOAT
+{empty} +
+{empty} +
+CL_DEVICE_PREFERRED_
+VECTOR_WIDTH_DOUBLE
+{empty} +
+{empty} +
+CL_DEVICE_PREFERRED_
+VECTOR_WIDTH_HALF|cl_uint |Preferred native vector width size for built-
+in scalar types that can be put into vectors.
+The vector width is defined as the number
+of scalar elements that can be stored in the
+vector.
+{empty} +
+{empty} +
+If double precision is not supported,CL_DEVICE_PREFERRED_VECTOR_WIDTH_
+DOUBLE must return 0.
+{empty} +
+{empty} +
+If the *cl_khr_fp16* extension is not supported,
+CL_DEVICE_PREFERRED_VECTOR_WIDTH_
+HALF must return 0.
+
+| CL_DEVICE_NATIVE_ VECTOR_WIDTH_CHAR 
+{empty} +
+{empty} +
+CL_DEVICE_NATIVE_
+VECTOR_WIDTH_SHORT
+{empty} +
+{empty} +
+CL_DEVICE_NATIVE_
+VECTOR_WIDTH_INT
+{empty} +
+{empty} +
+CL_DEVICE_NATIVE_
+VECTOR_WIDTH_LONG
+{empty} +
+{empty} +
+CL_DEVICE_NATIVE_
+VECTOR_WIDTH_FLOAT
+{empty} +
+{empty} +
+CL_DEVICE_NATIVE_
+VECTOR_WIDTH_DOUBLE
+{empty} +
+{empty} +
+CL_DEVICE_NATIVE_
+VECTOR_WIDTH_HALF|cl_uint |Returns the native ISA vector width. The
+vector width is defined as the number of
+scalar elements that can be stored in the
+vector.
+{empty} +
+{empty} +
+If double precision is not supported,
+CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE must return 0.
+{empty} +
+{empty} +
+If the *cl_khr_fp16* extension is not supported,
+CL_DEVICE_NATIVE_VECTOR_WIDTH_
+HALF must return 0.
+
+|CL_DEVICE_MAX_ CLOCK_FREQUENCY |cl_uint |Clock frequency of the device in MHz. The
+meaning of this value is implementation-
+defined. For devices with multiple clock
+domains, the clock frequency for any of the
+clock domains may be returned. For
+devices that dynamically change frequency
+for power or thermal reasons, the returned
+clock frequency may be any valid
+frequency.
+
+|CL_DEVICE_ADDRESS_BITS |cl_uint |The default compute device address
+space size of the global address space specified as an unsigned integer
+value in bits. Currently supported values are 32 or 64 bits.
+
+|CL_DEVICE_MAX_ MEM_ALLOC_SIZE |cl_ulong |Max size of memory object
+allocation in bytes. The minimum value is max (min(1024*1024*1024,
+1/4^th^ of *CL_DEVICE_GLOBAL_MEM_SIZE*), 32*1024*1024) for devices that
+are not of type CL_DEVICE_TYPE_CUSTOM.
+
+|CL_DEVICE_IMAGE_ SUPPORT |cl_bool |Is CL_TRUE if images are supported
+by the OpenCL device and CL_FALSE otherwise.
+
+|CL_DEVICE_MAX_ READ_IMAGE_ARGS |cl_uint |Max number of image objects
+arguments of a kernel declared with the read_only qualifier. The
+minimum value is 128 if CL_DEVICE_IMAGE_SUPPORT is CL_TRUE.
+
+|CL_DEVICE_MAX_ WRITE_IMAGE_ARGS |cl_uint |Max number of image objects
+arguments of a kernel declared with the write_only qualifier. The
+minimum value is 64 if CL_DEVICE_IMAGE_SUPPORT is CL_TRUE.
+
+|CL_DEVICE_MAX_ READ_WRITE_IMAGE_ARGSfootnote:[NOTE: *CL_DEVICE_MAX_WRITE_IMAGE_ARGS* is only there for backward compatibility.
+*CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS* should be used instead.] |cl_uint
+|Max number of image objects arguments
+of a kernel declared with the
+write_only or read_write qualifier.
+The minimum value is 64 if
+CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE .
+
+|CL_DEVICE_IL_VERSION |char[] |The intermediate languages that can be
+supported by *clCreateProgramWithIL* for this device. Returns a
+space-separated list of IL version strings of the form
+<IL_Prefix>_<Major_Version>.<Minor_Version>. For OpenCL 2.2, SPIR-V is
+a required IL prefix.
+
+|CL_DEVICE_IMAGE2D_ MAX_WIDTH |size_t |Max width of 2D image or 1D image not
+created from a buffer object in pixels.
+{empty} +
+{empty} +
+The minimum value is 16384 if
+CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE .
+
+|CL_DEVICE_IMAGE2D_ MAX_HEIGHT |size_t |Max height of 2D image in pixels.
+{empty} +
+{empty} +
+The minimum value is 16384 if
+CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE .
+
+|CL_DEVICE_IMAGE3D_ MAX_WIDTH |size_t |Max width of 3D image in pixels.
+{empty} +
+{empty} +
+The minimum value is 2048 if
+CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE .
+
+|CL_DEVICE_IMAGE3D_ MAX_HEIGHT |size_t |Max height of 3D image in pixels.
+{empty} +
+{empty} +
+The minimum value is 2048 if
+CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE 
+
+|CL_DEVICE_IMAGE3D_ MAX_DEPTH |size_t |Max depth of 3D image in pixels.
+{empty} +
+{empty} +
+The minimum value is 2048 if
+CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE 
+
+|CL_DEVICE_IMAGE_ MAX_BUFFER_SIZE|size_t |Max number of pixels for a 1D image
+created from a buffer object.
+{empty} +
+{empty} +
+The minimum value is 65536 if
+CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE .
+
+|CL_DEVICE_IMAGE_ MAX_ARRAY_SIZE |size_t |Max number of images in a 1D or 2D
+image array.
+{empty} +
+{empty} +
+The minimum value is 2048 if
+CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE .
+
+|CL_DEVICE_MAX_ SAMPLERS |cl_uint |Maximum number of samplers that can be
+used in a kernel.
+{empty} +
+{empty} +
+The minimum value is 16 if
+CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE .
+
+|CL_DEVICE_IMAGE_ PITCH_ALIGNMENT |cl_uint |The row pitch alignment size in pixels for
+2D images created from a buffer. The
+value returned must be a power of 2.
+{empty} +
+{empty} +
+If the device does not support images, this
+value must be 0.
+
+|CL_DEVICE_IMAGE_ BASE_ADDRESS_ ALIGNMENT |cl_uint |This query should be used when a 2D
+image is created from a buffer which was
+created using CL_MEM_USE_HOST_PTR. The value returned must be a power of 2.
+{empty} +
+{empty} +
+This query specifies the minimum
+alignment in pixels of the host_ptr
+specified to *clCreateBuffer*.
+{empty} +
+{empty} +
+If the device does not support images, this
+value must be 0.
+
+|CL_DEVICE_MAX_ PIPE_ARGS |cl_uint |The maximum number of pipe objects
+that can be passed as arguments to a kernel. The minimum value is 16.
+
+|CL_DEVICE_PIPE_ MAX_ACTIVE_RESERVATIONS |cl_uint |The maximum number of reservations that can be
+active for a pipe per work-item in a kernel. A work-group reservation
+is counted as one reservation per work-item. The minimum value is 1.
+
+|CL_DEVICE_PIPE_ MAX_PACKET_SIZE |cl_uint |The maximum size of pipe
+packet in bytes. The minimum value is 1024 bytes.
+
+|CL_DEVICE_MAX_ PARAMETER_SIZE |size_t |Max size in bytes of all arguments that can
+be passed to a kernel.
+{empty} +
+{empty} +
+The minimum value is 1024 for devices
+that are not of type
+CL_DEVICE_TYPE_CUSTOM . For this
+minimum value, only a maximum of 128
+arguments can be passed to a kernel
+
+|CL_DEVICE_MEM_ BASE_ADDR_ALIGN |cl_uint |Alignment requirement (in
+bits) for sub-buffer offsets. The minimum value is the size (in bits) of
+the largest OpenCL built-in data type supported by the device (long16 in
+FULL profile, 
+long16 or int16 in EMBEDDED profile) for devices that are
+not of type CL_DEVICE_TYPE_CUSTOM.
+
+|CL_DEVICE_SINGLE_ FP_CONFIGfootnote:[The optional rounding modes should be included as a device capability only if it is supported natively. All explicit
+conversion functions with specific rounding modes must still operate correctly.] |cl_device_
+ fp_config |Describes single precision floating-point
+capability of the device. This is a bit-field
+that describes one or more of the following values:
+CL_FP_DENORM – denorms are supported
+{empty} +
+{empty} +
+CL_FP_INF_NAN – INF and quiet NaNs are
+supported.
+{empty} +
+{empty} +
+CL_FP_ROUND_TO_NEAREST– round to
+nearest even rounding mode supported
+{empty} +
+{empty} +
+CL_FP_ROUND_TO_ZERO – round to zero
+rounding mode supported
+{empty} +
+{empty} +
+CL_FP_ROUND_TO_INF – round to positive
+and negative infinity rounding modes
+supported
+{empty} +
+{empty} +
+CL_FP_FMA – IEEE754-2008 fused multiply-
+add is supported.
+{empty} +
+{empty} +
+CL_FP_CORRECTLY_ROUNDED_DIVIDE
+_SQRT – divide and sqrt are correctly rounded
+as defined by the IEEE754 specification.
+{empty} +
+{empty} +
+CL_FP_SOFT_FLOAT – Basic floating-point
+operations (such as addition, subtraction,
+multiplication) are implemented in software.
+{empty} +
+{empty} +
+For the full profile, the mandated minimum
+floating-point capability for devices that
+are not of type
+CL_DEVICE_TYPE_CUSTOM is:
+CL_FP_ROUND_TO_NEAREST \|
+CL_FP_INF_NAN.
+{empty} +
+{empty} +
+For the embedded profile, see section 10.
+
+|CL_DEVICE_DOUBLE_ FP_CONFIGfootnote:[The optional rounding modes should be included as a device capability only if it is supported natively. All explicit
+conversion functions with specific rounding modes must still operate correctly.] |cl_device_
+ fp_config |Describes double precision floating-point
+capability of the OpenCL device. This is a
+bit-field that describes one or more of the
+following values:
+{empty} +
+{empty} +
+CL_FP_DENORM – denorms are supported
+{empty} +
+{empty} +
+CL_FP_INF_NAN – INF and NaNs are
+supported.
+{empty} +
+{empty} +
+CL_FP_ROUND_TO_NEAREST – round to
+nearest even rounding mode supported.
+{empty} +
+{empty} +
+CL_FP_ROUND_TO_ZERO – round to zero
+rounding mode supported.
+{empty} +
+{empty} +
+CL_FP_ROUND_TO_INF – round to
+positive and negative infinity rounding
+modes supported.
+{empty} +
+{empty} +
+CP_FP_FMA – IEEE754-2008 fused
+multiply-add is supported.
+{empty} +
+{empty} +
+CL_FP_SOFT_FLOAT – Basic floating-point
+operations (such as addition, subtraction,
+multiplication) are implemented in software.
+Double precision is an optional feature so
+the mandated minimum double precision
+floating-point capability is 0.
+If double precision is supported by the
+device, then the minimum double precision
+floating-point capability must be:
+CL_FP_FMA \|
+CL_FP_ROUND_TO_NEAREST \|
+CL_FP_INF_NAN \|
+CL_FP_DENORM .
+
+|CL_DEVICE_GLOBAL_ MEM_CACHE_TYPE | cl_device_mem_
+cache_type | Type of global memory cache supported.
+Valid values are:
+CL_NONE,
+CL_READ_ONLY_CACHE and
+CL_READ_WRITE_CACHE .
+
+|CL_DEVICE_GLOBAL_ MEM_CACHELINE_SIZE |cl_uint |Size of global memory
+cache line in bytes.
+
+|CL_DEVICE_GLOBAL_ MEM_CACHE_
+SIZE |cl_ulong |Size of global memory cache in
+bytes.
+
+|CL_DEVICE_GLOBAL_ MEM_SIZE |cl_ulong |Size of global device memory in
+bytes.
+
+|CL_DEVICE_MAX_ CONSTANT_BUFFER_SIZE |cl_ulong |Max size in bytes of a constant
+buffer allocation. The minimum value is 64 KB for devices that are not
+of type CL_DEVICE_TYPE_CUSTOM.
+
+|CL_DEVICE_MAX_ CONSTANT_ARGS|cl_uint |Max number of arguments
+declared with the __constant qualifier in a kernel. The minimum value
+is 8 for devices that are not of type CL_DEVICE_TYPE_CUSTOM.
+
+|CL_DEVICE_MAX_ GLOBAL_VARIABLE_SIZE |size_t |The maximum number of bytes of storage
+that may be allocated for any single
+variable in program scope or inside a
+function in an OpenCL kernel language declared in the
+global address space.
+{empty} +
+{empty} +
+The minimum value is 64 KB.
+
+|CL_DEVICE_GLOBAL_ VARIABLE_PREFERRED_ TOTAL_SIZE |size_t |Maximum
+preferred total size, in bytes, of all program variables in the global
+address space. This is a performance hint. An implementation may place
+such variables in storage with optimized device access. This query
+returns the capacity of such storage. The minimum value is 0.
+
+|CL_DEVICE_LOCAL_ MEM_TYPE |cl_device_ local_mem_type
+|Type of local memory supported. This can
+be set to CL_LOCAL implying dedicated
+local memory storage such as SRAM , or
+CL_GLOBAL .
+{empty} +
+{empty} +
+For custom devices, CL_NONE can also be
+returned indicating no local memory
+support.
+
+|CL_DEVICE_LOCAL_ MEM_SIZE |cl_ulong |Size of local memory region in
+bytes. The minimum value is 32 KB for devices that are not of type
+CL_DEVICE_TYPE_CUSTOM.
+
+|CL_DEVICE_ERROR_ CORRECTION_SUPPORT |cl_bool |Is CL_TRUE if the device implements
+error correction for all accesses to compute device memory (global and
+constant). Is CL_FALSE if the device does not implement such error
+correction.
+
+|CL_DEVICE_PROFILING_ TIMER_RESOLUTION |size_t |Describes the resolution of device
+timer. This is measured in nanoseconds. Refer to _section 5.14_ for
+details.
+
+|CL_DEVICE_ENDIAN_LITTLE |cl_bool |Is CL_TRUE if the OpenCL device is a
+little endian device and CL_FALSE
+otherwise
+
+|CL_DEVICE_AVAILABLE |cl_bool |Is CL_TRUE if the device is available
+and CL_FALSE otherwise. A device is considered to be available if the
+device can be expected to successfully execute commands enqueued to the
+device.
+
+|CL_DEVICE_COMPILER_ AVAILABLE |cl_bool |Is CL_FALSE if the implementation does
+not have a compiler available to compile
+the program source.
+{empty} +
+{empty} +
+Is CL_TRUE if the compiler is available.
+This can be CL_FALSE for the embedded
+platform profile only.
+
+|CL_DEVICE_LINKER_ AVAILABLE |cl_bool |Is CL_FALSE if the implementation does
+not have a linker available.
+Is CL_TRUE if the linker is available.
+{empty} +
+{empty} +
+This can be CL_FALSE for the embedded
+platform profile only.
+{empty} +
+{empty} +
+This must be CL_TRUE if
+CL_DEVICE_COMPILER_AVAILABLE
+is
+CL_TRUE .
+
+|CL_DEVICE_EXECUTION_ CAPABILITIES |cl_device_exec_ capabilities
+|Describes the execution capabilities of the
+device. This is a bit-field that describes
+one or more of the following values:
+{empty} +
+{empty} +
+CL_EXEC_KERNEL –
+The OpenCL device
+can execute OpenCL kernels.
+{empty} +
+{empty} +
+CL_EXEC_NATIVE_KERNEL – The OpenCL
+device can execute native kernels.
+{empty} +
+{empty} +
+The mandated minimum capability is:
+CL_EXEC_KERNEL .
+
+|CL_DEVICE_QUEUE_ ON_HOST_PROPERTIESfootnote:[CL_DEVICE_QUEUE_PROPERTIES is deprecated and replaced by
+CL_DEVICE_QUEUE_ON_HOST_PROPERTIES.] |cl_command_ queue_properties |Describes the on host command-queue
+properties supported by the device. This is
+a bit-field that describes one or more of the
+following values:
+{empty} +
+{empty} +
+CL_QUEUE_OUT_OF_ORDER_EXEC_
+MODE_ENABLE
+{empty} +
+{empty} +
+CL_QUEUE_PROFILING_ENABLE
+{empty} +
+{empty} +
+These properties are described in table 5.1.
+{empty} +
+{empty} +
+The mandated minimum capability is:
+CL_QUEUE_PROFILING_ENABLE .
+
+|CL_DEVICE_QUEUE_ ON_DEVICE_PROPERTIES |cl_command_ queue_properties |Describes the on device command-queue properties supported by the device. This is
+a bit-field that describes one or more of the
+following values:
+{empty} +
+{empty} +
+CL_QUEUE_OUT_OF_ORDER_EXEC_
+MODE_ENABLE
+{empty} +
+{empty} +
+CL_QUEUE_PROFILING_ENABLE
+{empty} +
+{empty} +
+These properties are described in table 5.1.
+The mandated minimum capability is:
+CL_QUEUE_OUT_OF_ORDER_EXEC_
+MODE_ENABLE \|
+CL_QUEUE_PROFILING_ENABLE .
+
+|CL_DEVICE_QUEUE_ ON_DEVICE_PREFERRED_ SIZE |cl_uint |The size of the device queue in bytes
+preferred by the implementation.
+Applications should use this size for the
+device queue to ensure good performance.
+{empty} +
+{empty} +
+The minimum value is 16 KB
+
+|CL_DEVICE_QUEUE_ ON_DEVICE_MAX_SIZE |cl_uint |The max. size of the device queue in bytes.
+{empty} +
+{empty} +
+The minimum value is 256 KB for the full
+profile and 64 KB for the embedded profile
+
+|CL_DEVICE_MAX_ ON_DEVICE_QUEUES |cl_uint |The maximum number of device queues
+that can be created for this device in a
+single context.
+{empty} +
+{empty} +
+The minimum value is 1.
+
+|CL_DEVICE_MAX_ ON_DEVICE_EVENTS |cl_uint |The maximum number of events in use by
+a device queue. These refer to events
+returned by the enqueue_ built-in
+functions to a device queue or user events
+returned by the create_user_event
+built-in function that have not been
+released.
+{empty} +
+{empty} +
+The minimum value is 1024.
+
+|CL_DEVICE_BUILT_IN_ KERNELS |char[] |A semi-colon separated list of
+built-in kernels supported by the device. An empty string is returned
+if no built-in kernels are supported by the device.
+
+|CL_DEVICE_PLATFORM |cl_platform_id |The platform associated with this
+device.
+
+|CL_DEVICE_NAME |char[] |Device name string.
+
+|CL_DEVICE_VENDOR |char[] |Vendor name string.
+
+|CL_DRIVER_VERSION |char[] |OpenCL software driver version string.
+Follows a vendor-specific format.
+
+|CL_DEVICE_PROFILEfootnote:[The platform profile returns the profile that is implemented by the OpenCL framework. If the platform profile
+returned is FULL_PROFILE, the OpenCL framework will support devices that are FULL_PROFILE and may also
+support devices that are EMBEDDED_PROFILE. The compiler must be available for all devices i.e.
+CL_DEVICE_COMPILER_AVAILABLE is CL_TRUE. If the platform profile returned is
+EMBEDDED_PROFILE, then devices that are only EMBEDDED_PROFILE are supported.]|char[]
+|[OpenCL profile string. Returns the profile
+name supported by the device. The profile
+name returned can be one of the following
+strings:
+{empty} +
+{empty} +
+FULL_PROFILE – if the device supports
+the OpenCL specification (functionality
+defined as part of the core specification and
+does not require any extensions to be
+supported).
+{empty} +
+{empty} +
+EMBEDDED_PROFILE - if the device supports the OpenCL embedded profile.
+
+|CL_DEVICE_VERSION |char[] |OpenCL version string. Returns the
+OpenCL version supported by the device.
+This version string has the following
+format:
+{empty} +
+{empty} +
+__OpenCL<space><major_version.minor_v
+ersion><space><vendor-specific
+information>__
+{empty} +
+{empty} +
+The major_version.minor_version value
+returned will be 2.2.
+
+|CL_DEVICE_OPENCL_C_ VERSION |char[] |OpenCL C version string. Returns the
+highest OpenCL C version supported by
+the compiler for this device that is not of
+type CL_DEVICE_TYPE_CUSTOM . This
+version string has the following format:
+{empty} +
+{empty} +
+__OpenCL<space>C<space><major_versio
+n.minor_version><space><vendor-
+specific information>__
+{empty} +
+{empty} +
+The major_version.minor_version value
+returned must be 2.0 if
+CL_DEVICE_VERSION is OpenCL 2.0.
+{empty} +
+{empty} +
+The major_version.minor_version value
+returned must be 1.2 if
+CL_DEVICE_VERSION is OpenCL 1.2.
+{empty} +
+{empty} +
+The major_version.minor_version value
+returned must be 1.1 if
+CL_DEVICE_VERSION is OpenCL 1.1.
+{empty} +
+{empty} +
+The major_version.minor_version value
+returned can be 1.0 or 1.1 if
+CL_DEVICE_VERSION is OpenCL 1.0.
+
+|CL_DEVICE_EXTENSIONS |char[] |Returns a space separated list of extension
+names (the extension names themselves do
+not contain any spaces) supported by the
+device. The list of extension names
+returned can be vendor supported extension
+names and one or more of the following
+Khronos approved extension names:
+{empty} +
+{empty} +
+*cl_khr_int64_base_atomics
+cl_khr_int64_extended_atomics
+cl_khr_fp16
+cl_khr_gl_sharing
+cl_khr_gl_event
+cl_khr_d3d10_sharing
+cl_khr_dx9_media_sharing
+cl_khr_d3d11_sharing
+cl_khr_gl_depth_images
+cl_khr_gl_msaa_sharing
+cl_khr_initialize_memory
+cl_khr_terminate_context
+cl_khr_spir
+cl_khr_srgb_image_writes*
+{empty} +
+{empty} +
+*The following approved Khronos extension
+names must be returned by all devices that
+support OpenCL C 2.0:*
+{empty} +
+{empty} +
+*cl_khr_byte_addressable_store
+cl_khr_fp64 (for backward compatibility if
+double precision is supported)
+cl_khr_3d_image_writes
+cl_khr_image2d_from_buffer
+cl_khr_depth_images*
+{empty} +
+{empty} +
+Please refer to the OpenCL 2.0 Extension
+Specification for a detailed description of
+these extensions.
+
+|CL_DEVICE_PRINTF_ BUFFER_SIZE |size_t |Maximum size in bytes of the
+internal buffer that holds the output of printf calls from a kernel.
+The minimum value for the FULL profile is 1 MB.
+
+|CL_DEVICE_PREFERRED_ INTEROP_USER_SYNC |cl_bool |Is CL_TRUE if the devices preference is for the
+user to be responsible for synchronization, when sharing memory objects
+between OpenCL and other APIs such as DirectX, CL_FALSE if the device /
+implementation has a performant path for performing synchronization of
+memory object shared between OpenCL and other APIs such as DirectX.
+
+|CL_DEVICE_PARENT_ DEVICE |cl_device_id |Returns the cl_device_id of
+the parent device to which this sub-device belongs. If _device_ is a
+root-level device, a NULL value is returned.
+
+|CL_DEVICE_PARTITION_ MAX_SUB_DEVICES |cl_uint
+|Returns the maximum number of sub-
+devices that can be created when a device
+is partitioned.
+{empty} +
+{empty} +
+The value returned cannot exceed
+CL_DEVICE_MAX_COMPUTE_UNITS .
+
+|CL_DEVICE_PARTITION_ PROPERTIES |cl_device_partition_ property[] |Returns the list of partition types supported
+by _device_. The is an array of
+cl_device_partition_property values drawn
+from the following list:
+{empty} +
+{empty} +
+CL_DEVICE_PARTITION_EQUALLY
+CL_DEVICE_PARTITION_BY_COUNTS
+CL_DEVICE_PARTITION_BY_AFFINITY_DOMAIN
+{empty} +
+{empty} +
+If the device cannot be partitioned (i.e.
+there is no partitioning scheme supported
+by the device that will return at least two
+subdevices), a value of 0 will be returned.
+
+|CL_DEVICE_PARTITION_ AFFINITY_DOMAIN |cl_device_affinity_ domain |Returns the list of supported affinity
+domains for partitioning the device using
+CL_DEVICE_PARTITION_BY_AFFINITY_DOMAIN .
+This is a bit-field that describes one or
+more of the following values:
+{empty} +
+{empty} +
+CL_DEVICE_AFFINITY_DOMAIN_NUMA
+CL_DEVICE_AFFINITY_DOMAIN_L4_CACHE
+CL_DEVICE_AFFINITY_DOMAIN_L3_CACHE
+CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE
+CL_DEVICE_AFFINITY_DOMAIN_L1_CACHE
+CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITI
+ONABLE
+{empty} +
+{empty} +
+If the device does not support any affinity
+domains, a value of 0 will be returned.
+
+|CL_DEVICE_PARTITION_ TYPE |cl_device_partition_ property[] |Returns the properties argument specified
+in *clCreateSubDevices* if device is a sub-
+device. In the case where the properties
+argument to *clCreateSubDevices* is
+CL_DEVICE_PARTITION_BY_AFFINITY_DOMAIN ,
+CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITI
+ONABLE , the affinity domain used to
+perform the partition will be returned. This
+can be one of the following values:
+{empty} +
+{empty} +
+CL_DEVICE_AFFINITY_DOMAIN_NUMA
+CL_DEVICE_AFFINITY_DOMAIN_L4_CACHE
+CL_DEVICE_AFFINITY_DOMAIN_L3_CACHE
+CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE
+CL_DEVICE_AFFINITY_DOMAIN_L1_CACHE
+{empty} +
+{empty} +
+Otherwise the implementation may either
+return a __param_value_size_ret__ of 0 i.e.
+there is no partition type associated with
+device or can return a property value of 0
+(where 0 is used to terminate the partition
+property list) in the memory that
+__param_value__ points to.
+
+|CL_DEVICE_REFERENCE_ COUNT |cl_uint |Returns the _device_ reference
+count. If the device is a root-level device, a reference count of one
+is returned.
+
+|CL_DEVICE_SVM_ CAPABILITIES |cl_device_svm_ capabilities |Describes the various shared virtual
+memory (a.k.a. SVM) memory allocation
+types the device supports. Coarse-grain
+SVM allocations are required to be
+supported by all OpenCL 2.0 devices. This
+is a bit-field that describes a combination
+of the following values:
+{empty} +
+{empty} +
+CL_DEVICE_SVM_COARSE_GRAIN_
+BUFFER – Support for coarse-grain buffer
+sharing using *clSVMAlloc*. Memory
+consistency is guaranteed at
+synchronization points and the host must
+use calls to *clEnqueueMapBuffer* and
+*clEnqueueUnmapMemObject*.
+{empty} +
+{empty} +
+CL_DEVICE_SVM_FINE_GRAIN_BUFFER
+– Support for fine-grain buffer sharing
+using *clSVMAlloc*. Memory consistency
+is guaranteed at synchronization points
+without need for *clEnqueueMapBuffer*
+and *clEnqueueUnmapMemObject*.
+{empty} +
+{empty} +
+CL_DEVICE_SVM_FINE_GRAIN_SYSTEM
+– Support for sharing the host’s entire
+virtual memory including memory
+allocated using *malloc*. Memory
+consistency is guaranteed at
+synchronization points.
+{empty} +
+{empty} +
+CL_DEVICE_SVM_ATOMICS – Support
+for the OpenCL 2.0 atomic operations that
+provide memory consistency across the
+host and all OpenCL devices supporting
+fine-grain SVM allocations.
+{empty} +
+{empty} +
+The mandated minimum capability is
+CL_DEVICE_SVM_COARSE_GRAIN_BUFFER.
+
+|CL_DEVICE_PREFERRED_ PLATFORM_ATOMIC_ ALIGNMENT |cl_uint |Returns the value representing the
+preferred alignment in bytes for OpenCL 2.0 fine-grained SVM atomic
+types. This query can return 0 which indicates that the preferred
+alignment is aligned to the natural size of the type.
+
+|CL_DEVICE_PREFERRED_ GLOBAL_ATOMIC_ ALIGNMENT |cl_uint |Returns the value representing the
+preferred alignment in bytes for OpenCL 2.0 atomic types to global
+memory. This query can return 0 which indicates that the preferred
+alignment is aligned to the natural size of the type.
+
+|CL_DEVICE_PREFERRED_ LOCAL_ATOMIC_ ALIGNMENT |cl_uint |Returns the
+value representing the preferred alignment in bytes for OpenCL 2.0
+atomic types to local memory. This query can return 0 which indicates
+that the preferred alignment is aligned to the natural size of the type.
+
+|CL_DEVICE_MAX_ NUM_SUB_GROUPS |cl_uint |Maximum number of sub-groups
+in a work-group that a device is capable of executing on a single
+compute unit, for any given kernel-instance running on the device. The
+minimum value is 1. (Refer also to *clGetKernelSubGroupInfo*.)
+
+|CL_DEVICE_SUB_ GROUP_INDEPENDENT_ FORWARD_PROGRESS |cl_bool |Is CL_TRUE
+if this device supports independent forward progress of sub-groups,
+CL_FALSE otherwise. If cl_khr_subgroups is supported by the device this
+must return CL_TRUE.
+|=======================================================================
+
+
+The device queries described in _table 4.3_ should return the same
+information for a root-level device i.e. a device returned by
+*clGetDeviceIDs* and any sub-devices created from this device except for
+the following queries:
+
+ 
+
+ CL_DEVICE_GLOBAL_MEM_CACHE_SIZE
+ CL_DEVICE_BUILT_IN_KERNELS
+ CL_DEVICE_PARENT_DEVICE
+ CL_DEVICE_PARTITION_TYPE
+ CL_DEVICE_REFERENCE_COUNT
+
+*clGetDeviceInfo* returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:
+
+ 
+
+* CL_INVALID_DEVICE if
+_device_ is not valid.
+
+* CL_INVALID_VALUE if
+_param_name_ is not one of the supported values or if size in bytes
+specified by _param_value_size_is < size of return type as specified in
+_table 4.3_ and _param_value_ is not a NULL value or if _param_name_ is
+a value that is available as an extension and the corresponding
+extension is not supported by the device.
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+
+The function
+----
+cl_int clGetDeviceAndHostTimer(cl_device_id device,
+                               cl_ulong* device_timestamp,
+                               cl_ulong* host_timestamp)
+----
+Returns a reasonably synchronized pair of timestamps from the device
+timer and the host timer as seen by _device_. Implementations may need
+to execute this query with a high latency in order to provide reasonable
+synchronization of the timestamps. The host timestamp and device
+timestamp returned by this function and *clGetHostTimer* each have an
+implementation deﬁned timebase. The timestamps will always be in their
+respective timebases regardless of which query function is used. The
+timestamp returned from *clGetEventProﬁlingInfo* for an event on a
+device and a device timestamp queried from the same device will always
+be in the same timebase.
+
+ 
+
+_device_ is a device returned by *clGetDeviceIDs*.
+
+ 
+
+_device_timestamp_ will be updated with the value of the device timer in
+nanoseconds. The resolution of the timer is the same as the device
+profiling timer returned by *clGetDeviceInfo*and the
+CL_DEVICE_PROFILING_TIMER_RESOLUTION query.
+
+ 
+
+_host_timestamp_ will be updated with the value of the host timer in
+nanoseconds at the closest possible point in time to that at which
+_device_timer_ was returned. The resolution of the timer may be queried
+via *clGetPlatformInfo* and the flag CL_PLATFORM_HOST_TIMER_RESOLUTION.
+
+ 
+
+*clGetDeviceAndHostTimer* will return CL_SUCCESS with a time value in
+_host_timestamp_ if provided. Otherwise, it returns one of the following
+errors:
+
+* CL_INVALID_DEVICE if
+_device_ is not a valid OpenCL device.
+
+* CL_INVALID_VALUE if
+_host_timestamp_ or _device_timestamp_is NULL.
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+The function
+----
+cl_int clGetHostTimer(cl_device_id device,
+                      cl_ulong* host_timestamp)
+----
+ 
+
+Return the current value of the host clock as seen by _device_. This
+value is in the same timebase as the host_timestamp returned from
+*clGetDeviceAndHostTimer*. The implementation will return with as low a
+latency as possible to allow a correlation with a subsequent application
+sampled time. The host timestamp and device timestamp returned by this
+function and *clGetDeviceAndHostTimer* each have an implementation
+defined timebase. The timestamps will always be in their respective
+timebases regardless of which query function is used. The timestamp
+returned from *clGetEventProfilingInfo* for an event on a device and a
+device timestamp queried from the same device will always be in the same
+timebase.
+
+ 
+
+_device_ is a device returned by *clGetDeviceIDs*.
+
+ 
+
+_host_timestamp_ will be updated with the value of the current timer in
+nanoseconds. The resolution of the timer may be queried via
+*clGetPlatformInfo* and the flag CL_PLATFORM_HOST_TIMER_RESOLUTION.
+
+ 
+
+*clGetHostTimer* will return CL_SUCCESS with a time value in
+_host_timestamp_ if provided. Otherwise, it returns one of the following
+errors:
+
+* CL_INVALID_DEVICE if
+_device_ is not a valid OpenCL device.
+
+* CL_INVALID_VALUE if
+_host_timestamp_is NULL.
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+=== Partitioning a Device
+
+The function
+----
+cl_int clCreateSubDevices(cl_device_id in_device,
+                          const cl_device_partition_property *properties,
+                          cl_uint num_devices,
+                          cl_device_id *out_devices,
+                          cl_uint *num_devices_ret)
+----
+
+creates an array of sub-devices that each reference a non-intersecting
+set of compute units within in_device, according to a partition scheme
+given by _properties_. The output sub-devices may be used in every way
+that the root (or parent) device can be used, including creating
+contexts, building programs, further calls to *clCreateSubDevices* and
+creating command-queues. When a command-queue is created against a
+sub-device, the commands enqueued on the queue are executed only on the
+sub-device.
+
+_in_device_ is the device to be partitioned.
+
+
+_properties_ specifies how _in_device_ is to be partition described by a
+partition name and its corresponding value. Each partition name is
+immediately followed by the corresponding desired value. The list is
+terminated with 0. The list of supported partitioning schemes is
+described in _table 4.4_. Only one of the listed partitioning schemes
+can be specified in _properties_.
+
+._List of supported partition schemes by_ *clCreateSubDevices*
+[width="100%",cols="<30%,<20%,<50%",]
+|=======================================================================
+|*cl_device_partition_property enum* |*Partition value* |*Description*
+|*CL_DEVICE_PARTITION_ EQUALLY* |cl_uint |Split the aggregate device
+into as many smaller aggregate devices as can be created, each
+containing _n_ compute units. The value _n_ is passed as the value
+accompanying this property. If _n_ does not divide evenly into
+CL_DEVICE_PARTITION_MAX_COMPUTE_UNITS, then the remaining compute units
+are not used.
+
+|*CL_DEVICE_PARTITION_ BY_COUNTS* |cl_uint
+|This property is followed by a
+CL_DEVICE_PARTITION_BY_COUNTS_LIST_END
+terminated list of compute unit counts. For each non-
+zero count _m_ in the list, a sub-device is created with
+_m_ compute units in it.
+CL_DEVICE_PARTITION_BY_COUNTS_LIST_END
+is defined to be 0.
+{empty} +
+{empty} +
+The number of non-zero count entries in the list may
+not exceed
+CL_DEVICE_PARTITION_MAX_SUB_DEVICES.
+{empty} +
+{empty} +
+The total number of compute units specified may not
+exceed
+CL_DEVICE_PARTITION_MAX_COMPUTE_UNITS .
+|*CL_DEVICE_PARTITION_ BY_AFFINITY_DOMAIN* |cl_device_affinity_ domain |Split the device into smaller aggregate devices
+containing one or more compute units that all share
+part of a cache hierarchy. The value accompanying
+this property may be drawn from the following list:
+{empty} +
+{empty} +
+CL_DEVICE_AFFINITY_DOMAIN_NUMA – Split the
+device into sub-devices comprised of compute units
+that share a NUMA node.
+{empty} +
+{empty} +
+CL_DEVICE_AFFINITY_DOMAIN_L4_CACHE –
+Split the device into sub-devices comprised of
+compute units that share a level 4 data cache.
+{empty} +
+{empty} +
+CL_DEVICE_AFFINITY_DOMAIN_L3_CACHE –
+Split the device into sub-devices comprised of
+compute units that share a level 3 data cache.
+{empty} +
+{empty} +
+CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE –
+Split the device into sub-devices comprised of
+compute units that share a level 2 data cache.
+{empty} +
+{empty} +
+CL_DEVICE_AFFINITY_DOMAIN_L1_CACHE –
+Split the device into sub-devices comprised of
+compute units that share a level 1 data cache.
+{empty} +
+{empty} +
+CL_DEVICE_AFFINITY_ DOMAIN_NEXT_ PARTITIO
+NABLE – Split the device along the next partitionable
+affinity domain. The implementation shall find the
+first level along which the device or sub-device may
+be further subdivided in the order NUMA, L4, L3,
+L2, L1, and partition the device into sub-devices
+comprised of compute units that share memory
+subsystems at this level.
+{empty} +
+{empty} +
+The user may determine what happened by calling
+clGetDeviceInfo( CL_DEVICE_PARTITION_TYPE )
+on the sub-devices.
+|=======================================================================
+
+_num_devices_ is the size of memory pointed to by _out_devices_
+specified as the number of cl_device_id entries.
+
+_out_devices_ is the buffer where the OpenCL sub-devices will be
+returned. If _out_devices_is NULL, this argument is ignored. If
+_out_devices_ is not NULL, _num_devices_ must be greater than or equal
+to the number of sub-devices that _device_ may be partitioned into
+according to the partitioning scheme specified in _properties_.
+
+_num_devices_ret_ returns the number of sub-devices that _device_ may be
+partitioned into according to the partitioning scheme specified in
+_properties_. If _num_devices_ret_ is NULL, it is ignored.
+
+*clCreateSubDevices* returns CL_SUCCESS if the partition is created
+successfully. Otherwise, it returns a NULL value with the following
+error values returned in _errcode_ret_:
+
+
+* CL_INVALID_DEVICE if
+_in_device_ is not valid.
+
+* CL_INVALID_VALUE if values
+specified in _properties_ are not valid or if values specified in
+_properties_ are valid but not supported by the device.
+
+* CL_INVALID_VALUE if
+_out_devices_ is not NULL and _num_devices_ is less than the number of
+sub-devices created by the partition scheme.
+
+* CL_DEVICE_PARTITION_FAILED
+if the partition name is supported by the implementation but in_device
+could not be further partitioned.
+
+
+* CL_INVALID_DEVICE_PARTITION_COUNT if the partition name specified in
+_properties_ is CL_DEVICE_PARTITION_BY_COUNTS and the number of
+sub-devices requested exceeds CL_DEVICE_PARTITION_MAX_SUB_DEVICES or the
+total number of compute units requested exceeds
+CL_DEVICE_PARTITION_MAX_COMPUTE_UNITS for _in_device_, or the number of
+compute units requested for one or more sub-devices is less than zero or
+the number of sub-devices requested exceeds
+CL_DEVICE_PARTITION_MAX_COMPUTE_UNITS for _in_device_.
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+
+A few examples that describe how to specify partition properties in
+_properties_ argument to *clCreateSubDevices* are given below:
+
+To partition a device containing 16 compute units into two sub-devices,
+each containing 8 compute units, pass the following in _properties_:
+----
+{ CL_DEVICE_PARTITION_EQUALLY, 8, 0 }
+----
+
+To partition a device with four compute units into two sub-devices with
+one sub-device containing 3 compute units and the other sub-device 1
+compute unit, pass the following in properties argument:
+
+----
+{ CL_DEVICE_PARTITION_BY_COUNTS,
+  3, 1, CL_DEVICE_PARTITION_BY_COUNTS_LIST_END, 0 }
+----
+
+To split a device along the outermost cache line (if any), pass the
+following in properties argument:
+----
+{ CL_DEVICE_PARTITION_BY_AFFINITY_DOMAIN,
+  CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITIONABLE,
+  0 }
+----
+
+The function
+----
+cl_int clRetainDevice(cl_device_id device)
+----
+
+increments the _device_ reference count if _device_ is a valid
+sub-device created by a call to *clCreateSubDevices*. If _device_ is a
+root level device i.e. a cl_device_id returned by *clGetDeviceIDs*, the
+_device_ reference count remains unchanged. *clRetainDevice* returns
+CL_SUCCESS if the function is executed successfully or the device is a
+root-level device. Otherwise, it returns one of the following errors:
+
+* CL_INVALID_DEVICE if
+_device_ is not a valid sub-device created by a call to
+*clCreateSubDevices*.
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+ 
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+The function
+----
+cl_int clReleaseDevice(cl_device_id device)
+----
+
+decrements the _device_ reference count if device is a valid sub-device
+created by a call to *clCreateSubDevices*. If _device_ is a root level
+device i.e. a cl_device_id returned by *clGetDeviceIDs*, the _device_
+reference count remains unchanged. *clReleaseDevice* returns CL_SUCCESS
+if the function is executed successfully. Otherwise, it returns one of
+the following errors:
+
+* CL_INVALID_DEVICE if _device_ is not a valid sub-device created by a call to
+*clCreateSubDevices*.
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+After the _device_ reference count becomes zero and all the objects
+attached to _device_ (such as command-queues) are released, the _device_
+object is deleted. Using this function to release a reference that was
+not obtained by creating the object or by calling *clRetainDevice*
+causes undefined behavior.
+
+=== Contexts
+The function
+----
+cl_context clCreateContext(const cl_context_properties *properties,
+                           cl_uint num_devices,
+                           const cl_device_id *devices,
+                           void(CL_CALLBACK *pfn_notify)
+                               (const char *errinfo, 
+                               const void *private_info, 
+                               size_t cb,
+                               void *user_data),
+                           void *user_data,
+                           cl_int *errcode_ret)
+----
+
+creates an OpenCL context. An OpenCL context is created with one or
+more devices. Contexts are used by the OpenCL runtime for managing
+objects such as command-queues, memory, program and kernel objects and
+for executing kernels on one or more devices specified in the context.
+
+ 
+
+_properties_specifies a list of context property names and their
+corresponding values. Each property name is immediately followed by the
+corresponding desired value. The list is terminated with 0. The list of
+supported properties is described in _table 4.5._ _properties_ can be
+NULL in which case the platform that is selected is
+implementation-defined.
+
+
+._List of supported properties by_ *clCreateContext*
+[width="100%",cols="<34%,<33%,<33%",]
+|=====================================================================
+|*cl_context_properties enum* |*Property value* |*Description*
+|*CL_CONTEXT_PLATFORM* |cl_platform_id |Specifies the platform to use.
+|*CL_CONTEXT_INTEROP_ USER_SYNC* |cl_bool |Specifies whether the user is
+responsible for synchronization
+between OpenCL and other APIs.
+Please refer to the specific sections
+in the OpenCL 2.0 extension
+specification that describe sharing
+with other APIs for restrictions on
+using this flag.
+{empty} +
+{empty} +
+If CL_CONTEXT_INTEROP_USER_
+SYNC is not specified, a default of
+CL_FALSE is assumed.
+|=====================================================================
+
+_num_devices_ is the number of devices specified in the _devices_
+argument.
+
+ 
+
+_devices_ is a pointer to a list of unique deviceslinkfootnote:[Duplicate devices specified in _devices_ are ignored.]
+returned by *clGetDeviceIDs* or sub-devices created by
+*clCreateSubDevices* for a platform.
+
+ 
+
+_pfn_notify_ is a callback function that can be registered by the
+application. This callback function will be used by the OpenCL
+implementation to report information on errors during context creation
+as well as errors that occur at runtime in this context. This callback
+function may be called asynchronously by the OpenCL implementation. It
+is the applications responsibility to ensure that the callback function
+is thread-safe. The parameters to this callback function are:
+
+
+ 
+
+* _errinfo_ is a pointer to
+an error string.
+
+* _private_info_ and _cb_
+represent a pointer to binary data that is returned by the OpenCL
+implementation that can be used to log additional information helpful in
+debugging the error.
+
+* _user_data_ is a pointer
+to user supplied data.
+
+ 
+
+If _pfn_notify_ is NULL, no callback function is registered.
+
+ 
+
+NOTE: There are a number of cases where error notifications need to be
+delivered due to an error that occurs outside a context. Such
+notifications may not be delivered through the _pfn_notify_ callback.
+ Where these notifications go is implementation-defined.
+
+ 
+
+_user_data_ will be passed as the _user_data_ argument when _pfn_notify_
+is called. _user_data_ can be NULL.
+
+ 
+
+_errcode_ret_ will return an appropriate error code. If _errcode_ret_
+is NULL, no error code is returned.
+
+ 
+
+*clCreateContext* returns a valid non-zero context and _errcode_ret_ is
+set to CL_SUCCESS if the context is created successfully. Otherwise, it
+returns a NULL value with the following error values returned in
+_errcode_ret_:
+
+ 
+
+* CL_INVALID_PLATFORM if
+_properties_is NULL and no platform could be selected or if platform
+value specified in _properties_ is not a valid platform.
+
+ 
+
+* CL_INVALID_PROPERTY if
+context property name in _properties_ is not a supported property name,
+if the value specified for a supported property name is not valid, or if
+the same property name is specified more than once.
+
+* CL_INVALID_VALUE if
+_devices_is NULL.
+
+* CL_INVALID_VALUE if
+_num_devices_is equal to zero.
+
+* CL_INVALID_VALUE if
+_pfn_notify_ is NULL but _user_data_ is not NULL.
+
+ 
+
+* CL_INVALID_DEVICE if
+_devices_ contains an invalid device.
+
+ 
+
+* CL_DEVICE_NOT_AVAILABLE if
+a device in _devices_ is currently not available even though the device
+was returned by *clGetDeviceIDs*.
+
+ 
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+
+ 
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+The functionfootnote:[*clCreateContextfromType* may return all or a subset of the actual physical devices present in the platform and
+that match device_type.]
+----
+cl_context clCreateContextFromType(const cl_context_properties *properties,
+                                   cl_device_type device_type,
+                                   void(CL_CALLBACK *pfn_notify)
+                                       (const char *errinfo,
+                                        const void *private_info,
+                                        size_t cb,
+                                        void *user_data),
+                                   void *user_data,
+                                   cl_int *errcode_ret)
+----
+creates an OpenCL context from a device type that identifies the
+specific device(s) to use. Only devices that are returned by
+*clGetDeviceIDs* for _device_type_ are used to create the context. The
+context does not reference any sub-devices that may have been created
+from these devices.
+
+ 
+
+_properties_specifies a list of context property names and their
+corresponding values. Each property name is immediately followed by the
+corresponding desired value. The list of supported properties is
+described in _table 4.5_. _properties_ can also be NULL in which case
+the platform that is selected is implementation-defined.
+
+_device_type_ is a bit-field that identifies the type of device and is
+described in _table 4.2_ in _section 4.2_.
+
+ 
+
+_pfn_notify_ and _user_data_ are described in *clCreateContext*.
+
+ 
+
+_errcode_ret_ will return an appropriate error code. If _errcode_ret_
+is NULL, no error code is returned.
+
+ 
+
+*clCreateContextFromType* returns a valid non-zero context and
+_errcode_ret_ is set to CL_SUCCESS if the context is created
+successfully. Otherwise, it returns a NULL value with the following
+error values returned in _errcode_ret_:
+
+ 
+
+* CL_INVALID_PLATFORM if
+_properties_is NULL and no platform could be selected or if platform
+value specified in _properties_ is not a valid platform.
+
+* CL_INVALID_PROPERTY if
+context property name in _properties_ is not a supported property name,
+if the value specified for a supported property name is not valid, or if
+the same property name is specified more than once.
+
+* CL_INVALID_VALUE if
+_pfn_notify_ is NULL but _user_data_ is not NULL.
+
+* CL_INVALID_DEVICE_TYPE if
+_device_type_ is not a valid value.
+
+* CL_DEVICE_NOT_AVAILABLE if
+no devices that match _device_type_ and property values specified in
+_properties_ are currently available.
+
+* CL_DEVICE_NOT_FOUND if no
+devices that match _device_type_ and property values specified in
+_properties_ were found.
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+The function
+
+----
+cl_int clRetainContext(cl_context context)
+----
+ 
+
+increments the _context_ reference count. *clRetainContext* returns
+CL_SUCCESS if the function is executed successfully. Otherwise, it
+returns one of the following errors:
+
+ 
+
+* CL_INVALID_CONTEXT if
+_context_ is not a valid OpenCL context.
+
+ 
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+
+ 
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+ 
+
+*clCreateContext*and*clCreateContextFromType* perform an implicit
+retain. This is very helpful for 3^rd^ party libraries, which typically
+get a context passed to them by the application. However, it is
+possible that the application may delete the context without informing
+the library. Allowing functions to attach to (i.e. retain) and release
+a context solves the problem of a context being used by a library no
+longer being valid.
+
+ 
+
+The function
+
+ 
+----
+cl_int clReleaseContext(cl_context context)
+----
+
+ 
+
+decrements the _context_ reference count. *clReleaseContext* returns
+CL_SUCCESS if the function is executed successfully. Otherwise, it
+returns one of the following errors:
+
+ 
+
+* CL_INVALID_CONTEXT if
+_context_ is not a valid OpenCL context.
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+ 
+
+After the _context_ reference count becomes zero and all the objects
+attached to _context_ (such as memory objects, command-queues) are
+released, the _context_ is deleted. Using this function to release a
+reference that was not obtained by creating the object or by calling
+*clRetainContext*causes undefined behavior.
+The function
+----
+cl_int clGetContextInfo(cl_context context,
+                        cl_context_info param_name,
+                        size_t param_value_size,
+                        void *param_value,
+                        size_t *param_value_size_ret)
+----
+
+can be used to query information about a context.
+
+ 
+
+_context_ specifies the OpenCL context being queried.
+
+ 
+
+_param_name_ is an enumeration constant that specifies the information
+to query.
+
+ 
+
+_param_value_ is a pointer to memory where the appropriate result being
+queried is returned. If _param_value_ is NULL, it is ignored.
+
+ 
+
+_param_value_size_ specifies the size in bytes of memory pointed to by
+_param_value_. This size must be greater than or equal to the size of
+return type as described in _table 4.6_.
+
+ 
+
+_param_value_size_ret_ returns the actual size in bytes of data being
+queried by _param_name_. If _param_value_size_ret_ is NULL, it is
+ignored.
+
+ 
+
+The list of supported _param_name_values and the information returned in
+_param_value_ by *clGetContextInfo* is described in _table 4.6_.
+
+.List of supported param_names
+by *clGetContextInfo*
+[width="100%",cols="<34%,<33%,<33%",]
+|=======================================================================
+|*cl_context_info* |*Return Type* |*Information returned in param_value*
+
+|*CL_CONTEXT_ REFERENCE_COUNT* footnote:[The reference count returned should be considered immediately stale. It is unsuitable for general use in
+applications. This feature is provided for identifying memory leaks.] |cl_uint |Return the _context_ reference
+count.
+
+|*CL_CONTEXT_NUM_DEVICES* |cl_uint |Return the number of devices in _context_.
+
+|*CL_CONTEXT_DEVICES* |cl_device_id[] |Return the list of devices and
+sub-devices in _context_.
+
+|*CL_CONTEXT_PROPERTIES* |cl_context_properties[]
+|Return the properties argument
+specified in *clCreateContext* or
+*clCreateContextFromType*.
+{empty} +
+{empty} +
+If the _properties_ argument specified
+in *clCreateContext* or
+*clCreateContextFromType* used
+to create _context_ is not NULL , the
+implementation must return the
+values specified in the properties
+argument.
+{empty} +
+{empty} +
+If the _properties_ argument specified
+in *clCreateContext* or
+*clCreateContextFromType* used
+to create _context_ is NULL , the
+implementation may return either a
+__param_value_size_ret__ of 0 i.e. there
+is no context property value to be
+returned or can return a context
+property value of 0 (where 0 is used
+to terminate the context properties
+list) in the memory that
+__param_value__ points to.
+|=======================================================================
+
+*clGetContextInfo* returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:
+
+ 
+
+* CL_INVALID_CONTEXT if
+_context_ is not a valid context.
+
+* CL_INVALID_VALUE if
+_param_name_ is not one of the supported values or if size in bytes
+specified by _param_value_size_is < size of return type as specified in
+_table 4.6_ and _param_value_ is not a NULL value.
+
+* CL_OUT_OF_RESOURCES if
+there is a failure to allocate resources required by the OpenCL
+implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if
+there is a failure to allocate resources required by the OpenCL
+implementation on the host.
+
+ 

@@ -1,0 +1,2258 @@
+// Copyright 2017 The Khronos Group. 
+//
+//  Khronos licenses this file to you under the Creative Commons Attribution 4.0 
+//  International (CC BY 4.0) License (the "License"); you may not use this file 
+//  except in compliance with the License.  You may obtain a copy of the License 
+//  at https://creativecommons.org/licenses/by/4.0/
+//
+//  Unless required by applicable law or agreed to in writing, material distributed 
+//  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+//  CONDITIONS OF ANY KIND, either express or implied. If all or a portion of this 
+//  material is re-used, notice substantially similar to the following must be included:
+//
+//  This specification includes material developed at The Khronos Group 
+//  (http://www.khronos.org/). Khronos supplied such material on an "AS IS" BASIS, 
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, under 
+//  the terms of the Creative Commons Attribution 4.0 International (CC BY 4.0) 
+//  License (the "License"), available at https://creativecommons.org/licenses/by/4.0/. 
+//  All use of such material is governed by the term of the License. Khronos bears 
+//  no responsibility whatsoever for additions or modifications to its material.
+
+== The OpenCL Architecture
+*OpenCL* is an open industry standard for programming a heterogeneous
+collection of CPUs, GPUs and other discrete computing devices organized
+into a single platform. It is more than a language. OpenCL is a
+framework for parallel programming and includes a language, API,
+libraries and a runtime system to support software development. Using
+OpenCL, for example, a programmer can write general purpose programs
+that execute on GPUs without the need to map their algorithms onto a 3D
+graphics API such as OpenGL or DirectX.
+{empty} +
+{empty} +
+The target of OpenCL is expert programmers wanting to write portable yet
+efficient code. This includes library writers, middleware vendors, and
+performance oriented application programmers. Therefore OpenCL provides
+a low-level hardware abstraction plus a framework to support programming
+and many details of the underlying hardware are exposed.
+{empty} +
+{empty} +
+To describe the core ideas behind OpenCL, we will use a hierarchy of
+models:
+
+* Platform Model 
+* Memory Model 
+* Execution Model 
+* Programming Model 
+
+=== Platform Model
+The Platform model for OpenCL is defined in _figure 3.1_. The model
+consists of a *host* connected to one or more *OpenCL devices*. An OpenCL
+device is divided into one or more *compute units* (CUs) which are further
+divided into one or more *processing elements* (PEs). Computations on a
+device occur within the processing elements.  
+{empty} +
+{empty} +
+An OpenCL application is implemented as both host code and device kernel
+code.  The host code portion of an OpenCL application runs on a host
+processor according to the models native to the host platform. The
+OpenCL application host code submits the kernel code as commands from
+the host to OpenCL devices.  An OpenCL device executes the commands
+computation on the processing elements within the device. 
+{empty} +
+{empty} +
+An OpenCL device has considerable latitude on how computations are
+mapped onto the devices processing elements.  When processing elements
+within a compute unit execute the same sequence of statements across the
+processing elements, the control flow is said to be _converged._
+Hardware optimized for executing a single stream of instructions over
+multiple processing elements is well suited to converged control
+flows. When the control flow varies from one processing element to
+another, it is said to be _diverged._ While a kernel always begins
+execution with a converged control flow, due to branching statements
+within a kernel, converged and diverged control flows may occur within a
+single kernel. This provides a great deal of flexibility in the
+algorithms that can be implemented with OpenCL.
+{empty} +
+{empty} +
+
+image:opencl22-API_files/image004_new.png[width=320,height=180]
+
+*Figure 3.1*: _Platform model ... one host plus one or more compute devices each
+with one or more compute units composed of one or more processing elements_.
+{empty} +
+{empty} +
+Programmers provide programs in the form of SPIR-V source binaries,
+OpenCL C or OpenCL C++ source strings or implementation-defined binary objects. The
+OpenCL platform provides a compiler to translate program input of either
+form into executable program objects. The device code compiler may be
+_online_ or _offline_. An _online_ _compiler_ is available during host
+program execution using standard APIs. An _offline compiler_ is
+invoked outside of host program control, using platform-specific
+methods. The OpenCL runtime allows developers to get a previously
+compiled device program executable and be able to load and execute a
+previously compiled device program executable.
+{empty} +
+{empty} +
+OpenCL defines two kinds of platform profiles: a _full profile_ and a
+reduced-functionality _embedded profile_. A full profile platform must
+provide an online compiler for all its devices. An embedded platform
+may provide an online compiler, but is not required to do so.
+{empty} +
+{empty} +
+A device may expose special purpose functionality as a _built-in
+function_. The platform provides APIs for enumerating and invoking the
+built-in functions offered by a device, but otherwise does not define
+their construction or semantics. A _custom device_ supports only
+built-in functions, and cannot be programmed via a kernel language.
+{empty} +
+{empty} +
+All device types support the OpenCL execution model, the OpenCL memory
+model, and the APIs used in OpenCL to manage devices.
+{empty} +
+{empty} +
+The platform model is an abstraction describing how OpenCL views the
+hardware. The relationship between the elements of the platform model
+and the hardware in a system may be a fixed property of a device or it
+may be a dynamic feature of a program dependent on how a compiler
+optimizes code to best utilize physical hardware.
+
+=== Execution Model
+
+The OpenCL execution model is defined in terms of two distinct units of
+execution: *kernels* that execute on one or more OpenCL devices and a
+*host program* that executes on the host. With regard to OpenCL, the
+kernels are where the "work" associated with a computation occurs. This
+work occurs through *work-items* that execute in groups (*work-groups*).
+{empty} +
+{empty} +
+A kernel executes within a well-defined context managed by the host.
+The context defines the environment within which kernels execute. It
+includes the following resources:
+
+* *Devices*: One or 
+more devices exposed by the OpenCL platform.
+
+* *Kernel Objects*:The
+OpenCL functions with their associated argument values that run on
+OpenCL devices.
+
+* *Program Objects*:The
+program source and executable that implement the kernels.
+
+* *Memory
+Objects*:Variables visible to the host and the OpenCL devices.
+Instances of kernels operate on these objects as they execute.
+
+The host program uses the OpenCL API to create and manage the context.
+Functions from the OpenCL API enable the host to interact with a device
+through a _command-queue_. Each command-queue is associated with a
+single device. The commands placed into the command-queue fall into
+one of three types:
+
+* *Kernel-enqueue commands*:
+Enqueue a kernel for execution on a device.
+
+* *Memory commands*:
+Transfer data between the host and device memory, between memory
+objects, or map and unmap memory objects from the host address space.
+
+* *Synchronization
+commands*: Explicit synchronization points that define order constraints
+between commands.
+
+In addition to commands submitted from the host command-queue, a kernel
+running on a device can enqueue commands to a device-side command queue.
+This results in _child kernels_ enqueued by a kernel executing on a
+device (the _parent kernel_). Regardless of whether the command-queue
+resides on the host or a device, each command passes through six states.
+
+. *Queued*: The command is enqueued to a command-queue. A
+command may reside in the queue until it is flushed either explicitly (a
+call to clFlush) or implicitly by some other command.
+
+. *Submitted*: The command is flushed from the command-queue and
+submitted for execution on the device. Once flushed from the
+command-queue, a command will execute after any prerequisites for
+execution are met.
+
+. *Ready*: All prerequisites constraining execution of a command
+have been met. The command, or for a kernel-enqueue command the
+collection of work groups associated with a command, is placed in a
+device work-pool from which it is scheduled for execution.
+
+. *Running*: Execution of the command starts. For the case of a
+kernel-enqueue command, one or more work-groups associated with the
+command start to execute.
+
+. *Ended*: Execution of a command ends. When a Kernel-enqueue
+command ends, all of the work-groups associated with that command have
+finished their execution. _Immediate side effects_, i.e. those
+associated with the kernel but not necessarily with its child kernels,
+are visible to other units of execution. These side effects include
+updates to values in global memory.
+
+. *Complete*: The command and its child commands have finished
+execution and the status of the event object, if any, associated with
+the command is set to CL_COMPLETE.
+
+The execution states and the transitions between them are summarized in
+Figure 3-2. These states and the concept of a device work-pool are
+conceptual elements of the execution model. An implementation of OpenCL
+has considerable freedom in how these are exposed to a program. Five of
+the transitions, however, are directly observable through a profiling
+interface. These profiled states are shown in Figure 3-2.
+
+image:opencl22-API_files/image006.jpg[image]
+
+*Figure 3-2: The states and transitions between states defined in the
+OpenCL execution model. A subset of these transitions is exposed
+through the profiling interface (see section 5.14).*
+
+Commands communicate their status through _Event objects_. Successful
+completion is indicated by setting the event status associated with a
+command to CL_COMPLETE. Unsuccessful completion results in abnormal
+termination of the command which is indicated by setting the event
+status to a negative value. In this case, the command-queue associated
+with the abnormally terminated command and all other command-queues in
+the same context may no longer be available and their behavior is
+implementation defined.
+{empty} +
+{empty} +
+A command submitted to a device will not launch until prerequisites that
+constrain the order of commands have been resolved. These
+prerequisites have three sources:
+
+* They may arise from
+commands submitted to a command-queue that constrain the order in which
+commands are launched. For example, commands that follow a command queue
+barrier will not launch until all commands prior to the barrier are
+complete.
+
+* The second source of
+prerequisites is dependencies between commands expressed through events.
+A command may include an optional list of events. The command will wait
+and not launch until all the events in the list are in the state CL
+COMPLETE. By this mechanism, event objects define order constraints
+between commands and coordinate execution between the host and one or
+more devices.
+
+* The third source of
+prerequisities can be the presence of non-trivial C initializers or C++
+constructors for program scope global variables. In this case, OpenCL
+C/C++ compiler shall generate program initialization kernels that
+perform C initialization or C++ construction. These kernels must be
+executed by OpenCL runtime on a device before any kernel from the same
+program can be executed on the same device. The ND-range for any program
+initialization kernel is (1,1,1). When multiple programs are linked
+together, the order of execution of program initialization kernels
+that belong to different programs is undefined.
+{empty} +
+{empty} +
+Program clean up may result in the execution of one or more program
+clean up kernels by the OpenCL runtime. This is due to the presence of
+non-trivial C\++ destructors for program scope variables. The ND-range
+for executing any program clean up kernel is (1,1,1). The order of
+execution of clean up kernels from different programs (that are linked
+together) is undefined.
+{empty} +
+{empty} +
+Note that C initializers, C++ constructors, or C++ destructors for
+program scope variables cannot use pointers to coarse grain and fine
+grain SVM allocations.
+{empty} +
+{empty} +
+A command may be submitted to a device and yet have no visible side effects
+outside of waiting on and satisfying event dependences. Examples include
+markers, kernels executed over ranges of no work-items or copy
+operations with zero sizes. Such commands may pass directly from the
+_ready_ state to the _ended_ state.
+{empty} +
+{empty} +
+Command execution can be blocking or non-blocking. Consider a sequence
+of OpenCL commands. For blocking commands, the OpenCL API functions
+that enqueue commands don't return until the command has completed.
+Alternatively, OpenCL functions that enqueue non-blocking commands
+return immediately and require that a programmer defines dependencies
+between enqueued commands to ensure that enqueued commands are not
+launched before needed resources are available. In both cases, the
+actual execution of the command may occur asynchronously with execution
+of the host program.
+{empty} +
+{empty} +
+Commands within a single command-queue execute relative to each other in
+one of two modes:
+
+ 
+
+* *In-order Execution*:
+Commands and any side effects associated with commands appear to the
+OpenCL application as if they execute in the same order they are
+enqueued to a command-queue.
+
+* *Out-of-order Execution*:
+Commands execute in any order constrained only by explicit
+synchronization points (e.g. through command queue barriers) or explicit
+dependencies on events.
+{empty} +
+{empty} +
+Multiple command-queues can be present within a single context.
+Multiple command-queues execute commands independently. Event objects
+visible to the host program can be used to define synchronization points
+between commands in multiple command queues. If such synchronization
+points are established between commands in multiple command-queues, an
+implementation must assure that the command-queues progress concurrently
+and correctly account for the dependencies established by the
+synchronization points. For a detailed explanation of synchronization
+points, see section 3.2.4.
+{empty} +
+{empty} +
+The core of the OpenCL execution model is defined by how the kernels
+execute. When a kernel-enqueue command submits a kernel for execution,
+an index space is defined. The kernel, the argument values associated
+with the arguments to the kernel, and the parameters that define the
+index space define a _kernel-instance_. When a kernel-instance executes
+on a device, the kernel function executes for each point in the defined
+index space. Each of these executing kernel functions is called a
+_work-item_. The work-items associated with a given kernel-instance are
+managed by the device in groups called _work-groups_. These work-groups
+define a coarse grained decomposition of the Index space. Work-groups
+are further divided into _sub-groups_, which provide an additional level
+of control over execution.
+{empty} +
+{empty} +
+Work-items have a global ID based on their coordinates within the Index
+space. They can also be defined in terms of their work-group and the
+local ID within a work-group. The details of this mapping are described
+in the following section.
+
+
+
+==== Execution Model: Mapping work-items onto an NDRange
+The index space supported by OpenCL is called an NDRange. An NDRange is
+an N-dimensional index space, where N is one, two or three. The NDRange
+is decomposed into work-groups forming blocks that cover the Index
+space. An NDRange is defined by three integer arrays of length N:
+
+* The extent of the index
+space (or global size) in each dimension.
+
+* An offset index F
+indicating the initial value of the indices in each dimension (zero by
+default).
+
+* The size of a work-group
+(local size) in each dimension.
+
+ 
+
+Each work-items global ID is an N-dimensional tuple. The global ID
+components are values in the range from F, to F plus the number of
+elements in that dimension minus one.
+{empty} +
+{empty} +
+If a kernel is created from OpenCL C 2.0 or SPIR-V, the size of work-groups
+in an NDRange (the local size) need not be the same for all work-groups.
+In this case, any single dimension for which the global size is not
+divisible by the local size will be partitioned into two regions. One
+region will have work-groups that have the same number of work items as
+was specified for that dimension by the programmer (the local size). The
+other region will have work-groups with less than the number of work
+items specified by the local size parameter in that dimension (the
+_remainder work-groups_). Work-group sizes could be non-uniform in
+multiple dimensions, potentially producing work-groups of up to 4
+different sizes in a 2D range and 8 different sizes in a 3D range.
+{empty} +
+{empty} +
+Each work-item is assigned to a work-group and given a local ID to
+represent its position within the work-group. A work-item's local ID is
+an N-dimensional tuple with components in the range from zero to the
+size of the work-group in that dimension minus one.
+{empty} +
+{empty} +
+Work-groups are assigned IDs similarly. The number of work-groups in
+each dimension is not directly defined but is inferred from the local
+and global NDRanges provided when a kernel-instance is enqueued. A
+work-group's ID is an N-dimensional tuple with components in the range 0
+to the ceiling of the global size in that dimension divided by the local
+size in the same dimension. As a result, the combination of a
+work-group ID and the local-ID within a work-group uniquely defines a
+work-item. Each work-item is identifiable in two ways; in terms of a
+global index, and in terms of a work-group index plus a local index
+within a work group.
+{empty} +
+{empty} +
+For example, consider the 2-dimensional index space in figure 3-3. We
+input the index space for the work-items (G~x~, G~y~), the size of each
+work-group (S~x~, S~y~) and the global ID offset (F~x~, F~y~). The
+global indices define an G~x~by G~y~ index space where the total number
+of work-items is the product of G~x~ and G~y~. The local indices define
+an S~x~ by S~y~ index space where the number of work-items in a single
+work-group is the product of S~x~ and S~y~. Given the size of each
+work-group and the total number of work-items we can compute the number
+of work-groups. A 2-dimensional index space is used to uniquely identify
+a work-group. Each work-item is identified by its global ID (_g_~x~,
+_g_~y~) or by the combination of the work-group ID (_w_~x~, _w_~y~), the
+size of each work-group (S~x~,S~y~) and the local ID (s~x~, s~y~) inside
+the work-group such that
+{empty} +
+
+{nbsp} {nbsp} {nbsp} {nbsp} (g~x~ , g~y~) = (w~x~ * S~x~ + s~x~ + F~x~, w~y~ * S~y~ + s~y~ + F~y~)
+{empty} +
+{empty} +
+The number of work-groups can be computed as:
+{empty} +
+
+{nbsp} {nbsp} {nbsp} {nbsp} (W~x~, W~y~) = (ceil(G~x~ / S~x~),ceil( G~y~ / S~y~))
+{empty} +
+{empty} +
+Given a global ID and the work-group size, the work-group ID for a
+work-item is computed as:
+{empty} +
+
+{nbsp} {nbsp} {nbsp} {nbsp} (w~x~, w~y~) = ( (g~x~  s~x~  F~x~) / S~x~, (g~y~  s~y~  F~y~) /
+S~y~ )
+
+image:opencl22-API_files/image007.jpg[image]
+
+*Figure 3-3: An example of an NDRange index space showing work-items,
+their global IDs and their mapping onto the pair of work-group and local
+IDs. In this case, we assume that in each dimension, the size of the
+work-group evenly divides the global NDRange size (i.e. all work-groups
+have the same size) and that the offset is equal to zero.*
+{empty} +
+{empty} +
+Within a work-group work-items may be divided into sub-groups. The
+mapping of work-items to sub-groups is implementation-defined and may be
+queried at runtime. While sub-groups may be used in multi-dimensional
+work-groups, each sub-group is 1-dimensional and any given work-item may
+query which sub-group it is a member of.
+{empty} +
+{empty} +
+Work items are mapped into sub-groups through a combination of
+compile-time decisions and the parameters of the dispatch. The mapping
+to sub-groups is invariant for the duration of a kernels execution,
+across dispatches of a given kernel with the same work-group dimensions,
+between dispatches and query operations consistent with the dispatch
+parameterization, and from one work-group to another within the dispatch
+(excluding the trailing edge work-groups in the presence of non-uniform
+work-group sizes). In addition, all sub-groups within a work-group will
+be the same size, apart from the sub-group with the maximum index which
+may be smaller if the size of the work-group is not evenly divisible by
+the size of the sub-groups.
+{empty} +
+{empty} +
+In the degenerate case, a single sub-group must be supported for each
+work-group. In this situation all sub-group scope functions are
+equivalent to their work-group level equivalents.
+
+
+==== Execution Model: Execution of kernel-instances
+The work carried out by an OpenCL program occurs through the execution
+of kernel-instances on compute devices. To understand the details of
+OpenCLs execution model, we need to consider how a kernel object moves
+from the kernel-enqueue command, into a command-queue, executes on a
+device, and completes.
+{empty} +
+{empty} +
+A kernel-object is defined from a function within the program object and
+a collection of arguments connecting the kernel to a set of argument
+values. The host program enqueues a kernel-object to the command queue
+along with the NDRange, and the work-group decomposition. These define
+a _kernel-instance_. In addition, an optional set of events may be
+defined when the kernel is enqueued. The events associated with a
+particular kernel-instance are used to constrain when the
+kernel-instance is launched with respect to other commands in the queue
+or to commands in other queues within the same context.
+{empty} +
+{empty} +
+A kernel-instance is submitted to a device. For an in-order command
+queue, the kernel instances appear to launch and then execute in that
+same order; where we use the term appear to emphasize that when there
+are no dependencies between commands and hence differences in the order
+that commands execute cannot be observed in a program, an implementation
+can reorder commands even in an in-order command queue. For an out of
+order command-queue, kernel-instances wait to be launched until:
+
+* Synchronization commands
+enqueued prior to the kernel-instance are satisfied.
+
+* Each of the events in an
+optional event list defined when the kernel-instance was enqueued are
+set to CL_COMPLETE.
+
+
+
+Once these conditions are met, the kernel-instance is launched and the
+work-groups associated with the kernel-instance are placed into a pool
+of ready to execute work-groups. This pool is called a _work-pool_.
+The work-pool may be implemented in any manner as long as it assures
+that work-groups placed in the pool will eventually execute. The
+device schedules work-groups from the work-pool for execution on the
+compute units of the device. The kernel-enqueue command is complete when
+all work-groups associated with the kernel-instance end their execution,
+updates to global memory associated with a command are visible globally,
+and the device signals successful completion by setting the event
+associated with the kernel-enqueue command to CL_COMPLETE.
+{empty} +
+{empty} +
+While a command-queue is associated with only one device, a single
+device may be associated with multiple command-queues all feeding into
+the single work-pool. A device may also be associated with command
+queues associated with different contexts within the same platform,
+again all feeding into the single work-pool. The device will pull
+work-groups from the work-pool and execute them on one or several
+compute units in any order; possibly interleaving execution of
+work-groups from multiple commands. A conforming implementation may
+choose to serialize the work-groups so a correct algorithm cannot assume
+that work-groups will execute in parallel. There is no safe and
+portable way to synchronize across the independent execution of
+work-groups since once in the work-pool, they can execute in any order.
+{empty} +
+{empty} +
+The work-items within a single sub-group execute concurrently but not
+necessarily in parallel (i.e. they are not guaranteed to make
+independent forward progress). Therefore, only high-level
+synchronization constructs (e.g. sub-group functions such as barriers)
+that apply to all the work-items in a sub-group are well defined and
+included in OpenCL.
+{empty} +
+{empty} +
+Sub-groups execute concurrently within a given work-group and with
+appropriate device support (_see Section__4.2_) may make independent
+forward progress with respect to each other, with respect to host
+threads and with respect to any entities external to the OpenCL system
+but running on an OpenCL device, even in the absence of work-group
+barrier operations. In this situation, sub-groups are able to internally
+synchronize using barrier operations without synchronizing with each
+other and may perform operations that rely on runtime dependencies on
+operations other sub-groups perform.
+{empty} +
+{empty} +
+The work-items within a single work-group execute concurrently but are
+only guaranteed to make independent progress in the presence of
+sub-groups and device support. In the absence of this capability, only
+high-level synchronization constructs (e.g. work-group functions such as
+barriers) that apply to all the work-items in a work-group are well
+defined and included in OpenCL for synchronization within the
+work-group.
+{empty} +
+{empty} +
+In the absence of synchronization functions (e.g. a barrier), work-items
+within a sub-group may be serialized. In the presence of sub -group
+functions, work-items within a sub -group may be serialized before any
+given sub -group function, between dynamically encountered pairs of sub
+-group functions and between a work-group function and the end of the
+kernel.
+{empty} +
+{empty} +
+In the absence of independent forward progress of constituent
+sub-groups, work-items within a work-group may be serialized before,
+after or between work-group synchronization functions.
+
+==== Execution Model: Device-side enqueue
+Algorithms may need to generate additional work as they execute. In
+many cases, this additional work cannot be determined statically; so the
+work associated with a kernel only emerges at runtime as the
+kernel-instance executes. This capability could be implemented in logic
+running within the host program, but involvement of the host may add
+significant overhead and/or complexity to the application control
+flow. A more efficient approach would be to nest kernel-enqueue
+commands from inside other kernels. This *nested parallelism* can be
+realized by supporting the enqueuing of kernels on a device without
+direct involvement by the host program; so-called *device-side
+enqueue*.
+{empty} +
+{empty} +
+Device-side kernel-enqueue commands are similar to host-side
+kernel-enqueue commands. The kernel executing on a device (the *parent
+kernel*) enqueues a kernel-instance (the *child kernel*) to a
+device-side command queue. This is an out-of-order command-queue and
+follows the same behavior as the out-of-order command-queues exposed to
+the host program. Commands enqueued to a device side command-queue
+generate and use events to enforce order constraints just as for the
+command-queue on the host. These events, however, are only visible to
+the parent kernel running on the device. When these prerequisite
+events take on the value CL_COMPLETE, the work-groups associated with
+the child kernel are launched into the devices work pool. The device
+then schedules them for execution on the compute units of the device.
+Child and parent kernels execute asynchronously. However, a parent will
+not indicate that it is complete by setting its event to CL_COMPLETE
+until all child kernels have ended execution and have signaled
+completion by setting any associated events to the value CL_COMPLETE.
+Should any child kernel complete with an event status set to a negative
+value (i.e. abnormally terminate), the parent kernel will abnormally
+terminate and propagate the childs negative event value as the value of
+the parents event. If there are multiple children that have an event
+status set to a negative value, the selection of which childs negative
+event value is propagated is implementation-defined.
+
+==== Execution Model: Synchronization
+Synchronization refers to mechanisms that constrain the order of
+execution between two or more units of execution. Consider the
+following three domains of synchronization in OpenCL:
+
+* Work-group
+synchronization: Constraints on the order of execution for work-items in
+a single work-group
+
+* Sub-group synchronization:
+Contraints on the order of execution for work-items in a single
+sub-group
+
+* Command synchronization:
+Constraints on the order of commands launched for execution
+
+
+Synchronization across all work-items within a single work-group is
+carried out using a _work-group function_. These functions carry out
+collective operations across all the work-items in a work-group.
+Available collective operations are: barrier, reduction, broadcast,
+prefix sum, and evaluation of a predicate. A work-group function must
+occur within a converged control flow; i.e. all work-items in the
+work-group must encounter precisely the same work-group function. For
+example, if a work-group function occurs within a loop, the work-items
+must encounter the same work-group function in the same loop
+iterations. All the work-items of a work-group must execute the
+work-group function and complete reads and writes to memory before any
+are allowed to continue execution beyond the work-group function.
+Work-group functions that apply between work-groups are not provided in
+OpenCL since OpenCL does not define forward-progress or ordering
+relations between work-groups, hence collective synchronization
+operations are not well defined.
+{empty} +
+{empty} +
+Synchronization across all work-items within a single sub-group is
+carried out using a _sub-group function_. These functions carry out
+collective operations across all the work-items in a sub-group.
+Available collective operations are: barrier, reduction, broadcast,
+prefix sum, and evaluation of a predicate. A sub-group function must
+occur within a converged control flow; i.e. all work-items in the
+sub-group must encounter precisely the same sub-group function. For
+example, if a work-group function occurs within a loop, the work-items
+must encounter the same sub-group function in the same loop iterations.
+All the work-items of a sub-group must execute the sub-group function
+and complete reads and writes to memory before any are allowed to
+continue execution beyond the sub-group function. Synchronization
+between sub-groups must either be performed using work-group functions,
+or through memory operations. Using memory operations for sub-group
+synchronization should be used carefully as forward progress of
+sub-groups relative to each other is only supported optionally by OpenCL
+implementations.
+{empty} +
+{empty} +
+Command synchronization is defined in terms of distinct *synchronization
+points*. The synchronization points occur between commands in host
+command-queues and between commands in device-side command-queues. The
+synchronization points defined in OpenCL include:
+
+* *Launching a command:* A
+kernel-instance is launched onto a device after all events that kernel
+is waiting-on have been set to CL_COMPLETE.
+
+* *Ending a command:* Child
+kernels may be enqueued such that they wait for the parent kernel to
+reach the _end_ state before they can be launched. In this case, the
+ending of the parent command defines a synchronization point.
+
+* *Completion of a command:*
+A kernel-instance is complete after all of the work-groups in the kernel
+and all of its child kernels have completed. This is signaled to the
+host, a parent kernel or other kernels within command queues by setting
+the value of the event associated with a kernel to CL_COMPLETE.
+
+* *Blocking Commands:* A
+blocking command defines a synchronization point between the unit of
+execution that calls the blocking API function and the enqueued command
+reaching the complete state.
+
+* *Command-queue barrier:*
+The command-queue barrier ensures that all previously enqueued commands
+have completed before subsequently enqueued commands can be launched.
+
+* *clFinish:* This function
+blocks until all previously enqueued commands in the command queue have
+completed after which clFinish defines a synchronization point and the
+clFinish function returns. 
+
+
+A synchronization point between a pair of commands (A and B) assures
+that results of command A happens-before command B is launched. This
+requires that any updates to memory from command A complete and are made
+available to other commands before the synchronization point completes.
+Likewise, this requires that command B waits until after the
+synchronization point before loading values from global memory. The
+concept of a synchronization point works in a similar fashion for
+commands such as a barrier that apply to two sets of commands. All the
+commands prior to the barrier must complete and make their results
+available to following commands. Furthermore, any commands following
+the barrier must wait for the commands prior to the barrier before
+loading values and continuing their execution.
+{empty} +
+{empty} +
+These _happens-before_ relationships are a fundamental part of the
+OpenCL memory model. When applied at the level of commands, they are
+straightforward to define at a language level in terms of ordering
+relationships between different commands. Ordering memory operations
+inside different commands, however, requires rules more complex than can
+be captured by the high level concept of a synchronization point.
+These rules are described in detail in section 3.3.6.
+
+==== Execution Model: Categories of Kernels
+The OpenCL execution model supports three types of kernels:
+
+* *OpenCL kernels* are
+managed by the OpenCL API as kernel-objects associated with kernel
+functions within program-objects. OpenCL kernels are provided via a
+kernel language. 
+All OpenCL implementations must support OpenCL kernels supplied in the
+standard SPIR-V intermediate language with the appropriate environment
+specification, and the OpenCL C programming language defined in earlier
+versions of the OpenCL specification. Implementations must also support
+OpenCL kernels in
+SPIR-V intermediate language.  SPIR-V binaries nay be
+generated from an
+OpenCL kernel language or by a third party compiler from an
+alternative input.  
+
+
+* *Native kernels* are
+accessed through a host function pointer. Native kernels are queued for
+execution along with OpenCL kernels on a device and share memory objects
+with OpenCL kernels. For example, these native kernels could be
+functions defined in application code or exported from a library. The
+ability to execute native kernels is optional within OpenCL and the
+semantics of native kernels are implementation-defined. The OpenCL API
+includes functions to query capabilities of a device(s) and determine if
+this capability is supported. 
+
+
+* *Built-in kernels* are tied
+to particular device and are not built at runtime from source code in a
+program object. The common use of built in kernels is to expose
+fixed-function hardware or firmware associated with a particular OpenCL
+device or custom device. The semantics of a built-in kernel may be
+defined outside of OpenCL and hence are implementation defined.
+
+
+All three types of kernels are manipulated through the OpenCL command
+queues and must conform to the synchronization points defined in the
+OpenCL execution model.
+
+=== Memory Model
+The OpenCL memory model describes the structure, contents, and behavior
+of the memory exposed by an OpenCL platform as an OpenCL program runs.
+The model allows a programmer to reason about values in memory as the
+host program and multiple kernel-instances execute.
+{empty} +
+{empty} +
+An OpenCL program defines a context that includes a host, one or more
+devices, command-queues, and memory exposed within the context.
+Consider the units of execution involved with such a program. The host
+program runs as one or more host threads managed by the operating system
+running on the host (the details of which are defined outside of
+OpenCL). There may be multiple devices in a single context which all
+have access to memory objects defined by OpenCL. On a single device,
+multiple work-groups may execute in parallel with potentially
+overlapping updates to memory. Finally, within a single work-group,
+multiple work-items concurrently execute, once again with potentially
+overlapping updates to memory.
+{empty} +
+{empty} +
+The memory model must precisely define how the values in memory as seen
+from each of these units of execution interact so a programmer can
+reason about the correctness of OpenCL programs. We define the memory
+model in four parts.
+
+* Memory regions: The
+distinct memories visible to the host and the devices that share a
+context.
+
+* Memory objects: The
+objects defined by the OpenCL API and their management by the host and
+devices.
+
+* Shared Virtual Memory: A
+virtual address space exposed to both the host and the devices within a
+context.
+
+* Consistency Model: Rules
+that define which values are observed when multiple units of execution
+load data from memory plus the atomic/fence operations that constrain
+the order of memory operations and define synchronization relationships.
+
+
+==== Memory Model: Fundamental Memory Regions
+Memory in OpenCL is divided into two parts.
+
+* *Host Memory:* The memory
+directly available to the host. The detailed behavior of host memory is
+defined outside of OpenCL. Memory objects move between the Host and the
+devices through functions within the OpenCL API or through a shared
+virtual memory interface.
+
+* *Device Memory:* Memory
+directly available to kernels executing on OpenCL devices. 
+
+Device memory consists of four named address spaces or _memory regions_:
+
+* *Global Memory:* This
+memory region permits read/write access to all work-items in all
+work-groups running on any device within a context. Work-items can read
+from or write to any element of a memory object. Reads and writes to
+global memory may be cached depending on the capabilities of the device.
+
+* *Constant Memory*: A
+region of global memory that remains constant during the execution of a
+kernel-instance. The host allocates and initializes memory objects
+placed into constant memory.
+
+* *Local Memory*: A memory
+region local to a work-group. This memory region can be used to allocate
+variables that are shared by all work-items in that work-group.
+
+* *Private Memory*: A region
+of memory private to a work-item. Variables defined in one work-items
+private memory are not visible to another work-item.
+
+ 
+
+The memory regions and their relationship to the OpenCL Platform model
+are summarized in figure 3-4. Local and private memories are always
+associated with a particular device. The global and constant memories,
+however, are shared between all devices within a given context. An
+OpenCL device may include a cache to support efficient access to these
+shared memories
+{empty} +
+{empty} +
+To understand memory in OpenCL, it is important to appreciate the
+relationships between these named address spaces.   The four named
+address spaces available to a device are disjoint meaning they do not
+overlap.   This is a logical relationship, however, and an
+implementation may choose to let these disjoint named address spaces
+share physical memory.
+{empty} +
+{empty} +
+Programmers often need functions callable from kernels where the
+pointers manipulated by those functions can point to multiple named
+address spaces. This saves a programmer from the error-prone and
+wasteful practice of creating multiple copies of functions; one for each
+named address space. Therefore the global, local and private address
+spaces belong to a single _generic address space_. This is closely
+modeled after the concept of a generic address space used in the
+embedded C standard (ISO/IEC 9899:1999). Since they all belong to a
+single generic address space, the following properties are supported for
+pointers to named address spaces in device memory:
+
+* A pointer to the generic
+address space can be cast to a pointer to a global, local or private
+address space
+
+* A pointer to a global,
+local or private address space can be cast to a pointer to the generic
+address space.
+
+* A pointer to a global,
+local or private address space can be implicitly converted to a pointer
+to the generic address space, but the converse is not allowed.
+
+ 
+
+The constant address space is disjoint from the generic address space.
+{empty} +
+{empty} +
+The addresses of memory associated with memory objects in Global memory
+are not preserved between kernel instances, between a device and the
+host, and between devices. In this regard global memory acts as a global
+pool of memory objects rather than an address space. This restriction is
+relaxed when shared virtual memory (SVM) is used.
+{empty} +
+{empty} +
+SVM causes addresses to be meaningful between the host and all of the
+devices within a context hence supporting the use of pointer based data
+structures in OpenCL kernels. It logically extends a portion of the
+global memory into the host address space giving work-items access to
+the host address space. On platforms with hardware support for a shared
+address space between the host and one or more devices, SVM may also
+provide a more efficient way to share data between devices and the host.
+Details about SVM are presented in section 3.3.3.
+
+
+
+image:opencl22-API_files/image008.jpg[image]
+
+*Figure 3-4: The named address spaces exposed in an OpenCL Platform.
+Global and Constant memories are shared between the one or more devices
+within a context, while local and private memories are associated with a
+single device. Each device may include an optional cache to support
+efficient access to their view of the global and constant address
+spaces.*
+
+A programmer may use the features of the memory consistency model
+(section 3.3.4) to manage safe access to global memory from multiple
+work-items potentially running on one or more devices. In addition, when
+using shared virtual memory (SVM), the memory consistency model may also
+be used to ensure that host threads safely access memory locations in
+the shared memory region.
+
+
+==== Memory Model: Memory Objects
+The contents of global memory are _memory objects_. A memory object is
+a handle to a reference counted region of global memory. Memory objects
+use the OpenCL type _cl_mem_ and fall into three distinct classes.
+
+* *Buffer*: A memory object
+stored as a block of contiguous memory and used as a general purpose
+object to hold data used in an OpenCL program. The types of the values
+within a buffer may be any of the built in types (such as int, float),
+vector types, or user-defined structures. The buffer can be
+manipulated through pointers much as one would with any block of memory
+in C.
+
+* *Image*: An image memory
+object holds one, two or three dimensional images. The formats are
+based on the standard image formats used in graphics applications. An
+image is an opaque data structure managed by functions defined in the
+OpenCL API. To optimize the manipulation of images stored in the
+texture memories found in many GPUs, OpenCL kernels have traditionally
+been disallowed from both reading and writing a single image. In OpenCL
+2.0, however, we have relaxed this restriction by providing
+synchronization and fence operations that let programmers properly
+synchronize their code to safely allow a kernel to read and write a
+single image.
+
+* *Pipe*: The _pipe_ memory
+object conceptually is an ordered sequence of data items. A pipe has
+two endpoints: a write endpoint into which data items are inserted, and
+a read endpoint from which data items are removed. At any one time,
+only one kernel instance may write into a pipe, and only one kernel
+instance may read from a pipe. To support the producer consumer design
+pattern, one kernel instance connects to the write endpoint (the
+producer) while another kernel instance connects to the reading endpoint
+(the consumer). 
+
+ 
+
+Memory objects are allocated by host APIs. The host program can provide
+the runtime with a pointer to a block of continuous memory to hold the
+memory object when the object is created (CL_MEM_USE_HOST_PTR).
+Alternatively, the physical memory can be managed by the OpenCL runtime
+and not be directly accessible to the host program.
+{empty} +
+{empty} +
+Allocation and access to memory objects within the different memory
+regions varies between the host and work-items running on a device.
+This is summarized in table 3.1 which__describes whether the kernel or
+the host can allocate from a memory region, the type of allocation
+(static at compile time vs. dynamic at runtime) and the type of access
+allowed (i.e. whether the kernel or the host can read and/or write to a
+memory region).
+
+<<<
+[width="80%"]
+|=======
+| |Global |Constant |Local | Private
+.2+|Host |Dynamic Allocation |Dynamic Allocation |Dynamic Allocation |No Allocation 
+|Read/Write access to buffers and images but not pipes |Read/Write access |No access |No access
+.2+|Kernel |Static Allocation for program scope variables |Static Allocation |Static Allocation. Dynamic allocation for child kernel |Static Allocation
+|Read/Write access |Read-only access |Read/Write access. No access to child's local memory. |Read/Write access
+|=======
+
+ 
+
+*Table 3 1: The different memory regions in 
+OpenCL and how memory objects are allocated and accessed by the host and
+by an executing instance of a kernel. For the case of kernels, we
+distinguish between the behavior of local memory with respect to a
+kernel (self) and its child kernels.*
+
+
+Once allocated, a memory object is made available to kernel-instances
+running on one or more devices. In addition to shared virtual memory
+(section 3.3.3) there are three basic ways to manage the contents of
+buffers between the host and devices.
+
+* *Read/Write/Fill
+commands*: The data associated with a memory object is explicitly read
+and written between the host and global memory regions using commands
+enqueued to an OpenCL command queue.
+
+* *Map/Unmap commands*: Data
+from the memory object is mapped into a contiguous block of memory
+accessed through a host accessible pointer. The host program enqueues a
+_map_ command on block of a memory object before it can be safely
+manipulated by the host program. When the host program is finished
+working with the block of memory, the host program enqueues an _unmap_
+command to allow a kernel-instance to safely read and/or write the
+buffer.**
+
+* *Copy commands:* The data
+associated with a memory object is copied between two buffers, each of
+which may reside either on the host or on the device.
+
+ 
+
+In both cases, the commands to transfer data between devices and the
+host can be blocking or non-blocking operations. The OpenCL function
+call for a blocking memory transfer returns once the associated memory
+resources on the host can be safely reused. For a non-blocking memory
+transfer, the OpenCL function call returns as soon as the command is
+enqueued.
+{empty} +
+{empty} +
+Memory objects are bound to a context and hence can appear in multiple
+kernel-instances running on more than one physical device. The OpenCL
+platform must support a large range of hardware platforms including
+systems that do not support a single shared address space in hardware;
+hence the ways memory objects can be shared between kernel-instances is
+restricted. The basic principle is that multiple read operations on
+memory objects from multiple kernel-instances that overlap in time are
+allowed, but mixing overlapping reads and writes into the same memory
+objects from different kernel instances is only allowed when fine
+grained synchronization is used with shared virtual memory (see section
+3.3.3).
+{empty} +
+{empty} +
+When global memory is manipulated by multiple kernel-instances running
+on multiple devices, the OpenCL runtime system must manage the
+association of memory objects with a given device. In most cases the
+OpenCL runtime will implicitly associate a memory object with a device.
+A kernel instance is naturally associated with the command queue to
+which the kernel was submitted. Since a command-queue can only access a
+single device, the queue uniquely defines which device is involved with
+any given kernel-instance; hence defining a clear association between
+memory objects, kernel-instances and devices. Programmers may
+anticipate these associations in their programs and explicitly manage
+association of memory objects with devices in order to improve
+performance.
+
+
+==== Memory Model: Shared Virtual Memory
+
+OpenCL extends the global memory region into the host memory region
+through a shared virtual memory (SVM) mechanism. There are three types
+of SVM in OpenCL
+
+* *Coarse-Grained buffer
+SVM*: Sharing occurs at the granularity of regions of OpenCL buffer
+memory objects. Consistency is enforced at synchronization points and
+with map/unmap commands to drive updates between the host and the
+device. This form of SVM is similar to non-SVM use of memory; however,
+it lets kernel-instances share pointer-based data structures (such as
+linked-lists) with the host program. Program scope global variables are
+treated as per-device coarse-grained SVM for addressing and sharing
+purposes. 
+
+* *Fine-Grained buffer
+SVM*: Sharing occurs at the granularity of individual loads/stores into
+bytes within OpenCL buffer memory objects. Loads and stores may be
+cached. This means consistency is guaranteed at synchronization points.
+If the optional OpenCL atomics are supported, they can be used to
+provide fine-grained control of memory consistency. 
+
+* *Fine-Grained system SVM*:
+Sharing occurs at the granularity of individual loads/stores into bytes
+occurring anywhere within the host memory. Loads and stores may be
+cached so consistency is guaranteed at synchronization points. If the
+optional OpenCL atomics are supported, they can be used to provide
+fine-grained control of memory consistency.
+
+.*A summary of shared virtual memory (SVM) options in OpenCL*
+[width="100%",cols="^,^,^,^,^"]
+|=======================================================================
+| |Granularity of sharing |Memory Allocation |Mechanisms to enforce Consistency |Explicit updates
+between host and device
+|Non-SVM buffers |OpenCL Memory objects(buffer) |clCreateBuffer |Host synchronization points on the same or between
+devices. |yes, through Map and Unmap commands.
+|Coarse-Grained buffer SVM |OpenCL Memory objects (buffer) |clSVMAlloc |Host synchronization points
+between devices |yes, through Map and Unmap commands.
+|Fine Grained buffer SVM |Bytes within OpenCL Memory objects (buffer) |clSVMAlloc |Synchronization points plus atomics (if supported) |No
+|Fine-Grained system SVM |Bytes within Host memory (system) |Host memory allocation mechanisms (e.g. malloc) |Synchronization points plus atomics (if
+supported) |No
+|=======================================================================
+
+Coarse-Grained buffer SVM is required in the core OpenCL specification.
+The two finer grained approaches are optional features in OpenCL. The
+various SVM mechanisms to access host memory from the work-items
+associated with a kernel instance are summarized in table 3-2.
+
+==== Memory Model: Memory Consistency Model
+The OpenCL memory model tells programmers what they can expect from an
+OpenCL implementation; which memory operations are guaranteed to happen
+in which order and which memory values each read operation will return.
+The memory model tells compiler writers which restrictions they must
+follow when implementing compiler optimizations; which variables they
+can cache in registers and when they can move reads or writes around a
+barrier or atomic operation. The memory model also tells hardware
+designers about limitations on hardware optimizations; for example, when
+they must flush or invalidate hardware caches.
+{empty} +
+{empty} +
+The memory consistency model in OpenCL is based on the memory model from
+the ISO C11 programming language. To help make the presentation more
+precise and self-contained, we include modified paragraphs taken
+verbatim from the ISO C11 international standard. When a paragraph is
+taken or modified from the C11 standard, it is identified as such along
+with its original location in the C11 standard.
+{empty} +
+{empty} +
+For programmers, the most intuitive model is the _sequential
+consistency_ memory model. Sequential consistency interleaves the steps
+executed by each of the units of execution. Each access to a memory
+location sees the last assignment to that location in that
+interleaving. While sequential consistency is relatively
+straightforward for a programmer to reason about, implementing
+sequential consistency is expensive. Therefore, OpenCL implements a
+relaxed memory consistency model; i.e. it is possible to write programs
+where the loads from memory violate sequential consistency. Fortunately,
+if a program does not contain any races and if the program only uses
+atomic operations that utilize the sequentially consistent memory order
+(the default memory ordering for OpenCL), OpenCL programs appear to
+execute with sequential consistency.
+{empty} +
+{empty} +
+Programmers can to some degree control how the memory model is relaxed by choosing the memory order for synchronization operations. The precise semantics of synchronization and the memory orders are formally defined in section 3.3.6. Here, we give a high level description of how these memory orders apply to atomic operations on atomic objects shared between units of execution. OpenCL memory_order choices are based on those from the ANSI C11 standard memory model. They are specified in certain OpenCL functions through the following enumeration constants:
+
+* *memory_order_relaxed*:
+implies no order constraints. This memory order can be used safely to
+increment counters that are concurrently incremented, but it doesnt
+guarantee anything about the ordering with respect to operations to
+other memory locations. It can also be used, for example, to do ticket
+allocation and by expert programmers implementing lock-free algorithms.
+
+* *memory_order_acquire*: A
+synchronization operation (fence or atomic) that has acquire semantics
+"acquires" side-effects from a release operation that synchronises with
+it: if an acquire synchronises with a release, the acquiring unit of
+execution will see all side-effects preceding that release (and possibly
+subsequent side-effects.) As part of carefully-designed protocols,
+programmers can use an "acquire" to safely observe the work of another
+unit of execution.
+
+* *memory_order_release*: A
+synchronization operation (fence or atomic operation) that has release
+semantics "releases" side effects to an acquire operation that
+synchronises with it. All side effects that precede the release are
+included in the release. As part of carefully-designed protocols,
+programmers can use a "release" to make changes made in one unit of
+execution visible to other units of execution.
+
+NOTE: In general, no acquire must _always_ synchronise with any
+particular release. However, synchronisation can be forced by certain
+executions. See 3.3.6.2 for detailed rules for when synchronisation
+must occur.
+
+* *memory_order_acq_rel*: A
+synchronization operation with acquire-release semantics has the
+properties of both the acquire and release memory orders. It is
+typically used to order read-modify-write operations.
+
+* *memory_order_seq_cst*:
+The loads and stores of each unit of execution appear to execute in
+program (i.e., sequenced-before) order, and the loads and stores from
+different units of execution appear to be simply interleaved.
+{empty} +
+{empty} +
+Regardless of which memory_order is specified, resolving constraints on
+memory operations across a heterogeneous platform adds considerable
+overhead to the execution of a program. An OpenCL platform may be able
+to optimize certain operations that depend on the features of the memory
+consistency model by restricting the scope of the memory operations.
+Distinct memory scopes are defined by the values of the memory_scope
+enumeration constant:
+
+* *memory_scope_work_item*:
+memory-ordering constraints only apply within the
+work-item.footnote:[This value for memory_scope can only be used with atomic_work_item_fence with flags set
+to LCK_IMAGE_MEM_FENCE.].
+
+* *memory_scope_sub_group*:memory-ordering constraints only apply within
+the sub-group.
+
+* *memory_scope_work_group*:
+memory-ordering constraints only apply to work-items executing within a
+single work-group.
+
+* *memory_scope_device:*
+memory-ordering constraints only apply to work-items executing on a
+single device
+
+* *memory_scope_all_svm_devices*: memory-ordering constraints apply to
+work-items executing across multiple devices and (when using SVM) the
+host. A release performed with *memory_scope_all_svm_devices* to a
+buffer that does not have the CL_MEM_SVM_ATOMICS flag set will commit to
+at least *memory_scope_device* visibility, with full synchronization of
+the buffer at a queue synchronization point (e.g. an OpenCL event).
+{empty} +
+{empty} +
+These memory scopes define a hierarchy of visibilities when analyzing
+the ordering constraints of memory operations. For example if a
+programmer knows that a sequence of memory operations will only be
+associated with a collection of work-items from a single work-group (and
+hence will run on a single device), the implementation is spared the
+overhead of managing the memory orders across other devices within the
+same context. This can substantially reduce overhead in a program. All
+memory scopes are valid when used on global memory or local memory. For
+local memory, all visibility is constrained to within a given work-group
+and scopes wider than *memory_scope_work_group* carry no additional
+meaning.
+{empty} +
+{empty} +
+In the following subsections (leading up to section 3.4), we will
+explain the synchronization constructs and detailed rules needed to use
+OpenCLs relaxed memory models. It is important to appreciate,
+however, that many programs do not benefit from relaxed memory models.
+Even expert programmers have a difficult time using atomics and fences
+to write correct programs with relaxed memory models. A large number of
+OpenCL programs can be written using a simplified memory model. This is
+accomplished by following these guidelines.
+
+* Write programs that manage
+safe sharing of global memory objects through the synchronization points
+defined by the command queues.
+
+* Restrict low level
+synchronization inside work-groups to the work-group functions such as
+barrier.
+
+* If you want sequential
+consistency behavior with system allocations or fine-grain SVM buffers
+with atomics support, use only memory_order_seq_cst operations with the
+scope memory_scope_all_svm_devices.
+
+* If you want sequential
+consistency behavior when not using system allocations or fine-grain SVM
+buffers with atomics support, use only memory_order_seq_cst operations
+with the scope memory_scope_device or memory_scope_all_svm_devices.
+
+* Ensure your program has no
+races.
+{empty} +
+{empty} +
+If these guidelines are followed in your OpenCL programs, you can skip
+the detailed rules behind the relaxed memory models and go directly to
+section 3.4.
+
+
+==== Memory Model: Overview of atomic and fence operations
+
+The OpenCL 2.0 specification defines a number of _synchronization
+operations_ that are used to define memory order constraints in a
+program. They play a special role in controlling how memory operations
+in one unit of execution (such as work-items or, when using SVM a host
+thread) are made visible to another. There are two types of
+synchronization operations in OpenCL; _atomic operations_ and _fences_.
+{empty} +
+{empty} +
+Atomic operations are indivisible. They either occur completely or not
+at all. These operations are used to order memory operations between
+units of execution and hence they are parameterized with the
+memory_order and memory_scope parameters defined by the OpenCL memory
+consistency model. The atomic operations for OpenCL kernel languages
+are similar to the corresponding operations defined
+by the C11 standard.
+{empty} +
+{empty} +
+The OpenCL 2.0 atomic operations apply to variables of an atomic type (a
+subset of those in the C11 standard) including atomic versions of the
+int, uint, long, ulong, float, double, half, intptr_t, uintptr_t,
+size_t, and ptrdiff_t types. However, support for some of these atomic
+types depends on support for the corresponding regular types.
+{empty} +
+{empty} +
+An atomic operation on one or more memory locations is either an acquire
+operation, a release operation, or both an acquire and release
+operation. An atomic operation without an associated memory location is
+a fence and can be either an acquire fence, a release fence, or both an
+acquire and release fence. In addition, there are relaxed atomic
+operations, which do not have synchronization properties, and atomic
+read-modify-write operations, which have special characteristics. [C11
+standard, Section 5.1.2.4, paragraph 5, modified]
+{empty} +
+{empty} +
+The orders memory_order_acquire (used for reads), memory_order_release
+(used for writes), and memory_order_acq_rel (used for read-modify-write
+operations) are used for simple communication between units of execution
+using shared variables. Informally, executing a memory_order_release on
+an atomic object A makes all previous side effects visible to any unit
+of execution that later executes a memory_order_acquire on A. The orders
+memory_order_acquire, memory_order_release, and memory_order_acq_rel do
+not provide sequential consistency for race-free programs because they
+will not ensure that atomic stores followed by atomic loads become
+visible to other threads in that order.
+{empty} +
+{empty} +
+The fence operation is atomic_work_item_fence, which includes a
+memory_order argument as well as the memory_scope and cl_mem_fence_flags
+arguments. Depending on the memory_order argument, this operation:
+
+* has no effects, if
+memory_order_relaxed;
+
+* is an acquire fence, if
+memory_order_acquire;
+
+* is a release fence, if
+memory_order_release;
+
+* is both an acquire fence
+and a release fence, if memory_order_acq_rel;
+
+* is a
+sequentially-consistent fence with both acquire and release semantics,
+if memory_order_seq_cst.
+
+ 
+
+If specified, the cl_mem_fence_flags argument must be
+CLK_IMAGE_MEM_FENCE, CLK_GLOBAL_MEM_FENCE, CLK_LOCAL_MEM_FENCE, or
+CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE.
+{empty} +
+{empty} +
+The atomic_work_item_fence(CLK_IMAGE_MEM_FENCE) built-in function must
+be
+{empty} +
+{empty} +
+used to make sure that sampler-less writes are visible to later reads by
+the same work-item. Without use of the atomic_work_item_fence function,
+write-read coherence on image objects is not guaranteed: if a work-item
+reads from an image to which it has previously written without an
+intervening atomic_work_item_fence, it is not guaranteed that those
+previous writes are visible to the work-item.
+{empty} +
+{empty} +
+The synchronization operations in OpenCL can be parameterized by a
+memory_scope. Memory scopes control the extent that an atomic operation
+or fence is visible with respect to the memory model. These memory
+scopes may be used when performing atomic operations and fences on
+global memory and local memory. When used on global memory visibility
+is bounded by the capabilities of that memory. When used on a
+fine-grained non-atomic SVM buffer, a coarse-grained SVM buffer, or a
+non-SVM buffer, operations parameterized with
+memory_scope_all_svm_devices will behave as if they were parameterized
+with memory_scope_device. When used on local memory, visibility is
+bounded by the work-group and, as a result, memory_scope with wider
+visibility than memory_scope_work_group will be reduced to
+memory_scope_work_group.
+
+Two actions *A* and *B* are defined to have an inclusive scope if they
+have the same scope *P* such that:
+
+* *P* is memory_scope_sub_group and *A* and *B* are executed by
+work-items within the same sub-group.
+
+* *P* is memory_scope_work_group and *A* and *B* are executed by
+work-items within the same work-group.
+
+* *P* is memory_scope_device and *A* and *B* are executed by
+work-items on the same device when *A* and *B* apply to an SVM
+allocation or *A* and *B* are executed by work-items in the same kernel
+or one of its children when *A* and *B* apply to a cl_mem buffer.
+
+* *P* is memory_scope_all_svm_devices if *A* and *B* are
+executed by host threads or by work-items on one or more devices that
+can share SVM memory with each other and the host process.
+
+
+==== Memory Model: Memory Ordering Rules
+
+Fundamentally, the issue in a memory model is to understand the
+orderings in time of modifications to objects in memory. Modifying an
+object or calling a function that modifies an object are side effects,
+i.e. changes in the state of the execution environment. Evaluation of an
+expression in general includes both value computations and initiation of
+side effects. Value computation for an lvalue expression includes
+determining the identity of the designated object. [C11 standard,
+Section 5.1.2.3, paragraph 2, modified]
+{empty} +
+{empty} +
+We assume that the OpenCL kernel language and host
+programming languages have a sequenced-before relation between the
+evaluations executed by a single unit of execution. This
+sequenced-before relation is an asymmetric, transitive, pair-wise
+relation between those evaluations, which induces a partial order among
+them. Given any two evaluations *A* and *B*, if *A* is sequenced-before
+*B*, then the execution of *A* shall precede the execution of *B*.
+(Conversely, if *A* is sequenced-before *B*, then *B* is sequenced-after
+*A*.) If *A* is not sequenced-before or sequenced-after *B*, then *A*
+and *B* are unsequenced. Evaluations *A* and *B* are indeterminately
+sequenced when *A* is either sequenced-before or sequenced-after *B*,
+but it is unspecified which. [C11 standard, Section 5.1.2.3, paragraph
+3, modified]
+{empty} +
+{empty} +
+NOTE: sequenced-before is a partial order of the operations executed by
+a single unit of execution (e.g. a host thread or work-item). It
+generally corresponds to the source program order of those operations,
+and is partial because of the undefined argument evaluation order of
+OpenCLs kernel C language.
+{empty} +
+{empty} +
+In an OpenCL kernel language, the value of an object
+visible to a work-item W at a particular point is the initial value of
+the object, a value stored in the object by W, or a value stored in the
+object by another work-item or host thread, according to the rules
+below. Depending on details of the host programming language, the value
+of an object visible to a host thread may also be the value stored in
+that object by another work-item or host thread. [C11 standard, Section
+5.1.2.4, paragraph 2, modified]
+{empty} +
+{empty} +
+Two expression evaluations conflict if one of them modifies a memory
+location and the other one reads or modifies the same memory location. [C11 standard, Section 5.1.2.4, paragraph 4]
+{empty} +
+{empty} +
+All modifications to a particular atomic object *M* occur in some
+particular total order, called the modification order of *M*. If *A* and
+*B* are modifications of an atomic object *M*, and *A* happens-before
+*B*, then *A* shall precede *B* in the modification order of *M*, which
+is defined below. Note that the modification order of an atomic object
+*M* is independent of whether *M* is in local or global memory. [C11
+standard, Section 5.1.2.4, paragraph 7, modified]
+{empty} +
+{empty} +
+A release sequence begins with a release operation *A* on an atomic
+object *M* and is the maximal contiguous sub-sequence of side effects
+in the modification order of *M*, where the first operation is *A* and
+every subsequent operation either is performed by the same work-item or
+host thread that performed the release or is an atomic
+read-modify-write operation. [C11 standard, Section 5.1.2.4, paragraph
+10, modified]
+{empty} +
+{empty} +
+OpenCLs local and global memories are disjoint. Kernels may access both
+kinds of memory while host threads may only access global memory.
+Furthermore, the _flags_ argument of OpenCLs work_group_barrier
+function specifies which memory operations the function will make
+visible: these memory operations can be, for example, just the ones to
+local memory, or the ones to global memory, or both. Since the
+visibility of memory operations can be specified for local memory
+separately from global memory, we define two related but independent
+relations, _global-synchronizes-with_ and _local-synchronizes-with_.
+Certain operations on global memory may global-synchronize-with other
+operations performed by another work-item or host thread. An example is
+a release atomic operation in one work- item that
+global-synchronizes-with an acquire atomic operation in a second
+work-item. Similarly, certain atomic operations on local objects in
+kernels can local-synchronize- with other atomic operations on those
+local objects. [C11 standard, Section 5.1.2.4, paragraph 11, modified]
+{empty} +
+{empty} +
+We define two separate happens-before relations: global-happens-before
+and local-happens-before.
+
+A global memory action *A* global-happens-before a global memory action
+*B*__if
+
+* *A* is sequenced before
+*B*, or
+
+* *A*
+global-synchronizes-with *B*, or
+
+* For some global memory
+action *C*, *A* global-happens-before *C* and *C* global-happens-before
+*B*.
+
+ 
+
+A local memory action *A* local-happens-before a local memory action
+*B*__if
+
+* *A* is sequenced before
+*B*, or
+
+* *A*
+local-synchronizes-with *B*, or
+
+* For some local memory
+action *C*, *A* local-happens-before *C* and *C* local-happens-before
+*B*.
+
+ 
+
+An OpenCL implementation shall ensure that no program execution
+demonstrates a cycle in either the local-happens-before relation or
+the global-happens-before relation.
+{empty} +
+{empty} +
+NOTE: The global- and local-happens-before relations are critical to
+defining what values are read and when data races occur. The
+global-happens-before relation, for example, defines what global memory
+operations definitely happen before what other global memory operations.
+If an operation *A* global-happens-before operation *B* then *A* must
+occur before *B*; in particular, any write done by *A* will be visible
+to *B*. The local-happens-before relation has similar properties for
+local memory. Programmers can use the local- and global-happens-before
+relations to reason about the order of program actions.
+{empty} +
+{empty} +
+A visible side effect *A* on a global object *M* with respect to a value
+computation *B* of *M* satisfies the conditions:
+
+* *A* global-happens-before
+*B*, and
+
+* there is no other side
+effect *X* to *M* such that *A* global-happens-before *X* and *X*
+global-happens-before *B*.
+
+ 
+
+We define visible side effects for local objects *M* similarly. The
+value of a non-atomic scalar object *M*, as determined by evaluation
+*B*, shall be the value stored by the visible side effect *A*. [C11
+standard, Section 5.1.2.4, paragraph 19, modified]
+{empty} +
+{empty} +
+The execution of a program contains a data race if it contains two
+conflicting actions A and B in different units of execution, and
+
+* (1) at least one of *A* or
+*B* is not atomic, or *A* and *B* do not have inclusive memory scope,
+and
+
+* (2) the actions are global
+actions unordered by the global-happens-before relation or are local
+actions unordered by the local-happens-before relation.
+
+Any such data race results in undefined behavior. [C11 standard, Section
+5.1.2.4, paragraph 25, modified]
+{empty} +
+{empty} +
+We also define the visible sequence of side effects on local and global
+atomic objects. The remaining paragraphs of this subsection define this
+sequence for a global atomic object *M*; the visible sequence of side
+effects for a local atomic object is defined similarly by using the
+local-happens-before relation.
+{empty} +
+{empty} +
+The visible sequence of side effects on a global atomic object *M*, with
+respect to a value computation *B* of *M*, is a maximal contiguous
+sub-sequence of side effects in the modification order of *M*, where the
+first side effect is visible with respect to *B*, and for every side
+effect, it is not the case that *B* global-happens-before it. The value
+of*M*, as determined by evaluation *B*, shall be the value stored by
+some operation in the visible sequence of *M* with respect to *B*. [C11
+standard, Section 5.1.2.4, paragraph 22, modified]
+{empty} +
+{empty} +
+If an operation *A* that modifies an atomic object *M* global-happens
+before an operation *B* that modifies *M*, then *A* shall be earlier
+than *B* in the modification order of *M*. This requirement is known as
+write-write coherence.
+{empty} +
+{empty} +
+If a value computation *A* of an atomic object *M* global-happens-before
+a value computation *B* of *M*, and *A* takes its value from a side
+effect *X* on *M*, then the value computed by *B* shall either equal the
+value stored by *X*, or be the value stored by a side effect *Y* on *M*,
+where *Y* follows *X* in the modification order of *M*. This requirement
+is known as read-read coherence. [C11 standard, Section 5.1.2.4,
+paragraph 22, modified]
+{empty} +
+{empty} +
+If a value computation *A* of an atomic object *M* global-happens-before
+an operation *B* on *M*, then *A* shall take its value from a side
+effect *X* on *M*, where *X* precedes *B* in the modification order of
+*M*. This requirement is known as read-write coherence.
+{empty} +
+{empty} +
+If a side effect *X* on an atomic object *M* global-happens-before a
+value computation *B* of *M*, then the evaluation *B* shall take its
+value from *X* or from a side effect *Y* that follows *X*in the
+modification order of *M*. This requirement is known as write-read
+coherence.
+
+===== Memory Ordering Rules: Atomic Operations
+
+This and following sections describe how different program actions in
+kernel C code and the host program contribute to the local- and
+global-happens-before relations. This section discusses ordering rules
+for OpenCL 2.0s atomic operations.
+
+Section 3.2.3 defined the enumerated type memory_order.
+
+* For memory_order_relaxed,
+no operation orders memory.
+
+* For memory_order_release,
+memory_order_acq_rel, and memory_order_seq_cst, a store operation
+performs a release operation on the affected memory location.
+
+* For memory_order_acquire,
+memory_order_acq_rel, and memory_order_seq_cst, a load operation
+performs an acquire operation on the affected memory location. [C11
+standard, Section 7.17.3, paragraphs 2-4, modified]
+
+ 
+
+Certain built-in functions synchronize with other built-in functions
+performed by another unit of execution. This is true for pairs of
+release and acquire operations under specific circumstances. An atomic
+operation *A* that performs a release operation on a global object *M*
+global-synchronizes-with an atomic operation *B* that performs an
+acquire operation on *M* and reads a value written by any side effect in
+the release sequence headed by *A*. A similar rule holds for atomic
+operations on objects in local memory: an atomic operation *A* that
+performs a release operation on a local object *M*
+local-synchronizes-with an atomic operation *B* that performs an acquire
+operation on *M* and reads a value written by any side effect in the
+release sequence headed by *A*. [C11 standard, Section 5.1.2.4,
+paragraph 11, modified]
+{empty} +
+{empty} +
+NOTE: Atomic operations specifying memory_order_relaxed are relaxed only
+with respect to memory ordering. Implementations must still guarantee
+that any given atomic access to a particular atomic object be
+indivisible with respect to all other atomic accesses to that object.
+{empty} +
+{empty} +
+There shall exist a single total order *S* for all memory_order_seq_cst
+operations that is consistent with the modification orders for all
+affected locations, as well as the appropriate global-happens-before and
+local-happens-before orders for those locations, such that each
+memory_order_seq operation *B* that loads a value from an atomic object
+*M* in global or local memory observes one of the following values:
+
+* the result of the last
+modification *A* of *M* that precedes *B* in *S*, if it exists, or
+
+* if *A* exists, the result
+of some modification of *M* in the visible sequence of side effects
+with respect to *B* that is not memory_order_seq_cst and that does not
+happen before *A*, or
+
+* if *A* does not exist, the
+result of some modification of *M* in the visible sequence of side
+effects with respect to *B* that is not memory_order_seq_cst. [C11
+standard, Section 7.17.3, paragraph 6, modified]
+
+ 
+
+Let X and Y be two memory_order_seq_cst operations. If X
+local-synchronizes-with or global-synchronizes-with Y then X both
+local-synchronizes-with Y and global-synchronizes-with Y.
+{empty} +
+{empty} +
+If the total order *S* exists, the following rules hold:
+
+* For an atomic operation
+*B* that reads the value of an atomic object *M*, if there is a
+memory_order_seq_cst fence *X* sequenced-before *B*, then *B* observes
+either the last memory_order_seq_cst modification of *M* preceding *X*
+in the total order *S* or a later modification of *M* in its
+modification order. [C11 standard, Section 7.17.3, paragraph 9]
+
+ 
+
+* For atomic operations *A*
+and *B* on an atomic object *M*, where *A* modifies *M* and *B* takes
+its value, if there is a memory_order_seq_cst fence *X* such that *A* is
+sequenced-before *X* and *B* follows *X* in *S*, then *B* observes
+either the effects of *A* or a later modification of *M* in its
+modification order. [C11 standard, Section 7.17.3, paragraph 10]
+
+ 
+
+* For atomic operations *A*
+and *B* on an atomic object *M*, where *A*modifies *M* and *B* takes its
+value, if there are memory_order_seq_cst fences *X* and *Y* such that
+*A* is sequenced-before *X*, *Y* is sequenced-before *B*, and *X*
+precedes *Y* in *S*, then *B* observes either the effects of *A* or a
+later modification of *M* in its modification order. [C11 standard,
+Section 7.17.3, paragraph 11]
+
+ 
+
+* For atomic operations *A*
+and *B* on an atomic object *M*, if there are memory_order_seq_cst
+fences *X* and *Y* such that *A* is sequenced-before *X*, *Y* is
+sequenced-before *B*, and *X* precedes *Y* in *S*, then *B* occurs later
+than *A* in the modification order of *M*.
+
+ 
+
+NOTE: memory_order_seq_cst ensures sequential consistency only for a
+program that is (1) free of data races, and (2) exclusively uses
+memory_order_seq_cst synchronization operations. Any use of weaker
+ordering will invalidate this guarantee unless extreme care is used. In
+particular, memory_order_seq_cst fences ensure a total order only for
+the fences themselves. Fences cannot, in general, be used to restore
+sequential consistency for atomic operations with weaker ordering
+specifications.
+{empty} +
+{empty} +
+Atomic read-modify-write operations should always read the last value
+(in the modification order) stored before the write associated with the
+read-modify-write operation. [C11 standard, Section 7.17.3, paragraph
+12]
+
+
+[underline]#Implementations should ensure that no "out-of-thin-air" values are computed that circularly depend on their own computation.#
+
+Note: Under the rules described above, and independent to the previously
+footnoted C++ issue, it is known that _x == y == 42_ is a valid final
+state in the following problematic example:
+
+----
+global atomic_int x = ATOMIC_VAR_INIT(0);
+
+local atomic_int y = ATOMIC_VAR_INIT(0);
+
+
+unit_of_execution_1:
+
+... [execution not reading or writing x or y, leading up to:]
+
+int t = atomic_load_explicit(&y, memory_order_acquire);
+
+atomic_store_explicit(&x, t, memory_order_release);
+
+
+unit_of_execution_2:
+
+... [execution not reading or writing x or y, leading up to:]
+
+int t = atomic_load_explicit(&x, memory_order_acquire);
+
+atomic_store_explicit(&y, t,
+memory_order_release);link:#_msocom_6[[BA6]] 
+----
+
+This is not useful behavior and implementations should not exploit this
+phenomenon. It should be expected that in the future this may be
+disallowed by appropriate updates to the memory model description by the
+OpenCL committee.
+
+ 
+
+Implementations should make atomic stores visible to atomic loads within
+a reasonable amount of time. [C11 standard, Section 7.17.3, paragraph
+16]
+
+ 
+
+As long as the following conditions are met, a host program sharing SVM
+memory with a kernel executing on one or more OpenCL devices may use
+atomic and synchronization operations to ensure that its assignments,
+and those of the kernel, are visible to each other:
+
+. Either fine-grained buffer or fine-grained system SVM must be
+used to share memory. While coarse-grained buffer SVM allocations may
+support atomic operations, visibility on these allocations is not
+guaranteed except at map and unmap operations.
+
+. The optional OpenCL 2.0 SVM atomic-controlled visibility
+specified by provision of the CL_MEM_SVM_ATOMICS flag must be supported
+by the device and the flag provided to the SVM buffer on allocation.
+
+. The host atomic and synchronization operations must be
+compatible with those of an OpenCL kernel language. This
+requires that the size and representation of the data types that the
+host atomic operations act on be consistent with the OpenCL kernel language atomic
+types.
+
+ 
+
+If these conditions are met, the host operations will apply at
+all_svm_devices scope.
+
+===== Memory Ordering Rules: Fence Operations
+This section describes how the OpenCL 2.0 fence operations contribute to
+the local- and global-happens-before relations.
+
+ 
+
+Earlier, we introduced synchronization primitives called fences. Fences
+can utilize the acquire memory_order, release memory_order, or both. A
+fence with acquire semantics is called an acquire fence; a fence with
+release semantics is called a release fence.
+
+ 
+
+A global release fence *A* global-synchronizes-with a global acquire
+fence *B* if there exist atomic operations *X* and *Y*, both operating
+on some global atomic object *M*, such that *A* is sequenced-before *X*,
+*X* modifies *M*, *Y* is sequenced-before *B*, *Y* reads the value
+written by *X* or a value written by any side effect in the hypothetical
+release sequence *X* would head if it were a release operation, and that
+the scopes of *A*, *B* are inclusive. [C11 standard, Section 7.17.4,
+paragraph 2, modified.]
+
+ 
+
+A global release fence *A* global-synchronizes-with an atomic operation
+*B* that performs an acquire operation on a global atomic object *M* if
+there exists an atomic operation *X* such that *A* is sequenced-before
+*X*, *X* modifies *M*, *B* reads the value written by *X* or a value
+written by any side effect in the hypothetical release sequence *X*
+would head if it were a release operation, and the scopes of *A* and *B*
+are inclusive. [C11 standard, Section 7.17.4, paragraph 3, modified.]
+
+ 
+
+An atomic operation *A* that is a release operation on a global atomic
+object *M* global-synchronizes-with a global acquire fence *B* if there
+exists some atomic operation *X* on *M* such that *X* is
+sequenced-before *B* and reads the value written by *A* or a value
+written by any side effect in the release sequence headed by *A*, and
+the scopes of *A* and *B* are inclusive. [C11 standard, Section 7.17.4,
+paragraph 4, modified.]
+
+ 
+
+A local release fence *A* local-synchronizes-with a local acquire fence
+*B* if there exist atomic operations *X* and *Y*, both operating on some
+local atomic object *M*, such that *A* is sequenced-before *X*, *X*
+modifies *M*, *Y* is sequenced-before *B*, and *Y* reads the value
+written by *X* or a value written by any side effect in the hypothetical
+release sequence *X* would head if it were a
+
+release operation, and the scopes of *A* and *B* are inclusive. [C11
+standard, Section 7.17.4, paragraph 2, modified.]
+
+ 
+
+A local release fence *A* local-synchronizes-with an atomic operation
+*B* that performs an acquire operation on a local atomic object *M* if
+there exists an atomic operation *X* such that *A* is sequenced-before
+*X*, *X* modifies *M*, and *B* reads the value written by *X* or a value
+written by any side effect in the hypothetical release sequence *X*
+would head if it were a release operation, and
+
+the scopes of *A* and *B* are inclusive. [C11 standard, Section 7.17.4,
+paragraph 3, modified.]
+
+ 
+
+An atomic operation *A* that is a release operation on a local atomic
+object *M* local-synchronizes-with a local acquire fence *B* if there
+exists some atomic operation *X* on *M* such that *X* is
+sequenced-before *B* and reads the value written by *A* or a value
+written by any side effect in the release sequence headed by *A*, and
+the scopes of *A* and *B* are inclusive. [C11 standard, Section 7.17.4,
+paragraph 4, modified.]
+
+ 
+
+Let *X* and *Y* be two work item fences that each have both the
+CLK_GLOBAL_MEM_FENCE and CLK_LOCAL_MEM_FENCE flags set. *X*
+global-synchronizes-with *Y* and *X* local synchronizes with *Y* if the
+conditions required for *X* to global-synchronize with *Y* are met, the
+conditions required for *X* to local-synchronize-with *Y* are met, or
+both sets of conditions are met.
+
+===== Memory Ordering Rules: Work-group Functions
+
+The OpenCL kernel execution model includes collective operations across
+the work-items within a single work-group. These are called work-group
+functions. Besides the work-group barrier function, they include the
+scan, reduction and pipe work-group functions described in the SPIR-V IL
+specifications . We will first discuss the work-group barrier. The other
+work-group functions are discussed afterwards.
+
+ 
+
+The barrier function provides a mechanism for a kernel to synchronize
+the work-items within a single work-group: informally, each work-item of
+the work-group must execute the barrier before any are allowed to
+proceed. It also orders memory operations to a specified combination of
+one or more address spaces such as local memory or global memory, in a
+similar manner to a fence.
+
+ 
+
+To precisely specify the memory ordering semantics for barrier, we need
+to distinguish between a dynamic and a static instance of the call to a
+barrier. A call to a barrier can appear in a loop, for example, and each
+execution of the same static barrier call results in a new dynamic
+instance of the barrier that will independently synchronize a
+work-groups work-items.
+
+ 
+
+A work-item executing a dynamic instance of a barrier results in two
+operations, both fences, that are called the entry and exit fences.
+These fences obey all the rules for fences specified elsewhere in this
+chapter as well as the following:
+
+* The entry fence is a
+release fence with the same flags and scope as requested for the
+barrier.
+
+* The exit fence is an
+acquire fence with the same flags and scope as requested for the
+barrier.
+
+* For each work-item the
+entry fence is sequenced before the exit fence.
+
+* If the flags have
+CLK_GLOBAL_MEM_FENCE set then for each work-item the entry fence
+global-synchronizes-with the exit fence of all other work-items in the
+same work-group.
+
+* If the flags have
+CLK_LOCAL_MEM_FENCE set then for each work-item the entry fence
+local-synchronizes-with the exit fence of all other work-items in the
+same work-group.
+
+ 
+
+The other work-group functions include such functions as
+work_group_all() and work_group_broadcast() and are described in the
+kernel language and IL specifications. The use of these work-group
+functions implies sequenced-before relationships between statements
+within the execution of a single work-item in order to satisfy data
+dependencies. For example, a work item that provides a value to a
+work-group function must behave as if it generates that value before
+beginning execution of that work-group function. Furthermore, the
+programmer must ensure that all work items in a work group must execute
+the same work-group function call site, or dynamic work-group function
+instance.
+
+===== Memory Ordering Rules: Sub-group Functions
+
+The OpenCL kernel execution model includes collective operations across
+the work-items within a single sub-group. These are called sub-group
+functions. Besides the sub-group-barrier function, they include the
+scan, reduction and pipe sub-group functions described in the SPIR-V IL
+specification. We will first discuss the sub-group barrier. The other
+sub-group functions are discussed afterwards.
+
+ 
+
+The barrier function provides a mechanism for a kernel to synchronize
+the work-items within a single sub-group: informally, each work-item of
+the sub-group must execute the barrier before any are allowed to
+proceed. It also orders memory operations to a specified combination of
+one or more address spaces such as local memory or global memory, in a
+similar manner to a fence.
+
+ 
+
+To precisely specify the memory ordering semantics for barrier, we need
+to distinguish between a dynamic and a static instance of the call to a
+barrier. A call to a barrier can appear in a loop, for example, and each
+execution of the same static barrier call results in a new dynamic
+instance of the barrier that will independently synchronize a
+sub-groups work-items.
+
+ 
+
+A work-item executing a dynamic instance of a barrier results in two
+operations, both fences, that are called the entry and exit fences.
+These fences obey all the rules for fences specified elsewhere in this
+chapter as well as the following:
+
+* The entry fence is a
+release fence with the same flags and scope as requested for the
+barrier.
+
+* The exit fence is an
+acquire fence with the same flags and scope as requested for the
+barrier.
+
+* For each work-item the
+entry fence is sequenced before the exit fence.
+
+* If the flags have
+CLK_GLOBAL_MEM_FENCE set then for each work-item the entry fence
+global-synchronizes-with the exit fence of all other work-items in the
+same sub-group.
+
+* If the flags have
+CLK_LOCAL_MEM_FENCE set then for each work-item the entry fence
+local-synchronizes-with the exit fence of all other work-items in the
+same sub-group.
+
+ 
+
+The other sub-group functions include such functions as sub_group_all()
+and sub_group_broadcast() and are described in OpenCL kernel
+languages specifications. The use of these sub-group functions
+implies sequenced-before relationships between statements within the
+execution of a single work-item in order to satisfy data dependencies.
+For example, a work item that provides a value to a sub-group function
+must behave as if it generates that value before beginning execution of
+that sub-group function. Furthermore, the programmer must ensure that
+all work items in a sub-group must execute the same sub-group function
+call site, or dynamic sub-group function instance.
+
+
+===== Memory Ordering Rules: Host-side and Device-side Commands
+This section describes how the OpenCL API functions associated with
+command-queues contribute to happens-before relations. There are two
+types of command queues and associated API functions in OpenCL 2.0;
+_host command-queues_ and _device command-queues_. The interaction of
+these command queues with the memory model are for the most part
+equivalent. In a few cases, the rules only applies to the host
+command-queue. We will indicate these special cases by specifically
+denoting the host command-queue in the memory ordering rule. SVM memory
+consistency in such instances is implied only with respect to
+synchronizing host commands.
+
+ 
+
+Memory ordering rules in this section apply to all memory objects
+(buffers, images and pipes) as well as to SVM allocations where no
+earlier, and more fine-grained, rules apply.
+
+ 
+
+In the remainder of this section, we assume that each command *C*
+enqueued onto a command-queue has an associated event object *E* that
+signals its execution status, regardless of whether *E*was returned to
+the unit of execution that enqueued *C*. We also distinguish between
+the API function call that enqueues a command *C* and creates an event
+*E*, the execution of *C*, and the completion of *C*(which marks the
+event *E* as complete).
+
+ 
+
+The ordering and synchronization rules for API commands are defined as
+following:
+
+. If an API function call *X* enqueues a command *C*, then *X*
+global-synchronizes-with *C*. For example, a host API function to
+enqueue a kernel global-synchronizes-with the start of that
+kernel-instances execution, so that memory updates sequenced-before the
+enqueue kernel function call will global-happen-before any kernel reads
+or writes to those same memory locations. For a device-side enqueue,
+global memory updates sequenced before *X* happens-before *C* reads or
+writes to those memory locations only in the case of fine-grained SVM.
+
+. If *E* is an event upon which a command *C* waits, then *E*
+global-synchronizes-with *C*. In particular, if *C* waits on an event
+*E* that is tracking the execution status of the command *C1*, then
+memory operations done by *C1* will global-happen-before memory
+operations done by *C*. As an example, assume we have an OpenCL program
+using coarse-grain SVM sharing that enqueues a kernel to a host
+command-queue to manipulate the contents of a region of a buffer that
+the host thread then accesses after the kernel completes. To do this,
+the host thread can call clEnqueueMapBuffer to enqueue a blocking-mode
+map command to map that buffer region, specifying that the map command
+must wait on an event signaling the kernels completion. When
+clEnqueueMapBuffer returns, any memory operations performed by the
+kernel to that buffer region will global- happen-before subsequent
+memory operations made by the host thread.
+
+. If a command *C* has an event *E* that signals its completion,
+then *C* global- synchronizes-with *E*.
+
+. For a command *C* enqueued to a host-side command queue, if *C*
+has an event *E* that signals its completion, then *E* global-
+synchronizes-with an API call *X* that waits on *E*. For example, if a
+host thread or kernel-instance calls the wait-for-events function on
+*E*(e.g. the clWaitForEvents function called from a host thread)*,*then
+*E* global-synchronizes-with that wait-for-events function call.
+
+. If commands *C* and *C1* are enqueued in that sequence onto an
+in-order command-queue, then the event (including the event implied
+between *C* and *C1*due to the in-order queue) signaling *C*s
+completion global-synchronizes-with *C1*. Note that in OpenCL 2.0, only
+a host command-queue can be configured as an in-order queue.
+
+. If an API call enqueues a marker command *C* with an empty list
+of events upon which *C* should wait, then the events of all commands
+enqueued prior to *C* in the command-queue global-synchronize-with*C*.
+
+. If a host API call enqueues a command-queue barrier command *C*
+with an empty list of events on which *C* should wait, then the events
+of all commands enqueued prior to *C* in the command-queue
+global-synchronize-with *C*. In addition, the event signaling the
+completion of *C* global-synchronizes-with all commands enqueued after
+*C* in the command-queue.
+
+. If a host thread executes a clFinish call *X*, then the events
+of all commands enqueued prior to *X* in the command-queue
+global-synchronizes-with *X*.
+
+. The start of a kernel-instance *K* global-synchronizes-with all
+operations in the work items of *K*. Note that this includes the
+execution of any atomic operations by the work items in a program using
+fine-grain SVM.
+
+. All operations of all work items of a kernel-instance *K*
+global-synchronizes-with the event signaling the completion of *K*. Note
+that this also includes the execution of any atomic operations by the
+work items in a program using fine-grain SVM.
+
+. If a callback procedure *P* is registered on an event *E*, then *E*
+global-synchronizes-with all operations of *P*. Note that callback
+procedures are only defined for commands within host command-queues.
+
+. If *C* is a command that waits for an event *E*'s completion, and
+API function call *X* sets the status of a user event *E*'s status to
+CL_COMPLETE (for example, from a host thread using a
+clSetUserEventStatus function), then *X* global-synchronizes-with *C*.
+
+. If a device enqueues a command *C* with the
+CLK_ENQUEUE_FLAGS_WAIT_KERNEL flag, then the end state of the parent
+kernel instance global-synchronizes with *C*.
+
+. If a work-group enqueues a command *C* with the
+CLK_ENQUEUE_FLAGS_WAIT_WORK_GROUP flag, then the end state of the
+work-group global-synchronizes with *C*.
+
+ 
+
+When using an out-of-order command queue, a wait on an event or a marker
+or command-queue barrier command can be used to ensure the correct
+ordering of dependent commands. In those cases, the wait for the event
+or the marker or barrier command will provide the necessary
+global-synchronizes-with relation.
+
+
+In this situation:
+
+* access to shared locations
+or disjoint locations in a single cl_mem object when using atomic
+operations from different kernel instances enqueued from the host such
+that one or more of the atomic operations is a write is
+implementation-defined and correct behavior is not guaranteed except
+at synchronization points.
+
+* access to shared locations
+or disjoint locations in a single cl_mem object when using atomic
+operations from different kernel instances consisting of a parent kernel
+and any number of child kernels enqueued by that kernel is guaranteed
+under the memory ordering rules described earlier in this section.
+
+* access to shared locations
+or disjoint locations in a single program scope global variable,
+coarse-grained SVM allocation or fine-grained SVM allocation when using
+atomic operations from different kernel instances enqueued from the host
+to a single device is guaranteed under the memory ordering rules
+described earlier in this section.
+
+ 
+
+If fine-grain SVM is used but without support for the OpenCL 2.0 atomic
+operations, then the host and devices can concurrently read the same
+memory locations and can concurrently update non-overlapping memory
+regions, but attempts to update the same memory locations are
+undefined. Memory consistency is guaranteed at the OpenCL
+synchronization points without the need for calls to clEnqueueMapBuffer
+and clEnqueueUnmapMemObject. For fine-grained SVM buffers it is
+guaranteed that at synchronization points only values written by the
+kernel will be updated. No writes to fine-grained SVM buffers can be
+introduced that were not in the original program.
+ 
+
+In the remainder of this section, we discuss a few points regarding the
+ordering rules for commands with a host command queue.
+
+ 
+
+The OpenCL 1.2 standard describes a synchronization point as a
+kernel-instance or host program location where the contents of memory
+visible to different work-items or command-queue commands are the same.
+It also says that waiting on an event and a command-queue barrier are
+synchronization points between commands in command- queues. Four of the
+rules listed above (2, 4, 7, and 8) cover these OpenCL synchronization
+points.
+
+ 
+
+A map operation (clEnqueueMapBuffer or clEnqueueMapImage) performed on a
+non-SVM buffer or a coarse-grained SVM buffer is allowed to overwrite
+the entire target region with the latest runtime view of the data as
+seen by the command with which the map operation synchronizes, whether
+the values were written by the executing kernels or not. Any values
+that were changed within this region by another kernel or host thread
+while the kernel synchronizing with the map operation was executing may
+be overwritten by the map operation.
+
+ 
+
+Access to non-SVM cl_mem buffers and coarse-grained SVM allocations is
+ordered at synchronization points between host commands. In the presence
+of an out-of-order command queue or a set of command queues mapped to
+the same device, multiple kernel instances may execute concurrently on
+the same device.
+
+=== The OpenCL Framework
+
+The OpenCL framework allows applications to use a host and one or more
+OpenCL devices as a single heterogeneous parallel computer system. The
+framework contains the following components:
+
+* OpenCL Platform layer: The
+platform layer allows the host program to discover OpenCL devices and
+their capabilities and to create contexts.
+
+* OpenCL Runtime: The
+runtime allows the host program to manipulate contexts once they have
+been created.
+
+* OpenCL Compiler: The
+OpenCL compiler creates program executables that contain OpenCL kernels.
+SPIR-V intermediate language, OpenCL C, OpenCL C++, and OpenCL C language versions from earlier
+OpenCL specifications are supported by the compiler. Other input
+languages may be supported by some implementations.
+
+==== OpenCL Framework: Mixed Version Support
+OpenCL supports devices with different capabilities under a single
+platform. This includes devices which conform to different versions of
+the OpenCL specification. There are three version identifiers to
+consider for an OpenCL system: the platform version, the version of a
+device, and the version(s) of the kernel language or IL supported on a
+device.
+
+ 
+
+The platform version indicates the version of the OpenCL runtime that is
+supported. This includes all of the APIs that the host can use to
+interact with resources exposed by the OpenCL runtime; including
+contexts, memory objects, devices, and command queues.
+
+ 
+
+The device version is an indication of the device's capabilities
+separate from the runtime and compiler as represented by the device info
+returned by *clGetDeviceInfo*. Examples of attributes associated with
+the device version are resource limits (e.g., minimum size of local
+memory per compute unit) and extended functionality (e.g., list of
+supported KHR extensions). The version returned corresponds to the
+highest version of the OpenCL specification for which the device is
+conformant, but is not higher than the platform version.
+
+ 
+
+The language version for a device represents the OpenCL programming
+language features a developer can assume are supported on a given
+device. The version reported is the highest version of the language
+supported.
+
+
+
+Backwards compatibility is an important goal for the OpenCL standard.
+Backwards compatibility is expected such that a device will consume
+earlier versions of the SPIR-V and OpenCL C programming languages with
+the following minimum requirements:
+
+. An OpenCL 1.x device must support at least one 1.x version of
+the OpenCL C programming language.
+
+. An OpenCL 2.0 device must support all the requirements of an
+OpenCL 1.x device in addition to the OpenCL C 2.0 programming language.
+If multiple language versions are supported, the compiler defaults to
+using the highest OpenCL 1.x language version supported for the device
+(typically OpenCL 1.2). To utilize the OpenCL 2.0 Kernel programming
+language, a programmer must specifically set the appropriate compiler
+flag (-cl-std=CL2.0). The language version must not be higher than the
+platform version, but may exceed the device version (see section
+5.8.4.5).
+
+. An OpenCL 2.1 device must support all the requirements of an
+OpenCL 2.0 device in addition to the SPIR-V intermediate language at
+version 1.0 or above. Intermediate language versioning is encoded as
+part of the binary object and no flags are required to be passed to the
+compiler.
+
+. An OpenCL 2.2 device must support all the requirements of an
+OpenCL 2.0 device in addition to the SPIR-V intermediate language at
+version 1.2 or above. Intermediate language
+is encoded as a part of the binary
+object and no flags are required to be passed to the compiler.

@@ -1,0 +1,379 @@
+﻿// Copyright 2017 The Khronos Group. 
+//
+//  Khronos licenses this file to you under the Creative Commons Attribution 4.0 
+//  International (CC BY 4.0) License (the "License"); you may not use this file 
+//  except in compliance with the License.  You may obtain a copy of the License 
+//  at https://creativecommons.org/licenses/by/4.0/
+//
+//  Unless required by applicable law or agreed to in writing, material distributed 
+//  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+//  CONDITIONS OF ANY KIND, either express or implied. If all or a portion of this 
+//  material is re-used, notice substantially similar to the following must be included:
+//
+//  This specification includes material developed at The Khronos Group 
+//  (http://www.khronos.org/). Khronos supplied such material on an "AS IS" BASIS, 
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, under 
+//  the terms of the Creative Commons Attribution 4.0 International (CC BY 4.0) 
+//  License (the "License"), available at https://creativecommons.org/licenses/by/4.0/. 
+//  All use of such material is governed by the term of the License. Khronos bears 
+//  no responsibility whatsoever for additions or modifications to its material.
+
+Appendix B Portability
+----------------------
+
+OpenCL is designed to be portable to other architectures and hardware
+designs. OpenCL has used at its core a C99 based programming language
+and follows rules based on that heritage. Floating-point arithmetic is
+based on the *IEEE-754* and *IEEE-754-2008* standards. The memory
+objects, pointer qualifiers and weakly ordered memory are designed to
+provide maximum compatibility with discrete memory architectures
+implemented by OpenCL devices.   Command-queues and barriers allow for
+synchronization between the host and OpenCL devices. The design,
+capabilities and limitations of OpenCL are very much a reflection of the
+capabilities of underlying hardware. 
+
+ 
+
+Unfortunately, there are a number of areas where idiosyncrasies of one
+hardware platform may allow it to do some things that do not work on
+another. By virtue of the rich operating system resident on the CPU, on
+some implementations the kernels executing on a CPU may be able to call
+out to system services whereas the same calls on the GPU will likely
+fail for now. Since there is some advantage to having these services
+available for debugging purposes, implementations can use the OpenCL
+extension mechanism to implement these services.
+
+ 
+
+Likewise, the heterogeneity of computing architectures might mean that a
+particular loop construct might execute at an acceptable speed on the
+CPU but very poorly on a GPU, for example. CPUs are designed in general
+to work well on latency sensitive algorithms on single threaded tasks,
+whereas common GPUs may encounter extremely long latencies, potentially
+orders of magnitude worse. A developer interested in writing portable
+code may find that it is necessary to test his design on a diversity of
+hardware designs to make sure that key algorithms are structured in a
+way that works well on a diversity of hardware.  We suggest favoring
+more work-items over fewer. It is anticipated that over the coming
+months and years experience will produce a set of best practices that
+will help foster a uniformly favorable experience on a diversity of
+computing devices.
+
+ 
+
+Of somewhat more concern is the topic of endianness. Since a majority
+of devices supported by the initial implementation of OpenCL are
+little-endian, developers need to make sure that their kernels are
+tested on both big-endian and little-endian devices to ensure source
+compatibility with OpenCL devices now and in the future. The endian
+attribute qualifier is supported by the SPIR-V IL to allow developers to
+specify whether the data uses the endianness of the host or the OpenCL
+device. This allows the OpenCL compiler to do appropriate
+endian-conversion on load and store operations from or to this data.
+
+ 
+
+We also describe how endianness can leak into an implementation causing
+kernels to produce unintended results:
+
+ 
+
+When a big-endian vector machine (e.g. AltiVec, CELL SPE) loads a
+vector, the order of the data is retained. That is both the order of
+the bytes within each element and the order of the elements in the
+vector are the same as in memory.  When a little-endian vector machine
+(e.g. SSE) loads a vector, the order of the data in register (where all
+the work is done) is reversed. *Both* the order of the bytes within
+each element and the order of the elements with respect to one another
+in the vector are reversed. 
+
+ 
+
+Memory:
+
+uint4 a =
+
+ 
+[width="100%",cols="<25%,<25%,<25%,<25%",]
+|=========================
+|0x00010203 | 0x04050607 | 0x08090A0B | 0x0C0D0E0F
+|=========================
+
+
+In register (big-endian):
+
+uint4 a =
+ 
+
+[width="100%",cols="<25%,<25%,<25%,<25%",]
+|=========================
+|0x00010203 | 0x04050607 | 0x08090A0B | 0x0C0D0E0F
+|=========================
+ 
+
+In register (little-endian):
+
+uint4 a =
+
+
+[width="100%",cols="<25%,<25%,<25%,<25%",]
+|=========================
+|0x0F0E0D0C | 0x0B0A0908 | 0x07060504 | 0x03020100
+|=========================
+
+This allows little-endian machines to use a single vector load to load
+little-endian data, regardless of how large each piece of data is in the
+vector. That is the transformation is equally valid whether that vector
+was a uchar16 or a ulong2.  Of course, as is well known, little-endian
+machines actuallyfootnote:[Note that we are talking about the programming model here. In reality, little endian systems might choose to 
+simply address their bytes from "the right" or reverse the "order" of the bits in the byte. Either of these choices 
+would mean that no big swap would need to occur in hardware.]: store their data in reverse byte
+order to compensate for the little-endian storage format of the array
+elements:
+
+Memory (big-endian):
+
+uint4 a = 
+
+
+[width="100%",cols="<25%,<25%,<25%,<25%",]
+|=========================
+|0x00010203 | 0x04050607 | 0x08090A0B | 0x0C0D0E0F
+|=========================
+
+Memory (little-endian):
+
+uint4 a =
+
+ 
+[width="100%",cols="<25%,<25%,<25%,<25%",]
+|=========================
+|0x03020100 | 0x07060504 | 0x0B0A0908 | 0x0F0E0D0C
+|=========================
+ 
+
+Once that data is loaded into a vector, we end up with this:
+
+
+In register (big-endian):
+
+uint4 a =   
+
+
+[width="100%",cols="<25%,<25%,<25%,<25%",]
+|=========================
+|0x00010203 | 0x04050607 | 0x08090A0B | 0x0C0D0E0F
+|=========================
+ 
+
+In register (little-endian):
+
+uint4 a =
+
+
+[width="100%",cols="<25%,<25%,<25%,<25%",]
+|=========================
+|0x0C0D0E0F | 0x08090A0B | 0x04050607 | 0x00010203  
+|=========================
+ 
+
+That is, in the process of correcting the endianness of the bytes within
+each element, the machine ends up reversing the order that the elements
+appear in the vector with respect to each other within the vector.
+0x00010203 appears at the left of the big-endian vector and at the
+right of the little-endian vector.
+
+When the host and device have different endianness, the developer must
+ensure that kernel argument values are processed correctly. The
+implementation may or may not automatically convert endianness of kernel
+arguments. Developers should consult vendor documentation for guidance
+on how to handle kernel arguments in these situations.
+
+OpenCL provides a consistent programming model across architectures by
+numbering elements according to their order in memory. Concepts such as
+even/odd and high/low follow accordingly.  Once the data is loaded into
+registers, we find that element 0 is at the left of the big-endian
+vector and element 0 is at the right of the little-endian vector:
+
+ 
+----
+float x[4];
+
+float4 v = vload4( 0, x );
+----
+
+ 
+
+Big-endian:
+----
+v contains { x[0], x[1], x[2], x[3] }
+----
+
+Little-endian:
+----
+v contains { x[3], x[2], x[1], x[0] }
+----
+
+The compiler is aware that this swap occurs and references elements
+accordingly. So long as we refer to them by a numeric index such as
+.s0123456789abcdef or by descriptors such as .xyzw, .hi, .lo, .even and
+.odd, everything works transparently. Any ordering reversal is undone
+when the data is stored back to memory. The developer should be able to
+work with a big endian programming model and ignore the element ordering
+problem in the vector ... for most problems. This mechanism relies on
+the fact that we can rely on a consistent element numbering. Once we
+change numbering system, for example by conversion-free casting (using
+as_type_n_) a vector to another vector of the same size but a different
+number of elements, then we get different results on different
+implementations depending on whether the system is big- endian, or
+little-endian or indeed has no vector unit at all. (Thus, the behavior
+of bitcasts to vectors of different numbers of elements is
+implementation-defined, see section 1.2.4 of OpenCL 2.0C specification)
+
+An example follows:
+
+----
+float x[4] = { 0.0f, 1.0f, 2.0f, 3.0f };
+
+float4 v = vload4( 0, x );
+
+uint4 y = as_uint4(v);  legal, portable 
+
+ushort8 z = as_ushort8(v);  legal, not portable  
+
+ element size changed
+----
+ 
+
+Big-endian:
+
+----
+v contains { 0.0f, 1.0f, 2.0f, 3.0f }
+----
+----
+y contains { 0x00000000, 0x3f800000, 0x40000000, 0x40400000 }
+----
+----
+z contains { 0x0000, 0x0000, *0x3f80*, 0x0000, 0x4000, 0x0000, 0x4040, 0x0000 }
+----
+
+----
+z.z is 0x3f80
+----
+
+Little-endian:
+
+----
+v contains { 3.0f, 2.0f, 1.0f, 0.0f }
+----
+
+----
+y contains { 0x40400000, 0x40000000, 0x3f800000, 0x00000000 }
+----
+
+----
+z contains { 0x4040, 0x0000, 0x4000, 0x0000, 0x3f80, *0x0000*, 0x0000, 0x0000 }
+----
+
+
+----
+z.z is 0
+----
+
+Here, the value in z.z is not the same between big- and little-endian
+vector machines 
+
+ 
+
+OpenCL could have made it illegal to do a conversion free cast that
+changes the number of elements in the name of portability. However,
+while OpenCL provides a common set of operators drawing from the set
+that are typically found on vector machines, it can not provide access
+to everything every ISA may offer in a consistent uniform portable
+manner. Many vector ISAs provide special purpose instructions that
+greatly accelerate specific operations such as DCT, SAD, or 3D
+geometry. It is not intended for OpenCL to be so heavy handed that
+time-critical performance sensitive algorithms can not be written by
+knowledgeable developers to perform at near peak performance. Developers
+willing to throw away portability should be able to use the
+platform-specific instructions in their code. For this reason, OpenCL is
+designed to allow traditional vector C language programming extensions,
+such as the AltiVec C Programming Interface or the Intel C programming
+interfaces (such as those found in emmintrin.h) to be used directly in
+OpenCL with OpenCL data types as an extension to OpenCL.  As these
+interfaces rely on the ability to do conversion-free casts that change
+the number of elements in the vector to function properly, OpenCL allows
+them too. 
+
+ 
+
+As a general rule, any operation that operates on vector types in
+segments that are not the same size as the vector element size may break
+on other hardware with different endianness or different vector
+architecture.
+
+ 
+
+Examples might include:
+
+* Combining two uchar8's containing high and low bytes of a ushort, to make a ushort8 using
+.even and .odd operators  (please use *upsample()* for this)
+
+* Any bitcast that changes
+the number of elements in the vector. (Operations on the new type are
+non-portable.)
+
+* Swizzle operations that
+change the order of data using chunk sizes that are not the same as the
+element size
+
+Examples of operations that are portable:
+
+* Combining two uint8's to
+make a uchar16 using .even and .odd operators. For example to
+interleave left and right audio streams.
+
+* Any bitcast that does not
+change the number of elements (e.g.  (float4) unit4 -- we define the
+storage format for floating-point types)
+
+* Swizzle operations that
+swizzle elements of the same size as the elements of the vector.
+
+
+OpenCL has made some additions to C to make application behavior more
+dependable than C. Most notably in a few cases OpenCL defines the
+behavior of some operations that are undefined in C99:
+
+* OpenCL provides convert_
+operators for conversion between all types. C99 does not define what
+happens when a floating-point type is converted to integer type and the
+floating-point value lies outside the representable range of the integer
+type after rounding. When the _sat variant of the conversion is used,
+the float shall be converted to the nearest representable integer value.
+ Similarly, OpenCL also makes recommendations about what should happen
+with NaN. Hardware manufacturers that provide the saturated conversion
+in hardware may use the saturated conversion hardware for both the
+saturated and non-saturated versions of the OpenCL convert_ operator.
+OpenCL does not define what happens for the non-saturated conversions
+when floating-point operands are outside the range representable
+integers after rounding.
+
+* The format of half, float,
+and double types is defined to be the binary16, binary32 and binary64
+formats in the draft IEEE-754 standard. (The latter two are identical to
+the existing IEEE-754 standard.) You may depend on the positioning and
+meaning of the bits in these types.
+
+* OpenCL defines behavior
+for oversized shift values. Shift operations that shift greater than or
+equal to the number of bits in the first operand reduce the shift value
+modulo the number of bits in the element. For example,  if we shift an
+int4 left by 33 bits, OpenCL treats this as shift left by 33%32 = 1 bit.
+* A number of edge cases for
+math library functions are more rigorously defined than in C99. Please
+see _section 3.5_of the OpenCL 2.0 C specification.
+
+
+ 
+

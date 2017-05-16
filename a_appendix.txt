@@ -1,0 +1,105 @@
+﻿// Copyright 2017 The Khronos Group. 
+//
+//  Khronos licenses this file to you under the Creative Commons Attribution 4.0 
+//  International (CC BY 4.0) License (the "License"); you may not use this file 
+//  except in compliance with the License.  You may obtain a copy of the License 
+//  at https://creativecommons.org/licenses/by/4.0/
+//
+//  Unless required by applicable law or agreed to in writing, material distributed 
+//  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+//  CONDITIONS OF ANY KIND, either express or implied. If all or a portion of this 
+//  material is re-used, notice substantially similar to the following must be included:
+//
+//  This specification includes material developed at The Khronos Group 
+//  (http://www.khronos.org/). Khronos supplied such material on an "AS IS" BASIS, 
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, under 
+//  the terms of the Creative Commons Attribution 4.0 International (CC BY 4.0) 
+//  License (the "License"), available at https://creativecommons.org/licenses/by/4.0/. 
+//  All use of such material is governed by the term of the License. Khronos bears 
+//  no responsibility whatsoever for additions or modifications to its material.
+
+//[appendix]
+
+Appendix A
+----------
+
+A.1 Shared OpenCL Objects
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This section describes which objects can be shared across multiple
+command-queues created within a host process.
+
+OpenCL memory objects, program objects and kernel objects are created
+using a context and can be shared across multiple command-queues created
+using the same context. Event objects can be created when a command is
+queued to a command-queue. These event objects can be shared across
+multiple command-queues created using the same context.
+
+The application needs to implement appropriate synchronization across
+threads on the host processor to ensure that the changes to the state of
+a shared object (such as a command-queue object, memory object, program
+or kernel object) happen in the correct order (deemed correct by the
+application) when multiple command-queues in multiple threads are making
+changes to the state of a shared object.
+
+A command-queue can cache changes to the state of a memory object on the
+device associated with the command-queue. To synchronize changes to a
+memory object across command-queues, the application must do the
+following:
+
+In the command-queue that includes commands that modify the state of a
+memory object, the application must do the following:
+
+* Get appropriate event objects for commands that modify the state of the shared memory object.
+
+* Call the *clFlush* (or *clFinish*) API to issue any outstanding commands from this command-queue.
+ 
+
+In the command-queue that wants to synchronize to the latest state of a
+memory object, commands queued by the application must use the
+appropriate event objects that represent commands that modify the state
+of the shared memory object as event objects to wait on. This is to
+ensure that commands that use this shared memory object complete in the
+previous command-queue before the memory objects are used by commands
+executing in this command-queue.
+
+ 
+
+The results of modifying a shared resource in one command-queue while it
+is being used by another command-queue are undefined.
+ 
+
+A.2 Multiple Host Threads
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All OpenCL API calls are thread-safefootnote:[Please refer to the OpenCL glossary 
+for the OpenCL definition of thread -safe. This definition may be different 
+from usage of the term in other contexts.]: except those that
+modify the state of cl_kernel objects: *clSetKernelArg,
+clSetKernelArgSVMPointer, clSetKernelExecInfo*and *clCloneKernel*.
+*clSetKernelArg* , *clSetKernelArgSVMPointer*, *clSetKernelExecInfo*
+and *clCloneKernel*are safe to call from any host thread, and safe to
+call re-entrantly so long as concurrent calls to any combination of
+these API calls operate on different cl_kernel objects. The state of
+the cl_kernel object is undefined if *clSetKernelArg*,
+*clSetKernelArgSVMPointer*, *clSetKernelExecInfo* or *clCloneKernel*are
+called from multiple host threads on the same cl_kernel object at the
+same timefootnote:[There is an inherent race condition in the design of OpenCL that occurs between setting a kernel argument and 
+using the kernel with clEnqueueNDRangeKernel. Another host thread might change the kernel arguments between 
+when a host thread sets the kernel arguments and then enqueues the kernel, causing the wrong kernel arguments to 
+be enqueued. Rather than attempt to share cl_kernel objects among multiple host threads, applications are strongly 
+encouraged to make additional cl_kernel objects for kernel functions for each host thread.]:. Please note that there are additional
+limitations as to which OpenCL APIs may be called from OpenCL callback
+functions -- please see _section 5.11_.
+
+ 
+
+The behavior of OpenCL APIs called from an interrupt or signal handler
+is implementation-defined
+
+ 
+
+The OpenCL implementation should be able to create multiple
+command-queues for a given OpenCL context and multiple OpenCL contexts
+in an application running on the host processor.
+

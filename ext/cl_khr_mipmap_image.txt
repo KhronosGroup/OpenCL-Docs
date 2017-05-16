@@ -1,0 +1,86 @@
+// Copyright 2017 The Khronos Group. 
+//
+//  Khronos licenses this file to you under the Creative Commons Attribution 4.0 
+//  International (CC BY 4.0) License (the "License"); you may not use this file 
+//  except in compliance with the License.  You may obtain a copy of the License 
+//  at https://creativecommons.org/licenses/by/4.0/
+//
+//  Unless required by applicable law or agreed to in writing, material distributed 
+//  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+//  CONDITIONS OF ANY KIND, either express or implied. If all or a portion of this 
+//  material is re-used, notice substantially similar to the following must be included:
+//
+//  This specification includes material developed at The Khronos Group 
+//  (http://www.khronos.org/). Khronos supplied such material on an "AS IS" BASIS, 
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, under 
+//  the terms of the Creative Commons Attribution 4.0 International (CC BY 4.0) 
+//  License (the "License"), available at https://creativecommons.org/licenses/by/4.0/. 
+//  All use of such material is governed by the term of the License. Khronos bears 
+//  no responsibility whatsoever for additions or modifications to its material.
+
+[[cl_khr_mipmap_image]]
+== Mipmaps
+
+This section describes OpenCL support for mipmaps.
+
+There are two optional mipmap extensions.  The *cl_khr_mipmap_image* extension adds the ability to create a mip-mapped image, enqueue commands to read/write/copy/map/unmap a region of a mipmapped image, and built-in functions that can be used to read a mip-mapped image in an OpenCL C program. The *cl_khr_mipmap_image_writes* extension adds built-in functions that can be used to write a mip-mapped image in an OpenCL C program. If the *cl_khr_mipmap_image_writes* extension is supported by the OpenCL device, the *cl_khr_mipmap_image* extension must also be supported.
+
+[[cl_khr_mipmap_image-additions-to-chapter-5]]
+=== Additions to Chapter 5 of the OpenCL 2.2 Specification
+
+[[cl_khr_mipmap_image-additions-to-section-5.3]]
+==== Additions to section 5.3 – Image Objects
+
+A mip-mapped 1D image, 1D image array, 2D image, 2D image array or 3D image is created by specifying _num_mip_levels_ to be a value greater than one in the _cl_image_desc_ passed to *clCreateImage*. The dimensions of a mip-mapped image can be a power of two or a non-power of two. Each successively smaller mipmap level is half the size of the previous level. If this half value is a fractional value, it is rounded down to the nearest integer.
+
+*Restrictions*
+
+The following restrictions apply when mip-mapped images are created with *clCreateImage*:
+
+* CL_MEM_USE_HOST_PTR or CL_MEM_COPY_HOST_PTR cannot be specified if a mip-mapped image is created.
+* The _host_ptr_ argument to *clCreateImage* must be a NULL value.
+* Mip-mapped images cannot be created for CL_MEM_OBJECT_IMAGE1D_BUFFER images, depth images or multi-sampled (i.e. msaa) images.
+
+Calls to *clEnqueueReadImage*, *clEnqueueWriteImage* and *clEnqueueMapImage* can be used to read from or write to a specific mip-level of a mip-mapped image. If image argument is a 1D image, _origin_[1] specifies the mip-level to use. If image argument is a 1D image array, _origin_[2] specifies the mip-level to use. If image argument is a 2D image, _origin_[2] specifies the mip-level to use. If image argument is a 2D image array or a 3D image, _origin_[3] specifies the mip-level to use.
+
+Calls to *clEnqueueCopyImage*, *clEnqueueCopyImageToBuffer* and *clEnqueueCopyBufferToImage* can also be used to copy from and to a specific mip-level of a mip-mapped image. If _src_image_ argument is a 1D image, _src_origin_[1] specifies the mip-level to use. If _src_image_ argument is a 1D image array, _src_origin_[2] specifies the mip-level to use. If _src_image_ argument is a 2D image, _src_origin_[2] specifies the mip-level to use. If _src_image_ argument is a 2D image array or a 3D image, _src_origin_[3] specifies the mip-level to use. If _dst_image_ argument is a 1D image, _dst_origin_[1] specifies the mip-level to use. If _dst_image_ argument is a 1D image array, _dst_origin_[2] specifies the mip-level to use. If _dst_image_ argument is a 2D image, _dst_origin_[2] specifies the mip-level to use. If _dst_image_ argument is a 2D image array or a 3D image, _dst_origin_[3] specifies the mip-level to use.
+
+If the mip level specified is not a valid value, these functions return the error CL_INVALID_MIP_LEVEL.
+
+Calls to clEnqueueFillImage can be used to write to a specific mip-level of a mip-mapped image. If image argument is a 1D image, origin[1] specifies the mip-level to use. If image argument is a 1D image array, origin[2] specifies the mip-level to use. If image argument is a 2D image, origin[2] specifies the mip-level to use. If image argument is a 2D image array or a 3D image, origin[3] specifies the mip-level to use.
+
+[[cl_khr_mipmap_image-additions-to-section-5.7]]
+==== Additions to section 5.7 – Sampler Objects
+
+Add the following sampler properties _to table 5.14_ that can be specified when a sampler object is created using *clCreateSamplerWithProperties*.
+
+[cols="3,1,2",options="header",]
+|=======================================================================
+|*cl_sampler_properties enum*
+|*Property Value*
+|*Default Value*
+
+|*CL_SAMPLER_MIP_FILTER_MODE_KHR*
+|cl_filter_mode
+|CL_FILTER_NEAREST_KHR
+
+|*CL_SAMPLER_LOD_MIN_KHR*
+|cl_float
+|0.0f
+
+|*CL_SAMPLER_LOD_MAX_KHR*
+|cl_float
+|MAXFLOAT
+
+|=======================================================================
+
+NOTE: The sampler properties CL_SAMPLER_MIP_FILTER_MODE_KHR, CL_SAMPLER_LOD_MIN_KHR and CL_SAMPLER_LOD_MAX_KHR cannot be specified with any samplers initialized in the OpenCL program source. Only the default values for these properties will be used. To create a sampler with specific values for these properties, a sampler object must be created with *clCreateSamplerWithProperties* and passed as an argument to a kernel.
+
+[[cl_khr_mipmap_image-additions-to-creating-opencl-memory-objects-from-opengl-objects]]
+=== Additions to <<cl_khr_gl_sharing__memobjs,Creating OpenCL Memory Objects from OpenGL Objects>>
+
+If both the *+cl_khr_mipmap_image+* and *+cl_khr_gl_sharing+* extensions are supported by the OpenCL device, the *+cl_khr_gl_sharing+* extension may also be used to create a mipmapped OpenCL image from a mipmapped OpenGL texture.
+
+To create a mipmapped OpenCL image from a mipmapped OpenGL texture, pass a negative value as the _miplevel_ argument to *clCreateFromGLTexture*. If _miplevel_ is a negative value then an OpenCL mipmapped image object is created from a mipmapped OpenGL texture object, instead of an OpenCL image object for a specific miplevel of the OpenGL texture.
+
+NOTE: For a detailed description of how the level of detail is computed, please refer to _section 3.9.7_ of the OpenGL 3.0 specification.

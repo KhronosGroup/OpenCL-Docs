@@ -1,0 +1,344 @@
+﻿// Copyright 2017 The Khronos Group. 
+//
+//  Khronos licenses this file to you under the Creative Commons Attribution 4.0 
+//  International (CC BY 4.0) License (the "License"); you may not use this file 
+//  except in compliance with the License.  You may obtain a copy of the License 
+//  at https://creativecommons.org/licenses/by/4.0/
+//
+//  Unless required by applicable law or agreed to in writing, material distributed 
+//  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+//  CONDITIONS OF ANY KIND, either express or implied. If all or a portion of this 
+//  material is re-used, notice substantially similar to the following must be included:
+//
+//  This specification includes material developed at The Khronos Group 
+//  (http://www.khronos.org/). Khronos supplied such material on an "AS IS" BASIS, 
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, under 
+//  the terms of the Creative Commons Attribution 4.0 International (CC BY 4.0) 
+//  License (the "License"), available at https://creativecommons.org/licenses/by/4.0/. 
+//  All use of such material is governed by the term of the License. Khronos bears 
+//  no responsibility whatsoever for additions or modifications to its material.
+
+== OpenCL Embedded Profile
+
+The OpenCL 2.2specification describes the feature requirements for
+desktop platforms. This section describes the OpenCL 2.2embedded
+profile that allows us to target a subset of the OpenCL 2.2specification
+for handheld and embedded platforms. The optional extensions defined in
+the OpenCL 2.2Extension Specification apply to both profiles.
+
+The OpenCL 2.2 embedded profile has the following restrictions:
+
+1.  64 bit integers i.e. long, ulong including the appropriate vector
+data types and operations on 64-bit integers are optional. The
+*cles_khr_int64footnote:[Note that the performance of 64-bit integer arithmetic 
+can vary significantly between embedded devices.]: extension string will be reported
+if the embedded profile implementation supports 64-bit integers.
+
+2. [line-through] Support for 3D images is optional.  
+
+3. If [line-through] *CL_DEVICE_IMAGE3D_MAX_WIDTH*, [line-through] *CL_DEVICE_IMAGE3D_MAX_HEIGHT*
+and [line-through] *CL_DEVICE_IMAGE3D_MAX_DEPTH* are zero, the call to
+*clCreateImage* in the embedded profile will fail to create the 3D
+image. The _errcode_ret_ argument in *clCreateImage*
+returns [line-through] CL_INVALID_OPERATION. Declaring arguments of
+type*[line-through]*image3d_t in a kernel will result in a compilation
+error.  
+
+If 
+[line-through] *CL_DEVICE_IMAGE3D_MAX_WIDTH*, [line-through] *CL_DEVICE_IMAGE3D_HEIGHT* and 
+[line-through] CL_DEVICE_IMAGE3D_MAX_DEPTH > 0, 3D images are supported by the OpenCL embedded profile implementation.
+[line-through] *clCreateImage* will work as defined by the OpenCL specification. The 
+[line-through] image3d_t data type can be used in a kernel(s).
+
+3.  [line-through] Support for 2D image array writes is optional. If the *cles_khr_2d_image_array_writes* extension is supported by the 
+[line-through] embedded profile, writes to 2D image arrays are supported.
+
+4.  [line-through] Image and image arrays created with an 
+[line-through] image_channel_data_type value of 
+[line-through] CL_FLOAT or 
+[line-through] CL_HALF_FLOAT can only be used with samplers that use a filter mode of
+[line-through] CL_FILTER_NEAREST. The values returned by *read_imagef* and *read_imageh*footnote:[If cl_khr_fp16 extension is supported.]: for 2D and 3D images if
+[line-through] image_channel_data_type value is 
+[line-through] CL_FLOAT or
+[line-through] CL_HALF_FLOAT and sampler with 
+[line-through] filter_mode =CL_FILTER_LINEAR are undefined.
+
+5.  The mandated minimum single precision floating-point capability
+given by CL_DEVICE_SINGLE_FP_CONFIG is CL_FP_ROUND_TO_ZERO or
+CL_FP_ROUND_TO_NEAREST. If CL_FP_ROUND_TO_NEAREST is supported, the
+default rounding mode will be round to nearest even; otherwise the
+default rounding mode will be round to zero.  +
+ 
+6.  The single precision floating-point operations (addition,
+subtraction and multiplication) shall be correctly rounded. Zero
+results may always be positive 0.0. The accuracy of division and sqrt
+are given in the SPIR-V OpenCL environment specification.  
+  
+If CL_FP_INF_NAN is not set in CL_DEVICE_SINGLE_FP_CONFIG, and one of
+the operands or the result of addition, subtraction, multiplication or
+division would signal the overflow or invalid exception (see IEEE 754
+specification), the value of the result is implementation-defined.
+Likewise, single precision comparison operators (<, >, <=, >=, ==, !=)
+return implementation-defined values when one or more operands is a
+NaN.
+
+In all cases, conversions (see the SPIR-V OpenCL environment
+specification) shall be correctly rounded as described for the
+FULL_PROFILE, including those that consume or produce an INF or NaN.
+The built-in math functions shall behave as described for the
+FULL_PROFILE, including edge case behavior but with slightly different
+accuracy rules. Edge case behavior and accuracy rules are described in
+the SPIR-V OpenCL environment specification.  +
+
+NOTE:: If addition, subtraction and multiplication have default round
+to zero rounding mode, then *fract*, *fma* and *fdim* shall produce the
+correctly rounded result for round to zero rounding mode. 
+  
+This relaxation of the requirement to adhere to IEEE 754 requirements
+for basic floating-point operations, though extremely undesirable, is to
+provide flexibility for embedded devices that have lot stricter
+requirements on hardware area budgets.
+
+7.  Denormalized numbers for the half data type which may be generated
+when converting a float to a half using variants of the *vstore_half*
+function or when converting from a half to a float using variants of the
+*vload_half* function can be flushed to zero. The SPIR-V environment
+specification for details.
+
+8.  The precision of conversions from CL_UNORM_INT8, CL_SNORM_INT8,
+CL_UNORM_INT16, CL_SNORM_INT16, CL_UNORM_INT_101010 and
+CL_UNORM_INT_101010_2 to float is <= 2 ulp for the embedded profile
+instead of <= 1.5 ulp as defined in the full profile. The exception
+cases described in the full profile and given below apply to the
+embedded profile. 
+  
+For CL_UNORM_INT8
+
+* 0 must convert to 0.0f and
+
+* 255 must convert to 1.0f
+
+For CL_UNORM_INT16
+
+* 0 must convert to 0.0f and
+
+* 65535 must convert to 1.0f
+
+For CL_SNORM_INT8
+
+* -128 and -127 must convert to -1.0f,
+
+* 0 must convert to 0.0f and
+
+* 127 must convert to 1.0f
+
+For CL_SNORM_INT16
+
+* -32768 and -32767 must convert to -1.0f,
+
+* 0 must convert to 0.0f and
+
+* 32767 must convert to 1.0f
+
+For CL_UNORM_INT_101010
+
+* 0 must convert to 0.0f and
+
+* 1023 must convert to 1.0f
+
+For CL_UNORM_INT_101010_2
+
+* 0  must convert to 0.0f and
+
+* 1023 must convert to 1.0f (for RGB)
+
+* 3 must convert to 1.0f (for A)
+
+The following optional extensions defined in the OpenCL 2.2 Extension
+Specification are available to the embedded profile:
+
+*cl_khr_int64_base_atomics*
+
+*cl_khr_int64_extended_atomics*
+
+*cl_khr_fp16*
+
+*cles_khr_int64*.
+
+If double precision is supported i.e. CL_DEVICE_DOUBLE_FP_CONFIG is not
+zero, then cles_khr_int64 must also be supported.
+
+
+CL_PLATFORM_PROFILE defined in _table 4.1_ will return the string
+EMBEDDED_PROFILE if the OpenCL implementation supports the embedded
+profile only.
+
+The minimum maximum values specified in _table 4.3_ that have been
+modified for the OpenCL embedded profile are listed below:
+
+
+
+[width="100%",cols="<34%,<33%,<33%",]
+|=======================================================================
+|*cl_device_info* |*Return Type* |*Description*
+
+|*CL_DEVICE_MAX_READ_ IMAGE_ARGS* |cl_uint |Max number of image objects
+arguments of a kernel declared with the read_only qualifier. The
+minimum value is 8 if CL_DEVICE_IMAGE_SUPPORT is CL_TRUE.
+
+|*CL_DEVICE_MAX_WRITE_ IMAGE_ARGS* |cl_uint |Max number of image objects
+arguments of a kernel declared with the write_only qualifier. The
+minimum value is 8 if CL_DEVICE_IMAGE_SUPPORT is CL_TRUE.
+
+|*CL_DEVICE_MAX_READ_ WRITE_IMAGE_ARGS* |cl_uint |Max number of image
+objects arguments of a kernel declared with the write_only or read_write
+qualifier. The minimum value is 8 if CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE.
+
+|*CL_DEVICE_IMAGE2D_ MAX_WIDTH* |size_t |Max width of 2D image in
+pixels. The minimum value is 2048 if CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE.
+
+|*CL_DEVICE_IMAGE2D_ MAX_HEIGHT* |size_t |Max height of 2D image in
+pixels. The minimum value is 2048 if CL_DEVICE_IMAGE_SUPPORT is CL_TRUE.
+
+|*CL_DEVICE_IMAGE3D_ MAX_WIDTH* |size_t |Max width of 3D image in
+pixels. The minimum value is 2048 if CL_DEVICE_IMAGE_SUPPORT is
+CL_TRUE.
+
+|*CL_DEVICE_IMAGE3D_ MAX_HEIGHT* |size_t |Max height of 3D image in
+pixels. The minimum value is 2048.
+
+|*CL_DEVICE_IMAGE3D_ MAX_DEPTH* |size_t |Max depth of 3D image in pixels.
+The minimum value is 2048.
+
+|*CL_DEVICE_IMAGE_ MAX_BUFFER_SIZE* |size_t |Max number of pixels for a 1D image 
+created from a buffer object.
+{empty} +
+{empty} +
+The minimum value is 2048 if 
+CL_DEVICE_IMAGE_SUPPORT is 
+CL_TRUE.
+
+|*CL_DEVICE_IMAGE_ MAX_ARRAY_SIZE* |size_t |Max number of images in a 1D or 2D 
+image array. 
+{empty} +
+{empty} +
+The minimum value is 256 if 
+CL_DEVICE_IMAGE_SUPPORT is 
+CL_TRUE.
+
+|*CL_DEVICE_MAX_SAMPLERS* |cl_uint |Maximum number of samplers that 
+can be used in a kernel. 
+{empty} +
+{empty} +
+The minimum value is 8 if 
+CL_DEVICE_IMAGE_SUPPORT is 
+CL_TRUE. 
+
+|*CL_DEVICE_MAX_ PARAMETER_SIZE* |size_t |Max size in bytes of all
+arguments that can be passed to a kernel. The minimum value is 256
+bytes for devices that are not of type CL_DEVICE_TYPE_CUSTOM.
+
+|*CL_DEVICE_SINGLE_ FP_CONFIG* |cl_device_ +
+ fp_config | Describes single precision floatingpoint capability of the device. This is 
+a bit-field that describes one or more 
+of the following values:
+{empty} +
+{empty} +
+CL_FP_DENORM – denorms are supported
+{empty} +
+{empty} +
+CL_FP_INF_NAN – INF and quiet NaNs are 
+supported. 
+{empty} +
+{empty} +
+CL_FP_ROUND_TO_NEAREST– round to 
+nearest even rounding mode supported
+{empty} +
+{empty} +
+CL_FP_ROUND_TO_ZERO – round to zero 
+rounding mode supported
+{empty} +
+{empty} +
+CL_FP_ROUND_TO_INF – round to positive 
+and negative infinity rounding modes 
+supported
+{empty} +
+{empty} +
+CL_FP_FMA – IEEE754-2008 fused 
+multiply-add is supported.
+{empty} +
+{empty} +
+CL_FP_CORRECTLY_ ROUNDED_DIVIDE
+_SQRT – divide and sqrt are correctly 
+rounded as defined by the IEEE754 
+specification.
+{empty} +
+{empty} +
+CL_FP_SOFT_FLOAT –  Basic floatingpoint operations (such as addition, subtraction, 
+multiplication) are implemented in software.
+{empty} +
+{empty} +
+The mandated minimum floating-point 
+capability is:
+CL_FP_ROUND_TO_ZERO or 
+CL_FP_ROUND_TO_NEAREST 
+for devices that are not of type 
+CL_DEVICE_TYPE_CUSTOM.
+
+|*CL_DEVICE_MAX_CONSTANT_ BUFFER_SIZE* |cl_ulong  |Max size in bytes
+of a constant buffer allocation. The minimum value is 1 KB for devices
+that are not of type CL_DEVICE_TYPE_CUSTOM.
+
+|*CL_DEVICE_MAX_CONSTANT_ ARGS* |cl_uint |Max number of arguments
+declared with the __constant qualifier in a kernel. The minimum value
+is 4 for devices that are not of type CL_DEVICE_TYPE_CUSTOM.
+
+|*CL_DEVICE_LOCAL_MEM_ SIZE* |cl_ulong |Size of local memory arena in
+bytes. The minimum value is 1 KB for devices that are not of type
+CL_DEVICE_TYPE_CUSTOM.
+
+|*CL_DEVICE_COMPILER_ AVAILABLE* |cl_bool |Is CL_FALSE if the implementation 
+does not have a compiler available to 
+compile the program source. 
+{empty} +
+{empty} +
+Is CL_TRUE if the compiler is 
+available. 
+This can be CL_FALSE for the 
+embedded platform profile only.
+
+|*CL_DEVICE_LINKER_ AVAILABLE* |cl_bool | Is CL_FALSE if the implementation 
+does not have a linker available. 
+Is CL_TRUE if the linker is available. 
+{empty} +
+{empty} +
+This can be CL_FALSE for the 
+embedded platform profile only.
+{empty} +
+{empty} +
+This must be CL_TRUE if 
+CL_DEVICE_COMPILER_ AVAILABLE is CL_TRUE.
+
+|*CL_DEVICE_QUEUE_ON_ DEVICE_MAX_SIZE* |cl_uint |The max. size of the
+device queue in bytes. The minimum value is 64 KB for the embedded
+profile
+
+|*CL_DEVICE_PRINTF_ BUFFER_SIZE* |size_t |Maximum size in bytes of the
+internal buffer that holds the output of printf calls from a kernel.
+The minimum value for the EMBEDDED profile is 1 KB.
+
+|=======================================================================
+
+
+If CL_DEVICE_IMAGE_SUPPORT specified in _table 4.3_ is CL_TRUE, the
+values assigned to CL_DEVICE_MAX_READ_IMAGE_ARGS,
+CL_DEVICE_MAX_WRITE_IMAGE_ARGS, CL_DEVICE_IMAGE2D_MAX_WIDTH,
+CL_DEVICE_IMAGE2D_MAX_HEIGHT, CL_DEVICE_IMAGE3D_MAX_WIDTH,
+CL_DEVICE_IMAGE3D_MAX_HEIGHT, CL_DEVICE_IMAGE3D_MAX_DEPTH and
+CL_DEVICE_MAX_SAMPLERS by the implementation must be greater than or
+equal to the minimum values specified in the embedded profile version of
+_table 4.3_ given above.
+
+
