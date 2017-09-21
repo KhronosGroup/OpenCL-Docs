@@ -140,6 +140,7 @@ apihtml: $(HTMLDIR)/$(APISPEC).html $(APISPECSRC)
 $(HTMLDIR)/$(APISPEC).html: $(APISPECSRC) katexinst
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(APISPEC).txt
 
+<<<<<<< ff6c712ad35487ed4a55b529106fd4f6a5fa1fb3
 apipdf: $(PDFDIR)/$(APISPEC).pdf $(APISPECSRC)
 
 $(PDFDIR)/$(APISPEC).pdf: $(APISPECSRC)
@@ -148,6 +149,13 @@ $(PDFDIR)/$(APISPEC).pdf: $(APISPECSRC)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(APISPEC).txt
 ifndef GS_EXISTS
 	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
+=======
+opencl_ext-docinfo.xml:
+	$(QUIET)echo "<subtitle>unknown version</subtitle>" > $@
+
+unified_ext/opencl_ext-docinfo.xml:
+	$(QUIET)echo "<subtitle>unknown version</subtitle>" > $@
+>>>>>>> initial Unified Extension document toolchain
 else
 	$(QUIET)$(CURDIR)/config/optimize-pdf $@
 	$(QUIET)rm $@
@@ -190,6 +198,7 @@ exthtml: $(HTMLDIR)/$(EXTSPEC).html $(EXTSPECSRC)
 $(HTMLDIR)/$(EXTSPEC).html: $(EXTSPECSRC) katexinst
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTSPEC).txt
 
+<<<<<<< ff6c712ad35487ed4a55b529106fd4f6a5fa1fb3
 extpdf: $(PDFDIR)/$(EXTSPEC).pdf $(EXTSPECSRC)
 
 $(PDFDIR)/$(EXTSPEC).pdf: $(EXTSPECSRC)
@@ -202,6 +211,13 @@ else
 	$(QUIET)$(CURDIR)/config/optimize-pdf $@
 	$(QUIET)rm $@
 	$(QUIET)mv $(PDFDIR)/$(EXTSPEC)-optimized.pdf $@
+=======
+opencl_ext-docinfo.xml: $(GITHEAD)
+	$(QUIET)echo "<subtitle>" `git describe --tags --dirty` "</subtitle>" > $@
+
+unified_ext/opencl_ext-docinfo.xml:
+	$(QUIET)echo "<subtitle>" `git describe --tags --dirty` "</subtitle>" > $@
+>>>>>>> initial Unified Extension document toolchain
 endif
 
 # C++ (cxx) spec
@@ -285,3 +301,24 @@ clean_html:
 
 clean_pdf:
 	$(QUIET)$(RMRF) $(PDFDIR) $(PDFMATHDIR)
+opencl_ext.pdf: $(OPENCL_EXT_ASC_DEPS) opencl_ext-docinfo.xml
+	$(QUIET)$(ASCIIDOC) $(AD_DB_OPTIONS) $(VERBOSE) -o $@.xml $<
+	$(QUIET)$(XMLLINT) --nonet --noout --valid $@.xml
+	$(QUIET)$(DBLATEX) -t pdf $(DB_EXT_OPTIONS) $(VERBOSE) -o $@ $@.xml
+	$(QUIET)$(DOS2UNIX) $@ 2> /dev/null
+
+
+UNIFIED_EXT_ASC_DEPS=unified_ext/opencl_ext.asc $(shell grep ^include:: unified_ext/opencl_ext.asc | sed -e 's/^include::/unified_ext\//' -e 's/\[\]/ /' | xargs echo)
+DB_UNIFIED_EXT_OPTIONS = -P doc.layout="coverpage toc mainmatter" -P doc.publisher.show=0 -P latex.output.revhistory=0 -p unified_ext/dblatex/ext/asciidoc-dblatex.xsl -s unified_ext/dblatex/ext/asciidoc-dblatex.sty
+
+opencl_unified_ext: opencl_unified_ext.html opencl_unified_ext.pdf
+
+opencl_unified_ext.html: $(UNIFIED_EXT_ASC_DEPS)
+	$(QUIET)$(ASCIIDOC) $(AD_HTML_OPTIONS) $(VERBOSE) -o $@ $<
+	$(QUIET)$(DOS2UNIX) $@ 2> /dev/null
+
+opencl_unified_ext.pdf: $(UNIFIED_EXT_ASC_DEPS) unified_ext/opencl_ext-docinfo.xml
+	$(QUIET)$(ASCIIDOC) $(AD_DB_OPTIONS) $(VERBOSE) -o $@.xml $<
+	$(QUIET)$(XMLLINT) --nonet --noout --valid $@.xml
+	$(QUIET)$(DBLATEX) -t pdf $(DB_UNIFIED_EXT_OPTIONS) $(VERBOSE) -o $@ $@.xml
+	$(QUIET)$(DOS2UNIX) $@ 2> /dev/null
