@@ -215,7 +215,7 @@ else
 opencl_ext-docinfo.xml: $(GITHEAD)
 	$(QUIET)echo "<subtitle>" `git describe --tags --dirty` "</subtitle>" > $@
 
-unified_ext/opencl_ext-docinfo.xml:
+unified_ext/opencl_ext-docinfo.xml: $(GITHEAD)
 	$(QUIET)echo "<subtitle>" `git describe --tags --dirty` "</subtitle>" > $@
 >>>>>>> initial Unified Extension document toolchain
 endif
@@ -308,7 +308,7 @@ opencl_ext.pdf: $(OPENCL_EXT_ASC_DEPS) opencl_ext-docinfo.xml
 	$(QUIET)$(DOS2UNIX) $@ 2> /dev/null
 
 
-UNIFIED_EXT_ASC_DEPS=unified_ext/opencl_ext.asc $(shell grep ^include:: unified_ext/opencl_ext.asc | sed -e 's/^include::/unified_ext\//' -e 's/\[\]/ /' | xargs echo)
+UNIFIED_EXT_ASC_DEPS=unified_ext/opencl_ext.asc $(SPECVERSION) $(shell grep ^include:: unified_ext/opencl_ext.asc | sed -e 's/^include::/unified_ext\//' -e 's/\[\]/ /' | xargs echo)
 DB_UNIFIED_EXT_OPTIONS = -P doc.layout="coverpage toc mainmatter" -P doc.publisher.show=0 -P latex.output.revhistory=0 -p unified_ext/dblatex/ext/asciidoc-dblatex.xsl -s unified_ext/dblatex/ext/asciidoc-dblatex.sty
 
 opencl_unified_ext: opencl_unified_ext.html opencl_unified_ext.pdf
