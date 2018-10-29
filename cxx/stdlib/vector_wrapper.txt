@@ -1,0 +1,419 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[vector-wrapper-library]]
+=== Vector Wrapper Library
+
+The OpenCL {cpp} programming language implements a vector wrapper type that works efficiently on the OpenCL devices.
+The vector class supports methods that allow construction of a new vector from a swizzled set of component elements or from a built-in vector type.
+The vector class can be converted to a corresponding built-in vector type.
+
+The `Size` parameter can be one of: 2, 3, 4, 8 or 16.
+Any other value should produce a compilation failure.
+The element type parameter `T`, must be one of the basic scalar types defined in <<device_builtin_scalar_data_types,Device built-in scalar data types>> table except void type.
+
+[[header-opencl_vec-synopsis]]
+==== Header <opencl_vec> Synopsis
+
+[source]
+----
+namespace cl {
+static constexpr size_t undef_channel = static_cast<size_t>(-1);
+enum class channel : size_t { r = 0, g = 1, b = 2, a = 3, x = 0, y = 1, z = 2, w = 3, undef = undef_channel };
+
+template<class T, size_t Size>
+struct vec
+{
+    using element_type = T;
+    using vector_type = make_vector_t<T, Size>;
+    static constexpr size_t size = Size;
+
+    vec( ) = default;
+    vec(const vec &) = default;
+    vec(vec &&) = default;
+
+    vec(const vector_type &r) noexcept;
+    vec(vector_type &&r) noexcept;
+
+    template <class... Params>
+    vec(Params... params) noexcept;
+
+    vec& operator=(const vec &) = default;
+    vec& operator=(vec &&) = default;
+
+    vec& operator=(const vector_type &r) noexcept;
+    vec& operator=(vector_type &&r) noexcept;
+
+    operator vector_type() const noexcept;
+
+    vec& operator++() noexcept;
+    vec& operator++(int) noexcept;
+    vec& operator--() noexcept;
+    vec& operator--(int) noexcept;
+    vec& operator+=(const vec &r) noexcept;
+    vec& operator+=(const element_type &r) noexcept;
+    vec& operator-=(const vec &r) noexcept;
+    vec& operator-=(const element_type &r) noexcept;
+    vec& operator*=(const vec &r) noexcept;
+    vec& operator*=(const element_type &r) noexcept;
+    vec& operator/=(const vec &r) noexcept;
+    vec& operator/=(const element_type &r) noexcept;
+    vec& operator%=(const vec &r) noexcept;
+    vec& operator%=(const element_type &r) noexcept;
+
+    template <size_t... Sizes>
+    auto swizzle() noexcept;
+
+    template <size_t... Sizes>
+    auto swizzle() const noexcept;
+
+#ifdef SIMPLE_SWIZZLES
+    auto x() noexcept;
+...
+    auto xyzw() noexcept;
+...
+    auto zzzz() noexcept;
+#endif
+};
+
+template <size_t... Swizzle, class Vec>
+auto swizzle(Vec& v);
+template <channel... Swizzle, class Vec>
+auto swizzle(Vec& v);
+
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator==(const vec<T, Size> &lhs,
+                                     const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator!=(const vec<T, Size> &lhs,
+                                     const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator<(const vec<T, Size> &lhs,
+                                    const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator>(const vec<T, Size> &lhs,
+                                    const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator<=(const vec<T, Size> &lhs,
+                                     const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator>=(const vec<T, Size> &lhs,
+                                     const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator+(const vec<T, Size> &lhs,
+                       const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator+(const vec<T, Size> &lhs, const T &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator+(const T &lhs, const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator-(const vec<T, Size> &lhs,
+                       const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator-(const vec<T, Size> &lhs, const T &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator-(const T &lhs, const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator*(const vec<T, Size> &lhs,
+                       const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator*(const vec<T, Size> &lhs, const T &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator*(const T &lhs, const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator/(const vec<T, Size> &lhs,
+                       const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator/(const vec<T, Size> &lhs, const T &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator/(const T &lhs, const vec<T, Size> &rhs) noexcept;
+
+}
+----
+
+[[constructors-2]]
+==== Constructors
+
+[source]
+----
+vec(const vector_type &r) noexcept;
+----
+
+Copy constructor.
+Constructs an object with the corresponding built-in vector type.
+
+[source]
+----
+vec(vector_type &&r) noexcept;
+----
+
+Move constructor.
+Constructs an object with the corresponding built-in vector type.
+
+[source]
+----
+template <class... Params>
+vec(Params... params) noexcept;
+----
+
+Constructs a vector object from a swizzled set of component elements.
+
+[[assignment-operators-2]]
+==== Assignment operators
+
+[source]
+----
+vec& operator=(const vector_type &r) noexcept;
+----
+
+Copy assignment operator.
+The operator assigns a corresponding built-in vector type.
+
+[source]
+----
+vec& operator=(vector_type &&r) noexcept;
+----
+
+Move assignment operator.
+The operator assigns a corresponding built-in vector type.
+
+[[conversion-operators-1]]
+==== Conversion operators
+
+[source]
+----
+operator vector_type() const noexcept;
+----
+
+Conversion operator.
+The operator converts from the vector wrapper class to a corresponding built-in vector type.
+
+[[arithmetic-operations-1]]
+==== Arithmetic operations
+
+[source]
+----
+vec& operator++() noexcept;
+----
+
+Pre-increment operator.
+
+[source]
+----
+vec& operator++(int) noexcept;
+----
+
+Post-increment operator.
+
+[source]
+----
+vec& operator--() noexcept;
+----
+
+Pre-decrement operator.
+
+[source]
+----
+vec& operator--(int) noexcept;
+----
+
+Post-decrement operator.
+
+[source]
+----
+vec& operator+=(const vec &r) noexcept;
+vec& operator+=(const element_type &r) noexcept;
+----
+
+Add each element of `r` to the respective element of the current vector in-place.
+
+[source]
+----
+vec& operator-=(const vec &r) noexcept;
+vec& operator-=(const element_type &r) noexcept;
+----
+
+Subtract each element of `r` from the respective element of the current vector in-place.
+
+[source]
+----
+vec& operator*=(const vec &r) noexcept;
+vec& operator*=(const element_type &r) noexcept;
+----
+
+Multiply each element of `r` by the respective element of the current vector in-place.
+
+[source]
+----
+vec& operator/=(const vec &r) noexcept;
+vec& operator/=(const element_type &r) noexcept;
+----
+
+Divide each element of the current vector in-place by the respective element of `r`.
+
+[source]
+----
+vec& operator%=(const vec &r) noexcept;
+vec& operator%=(const element_type &r) noexcept;
+----
+
+Remainder of each element of the current vector in-place by the respective element of `r`.
+
+[[swizzle-methods]]
+==== Swizzle methods
+
+All swizzle methods return a temporary object representing a swizzled set of the original vector's member elements.
+The swizzled vector may be used as a source (rvalue) and destination (lvalue).
+In order to enable the r-value and lvalue swizzling to work, this returns an intermediate swizzled-vector class, which can be implicitly converted to a vector (rvalue evaluation) or assigned to.
+
+[source]
+----
+template <size_t... Sizes>
+auto swizzle() noexcept;
+
+template <size_t... Sizes>
+auto swizzle() const noexcept;
+----
+
+Returns a vector swizzle.
+The number of template parameters specified in `Sizes` must be from `1` to `Size`.
+`Sizes` parameters must be channel values: `channel::r`, `channel::b`, `...`.
+Swizzle letters may be repeated or re-ordered.
+
+[source]
+----
+auto x() noexcept;
+...
+auto xyzw() noexcept;
+...
+auto zzzz() noexcept;
+----
+
+Returns a swizzle.
+These swizzle methods are only generated if the user defined the `SIMPLE_SWIZZLES` macro before including _opencl_vec_ header.
+
+[[non-member-functions-2]]
+==== Non-member functions
+
+[source]
+----
+template <size_t... Swizzle, class Vec>
+auto swizzle(Vec& v);
+
+template <channel... Swizzle, class Vec>
+auto swizzle(Vec& v);
+----
+
+Returns a vector swizzle.
+The number of template parameters specified in `Sizes` must be from `1` to `Size`.
+`Sizes` parameters must be channel values: `channel::r`, `channel::b`, `...` .
+Swizzle letters may be repeated or re-ordered.
+
+[source]
+----
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator==(const vec<T, Size> &lhs,
+                                     const vec<T, Size> &rhs) noexcept;
+----
+
+Return `true` if all elements of `rhs` compare equal to the respective element of `lhs`.
+
+[source]
+----
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator!=(const vec<T, Size> &lhs,
+                                     const vec<T, Size> &rhs) noexcept;
+----
+
+Return `true` if any one element of `rhs` does not compare equal to the respective element of `lhs`.
+
+[source]
+----
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator<(const vec<T, Size> &lhs,
+                                    const vec<T, Size> &rhs) noexcept;
+----
+
+Return `true` if all elements of `lhs` are less than the respective element of `rhs`.
+
+[source]
+----
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator>(const vec<T, Size> &lhs,
+                                    const vec<T, Size> &rhs) noexcept;
+----
+
+Return `true` if all elements of `lhs` are greater than the respective element of `rhs`.
+
+[source]
+----
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator<=(const vec<T, Size> &lhs,
+                                     const vec<T, Size> &rhs) noexcept;
+----
+
+Return `true` if all elements of `lhs` are less than or equal to the respective element of `rhs`.
+
+[source]
+----
+template<class T, size_t Size>
+make_vector_t<bool, Size> operator>=(const vec<T, Size> &lhs,
+                                     const vec<T, Size> &rhs) noexcept;
+----
+
+Return `true` if all elements of `lhs` are greater than or equal to the respective element of `rhs`.
+
+[source]
+----
+template<class T, size_t Size>
+vec<T, Size> operator+(const vec<T, Size> &lhs,
+                       const vec<T, Size> &rhs) noexcept;
+
+template<class T, size_t Size>
+vec<T, Size> operator+(const vec<T, Size> &lhs, const T &rhs) noexcept;
+
+template<class T, size_t Size>
+vec<T, Size> operator+(const T &lhs, const vec<T, Size> &rhs) noexcept;
+----
+
+Add each element of `rhs` to the respective element of `lhs`.
+
+[source]
+----
+template<class T, size_t Size>
+vec<T, Size> operator-(const vec<T, Size> &lhs,
+                       const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator-(const vec<T, Size> &lhs, const T &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator-(const T &lhs, const vec<T, Size> &rhs) noexcept;
+----
+
+Subtract each element of `rhs` from the respective element of `lhs`.
+
+[source]
+----
+template<class T, size_t Size>
+vec<T, Size> operator*(const vec<T, Size> &lhs,
+                       const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator*(const vec<T, Size> &lhs, const T &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator*(const T &lhs, const vec<T, Size> &rhs) noexcept;
+----
+
+Multiply each element of `rhs` by the respective element of `lhs`.
+
+[source]
+----
+template<class T, size_t Size>
+vec<T, Size> operator/(const vec<T, Size> &lhs,
+                       const vec<T, Size> &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator/(const vec<T, Size> &lhs, const T &rhs) noexcept;
+template<class T, size_t Size>
+vec<T, Size> operator/(const T &lhs, const vec<T, Size> &rhs) noexcept;
+----
+
+Divide each element of `lhs` by the respective element of the `rhs`.

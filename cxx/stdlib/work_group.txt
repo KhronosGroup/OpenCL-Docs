@@ -1,0 +1,400 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[work-group-functions]]
+=== Work-group Functions
+
+The OpenCL {cpp} library implements the following functions that operate on a work-group level.
+These built-in functions must be encountered by all work-items in a work-group executing the kernel.
+
+Here `gentype` matches: `int`, `uint`, `long`, `ulong`, `float`, `half` [[ftnref4]] <<ftn4,[4]>> or `double` [[ftnref18]] <<ftn18,[18]>>.
+
+[[header-opencl_work_group-synopsis]]
+==== Header <opencl_work_group> Synopsis
+
+[source]
+----
+namespace cl
+{
+enum class work_group_op { add, min, max };
+
+//logical operations
+bool work_group_all(bool predicate);
+bool work_group_any(bool predicate);
+bool sub_group_all(bool predicate);
+bool sub_group_any(bool predicate);
+
+//broadcast functions
+int work_group_broadcast(int a, size_t local_id);
+uint work_group_broadcast(uint a, size_t local_id);
+long work_group_broadcast(long a, size_t local_id);
+ulong work_group_broadcast(ulong a, size_t local_id);
+float work_group_broadcast(float a, size_t local_id);
+#ifdef cl_khr_fp16
+half work_group_broadcast(half a, size_t local_id);
+#endif
+#ifdef cl_khr_fp64
+double work_group_broadcast(double a, size_t local_id);
+#endif
+
+int work_group_broadcast(int a, size_t local_id_x, size_t local_id_y);
+uint work_group_broadcast(uint a, size_t local_id_x, size_t local_id_y);
+long work_group_broadcast(long a, size_t local_id_x, size_t local_id_y);
+ulong work_group_broadcast(ulong a, size_t local_id_x, size_t local_id_y);
+float work_group_broadcast(float a, size_t local_id_x, size_t local_id_y);
+#ifdef cl_khr_fp16
+half work_group_broadcast(half a, size_t local_id_x, size_t local_id_y);
+#endif
+#ifdef cl_khr_fp64
+double work_group_broadcast(double a, size_t local_id_x, size_t local_id_y);
+#endif
+
+int work_group_broadcast(int a, size_t local_id_x, size_t local_id_y,
+                         size_t local_id_z);
+uint work_group_broadcast(uint a, size_t local_id_x, size_t local_id_y,
+                          size_t local_id_z);
+long work_group_broadcast(long a, size_t local_id_x, size_t local_id_y,
+                          size_t local_id_z);
+ulong work_group_broadcast(ulong a, size_t local_id_x, size_t local_id_y,
+                           size_t local_id_z);
+float work_group_broadcast(float a, size_t local_id_x, size_t local_id_y,
+                           size_t local_id_z);
+#ifdef cl_khr_fp16
+half work_group_broadcast(half a, size_t local_id_x, size_t local_id_y,
+                          size_t local_id_z);
+#endif
+#ifdef cl_khr_fp64
+double work_group_broadcast(double a, size_t local_id_x, size_t local_id_y,
+                            size_t local_id_z);
+#endif
+
+int sub_group_broadcast(int a, size_t sub_group_local_id);
+uint sub_group_broadcast(uint a, size_t sub_group_local_id);
+long sub_group_broadcast(long a, size_t sub_group_local_id);
+ulong sub_group_broadcast(ulong a, size_t sub_group_local_id);
+float sub_group_broadcast(float a, size_t sub_group_local_id);
+#ifdef cl_khr_fp16
+half sub_group_broadcast(half a, size_t sub_group_local_id);
+#endif
+#ifdef cl_khr_fp64
+double sub_group_broadcast(double a, size_t sub_group_local_id);
+#endif
+
+//numeric operations
+template <work_group_op op> int work_group_reduce(int x);
+template <work_group_op op> uint work_group_reduce(uint x);
+template <work_group_op op> long work_group_reduce(long x);
+template <work_group_op op> ulong work_group_reduce(ulong x);
+template <work_group_op op> float work_group_reduce(float x);
+#ifdef cl_khr_fp16
+template <work_group_op op> half work_group_reduce(half x);
+#endif
+#ifdef cl_khr_fp64
+template <work_group_op op> double work_group_reduce(double x);
+#endif
+
+template <work_group_op op> int work_group_scan_exclusive(int x);
+template <work_group_op op> uint work_group_scan_exclusive(uint x);
+template <work_group_op op> long work_group_scan_exclusive(long x);
+template <work_group_op op> ulong work_group_scan_exclusive(ulong x);
+template <work_group_op op> float work_group_scan_exclusive(float x);
+#ifdef cl_khr_fp16
+template <work_group_op op> half work_group_scan_exclusive(half x);
+#endif
+#ifdef cl_khr_fp64
+template <work_group_op op> double work_group_scan_exclusive(double x);
+#endif
+
+template <work_group_op op> int work_group_scan_inclusive(int x);
+template <work_group_op op> uint work_group_scan_inclusive(uint x);
+template <work_group_op op> long work_group_scan_inclusive(long x);
+template <work_group_op op> ulong work_group_scan_inclusive(ulong x);
+template <work_group_op op> float work_group_scan_inclusive(float x);
+#ifdef cl_khr_fp16
+template <work_group_op op> half work_group_scan_inclusive(half x);
+#endif
+#ifdef cl_khr_fp64
+template <work_group_op op> double work_group_scan_inclusive(double x);
+#endif
+
+template <work_group_op op> int sub_group_reduce(int x);
+template <work_group_op op> uint sub_group_reduce(uint x);
+template <work_group_op op> long sub_group_reduce(long x);
+template <work_group_op op> ulong sub_group_reduce(ulong x);
+template <work_group_op op> float sub_group_reduce(float x);
+#ifdef cl_khr_fp16
+template <work_group_op op> half sub_group_reduce(half x);
+#endif
+#ifdef cl_khr_fp64
+template <work_group_op op> double sub_group_reduce(double x);
+#endif
+
+template <work_group_op op> int sub_group_scan_exclusive(int x);
+template <work_group_op op> uint sub_group_scan_exclusive(uint x);
+template <work_group_op op> long sub_group_scan_exclusive(long x);
+template <work_group_op op> ulong sub_group_scan_exclusive(ulong x);
+template <work_group_op op> float sub_group_scan_exclusive(float x);
+#ifdef cl_khr_fp16
+template <work_group_op op> half sub_group_scan_exclusive(half x);
+#endif
+#ifdef cl_khr_fp64
+template <work_group_op op> double sub_group_scan_exclusive(double x);
+#endif
+
+template <work_group_op op> int sub_group_scan_inclusive(int x);
+template <work_group_op op> uint sub_group_scan_inclusive(uint x);
+template <work_group_op op> long sub_group_scan_inclusive(long x);
+template <work_group_op op> ulong sub_group_scan_inclusive(ulong x);
+template <work_group_op op> float sub_group_scan_inclusive(float x);
+#ifdef cl_khr_fp16
+template <work_group_op op> half sub_group_scan_inclusive(half x);
+#endif
+#ifdef cl_khr_fp64
+template <work_group_op op> double sub_group_scan_inclusive(double x);
+#endif
+
+}
+----
+
+[[logical-operations]]
+==== Logical operations
+
+[[work_group_all]]
+===== work_group_all
+[source]
+----
+bool work_group_all(bool predicate)
+----
+
+Evaluates `predicate` for all work-items in the work-group and returns `true` if `predicate` evaluates to `true` for all work-items in the work-group.
+
+[[work_group_any]]
+===== work_group_any
+[source]
+----
+bool work_group_any(bool predicate)
+----
+
+Evaluates `predicate` for all work-items in the work-group and returns `true` if `predicate` evaluates to `true` for any work-items in the work-group.
+
+[[sub_group_all]]
+===== sub_group_all
+[source]
+----
+bool sub_group_all(bool predicate)
+----
+
+Evaluates `predicate` for all work-items in the sub-group and returns `true` value if `predicate` evaluates to `true` for all work-items in the sub-group.
+
+[[sub_group_any]]
+===== sub_group_any
+[source]
+----
+bool sub_group_any(bool predicate)
+----
+
+Evaluates `predicate` for all work-items in the sub-group and returns `true` value if `predicate` evaluates to `true` for any work-items in the sub-group.
+
+Example:
+[source]
+----
+#include <opencl_work_item>
+#include <opencl_work_group>
+using namespace cl;
+
+kernel void foo(int *p) {
+    //...
+    bool check = work_group_all(p[get_local_id(0)] == 0);
+}
+----
+
+In this case `work_group_all` would return `true` for all work-items in work-group if all elements in `p`, in range specified by work-group's size, are `true`.
+
+One could achieve similar result by using analogical call to `work_group_any`:
+[source]
+----
+#include <opencl_work_item>
+#include <opencl_work_group>
+using namespace cl;
+
+kernel void foo(int *p) {
+    //...
+    bool check = !work_group_any(p[get_local_id(0)] != 0);
+}
+----
+
+[[broadcast-functions]]
+==== Broadcast functions
+
+[[work_group_broadcast]]
+===== work_group_broadcast
+[source]
+----
+gentype work_group_broadcast(gentype a,
+                             size_t local_id);
+
+gentype work_group_broadcast(gentype a,
+                             size_t local_id_x,
+                             size_t local_id_y);
+
+gentype work_group_broadcast(gentype a,
+                                            size_t local_id_x,
+                                            size_t local_id_y,
+                                            size_t local_id_z);
+----
+
+Broadcast the value of `a` for work-item identified by `local_id` to all work-items in the work-group.
+
+`local_id` must be the same value for all work-items in the work-group.
+
+[[sub_group_broadcast]]
+===== sub_group_broadcast
+[source]
+----
+gentype sub_group_broadcast(gentype a,
+                                           size_t sub_group_local_id);
+----
+
+Broadcast the value of `a` for work-item identified by `sub_group_local_id` (value returned by `get_sub_group_local_id`) to all work-items in the sub-group.
+
+`sub_group_local_id` must be the same value for all work-items in the sub-group.
+
+Example:
+[source]
+----
+#include <opencl_work_item>
+#include <opencl_work_group>
+using namespace cl;
+
+kernel void foo(int *p) {
+   //...
+   int broadcasted_value = work_group_broadcast(p[get_local_id(0)], 0);
+}
+----
+
+Here we are broadcasting value passed to `work_group_broadcast` function by work-item with `local_id = 0` (which is `p[0]`).
+This function will return `p[0]` for all callers.
+Please note that `local_id` must be the same for all work-items, therefore something like this is invalid:
+
+[source]
+----
+#include <opencl_work_item>
+#include <opencl_work_group>
+using namespace cl;
+
+kernel void foo(int *p) {
+    //...
+    int broadcasted_value =
+      work_group_broadcast(p[get_local_id(0)], get_local_id(0));
+                    //invalid: second argument has different value
+                    // for different work-items in work-group
+}
+----
+
+[[numeric-operations]]
+==== Numeric operations
+
+[[work_group_reduce]]
+===== work_group_reduce
+[source]
+----
+template <work_group_op op>
+gentype work_group_reduce(gentype x);
+----
+
+Return result of reduction operation specified by `op` for all values of `x` specified by work-items in a work-group.
+
+[[work_group_scan_exclusive]]
+===== work_group_scan_exclusive
+[source]
+----
+template <work_group_op op>
+gentype work_group_scan_exclusive(gentype x);
+----
+
+Do an exclusive scan operation specified by `op` of all values specified by work-items in the work-group.
+The scan results are returned for each work-item.
+
+The scan order is defined by increasing 1D linear global ID within the work-group.
+
+[[work_group_scan_inclusive]]
+===== work_group_scan_inclusive
+[source]
+----
+template <work_group_op op>
+gentype work_group_scan_inclusive(gentype x);
+----
+
+Do an inclusive scan operation specified by `op` of all values specified by work-items in the work-group.
+The scan results are returned for each work-item.
+
+The scan order is defined by increasing 1D linear global ID within the work-group.
+
+[[sub_group_reduce]]
+===== sub_group_reduce
+[source]
+----
+template <work_group_op op>
+gentype sub_group_reduce(gentype x);
+----
+
+Return result of reduction operation specified by `op` for all values of `x` specified by work-items in a sub-group.
+
+[[sub_group_scan_exclusive]]
+===== sub_group_scan_exclusive
+[source]
+----
+template <work_group_op op>
+gentype sub_group_scan_exclusive(gentype x);
+----
+
+Do an exclusive scan operation specified by `op` of all values specified by work-items in a sub-group.
+The scan results are returned for each work-item.
+
+The scan order is defined by increasing 1D linear global ID within the sub-group.
+
+[[sub_group_scan_inclusive]]
+===== sub_group_scan_inclusive
+[source]
+----
+template <work_group_op op>
+gentype sub_group_scan_inclusive(gentype x);
+----
+
+Do an inclusive scan operation specified by `op` of all values specified by work-items in a sub-group.
+The scan results are returned for each work-item.
+
+The scan order is defined by increasing 1D linear global ID within the sub-group.
+
+The inclusive scan operation takes a binary operator `op` with an identity I and n (where n is the size of the work-group) elements [a~0~, a~1~, ... a~n-1~] and returns [a~0~, (a~0~ _op_ a~1~), ... (a~0~ _op_ a~1~ _op_ ... _op_ a~n-1~)].
+If `op` is `work_group_op::add`, the identity I is 0.
+If `op` is `work_group_op::min`, the identity I is `INT_MAX`, `UINT_MAX`, `LONG_MAX`, `ULONG_MAX`, for `int`, `uint`, `long`, `ulong` types and is `pass:[+]INF` for floating-point types.
+Similarly if `op` is `work_group_op::max`, the identity I is `INT_MIN`, `0`, `LONG_MIN`, `0` and `-INF`.
+
+Consider the following example:
+[source]
+----
+#include <opencl_work_item>
+#include <opencl_work_group>
+using namespace cl;
+
+void foo(int *p)
+{
+    ...
+    int prefix_sum_val =
+               work_group_scan_inclusive<work_group_op::add>(
+    p[get_local_id(0)]);
+}
+----
+
+For the example above, let's assume that the work-group size is 8 and p points to the following elements [3 1 7 0 4 1 6 3].
+Work-item 0 calls `work_group_scan_inclusive<work_group_op::add>` with 3 and returns 3.
+Work-item 1 calls `work_group_scan_inclusive<work_group_op::add>` with 1 and returns 4.
+The full set of values returned by `work_group_scan_inclusive<work_group_op::add>` for work-items 0 ... 7 is [3 4 11 11 15 16 22 25].
+
+The exclusive scan operation takes a binary associative operator `op` with an identity I and n (where n is the size of the work-group) elements [a~0~, a~1~, ... a~n-1~] and returns [I, a~0~, (a~0~ _op_ a~1~), ... (a~0~ _op_ a~1~ _op_ ... _op_ a~n-2~)].
+For the example above, the exclusive scan add operation on the ordered set [3 1 7 0 4 1 6 3] would return [0 3 4 11 11 15 16 22].
+
+NOTE: The order of floating-point operations is not guaranteed for the `work_group_reduce<op>`, `work_group_scan_inclusive<op>` and `work_group_scan_exclusive<op>` built-in functions that operate on `half`, `float` and `double` data types.
+The order of these floating-point operations is also non-deterministic for a given work-group.

@@ -1,0 +1,21 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[floating-point-exceptions]]
+=== Floating-Point Exceptions
+
+Floating-point exceptions are disabled in OpenCL.
+The result of a floating-point exception must match the IEEE 754 spec for the exceptions not enabled case.
+Whether and when the implementation sets floating-point flags or raises floating-point exceptions is implementation-defined.
+This standard provides no method for querying, clearing or setting floating-point flags or trapping raised exceptions.
+Due to non-performance, non-portability of trap mechanisms and the impracticality of servicing precise exceptions in a vector context (especially on heterogeneous hardware), such features are discouraged.
+
+Implementations that nevertheless support such operations through an extension to the standard shall initialize with all exception flags cleared and the exception masks set so that exceptions raised by arithmetic operations do not trigger a trap to be taken.
+If the underlying work is reused by the implementation, the implementation is however not responsible for reclearing the flags or resetting exception masks to default values before entering the kernel.
+That is to say that kernels that do not inspect flags or enable traps are licensed to expect that their arithmetic will not trigger a trap.
+Those kernels that do examine flags or enable traps are responsible for clearing flag state and disabling all traps before returning control to the implementation.
+Whether or when the underlying work-item (and accompanying global floating-point state if any) is reused is implementation-defined.
+
+The expressions math_errorhandling and MATH_ERREXCEPT are reserved for use by this standard, but not defined.
+Implementations that extend this specification with support for floating-point exceptions shall define `math_errorhandling` and `MATH_ERREXCEPT` per ISO / IEC 9899 : TC2.

@@ -1,0 +1,178 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[vector-data-load-and-store-functions]]
+=== Vector Data Load and Store Functions
+
+Functions described in this section allow user to read and write vector types from a pointer to memory.
+The results of these functions are undefined if the address being read from or written to is not correctly aligned as described in following subsections.
+
+Here `gentype` matches: `char__n__`, `uchar__n__`, `short__n__`, `ushort__n__`, `int__n__`, `uint__n__`, `long__n__`, `ulong__n__`, `half__n__` [[ftnref4]] <<ftn4,[4]>>, `float__n__` and `double__n__` [[ftnref18]] <<ftn18,[18]>>.
+
+[[header-opencl_vector_load_store]]
+==== Header <opencl_vector_load_store> Synopsis
+
+[source]
+----
+namespace cl
+{
+//basic load & store
+template <size_t N, class T>
+make_vector_t<T, N> vload(size_t offset, const T* p);
+
+template <size_t N, class T>
+make_vector_t<T, N> vload(size_t offset, const constant_ptr<T> p);
+
+template <class T>
+void vstore(T data, size_t offset, vector_element_t<T>* p);
+
+//half load & store
+template <size_t N>
+make_vector_t<float, N> vload_half(size_t offset, const half* p);
+
+template <size_t N>
+make_vector_t<float, N> vload_half(size_t offset, const constant_ptr<half> p);
+
+template <rounding_mode rmode = rounding_mode::rte, class T>
+void vstore_half(T data, size_t offset, half* p);
+
+//half array load & store
+template <size_t N>
+make_vector_t<float, N> vloada_half(size_t offset, const half* p);
+
+template <size_t N>
+make_vector_t<float, N> vloada_half(size_t offset, const constant_ptr<half> p);
+
+template <rounding_mode rmode = rounding_mode::rte, class T>
+void vstorea_half(T data, size_t offset, half* p);
+
+}
+----
+
+[[basic-load-store]]
+==== Basic load & store
+
+[[vload]]
+===== vload
+[source]
+----
+template <size_t N, class T>
+make_vector_t<T, N> vload(size_t offset, const T* p);
+
+template <size_t N, class T>
+make_vector_t<T, N> vload(size_t offset, const constant_ptr<T> p);
+----
+
+Return `sizeof(make_vector_t<T, N>)` bytes of data read from address `(p + (offset * n))`.
+
+Requirements:
+
+  * The address computed as `(p+(offset*n))` must be 8-bit aligned if `T` is `char`, or `uchar`; 16-bit aligned if `T` is `short`, `ushort`, or `half` <<ftn4,[4]>>; 32-bit aligned if `T` is `int`, `uint`, or `float`; and 64-bit aligned if `T` is `long`, `ulong`, or `double` <<ftn18,[18]>>.
+  * `vload` function is only defined for n = 2, 3, 4, 8, 16.
+  * `half` version is only defined if the *cl_khr_fp16* extension is supported.
+  * `double` version is only defined if double precision is supported.
+
+[[vstore]]
+===== vstore
+[source]
+----
+template <class T>
+void vstore(T data, size_t offset, vector_element_t<T>* p);
+----
+
+Write `sizeof(T)` bytes given by data to address `(p+(offset*n))`.
+
+Requirements:
+
+  * The address computed as `(p+(offset*n))` must be 8-bit aligned if `T` is `char`, or `uchar`; 16-bit aligned if `T` is `short`, `ushort`, or `half` <<ftn4,[4]>>; 32-bit aligned if `T` is `int`, `uint`, or `float`; and 64-bit aligned if `T` is `long`, `ulong`, or `double` <<ftn18,[18]>>.
+  * `vstore` function is only defined for n = 2, 3, 4, 8, 16.
+  * `half` version is only defined if the *cl_khr_fp16* extension is supported.
+  * `double` version is only defined if double precision is supported.
+
+[[half-vload-vstore]]
+==== half vload & vstore
+
+[[vload_half]]
+===== vload_half
+[source]
+----
+template <size_t N>
+make_vector_t<float, N> vload_half(size_t offset, const half* p);
+
+template <size_t N>
+make_vector_t<float, N> vload_half(size_t offset, const constant_ptr<half> p);
+----
+
+Read `sizeof(halfn)` bytes of data from address `(p+(offset*n))`.
+The data read is interpreted as a `halfn` value.
+The `halfn` value read is converted to a `float` value and the `floatn` value is returned.
+
+Requirements:
+
+  * The read address computed as `(p+(offset*n))` must be 16-bit aligned.
+  * `vload_half` function is only defined for n = 1, 2, 3, 4, 8, 16.
+
+[[vstore_half]]
+===== vstore_half
+[source]
+----
+template <rounding_mode rmode = rounding_mode::rte, class T>
+void vstore_half(T data, size_t offset, half* p);
+----
+
+The `T` value given by data is first converted to a `halfn` value using the appropriate rounding mode.
+The `half` value is then written to address computed as `(p+offset)`.
+
+Requirements:
+
+  * The address computed as `(p+offset)` must be 16-bit aligned.
+  * `T` can be `floatn` or `doublen` <<ftn18,[18]>>.
+  * `double` version is only defined if double precision is supported.
+  * `vstore_half` function is only defined for n = 1, 2, 3, 4, 8, 16.
+
+[[half-array-vload-vstore]]
+==== half array vload & vstore
+
+[[vloada_half]]
+===== vloada_half
+[source]
+----
+template <size_t N>
+make_vector_t<float, N> vloada_half(size_t offset, const half* p);
+
+template <size_t N>
+make_vector_t<float, N> vloada_half(size_t offset, const constant_ptr<half> p);
+----
+
+For `N` = 2, 4, 8 and 16 read `sizeof(halfn)` bytes of data from address `(p+(offset*n))`.
+The data read is interpreted as a `halfn` value.
+The `halfn` value read is converted to a `floatn` value and the `floatn` value is returned.
+
+Requirements:
+
+  * The address computed as `(p+(offset*n))` must be aligned to `sizeof(halfn)` bytes.
+  * For n = 3, `vloada_half` reads a `half3` from address `(p+(offset*4))` and returns a `float3`.
+    The address computed as `(p+(offset*4))` must be aligned to `sizeof(half)*4` bytes.
+  * `vloada_half` function is only defined for `N` = 2, 3, 4, 8, 16.
+
+[[vstorea_half]]
+===== vstorea_half
+[source]
+----
+template <rounding_mode rmode = rounding_mode::rte, class T>
+void vstorea_half(T data, size_t offset, half* p);
+----
+
+The `T` value is converted to a `halfn` value using the appropriate rounding mode.
+For n = 2, 4, 8 or 16, the halfn value is written to the address computed as `(p+(offset*n))`.
+For n = 3, the `half3` value is written to the address computed as `(p+(offset*4))`.
+The address computed as `(p+(offset*4))` must be aligned to `sizeof(half)*4` bytes.
+
+Requirements:
+
+  * The address computed as `(p+(offset* n))` must be aligned to `sizeof(halfn)` bytes.
+  * For n = 3, the address computed as `(p+(offset*4))` must be aligned to `sizeof(half)*4` bytes.
+  * `T` can be `floatn` or `doublen` <<ftn18,[18]>>.
+  * `double` version is only defined if double precision is supported.
+  * `vstorea_half` function is only defined for n = 2, 3, 4, 8, 16.

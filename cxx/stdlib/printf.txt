@@ -1,0 +1,310 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[printf]]
+=== printf
+
+The OpenCL {cpp} programming language implements the `printf` [[ftnref24]] <<ftn24,[24]>> function.
+This function is defined in header _<opencl_printf>_.
+
+[[header-opencl_printf-synopsis]]
+==== Header <opencl_printf> Synopsis
+[source]
+----
+namespace cl
+{
+int printf(const char *format, ...);
+
+}
+----
+
+[[printf-function]]
+==== printf function
+
+[[printf-1]]
+===== printf
+[source]
+----
+int printf(const char *format, ...);
+----
+
+The `printf` built-in function writes output to an implementation-defined stream such as stdout under control of the string pointed to by `format` that specifies how subsequent arguments are converted for output.
+If there are insufficient arguments for the format, the behavior is undefined.
+If the format is exhausted while arguments remain, the excess arguments are evaluated (as always) but are otherwise ignored.
+The `printf` function returns when the end of the format string is encountered.
+
+`printf` returns 0 if it was executed successfully and -1 otherwise.
+
+Limitations:
+
+  * Format must be known at compile time; otherwise it will be a compile time error.
+
+[[printf-output-synchronization]]
+===== printf output synchronization
+
+When the event that is associated with a particular kernel invocation is completed, the output of all `printf()` calls executed by this kernel invocation is flushed to the implementation-defined output stream.
+Calling `clFinish` on a host command queue flushes all pending output by `printf` in previously enqueued and completed commands to the implementation-defined output stream.
+In the case that `printf` is executed from multiple work-items concurrently, there is no guarantee of ordering with respect to written data.
+For example, it is valid for the output of a work-item with a global id (0,0,1) to appear intermixed with the output of a work-item with a global id (0,0,4) and so on.
+
+[[printf-format-string]]
+===== printf format string
+
+The format shall be a character sequence, beginning and ending in its initial shift state.
+The format is composed of zero or more directives: ordinary characters (not *%*), which are copied unchanged to the output stream; and conversion specifications, each of which results in fetching zero or more subsequent arguments, converting them, if applicable, according to the corresponding conversion specifier, and then writing the result to the output stream.
+The format is in the `constant` address space and must be resolvable at compile time i.e. cannot be dynamically created by the executing program, itself.
+
+Each conversion specification is introduced by the character *%*.
+After the *%*, the following appear in sequence:
+
+  * Zero or more _flags_ (in any order) that modify the meaning of the conversion specification.
+  * An optional minimum _field width_.
+    If the converted value has fewer characters than the field width, it is padded with spaces (by default) on the left (or right, if the left adjustment flag, described later, has been given) to the field width.
+    The field width takes the form of a nonnegative decimal integer. [[ftnref25]] <<ftn25,[25]>>
+  * An optional _precision_ that gives the minimum number of digits to appear for the _d_, _i_, _o_, _u_, _x_, and _X_ conversions, the number of digits to appear after the decimal-point character for _a_, _A_, _e_, _E_, _f_, and _F_ conversions, the maximum number of significant digits for the _g_ and _G_ conversions, or the maximum number of bytes to be written for _s_ conversions.
+    The precision takes the form of a period (.) followed by an optional decimal integer; if only the period is specified, the precision is taken as zero.
+    If a precision appears with any other conversion specifier, the behavior is undefined.
+  * An optional _vector specifier_.
+  * A _length modifier_ that specifies the size of the argument.
+    The _length modifier_ is required with a vector specifier and together specifies the vector type.
+    Implicit conversions between vector types are disallowed (as per the <<implicit-type-conversions, _Implicit Type Conversions_>> section).
+    If the _vector specifier_ is not specified, the _length modifier_ is optional.
+  * A _conversion specifier_ character that specifies the type of conversion to be applied.
+
+
+The flag characters and their meanings are:
+
+[horizontal]
+
+_-_::
+The result of the conversion is left-justified within the field.
+(It is right-justified if this flag is not specified.)
+
+_+_::
+The result of a signed conversion always begins with a plus or minus sign.
+(It begins with a sign only when a negative value is converted if this flag is not specified.) [[ftnref26]] <<ftn26,[26]>>
+
+_space_::
+If the first character of a signed conversion is not a sign, or if a signed conversion results in no characters, a space is prefixed to the result.
+If the _space_ and _+_ flags both appear, the _space_ flag is ignored.
+
+_#_::
+The result is converted to an "alternative form".
+For _o_ conversion, it increases the precision, if and only if necessary, to force the first digit of the result to be a zero (if the value and precision are both 0, a single 0 is printed).
+For _x_ (or _X_) conversion, a nonzero result has *0x* (or *0X*) prefixed to it.
+For _a_, _A_, _e_, _E_, _f_, _F_, _g_ and _G_ conversions, the result of converting a floating-point number always contains a decimal-point character, even if no digits follow it.
+(Normally, a decimal-point character appears in the result of these conversions only if a digit follows it.) For _g_ and _G_ conversions, trailing zeros are _not_ removed from the result.
+For other conversions, the behavior is undefined.
+
+_0_::
+For _d_, _i_, _o_, _u_, _x_, _X_, _a_, _A_, _e_, _E_, _f_, _F_, _g_ and _G_ conversions, leading zeros (following any indication of sign or base) are used to pad to the field width rather than performing space padding, except when converting an infinity or NaN.
+If the _0_ and _-_ flags both appear, the _0_ flag is ignored.
+For _d_, _i_, _o_, _u_, _x_, and _X_ conversions, if a precision is specified, the _0_ flag is ignored.
+For other conversions, the behavior is undefined.
+
+
+The vector specifier and its meaning is:
+
+[horizontal]
+
+_vn_::
+Specifies that a following _a_, _A_, _e_, _E_, _f_, _F_, _g_, _G_, _d_, _i_, _o_, _u_, _x_ or _X_ conversion specifier applies to a vector argument, where _n_ is the size of the vector and must be 2, 3, 4, 8 or 16.
++
+The vector value is displayed in the following general form:
++
+value1 _C_ value2 _C_ ... _C_ value__n__
++
+where _C_ is a separator character.
+The value for this separator character is a comma.
+
+
+If the vector specifier is not used, the length modifiers and their meanings are:
+
+[horizontal]
+
+_hh_::
+Specifies that a following _d_, _i_, _o_, _u_, _x_, or _X_ conversion specifier applies to a `char` or `uchar` argument (the argument will have been promoted according to the integer promotions, but its value shall be converted to `char` or `uchar` before printing).
+
+_h_::
+Specifies that a following _d_, _i_, _o_, _u_, _x_ or _X_ conversion specifier applies to a `short` or `ushort` argument (the argument will have been promoted according to the integer promotions, but its value shall be converted to `short` or `ushort` before printing).
+
+_l_ (ell)::
+Specifies that a following _d_, _i_, _o_, _u_, _x_ or _X_ conversion specifier applies to a `long` or `ulong` argument.
+The _l_ modifier is supported by the full profile.
+For the embedded profile, the _l_ modifier is supported only if 64-bit integers are supported by the device.
+
+
+If the vector specifier is used, the length modifiers and their meanings are:
+
+[horizontal]
+
+_hh_::
+Specifies that a following _d_, _i_, _o_, _u_, _x_ or _X_ conversion specifier applies to a `char__n__` or `uchar__n__` argument (the argument will not be promoted).
+
+_h_::
+Specifies that a following _d_, _i_, _o_, _u_, _x_ or _X_ conversion specifier applies to a `short__n__` or `ushort__n__` argument (the argument will not be promoted); that a following _a_, _A_, _e_, _E_, _f_, _F_, _g_ or _G_ conversion specifier applies to a `half__n__` argument.
+
+_hl_::
+This modifier can only be used with the vector specifier.
+Specifies that a following _d_, _i_, _o_, _u_, _x_ or _X_ conversion specifier applies to an `int__n__` or `uint__n__` argument; that a following _a_, _A_, _e_, _E_, _f_, _F_, _g_ or _G_ conversion specifier applies to a `float__n__` argument.
+
+_l_ (ell)::
+Specifies that a following _d_, _i_, _o_, _u_, _x_ or _X_ conversion specifier applies to a `long__n__` or `ulong__n__` argument; that a following _a_, _A_, _e_, _E_, _f_, _F_, _g_ or _G_ conversion specifier applies to a `double__n__` argument.
+The _l_ modifier is supported by the full profile.
+For the embedded profile, the _l_ modifier is supported only if 64-bit integers or double-precision floating-point are supported by the device.
+
+If a vector specifier appears without a length modifier, the behavior is undefined.
+The vector data type described by the vector specifier and length modifier must match the data type of the argument; otherwise the behavior is undefined.
+
+If a length modifier appears with any conversion specifier other than as specified above, the behavior is undefined.
+
+
+The conversion specifiers and their meanings are:
+
+[horizontal]
+
+__d__,{nbsp}__i__::
+The `int`, `char__n__`, `short__n__`, `int__n__` or `long__n__` argument is converted to signed decimal in the style _[-]dddd_.
+The precision specifies the minimum number of digits to appear; if the value being converted can be represented in fewer digits, it is expanded with leading zeros.
+The default precision is 1. The result of converting a zero value with a precision of zero is no characters.
+
+__o__,{nbsp}__u__, __x__,{nbsp}__X__::
+The `uint`, `uchar__n__`, `ushort__n__`, `uint__n__` or `ulong__n__` argument is converted to unsigned octal (_o_), unsigned decimal (_u_), or unsigned hexadecimal notation (_x_ or _X_) in the style _dddd_; the letters *abcdef* are used for _x_ conversion and the letters *ABCDEF* for _X_ conversion.
+The precision specifies the minimum number of digits to appear; if the value being converted can be represented in fewer digits, it is expanded with leading zeros.
+The default precision is 1.
+The result of converting a zero value with a precision of zero is no characters.
+
+__f__,{nbsp}__F__::
+A `double`, `half__n__`, `float__n__` or `double__n__` argument representing a floating-point number is converted to decimal notation in the style _[-]ddd_**.**_ddd_, where the number of digits after the decimal-point character is equal to the precision specification.
+If the precision is missing, it is taken as 6; if the precision is zero and the _#_ flag is not specified, no decimal-point character appears.
+If a decimal-point character appears, at least one digit appears before it.
+The value is rounded to the appropriate number of digits.
+A `double`, `half__n__`, `float__n__` or `double__n__` argument representing an infinity is converted in one of the styles _[-]_**inf** or _[-]_**infinity** - which style is implementation-defined.
+A `double`, `half__n__`, `float__n__` or `double__n__` argument representing a NaN is converted in one of the styles _[-]_**nan** or _[-]_**nan**(_n-char-sequence_) - which style, and the meaning of any _n-char-sequence_, is implementation-defined.
+The _F_ conversion specifier produces *INF*, *INFINITY*, or *NAN* instead of *inf*, *infinity*, or *nan*, respectively. [[ftnref27]] <<ftn27,[27]>>
+
+__e__,{nbsp}__E__::
+A `double`, `half__n__`, `float__n__` or `double__n__` argument representing a floating-point number is converted in the style _[-]d_**.**_ddd_**e**_{plusmn}dd_, where there is one digit (which is nonzero if the argument is nonzero) before the decimal-point character and the number of digits after it is equal to the precision; if the precision is missing, it is taken as 6; if the precision is zero and the _#_ flag is not specified, no decimal-point character appears.
+The value is rounded to the appropriate number of digits.
+The _E_ conversion specifier produces a number with *E* instead of *e* introducing the exponent.
+The exponent always contains at least two digits, and only as many more digits as necessary to represent the exponent.
+If the value is zero, the exponent is zero.
+A `double`, `half__n__`, `float__n__` or `double__n__` argument representing an infinity or NaN is converted in the style of an _f_ or _F_ conversion specifier.
+
+__g__,{nbsp}__G__::
+A `double`, `half__n__`, `float__n__` or `double__n__` argument representing a floating-point number is converted in style _f_ or _e_ (or in style _F_ or _E_ in the case of a _G_ conversion specifier), depending on the value converted and the precision.
+Let _P_ equal the precision if nonzero, 6 if the precision is omitted, or 1 if the precision is zero.
+Then, if a conversion with style _E_ would have an exponent of _X_:
+- if _P > X {geq} -4, the conversion is with style _f_ (or _F_) and precision _P - (X + 1)_.
+- otherwise, the conversion is with style _e_ (or _E_) and precision _P - 1_.
+
++
+Finally, unless the _#_ flag is used, any trailing zeros are removed from the fractional portion of the result and the decimal-point character is removed if there is no fractional portion remaining.
+A `double`, `half__n__`, `float__n__` or `double__n__` argument representing an infinity or NaN is converted in the style of an _f_ or _F_ conversion specifier.
+
+__a__,{nbsp}__A__::
+A `double`, `half__n__`, `float__n__` or `double__n__` argument representing a floating-point number is converted in the style _[-]_**0x**_h_**.**_hhhh_**p**_{plusmn}d_, where there is one hexadecimal digit (which is nonzero if the argument is a normalized floating-point number and is otherwise unspecified) before the decimal-point character [[ftnref28]] <<ftn28,[28]>> and the number of hexadecimal digits after it is equal to the precision; if the precision is missing, then the precision is sufficient for an exact representation of the value; if the precision is zero and the _#_ flag is not specified, no decimal point character appears.
+The letters *abcdef* are used for _a_ conversion and the letters *ABCDEF* for _A_ conversion.
+The _A_ conversion specifier produces a number with *X* and *P* instead of *x* and *p*.
+The exponent always contains at least one digit, and only as many more digits as necessary to represent the decimal exponent of 2.
+If the value is zero, the exponent is zero.
+A `double`, `half__n__`, `float__n__` or `double__n__` argument representing an infinity or NaN is converted in the style of an _f_ or _F_ conversion specifier.
++
+NOTE:  The conversion specifiers _e_, _E_, _g_, _G_, _a_, _A_ convert a `float` or `half` argument that is a scalar type to a `double` only if the `double` data type is supported.
+If the `double` data type is not supported, the argument will be a `float` instead of a `double` and the `half` type will be converted to a `float`.
+
+_c_::
+The `int` argument is converted to an `uchar` and the resulting character is written.
+
+_s_::
+The argument shall be a literal string. [[ftnref29]] <<ftn29,[29]>>
+Characters from the literal string array are written up to (but not including) the terminating null character.
+If the precision is specified, no more than that many bytes are written.
+If the precision is not specified or is greater than the size of the array, the array shall contain a null character.
+
+_p_::
+The argument shall be a pointer to `void`.
+The pointer can refer to a memory region in the global, constant, local, private or generic address space.
+The value of the pointer is converted to a sequence of printing characters in an implementation-defined manner.
+
+_%_::
+A *%* character is written.
+No argument is converted. The complete conversion specification shall be *%%*.
+
+If a conversion specification is invalid, the behavior is undefined.
+If any argument is not the correct type for the corresponding conversion specification, the behavior is undefined.
+
+In no case does a nonexistent or small field width cause truncation of a field; if the result of a conversion is wider than the field width, the field is expanded to contain the conversion result.
+
+For _a_ and _A_ conversions, the value is correctly rounded to a hexadecimal floating number with the given precision.
+
+[source]
+----
+float4  f = float4(1.0f, 2.0f, 3.0f, 4.0f);
+uchar4 uc = uchar4(0xFA, 0xFB, 0xFC, 0xFD);
+
+printf("f4 = %2.2v4hlf\n", f);
+printf("uc = %#v4hhx\n", uc);
+----
+
+The above two `printf` calls print the following:
+
+----
+f4 = 1.00,2.00,3.00,4.00
+uc = 0xfa,0xfb,0xfc,0xfd
+----
+
+A few examples of valid use cases of `printf` for the conversion specifier _s_ are given below.
+The argument value must be a pointer to a literal string.
+
+[source]
+----
+#include <opencl_printf>
+
+kernel void my_kernel( ... )
+{
+    cl::printf("%s\n", "this is a test string\n");
+}
+----
+
+A few examples of invalid use cases of `printf` for the conversion specifier _s_ are given below:
+
+[source]
+----
+#include <opencl_printf>
+
+kernel void my_kernel(char *s, ... )
+{
+    cl::printf("%s\n", s);
+}
+----
+
+A few examples of invalid use cases of `printf` where data types given by the vector specifier and length modifier do not match the argument type are given below:
+
+[source]
+----
+#include <opencl_printf>
+using namespace cl;
+
+kernel void my_kernel( ... )
+{
+    uint2 ui = uint2(0x12345678, 0x87654321);
+    printf("unsigned short value = (%#v2hx)\n", ui);
+    printf("unsigned char value = (%#v2hhx)\n", ui);
+}
+----
+
+[[differences-between-opencl-c-and-c14-printf]]
+==== Differences between OpenCL {cpp} and {cpp14} printf
+
+  * The _l_ modifier followed by a _c_ conversion specifier or _s_ conversion specifier is not supported by OpenCL {cpp}.
+  * The _ll_, _j_, _z_, _t_, and _L_ length modifiers are not supported by OpenCL {cpp} but are reserved.
+  * The _n_ conversion specifier is not supported by OpenCL {cpp} but is reserved.
+  * OpenCL {cpp} adds the optional _vn_ vector specifier to support printing of vector types.
+  * The conversion specifiers _f_, _F_, _e_, _E_, _g_, _G_, _a_, _A_ convert a float argument to a double only if the double data type is supported.
+    Refer to the description of `CL_DEVICE_DOUBLE_FP_CONFIG` in _table 4.3_.
+    If the double data type is not supported, the argument will be a float instead of a double.
+  * For the embedded profile, the _l_ length modifier is supported only if 64-bit integers are supported.
+  * In OpenCL {cpp}, `printf` returns 0 if it was executed successfully and -1 otherwise vs. {cpp14} where `printf` returns the number of characters printed or a negative value if an output or encoding error occurred.
+  * In OpenCL {cpp}, the conversion specifier _s_ can only be used for arguments that are literal strings.

@@ -1,0 +1,351 @@
+// Copyright 2016-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[appendix]
+[[data-types]]
+= Application Data Types
+
+This section documents the provided host application types and constant
+definitions.
+The documented material describes the commonly defined data structures,
+types and constant values available to all platforms and architectures.
+The addition of these details demonstrates our commitment to maintaining a
+portable programming environment and potentially deters changes to the
+supplied headers.
+
+
+[[scalar-data-types]]
+== Shared Application Scalar Data Types
+
+The following application scalar types are provided for application
+convenience.
+
+[source,c]
+----
+cl_char
+cl_uchar
+cl_short
+cl_ushort
+cl_int
+cl_uint
+cl_long
+cl_ulong
+cl_half
+cl_float
+cl_double
+----
+
+
+[[vector-data-types]]
+== Supported Application Vector Data Types
+
+Application vector types are unions used to create vectors of the above
+application scalar types.
+The following application vector types are provided for application
+convenience.
+
+[source,c]
+----
+cl_char<n>
+cl_uchar<n>
+cl_short<n>
+cl_ushort<n>
+cl_int<n>
+cl_uint<n>
+cl_long<n>
+cl_ulong<n>
+cl_half<n>
+cl_float<n>
+cl_double<n>
+----
+
+_n_ can be 2, 3, 4, 8 or 16.
+
+The application scalar and vector data types are defined in the
+*cl_platform.h* header file.
+
+
+[[alignment-app-data-types]]
+== Alignment of Application Data Types
+
+The user is responsible for ensuring that pointers passed into and out of
+OpenCL kernels are natively aligned relative to the data type of the
+parameter as defined in the kernel language and SPIR-V specifications.
+This implies that OpenCL buffers created with CL_MEM_USE_HOST_PTR need to
+provide an appropriately aligned host memory pointer that is aligned to the
+data types used to access these buffers in a kernel(s), that SVM allocations
+must correctly align and that pointers into SVM allocations must also be
+correctly aligned.
+The user is also responsible for ensuring image data passed is aligned to
+the granularity of the data representing a single pixel (e.g.
+`image_num_channels * sizeof(image_channel_data_type)`) except for CL_RGB
+and CL_RGBx images where the data must be aligned to the granularity of a
+single channel in a pixel (i.e. `sizeof(image_channel_data_type)`).
+This implies that OpenCL images created with CL_MEM_USE_HOST_PTR must align
+correctly.
+The image alignment value can be queried using the
+CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT query.
+In addition, source pointers for *clEnqueueWriteImage* and other operations
+that copy to the OpenCL runtime, as well as destination pointers for
+*clEnqueueReadImage* and other operations that copy from the OpenCL runtime
+must follow the same alignment rules.
+
+OpenCL makes no requirement about the alignment of OpenCL application
+defined data types outside of buffers and images, except that the underlying
+vector primitives (e.g. `+__cl_float4+`) where defined shall be directly
+accessible as such using appropriate named fields in the cl_type union (see
+<<vector-components,Vector Components>>.
+Nevertheless, it is recommended that the *cl_platform.h* header should
+attempt to naturally align OpenCL defined application data types (e.g.
+`cl_float4`) according to their type.
+
+
+== Vector Literals
+
+Application vector literals may be used in assignments of individual vector
+components.
+Literal usage follows the convention of the underlying application compiler.
+
+[source,c]
+----
+cl_float2 foo = { .s[1] = 2.0f };
+cl_int8 bar = {{ 2, 4, 6, 8, 10, 12, 14, 16 }};
+----
+
+
+[[vector-components]]
+== Vector Components
+
+The components of application vector types can be addressed using the
+`<vector_name>.s[<index>]` notation.
+
+For example:
+
+[source,c]
+----
+foo.s[0] = 1.0f; // Sets the 1st vector component of foo
+pos.s[6] = 2;    // Sets the 7th vector component of bar
+----
+
+In some cases vector components may also be accessed using the following
+notations.
+These notations are not guaranteed to be supported on all implementations,
+so their use should be accompanied by a check of the corresponding
+preprocessor symbol.
+
+
+=== Named vector components notation
+
+Vector data type components may be accessed using the `.sN`, `.sn` or
+`.xyzw` field naming convention, similar to how they are used within the
+OpenCL language.
+Use of the `.xyzw` field naming convention only allows accessing of the
+first 4 component fields.
+Support of these notations is identified by the CL_HAS_NAMED_VECTOR_FIELDS
+preprocessor symbol.
+For example:
+
+
+[source,c]
+----
+#ifdef CL_HAS_NAMED_VECTOR_FIELDS
+    cl_float4 foo;
+    cl_int16 bar;
+    foo.x = 1.0f;  // Set first component
+    foo.s0 = 1.0f; // Same as above
+    bar.z = 3;     // Set third component
+    bar.se = 11;   // Same as bar.s[0xe]
+    bar.sD = 12;   // Same as bar.s[0xd]
+#endif
+----
+
+Unlike the OpenCL language type usage of named vector fields, only one
+component field may be accessed at a time.
+This restriction prevents the ability to swizzle or replicate components as
+is possible with the OpenCL language types.
+Attempting to access beyond the number of components for a type also results
+in a failure.
+
+[source,c]
+----
+foo.xy    // illegal - illegal field name combination
+bar.s1234 // illegal - illegal field name combination
+foo.s7    // illegal - no component s7
+----
+
+
+=== High/Low vector component notation
+
+Vector data type components may be accessed using the `.hi` and `.lo`
+notation similar to that supported within the language types.
+Support of this notation is identified by the CL_HAS_HI_LO_VECTOR_FIELDS
+preprocessor symbol.
+For example:
+
+[source,c]
+----
+#ifdef CL_HAS_HI_LO_VECTOR_FIELDS
+    cl_float4 foo;
+    cl_float2 new_hi = 2.0f, new_lo = 4.0f;
+    foo.hi = new_hi;
+    foo.lo = new_lo;
+#endif
+----
+
+
+=== Native vector type notation
+
+Certain native vector types are defined for providing a mapping of vector
+types to architecturally builtin vector types.
+Unlike the above described application vector types, these native types are
+supported on a limited basis depending on the supporting architecture and
+compiler.
+
+These types are not unions, but rather convenience mappings to the
+underlying architectures' builtin vector types.
+The native types share the name of their application counterparts but are
+preceded by a double underscore "__".
+
+For example, `+__cl_float4+` is the native builtin vector type equivalent of
+the `cl_float4` application vector type.
+The `+__cl_float4+` type may provide direct access to the architectural
+builtin `+__m128+` or vector float type, whereas the `cl_float4` is treated
+as a union.
+
+In addition, the above described application data types may have native
+vector data type members for access convenience.
+The native components are accessed using the `.vN` sub-vector notation,
+where `N` is the number of elements in the sub-vector.
+In cases where the native type is a subset of a larger type (more
+components), the notation becomes an index based array of the sub-vector
+type.
+
+Support of the native vector types is identified by a `+__CL_TYPEN__+`
+preprocessor symbol matching the native type name.
+For example:
+
+[source,c]
+----
+#ifdef __CL_FLOAT4__ // Check for native cl_float4 type
+    cl_float8 foo;
+    __cl_float4 bar; // Use of native type
+    bar = foo.v4[1]; // Access the second native float4 vector
+#endif
+----
+
+
+== Implicit Conversions
+
+Implicit conversions between application vector types are not supported.
+
+
+== Explicit Casts
+
+Explicit casting of application vector types (`cl_typen`) is not supported.
+Explicit casting of native vector types (`+__cl_typen+`) is defined by the
+external compiler.
+
+
+== Other operators and functions
+
+The behavior of standard operators and function on both application vector
+types (`cl_typen`) and native vector types (`+__cl_typen+`) is defined by
+the external compiler.
+
+
+== Application constant definitions
+
+In addition to the above application type definitions, the following literal
+defintions are also available.
+
+[width="100%",cols="<50%,<50%"]
+|====
+| *CL_CHAR_BIT* | Bit width of a character
+| *CL_SCHAR_MAX*
+  | Maximum value of a type `cl_char`
+| *CL_SCHAR_MIN*
+  | Minimum value of a type `cl_char`
+| *CL_CHAR_MAX*
+  | Maximum value of a type `cl_char`
+| *CL_CHAR_MIN*
+  | Minimum value of a type `cl_char`
+| *CL_UCHAR_MAX*
+  | Maximum value of a type `cl_uchar`
+| *CL_SHORT_MAX*
+  | Maximum value of a type `cl_short`
+| *CL_SHORT_MIN*
+  | Minimum value of a type `cl_short`
+| *CL_USHORT_MAX*
+  | Maximum value of a type `cl_ushort`
+| *CL_INT_MAX*
+  | Maximum value of a type `cl_int`
+| *CL_INT_MIN*
+  | Minimum value of a type `cl_int`
+| *CL_UINT_MAX*
+  | Maximum value of a type `cl_uint`
+| *CL_LONG_MAX*
+  | Maximum value of a type `cl_long`
+| *CL_LONG_MIN*
+  | Minimum value of a type `cl_long`
+| *CL_ULONG_MAX*
+  | Maximum value of a type `cl_ulong`
+| *CL_FLT_DIAG*
+  | Number of decimal digits of precision for the type `cl_float`
+| *CL_FLT_MANT_DIG*
+  | Number of digits in the mantissa of type `cl_float`
+| *CL_FLT_MAX_10_EXP*
+  | Maximum positive integer such that 10 raised to this power minus one can
+    be represented as a normalized floating-point number of type `cl_float`
+| *CL_FLT_MAX_EXP*
+  | Maximum exponent value of type `cl_float`
+| *CL_FLT_MIN_10_EXP*
+  | Minimum negative integer such that 10 raised to this power minus one can
+    be represented as a normalized floating-point number of type `cl_float`
+| *CL_FLT_MIN_EXP*
+  | Minimum exponent value of type `cl_float`
+| *CL_FLT_RADIX*
+  | Base value of type `cl_float`
+| *CL_FLT_MAX*
+  | Maximum value of type `cl_float`
+| *CL_FLT_MIN*
+  | Minimum value of type `cl_float`
+| *CL_FLT_EPSILON*
+  | Minimum positive floating-point number of type `cl_float` such that `1.0
+    {plus} CL_FLT_EPSILON != 1` is true.
+| *CL_DBL_DIG*
+  | Number of decimal digits of precision for the type `cl_double`
+| *CL_DBL_MANT_DIG*
+  | Number of digits in the mantissa of type `cl_double`
+| *CL_DBL_MAX_10_EXP*
+  | Maximum positive integer such that 10 raised to this power minus one can
+    be represented as a normalized floating-point number of type `cl_double`
+| *CL_DBL_MAX_EXP*
+  | Maximum exponent value of type `cl_double`
+| *CL_DBL_MIN_10_EXP*
+  | Minimum negative integer such that 10 raised to this power minus one can
+    be represented as a normalized floating-point number of type `cl_double`
+| *CL_DBL_MIN_EXP*
+  | Minimum exponent value of type `cl_double`
+| *CL_DBL_RADIX*
+  | Base value of type `cl_double`
+| *CL_DBL_MAX*
+  | Maximum value of type `cl_double`
+| *CL_DBL_MIN*
+  | Minimum value of type `cl_double`
+| *CL_DBL_EPSILON*
+  | Minimum positive floating-point number of type `cl_double` such that
+    `1.0 {plus} CL_DBL_EPSILON != 1` is true.
+| *CL_NAN*
+  | Macro expanding to a value representing NaN
+| *CL_HUGE_VALF*
+  | Largest representative value of type `cl_float`
+| *CL_HUGE_VAL*
+  | Largest representative value of type `cl_double`
+| *CL_MAXFLOAT*
+  | Maximum value of type `cl_float`
+| *CL_INFINITY*
+  | Macro expanding to a value represnting infinity
+|====
+
+These literal definitions are defined in the *cl_platform.h* header.

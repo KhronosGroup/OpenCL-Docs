@@ -1,0 +1,423 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[attribute-qualifiers]]
+=== Attribute Qualifiers
+
+The `[[ ]]` attribute qualifier syntax allows additional attributes to be attached to types, variables, kernel functions, kernel parameters, or loops.
+
+Some attributes change the semantics of the program and are required for program correctness.
+Other attributes are optional hints that may be ignored without affecting program correctness.
+Nevertheless, frontend compilers that compile to an intermediate representation are required to faithfully pass optional attribute hints with an intermediate representation to device compilers for further processing.
+
+[[optional-type-attributes]]
+==== Optional Type Attributes
+
+`[[ ]]` attribute syntax can be used to specify special attributes of enum, class and union types when you define such types.
+Two attributes are currently defined for types: `aligned`, and `packed`.
+
+You may specify type attributes in an enum, class or union type declaration or definition, or for other types in a typedef declaration.
+
+For an enum, class or union type, you may specify attributes either between the enum, class or union tag and the name of the type, or just past the closing curly brace of the definition.
+The former syntax is preferred.
+
+[[claligned-alignment]]
+===== cl::aligned (alignment)
+
+This attribute specifies a minimum alignment (in bytes) for variables of the specified type.
+For example, the declarations:
+
+[source]
+----
+struct S { short f[3]; } [[cl::aligned(8)]];
+typedef int more_aligned_int [[cl::aligned(8)]];
+----
+
+force the compiler to insure (as far as it can) that each variable whose type is struct S or `more_aligned_int` will be allocated and aligned _at least_ on a 8-byte boundary.
+
+Note that the alignment of any given struct or union type is required by the {cpp} standard to be at least a perfect multiple of the lowest common multiple of the alignments of all of the members of the struct or union in question and must also be a power of two.
+This means that you _can_ effectively adjust the alignment of a class or union type by attaching an aligned attribute to any one of the members of such a type, but the notation illustrated in the example above is a more obvious, intuitive, and readable way to request the compiler to adjust the alignment of an entire class or union type.
+
+As in the preceding example, you can explicitly specify the alignment (in bytes) that you wish the compiler to use for a given class or union type.
+Alternatively, you can leave out the alignment factor and just ask the compiler to align a type to the maximum useful alignment for the target machine you are compiling for.
+For example, you could write:
+
+[source]
+----
+struct S { short f[3]; } [[cl::aligned]];
+----
+
+Whenever you leave out the alignment factor in an aligned attribute specification, the compiler automatically sets the alignment for the type to the largest alignment which is ever used for any data type on the target machine you are compiling for.
+In the example above, the size of each short is 2 bytes, and therefore the size of the entire struct S type is 6 bytes.
+The smallest power of two which is greater than or equal to that is 8, so the compiler sets the alignment for the entire struct S type to 8 bytes.
+
+Note that the effectiveness of aligned attributes may be limited by inherent limitations of the OpenCL device and compiler.
+For some devices, the OpenCL compiler may only be able to arrange for variables to be aligned up to a certain maximum alignment.
+If the OpenCL compiler is only able to align variables up to a maximum of 8 byte alignment, then specifying `aligned(16)` will still only provide you with 8 byte alignment.
+See your platform-specific documentation for further information.
+
+The aligned attribute can only increase the alignment; but you can decrease it by specifying packed as well.
+See below.
+
+[[clpacked]]
+===== cl::packed
+
+This attribute, attached to class or union type definition, specifies that each member of the structure or union is placed to minimize the memory required.
+When attached to an enum definition, it indicates that the smallest integral type should be used.
+
+Specifying this attribute for class and union types is equivalent to specifying the packed attribute on each of the structure or union members.
+
+In the following example struct my_packed_struct's members are packed closely together, but the internal layout of its s member is not packed.
+To do that, struct `my_unpacked_struct` would need to be packed, too.
+
+[source]
+----
+struct my_unpacked_struct
+{
+  char c;
+  int i;
+};
+
+struct [[cl::packed]] my_packed_struct
+{
+  char c;
+  int  i;
+  struct my_unpacked_struct s;
+};
+----
+
+You may only specify this attribute on the definition of an enum, class or union, not on a typedef which does not also define the enumerated type, structure or union.
+
+[[optional-variable-attributes]]
+==== Optional Variable Attributes
+
+[[ ]] syntax allows you to specify special attributes of variables or structure fields.
+The following attribute qualifiers are currently defined:
+
+[[claligned]]
+===== cl::aligned
+
+This attribute specifies a minimum alignment for the variable or class field, measured in bytes.
+For example, the declaration:
+
+[source]
+----
+int x [[cl::aligned(16)]] = 0;
+----
+
+causes the compiler to allocate the global variable `x` on a 16-byte boundary.
+The alignment value specified must be a power of two.
+
+You can also specify the alignment of structure fields.
+For example, to create double-word aligned int pair, you could write:
+
+[source]
+----
+struct foo { int x[2] [[cl::aligned(8)]]; };
+----
+
+This is an alternative to creating a union with a double member that forces the union to be double-word aligned.
+
+As in the preceding examples, you can explicitly specify the alignment (in bytes) that you wish the compiler to use for a given variable or structure field.
+Alternatively, you can leave out the alignment factor and just ask the compiler to align a variable or field to the maximum useful alignment for the target machine you are compiling for.
+For example, you could write:
+
+[source]
+----
+short array[3] [[cl::aligned]];
+----
+
+Whenever you leave out the alignment factor in an aligned attribute specification, the OpenCL compiler automatically sets the alignment for the declared variable or field to the largest alignment which is ever used for any data type on the target device you are compiling for.
+
+When used on a class, or class member, the aligned attribute can only increase the alignment; in order to decrease it, the packed attribute must be specified as well.
+When used as part of a typedef, the aligned attribute can both increase and decrease alignment, and specifying the packed attribute will generate a warning.
+
+Note that the effectiveness of aligned attributes may be limited by inherent limitations of the OpenCL device and compiler.
+For some devices, the OpenCL compiler may only be able to arrange for variables to be aligned up to a certain maximum alignment.
+If the OpenCL
+compiler is only able to align variables up to a maximum of 8 byte alignment, then specifying `aligned(16)` will still only provide you with 8 byte alignment.
+See your platform-specific documentation for further information.
+
+[[clpacked-1]]
+===== cl::packed
+
+The `packed` attribute specifies that a variable or class field should have the smallest possible alignment - one byte for a variable, unless you specify a larger value with the aligned attribute.
+
+Here is a structure in which the field `x` is packed, so that it immediately follows a:
+
+[source]
+----
+struct foo
+{
+  char a;
+  int x[2] [[cl::packed]];
+};
+----
+
+An attribute list placed at the beginning of a user-defined type applies to the variable of that type and not the type, while attributes following the type body apply to the type.
+
+For example:
+
+[source]
+----
+/* a has alignment of 128 */
+[[cl::aligned(128)]] struct A { int i; } a;
+
+/* b has alignment of 16 */
+[[cl::aligned(16)]] struct B { double d; } [[cl::aligned(32)]] b;
+
+struct A a1; /* a1 has alignment of 4 */
+
+struct B b1; /* b1 has alignment of 32 */
+----
+
+[[optional-kernel-function-attributes]]
+==== Optional Kernel Function Attributes
+
+The kernel qualifier can be used with the `[[ ]]` attribute syntax to declare additional information about the kernel function.
+The kernel function attributes must appear immediately before the kernel function to be affected.
+
+The following attributes are supported:
+
+[[clwork_group_size_hint]]
+===== cl::work_group_size_hint
+
+The optional `[[cl::work_group_size_hint(X, Y, Z)]]` is a hint to the compiler and is intended to specify the work-group size that may be used i.e. value most likely to be specified by the `local_work_size` argument to `clEnqueueNDRangeKernel`.
+For example the `[[cl::work_group_size_hint(1, 1, 1)]]` is a hint to the compiler that the kernel will most likely be executed with a work-group size of 1.
+
+The specialization constants (see the <<specialization-constants-library, _Specialization Constants_>> section) can be used as arguments of `cl::work_group_size_hint` attribute.
+
+[[clrequired_work_group_size]]
+===== cl::required_work_group_size
+
+The optional `[[cl::required_work_group_size(X, Y, Z)]]` is the work-group size that must be used as the `local_work_size` argument to `clEnqueueNDRangeKernel`.
+This allows the compiler to optimize the generated code appropriately for this kernel.
+
+If `Z` is one, the `work_dim` argument to `clEnqueueNDRangeKernel` can be 2 or 3.
+If `Y` and `Z` are one, the `work_dim` argument to `clEnqueueNDRangeKernel` can be 1, 2 or 3.
+
+The specialization constants (see the <<specialization-constants-library, _Specialization Constants_>> section) can be used as arguments of `cl::required_work_group_size(X, Y, Z)` attribute.
+
+[[clrequired_num_sub_groups]]
+===== cl::required_num_sub_groups
+
+The optional `[[cl::required_num_sub_groups(X)]]` is the number of sub-groups that must be generated by a kernel launch.
+To ensure that this number is created the queries mapping number of sub-groups to local size may be used.
+This allows the compiler to optimize the kernel based on the sub-group count and in addition allows the API to enforce correctness of kernel use to the user when concurrency of sub-groups is a requirement.
+
+The specialization constants (see the <<specialization-constants-library, _Specialization Constants_>> section) can be used as argument of `cl::required_num_sub_groups` attribute.
+
+[[clvec_type_hint]]
+===== cl::vec_type_hint
+
+The optional `[[cl::vec_type_hint(<type>)]]` is a hint to the compiler and is intended to be a representation of the computational _width_ of the kernel, and should serve as the basis for calculating processor bandwidth utilization when the compiler is looking to autovectorize the code.
+In the `[[cl::vec_type_hint(<type>)]]` qualifier `<type>` is one of the built-in vector types listed in <<device_builtin_vector_data_types,Device built-in vector data types>> table or the constituent scalar element types.
+If `cl::vec_type_hint(<type>)` is not specified, the kernel is assumed to have the `[[cl::vec_type_hint(int)]]` qualifier.
+
+For example, where the developer specified a width of `float4`, the compiler should assume that the computation usually uses up to 4 lanes of a float vector, and would decide to merge work-items or possibly even separate one work-item into many threads to better match the hardware capabilities.
+A conforming implementation is not required to autovectorize code, but shall support the hint.
+A compiler may autovectorize, even if no hint is provided.
+If an implementation merges N work-items into one thread, it is responsible for correctly handling cases where the number of global or local work-items in any dimension modulo N is not zero.
+
+Examples:
+
+[source]
+----
+// autovectorize assuming float4 as the
+// basic computation width
+[[cl::vec_type_hint(float4)]] kernel
+void foo(cl::global_ptr<float4> p) { ... }
+
+// autovectorize assuming double as the
+// basic computation width
+[[cl::vec_type_hint(double)]] kernel
+void foo(cl::global_ptr<float4> p) { ... }
+
+// autovectorize assuming int (default)
+// as the basic computation width
+kernel void foo(cl::global_ptr<float4> p) { ... }
+----
+
+[[optional-kernel-parameter-attributes]]
+==== Optional Kernel Parameter Attributes
+
+The kernel parameter can be used with the `[[ ]]` attribute syntax to declare additional information about an argument passed to the kernel.
+The kernel parameter attributes must appear immediately before or after the kernel parameter declaration to be affected.
+
+The following attributes are supported:
+
+[[clmax_size]]
+===== cl::max_size
+
+This attribute can be provided with a kernel argument of type `constant_ptr<T>`, `constant<T>*`, `constant<T>&`, `local_ptr<T>`, `local<T>*`, `local<T>&`.
+The value of the attribute specifies the maximum size in bytes of the corresponding memory object.
+This size cannot exceed the limits supported by the device:
+
+  * `CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE` for the kernel arguments in constant memory
+  * `CL_DEVICE_LOCAL_MEM_SIZE` for the kernel arguments in local memory
+
+The specialization constants (see the <<specialization-constants-library, _Specialization Constants_>> section) can be used as argument of `cl::max_size` attribute.
+
+Examples:
+[source]
+----
+#include <opencl_memory>
+
+kernel void foo([[cl::max_size(65536)]] cl::constant_ptr<int> arg) {
+  //...
+}
+----
+
+[[optional-loop-attributes]]
+==== Optional Loop Attributes
+
+===== cl::unroll_hint
+
+The `[[cl::unroll_hint]]` and `[[cl::unroll_hint(n)]]` attribute qualifiers can be used to specify that a loop (`for`, `while` and `do` loops) can be unrolled.
+This attribute qualifier can be used to specify full unrolling or partial unrolling by a specified amount.
+This is a compiler hint and the compiler may ignore this directive.
+
+`n` is the loop unrolling factor and must be a positive integral compile time constant expression.
+An unroll factor of 1 disables unrolling.
+If `n` is not specified, the compiler determines the unrolling factor for the loop.
+
+NOTE: The `[[cl::unroll_hint(n)]]` attribute qualifier must appear immediately before the loop to be affected.
+
+Examples:
+
+[source]
+----
+[[cl::unroll_hint(2)]]
+while (*s != 0)
+    *p++ = *s++;
+----
+
+This tells the compiler to unroll the above while loop by a factor of 2.
+
+[source]
+----
+[[cl::unroll_hint]]
+for (int i=0; i<2; i++) {
+   //...
+}
+----
+
+In the example above, the compiler will determine how much to unroll the loop.
+
+[source]
+----
+[[cl::unroll_hint(1)]]
+for (int i=0; i<32; i++) {
+  //...
+}
+----
+
+The above is an example where the loop should not be unrolled.
+
+Below are some examples of invalid usage of `[[cl::unroll_hint(n)]]`.
+
+[source]
+----
+[[cl::unroll_hint(-1)]]
+while (/* ... */) {
+  //...
+}
+----
+
+The above example is an invalid usage of the loop unroll factor as the loop unroll factor is negative.
+
+[source]
+----
+[[cl::unroll_hint]]
+if(/* ... */) {
+  //...
+}
+----
+
+The above example is invalid because the `unroll_hint` attribute qualifier is used on a non-loop construct.
+
+[source]
+----
+kernel void my_kernel(/* ... */) {
+  int x;
+  [[cl::unroll_hint(x)]]
+  for (int i=0; i<x; i++) {
+    //...
+  }
+}
+----
+
+The above example is invalid because the loop unroll factor is not a compile-time constant expression.
+
+[[clivdep]]
+===== cl::ivdep
+
+// Jon - I have no idea why it's neccessary to use pass:[] around cl::ivdep
+// here to avoid it becoming a (duplicate) anchor, since that doesn't seem to happen
+// with other attributes.
+
+The `pass:[[[cl::ivdep]]]` (ignore vector dependencies) attribute qualifier is a hint to the compiler and may appear in loops to indicate that the compiler may assume there are no memory dependencies across loop iterations in order to autovectorize consecutive iterations of the loop.
+This attribute qualifier may appear in one of the following
+forms:
+
+[source]
+----
+[[cl::ivdep]]
+[[cl::ivdep(len)]]
+----
+
+If the parameter `len` is specified, it is used to specify the maximum number of consecutive iterations without loop-carried dependencies.
+`len` is a lower bound on the distance of any loop-carried dependence, and it applies to arbitrary alignment.
+For example, any 4 consecutive iterations can be vectorized with `cl::ivdep(4)`.
+The `len` parameter must be a positive integer.
+The final decision whether to autovectorize the complete loop may be subject to other compiler heuristics as well as flags e.g., _-cl-fast-relaxed-math_ to ignore non-associated operations.
+
+Examples:
+
+[source]
+----
+[[cl::ivdep]]
+for (int i=0; i<N; i++) {
+    C[i+offset] = A[i+offset] * B[i+offset];
+}
+----
+
+In the example above, assuming that `A` and `B` are not restricted pointers, it is unknown if `C` aliases `A` or `B`.
+Placing the `pass:[[[cl::ivdep]]]` attribute before the loop lets the compiler assume there are no memory dependencies across the loop iterations.
+
+[source]
+----
+[[cl::ivdep(8)]]
+for (int i=0; i<N; i++) {
+    A[i+K] = A[i] * B[i];
+}
+----
+
+In the example above, buffer `A` is read from and written to in the loop iterations.
+In each iteration, the read and write to `A` are to different indices.
+In this case it is not safe to vectorize the loop to a vector length greater than `K`, so the `len` parameter is specified with a value that is known to be not greater than any value that `K` may take during the execution of loop.
+In this example we are guaranteed (by `len`) that `K` will always be greater than or equal to 8.
+
+Below is an example of invalid usage of `pass:[[[cl::ivdep]]]`.
+
+[source]
+----
+[[cl::ivdep(-1)]]
+for (int i=0; i<N; i++) {
+    C[i+offset] = A[i+offset] * B[i+offset];
+}
+----
+
+The above example is an invalid usage of the attribute qualifier as `len` is negative.
+
+[[extending-attribute-qualifiers]]
+==== Extending Attribute Qualifiers
+
+The attribute syntax can be extended for standard language extensions and vendor specific extensions.
+Any extensions should follow the naming conventions outlined in the introduction to _section 9_ in the OpenCL 2.2 Extension Specification.
+
+Attributes are intended as useful hints to the compiler.
+It is our intention that a particular implementation of OpenCL be free to ignore all attributes and the resulting executable binary will produce the same result.
+This does not preclude an implementation from making use of the additional information provided by attributes and performing optimizations or other transformations as it sees fit.
+In this case it is the programmer's responsibility to guarantee that the information provided is in some sense correct.

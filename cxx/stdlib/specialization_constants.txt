@@ -1,0 +1,132 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[specialization-constants-library]]
+=== Specialization Constants Library
+
+The specialization constants are objects that will not have known constant values until after initial generation of a module in
+an intermediate representation format (e.g. SPIR-V). Such objects are called specialization constants.
+Application might provide values for the specialization constants that will be used when program is built from an intermediate format.
+
+[[header-opencl_spec_constant-synopsis]]
+==== Header <opencl_spec_constant> Synopsis
+
+[source]
+----
+namespace cl
+{
+template<class T, unsigned int ID>
+struct spec_constant
+{
+    spec_constant() = delete;
+    spec_constant(const spec_constant &) = default;
+    spec_constant(spec_constant&&) = default;
+
+    constexpr spec_constant(const T& value);
+
+    spec_constant& operator=(const spec_constant&) = delete;
+    spec_constant& operator=(spec_constant&&) = delete;
+
+    const T& get() const noexcept;
+
+    operator const T&() const noexcept;
+};
+
+template<class T, unsigned int ID>
+const T& get(const spec_constant<T, ID> &r) noexcept;
+
+}
+----
+
+[[spec_constant-class-methods-and-get-function]]
+==== spec_constant class methods and get function
+
+[[spec_constantspec_constant]]
+===== spec_constant::spec_constant
+
+[source]
+----
+constexpr spec_constant(const T& value);
+----
+
+Constructor of spec_constant class.
+The value parameter is a default value of the specialization constant that will be used if a value is not set by the host API.
+It must be a literal value.
+
+[[get]]
+===== get
+
+[source]
+----
+const T& get() const noexcept;
+
+operator const T&() const noexcept;
+
+template<class T, unsigned int ID>
+const T& get(const spec_constant<T, ID> &r) noexcept;
+----
+
+Return a value of specialization constant.
+If an object is not specialized from the host, the default value will be returned.
+
+[[requirements-2]]
+==== Requirements
+
+Specialization constant variables cannot be defined `constexpr`.
+
+[[data-1]]
+===== Data
+
+Template parameter `T` in spec_constant class template denotes the data type of specialization constant.
+The type `T` must be integral or floating point type.
+
+[[id]]
+===== ID
+
+Template parameter `ID` in spec_constant class template denotes an unique ID of the specialization constant that can be used to set a value from the host API.
+The value of `ID` must be unique within this compilation unit and across any other modules that it is linked with.
+
+[[examples-9]]
+==== Examples
+
+[[example-1-9]]
+===== Example 1
+
+Example of using the specialization constant in the kernel.
+[source]
+----
+#include <opencl_spec_constant>
+cl::spec_constant<int, 1> spec1{ 255 };
+constexpr cl::spec_constant<int, 2> spec2{ 255 }; // error, constexpr specialization
+                                                  // constant variables are not allowed
+
+kernel void myKernel()
+{
+  if(cl::get(spec1) == 255)
+  {
+       // do something if a default value is used
+  }
+  else
+  {
+    // do something if the spec constant was specialized by the host
+  }
+}
+----
+
+[[example-2-7]]
+===== Example 2
+
+Example of specializing one of the dimensions in `cl::required_work_group_size` attribute.
+
+[source]
+----
+#include <opencl_spec_constant>
+cl::spec_constant<int, 1> spec1{ 512 };
+
+[[cl::required_work_group_size(spec1, 1, 1)]]
+kernel void myKernel()
+{
+   //...
+}
+----

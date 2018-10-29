@@ -1,0 +1,99 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[marker-types]]
+=== Marker Types
+
+Some types in OpenCL {cpp} are considered marker types.
+These types are special in the manner that their usages need to be tracked by the compiler.
+This results in the following set of restrictions that marker types have to follow:
+
+  * Marker types have the default constructor deleted.
+  * Marker types have all default copy and move assignment operators deleted.
+  * Marker types have address-of operator deleted.
+  * Marker types cannot be used in divergent control flow. It can result in undefined behavior.
+  * Size of marker types is undefined.
+
+[[header-opencl_marker-synopsis]]
+==== Header <opencl_marker> Synopsis
+
+[source]
+----
+namespace cl
+{
+struct marker_type;
+
+template<class T>
+struct is_marker_type;
+
+}
+----
+
+[[marker_type-class]]
+==== marker_type class
+
+All special OpenCL {cpp} types must use the `marker_type` class as a base class.
+
+[[is_marker_type-type-trait]]
+==== is_marker_type type trait
+
+`is_marker_type` type trait provides compile-time check if the base of a class is `marker_type`.
+
+[source]
+----
+namespace cl
+{
+template<class T>
+struct is_marker_type : integral_constant <bool, is_base_of<marker_type, T>::value> { };
+
+}
+----
+
+[[examples]]
+==== Examples
+
+[[example-1]]
+===== Example 1
+
+The examples of invalid use of `marker types`.
+
+[source]
+----
+#include <opencl_image>
+#include <opencl_work_item>
+using namespace cl;
+
+float4 bar(image1d<float4> img) {
+    return img.read({get_global_id(0), get_global_id(1)});
+}
+
+kernel void foo(image1d<float4> img1, image1d<float4> img2) {
+    image1d<float4> img3; //error: marker type cannot be declared
+                          //       in the kernel
+    img1 = img2; //error: marker type cannot be assigned
+    image1d<float4> *imgPtr = &img1; //error: taking address of
+                                     //       marker type
+
+    size_t s = sizeof(img1); //undefined behavior: size of marker
+                             //               type is not defined
+
+    float4 val = bar(get_global_id(0) ? img1: img2);
+                          //undefined behavior: divergent control flow
+}
+----
+
+[[example-2]]
+===== Example 2
+
+The examples of how to use `is_marker_type` trait.
+
+[source]
+----
+#include <opencl_image>
+using namespace cl;
+
+kernel void foo(image1d<float4> img) {
+  static_assert(is_marker_type<decltype(img)>(), "");
+}
+----

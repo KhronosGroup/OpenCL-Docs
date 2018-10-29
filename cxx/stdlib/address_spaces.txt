@@ -1,0 +1,1669 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[address-spaces-library]]
+=== Address Spaces Library
+
+Unlike OpenCL C, OpenCL {cpp} does not require the address space qualifiers to allocate storage from global, local and constant memory pool.
+The same functionality is provided using the storage and pointer classes.
+These new types are designed to avoid many programming issues and it is recommended to use them for the static and program scope variables even if it is not required.
+
+[[header-opencl_memory-synopsis]]
+==== Header <opencl_memory> Synopsis
+
+[source]
+----
+namespace cl
+{
+enum class mem_fence
+{
+    local,
+    global,
+    image
+};
+
+inline mem_fence operator ~(mem_fence flags);
+inline mem_fence operator &(mem_fence LHS, mem_fence RHS);
+inline mem_fence operator |(mem_fence LHS, mem_fence RHS);
+inline mem_fence operator ^(mem_fence LHS, mem_fence RHS);
+
+// address space pointer classes
+template<class T>
+class global_ptr;
+
+template<class T>
+class local_ptr;
+
+template<class T>
+class private_ptr;
+
+template<class T>
+class constant_ptr;
+
+template<class T>
+using global = see 'global class' section;
+
+template<class T>
+using local = see 'local class' section;
+
+template<class T>
+using priv = see 'priv class' section;
+
+template<class T>
+using constant = see 'constant class' section;
+
+// address space query functions
+template<class T>
+mem_fence get_mem_fence(T *ptr);
+
+// address space cast functions
+template<class T>
+T dynamic_asptr_cast(T *ptr) noexcept;
+
+template <class T, class U>
+local_ptr<T> static_asptr_cast(local_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+global_ptr<T> static_asptr_cast(global_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+constant_ptr<T> static_asptr_cast(constant_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+private_ptr<T> static_asptr_cast(private_ptr<U> const& ptr) noexcept;
+
+template <class T, class U>
+local_ptr<T> reinterpret_asptr_cast(local_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+global_ptr<T> reinterpret_asptr_cast(global_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+constant_ptr<T> reinterpret_asptr_cast(constant_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+private_ptr<T> reinterpret_asptr_cast(private_ptr<U> const& ptr) noexcept;
+
+template <class T>
+T* addressof(T& t) noexcept;
+
+}
+----
+
+[[explicit-address-space-storage-classes]]
+==== Explicit address space storage classes
+
+The explicit address space storage classes described in this section are designed to allocate memory in one of the named address spaces: global, local, constant or private.
+
+[[global-class]]
+===== global class
+
+The variables declared using `global<T>` class refer to memory objects allocated from the global memory pool (see the <<global, _Global Memory Pool_>> section).
+The global storage class can only be used to declare variables at program, function and class scope.
+The variables at function and class scope must be declared with `static` specifier.
+
+If `T` is a fundamental or an array type, the `global` class should meet the following requirements:
+
+  * no user provide default constructor
+  * default copy and move constructors
+  * default copy and move assignment operators
+  * address-of operators that return a generic `T` pointer (`T*`)
+  * conversion operators to a generic `T` lvalue reference type (`T&`)
+  * assignment `const T&` operator
+  * `ptr()` methods that return a `global_ptr<T>` pointer class
+
+If `T` is a class type, the `global` class should provide the following interface:
+
+  * the same public interface as `T` type including constructors and assignment operators address-of operators that return a generic `T` pointer (`T*`)
+  * conversion operators to a generic `T` lvalue reference type (`T&`)
+  * `ptr()` methods that return a `global_ptr<T>` pointer class
+
+[[local-class]]
+===== local class
+
+The variables declared using `local<T>` class refer to memory objects allocated from the local memory pool (see the <<local, _Local Memory Pool_>> section).
+The local storage class can only be used to declare variables at program, kernel and class scope.
+The variables at class scope must be declared with `static` specifier.
+
+If `T` is a fundamental or an array type, the `local` class should meet the following requirements:
+
+  * no user provide default constructor
+  * default copy and move constructors
+  * default copy and move assignment operators
+  * address-of operators that return a generic `T` pointer (`T*`)
+  * conversion operators to a generic `T` lvalue reference type (`T&`)
+  * assignment `const T&` operator
+  * `ptr()` methods that return a `local_ptr<T>` pointer class
+
+If `T` is a class type, the `local` class should provide the following interface:
+
+  * the same public interface as `T` type including constructors
+and assignment operators
+  * address-of operators that return a generic `T` pointer (`T*`)
+  * conversion operators to a generic `T` lvalue reference type (`T&`)
+  * `ptr()` methods that return a `local_ptr<T>` pointer class
+
+[[priv-class]]
+===== priv class
+
+The variables declared using the `priv<T>` class refer to memory objects allocated from the private memory pool.
+
+The `priv` storage class cannot be used to declare variables in the program scope, with `static` specifier or `extern` specifier.
+
+If `T` is a fundamental or an array type, the `priv` class should meet the following requirements:
+
+  * no user provide default constructor
+  * default copy and move constructors
+  * default copy and move assignment operators
+  * address-of operators that return a generic `T` pointer (`T*`)
+  * conversion operators to a generic `T` lvalue reference type (`T&`)
+  * assignment const `T&` operator
+  * `ptr()` methods that return a `private_ptr<T>` pointer class
+
+If `T` is a class type, the `priv` class should provide the following interface:
+
+  * the same public interface as `T` type including constructors and assignment operators
+  * address-of operators that return a generic `T` pointer (`T*`)
+  * conversion operators to a generic `T` lvalue reference type (`T&`)
+  * `ptr()` methods that return a `private_ptr<T>` pointer class
+
+[[constant-class]]
+===== constant class
+
+The variables declared using the `constant<T>` class refer to memory objects allocated from the global memory pool and which are accessed inside a kernel(s) as read-only variables.
+The constant storage class can only be used to declare variables at program, kernel and class scope.
+The variables at class scope must be declared with `static` specifier.
+
+The `T` type must meet the following requirements:
+
+  * `T` must be constructible at compile time
+  * `T` cannot have any user defined constructors, destructors, methods and operators
+
+If `T` is a fundamental, array or class type, the `constant` class should meet the following requirements:
+
+  * no user provide default constructor
+  * default copy and move constructors
+  * copy and move assignment operators deleted
+  * address-of operators that return a `constant_ptr<T>` pointer class
+  * `ptr()` methods that return a `constant_ptr<T>` pointer class
+  * conversion operators to a constant `T` lvalue reference type (`add_constant_t<T>&`)
+
+[[explicit-address-space-pointer-classes]]
+==== Explicit address space pointer classes
+
+The explicit address space pointer classes are just like pointers: they can be converted to and from pointers with compatible address spaces, qualifiers and types.
+Assignment or casting between explicit pointer types of incompatible address spaces is illegal.
+
+All named address spaces are incompatible with all other address spaces, but local, global and private pointers can be converted to standard {cpp} pointers.
+
+[[global_ptr-class]]
+===== global_ptr class
+[source]
+----
+namespace cl
+{
+template <class T> class global_ptr
+{
+public:
+    //types:
+    typedef T element_type;
+    typedef ptrdiff_t difference_type;
+    typedef add_global_t<T>& reference;
+    typedef const add_global_t<T>& const_reference;
+    typedef add_global_t<T>* pointer;
+    typedef const add_global_t<T>* const_pointer;
+
+    //constructors:
+    constexpr global_ptr() noexcept;
+    explicit global_ptr(pointer p) noexcept;
+    global_ptr(const global_ptr &r) noexcept;
+    global_ptr(global_ptr &&r) noexcept;
+    constexpr global_ptr(nullptr_t) noexcept;
+
+    //assignment:
+    global_ptr &operator=(const global_ptr &r) noexcept;
+    global_ptr &operator=(global_ptr &&r) noexcept;
+    global_ptr &operator=(pointer r) noexcept;
+    global_ptr &operator=(nullptr_t) noexcept;
+
+    //observers:
+    add_lvalue_reference_t<add_global_t<T>> operator*() const noexcept;
+    pointer operator->() const noexcept;
+    pointer get() const noexcept;
+    explicit operator bool() const noexcept;
+
+    //modifiers:
+    pointer release() noexcept;
+    void reset(pointer p = pointer()) noexcept;
+    void swap(global_ptr& r) noexcept;
+
+    global_ptr &operator++() noexcept;
+    global_ptr operator++(int) noexcept;
+    global_ptr &operator--() noexcept;
+    global_ptr operator--(int) noexcept;
+    global_ptr &operator+=(difference_type r) noexcept;
+    global_ptr &operator-=(difference_type r) noexcept;
+    global_ptr operator+(difference_type r) noexcept;
+    global_ptr operator-(difference_type r) noexcept;
+};
+
+template <class T> class global_ptr<T[]>
+{
+public:
+    //types:
+    typedef T element_type;
+    typedef ptrdiff_t difference_type;
+    typedef add_global_t<T>& reference;
+    typedef const add_global_t<T>& const_reference;
+    typedef add_global_t<T>* pointer;
+    typedef const add_global_t<T>* const_pointer;
+
+    //constructors:
+    constexpr global_ptr() noexcept;
+    explicit global_ptr(pointer p) noexcept;
+    global_ptr(const global_ptr &r) noexcept;
+    global_ptr(global_ptr &&r) noexcept;
+    constexpr global_ptr(nullptr_t) noexcept;
+
+    //assignment:
+    global_ptr &operator=(const global_ptr &r) noexcept;
+    global_ptr &operator=(global_ptr &&r) noexcept;
+    global_ptr &operator=(pointer r) noexcept;
+    global_ptr &operator=(nullptr_t) noexcept;
+
+    //observers:
+    reference operator[](size_t pos) const noexcept;
+    pointer get() const noexcept;
+    explicit operator bool() const noexcept;
+
+    //modifiers:
+    pointer release()noexcept;
+    void reset(pointer p) noexcept;
+    void reset(nullptr_t p = nullptr) noexcept;
+    void swap(global_ptr& r) noexcept;
+
+    global_ptr &operator++() noexcept;
+    global_ptr operator++(int) noexcept;
+    global_ptr &operator--() noexcept;
+    global_ptr operator--(int) noexcept;
+    global_ptr &operator+=(difference_type r) noexcept;
+    global_ptr &operator-=(difference_type r) noexcept;
+    global_ptr operator+(difference_type r) noexcept;
+    global_ptr operator-(difference_type r) noexcept;
+};
+
+template<class T, class U>
+bool operator==(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator!=(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<=(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>=(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+
+template<class T>
+bool operator==(const global_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator==(nullptr_t, const global_ptr<T> &x) noexcept;
+template<class T>
+bool operator!=(const global_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator!=(nullptr_t, const global_ptr<T> &x) noexcept;
+template<class T>
+bool operator<(const global_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator<(nullptr_t, const global_ptr<T> &x) noexcept;
+template<class T>
+bool operator>(const global_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator>(nullptr_t, const global_ptr<T> &x) noexcept;
+template<class T>
+bool operator<=(const global_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator<=(nullptr_t, const global_ptr<T> &x) noexcept;
+template<class T>
+bool operator>=(const global_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator>=(nullptr_t, const global_ptr<T> &x) noexcept;
+
+template<class T>
+void swap(global_ptr<T>& a, global_ptr<T>& b) noexcept;
+
+}
+----
+
+[[local_ptr-class]]
+===== local_ptr class
+[source]
+----
+namespace cl
+{
+template <class T> class local_ptr
+{
+public:
+    struct size_type
+    {
+        explicit constexpr size_type(size_t size);
+        operator size_t();
+    };
+
+    //types:
+    typedef T element_type;
+    typedef ptrdiff_t difference_type;
+    typedef add_local_t<T>& reference;
+    typedef const add_local_t<T>& const_reference;
+    typedef add_local_t<T>* pointer;
+    typedef const add_local_t<T>* const_pointer;
+
+    //constructors:
+    constexpr local_ptr() noexcept;
+    explicit local_ptr(pointer p) noexcept;
+    local_ptr(const local_ptr &r) noexcept;
+    local_ptr(local_ptr &&r) noexcept;
+    constexpr local_ptr(nullptr_t) noexcept;
+
+    //assignment:
+    local_ptr &operator=(const local_ptr &r) noexcept;
+    local_ptr &operator=(local_ptr &&r) noexcept;
+    local_ptr &operator=(pointer r) noexcept;
+    local_ptr &operator=(nullptr_t) noexcept;
+
+    //observers:
+    add_lvalue_reference_t<add_local_t<T>> operator*() const noexcept;
+    pointer operator->() const noexcept;
+    pointer get() const noexcept;
+    explicit operator bool() const noexcept;
+
+    //modifiers:
+    pointer release() noexcept;
+    void reset(pointer p = pointer()) noexcept;
+    void swap(local_ptr& r) noexcept;
+
+    local_ptr &operator++() noexcept;
+    local_ptr operator++(int) noexcept;
+    local_ptr &operator--() noexcept;
+    local_ptr operator--(int) noexcept;
+    local_ptr &operator+=(difference_type r) noexcept;
+    local_ptr &operator-=(difference_type r) noexcept;
+    local_ptr operator+(difference_type r) noexcept;
+    local_ptr operator-(difference_type r) noexcept;
+};
+
+template <class T> class local_ptr<T[]>
+{
+public:
+    //types:
+    typedef T element_type;
+    typedef ptrdiff_t difference_type;
+    typedef add_local_t<T>& reference;
+    typedef const add_local_t<T>& const_reference;
+    typedef add_local_t<T>* pointer;
+    typedef const add_local_t<T>* const_pointer;
+
+    //constructors:
+    constexpr local_ptr() noexcept;
+    explicit local_ptr(pointer p) noexcept;
+    local_ptr(const local_ptr &r) noexcept;
+    local_ptr(local_ptr &&r) noexcept;
+    constexpr local_ptr(nullptr_t) noexcept;
+
+    //assignment:
+    local_ptr &operator=(const local_ptr &r) noexcept;
+    local_ptr &operator=(local_ptr &&r) noexcept;
+    local_ptr &operator=(pointer r) noexcept;
+    local_ptr &operator=(nullptr_t) noexcept;
+
+    //observers:
+    reference operator[](size_t pos) const noexcept;
+    pointer get() const noexcept;
+    explicit operator bool() const noexcept;
+
+    //modifiers:
+    pointer release()noexcept;
+    void reset(pointer p) noexcept;
+    void reset(nullptr_t p = nullptr) noexcept;
+    void swap(local_ptr& r) noexcept;
+
+    local_ptr &operator++() noexcept;
+    local_ptr operator++(int) noexcept;
+    local_ptr &operator--() noexcept;
+    local_ptr operator--(int) noexcept;
+    local_ptr &operator+=(difference_type r) noexcept;
+    local_ptr &operator-=(difference_type r) noexcept;
+    local_ptr operator+(difference_type r) noexcept;
+    local_ptr operator-(difference_type r) noexcept;
+};
+
+template<class T, class U>
+bool operator==(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator!=(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<=(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>=(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+
+template<class T>
+bool operator==(const local_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator==(nullptr_t, const local_ptr<T> &x) noexcept;
+template<class T>
+bool operator!=(const local_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator!=(nullptr_t, const local_ptr<T> &x) noexcept;
+template<class T>
+bool operator<(const local_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator<(nullptr_t, const local_ptr<T> &x) noexcept;
+template<class T>
+bool operator>(const local_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator>(nullptr_t, const local_ptr<T> &x) noexcept;
+template<class T>
+bool operator<=(const local_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator<=(nullptr_t, const local_ptr<T> &x) noexcept;
+template<class T>
+bool operator>=(const local_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator>=(nullptr_t, const local_ptr<T> &x) noexcept;
+
+template<class T>
+void swap(local_ptr<T>& a, local_ptr<T>& b) noexcept;
+
+}
+----
+
+[[private_ptr-class]]
+===== private_ptr class
+[source]
+----
+namespace cl
+{
+template <class T> class private_ptr
+{
+public:
+    //types:
+    typedef T element_type;
+    typedef ptrdiff_t difference_type;
+    typedef add_private_t<T>& reference;
+    typedef const add_private_t<T>& const_reference;
+    typedef add_private_t<T>* pointer;
+    typedef const add_private_t<T>* const_pointer;
+
+    //constructors:
+    constexpr private_ptr() noexcept;
+    explicit private_ptr(pointer p) noexcept;
+    private_ptr(const private_ptr &r) noexcept;
+    private_ptr(private_ptr &&r) noexcept;
+    constexpr private_ptr(nullptr_t) noexcept;
+
+    //assignment:
+    private_ptr &operator=(const private_ptr &r) noexcept;
+    private_ptr &operator=(private_ptr &&r) noexcept;
+    private_ptr &operator=(pointer r) noexcept;
+    private_ptr &operator=(nullptr_t) noexcept;
+
+    //observers:
+    add_lvalue_reference_t<add_private_t<T>> operator*() const noexcept;
+    pointer operator->() const noexcept;
+    pointer get() const noexcept;
+    explicit operator bool() const noexcept;
+
+    //modifiers:
+    pointer release() noexcept;
+    void reset(pointer p = pointer()) noexcept;
+    void swap(private_ptr& r) noexcept;
+
+    private_ptr &operator++() noexcept;
+    private_ptr operator++(int) noexcept;
+    private_ptr &operator--() noexcept;
+    private_ptr operator--(int) noexcept;
+    private_ptr &operator+=(difference_type r) noexcept;
+    private_ptr &operator-=(difference_type r) noexcept;
+    private_ptr operator+(difference_type r) noexcept;
+    private_ptr operator-(difference_type r) noexcept;
+};
+
+template <class T> class private_ptr<T[]> {
+public:
+    //types:
+    typedef T element_type;
+    typedef ptrdiff_t difference_type;
+    typedef add_private_t<T>& reference;
+    typedef const add_private_t<T>& const_reference;
+    typedef add_private_t<T>* pointer;
+    typedef const add_private_t<T>* const_pointer;
+
+    //constructors:
+    constexpr private_ptr() noexcept;
+    explicit private_ptr(pointer p) noexcept;
+    private_ptr(const private_ptr &r) noexcept;
+    private_ptr(private_ptr &&r) noexcept;
+    constexpr private_ptr(nullptr_t) noexcept;
+
+    //assignment:
+    private_ptr &operator=(const private_ptr &r) noexcept;
+    private_ptr &operator=(private_ptr &&r) noexcept;
+    private_ptr &operator=(pointer r) noexcept;
+    private_ptr &operator=(nullptr_t) noexcept;
+
+    //observers:
+    reference operator[](size_t pos) const noexcept;
+    pointer get() const noexcept;
+    explicit operator bool() const noexcept;
+
+    //modifiers:
+    pointer release()noexcept;
+    void reset(pointer p) noexcept;
+    void reset(nullptr_t p = nullptr) noexcept;
+    void swap(private_ptr& r) noexcept;
+
+    private_ptr &operator++() noexcept;
+    private_ptr operator++(int) noexcept;
+    private_ptr &operator--() noexcept;
+    private_ptr operator--(int) noexcept;
+    private_ptr &operator+=(difference_type r) noexcept;
+    private_ptr &operator-=(difference_type r) noexcept;
+    private_ptr operator+(difference_type r) noexcept;
+    private_ptr operator-(difference_type r) noexcept;
+};
+
+template<class T, class U>
+bool operator==(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator!=(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<=(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>=(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+
+template<class T>
+bool operator==(const private_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator==(nullptr_t, const private_ptr<T> &x) noexcept;
+template<class T>
+bool operator!=(const private_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator!=(nullptr_t, const private_ptr<T> &x) noexcept;
+template<class T>
+bool operator<(const private_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator<(nullptr_t, const private_ptr<T> &x) noexcept;
+template<class T>
+bool operator>(const private_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator>(nullptr_t, const private_ptr<T> &x) noexcept;
+template<class T>
+bool operator<=(const private_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator<=(nullptr_t, const private_ptr<T> &x) noexcept;
+template<class T>
+bool operator>=(const private_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator>=(nullptr_t, const private_ptr<T> &x) noexcept;
+
+template<class T>
+void swap(private_ptr<T>& a, private_ptr<T>& b) noexcept;
+
+}
+----
+
+[[constant_ptr-class]]
+===== constant_ptr class
+[source]
+----
+namespace cl
+{
+template <class T> class constant_ptr
+{
+public:
+    //types:
+    typedef T element_type;
+    typedef ptrdiff_t difference_type;
+    typedef add_constant_t<T>& reference;
+    typedef const add_constant_t<T>& const_reference;
+    typedef add_constant_t<T>* pointer;
+    typedef const add_constant_t<T>* const_pointer;
+
+    //constructors:
+    constexpr constant_ptr() noexcept;
+    explicit constant_ptr(pointer p) noexcept;
+    constant_ptr(const constant_ptr &r) noexcept;
+    constant_ptr(constant_ptr &&r) noexcept;
+    constexpr constant_ptr(nullptr_t) noexcept;
+
+    //assignment:
+    constant_ptr &operator=(const constant_ptr &r) noexcept;
+    constant_ptr &operator=(constant_ptr &&r) noexcept;
+    constant_ptr &operator=(pointer r) noexcept;
+    constant_ptr &operator=(nullptr_t) noexcept;
+
+    //observers:
+    add_lvalue_reference_t<add_constant_t<T>> operator*() const noexcept;
+    pointer operator->() const noexcept;
+    pointer get() const noexcept;
+    explicit operator bool() const noexcept;
+
+    //modifiers:
+    pointer release() noexcept;
+    void reset(pointer p = pointer()) noexcept;
+    void swap(constant_ptr& r) noexcept;
+
+    constant_ptr &operator++() noexcept;
+    constant_ptr operator++(int) noexcept;
+    constant_ptr &operator--() noexcept;
+    constant_ptr operator--(int) noexcept;
+    constant_ptr &operator+=(difference_type r) noexcept;
+    constant_ptr &operator-=(difference_type r) noexcept;
+    constant_ptr operator+(difference_type r) noexcept;
+    constant_ptr operator-(difference_type r) noexcept;
+};
+
+template <class T> class constant_ptr<T[]>
+{
+public:
+    //types:
+    typedef T element_type;
+    typedef ptrdiff_t difference_type;
+    typedef add_constant_t<T>& reference;
+    typedef const add_constant_t<T>& const_reference;
+    typedef add_constant_t<T>* pointer;
+    typedef const add_constant_t<T>* const_pointer;
+
+    //constructors:
+    constexpr constant_ptr() noexcept;
+    explicit constant_ptr(pointer p) noexcept;
+    constant_ptr(const constant_ptr &r) noexcept;
+    constant_ptr(constant_ptr &&r) noexcept;
+    constexpr constant_ptr(nullptr_t) noexcept;
+
+    //assignment:
+    constant_ptr &operator=(const constant_ptr &r) noexcept;
+    constant_ptr &operator=(constant_ptr &&r) noexcept;
+    constant_ptr &operator=(pointer r) noexcept;
+    constant_ptr &operator=(nullptr_t) noexcept;
+
+    //observers:
+    reference operator[](size_t pos) const noexcept;
+    pointer get() const noexcept;
+    explicit operator bool() const noexcept;
+
+    //modifiers:
+    pointer release()noexcept;
+    void reset(pointer p) noexcept;
+    void reset(nullptr_t p = nullptr) noexcept;
+    void swap(constant_ptr& r) noexcept;
+
+    constant_ptr &operator++() noexcept;
+    constant_ptr operator++(int) noexcept;
+    constant_ptr &operator--() noexcept;
+    constant_ptr operator--(int) noexcept;
+    constant_ptr &operator+=(difference_type r) noexcept;
+    constant_ptr &operator-=(difference_type r) noexcept;
+    constant_ptr operator+(difference_type r) noexcept;
+    constant_ptr operator-(difference_type r) noexcept;
+};
+
+template<class T, class U>
+bool operator==(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator!=(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<=(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>=(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+
+template<class T>
+bool operator==(const constant_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator==(nullptr_t, const constant_ptr<T> &x) noexcept;
+template<class T>
+bool operator!=(const constant_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator!=(nullptr_t, const constant_ptr<T> &x) noexcept;
+template<class T>
+bool operator<(const constant_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator<(nullptr_t, const constant_ptr<T> &x) noexcept;
+template<class T>
+bool operator>(const constant_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator>(nullptr_t, const constant_ptr<T> &x) noexcept;
+template<class T>
+bool operator<=(const constant_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator<=(nullptr_t, const constant_ptr<T> &x) noexcept;
+template<class T>
+bool operator>=(const constant_ptr<T> &x, nullptr_t) noexcept;
+template<class T>
+bool operator>=(nullptr_t, const constant_ptr<T> &x) noexcept;
+
+template<class T>
+void swap(constant_ptr<T>& a, constant_ptr<T>& b) noexcept;
+
+}
+----
+
+[[constructors]]
+===== Constructors
+
+[source]
+----
+constexpr global_ptr() noexcept;
+constexpr local_ptr() noexcept;
+constexpr private_ptr() noexcept;
+constexpr constant_ptr() noexcept;
+----
+
+Constructs an object which points to nothing.
+
+[source]
+----
+explicit global_ptr(pointer p) noexcept;
+explicit local_ptr(pointer p) noexcept;
+explicit private_ptr(pointer p) noexcept;
+explicit constant_ptr(pointer p) noexcept;
+----
+
+Constructs an object which points to `p`.
+
+[source]
+----
+global_ptr(const global_ptr &) noexcept;
+local_ptr(const local_ptr &) noexcept;
+private_ptr(const private_ptr &) noexcept;
+constant_ptr(const constant_ptr &) noexcept;
+----
+
+Copy constructor.
+
+[source]
+----
+global_ptr(global_ptr &&r) noexcept;
+local_ptr(local_ptr &&r) noexcept;
+private_ptr(private_ptr &&r) noexcept;
+constant_ptr(constant_ptr &&r) noexcept;
+----
+
+Move constructor.
+
+[source]
+----
+constexpr global_ptr(nullptr_t) noexcept;
+constexpr local_ptr(nullptr_t) noexcept;
+constexpr private_ptr(nullptr_t) noexcept;
+constexpr constant_ptr(nullptr_t) noexcept;
+----
+
+Constructs an object initialized with `nullptr`.
+
+[[assignment-operators]]
+===== Assignment operators
+[source]
+----
+global_ptr &operator=(const global_ptr &r) noexcept;
+local_ptr &operator=(const local_ptr &r) noexcept;
+private_ptr &operator=(const private_ptr &r) noexcept;
+constant_ptr &operator=(const constant_ptr &r) noexcept;
+----
+
+Copy assignment operator
+
+[source]
+----
+global_ptr &operator=(global_ptr &&r) noexcept;
+local_ptr &operator=(local_ptr &&r) noexcept;
+private_ptr &operator=(private_ptr &&r) noexcept;
+constant_ptr &operator=(constant_ptr &&r) noexcept;
+----
+
+Move assignment operator
+
+[source]
+----
+global_ptr &operator=(pointer r) noexcept;
+local_ptr &operator=(pointer r) noexcept;
+private_ptr &operator=(pointer r) noexcept;
+constant_ptr &operator=(pointer r) noexcept;
+----
+
+Assigns `r` pointer to the stored pointer
+
+[source]
+----
+global_ptr &operator=(nullptr_t) noexcept;
+local_ptr &operator=(nullptr_t) noexcept;
+private_ptr &operator=(nullptr_t) noexcept;
+constant_ptr &operator=(nullptr_t) noexcept;
+----
+
+Assigns `nullptr` to the stored pointer
+
+[[observers]]
+===== Observers
+
+[source]
+----
+add_lvalue_reference_t<add_global_t<T>> operator*() const noexcept;
+add_lvalue_reference_t<add_local_t<T>> operator*() const noexcept;
+add_lvalue_reference_t<add_private_t<T>> operator*() const noexcept;
+add_lvalue_reference_t<add_constant_t<T>> operator*() const noexcept;
+----
+
+Returns `*get()`. It is only defined in single object version of the explicit address space pointer class.
+The result of this operator is undefined if `get() == nullptr`.
+
+[source]
+----
+pointer operator->() const noexcept;
+----
+
+Returns `get()`. It is only defined in single object version of the explicit address space pointer class.
+The result of this operator is undefined if `get() == nullptr`.
+
+[source]
+----
+reference operator[](size_t pos) const noexcept;
+----
+
+Returns `get()[pos]`. The subscript operator is only defined in specialized `global_ptr<T[]>`, `local_ptr<T[]>`, `private_ptr<T[]>` and `constant_ptr<T[]>` version for array types.
+The result of this operator is undefined if `pos >=` the number of elements in the array to which the stored pointer points.
+
+[source]
+----
+pointer get() const noexcept;
+----
+
+Returns the stored pointer.
+
+[source]
+----
+explicit operator bool() const noexcept;
+----
+
+Returns `get() != nullptr`.
+
+[[modifiers]]
+===== Modifiers
+
+[source]
+----
+pointer release() noexcept;
+----
+
+Assigns `nullptr` to the stored pointer and returns the value `get()` had at the start of the call to release.
+
+[source]
+----
+void reset(pointer p = pointer()) noexcept;
+----
+
+Assigned `p` to the stored pointer.
+It is only defined in single object version of the explicit address space pointer class
+
+[source]
+----
+void reset(pointer p) noexcept;
+----
+
+Assigned `p` to the stored pointer.
+It is only defined in specialized `global_ptr<T[]>`, `local_ptr<T[]>`, `private_ptr<T[]>` and `constant_ptr<T[]>` version for array types.
+
+[source]
+----
+void reset(nullptr_t p = nullptr) noexcept;
+----
+
+Equivalent to `reset(pointer())`.
+It is only defined in specialized `global_ptr<T[]>`, `local_ptr<T[]>`, `private_ptr<T[]>` and `constant_ptr<T[]>` version for array types.
+
+[source]
+----
+void swap(global_ptr& r) noexcept;
+void swap(local_ptr& r) noexcept;
+void swap(private_ptr& r) noexcept;
+void swap(constant_ptr& r) noexcept;
+----
+
+Invokes swap on the stored pointers.
+
+[source]
+----
+global_ptr &operator++() noexcept;
+local_ptr &operator++() noexcept;
+private_ptr &operator++() noexcept;
+constant_ptr &operator++() noexcept;
+----
+
+Prefix increment operator.
+Increments the stored pointer by one.
+
+[source]
+----
+global_ptr operator++(int) noexcept;
+local_ptr operator++(int) noexcept;
+private_ptr operator++(int) noexcept;
+constant_ptr operator++(int) noexcept;
+----
+
+Postfix increment operator.
+Increments the stored pointer by one.
+
+[source]
+----
+global_ptr &operator--() noexcept;
+local_ptr &operator--() noexcept;
+private_ptr &operator--() noexcept;
+constant_ptr &operator--() noexcept;
+----
+
+Prefix decrement operator.
+Decrements the stored pointer by one.
+
+[source]
+----
+global_ptr operator--(int) noexcept;
+local_ptr operator--(int) noexcept;
+private_ptr operator--(int) noexcept;
+constant_ptr operator--(int) noexcept;
+----
+
+Postfix decrement operator.
+Decrements the stored pointer by one.
+
+[source]
+----
+global_ptr &operator+=(difference_type r) noexcept;
+local_ptr &operator+=(difference_type r) noexcept;
+private_ptr &operator+=(difference_type r) noexcept;
+constant_ptr &operator+=(difference_type r) noexcept;
+----
+
+Adds `r` to the stored pointer and returns `*this`.
+
+[source]
+----
+global_ptr &operator-=(difference_type r) noexcept;
+local_ptr &operator-=(difference_type r) noexcept;
+private_ptr &operator-=(difference_type r) noexcept;
+constant_ptr &operator-=(difference_type r) noexcept;
+----
+
+Subtracts `r` to the stored pointer and returns `*this`.
+
+[source]
+----
+global_ptr operator+(difference_type r) noexcept;
+local_ptr operator+(difference_type r) noexcept;
+private_ptr operator+(difference_type r) noexcept;
+constant_ptr operator+(difference_type r) noexcept;
+----
+
+Adds `r` to the stored pointer and returns the value `*this` has at the start of `operator+`.
+
+[source]
+----
+global_ptr operator-(difference_type r) noexcept;
+local_ptr operator-(difference_type r) noexcept;
+private_ptr operator-(difference_type r) noexcept;
+constant_ptr operator-(difference_type r) noexcept;
+----
+
+Subtracts `r` to the stored pointer and returns the value `*this` has at the start of `operator-`.
+
+[[non-member-functions]]
+===== Non-member functions
+
+[source]
+----
+template<class T, class U>
+bool operator==(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator==(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator==(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator==(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+----
+
+Comparison `operator==` for the explicit address space pointer classes.
+
+[source]
+----
+template<class T>
+bool operator==(nullptr_t, const global_ptr<T> &x) noexcept;
+template<class T>
+bool operator==(const global_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator==(nullptr_t, const local_ptr<T> &x) noexcept;
+template<class T>
+bool operator==(const local_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator==(nullptr_t, const private_ptr<T> &x) noexcept;
+template<class T>
+bool operator==(const private_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator==(nullptr_t, const constant_ptr<T> &x) noexcept;
+template<class T>
+bool operator==(const constant_ptr<T> &x, nullptr_t) noexcept;
+----
+
+Comparison `operator==` for the explicit address space pointer classes with a `nullptr_t`.
+
+[source]
+----
+template<class T, class U>
+bool operator!=(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator!=(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator!=(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator!=(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+----
+
+Comparison `operator!=` for the explicit address space pointer classes.
+
+[source]
+----
+template<class T>
+bool operator!=(nullptr_t, const global_ptr<T> &x) noexcept;
+template<class T>
+bool operator!=(const global_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator!=(nullptr_t, const local_ptr<T> &x) noexcept;
+template<class T>
+bool operator!=(const local_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator!=(nullptr_t, const private_ptr<T> &x) noexcept;
+template<class T>
+bool operator!=(const private_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator!=(nullptr_t, const constant_ptr<T> &x) noexcept;
+template<class T>
+bool operator!=(const constant_ptr<T> &x, nullptr_t) noexcept;
+----
+
+Comparison `operator!=` for the explicit address space pointer classes with a `nullptr_t`.
+
+[source]
+----
+template<class T, class U>
+bool operator<(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+----
+
+Comparison `operator<` for the explicit address space pointer classes.
+
+[source]
+----
+template<class T>
+bool operator<(nullptr_t, const global_ptr<T> &x) noexcept;
+template<class T>
+bool operator<(const global_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator<(nullptr_t, const local_ptr<T> &x) noexcept;
+template<class T>
+bool operator<(const local_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator<(nullptr_t, const private_ptr<T> &x) noexcept;
+template<class T>
+bool operator<(const private_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator<(nullptr_t, const constant_ptr<T> &x) noexcept;
+template<class T>
+bool operator<(const constant_ptr<T> &x, nullptr_t) noexcept;
+----
+
+Comparison `operator<` for the explicit address space pointer classes with a `nullptr_t`.
+
+[source]
+----
+template<class T, class U>
+bool operator>(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+----
+
+Comparison `operator>` for the explicit address space pointer classes.
+
+[source]
+----
+template<class T>
+bool operator>(nullptr_t, const global_ptr<T> &x) noexcept;
+template<class T>
+bool operator>(const global_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator>(nullptr_t, const local_ptr<T> &x) noexcept;
+template<class T>
+bool operator>(const local_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator>(nullptr_t, const private_ptr<T> &x) noexcept;
+template<class T>
+bool operator>(const private_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator>(nullptr_t, const constant_ptr<T> &x) noexcept;
+template<class T>
+bool operator>(const constant_ptr<T> &x, nullptr_t) noexcept;
+----
+
+Comparison `operator>` for the explicit address space pointer classes with a `nullptr_t`.
+
+[source]
+----
+template<class T, class U>
+bool operator<=(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<=(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<=(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator<=(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+----
+
+Comparison `operator\<=` for the explicit address space pointer classes.
+
+[source]
+----
+template<class T>
+bool operator<=(nullptr_t, const global_ptr<T> &x) noexcept;
+template<class T>
+bool operator<=(const global_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator<=(nullptr_t, const local_ptr<T> &x) noexcept;
+template<class T>
+bool operator<=(const local_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator<=(nullptr_t, const private_ptr<T> &x) noexcept;
+template<class T>
+bool operator<=(const private_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator<=(nullptr_t, const constant_ptr<T> &x) noexcept;
+template<class T>
+bool operator<=(const constant_ptr<T> &x, nullptr_t) noexcept;
+----
+
+Comparison `operator\<=` for the explicit address space pointer classes with a `nullptr_t`.
+
+[source]
+----
+template<class T, class U>
+bool operator>=(const global_ptr<T> &a, const global_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>=(const local_ptr<T> &a, const local_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>=(const private_ptr<T> &a, const private_ptr<U> &b) noexcept;
+template<class T, class U>
+bool operator>=(const constant_ptr<T> &a, const constant_ptr<U> &b) noexcept;
+----
+
+Comparison `operator>=` for the explicit address space pointer classes.
+
+[source]
+----
+template<class T>
+bool operator>=(nullptr_t, const global_ptr<T> &x) noexcept;
+template<class T>
+bool operator>=(const global_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator>=(nullptr_t, const local_ptr<T> &x) noexcept;
+template<class T>
+bool operator>=(const local_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator>=(nullptr_t, const private_ptr<T> &x) noexcept;
+template<class T>
+bool operator>=(const private_ptr<T> &x, nullptr_t) noexcept;
+
+template<class T>
+bool operator>=(nullptr_t, const constant_ptr<T> &x) noexcept;
+template<class T>
+bool operator>=(const constant_ptr<T> &x, nullptr_t) noexcept;
+----
+
+Comparison `operator>=` for the explicit address space pointer classes with a `nullptr_t`.
+
+[source]
+----
+template<class T>
+void swap(global_ptr<T>& a, global_ptr<T>& b) noexcept;
+template<class T>
+void swap(local_ptr<T>& a, local_ptr<T>& b) noexcept;
+template<class T>
+void swap(private_ptr<T>& a, private_ptr<T>& b) noexcept;
+template<class T>
+void swap(constant_ptr<T>& a, constant_ptr<T>& b) noexcept;
+----
+
+Calls `a.swap(b)`
+
+[[other-functions]]
+==== Other functions
+
+The OpenCL {cpp} address space library implements the address space query and cast functions.
+The cast function that allows to explicitly convert from a pointer in the generic address space to a pointer in the global, local and private address space.
+
+[[get_mem_fence]]
+===== get_mem_fence
+
+[source]
+----
+template <class T>
+mem_fence get_mem_fence (T *ptr);
+----
+
+Returns the `mem_fence` value for `ptr`.
+`ptr` must be the generic pointer and it cannot be the explicit address space pointer (`global_ptr<>`, `local_ptr<>`, `private_ptr<>` and `constant_ptr<>`) or pointer to address space storage class (`global<>*`, `local<>*`, `priv<>*` and `constant<>*`).
+
+[[dynamic_asptr_cast]]
+===== dynamic_asptr_cast
+
+[source]
+----
+template<class T, class U>
+T dynamic_asptr_cast(U *ptr);
+----
+
+Returns a pointer that points to a region in the address space pointer class specified in `T` if `dynamic_asptr_cast` can cast `ptr` to the specified address space.
+Otherwise it returns `nullptr`.
+Only `global_ptr<U>`, `local_ptr<U>` and `private_ptr<U>` are valid `T` template arguments.
+`ptr` must be the generic pointer and it cannot be the explicit address space pointer (`global_ptr<>`, `local_ptr<>`, `private_ptr<>` and `constant_ptr<>`) or pointer to address space storage class (`global<>*`, `local<>*`, `priv<>*` and `constant<>*`).
+
+[[static_asptr_cast]]
+===== static_asptr_cast
+
+[source]
+----
+template <class T, class U>
+local_ptr<T> static_asptr_cast(local_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+global_ptr<T> static_asptr_cast(global_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+constant_ptr<T> static_asptr_cast(constant_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+private_ptr<T> static_asptr_cast(private_ptr<U> const& ptr) noexcept;
+----
+
+The expression `static_cast(r.get())` shall be well formed.
+
+[[reinterpret_asptr_cast]]
+===== reinterpret_asptr_cast
+
+[source]
+----
+template <class T, class U>
+local_ptr<T> reinterpret_asptr_cast(local_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+global_ptr<T> reinterpret_asptr_cast(global_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+constant_ptr<T> reinterpret_asptr_cast(constant_ptr<U> const& ptr) noexcept;
+template <class T, class U>
+private_ptr<T> reinterpret_asptr_cast(private_ptr<U> const& ptr) noexcept;
+----
+
+The expression `reinterpret_cast(r.get())` shall be well formed.
+
+[[restrictions-2]]
+==== Restrictions
+
+1.
+The objects allocated using `global`, `local` and `constant` storage classes can be passed to a function only by reference or pointer
+[source]
+----
+#include <opencl_memory>
+#include <opencl_array>
+using namespace cl;
+
+kernel void foo(global<array<int, 5>> val) {
+    // Error: variable in the global
+    //        address space passed by value
+    //...
+}
+
+kernel void bar(global<array<int, 5>> &val) { // OK
+    //...
+}
+
+kernel void foobar(global_ptr<int> val) { // OK
+    //...
+}
+
+kernel void barfoo(global_ptr<int[]> val) { // OK
+    //...
+}
+----
+
+2.
+The `global`, `local`, `priv` and `constant` storage classes cannot be used as a return type of function
+[source]
+----
+#include <opencl_memory>
+#include <opencl_array>
+using namespace cl;
+
+global<array<int, 5>> programVar;
+
+global<array<int, 5>> foo() { // error: variable in the global
+                             // address space returned by value
+    return programVar;
+}
+
+global<array<int, 5>> &bar() { // OK
+    return programVar;
+}
+----
+
+3.
+The `global`, `local` and `constant` storage classes cannot be used to declare class members unless `static` keyword is used
+[source]
+----
+#include <opencl_memory>
+#include <opencl_array>
+using namespace cl;
+
+struct Foo {
+    global<int> a; // error: class members cannot be qualified
+                   // with address space
+    local<array<int, 5>> b; // error: class members cannot be
+                           // qualified with address space
+
+    static global<int> c; // OK
+    static local<array<int, 5>> d; // OK
+};
+----
+
+4.
+The `global` storage class cannot be used to declare variables at function scope unless `static` keyword is used
+[source]
+----
+#include <opencl_memory>
+using namespace cl;
+
+kernel void foo() {
+    global<int> b; // error
+    static global<int> b; // OK
+}
+----
+
+5.
+The `local` variables can be declared only at kernel function scope, program scope and with `static` keyword
+[source]
+----
+#include <opencl_memory>
+#include <opencl_array>
+using namespace cl;
+
+// An array of 5 ints allocated in
+// local address space.
+local<array<int, 5>> a = { 10 }; // OK: program scope local
+                                 // variable
+
+kernel void foo() {
+    // A single int allocated in
+    // local address space
+    local<int> b{1}; // OK
+    static local<int> d{1}; // OK
+
+    if(get_local_id(0) == 0) {
+        // example of variable in local address space
+        // but not declared at __kernel function scope.
+        local<int> c{2}; // not allowed
+  }
+}
+----
+
+6.
+The objects allocated using `global` storage class must be initialized with the constant expression arguments
+[source]
+----
+#include <opencl_memory>
+#include <opencl_work_item>
+using namespace cl;
+
+kernel void foo() {
+    int a = get_local_id(0);
+    static global<int> b{a}; // undefined behavior
+    static global<int> c{0}; // OK
+}
+----
+
+7.
+The constructors of objects allocated using `constant` storage class must be constant expression
+[source]
+----
+#include <opencl_memory>
+#include <opencl_work_item>
+using namespace cl;
+
+constant<int> b{0}; // OK
+
+kernel void foo() {
+    int a = get_local_id(0);
+    static constant<int> b{a}; // undefined behavior
+}
+----
+
+8.
+Constant variables must be initialized
+[source]
+----
+#include <opencl_memory>
+using namespace cl;
+
+constant<int> a{0}; // OK
+constant<int> b; // error: constant variable must be initialized
+
+kernel void foo() {
+    static constant<int> c{0}; // OK
+    static constant<int> d; // error: constant variable must be initialized
+}
+----
+
+9.
+The `priv` storage class cannot be used to declare variables in the program scope or with `static` specifier.
+[source]
+----
+#include <opencl_memory>
+using namespace cl;
+
+priv<int> a{0}; // error: priv variable in program scope
+
+kernel void foo() {
+    static priv<int> c{0}; // error: priv variable with static specifier
+    priv<int> d; // OK
+}
+----
+
+10.
+`T` type used in `constant` storage class cannot have any user defined constructors, destructors, operators and methods
+[source]
+----
+#include <opencl_memory>
+using namespace cl;
+
+struct bar {
+    int get() { return 10; }
+};
+
+kernel void foo() {
+    constant<bar> a;
+    int b = a.get() // undefined behavior
+}
+----
+
+11.
+`T` type used in `global`, `local`, `priv` and `constant` storage class cannot be sealed class
+[source]
+----
+#include <opencl_memory>
+using namespace cl;
+
+struct bar final { };
+
+kernel void foo() {
+    local<bar> a; // error: bar is marked as final
+}
+----
+
+12.
+Using work-group barriers or relying on a specific work-item to be executed in constructors and destructors of global and local objects can result in undefined behavior
+[source]
+----
+#include <opencl_memory>
+#include <opencl_synchronization>
+using namespace cl;
+
+struct Foo {
+    Foo() {
+        work_group_barrier(mem_fence::local); // not allowed
+    }
+
+    ~Foo() {
+        if(get_local_id(0) != 5) { // not allowed
+            while(1) {}
+        }
+    }
+};
+
+kernel void bar() {
+    local<Foo> a;
+}
+----
+
+13.
+All local (address-space) variable declarations in kernel-scope shall be declared before any explicit return statement.
+Declaring local variable after return statement may cause undefined behavior.
+Implementation is encouraged to generate at least a warning in such cases.
+
+[[examples-3]]
+==== Examples
+
+[[example-1-3]]
+===== Example 1
+
+Example of passing an explicit address space storage object to a kernel.
+[source]
+----
+#include <opencl_memory>
+using namespace cl;
+
+kernel void foo(global<int> *arg) {
+    //...
+}
+----
+
+[[example-2-2]]
+===== Example 2
+
+Example of passing an explicit address space pointer object to a kernel.
+[source]
+----
+#include <opencl_memory>
+using namespace cl;
+
+kernel void foo(global_ptr<int> arg) {
+    //...
+}
+----
+
+[[example-3-1]]
+===== Example 3
+
+Example of casting a generic pointer to an explicit address space pointer object.
+This is the runtime operation and the `dynamic_asptr_cast` can fail.
+[source]
+----
+#include <opencl_memory>
+using namespace cl;
+
+kernel void foo(global_ptr<int> arg) {
+    int *ptr = arg;
+    auto globalPtr = dynamic_asptr_cast<global_ptr<int>>(ptr);
+    if(globalPtr)
+    {
+        //...
+    }
+}
+----
+
+[[example-4]]
+===== Example 4
+
+Example of using an array with an explicit address space storage class.
+
+[source]
+----
+#include <opencl_memory>
+#include <opencl_array>
+#include <opencl_work_item>
+using namespace cl;
+
+kernel void foo() {
+    local<array<int, 2>> localArray;
+    if(get_local_id(0) == 0) {
+        for(auto it = localArray.begin(); it != localArray.end(); ++it)
+            *it = 0;
+    }
+    work_group_barrier(mem_fence::local);
+    localArray[0] += 1;
+}
+----
+
+[[example-5]]
+===== Example 5
+
+Example of using a fundamental type with an explicit address space storage class.
+
+[source]
+----
+#include <opencl_memory>
+#include <opencl_work_item>
+using namespace cl;
+
+kernel void foo() {
+    local<int> a;
+    if(get_local_id(0) == 0)
+        a = 1;
+
+    work_group_barrier(mem_fence::local);
+    if(get_local_id(0) == 1)
+        a += 1;
+}
+----

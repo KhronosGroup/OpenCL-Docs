@@ -1,212 +1,291 @@
-// Copyright 2017 The Khronos Group. 
-//
-//  Khronos licenses this file to you under the Creative Commons Attribution 4.0 
-//  International (CC BY 4.0) License (the "License"); you may not use this file 
-//  except in compliance with the License.  You may obtain a copy of the License 
-//  at https://creativecommons.org/licenses/by/4.0/
-//
-//  Unless required by applicable law or agreed to in writing, material distributed 
-//  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
-//  CONDITIONS OF ANY KIND, either express or implied. If all or a portion of this 
-//  material is re-used, notice substantially similar to the following must be included:
-//
-//  This specification includes material developed at The Khronos Group 
-//  (http://www.khronos.org/). Khronos supplied such material on an "AS IS" BASIS, 
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, under 
-//  the terms of the Creative Commons Attribution 4.0 International (CC BY 4.0) 
-//  License (the "License"), available at https://creativecommons.org/licenses/by/4.0/. 
-//  All use of such material is governed by the term of the License. Khronos bears 
-//  no responsibility whatsoever for additions or modifications to its material.
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
 
 [[cl_khr_subgroups]]
 == Subgroups
 
 This section describes the *cl_khr_subgroups* extension.
 
-This extension adds support for implementation-controlled groups of work items, known as subgroups. Subgroups behave similarly to work groups and have their own sets of builtins and synchronization primitives, but subgroups within a work group are independent, may make forward progress with respect to each other, and may map to optimized hardware structures where that makes sense.
+This extension adds support for implementation-controlled groups of work
+items, known as subgroups.
+Subgroups behave similarly to work groups and have their own sets of
+builtins and synchronization primitives, but subgroups within a work group
+are independent, may make forward progress with respect to each other, and
+may map to optimized hardware structures where that makes sense.
 
-Subgroups became a core feature in OpenCL 2.1, so this section only describes changes to the OpenCL 2.0 C specification.  Please refer to the OpenCL API specification for descriptions of the subgroups APIs, to the SPIR-V specification for information about using subgroups in the SPIR-V intermediate representation, and to the OpenCL {cpp} specification for descriptions of OpenCL {cpp} subgroup built-in functions.
+Subgroups became a core feature in OpenCL 2.1, so this section only
+describes changes to the OpenCL 2.0 C specification.
+Please refer to the OpenCL API specification for descriptions of the
+subgroups APIs, to the SPIR-V specification for information about using
+subgroups in the SPIR-V intermediate representation, and to the OpenCL {cpp}
+specification for descriptions of OpenCL {cpp} subgroup built-in functions.
 
 [[cl_khr_subgroups-additions-to-chapter-6-of-the-opencl-2.0-specification]]
 === Additions to Chapter 6 of the OpenCL 2.0 C Specification
 
 [[cl_khr_subgroups-additions-to-section-6.13.1-work-item-functions]]
-==== Additions to section 6.13.1 – Work Item Functions
+==== Additions to section 6.13.1 -- Work Item Functions
 
 [cols="a,",options="header",]
-|=======================================================================
-|*Function*
-|*Description*
+|====
+| *Function*
+| *Description*
 
-|uint *get_sub_group_size* ()
-|Returns the number of work items in the subgroup. This value is no more than the maximum subgroup size and is implementation-defined based on a combination of the compiled kernel and the dispatch dimensions. This will be a constant value for the lifetime of the subgroup.
+| uint *get_sub_group_size* ()
+| Returns the number of work items in the subgroup.
+  This value is no more than the maximum subgroup size and is
+  implementation-defined based on a combination of the compiled kernel and
+  the dispatch dimensions.
+  This will be a constant value for the lifetime of the subgroup.
 
-|uint *get_max_sub_group_size* ()
-|Returns the maximum size of a subgroup within the dispatch. This value will be invariant for a given set of dispatch dimensions and a kernel object compiled for a given device.
+| uint *get_max_sub_group_size* ()
+| Returns the maximum size of a subgroup within the dispatch.
+  This value will be invariant for a given set of dispatch dimensions and a
+  kernel object compiled for a given device.
 
-|uint *get_num_sub_groups* ()
-|Returns the number of subgroups that the current work group is divided into. +
-{blank}
-This number will be constant for the duration of a work group’s execution. If the kernel is executed with a non-uniform work group size footnote:[i.e. the global_work_size values specified to *clEnqueueNDRangeKernel* are not evenly divisible by the local_work_size values for any dimension.] in any dimension, calls to this built-in from some work groups may return different values than calls to this built-in from other work groups.
+| uint *get_num_sub_groups* ()
+| Returns the number of subgroups that the current work group is divided
+  into.
 
-|uint *get_enqueued_num_sub_groups* ()
-|Returns the same value as that returned by *get_num_sub_groups* if the kernel is executed with a uniform work group size. +
-{blank}
-If the kernel is executed with a non-uniform work group size, returns the number of subgroups in each of the work groups that make up the uniform region of the global range.
+  This number will be constant for the duration of a work group's execution.
+  If the kernel is executed with a non-uniform work group size
+  (i.e. the global_work_size values specified to *clEnqueueNDRangeKernel* 
+  are not evenly divisible by the local_work_size values for any dimension,
+  calls to this built-in from some work groups may return different values
+  than calls to this built-in from other work groups.
 
-|uint *get_sub_group_id* ()
-|*get_sub_group_id* returns the subgroup ID which is a number from 0 .. *get_num_sub_groups*() – 1. +
-{blank}
-For *clEnqueueTask*, this returns 0.
+| uint *get_enqueued_num_sub_groups* ()
+| Returns the same value as that returned by *get_num_sub_groups* if the
+  kernel is executed with a uniform work group size.
 
-|uint *get_sub_group_local_id* ()
-|Returns the unique work item ID within the current subgroup. The mapping from *get_local_id*(__dimindx__) to *get_sub_group_local_id* will be invariant for the lifetime of the work group.
+  If the kernel is executed with a non-uniform work group size, returns the
+  number of subgroups in each of the work groups that make up the uniform
+  region of the global range.
 
-|=======================================================================
+| uint *get_sub_group_id* ()
+| *get_sub_group_id* returns the subgroup ID which is a number from 0 ..
+  *get_num_sub_groups*() - 1.
+
+  For *clEnqueueTask*, this returns 0.
+
+| uint *get_sub_group_local_id* ()
+| Returns the unique work item ID within the current subgroup.
+  The mapping from *get_local_id*(__dimindx__) to *get_sub_group_local_id*
+  will be invariant for the lifetime of the work group.
+
+|====
 
 [[cl_khr_subgroups-additions-to-section-6.13.8-synchronization-functions]]
-==== Additions to section 6.13.8 – Synchronization Functions
+==== Additions to section 6.13.8 -- Synchronization Functions
 
-[cols="a,",options="header",]
-|=======================================================================
-|*Function*
-|*Description*
+[cols=",",options="header",]
+|====
+| *Function*
+| *Description*
 
-|void *sub_group_barrier* (cl_mem_fence_flags _flags_) +
-{blank}
-void *sub_group_barrier* ( +
-cl_mem_fence_flags _flags_, memory_scope _scope_)
+| void **sub_group_barrier** ( +
+  cl_mem_fence_flags _flags_)
 
-|All work items in a subgroup executing the kernel on a processor must execute this function before any are allowed to continue execution beyond the subgroup barrier. This function must be encountered by all work items in a subgroup executing the kernel. These rules apply to ND-ranges implemented with uniform and non-uniform work groups. +
-{blank}
-If *subgroup_barrier* is inside a conditional statement, then all work items within the subgroup must enter the conditional if any work item in the subgroup enters the conditional statement and executes the subgroup_barrier. +
-{blank}
-If *subgroup_barrier* is inside a loop, all work items within the subgroup must execute the subgroup_barrier for each iteration of the loop before any are allowed to continue execution beyond the subgroup_barrier. +
-{blank}
-The *subgroup_barrier* function also queues a memory fence (reads and writes) to ensure correct ordering of memory operations to local or global memory. +
-{blank}
-The flags argument specifies the memory address space and can be set to a combination of the following values: +
-{blank}
-CLK_LOCAL_MEM_FENCE - The *subgroup_barrier* function will either flush any variables stored in local memory or queue a memory fence to ensure correct ordering of memory operations to local memory. +
-{blank}
-CLK_GLOBAL_MEM_FENCE – The *subgroup_barrier* function will queue a memory fence to ensure correct ordering of memory operations to global memory. This can be useful when work items, for example, write to buffer objects and then want to read the updated data from these buffer objects. +
-{blank}
-CLK_IMAGE_MEM_FENCE – The *subgroup_barrier* function will queue a memory fence to ensure correct ordering of memory operations to image objects. This can be useful when work items, for example, write to image objects and then want to read the updated data from these image objects.
+  void **sub_group_barrier** ( +
+  cl_mem_fence_flags _flags_, memory_scope _scope_)
 
-|=======================================================================
+| All work items in a subgroup executing the kernel on a processor must
+  execute this function before any are allowed to continue execution beyond
+  the subgroup barrier.
+  This function must be encountered by all work items in a subgroup
+  executing the kernel.
+  These rules apply to ND-ranges implemented with uniform and non-uniform
+  work groups.
+
+  If *subgroup_barrier* is inside a conditional statement, then all work
+  items within the subgroup must enter the conditional if any work item in
+  the subgroup enters the conditional statement and executes the
+  subgroup_barrier.
+
+  If *subgroup_barrier* is inside a loop, all work items within the subgroup
+  must execute the subgroup_barrier for each iteration of the loop before
+  any are allowed to continue execution beyond the subgroup_barrier.
+
+  The *subgroup_barrier* function also queues a memory fence (reads and
+  writes) to ensure correct ordering of memory operations to local or global
+  memory.
+
+  The flags argument specifies the memory address space and can be set to a
+  combination of the following values:
+
+  CLK_LOCAL_MEM_FENCE - The *subgroup_barrier* function will either flush
+  any variables stored in local memory or queue a memory fence to ensure
+  correct ordering of memory operations to local memory.
+
+  CLK_GLOBAL_MEM_FENCE -- The *subgroup_barrier* function will queue a
+  memory fence to ensure correct ordering of memory operations to global
+  memory.
+  This can be useful when work items, for example, write to buffer objects
+  and then want to read the updated data from these buffer objects.
+
+  CLK_IMAGE_MEM_FENCE -- The *subgroup_barrier* function will queue a memory
+  fence to ensure correct ordering of memory operations to image objects.
+  This can be useful when work items, for example, write to image objects
+  and then want to read the updated data from these image objects.
+
+|====
 
 [[cl_khr_subgroups-additions-to-section-6.13.11-atomic-functions]]
-==== Additions to section 6.13.11 – Atomic Functions
+==== Additions to section 6.13.11 -- Atomic Functions
 
-Add the following new value to the enumerated type +memory_scope+ defined in _section 6.13.11.4_.
+Add the following new value to the enumerated type `memory_scope` defined in
+_section 6.13.11.4_.
 
 ----
 memory_scope_sub_group
 ----
 
-The +memory_scope_sub_group+ specifies that the memory ordering constraints given by +memory_order+ apply to work items in a subgroup. This memory scope can be used when performing atomic operations to global or local memory.
+The `memory_scope_sub_group` specifies that the memory ordering constraints
+given by `memory_order` apply to work items in a subgroup.
+This memory scope can be used when performing atomic operations to global or
+local memory.
 
 [[cl_khr_subgroups-additions-to-section-6.13.15-work-group-functions]]
-==== Additions to section 6.13.15 – Work Group Functions
+==== Additions to section 6.13.15 -- Work Group Functions
 
-The OpenCL C programming language implements the following built-in functions that operate on a subgroup level. These built-in functions must be encountered by all work items in a subgroup executing the kernel. We use the generic type name +gentype+ to indicate the built-in data types +half+ footnote:[Only if the *cl_khr_fp16* extension is supported.], +int+, +uint+, +long+, +ulong+, +float+ or +double+ footnote:[Only if double precision is supported.] as the type for the arguments.
+The OpenCL C programming language implements the following built-in
+functions that operate on a subgroup level.
+These built-in functions must be encountered by all work items in a subgroup
+executing the kernel.
+We use the generic type name `gentype` to indicate the built-in data types
+`half` (only if the *cl_khr_fp16* extension is supported), `int`,
+`uint`, `long`, `ulong`, `float` or `double` (only if double
+precision is supported) as the type for the arguments.
 
 [cols=",",options="header",]
-|=======================================================================
-|*Function*
-|*Description*
+|====
+| *Function*
+| *Description*
 
-|int *sub_group_all* (int _predicate_)
-|Evaluates _predicate_ for all work items in the subgroup and returns a non-zero value if _predicate_ evaluates to non-zero for all work items in the subgroup.
+| int *sub_group_all* (int _predicate_)
+| Evaluates _predicate_ for all work items in the subgroup and returns a
+  non-zero value if _predicate_ evaluates to non-zero for all work items in
+  the subgroup.
 
-|int *sub_group_any* (int _predicate_)
-|Evaluates _predicate_ for all work items in the subgroup and returns a non-zero value if _predicate_ evaluates to non-zero for any work items in the subgroup.
+| int *sub_group_any* (int _predicate_)
+| Evaluates _predicate_ for all work items in the subgroup and returns a
+  non-zero value if _predicate_ evaluates to non-zero for any work items in
+  the subgroup.
 
-|gentype *sub_group_broadcast* ( +
-gentype _x_, uint _sub_group_local_id_)
-| Broadcast the value of _x_ for work item identified by _sub_group_local_id_ (value returned by *get_sub_group_local_id*) to all work items in the subgroup. +
-{blank}
-_sub_group_local_id_ must be the same value for all work items in the subgroup.
+| gentype *sub_group_broadcast* ( +
+  gentype _x_, uint _sub_group_local_id_)
+| Broadcast the value of _x_ for work item identified by
+  _sub_group_local_id_ (value returned by *get_sub_group_local_id*) to all
+  work items in the subgroup.
 
-|gentype *sub_group_reduce_<op>* ( +
-gentype _x_)
-|Return result of reduction operation specified by *<op>* for all values of _x_ specified by work items in a subgroup.
+  _sub_group_local_id_ must be the same value for all work items in the
+  subgroup.
 
-|gentype *sub_group_scan_exclusive_<op>* ( +
-gentype _x_)
-|Do an exclusive scan operation specified by *<op>* of all values specified by work items in a subgroup. The scan results are returned for each work item. +
-{blank}
-The scan order is defined by increasing 1D linear global ID within the subgroup.
+| gentype *sub_group_reduce_<op>* ( +
+  gentype _x_)
+| Return result of reduction operation specified by *<op>* for all values of
+  _x_ specified by work items in a subgroup.
 
-|gentype *sub_group_scan_inclusive_<op>* ( +
-gentype _x_)
-|Do an inclusive scan operation specified by *<op>* of all values specified by work items in a subgroup. The scan results are returned for each work item. +
-{blank}
-The scan order is defined by increasing 1D linear global ID within the subgroup.
+| gentype *sub_group_scan_exclusive_<op>* ( +
+  gentype _x_)
+| Do an exclusive scan operation specified by *<op>* of all values specified
+  by work items in a subgroup.
+  The scan results are returned for each work item.
 
-|=======================================================================
+  The scan order is defined by increasing subgroup local ID within the
+  subgroup.
+
+| gentype *sub_group_scan_inclusive_<op>* ( +
+  gentype _x_)
+| Do an inclusive scan operation specified by *<op>* of all values specified
+  by work items in a subgroup.
+  The scan results are returned for each work item.
+
+  The scan order is defined by increasing subgroup local ID within the
+  subgroup.
+
+|====
 
 [[cl_khr_subgroups-additions-to-section-6.13.16-pipe-functions]]
-==== Additions to section 6.13.16 – Pipe Functions
+==== Additions to section 6.13.16 -- Pipe Functions
 
-The OpenCL C programming language implements the following built-in pipe functions that operate at a subgroup level. These built-in functions must be encountered by all work items in a subgroup executing the kernel with the same argument values; otherwise the behavior is undefined. We use the generic type name +gentype+ to indicate the built-in OpenCL C scalar or vector integer or floating-point data types footnote:[The half scalar and vector types can only be used if the *cl_khr_fp16* extension is supported. The double scalar and vector types can only be used if double precision is supported.] or any user defined type built from these scalar and vector data types can be used as the type for the arguments to the pipe functions listed in _table 6.29_.
+The OpenCL C programming language implements the following built-in pipe
+functions that operate at a subgroup level.
+These built-in functions must be encountered by all work items in a subgroup
+executing the kernel with the same argument values; otherwise the behavior
+is undefined.
+We use the generic type name `gentype` to indicate the built-in OpenCL C
+scalar or vector integer or floating-point data types or any user defined 
+type built from these scalar and vector data types can be used as the type
+for the arguments to the pipe functions listed in _table 6.29_.
 
 [cols=",",options="header",]
-|=======================================================================
-|*Function*
-|*Description*
+|====
+| *Function*
+| *Description*
 
-|reserve_id_t *sub_group_reserve_read_pipe* ( +
-read_only pipe gentype _pipe_, +
-uint _num_packets_) +
-{blank}
-reserve_id_t *sub_group_reserve_write_pipe* ( +
-write_only pipe gentype _pipe_, +
-uint _num_packets_)
-|Reserve _num_packets_ entries for reading from or writing to _pipe_. Returns a valid non-zero reservation ID if the reservation is successful and 0 otherwise. +
-{blank}
-The reserved pipe entries are referred to by indices that go from 0 ... _num_packets_ – 1.
+| reserve_id_t *sub_group_reserve_read_pipe* ( +
+  read_only pipe gentype _pipe_, +
+  uint _num_packets_)
 
-|void *sub_group_commit_read_pipe* ( +
-read_only pipe gentype _pipe_, +
-reserve_id_t _reserve_id_) +
-{blank}
-void *sub_group_commit_write_pipe* ( +
-write_only pipe gentype _pipe_, +
-reserve_id_t _reserve_id_)
-|Indicates that all reads and writes to _num_packets_ associated with reservation _reserve_id_ are completed.
+  reserve_id_t *sub_group_reserve_write_pipe* ( +
+  write_only pipe gentype _pipe_, +
+  uint _num_packets_)
+| Reserve _num_packets_ entries for reading from or writing to _pipe_.
+  Returns a valid non-zero reservation ID if the reservation is successful
+  and 0 otherwise.
 
-|=======================================================================
+  The reserved pipe entries are referred to by indices that go from 0 ...
+  _num_packets_ - 1.
 
-NOTE: Reservations made by a subgroup are ordered in the pipe as they are ordered in the program. Reservations made by different subgroups that belong to the same work group can be ordered using subgroup synchronization. The order of subgroup based reservations that belong to different work groups is implementation defined.
+| void *sub_group_commit_read_pipe* ( +
+  read_only pipe gentype _pipe_, +
+  reserve_id_t _reserve_id_)
+
+  void *sub_group_commit_write_pipe* ( +
+  write_only pipe gentype _pipe_, +
+  reserve_id_t _reserve_id_)
+| Indicates that all reads and writes to _num_packets_ associated with
+  reservation _reserve_id_ are completed.
+
+|====
+
+Note: Reservations made by a subgroup are ordered in the pipe as they are
+ordered in the program.
+Reservations made by different subgroups that belong to the same work group
+can be ordered using subgroup synchronization.
+The order of subgroup based reservations that belong to different work
+groups is implementation defined.
 
 [[cl_khr_subgroups-additions-to-section-6.13.17.6-enqueuing-kernels-kernel-query-functions]]
-==== Additions to section 6.13.17.6 – Enqueuing Kernels (Kernel Query Functions)
+==== Additions to section 6.13.17.6 -- Enqueuing Kernels (Kernel Query Functions)
 
-[cols=",",options="header",]
-|=======================================================================
-|*Built-in Function*
-|*Description*
+[cols="5,4",options="header",]
+|====
+| *Built-in Function*
+| *Description*
 
-|uint *get_kernel_sub_group_count_for_ndrange* ( +
-const ndrange_t _ndrange_, +
-void (\^block)(void)); +
-{blank}
+| uint *get_kernel_sub_group_count_for_ndrange* ( +
+  const ndrange_t _ndrange_, +
+  void (^block)(void));
 
-uint *get_kernel_sub_group_count_for_ndrange* ( +
-const ndrange_t _ndrange_, +
-void (^block)(local void *, ...));
-|Returns the number of subgroups in each work group of the dispatch (except for the last in cases where the global size does not divide cleanly into work groups) given the combination of the passed ndrange and block. +
-{blank}
-_block_ specifies the block to be enqueued.
+  uint *get_kernel_sub_group_count_for_ndrange* ( +
+  const ndrange_t _ndrange_, +
+  void (^block)(local void *, ...));
+| Returns the number of subgroups in each work group of the dispatch (except
+  for the last in cases where the global size does not divide cleanly into
+  work groups) given the combination of the passed ndrange and block.
 
-|uint *get_kernel_max_sub_group_size_for_ndrange* ( +
-const ndrange_t _ndrange_, +
-void (\^block)(void)); +
-{blank}
-uint *get_kernel_max_sub_group_size_for_ndrange* ( +
-const ndrange_t _ndrange_, +
-void (^block)(local void *, ...));
-|Returns the maximum subgroup size for a block.
+  _block_ specifies the block to be enqueued.
 
-|=======================================================================
+| uint *get_kernel_max_sub_group_size_for_ndrange* ( +
+  const ndrange_t _ndrange_, +
+  void (^block)(void)); +
+
+  uint *get_kernel_max_sub_group_size_for_ndrange* ( +
+  const ndrange_t _ndrange_, +
+  void (^block)(local void *, ...));
+| Returns the maximum subgroup size for a block.
+
+|====

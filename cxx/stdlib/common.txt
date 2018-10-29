@@ -1,0 +1,163 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[common-functions]]
+=== Common Functions
+
+This section describes the OpenCL {cpp} library common functions that take scalar or vector arguments.
+Vector versions of common functions operate component-wise.
+Descriptions are always per-component.
+
+The built-in common functions are implemented using the round to nearest even rounding mode.
+
+Here `gentype` matches: `half__n__` [[ftnref4]] <<ftn4,[4]>>, `float__n__` or `double__n__` [[ftnref18]] <<ftn18,[18]>>
+
+[[header-opencl_common-synopsis]]
+==== Header <opencl_common> Synopsis
+
+[source]
+----
+namespace cl
+{
+#ifdef cl_khr_fp16
+halfn clamp(halfn x, halfn min, halfn max);
+halfn degrees(halfn t);
+halfn max(halfn x, halfn y);
+halfn min(halfn x, halfn y);
+halfn mix(halfn x, halfn y, halfn a);
+halfn radians(halfn t);
+halfn step(halfn edge, halfn x);
+halfn smoothstep(halfn edge0, halfn edge1, halfn x);
+halfn sign(halfn t);
+#endif
+
+#ifdef cl_khr_fp64
+doublen clamp(doublen x, doublen min, doublen max);
+doublen degrees(doublen t);
+doublen max(doublen x, doublen y);
+doublen min(doublen x, doublen y);
+doublen mix(doublen x, doublen y, doublen a);
+doublen radians(doublen t);
+doublen step(doublen edge, doublen x);
+doublen smoothstep(doublen edge0, doublen edge1, doublen x);
+doublen sign(doublen t);
+#endif
+
+floatn clamp(floatn x, floatn min, floatn max);
+floatn degrees(floatn t);
+floatn max(floatn x, floatn y);
+floatn min(floatn x, floatn y);
+floatn mix(floatn x, floatn y, floatn a);
+floatn radians(floatn t);
+floatn step(floatn edge, floatn x);
+floatn smoothstep(floatn edge0, floatn edge1, floatn x);
+floatn sign(floatn t);
+
+}
+----
+
+[[common-operations]]
+==== Common operations
+
+[[clamp-1]]
+===== clamp
+[source]
+----
+gentype clamp(gentype x, gentype minval, gentype maxval);
+----
+
+Returns `fmin(fmax(x, minval), maxval)`.
+
+Results are undefined if `minval > maxval`.
+
+[[degrees]]
+===== degrees
+[source]
+----
+gentype degrees(gentype radians);
+----
+
+Converts radians to degrees, i.e. `(180 / {pi}) * radians`.
+
+[[max-1]]
+===== max
+[source]
+----
+gentype max(gentype x, gentype y);
+----
+
+Returns `y` if `x < y`, otherwise it returns `x`.
+If `x` or `y` are `infinite` or `NaN`, the return values are undefined.
+
+[[min-1]]
+===== min
+[source]
+----
+gentype min(gentype x, gentype y);
+----
+
+Returns `y` if `y < x`, otherwise it returns `x`.
+If `x` or `y` are `infinite` or `NaN`, the return values are undefined.
+
+[[mix]]
+===== mix
+[source]
+----
+gentype mix(gentype x, gentype y, gentype a);
+----
+
+Returns the linear blend of `x` and `y` implemented as:
+
+`x + (y - x) * a`
+
+`a` must be a value in the range 0.0 ... 1.0.
+If `a` is not in the range 0.0 ... 1.0, the return values are undefined.
+
+[[radians]]
+===== radians
+[source]
+----
+gentype radians(gentype degrees);
+----
+
+Converts degrees to radians, i.e. `({pi} / 180) * degrees`.
+
+[[step]]
+===== step
+[source]
+----
+gentype step(gentype edge, gentype x);
+----
+
+Returns `0.0` if `x < edge`, otherwise it returns `1.0`.
+
+[[smoothstep]]
+===== smoothstep
+[source]
+----
+gentype smoothstep(gentype edge0, gentype edge1, gentype x);
+----
+
+Returns `0.0` if `x \<= edge0` and `1.0` if `x >= edge1` and performs smooth Hermite interpolation between `0` and `1` when `edge0 < x < edge1`.
+This is useful in cases where you would want a threshold function with a smooth transition.
+
+This is equivalent to:
+[source]
+----
+gentype t;
+t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+return t * t * (3 - 2 * t);
+----
+
+Results are undefined if `edge0 >= edge1` or if `x`, `edge0` or `edge1` is a `NaN`.
+
+[[sign]]
+===== sign
+[source]
+----
+gentype sign(gentype x);
+----
+
+Returns `1.0` if `x > 0`, `-0.0` if `x = -0.0`, `+0.0` if `x = 0.0`, or `-1.0` if `x < 0`.
+Returns `0.0` if `x` is a `NaN`.

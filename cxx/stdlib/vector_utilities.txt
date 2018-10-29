@@ -1,0 +1,176 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[vector-utilities-library]]
+=== Vector Utilities Library
+
+OpenCL {cpp} implements vector utilities library that contains multiple helper classes to help working with built-in vectors.
+
+[[header-opencl_vector_utility-synopsis]]
+==== Header <opencl_vector_utility> Synopsis
+
+[source]
+----
+namespace cl
+{
+template <size_t Channel, class Vec>
+constexpr remove_attrs_t<vector_element_t<Vec>> get(Vec & vector) noexcept;
+
+template <size_t Channel, class Vec>
+constexpr void set(Vec & vector,
+                   remove_attrs_t<vector_element_t<Vec>> value) noexcept;
+
+template <class Vec>
+struct channel_ref
+{
+    using type = remove_attrs_t<vector_element_t<Vec>>;
+
+    constexpr operator type( ) noexcept;
+    constexpr channel_ref& operator=(type value) noexcept;
+    constexpr channel_ref& operator +=(type value) noexcept;
+    constexpr friend type operator +(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator -=(type value) noexcept;
+    constexpr friend type operator -(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator *=(type value) noexcept;
+    constexpr friend type operator *(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator /=(type value) noexcept;
+    constexpr friend type operator /(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator %=(type value) noexcept;
+    constexpr friend type operator %(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator ^=(type value) noexcept;
+    constexpr friend type operator ^(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator &=(type value) noexcept;
+    constexpr friend type operator &(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator |=(type value) noexcept;
+    constexpr friend type operator |(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator++( ) noexcept;
+    constexpr channel_ref operator++(int) noexcept;
+    constexpr channel_ref& operator--( ) noexcept;
+    constexpr channel_ref operator--(int) noexcept;
+};
+
+template <>
+struct channel_ref<floating_point_vector>
+{
+    using type = remove_attrs_t<vector_element_t<Vec>>;
+
+    constexpr operator type( ) noexcept;
+    constexpr channel_ref& operator=(type value) noexcept;
+    constexpr channel_ref& operator +=(type value) noexcept;
+    constexpr friend type operator +(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator -=(type value) noexcept;
+    constexpr friend type operator -(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator *=(type value) noexcept;
+    constexpr friend type operator *(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator /=(type value) noexcept;
+    constexpr friend type operator /(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator++( ) noexcept;
+    constexpr channel_ref& operator++(int) noexcept;
+    constexpr channel_ref& operator--( ) noexcept;
+    constexpr channel_ref& operator--(int) noexcept;
+};
+
+template <>
+struct channel_ref<boolean_vector>
+{
+    using type = remove_attrs_t<vector_element_t<Vec>>;
+
+    constexpr operator type( ) noexcept;
+    constexpr channel_ref& operator=(type value) noexcept;
+    constexpr channel_ref& operator +=(type value) noexcept;
+    constexpr friend type operator +(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator -=(type value) noexcept;
+    constexpr friend type operator -(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator *=(type value) noexcept;
+    constexpr friend type operator *(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator /=(type value) noexcept;
+    constexpr friend type operator /(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator %=(type value) noexcept;
+    constexpr friend type operator %(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator ^=(type value) noexcept;
+    constexpr friend type operator ^(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator &=(type value) noexcept;
+    constexpr friend type operator &(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator |=(type value) noexcept;
+    constexpr friend type operator |(channel_ref lhs, type rhs) noexcept;
+    constexpr channel_ref& operator++( ) noexcept;
+    constexpr channel_ref& operator++(int) noexcept;
+};
+
+template <class Vec>
+struct channel_ptr
+{
+    constexpr channel_ptr( ) noexcept;
+    constexpr channel_ptr(const channel_ref<Vec>& ref) noexcept;
+    constexpr channel_ptr(const channel_ptr&) noexcept = default;
+    constexpr channel_ptr(channel_ptr&&) noexcept = default;
+    constexpr channel_ptr& operator=(const channel_ptr&) noexcept = default;
+    constexpr channel_ptr& operator=(channel_ptr&&) noexcept = default;
+
+    using type = remove_attrs_t<vector_element_t<Vec>>;
+
+    constexpr channel_ref<Vec>& operator*( ) noexcept;
+};
+
+template <class Vec>
+struct vector_iterator : iterator<random_access_iterator_tag,
+                          remove_attrs_t<vector_element_t<remove_attrs_t<Vec>>>,
+                          ptrdiff_t,
+                          channel_ptr<remove_attrs_t<Vec>>,
+                          channel_ref<remove_attrs_t<Vec>>>
+{
+    using type = remove_attrs_t<Vec>;
+
+    constexpr vector_iterator(type & vector, size_t offset) noexcept;
+    constexpr vector_iterator( ) noexcept = default;
+    constexpr vector_iterator(const vector_iterator&) noexcept = default;
+    constexpr vector_iterator(vector_iterator&&) noexcept = default;
+    constexpr vector_iterator& operator=(
+                                     const vector_iterator&) noexcept = default;
+    constexpr vector_iterator& operator=(vector_iterator&&) noexcept = default;
+
+    constexpr vector_iterator& operator+=(difference_type value) noexcept;
+    constexpr friend vector_iterator operator+(const vector_iterator& lhs,
+                                               difference_type rhs) noexcept;
+    constexpr friend vector_iterator operator+(difference_type lhs,
+                                           const vector_iterator& rhs) noexcept;
+    constexpr vector_iterator& operator-=(difference_type value) noexcept;
+    constexpr friend vector_iterator operator-(const vector_iterator& lhs,
+                                                  difference_type rhs) noexcept;
+
+    constexpr vector_iterator operator++(int) noexcept;
+    constexpr vector_iterator& operator++( ) noexcept;
+    constexpr vector_iterator operator--(int) noexcept;
+    constexpr vector_iterator& operator--( ) noexcept;
+
+    friend constexpr bool operator ==(const vector_iterator& lhs,
+                                      const vector_iterator& rhs) noexcept;
+    friend constexpr bool operator !=(const vector_iterator& lhs,
+                                      const vector_iterator& rhs) noexcept;
+    friend constexpr bool operator <(const vector_iterator& lhs,
+                                     const vector_iterator& rhs) noexcept;
+    friend constexpr bool operator <=(const vector_iterator& lhs,
+                                      const vector_iterator& rhs) noexcept;
+    friend constexpr bool operator >(const vector_iterator& lhs,
+                                     const vector_iterator& rhs) noexcept;
+    friend constexpr bool operator >=(const vector_iterator& lhs,
+                                      const vector_iterator& rhs) noexcept;
+
+    constexpr reference operator[ ](difference_type value) noexcept;
+    constexpr reference operator*( ) noexcept;
+
+    constexpr pointer operator->( ) noexcept;
+};
+
+template <class Vec, class = enable_if_t<is_vector_type<Vec>::value, void>>
+constexpr channel_ref<Vec> index(Vec& vector, size_t channel) noexcept;
+
+template <class Vec, class = enable_if_t<is_vector_type<Vec>::value, void>>
+constexpr vector_iterator<Vec> begin(Vec & vector) noexcept;
+
+template <class Vec, class = enable_if_t<is_vector_type<Vec>::value, void>>
+constexpr vector_iterator<Vec> end(Vec & vector) noexcept;
+
+}
+----

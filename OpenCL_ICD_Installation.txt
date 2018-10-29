@@ -1,0 +1,124 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+= OpenCL^(TM)^ ICD Installation Guidelines
+:R: pass:q,r[^(R)^]
+Khronos{R} OpenCL Working Group
+:data-uri:
+:icons: font
+:toc2:
+:toclevels: 2
+:max-width: 100
+:numbered:
+:imagewidth: 800
+:fullimagewidth: width="800"
+:source-highlighter: coderay
+:title-logo-image: image:images/OpenCL.png[Logo,200,200]
+:title-page-background-image: image:images/Khronos_Dec14.svg["Khronos Logo",pdfwidth=50%,scaledwidth=50%]
+
+:blank: pass:[ +]
+:cpp: pass:[C++]
+:cpp14: pass:[C++14]
+
+// Various special / math symbols. This is easier to edit with than Unicode.
+include::config/attribs.txt[]
+
+// type of the source code in the document
+:language: {basebackend@docbook:c++:cpp}
+
+include::copyrights.txt[]
+
+<<<
+
+== Introduction
+
+The OpenCL Installable Client Driver (ICD) is a mechanism to allow OpenCL implementations from multiple vendors to coexist on a system. A vendor OpenCL implementation is an OpenCL Installable Client Driver if it implements the extension `cl_khr_icd`, which is described in the OpenCL extension registry:
+
+https://www.khronos.org/registry/OpenCL/extensions/khr/cl_khr_icd.txt
+
+The ICD loader library is a shared resource that discovers and enumerates all OpenCL ICDs. It will typically be installed by an installer from one of the vendors.
+
+In order to prevent conflicts between vendor installers it is necessary to have strict guidelines for installation and uninstallation of the ICD loader library and associated system configuration.
+
+== General Guidelines
+
+Vendor installers MUST install and uninstall their ICD-compliant implementations in such a way that the installer:
+
+. Installs its own ICD loader library if and only if the existing ICD loader library is older than the one being installed. 
+. Does not remove ICD loader library at uninstall if other implementations exist. 
+. Does not cause existing installations to become inoperable or unusable in any way. This includes, but is not limited to, WHQL and similar signed package certification check failures. 
+. Does not manipulate the vendor enumeration order within the ICD loader library except to add (or remove) the new vendor implementation. 
+
+=== Compatibility With Non-ICD implementations
+
+Because the ICD loader library and a non-ICD OpenCL implementation are likely to share the same library file name, behavior is undefined if the ICD loader library is installed on a system with an existing non-ICD OpenCL implementation, or if a non-ICD OpenCL implementation is installed on a system with an existing ICD loader library. In particular, in this scenario the non-ICD OpenCL implementation, or the ICD OpenCL implementation, or both, may cease to function correctly.
+
+== Windows ICD Installation and Uninstallation
+
+On Windows, the ICD loader library is `OpenCL.dll`.
+
+In general, Windows Vendor installers MUST follow the guidelines described here:
+
+* https://msdn.microsoft.com/en-us/library/ms954376.aspx
+
+If the Windows Vendor installer is using the _Windows Installer_ then many of the steps below will happen automatically.
+
+=== Windows ICD Installation
+
+. Vendor MAY include `OpenCL.dll` file in its vendor package. 
+
+. IF Vendor includes `OpenCL.dll` in the manifest of the signed vendor package, then Vendor MUST NOT include `OpenCL.dll` in the manifest of the signed vendor package to map to either of the following paths:
+.. `%WINDIR%\system32\OpenCL.dll`
+.. `%WINDIR%\SysWOW64\OpenCL.dll`
+
++
+Vendor MAY include `OpenCL.dll` in the manifest of a signed package provided that a vendor specific directory is used, such as `%PROGRAMFILES%\<vendor>\OpenCL`.
+
+. Vendor MUST check for existing OpenCL installations before installing `OpenCL.dll`.
+.. Vendor SHALL check the version of `OpenCL.dll` located in
+... `%WINDIR%\System32\`
+... `%WINDIR%\SysWOW64\`
+.. IF `OpenCL.dll` is not present, install ICD in 3.a.i and/or 3.a.ii as appropriate.
+.. IF version of installed `OpenCL.dll` < vendor `OpenCL.dll` version, then replace the installed `OpenCL.dll` in 3.a.i and/or 3.a.ii as appropriate.
+.. IF version of installed `OpenCL.dll` >= vendor `OpenCL.dll` version, then vendor MUST NOT modify the installed `OpenCL.dll`.
+
++
+Versioning of `OpenCL.dll` is described in a later section. 
+
+. Vendor MUST accurately increment the reference count for `OpenCL.dll`.
+.. IF Vendor does not use the Windows Installer, the Vendor installer MUST increment the reference count under the registry key:
+
+    HKLM\SOFTWARE\Microsoft\Windows\Current Version\SharedDLLs
+
+=== Windows ICD Uninstallation
+
+Uninstalling `OpenCL.dll` should be straightforward since it is reference counted as a shared component.
+
+. Vendor MUST accurately decrement the reference count for `OpenCL.dll` and delete it when the reference count reaches zero.
+
+Note that older installers that do not comply with these guidelines may not check the reference count when uninstalling and hence may erroneously uninstall `OpenCL.dll` while it is still in use by another OpenCL implementation.  If this occurs, reinstalling the other OpenCL implementation will usually fix the issue.
+
+=== OpenCL.dll Versioning
+
+The `OpenCL.dll` has a FileVersion string of the form “x.y.z.0”. The parts *_x_* and *_y_* denote the OpenCL major and minor version (2.2 at the time of writing this document). The third part *_z_* is a revision number which will be incremented for every change made to the ICD loader sources.
+
+For same version of OpenCL, higher *_z_* value means a later revision. For different versions of OpenCL a higher OpenCL version means a later revision, irrespective of the value of *_z_*.
+
+If a given OpenCL.dll file does not have a valid FileVersion string or if the FileVersion string is absent then the version should be considered to be "0.0.0.0".
+
+== Android ICD Installation
+
+On Android, the ICD loader library is `libOpenCL.so`.
+
+=== Target Device Filesystem
+
+. Vendor MUST install `libOpenCL.so` to reside directly within the directory `/vendor/lib/` which is one of the paths searched by the dynamic loader on an Android system.
+
+Usually an Android system will have a single-vendor OpenCL installation, so the need to overwrite `libOpenCL.so` should not arise.
+
+=== Android SDK/NDK
+
+Vendors should package the `libOpenCL.so` stub for linking to user applications in their Android SDK/NDK and either configure the default environment, or provide instructions for configuring the build environment, or both.
+
+Typically a vendor should put `libOpenCL.so` inside a directory within the Android SDK/NDK package provided by the vendor for application development on the vendor’s device. The path to this directory should be added to LIBPATH in the default environment of the IDE (e.g. Eclipse) and other build configurations (e.g. Makefiles) in the SDK/NDK. The path should also be mentioned in the vendor documentation to allow application developers to write their own Makefiles or other build systems. 

@@ -1,0 +1,166 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[conversions-library]]
+=== Conversions Library
+
+This section describes the explicit conversion cast functions.
+These functions provide a full set of type conversions between supported scalar and vector data types (see the <<builtin-scalar-data-types, _Built-in Scalar Data Types_>> and the <<builtin-vector-data-types, _Built-in Vector Data Types_>> sections) except for the following types: `size_t`, `ptrdiff_t`, `intptr_t`, `uintptr_t`, and `void`.
+
+The behavior of the conversion may be modified by one or two optional modifiers that specify saturation for out-of-range inputs and rounding behavior.
+
+The `convert_cast` type conversion operator that specifies a rounding mode and saturation is also provided.
+
+[[header-opencl_convert-synopsis]]
+==== Header <opencl_convert> Synopsis
+
+[source]
+----
+namespace cl
+{
+enum class rounding_mode { rte, rtz, rtp, rtn };
+enum class saturate { off, on };
+
+template <class T, class U>
+T convert_cast(U const& arg);
+template <class T>
+T convert_cast(T const& arg);
+
+template <class T, rounding_mode rmode, class U>
+T convert_cast(U const& arg);
+template <class T, rounding_mode rmode>
+T convert_cast(T const& arg);
+
+template <class T, saturate smode, class U>
+T convert_cast(U const& arg);
+template <class T, saturate smode>
+T convert_cast(T const& arg);
+
+template <class T, rounding_mode rmode, saturate smode, class U>
+T convert_cast(U const& arg);
+template <class T, rounding_mode rmode, saturate smode>
+T convert_cast(T const& arg);
+
+}
+----
+
+[[data-types]]
+==== Data Types
+
+Conversions are available for the following scalar types: `bool`, `char`, `uchar`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `half` [[ftnref4]] <<ftn4,[4]>>, `float`, `double`, and built-in vector types derived therefrom.
+The operand and result type must have the same number of elements.
+The operand and result type may be the same type in which case the conversion has no effect on the type or value of an expression.
+
+Conversions between integer types follow the conversion rules specified in the {cpp14} specification except for out-of-range behavior and saturated conversions which are described in the <<out-of-range-behavior-and-saturated-conversions, _Out-of-Range Behavior and Saturated Conversions_>> section below.
+
+[[rounding-modes]]
+==== Rounding Modes
+
+Conversions to and from floating-point type shall conform to IEEE-754 rounding rules.
+Conversions may have an optional rounding mode specified as described in the table belows.
+
+.Rounding Modes
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Rounding Mode* | *Description*
+| `rte`           | Round to nearest even
+| `rtz`           | Round toward zero
+| `rtp`           | Round toward positive infinity
+| `rtn`           | Round toward negative infinity
+|====
+
+If a rounding mode is not specified, conversions to integer type use the `rtz` (round toward zero) rounding mode and conversions to floating-point type [[ftnref5]] <<ftn5,[5]>> uses the `rte` rounding mode.
+
+[[out-of-range-behavior-and-saturated-conversions]]
+==== Out-of-Range Behavior and Saturated Conversions
+
+When the conversion operand is either greater than the greatest representable destination value or less than the least representable destination value, it is said to be out-of-range.
+The result of out-of-range conversion is determined by the conversion rules specified by the {cpp14} specification in _chapter 4.9_.
+When converting from a floating-point type to integer type, the behavior is implementation-defined.
+
+Conversions to integer type may opt to convert using the optional saturation mode.
+When in saturated mode, values that are outside the representable range shall clamp to the nearest representable value in the destination format.
+(NaN should be converted to 0).
+
+Conversions to floating-point type shall conform to IEEE-754 rounding rules. The `convert_cast` operator with a saturate argument may not be used for conversions to floating-point formats.
+
+[[examples-1]]
+==== Examples
+
+[[example-1-1]]
+===== Example 1
+
+Examples of casting between two vector types with saturation.
+[source]
+----
+#include <opencl_convert>
+using namespace cl;
+
+kernel void Foo() {
+short4 s;
+       // negative values clamped to 0
+       ushort4 u = convert_cast<ushort4,saturate::on>(s);
+
+// values > CHAR_MAX converted to CHAR_MAX
+       // values < CHAR_MIN converted to CHAR_MIN
+       char4 c = convert_cast<char4, saturate::on>(s);
+}
+----
+
+[[example-2-1]]
+===== Example 2
+
+Examples of casting from float to integer vector type with saturation and rounding mode specified.
+[source]
+----
+#include <opencl_convert>
+using namespace cl;
+
+kernel void Foo() {
+       float4  f;
+
+       // values implementation defined for
+       // f > INT_MAX, f < INT_MIN or NaN
+       int4    i1 = convert_cast<int4>(f);
+
+       // values > INT_MAX clamp to INT_MAX, values < INT_MIN clamp
+       // to INT_MIN. NaN should produce 0.
+       // The rtz rounding mode is used to produce the integer
+       // values.
+       int4    i2 = convert_cast<int4,saturate::on>(f);
+
+       // similar to convert_cast<int4>, except that floating-point
+       // values are rounded to the nearest integer instead of
+       // truncated
+       int4    i3 = convert_cast<int4, rounding_mode::rte>(f);
+
+       // similar to convert_cast<int4, saturate::on>, except that
+       // floating-point values are rounded to the nearest integer
+       // instead of truncated
+       int4    i4 = convert_cast<int4, rounding_mode::rte,
+       saturate::on>(f);
+}
+----
+
+[[example-3]]
+===== Example 3
+
+Examples of casting from integer to float vector type.
+[source]
+----
+#include <opencl_convert>
+using namespace cl;
+
+kernel void Foo() {
+       int4    i;
+
+       // convert ints to floats using the default rounding mode.
+       float4  f1 = convert_cast<float4>(i);
+
+       // convert ints to floats. integer values that cannot
+       // be exactly represented as floats should round up to the
+       // next representable float.
+       float4  f2 = convert_cast<float4, rounding_mode::rtp>(i);
+}
+----

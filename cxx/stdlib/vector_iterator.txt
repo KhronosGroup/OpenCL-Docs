@@ -1,0 +1,128 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[vector-iterator]]
+==== Vector iterator
+
+Vector iterator is a random access iterator that allows runtime iteration over vector channels.
+Meets all the requirements for random access iterator.
+Iterating outside of vector bounds is an undefined behavior.
+
+The library also exposes non member begin and end functions for vectors.
+
+NOTE: Due to the usage of argument-dependent lookup in range based for loops this functions are not available, and the new range adapter has to be used
+
+There is also an `index` function present in the library that allows runtime numerical indexing of channels.
+It returns a channel reference to a given channel number.
+Indexing out of vector bounds results in undefined behavior.
+
+The following example will present simple template function computing sum of channels of a given vector:
+
+[source]
+----
+template<class V>
+auto sum(const V& v) {
+    vector_element_t<V> temp = 0;
+    for(auto e : range(v)) {
+        temp += e;
+    }
+    return temp;
+}
+----
+
+[[channel-reference-and-channel-pointer]]
+==== Channel reference and channel pointer
+
+`channel_ref` and `channel_ptr` classes provide lightweight reference and pointer wrappers for vector channels.
+This is required due to the fact that vector channels can be moved across memory during execution so direct physical addressing is impossible.
+Reference wrapper provides a set of binary operators (depending on vector channel type).
+
+The following example will present a simple usage of channel reference to set first channel of given vector to 0:
+
+[source]
+----
+template <class V>
+void fun(V& v) {
+    channel_ref<V> r = *begin(v);
+    r = 0;
+}
+----
+
+[[get-and-set-functions]]
+==== Get and set functions
+
+Get and set functions allow compile time numerical indexing of channels to substitute for normal swizzling.
+Indexing out of vector range generates a compile error.
+Get function returns a copy of channel value.
+
+The following example will present how get and set functions can be used to duplicate the value of the first channel of given vector:
+
+[source]
+----
+template <class V>
+void fun(V& v) {
+    auto c = get< 0 >(v);
+    set< 0 >(v, 2*c);
+}
+----
+
+[[examples-8]]
+==== Examples
+
+[[example-1-8]]
+===== Example 1
+
+Example of using built-in vector iterators.
+
+[source]
+----
+#include <opencl_vector_utility>
+#include <opencl_range>
+using namespace cl;
+
+kernel void foo() {
+    int8 v_i8;
+    auto iter_begin = begin(v_i8);
+    auto iter_end = end(v_i8);
+
+    iter_begin = iter_end;
+
+    int a = 0;
+    a = *iter_begin;
+    a = iter_begin[0];
+
+    iter_begin++;
+    iter_begin+=1;
+    iter_begin = iter_begin + 1;
+
+    iter_begin--;
+    iter_begin-=1;
+    iter_begin = iter_begin - 1;
+}
+----
+
+[[example-2-6]]
+===== Example 2
+
+Example of iterating though built-in vector channels and using range library.
+
+[source]
+----
+#include <opencl_vector_utility>
+#include <opencl_range>
+
+kernel void foo() {
+    int16 a;
+
+    for (auto it = cl::begin(a); it != cl::end(a); it++) {
+        int b = *it;
+        *it = 2;
+    }
+
+    for (auto c : cl::range(a,3,6)) {
+        int b = c;
+        c = 2;
+    }
+}
+----
