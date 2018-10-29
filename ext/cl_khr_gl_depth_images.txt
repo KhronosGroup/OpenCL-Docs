@@ -1,97 +1,110 @@
-// Copyright 2017 The Khronos Group. 
-//
-//  Khronos licenses this file to you under the Creative Commons Attribution 4.0 
-//  International (CC BY 4.0) License (the "License"); you may not use this file 
-//  except in compliance with the License.  You may obtain a copy of the License 
-//  at https://creativecommons.org/licenses/by/4.0/
-//
-//  Unless required by applicable law or agreed to in writing, material distributed 
-//  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
-//  CONDITIONS OF ANY KIND, either express or implied. If all or a portion of this 
-//  material is re-used, notice substantially similar to the following must be included:
-//
-//  This specification includes material developed at The Khronos Group 
-//  (http://www.khronos.org/). Khronos supplied such material on an "AS IS" BASIS, 
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, under 
-//  the terms of the Creative Commons Attribution 4.0 International (CC BY 4.0) 
-//  License (the "License"), available at https://creativecommons.org/licenses/by/4.0/. 
-//  All use of such material is governed by the term of the License. Khronos bears 
-//  no responsibility whatsoever for additions or modifications to its material.
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
 
 [[cl_khr_gl_depth_images]]
 == Sharing OpenGL and OpenGL ES Depth and Depth-Stencil Images
 
-This section describes the *cl_khr_gl_depth_images* extension. The *cl_khr_gl_depth_images* extends OpenCL / OpenGL sharing (the cl_khr_gl_sharing_extension) defined in <<cl_khr_gl_sharing__memobjs,Creating OpenCL Memory Objects from OpenGL Objects>> to allow an OpenCL image to be created from an OpenGL depth or depth-stencil texture.
+This section describes the *cl_khr_gl_depth_images* extension.
+The *cl_khr_gl_depth_images* extends OpenCL / OpenGL sharing (the
+cl_khr_gl_sharing_extension) defined in
+<<cl_khr_gl_sharing__memobjs,Creating OpenCL Memory Objects from OpenGL
+Objects>> to allow an OpenCL image to be created from an OpenGL depth or
+depth-stencil texture.
 
 [[cl_khr_gl_depth_images-additions-to-chapter-5]]
 === Additions to Chapter 5 of the OpenCL 2.2 Specification
 
-The *cl_khr_gl_depth_images* extension extends OpenCL / OpenGL sharing by allowing an OpenCL depth image to be created from an OpenGL depth or depth-stencil texture. Depth images with an image channel order of CL_DEPTH_STENCIL can only be created using the *clCreateFromGLTexture* API.
+The *cl_khr_gl_depth_images* extension extends OpenCL / OpenGL sharing by
+allowing an OpenCL depth image to be created from an OpenGL depth or
+depth-stencil texture.
+Depth images with an image channel order of CL_DEPTH_STENCIL can only be
+created using the *clCreateFromGLTexture* API.
 
-This extension adds the following new image format for depth-stencil images to _table 5.6 and 5.7_ of the OpenCL 2.2 specification.
+This extension adds the following new image format for depth-stencil images
+to _table 5.6 and 5.7_ of the OpenCL 2.2 specification.
 
 [cols="",options="header",]
-|=======================================================================
-|*Enum values that can be specified in channel_order*
+|====
+| *Enum values that can be specified in channel_order*
 
-|*CL_DEPTH_STENCIL.* This format can only be used if channel data type = CL_UNORM_INT24 or CL_FLOAT.
+| *CL_DEPTH_STENCIL*.
+  This format can only be used if channel data type = CL_UNORM_INT24 or
+  CL_FLOAT.
 
-|=======================================================================
+|====
 
 [cols=",",options="header",]
-|=======================================================================
-|*Image Channel Data Type*
-|*Description*
+|====
+| *Image Channel Data Type*
+| *Description*
 
-|*CL_UNORM_INT24*
-|Each channel component is a normalized unsigned 24-bit integer value
+| *CL_UNORM_INT24*
+| Each channel component is a normalized unsigned 24-bit integer value
 
-|*CL_FLOAT*
-|Each channel component is a single precision floating-point value
-|=======================================================================
+| *CL_FLOAT*
+| Each channel component is a single precision floating-point value
+|====
 
-This extension adds the following new image format to the minimum list of supported image formats described in _tables 5.8.a_ and _5.8.b_.
+This extension adds the following new image format to the minimum list of
+supported image formats described in _tables 5.8.a_ and _5.8.b_.
 
 [[cl_khr_gl_depth_images-required-image-formats]]
 ._Required Image Formats for_ *cl_khr_gl_depth_images*
 [cols=",,,",]
-|====================================================================
-|*num_channels*
-|*channel_order*
-|*channel_data_type*
-|*read / write*
+|====
+| *num_channels*
+| *channel_order*
+| *channel_data_type*
+| *read / write*
 
-|1
-|CL_DEPTH_STENCIL
-|CL_UNORM_INT24 +
-CL_FLOAT
-|read only
+| 1
+| CL_DEPTH_STENCIL
+| CL_UNORM_INT24 +
+  CL_FLOAT
+| read only
 
-|======================
+|====
 
-For the image format given by channel order of CL_DEPTH_STENCIL and channel data type of CL_UNORM_INT24, the depth is stored as an unsigned normalized 24-bit value.
+For the image format given by channel order of CL_DEPTH_STENCIL and channel
+data type of CL_UNORM_INT24, the depth is stored as an unsigned normalized
+24-bit value.
 
-For the image format given by channel order of CL DEPTH_STENCIL and channel data type of CL_FLOAT, each pixel is two 32-bit values. The depth is stored as a single precision floating-point value followed by the stencil which is stored as a 8-bit integer value.
+For the image format given by channel order of CL DEPTH_STENCIL and channel
+data type of CL_FLOAT, each pixel is two 32-bit values.
+The depth is stored as a single precision floating-point value followed by
+the stencil which is stored as a 8-bit integer value.
 
-The stencil value cannot be read or written using the *read_imagef* and *write_imagef* built-in functions in an OpenCL kernel.
+The stencil value cannot be read or written using the *read_imagef* and
+*write_imagef* built-in functions in an OpenCL kernel.
 
-Depth image objects with an image channel order equal to CL_DEPTH_STENCIL cannot be used as arguments to clEnqueueReadImage, clEnqueueWriteImage, clEnqueueCopyImage, clEnqueueCopyImageToBuffer, clEnqueueCopyBufferToImage, clEnqueueMapImage and clEnqueueFillImage and will return a CL_INVALID_OPERATION error.
+Depth image objects with an image channel order equal to CL_DEPTH_STENCIL
+cannot be used as arguments to clEnqueueReadImage, clEnqueueWriteImage,
+clEnqueueCopyImage, clEnqueueCopyImageToBuffer, clEnqueueCopyBufferToImage,
+clEnqueueMapImage and clEnqueueFillImage and will return a
+CL_INVALID_OPERATION error.
 
 [[cl_khr_gl_depth_images-additions-to-extension-specification]]
 === Additions to the OpenCL Extension Specification
 
-The following new image formats are added to the table of <<cl_khr_gl_sharing__memobjs-mapping-of-image-formats,OpenGL internal formats and corresponding OpenCL internal formats>> in the OpenCL extension specification. If an OpenGL texture object with an internal format in this table is successfully created by OpenGL, then there is guaranteed to be a mapping to one of the corresponding OpenCL image format(s) in that table.
+The following new image formats are added to the table of
+<<cl_khr_gl_sharing__memobjs-mapping-of-image-formats,OpenGL internal
+formats and corresponding OpenCL internal formats>> in the OpenCL extension
+specification.
+If an OpenGL texture object with an internal format in this table is
+successfully created by OpenGL, then there is guaranteed to be a mapping to
+one of the corresponding OpenCL image format(s) in that table.
 
 [cols=",",options="header",]
-|=====================================================
-|*GL internal format*
-|*CL image format*
+|====
+| *GL internal format*
+| *CL image format*
 
-*(channel order, channel data type)*
+  *(channel order, channel data type)*
 
-|GL_DEPTH_COMPONENT32F |CL_DEPTH, CL_FLOAT
-|GL_DEPTH_COMPONENT16 |CL_DEPTH, CL_UNORM_INT16
-|GL_DEPTH24_STENCIL8 |CL_DEPTH_STENCIL, CL_UNORM_INT24
-|GL_DEPTH32F_STENCIL8 |CL_DEPTH_STENCIL, CL_FLOAT
-|=====================================================
+| GL_DEPTH_COMPONENT32F | CL_DEPTH, CL_FLOAT
+| GL_DEPTH_COMPONENT16  | CL_DEPTH, CL_UNORM_INT16
+| GL_DEPTH24_STENCIL8   | CL_DEPTH_STENCIL, CL_UNORM_INT24
+| GL_DEPTH32F_STENCIL8  | CL_DEPTH_STENCIL, CL_FLOAT
+|====
 

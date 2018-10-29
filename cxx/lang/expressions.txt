@@ -1,0 +1,102 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[expressions]]
+=== Expressions
+
+All expressions behave as described in _[ISO/IEC 14882:2014: expr, ch. 5]_ with the the restrictions described in the <<opencl_cxx_restrictions, _OpenCL {cpp} Restrictions_>> section and the following changes:
+
+1. All built-in operators have their vector counterparts.
+
+2. All built-in vector operations, apart from conditional operator, are performed component-wise.
++
+NOTE: Conditional operator logical-or-expression cannot be of vector type.
+
+3. Built in operators taking two vectors require that vectors have the same number of components, otherwise expression is ill-formed.
+
+4. Vector swizzle operations meet extra requirements and restrictions described in the <<vector-component-access, _Vector Component Access_>> section.
+
+5. Implicit and explicit casts between vector types are not legal.
+The conversion between vector types can be done only using `convert_cast` from the <<conversions-library, _Conversions Library_>> section.
++
+Examples:
++
+[source]
+----
+int4   i;
+uint4  u = (uint4) i; // not allowed
+
+float4 f;
+int4   i = static_cast<int4>(f); // not allowed
+
+float4 f;
+int8   i = (int8) f; // not allowed
+----
+
+6. Implicit and explicit casts from scalar to vector types are supported.
+
+7. All built-in arithmetic operators return result of the same built-in type (integer or floating-point) as the type of the operands, after operand type conversion.
+After conversion, the following cases are valid:
++
+a. The two operands are scalars.  In this case, the operation is applied, resulting in a scalar.
+b. One operand is a scalar, and the other is a vector.
+In this case, the scalar may be subject to the usual arithmetic conversion to the element type used by the vector operand.
+The scalar type is then widened to a vector that has the same number of components as the vector operand.
+The operation is done component-wise resulting in the same size vector.
+c. The two operands are vectors of the same type.
+In this case, the operation is done component-wise resulting in the same size vector.
+
+8. The built-in relational and equality operators equal (`==`), not equal (`!=`), greater than (`>`), greater than or equal (`>=`), less than (`<`), and less than or equal (`\<=`) operate on scalar and vector types.
+All relational and equality operators result in a boolean (scalar or vector) type.
+After operand type conversion, the following cases are valid:
++
+a. The two operands are scalars.
+In this case, the operation is applied, resulting in a boolean scalar.
+
+b. One operand is a scalar, and the other is a vector.
+In this case, the scalar may be subject to the usual arithmetic conversion to the element type used by the vector operand.
+The scalar type is then widened to a vector that has the same number of components as the vector operand.
+The operation is done component-wise resulting in the same size boolean vector.
+
+c. The two operands are vectors of the same type.
+In this case, the operation is done component-wise resulting in the same size boolean vector.
+
+9. The built-in bitwise operators and (`&`), or (`|`), exclusive or (`^`), not (`~`) operate on all scalar and vector built-in types except the built-in scalar and vector float types.
+For vector built-in types, the operators are applied component-wise.
+If one operand is a scalar and the other is a vector, the scalar may be subject to the usual arithmetic conversion to the element type used by the vector operand.
+The scalar type is then widened to a vector that has the same number of components as the vector operand.
+The operation is done component-wise resulting in the same size vector.
+
+10. The built-in logical operators and (`&&`), or (`||`) operate on all scalar and vector built-in types.
+For scalar built-in types the logical operator and (`&&`) will only evaluate the right hand operand if the left hand operand compares unequal to `false`.
+For scalar built-in types the logical operator or (`||`) will only evaluate the right hand operand if the left hand operand compares equal to `false`.
+For built-in vector types, both operands are evaluated and the operators are applied component-wise.
+If one operand is a scalar and the other is a vector, the scalar may be subject to the usual arithmetic conversion to the element type used by the vector operand.
+The scalar type is then widened to a vector that has the same number of components as the vector operand.
+The operation is done component-wise resulting in the same size vector.
++
+The result is a scalar or vector boolean.
+
+11. The built-in logical unary operator not (`!`) operates on all scalar and vector built-in types.
+For built-in vector types, the operators are applied component-wise.
++
+The result is a scalar or vector boolean.
+
+12. The built-in conditional operator (`?:`) described in _[ISO/IEC 14882:2014: expr, ch. 5.2]_ operates on three expressions (`exp1 ? exp2 : exp3`).
+This operator evaluates the first expression `exp1`, which must be a scalar boolean result.
+If the result is _true_ it selects to evaluate the second expression, otherwise it selects to evaluate the third expression.
+The second and third expressions can be any type, as long their types match, or there is a conversion in the <<implicit-type-conversions, _Implicit Type Conversions_>> section that can be applied to one of the expressions to make their types match, or one is a vector and the other is a scalar and the scalar may be subject to the usual arithmetic conversion to the element type used by the vector operand and widened to the same type as the vector type.
++
+This resulting matching type is the type of the entire expression.
+
+13. The built-in shift operators are supported for built-in vector types except the built-in scalar and vector float types.
+For built-in vector types, the operators are applied component-wise.
+For the right-shift (`>>`), left-shift (`<<`) operators, the rightmost operand must be a scalar if the first operand is a scalar, and the rightmost operand can be a vector or scalar if the first operand is a vector.
+The result of `E1 << E2` is `E1` left-shifted by `log2(N)` least significant bits in `E2` viewed as an unsigned integer value, where `N` is the number of bits used to represent the data type of `E1` after integer promotion, if `E1` is a scalar, or the number of bits used to represent the type of `E1` elements, if `E1` is a vector.
+The vacated bits are filled with zeros.
+The result of `E1 >> E2` is `E1` right-shifted by `log2(N)` least significant bits in `E2` viewed as an unsigned integer value, where `N` is the number of bits used to represent the data type of `E1` after integer promotion, if `E1` is a scalar, or the number of bits used to represent the type of `E1` elements, if `E1` is a vector.
++
+If `E1` has an unsigned type or if `E1` has a signed type and a nonnegative value, the vacated bits are filled with zeros.
++
+If `E1` has a signed type and a negative value, the vacated bits are filled with ones.

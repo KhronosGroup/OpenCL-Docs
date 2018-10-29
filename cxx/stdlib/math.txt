@@ -1,0 +1,1139 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[math-functions]]
+=== Math Functions
+
+,The list of the OpenCL {cpp} library math functions is described in <<trigonometric-functions, _Trigonometric functions_>>, <<logarithmic-functions, _Logarithmic functions_>>, <<exponential-functions, _Exponential functions_>>, <<floating-point-functions, _Floating-point functions_>>, <<comparison-functions, _Comparison functions_>>, and <<other-functions-1, _Other functions_>> sections.
+
+The built-in math functions are categorized into the following:
+
+  * A list of built-in functions that have scalar or vector argument versions.
+  * A list of built-in functions that only take scalar float arguments.
+
+The vector versions of the math functions operate component-wise.
+The description is per-component.
+
+The built-in math functions are not affected by the prevailing rounding mode in the calling environment, and always return the same value as they would if called with the round to nearest even rounding mode.
+
+Here `gentype` matches: `half__n__` [[ftnref4]] <<ftn4,[4]>>, `float__n__` or `double__n__` [[ftnref18]] <<ftn18,[18]>>
+
+[[header-opencl_math-synopsis]]
+==== Header <opencl_math> Synopsis
+
+[source]
+----
+namespace cl
+{
+//trigonometric functions
+gentype acos(gentype x);
+gentype acosh(gentype x);
+gentype acospi(gentype x);
+gentype asin(gentype x);
+gentype asinh(gentype x);
+gentype asinpi(gentype x);
+gentype atan(gentype x);
+gentype atanh(gentype x);
+gentype atanpi(gentype x);
+gentype atan2(gentype y, gentype x);
+gentype atan2pi(gentype y, gentype x);
+gentype cos(gentype x);
+gentype cosh(gentype x);
+gentype cospi(gentype x);
+gentype sin(gentype x);
+gentype sincos(gentype x, gentype * cosval);
+gentype sinh(gentype x);
+gentype sinpi(gentype x);
+gentype tan(gentype x);
+gentype tanh(gentype x);
+gentype tanpi(gentype x);
+
+//power functions
+gentype cbrt(gentype x);
+gentype pow(gentype x, gentype y);
+gentype pown(gentype x, intn y);
+gentype powr(gentype x, gentype y);
+gentype rootn(gentype x, intn y);
+gentype rsqrt(gentype x);
+gentype sqrt(gentype x);
+
+//logarithmic functions
+intn ilogb(gentype x);
+gentype lgamma(gentype x);
+gentype lgamma_r(gentype x, intn* signp);
+gentype log(gentype x);
+gentype logb(gentype x);
+gentype log2(gentype x);
+gentype log10(gentype x);
+gentype log1p(gentype x);
+
+//exponential functions
+gentype exp(gentype x);
+gentype expm1(gentype x);
+gentype exp2(gentype x);
+gentype exp10(gentype x);
+gentype ldexp(gentype x, intn k);
+
+//floating-point functions
+gentype ceil(gentype x);
+gentype copysign(gentype x, gentype y);
+gentype floor(gentype x);
+gentype fma(gentype a, gentype b, gentype c);
+gentype fmod(gentype x, gentype y);
+gentype fract(gentype x, gentype* iptr);
+gentype frexp(gentype x, intn* exp);
+gentype modf(gentype x, gentype* iptr);
+#ifdef cl_khr_fp16
+halfn nan(ushortn nancode);
+#endif
+floatn nan(uintn nancode);
+#ifdef cl_khr_fp64
+doublen nan(ulong nancode);
+#endif
+gentype nextafter(gentype x, gentype y);
+gentype remainder(gentype x, gentype y);
+gentype remquo(gentype x, gentype y, intn* quo);
+gentype rint(gentype x);
+gentype round(gentype x);
+gentype trunc(gentype x);
+
+//comparison functions
+gentype fdim(gentype x, gentype y);
+gentype fmax(gentype x, gentype y);
+gentype fmin(gentype x, gentype y);
+gentype maxmag(gentype x, gentype y);
+gentype minmag(gentype x, gentype y);
+
+//other functions
+gentype erf(gentype x);
+gentype erfc(gentype x);
+gentype fabs(gentype x);
+gentype hypot(gentype x, gentype y);
+gentype mad(gentype a, gentype b, gentype c);
+gentype tgamma(gentype x);
+
+//native functions
+namespace native
+{
+floatn cos(floatn x);
+floatn exp(floatn x);
+floatn exp2(floatn x);
+floatn exp10(floatn x);
+floatn log(floatn x);
+floatn log2(floatn x);
+floatn log10(floatn x);
+floatn recip(floatn x);
+floatn rsqrt(floatn x);
+floatn sin(floatn x);
+floatn sqrt(floatn x);
+floatn tan(floatn x);
+floatn divide(floatn x, floatn y);
+floatn powr(floatn x, floatn y);
+
+}
+
+//half_math functions
+namespace half_math
+{
+floatn cos(floatn x);
+floatn exp(floatn x);
+floatn exp2(floatn x);
+floatn exp10(floatn x);
+floatn log(floatn x);
+floatn log2(floatn x);
+floatn log10(floatn x);
+floatn recip(floatn x);
+floatn rsqrt(floatn x);
+floatn sin(floatn x);
+floatn sqrt(floatn x);
+floatn tan(floatn x);
+floatn divide(floatn x, floatn y);
+floatn powr(floatn x, floatn y);
+
+}
+
+}
+----
+
+[[trigonometric-functions]]
+==== Trigonometric functions
+
+[[acos]]
+===== acos
+[source]
+----
+gentype acos(gentype x);
+----
+
+Arc cosine function.
+Returns an angle in radians.
+
+[[acosh]]
+===== acosh
+[source]
+----
+gentype acosh(gentype x);
+----
+
+Inverse hyperbolic cosine.
+Returns an angle in radians.
+
+[[acospi]]
+===== acospi
+[source]
+----
+gentype acospi(gentype x);
+----
+
+Compute acos(`x`) / {pi}.
+
+[[asin]]
+===== asin
+[source]
+----
+gentype asin(gentype x);
+----
+
+Arc sine function.
+Returns an angle in radians.
+
+[[asinh]]
+===== asinh
+[source]
+----
+gentype asinh(gentype x);
+----
+
+Inverse hyperbolic sine.
+Returns an angle in radians.
+
+[[asinpi]]
+===== asinpi
+[source]
+----
+gentype asinpi(gentype x);
+----
+
+Compute asin(`x`) / {pi}.
+
+[[atan]]
+===== atan
+[source]
+----
+gentype atan(gentype y_over_x);
+----
+
+Arc tangent function.
+Returns an angle in radians.
+
+[[atan2]]
+===== atan2
+[source]
+----
+gentype atan2(gentype y, gentype x);
+----
+
+Arc tangent of `y / x`.
+Returns an angle in radians.
+
+[[atanh]]
+===== atanh
+[source]
+----
+gentype atanh(gentype x);
+----
+
+Hyperbolic arc tangent.
+Returns an angle in radians.
+
+[[atanpi]]
+===== atanpi
+[source]
+----
+gentype atanpi(gentype x);
+----
+
+Compute atan(`x`) / {pi}.
+
+[[atan2pi]]
+===== atan2pi
+[source]
+----
+gentype atan2pi(gentype y, gentype x);
+----
+
+Compute atan2(`y`, `x`) / {pi}.
+
+[[cos]]
+===== cos
+[source]
+----
+gentype cos(gentype x);
+----
+
+Compute cosine, where `x` is an angle in radians.
+
+[[cosh]]
+===== cosh
+[source]
+----
+gentype cosh(gentype x);
+----
+
+Compute hyperbolic consine, where `x` is an angle in radians.
+
+[[cospi]]
+===== cospi
+[source]
+----
+gentype cospi(gentype x);
+----
+
+Compute cos({pi} x).
+
+[[sin]]
+===== sin
+[source]
+----
+gentype sin(gentype x);
+----
+
+Compute sine, where `x` is an angle in radians.
+
+[[sincos]]
+===== sincos
+[source]
+----
+gentype sincos(gentype x, gentype *cosval);
+----
+
+Compute sine and cosine of `x`.
+The computed sine is the return value and computed cosine is returned in `cosval`, where `x` is an angle in radians
+
+[[sinh]]
+===== sinh
+[source]
+----
+gentype sinh(gentype x);
+----
+
+Compute hyperbolic sine, where `x` is an angle in radians
+
+[[sinpi]]
+===== sinpi
+[source]
+----
+gentype sinpi(gentype x);
+----
+
+Compute sin({pi} `x`).
+
+[[tan]]
+===== tan
+[source]
+----
+gentype tan(gentype x);
+----
+
+Compute tangent, where `x` is an angle in radians.
+
+[[tanh]]
+===== tanh
+[source]
+----
+gentype tanh(gentype x);
+----
+
+Compute hyperbolic tangent, where `x` is an angle in radians.
+
+[[tanpi]]
+===== tanpi
+[source]
+----
+gentype tanpi(gentype x);
+----
+
+Compute tan({pi} `x`).
+
+[[power-functions]]
+==== Power function
+
+[[cbrt]]
+===== cbrt
+[source]
+----
+gentype cbrt(gentype x);
+----
+
+Compute cube-root.
+
+[[pow]]
+===== pow
+[source]
+----
+gentype pow(gentype x, gentype y);
+----
+
+Compute `x` to the power `y`.
+
+[[pown]]
+===== pown
+[source]
+----
+floatn pown(gentype x, intn y);
+----
+
+Compute `x` to the power `y`, where `y` is an integer.
+
+[[powr]]
+===== powr
+[source]
+----
+gentype powr(gentype x, gentype y);
+----
+
+Compute `x` to the power `y`, where `x` is `>= 0`.
+
+[[rootn]]
+===== rootn
+[source]
+----
+gentype powr(gentype x, gentype y);
+----
+
+Compute `x` to the power `1/y`.
+
+[[rsqrt]]
+===== rsqrt
+[source]
+----
+gentype rsqrt(gentype x);
+----
+
+Compute inverse square root.
+
+[[sqrt]]
+===== sqrt
+[source]
+----
+gentype sqrt(gentype x);
+----
+
+Compute square root.
+
+[[logarithmic-functions]]
+==== Logarithmic functions
+
+[[ilogb]]
+===== ilogb
+[source]
+----
+intn ilogb(gentype x);
+----
+
+Return the exponent as an integer value.
+
+[[lgamma]]
+===== lgamma
+[source]
+----
+gentype lgamma(gentype x);
+
+gentype lgamma_r(gentype x, intn *signp);
+----
+
+Log gamma function.
+Returns the natural logarithm of the absolute value of the gamma function.
+The sign of the gamma function is returned in the signp argument of `lgamma_r`.
+
+[[log]]
+===== log
+[source]
+----
+gentype log(gentype x);
+----
+
+Compute natural logarithm.
+
+[[log2]]
+===== log2
+[source]
+----
+gentype log2(gentype x);
+----
+
+Compute a base 2 logarithm.
+
+[[log10]]
+===== log10
+[source]
+----
+gentype log10(gentype x);
+----
+
+Compute a base 10 logarithm.
+
+[[log1p]]
+===== log1p
+[source]
+----
+gentype log1p(gentype x);
+----
+
+Compute log~e~(1.0 + x).
+
+[[logb]]
+===== logb
+[source]
+----
+gentype logb(gentype x);
+----
+
+Compute the exponent of `x`, which is the integral part of log~r~|`x`|.
+
+[[exponential-functions]]
+==== Exponential functions
+
+[[exp]]
+===== exp
+[source]
+----
+gentype exp(gentype x);
+----
+
+Compute the base e exponential of `x`.
+
+[[exp2]]
+===== exp2
+[source]
+----
+gentype exp2(gentype x);
+----
+
+Exponential base 2 function.
+
+[[exp10]]
+===== exp10
+[source]
+----
+gentype exp10(gentype x);
+----
+
+Exponential base 10 function.
+
+[[expm1]]
+===== expm1
+[source]
+----
+gentype expm1(gentype x);
+----
+
+Compute e^x^- 1.0.
+
+[[ldexp]]
+===== ldexp
+[source]
+----
+gentype ldexp(gentype x, intn k);
+----
+
+Multiply `x` by 2 to the power `k`.
+
+[[floating-point-functions]]
+==== Floating-point functions
+
+[[ceil]]
+===== ceil
+[source]
+----
+gentype ceil(gentype x);
+----
+
+Round to integral value using the round to positive infinity rounding mode.
+
+[[copysign]]
+===== copysign
+[source]
+----
+gentype copysign(gentype x, gentype y);
+----
+
+Returns x with its sign changed to match the sign of y.
+
+[[floor]]
+===== floor
+[source]
+----
+gentype floor(gentype x);
+----
+
+Round to integral value using the round to negative infinity rounding mode.
+
+[[fma]]
+===== fma
+[source]
+----
+gentype fma(gentype a, gentype b, gentype c);
+----
+
+Returns the correctly rounded floating-point representation of the sum of `c` with the infinitely precise product of `a` and `b`.
+Rounding of intermediate products shall not occur.
+Edge case behavior is per the IEEE 754-2008 standard.
+
+[[fmod]]
+===== fmod
+[source]
+----
+gentype fmod(gentype x, gentype y);
+----
+
+Modulus. Returns `x - y * trunc (x/y)`.
+
+[[fract]]
+===== fract
+
+`fract` [[ftnref20]] <<ftn20,[20]>>:
+[source]
+----
+gentype fract(gentype x, gentype *iptr);
+----
+
+Returns `fmin(x - floor(x), 0x1.fffffep-1f)`.
+
+`floor(x)` is returned in `iptr`.
+
+[[frexp]]
+===== frexp
+[source]
+----
+gentype frexp(gentype x, intn *exp);
+----
+
+Extract mantissa and exponent from `x`.
+For each component the mantissa returned is a half with magnitude in the interval [1/2, 1) or 0.
+Each component of `x` equals mantissa returned `* 2^exp^`.
+
+[[modf]]
+===== modf
+[source]
+----
+gentype modf(gentype x, gentype *iptr);
+----
+
+Decompose a floating-point number.
+The modf function breaks the argument `x` into integral and fractional parts, each of which has the same sign as the argument.
+It stores the integral part in the object pointed to by `iptr`.
+
+[[nan]]
+===== nan
+[source]
+----
+floatn nan(uintn nancode);
+doublen nan(ulongn nancode);
+halfn nan(ushortn nancode);
+----
+
+Returns a quiet `NaN`.
+The nancode may be placed in the significand of the resulting `NaN`.
+
+[[nextafter]]
+===== nextafter
+[source]
+----
+gentype nextafter(gentype x, gentype y);
+----
+
+Computes the next representable single-precision floating-point value following `x` in the direction of `y`.
+Thus, if `y` is less than `x`.
+`nextafter()` returns the largest representable floating-point number less than `x`.
+
+[[remainder]]
+===== remainder
+[source]
+----
+gentype remainder(gentype x, gentype y);
+----
+
+Compute the value `r` such that `r = x - n*y`, where `n` is the integer nearest the exact value of `x/y`.
+If there are two integers closest to `x/y`, `n` shall be the even one.
+If `r` is zero, it is given the same sign as `x`.
+
+[[remquo]]
+===== remquo
+[source]
+----
+gentype remquo(gentype x, gentype y, intn *quo);
+----
+
+The remquo function computes the value `r` such that `r = x - k*y`, where `k` is the integer nearest the exact value of `x/y`.
+If there are two integers closest to `x/y`, `k` shall be the even one.
+If `r` is zero, it is given the same sign as `x`.
+This is the same value that is returned by the remainder function.
+`remquo` also calculates at least the seven lower bits of the integral quotient `x/y`, and gives that value the same sign as `x/y`.
+It stores this signed value in the object pointed to by `quo`.
+
+[[rint]]
+===== rint
+[source]
+----
+gentype rint(gentype x);
+----
+
+Round to integral value (using round to nearest even rounding mode) in floating-point format.
+Refer to the <<rounding-modes, _Rounding Modes_>> section for description of rounding modes.
+
+[[round]]
+===== round
+
+[source]
+----
+gentype round(gentype x);
+----
+
+Return the integral value nearest to `x` rounding halfway cases away from zero, regardless of the current rounding direction.
+
+[[trunc]]
+===== trunc
+[source]
+----
+gentype trunc(gentype x);
+----
+
+Round to integral value using the round to zero rounding mode.
+
+[[comparison-functions]]
+==== Comparison functions
+
+[[fdim]]
+===== fdim
+[source]
+----
+gentype fdim(gentype x, gentype y);
+----
+
+`x - y` if `x > y`, `pass:[+]0` if `x` is less than or equal to `y`.
+
+[[fmax]]
+===== fmax
+[source]
+----
+gentype fmax(gentype x, gentype y);
+----
+
+Returns `y` if `x < y`, otherwise it returns `x`.
+If one argument is a `NaN`, `fmax()` returns the other argument.
+If both arguments are NaNs, `fmax()` returns a `NaN`.
+
+[[fmin]]
+===== fmin
+
+`fmin` [[ftnref21]] <<ftn21,[21]>>:
+[source]
+----
+gentype fmin(gentype x, gentype y);
+----
+
+Returns `y` if `y < x`, otherwise it returns `x`.
+If one argument is a NaN, `fmin()` returns the other argument.
+If both arguments are NaNs, `fmin()` returns a `NaN`.
+
+[[fmod-1]]
+===== fmod
+[source]
+----
+gentype fmod(gentype x, gentype y);
+----
+
+Modulus.
+Returns `x - y * trunc (x/y)`.
+
+[[maxmag]]
+===== maxmag
+[source]
+----
+gentype maxmag(gentype x, gentype y);
+----
+
+Returns `x` if `|x| > |y|`, `y` if `|y| > |x|`, otherwise `fmax(x, y)`.
+
+[[minmag]]
+===== minmag
+[source]
+----
+gentype minmag(gentype x, gentype y);
+----
+
+Returns `x` if `|x| < |y|`, `y` if `|y| < |x|`, otherwise `fmin(x, y)`.
+
+[[other-functions-1]]
+==== Other functions
+
+[[erfc]]
+===== erfc
+[source]
+----
+gentype erfc(gentype x);
+----
+
+Complementary error function.
+
+[[erf]]
+===== erf
+[source]
+----
+gentype erf(gentype x);
+----
+
+Error function encountered in integrating the http://mathworld.wolfram.com/NormalDistribution.html[normal distribution].
+
+[[fabs]]
+===== fabs
+[source]
+----
+gentype fabs(gentype x);
+----
+
+Compute absolute value of a floating-point number.
+
+[[hypot]]
+===== hypot
+[source]
+----
+gentype hypot(gentype x, gentype y);
+----
+
+Compute the value of the square root of `x^2^ + y^2^` without undue overflow or underflow.
+
+[[mad]]
+===== mad
+[source]
+----
+gentype mad(gentype a, gentype b, gentype c);
+----
+
+`mad` computes `a * b + c`.
+The function may compute `a * b + c` with reduced accuracy
+    in the embedded profile. It is implemented either as a correctly rounded fma,
+    or as a multiply followed by an add, both of which are correctly rounded. 
+    On some hardware the mad instruction may provide better performance
+    than expanded computation of `a * b + c`. [[ftnref22]] <<ftn22,[22]>>
+
+[[tgamma]]
+===== tgamma
+[source]
+----
+gentype tgamma(gentype x);
+----
+
+Compute the gamma function.
+
+[[native-functions]]
+==== Native functions
+
+This section describes the following functions:
+
+  * A subset of functions from previous sections that are defined in the `cl::native_math` namespace.
+    These functions may map to one or more native device instructions and will typically have better performance compared to the corresponding functions (without the native_math namespace) described in the <<trigonometric-functions, _Trigonometric functions_>>, <<logarithmic-functions, _Logarithmic functions_>>, <<exponential-functions, _Exponential functions_>>, <<floating-point-functions, _Floating-point functions_>>, <<comparison-functions, _Comparison functions_>> and <<other-functions-1, _Other functions_>> sections.
+    The accuracy (and in some cases the input range(s)) of these functions is implementation-defined.
+  * Native functions for following basic operations: divide and reciprocal.
+  * Support for denormal values is implementation-defined for native functions.
+
+[[native_mathcos]]
+===== native_math::cos
+[source]
+----
+floatn native_math::cos(floatn x);
+----
+
+Compute cosine over an implementation-defined range, where `x` is an angle in radians.
+The maximum error is implementation-defined.
+
+[[native_mathdivide]]
+===== native_math::divide
+[source]
+----
+floatn native_math::divide(floatn x, floatn y);
+----
+
+Compute `x / y` over an implementation-defined range.
+The maximum error is implementation-defined.
+
+[[native_mathexp]]
+===== native_math::exp
+[source]
+----
+floatn native_math::exp(floatn x);
+----
+
+Compute the base e exponential of `x` over an implementation-defined range.
+The maximum error is implementation-defined.
+
+[[native_mathexp2]]
+===== native_math::exp2
+[source]
+----
+floatn native_math::exp2(floatn x);
+----
+
+Compute the base 2 exponential of `x` over an implementation-defined range.
+The maximum error is implementation-defined.
+
+[[native_mathexp10]]
+===== native_math::exp10
+[source]
+----
+floatn native_math::exp10(floatn x);
+----
+
+Compute the base 10 exponential of `x` over an implementation-defined range.
+The maximum error is implementation-defined.
+
+[[native_mathlog]]
+===== native_math::log
+[source]
+----
+floatn native_math::log(floatn x);
+----
+
+Compute natural logarithm over an implementation-defined range.
+The maximum error is implementation-defined.
+
+[[native_mathlog2]]
+===== native_math::log2
+[source]
+----
+floatn native_math::log2(floatn x);
+----
+
+Compute a base 2 logarithm over an implementation-defined range.
+The maximum error is implementation-defined.
+
+[[native_mathlog10]]
+===== native_math::log10
+[source]
+----
+floatn native_math::log10(floatn x);
+----
+
+Compute a base 10 logarithm over an implementation-defined range.
+The maximum error is implementation-defined.
+
+[[native_mathpowr]]
+===== native_math::powr
+[source]
+----
+floatn native_math::powr(floatn x, floatn y);
+----
+
+Compute `x` to the power `y`, where `x` is `>= 0`.
+The range of `x` and `y` are implementation-defined.
+The maximum error is implementation-defined.
+
+[[native_mathrecip]]
+===== native_math::recip
+[source]
+----
+floatn native_math::recip(floatn x);
+----
+
+Compute reciprocal over an implementation-defined range.
+The maximum error is implementation-defined.
+
+[[native_mathrsqrt]]
+===== native_math::rsqrt
+[source]
+----
+floatn native_math::rsqrt(floatn x);
+----
+
+Compute inverse square root over an implementation-defined range.
+The maximum error is implementation-defined.
+
+[[native_mathsin]]
+===== native_math::sin
+[source]
+----
+floatn native_math::sin(floatn x);
+----
+
+Compute sine over an implementation-defined range, where `x` is an angle in radians.
+The maximum error is implementation-defined.
+
+[[native_mathsqrt]]
+===== native_math::sqrt
+[source]
+----
+floatn native_math::sqrt(floatn x);
+----
+
+Compute square root over an implementation-defined range.
+The maximum error is implementation-defined.
+
+[[native_mathtan]]
+===== native_math::tan
+[source]
+----
+floatn native_math::tan(floatn x);
+----
+
+Compute tangent over an implementation-defined range, where `x` is an angle in radians.
+The maximum error is implementation-defined.
+
+[[half-functions]]
+==== Half functions
+
+This section describes the following functions:
+
+  * A subset of functions from previous sections that are defined in the `cl::half_math` namespace.
+    These functions are implemented with a minimum of 10-bits of accuracy i.e. an ULP value \<= 8192 ulp.
+  * half functions for following basic operations: divide and reciprocal.
+  * Support for denormal values is optional for half_math:: functions. The `half_math::` functions may return any result allowed by the <<edge-case-behavior-in-flush-to-zero-mode, _Edge Case Behavior in Flush To Zero Mode_>> section, even when `-cl-denorms-are-zero` is not in force.
+
+[[half_mathcos]]
+===== half_math::cos
+[source]
+----
+floatn half_math::cos(floatn x);
+----
+
+Compute cosine.
+`x` is an angle in radians and it must be in the range -2^16^ ... +2^16^.
+
+[[half_mathdivide]]
+===== half_math::divide
+[source]
+----
+floatn half_math::divide(floatn x, floatn y);
+----
+
+Compute `x / y`.
+
+[[half_mathexp]]
+===== half_math::exp
+[source]
+----
+floatn half_math::exp(floatn x);
+----
+
+Compute the base e exponential of `x`.
+
+[[half_mathexp2]]
+===== half_math::exp2
+[source]
+----
+floatn half_math::exp2(floatn x);
+----
+
+Compute the base 2 exponential of `x`.
+
+[[half_mathexp10]]
+===== half_math::exp10
+[source]
+----
+floatn half_math::exp10(floatn x);
+----
+
+Compute the base 10 exponential of `x`.
+
+[[half_mathlog]]
+===== half_math::log
+[source]
+----
+floatn half_math::log(floatn x);
+----
+
+Compute natural logarithm.
+
+[[half_mathlog2]]
+===== half_math::log2
+[source]
+----
+floatn half_math::log2(floatn x);
+----
+
+Compute a base 2 logarithm.
+
+[[half_mathlog10]]
+===== half_math::log10
+[source]
+----
+floatn half_math::log10(floatn x);
+----
+
+Compute a base 10 logarithm.
+
+[[half_mathpowr]]
+===== half_math::powr
+[source]
+----
+floatn half_math::powr(floatn x, floatn y);
+----
+
+Compute `x` to the power `y`, where `x` is `>= 0`.
+
+[[half_mathrecip]]
+===== half_math::recip
+[source]
+----
+floatn half_math::recip(floatn x);
+----
+
+Compute reciprocal.
+
+[[half_mathrsqrt]]
+===== half_math::rsqrt
+[source]
+----
+floatn half_math::rsqrt(floatn x);
+----
+
+Compute inverse square root.
+
+[[half_mathsin]]
+===== half_math::sin
+[source]
+----
+floatn half_math::sin(floatn x);
+----
+
+Compute sine.
+`x` is an angle in radians and it must be in the range -2^16^ ... +2^16^.
+
+[[half_mathsqrt]]
+===== half_math::sqrt
+[source]
+----
+floatn half_math::sqrt(floatn x);
+----
+
+Compute square root.
+
+[[half_mathtan]]
+===== half_math::tan
+[source]
+----
+floatn half_math::tan(floatn x);
+----
+
+Compute tangent.
+`x` is an angle in radians and it must be in the range -2^16^ ... +2^16^.
+
+[[floating-point-pragmas]]
+==== Floating-point pragmas
+
+The `FP_CONTRACT` pragma can be used to allow (if the state is on) or disallow (if the state is off) the implementation to contract expressions.
+Each pragma can occur either outside external declarations or preceding all explicit declarations and statements inside a compound statement.
+When outside external declarations, the pragma takes effect from its occurrence until another `FP_CONTRACT` pragma is encountered, or until the end of the translation unit.
+When inside a compound statement, the pragma takes effect from its occurrence until another `FP_CONTRACT` pragma is encountered (including within a nested compound statement), or until the end of the compound statement; at the end of a compound statement the state for the pragma is restored to its condition just before the compound statement.
+If this pragma is used in any other context, the behavior is undefined.
+
+The pragma definition to set `FP_CONTRACT` is:
+
+[source]
+----
+#pragma OPENCL FP_CONTRACT on-off-switch
+                          // on-off-switch is one of: ON, OFF or DEFAULT.
+----
+
+The `DEFAULT` value is `ON`.

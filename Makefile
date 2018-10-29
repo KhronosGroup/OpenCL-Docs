@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2017 The Khronos Group Inc.
+# Copyright (c) 2013-2018 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,101 +12,276 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-QUIET ?=
-ASCIIDOC ?= asciidoc
-XMLLINT ?= xmllint
-DBLATEX ?= dblatex
-DOS2UNIX ?= dos2unix
-RM ?= rm -f
-VERBOSE ?=
-SPECVERSION ?= specversion.txt
-GITHEAD ?= ./.git/logs/HEAD
+QUIET	    ?=
+ASCIIDOC    ?= asciidoc
+ASCIIDOCTOR ?= asciidoctor
+XMLLINT     ?= xmllint
+DBLATEX     ?= dblatex
+DOS2UNIX    ?= dos2unix
+RM	    = rm -f
+RMRF	    = rm -rf
+MKDIR	    = mkdir -p
+CP	    = cp
+GS_EXISTS   := $(shell command -v gs 2> /dev/null)
+GITHEAD     = ./.git/logs/HEAD
 
-AD_HTML_OPTIONS = -b html5 -a toc2 -a toclevels=3 -a mathjax -f config/mathjax-asciidoc.conf
-AD_DB_OPTIONS = -b docbook -a docinfo
+# Target directories for output files
+# HTMLDIR - 'html' target
+# PDFDIR - 'pdf' target
+# CHECKDIR - 'allchecks' target
+OUTDIR	  := out
+HTMLDIR   := $(OUTDIR)/html
+PDFDIR	  := $(OUTDIR)/pdf
 
-all: api env ext
+# PDF Equations are written to SVGs, this dictates the location to store those files (temporary)
+PDFMATHDIR := $(OUTDIR)/equations_temp
 
-clean:
-	$(QUIET)$(RM) $(SPECVERSION)
-	$(QUIET)$(RM) OpenCL_API.html OpenCL_API-docinfo.xml OpenCL_API.xml OpenCL_API.pdf
-	$(QUIET)$(RM) opencl_env.html opencl_env-docinfo.xml opencl_env.pdf.xml opencl_env.pdf
-	$(QUIET)$(RM) opencl_ext.html opencl_ext-docinfo.xml opencl_ext.pdf.xml opencl_ext.pdf
+# Set VERBOSE to -v to see what asciidoc is doing.
+VERBOSE =
 
+# asciidoc attributes to set.
+# NOTEOPTS   sets options controlling which NOTEs are generated
+# ATTRIBOPTS sets the api revision and enables MathJax generation
+# ADOCOPTS   options for asciidoc->HTML5 output
+# Currently unused in CL spec
+NOTEOPTS     = -a editing-notes
+# Spell out RFC2822 format as not all date commands support -R
+SPECDATE     = $(shell echo `date -u "+%a, %d %b %Y %T %z"`)
 
+# Generate Asciidoc attributes for spec version and remark
+# The dependency on HEAD is per the suggestion in
+# http://neugierig.org/software/blog/2014/11/binary-revisions.html
 ifeq ($(wildcard $(GITHEAD)),)
-$(SPECVERSION):
-	$(QUIET)echo ":revnumber: git information not available" > $@
-
-OpenCL_API-docinfo.xml:
-	$(QUIET)echo "<subtitle>unknown version</subtitle>" > $@
-
-opencl_env-docinfo.xml:
-	$(QUIET)echo "<subtitle>unknown version</subtitle>" > $@
-
-opencl_ext-docinfo.xml:
-	$(QUIET)echo "<subtitle>unknown version</subtitle>" > $@
+# If GITHEAD does not exist, don't include branch info.
+SPECREVISION = Git tag information not available
+SPECREMARK = Git branch information not available
 else
-$(SPECVERSION): $(GITHEAD)
-	$(QUIET)echo ":revnumber: " `git describe --tags --dirty` > $@
-
-OpenCL_API-docinfo.xml: $(GITHEAD)
-	$(QUIET)echo "<subtitle>" `git describe --tags --dirty` "</subtitle>" > $@
-
-opencl_env-docinfo.xml: $(GITHEAD)
-	$(QUIET)echo "<subtitle>" `git describe --tags --dirty` "</subtitle>" > $@
-
-opencl_ext-docinfo.xml: $(GITHEAD)
-	$(QUIET)echo "<subtitle>" `git describe --tags --dirty` "</subtitle>" > $@
+# Expect the tag to be in the format MAJOR.MINOR-REVISION, e.g. 2.2-9.
+# If your current commit is not a tag then a commit hash will be appended.
+# If you have locally modified files then -dirty will be appended.
+# Could use `git log -1 --format="%cd"` to get branch commit date
+SPECREVISION = $(shell echo `git describe --tags --dirty`)
+# This used to be a dependency in the spec html/pdf targets,
+# but that's likely to lead to merge conflicts. Just regenerate
+# when pushing a new spec for review to the sandbox.
+SPECREMARK = from git branch: $(shell echo `git symbolic-ref --short HEAD`) \
+	     commit: $(shell echo `git log -1 --format="%H"`)
 endif
 
+ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
+	       -a revdate="$(SPECDATE)" \
+	       -a revremark="$(SPECREMARK)" \
+	       -a stem=latexmath
 
-OPENCL_API_ASC_DEPS=OpenCL_API.asc $(shell grep ^include:: OpenCL_API.asc | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
-DB_API_OPTIONS = -P doc.layout="coverpage toc mainmatter" -P doc.publisher.show=0 -P latex.output.revhistory=0 -p dblatex/asciidoc-dblatex.xsl -s dblatex/asciidoc-dblatex.sty
+# Currently not using custom asciidoctor macros
+# ADOCEXTS     = -r $(CURDIR)/config/vulkan-macros.rb
+ADOCEXTS     = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb
+ADOCOPTS     = -d book $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
 
-api: OpenCL_API.html OpenCL_API.pdf
+KATEXDIR     = ../katex
+ADOCHTMLEXTS = -r $(CURDIR)/config/katex_replace.rb
+ADOCHTMLOPTS = $(ADOCHTMLEXTS) -a stylesheet=khronos.css \
+	       -a stylesdir=config -a katexpath=$(KATEXDIR)
 
-OpenCL_API.html: $(OPENCL_API_ASC_DEPS)
-	$(QUIET)$(ASCIIDOC) $(AD_HTML_OPTIONS) $(VERBOSE) -o $@ $<
-	$(QUIET)$(DOS2UNIX) $@ 2> /dev/null
+# The monkey patch for asciidoctor-pdf fixes issue #259
+# (https://github.com/asciidoctor/asciidoctor-pdf/issues/259).
+# I've submitted a pull request to fix it, once it goes into a gem release, we'll remove this.
+ADOCPDFEXTS  = -r asciidoctor-pdf -r asciidoctor-mathematical \
+	       -r $(CURDIR)/config/asciidoctor-pdf-monkeypatch.rb --trace
+ADOCPDFOPTS  = $(ADOCPDFEXTS) -a mathematical-format=svg \
+	       -a imagesoutdir=$(PDFMATHDIR)
 
-OpenCL_API.xml: $(OPENCL_API_ASC_DEPS) OpenCL_API-docinfo.xml
-	$(QUIET)$(ASCIIDOC) $(AD_DB_OPTIONS) $(VERBOSE) -o $@ $<
-	$(QUIET)$(XMLLINT) --nonet --noout --valid $@
+.PHONY: directories
 
-OpenCL_API.pdf: OpenCL_API.xml
-	$(QUIET)$(DBLATEX) -t pdf $(DB_API_OPTIONS) $(VERBOSE) -o $@ $<
-	$(QUIET)$(DOS2UNIX) $@ 2> /dev/null
+# README.md is a proxy for all the katex files that need to be installed
+katexinst: $(OUTDIR)/katex/README.md
 
+$(OUTDIR)/katex/README.md: katex/README.md
+	$(QUIET)$(MKDIR) $(OUTDIR)
+	$(QUIET)$(RMRF)  $(OUTDIR)/katex
+	$(QUIET)$(CP) -rf katex $(OUTDIR)
 
-OPENCL_ENV_ASC_DEPS=opencl_env.asc $(shell grep ^include:: opencl_env.asc | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
-DB_ENV_OPTIONS = -P doc.layout="coverpage toc mainmatter" -P doc.publisher.show=0 -P latex.output.revhistory=0 -p env/dblatex/asciidoc-dblatex.xsl -s env/dblatex/asciidoc-dblatex.sty 
+all: api env ext cxx c icdinst
 
-env: opencl_env.html opencl_env.pdf
+api: apihtml apipdf
 
-opencl_env.html: $(OPENCL_ENV_ASC_DEPS)
-	$(QUIET)$(ASCIIDOC) $(AD_HTML_OPTIONS) $(VERBOSE) -o $@ $<
-	$(QUIET)$(DOS2UNIX) $@ 2> /dev/null
+env: envhtml envpdf
 
-opencl_env.pdf: $(OPENCL_ENV_ASC_DEPS) opencl_env-docinfo.xml
-	$(QUIET)$(ASCIIDOC) $(AD_DB_OPTIONS) $(VERBOSE) -o $@.xml $<
-	$(QUIET)$(XMLLINT) --nonet --noout --valid $@.xml
-	$(QUIET)$(DBLATEX) -t pdf $(DB_ENV_OPTIONS) $(VERBOSE) -o $@ $@.xml
-	$(QUIET)$(DOS2UNIX) $@ 2> /dev/null
+ext: exthtml extpdf
 
+cxx: cxxhtml cxxpdf
 
-AD_EXT_HTML_OPTIONS = -b html5 -a toc2 -a toclevels=2 -a mathjax -f config/mathjax-asciidoc.conf
-OPENCL_EXT_ASC_DEPS=opencl_ext.asc $(shell grep ^include:: opencl_ext.asc | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
-DB_EXT_OPTIONS = -P doc.layout="coverpage toc mainmatter index" -P doc.publisher.show=0 -P latex.output.revhistory=0 -p ext/dblatex/asciidoc-dblatex.xsl -s ext/dblatex/asciidoc-dblatex.sty 
+c: chtml cpdf
 
-ext: opencl_ext.html opencl_ext.pdf
+icdinst: icdinsthtml icdinstpdf
 
-opencl_ext.html: $(OPENCL_EXT_ASC_DEPS)
-	$(QUIET)$(ASCIIDOC) $(AD_EXT_HTML_OPTIONS) $(VERBOSE) -o $@ $<
-	$(QUIET)$(DOS2UNIX) $@ 2> /dev/null
+html: apihtml envhtml exthtml cxxhtml chtml icdinsthtml
 
-opencl_ext.pdf: $(OPENCL_EXT_ASC_DEPS) opencl_ext-docinfo.xml
-	$(QUIET)$(ASCIIDOC) $(AD_DB_OPTIONS) $(VERBOSE) -o $@.xml $<
-	$(QUIET)$(XMLLINT) --nonet --noout --valid $@.xml
-	$(QUIET)$(DBLATEX) -t pdf $(DB_EXT_OPTIONS) $(VERBOSE) -o $@ $@.xml
-	$(QUIET)$(DOS2UNIX) $@ 2> /dev/null
+pdf: apipdf envpdf extpdf cxxpdf cpdf icdinstpdf
+
+# Spec targets.
+# There is some complexity to try and avoid short virtual targets like
+# 'html' causing specs to *always* be regenerated.
+
+src:
+	@echo APISPECSRC = $(APISPECSRC)
+	@echo ENVSPECSRC = $(ENVSPECSRC)
+	@echo EXTSPECSRC = $(EXTSPECSRC)
+
+# API spec
+
+# Top-level spec source file
+APISPEC = OpenCL_API
+APISPECSRC = $(APISPEC).txt \
+    $(shell grep ^include:: $(APISPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+
+apihtml: $(HTMLDIR)/$(APISPEC).html $(APISPECSRC)
+
+$(HTMLDIR)/$(APISPEC).html: $(APISPECSRC) katexinst
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(APISPEC).txt
+
+apipdf: $(PDFDIR)/$(APISPEC).pdf $(APISPECSRC)
+
+$(PDFDIR)/$(APISPEC).pdf: $(APISPECSRC)
+	$(QUIET)$(MKDIR) $(PDFDIR)
+	$(QUIET)$(MKDIR) $(PDFMATHDIR)
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(APISPEC).txt
+ifndef GS_EXISTS
+	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
+else
+	$(QUIET)$(CURDIR)/config/optimize-pdf $@
+	$(QUIET)rm $@
+	$(QUIET)mv $(PDFDIR)/$(APISPEC)-optimized.pdf $@
+endif
+
+# Environment spec
+
+# Top-level spec source file
+ENVSPEC = OpenCL_Env
+ENVSPECSRC = $(ENVSPEC).txt \
+    $(shell grep ^include:: $(ENVSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+
+envhtml: $(HTMLDIR)/$(ENVSPEC).html $(ENVSPECSRC)
+
+$(HTMLDIR)/$(ENVSPEC).html: $(ENVSPECSRC) katexinst
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(ENVSPEC).txt
+
+envpdf: $(PDFDIR)/$(ENVSPEC).pdf $(ENVSPECSRC)
+
+$(PDFDIR)/$(ENVSPEC).pdf: $(ENVSPECSRC)
+	$(QUIET)$(MKDIR) $(PDFDIR)
+	$(QUIET)$(MKDIR) $(PDFMATHDIR)
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(ENVSPEC).txt
+ifndef GS_EXISTS
+	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
+else
+	$(QUIET)$(CURDIR)/config/optimize-pdf $@
+	$(QUIET)rm $@
+	$(QUIET)mv $(PDFDIR)/$(ENVSPEC)-optimized.pdf $@
+endif
+
+# Extensions spec
+EXTSPEC = OpenCL_Ext
+EXTSPECSRC = $(EXTSPEC).txt \
+    $(shell grep ^include:: $(EXTSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+
+exthtml: $(HTMLDIR)/$(EXTSPEC).html $(EXTSPECSRC)
+
+$(HTMLDIR)/$(EXTSPEC).html: $(EXTSPECSRC) katexinst
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTSPEC).txt
+
+extpdf: $(PDFDIR)/$(EXTSPEC).pdf $(EXTSPECSRC)
+
+$(PDFDIR)/$(EXTSPEC).pdf: $(EXTSPECSRC)
+	$(QUIET)$(MKDIR) $(PDFDIR)
+	$(QUIET)$(MKDIR) $(PDFMATHDIR)
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(EXTSPEC).txt
+ifndef GS_EXISTS
+	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
+else
+	$(QUIET)$(CURDIR)/config/optimize-pdf $@
+	$(QUIET)rm $@
+	$(QUIET)mv $(PDFDIR)/$(EXTSPEC)-optimized.pdf $@
+endif
+
+# C++ (cxx) spec
+CXXSPEC = OpenCL_Cxx
+CXXSPECSRC = $(CXXSPEC).txt \
+    $(shell grep ^include:: $(CXXSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+
+cxxhtml: $(HTMLDIR)/$(CXXSPEC).html $(CXXSPECSRC)
+
+$(HTMLDIR)/$(CXXSPEC).html: $(CXXSPECSRC) katexinst
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CXXSPEC).txt
+
+cxxpdf: $(PDFDIR)/$(CXXSPEC).pdf $(CXXSPECSRC)
+
+$(PDFDIR)/$(CXXSPEC).pdf: $(CXXSPECSRC)
+	$(QUIET)$(MKDIR) $(PDFDIR)
+	$(QUIET)$(MKDIR) $(PDFMATHDIR)
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CXXSPEC).txt
+ifndef GS_EXISTS
+	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
+else
+	$(QUIET)$(CURDIR)/config/optimize-pdf $@
+	$(QUIET)rm $@
+	$(QUIET)mv $(PDFDIR)/$(CXXSPEC)-optimized.pdf $@
+endif
+
+# C spec
+CSPEC = OpenCL_C
+CSPECSRC = $(CSPEC).txt \
+    $(shell grep ^include:: $(CSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+
+chtml: $(HTMLDIR)/$(CSPEC).html $(CSPECSRC)
+
+$(HTMLDIR)/$(CSPEC).html: $(CSPECSRC) katexinst
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CSPEC).txt
+
+cpdf: $(PDFDIR)/$(CSPEC).pdf $(CSPECSRC)
+
+$(PDFDIR)/$(CSPEC).pdf: $(CSPECSRC)
+	$(QUIET)$(MKDIR) $(PDFDIR)
+	$(QUIET)$(MKDIR) $(PDFMATHDIR)
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CSPEC).txt
+ifndef GS_EXISTS
+	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
+else
+	$(QUIET)$(CURDIR)/config/optimize-pdf $@
+	$(QUIET)rm $@
+	$(QUIET)mv $(PDFDIR)/$(CSPEC)-optimized.pdf $@
+endif
+
+# ICD installation guidelines
+ICDINSTSPEC = OpenCL_ICD_Installation
+ICDINSTSPECSRC = $(ICDINSTSPEC).txt \
+    $(shell grep ^include:: $(ICDINSTSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+
+icdinsthtml: $(HTMLDIR)/$(ICDINSTSPEC).html $(ICDINSTSPECSRC)
+
+$(HTMLDIR)/$(ICDINSTSPEC).html: $(ICDINSTSPECSRC) katexinst
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(ICDINSTSPEC).txt
+
+icdinstpdf: $(PDFDIR)/$(ICDINSTSPEC).pdf $(ICDINSTSPECSRC)
+
+$(PDFDIR)/$(ICDINSTSPEC).pdf: $(ICDINSTSPECSRC)
+	$(QUIET)$(MKDIR) $(PDFDIR)
+	$(QUIET)$(MKDIR) $(PDFMATHDIR)
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(ICDINSTSPEC).txt
+ifndef GS_EXISTS
+	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
+else
+	$(QUIET)$(CURDIR)/config/optimize-pdf $@
+	$(QUIET)rm $@
+	$(QUIET)mv $(PDFDIR)/$(ICDINSTSPEC)-optimized.pdf $@
+endif
+
+# Clean generated and output files
+
+clean: clean_html clean_pdf
+
+clean_html:
+	$(QUIET)$(RMRF) $(HTMLDIR) $(OUTDIR)/katex
+
+clean_pdf:
+	$(QUIET)$(RMRF) $(PDFDIR) $(PDFMATHDIR)

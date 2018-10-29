@@ -1,0 +1,550 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[pipes-library]]
+=== Pipes Library
+
+Header _<opencl_pipe>_ defines `pipe` and `pipe_storage` template classes.
+`pipe` and `pipe_storage` can be used as a communication channel between kernels.
+`pipe`, `reservation` and `pipe_storage`  template classes follow all the rules for marker types as specified in the <<marker-types, _Marker Types_>> section.
+
+[[pipe-host-type]]
+==== Pipe Host Type
+
+The below describes the OpenCL pipe data type and the corresponding data type available to the application:
+
+[[host_pipe_type]]
+.Host pipe type
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Type in OpenCL {cpp}*
+| *API type for application*
+
+| `cl::pipe`
+| `cl_pipe`
+|====
+
+[[header-opencl_pipe-synopsis]]
+==== Header <opencl_pipe> Synopsis
+
+[source]
+----
+namespace cl
+{
+enum class pipe_access { read, write };
+
+template <class T, pipe_access Access = pipe_access::read>
+struct pipe;
+
+template <class T, size_t N>
+struct pipe_storage;
+
+template<pipe_access Access = pipe_access::read, class T, size_t N>
+pipe<T, Access> make_pipe(const pipe_storage<T, N>& ps);
+
+}
+----
+
+[[pipe-class-specializations]]
+==== pipe class specializations
+
+`pipe` class has two distinct specializations depending on `pipe_access` parameter defined as follows:
+[source]
+----
+namespace cl
+{
+template <class T, pipe_access Access = pipe_access::read>
+struct pipe: marker_type
+{
+    typedef T element_type;
+    static constexpr pipe_access access = Access;
+
+    template<memory_scope S>
+    struct reservation: marker_type
+    {
+        reservation() = delete;
+        reservation(const reservation&) = default;
+        reservation(reservation&&) = default;
+
+        reservation& operator=(const reservation&) = delete;
+        reservation& operator=(reservation&&) = delete;
+        reservation* operator&() = delete;
+
+        bool is_valid() const noexcept;
+        bool read(uint index, T& ref) const noexcept;
+        void commit() noexcept;
+
+        explicit operator bool() const noexcept;
+    };
+
+    pipe() = delete;
+    pipe(const pipe&) = default;
+    pipe(pipe&&) = default;
+
+    pipe& operator=(const pipe&) = delete;
+    pipe& operator=(pipe&&) = delete;
+    pipe* operator&() = delete;
+
+    bool read(T& ref) const noexcept;
+    reservation<memory_scope_work_item> reserve(
+                                               uint num_packets) const noexcept;
+    reservation<memory_scope_work_group> work_group_reserve(
+                                               uint num_packets) const noexcept;
+    reservation<memory_scope_sub_group> sub_group_reserve(
+                                               uint num_packets) const noexcept;
+
+    uint num_packets() const noexcept;
+    uint max_packets() const noexcept;
+};
+
+template <class T>
+struct pipe<T, pipe_access::write>: marker_type
+{
+    typedef T element_type;
+    static constexpr pipe_access access = pipe_access::write;
+
+    template<memory_scope S>
+    struct reservation: marker_type
+    {
+        reservation() = delete;
+        reservation(const reservation &) = default;
+        reservation(reservation &&) = default;
+
+        reservation& operator=(const reservation &) noexcept = delete;
+        reservation& operator=(reservation &&) noexcept = delete;
+        reservation* operator&() = delete;
+
+        bool is_valid() const noexcept;
+        bool write(uint index, const T& ref) noexcept;
+        void commit() noexcept;
+
+        explicit operator bool() const noexcept;
+    };
+
+    pipe() = delete;
+    pipe(const pipe&) = default;
+    pipe(pipe&&) = default;
+
+    pipe& operator=(const pipe&) = delete;
+    pipe& operator=(pipe&&) = delete;
+    pipe* operator&() = delete;
+
+    bool write(const T& ref) noexcept;
+    reservation<memory_scope_work_item> reserve(uint num_packets) noexcept;
+    reservation<memory_scope_work_group> work_group_reserve(
+                                                     uint num_packets) noexcept;
+    reservation<memory_scope_sub_group> sub_group_reserve(
+                                                     uint num_packets) noexcept;
+
+    uint num_packets() const noexcept;
+    uint max_packets() const noexcept;
+};
+
+}
+----
+
+[[pipe-class-methods]]
+==== pipe class methods
+
+[[piperead]]
+===== pipe::read
+
+[source]
+----
+bool read(T& ref) const noexcept;
+----
+
+Read packet from pipe into `ref`.
+
+Returns `true` if read is successful and `false` if the pipe is empty.
+
+[[pipewrite]]
+===== pipe::write
+
+[source]
+----
+bool write(const T& ref) noexcept;
+----
+
+Write packet specified by `ref` to pipe.
+Returns `true` if write is successful and `false` if the pipe is full.
+
+[[pipereserve]]
+===== pipe::reserve
+
+[source]
+----
+reservation reserve(uint num_packets) const noexcept;
+
+reservation reserve(uint num_packets) noexcept;
+----
+
+Reserve `num_packets` entries for reading/writing from/to pipe.
+Returns a valid reservation if the reservation is successful.
+
+The reserved pipe entries are referred to by indices that go from `0 ... num_packets - 1`.
+
+[[pipework_group_reserve]]
+===== pipe::work_group_reserve
+
+[source]
+----
+reservation work_group_reserve(uint num_packets) const noexcept;
+
+reservation work_group_reserve(uint num_packets) noexcept;
+----
+
+Reserve `num_packets` entries for reading/writing from/to pipe.
+Returns a valid reservation if the reservation is successful.
+
+The reserved pipe entries are referred to by indices that go from `0 ... num_packets - 1`.
+
+[[pipesub_group_reserve]]
+===== pipe::sub_group_reserve
+
+[source]
+----
+reservation sub_group_reserve(uint num_packets) const noexcept;
+
+reservation sub_group_reserve(uint num_packets) noexcept;
+----
+
+Reserve `num_packets` entries for reading/writing from/to pipe.
+Returns a valid reservation if the reservation is successful.
+
+The reserved pipe entries are referred to by indices that go from `0 ... num_packets - 1`.
+
+[[pipenum_packets]]
+===== pipe::num_packets
+
+[source]
+----
+uint num_packets() const noexcept;
+----
+
+Returns the current number of packets that have been written to the pipe, but have not yet been read from the pipe.
+The number of available entries in a pipe is a dynamic value.
+The value returned should be considered immediately stale.
+
+[[pipemax_packets]]
+===== pipe::max_packets
+
+[source]
+----
+uint max_packets() const noexcept;
+----
+
+Returns the maximum number of packets specified when pipe was created.
+
+[[pipereservationread]]
+===== pipe::reservation::read
+
+[source]
+----
+bool pipe::reservation::read(uint index, T& ref) const noexcept;
+----
+
+Read packet from the reserved area of the pipe referred to by `index` into `ref`.
+
+The reserved pipe entries are referred to by indices that go from `0 ... num_packets - 1`.
+
+Returns `true` if read is successful and `false` otherwise.
+
+[[pipereservationwrite]]
+===== pipe::reservation::write
+
+[source]
+----
+bool pipe::reservation::write(uint index, const T& ref) noexcept;
+----
+
+Write packet specified by `ref` to the reserved area of the pipe referred to by `index`.
+
+The reserved pipe entries are referred to by indices that go from `0 ... num_packets - 1`.
+
+Returns `true` if write is successful and `false` otherwise.
+
+[[pipereservationcommit]]
+===== pipe::reservation::commit
+
+[source]
+----
+void pipe::reservation::commit() const noexcept;
+
+void pipe::reservation::commit() noexcept;
+----
+
+Indicates that all reads/writes to `num_packets` associated with reservation are completed.
+
+[[pipereservationis_valid]]
+===== pipe::reservation::is_valid
+
+[source]
+----
+bool pipe::reservation::is_valid();
+----
+
+Return `true` if reservation is a valid reservation and `false` otherwise.
+
+[[pipereservationoperator-bool]]
+===== pipe::reservation::operator bool
+[source]
+----
+explicit pipe::reservation::operator bool() const noexcept;
+----
+
+Return `true` if reservation is a valid reservation and `false` otherwise.
+
+[[pipe_storage-class]]
+==== pipe_storage class
+
+The lifetime of `pipe_storage` objects is the same as a program where they were declared.
+The variables of such type are not shared across devices.
+
+`N` in the `pipe_storage` template class specifies the maximum number of packets which can be held by an object.
+[source]
+----
+namespace cl
+{
+template<class T, size_t N>
+struct pipe_storage: marker_type
+{
+    pipe_storage();
+    pipe_storage(const pipe_storage&) = default;
+    pipe_storage(pipe_storage&&) = default;
+
+    pipe_storage& operator=(const pipe_storage&) = delete;
+    pipe_storage& operator=(pipe_storage&&) = delete;
+    pipe_storage* operator&() = delete;
+
+    template<pipe_access Access = pipe_access::read>
+    pipe<T, Access> get() const noexcept
+};
+
+template<pipe_access Access = pipe_access::read, class T, size_t N>
+pipe<T, Access> make_pipe(const pipe_storage<T, N>& ps);
+
+}
+----
+
+[[pipe_storage-class-methods-and-make_pipe-function]]
+==== pipe_storage class methods and make_pipe function
+
+[[pipe_storageget]]
+===== pipe_storage::get
+[source]
+----
+template<pipe_access Access = pipe_access::read>
+pipe<T, Access> get() noexcept;
+----
+
+Constructs a read only or write only pipe from `pipe_storage` object.
+One kernel can have only one pipe accessor associated with one `pipe_storage` object.
+
+[[make_pipe]]
+===== make_pipe
+[source]
+----
+template<pipe_access Access = pipe_access::read, class T, size_t N>
+pipe<T, Access> make_pipe(const pipe_storage<T, N>& ps);
+----
+
+Constructs a read only or write only pipe from `pipe_storage` object.
+One kernel can have only one pipe accessor associated with one `pipe_storage` object.
+
+[[operations-ordering-using-reservations]]
+==== Operations ordering using reservations
+
+The `reservation::read` and `reservation::write` pipe functions can be used to read from or write to a packet index.
+These functions can be used to read from or write to a packet index one or multiple times.
+If a packet index that is reserved for writing is not written to using the `reservation::write` method, the contents of that packet in the pipe are undefined.
+`reservation::commit` remove the entries reserved for reading from the pipe.
+`reservation::commit` ensures that the entries reserved for writing are all added in-order as one contiguous set of packets to the pipe.
+
+There can only be `CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS` (refer to _Table 4.3_) reservations active (i.e. reservations that have been reserved but not committed) per work-item or work-group for a pipe in a kernel executing on a device.
+
+Work-item based reservations made by a work-item are ordered in the pipe as they are ordered in the program.
+Reservations made by different work-items that belong to the same work-group can be ordered using the work-group barrier function.
+The order of work-item based reservations that belong to different work-groups is implementation defined.
+
+Work-group based reservations made by a work-group are ordered in the pipe as they are ordered in the program.
+The order of work-group based reservations by different work-groups is implementation defined.
+
+[[requirements]]
+==== Requirements
+
+[[data]]
+===== Data
+
+Template parameter `T` in `pipe` and `pipe_storage` class template denotes the data type stored in pipe.
+The type `T` must be a POD type i.e. satisfy `is_pod<T>::value == true`.
+
+[[work-group-operations]]
+===== Work-group operations
+
+All work-group specific functions must be encountered by all work items in a work-group executing the kernel with the same argument values, otherwise the behavior is undefined.
+
+[[sub-group-operations]]
+===== Sub-group operations
+
+All sub-group specific functions must be encountered by all work items in a sub-group executing the kernel with the same argument values, otherwise the behavior is undefined.
+
+[[restrictions-5]]
+==== Restrictions
+
+[[pipe]]
+===== pipe
+
+  * The `pipe` type cannot be used with variables declared inside a class or union field, a pointer type, an array, global variables declared at program scope or the return type of a function.
+  * A kernel cannot read from and write to the same pipe object.
+  * The `pipe` type cannot be used with the `global`, `local`, `priv` and `constant` address space storage classes (see the <<explicit-address-space-storage-classes, _Explicit address space storage classes_>> section).
+  * The value returned by applying the `sizeof` operator to the `pipe` type is implementation-defined.
+
+[[reservation]]
+===== reservation
+
+  * The `reservation` type cannot be used with variables declared inside a class or union field, a pointer type, an array, global variables declared at program scope or the return type of a function.
+  * The `reservation` type cannot be used with the `global`, `local`, `priv` and `constant` address space storage classes (see the <<explicit-address-space-storage-classes, _Explicit address space storage classes_>> section).
+  * The value returned by applying the `sizeof` operator to the `reservation` type is implementation-defined.
+
+
+The following behavior is undefined:
+
+  * A kernel calls `reservation::read` or `reservation::write` with a valid reservation but with an index that is not a value from `0 ... num_packets - 1` specified to the corresponding call to `pipe::reserve`, `pipe::work_group_reserve` or `pipe::sub_group_reserve`.
+  * A kernel calls `reservation::read` or `reservation::write` with a reservation that has already been committed (i.e. a `reservation::commit` with this reservation has already been called).
+  * The contents of the reserved data packets in the pipe are undefined if the kernel does not call `reservation::write` for all entries that were reserved by the corresponding call to `pipe::reserve`, `pipe::work_group_reserve` or `pipe::sub_group_reserve`.
+  * Calls to `reservation::read` and `reservation::commit` or `reservation::write` and `reservation::commit` for a given reservation must be called by the same kernel that made the reservation using `pipe::reserve`, `pipe::work_group_reserve` or `pipe::sub_group_reserve`. The reservation cannot be passed to another kernel including child kernels.
+
+[[pipe_storage]]
+===== pipe_storage
+
+  * Variables of type `pipe_storage` can only be declared at program scope or with the static specifier.
+  * The `pipe_storage` type cannot be used as a class or union field, a pointer type, an array or the return type of a function.
+  * The `pipe_storage` type cannot be used with the `global`, `local`, `priv` and `constant` address space storage classes (see the <<explicit-address-space-storage-classes, _Explicit address space storage classes_>> section).
+  * The value returned by applying the `sizeof` operator to the `pipe_storage` type is implementation-defined.
+  * Variables of type `pipe` created from `pipe_storage` can only be declared inside a kernel function at kernel scope.
+
+
+The following behavior is undefined:
+
+  * A kernel cannot contain more than one `pipe` accessor made from one `pipe_storage` object. Otherwise behavior is undefined.
+
+[[examples-6]]
+==== Examples
+
+[[example-1-6]]
+===== Example 1
+
+Example of reading from a pipe object.
+[source]
+----
+#include <opencl_pipe>
+using namespace cl;
+
+kernel void reader(pipe<int> p) {
+    int val;
+    if(p.read(val)) {
+        //...
+    }
+}
+----
+
+[[example-2-4]]
+===== Example 2
+
+Example of writing to a pipe object.
+[source]
+----
+#include <opencl_pipe>
+using namespace cl;
+
+kernel void writer(pipe<int, pipe_access::write> p) {
+    //...
+    int val;
+    if(p.write(val)) {
+        //...
+    }
+}
+----
+
+[[example-3-3]]
+===== Example 3
+
+Example of reading from a pipe object using reservations.
+[source]
+----
+#include <opencl_pipe>
+using namespace cl;
+
+kernel void reader(pipe<int, pipe_access::read> p) {
+    int val;
+    auto rid = p.reserve(1);
+    if(rid.read(0, val)) {
+        //...
+    }
+    rid.commit();
+}
+----
+
+[[example-4-2]]
+===== Example 4
+
+Example of using a pipe_storage object and how to create the pipe objects/accessors from it.
+[source]
+----
+#include <opencl_pipe>
+
+cl::pipe_storage <int, 100> myProgramPipe0;
+
+kernel void producer() {
+    cl::pipe<int, cl::pipe_access::write> p =
+   myProgramPipe0.get<cl::pipe_access::write>();
+    //...
+    p.write(...);
+}
+
+kernel void consumer() {
+    cl::pipe<int, cl::pipe_access::read> p =
+  myProgramPipe0.get<cl::pipe_access::read>();
+    if(p.read(...)) {
+        //...
+    }
+}
+----
+
+[[example-5-2]]
+===== Example 5
+
+Example of using more than one pipe_storage object.
+[source]
+----
+#include <opencl_pipe>
+using namespace cl;
+
+pipe_storage<int2, 20> myProgramPipe2;
+pipe_storage<float, 40> myProgramPipe3;
+
+kernel void input() {
+    auto p = make_pipe<pipe_access::write>(myProgramPipe2);
+    //...
+    p.write(...);
+}
+
+kernel void processor() {
+    auto p_in = make_pipe<pipe_access::read>(myProgramPipe2);
+    auto p_out = make_pipe<pipe_access::write>(myProgramPipe3);
+    ...
+    if(p_in.read(...)) {
+        //...
+    }
+    p_out.write(...);
+}
+
+kernel void output() {
+    auto p = make_pipe<pipe_access::read>(myProgramPipe3);
+    if(p.read(...)) {
+        //...
+    }
+}
+----

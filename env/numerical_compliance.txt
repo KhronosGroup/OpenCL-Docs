@@ -1,1365 +1,1524 @@
-// Copyright 2017 The Khronos Group. 
-//
-//  Khronos licenses this file to you under the Creative Commons Attribution 4.0 
-//  International (CC BY 4.0) License (the "License"); you may not use this file 
-//  except in compliance with the License.  You may obtain a copy of the License 
-//  at https://creativecommons.org/licenses/by/4.0/
-//
-//  Unless required by applicable law or agreed to in writing, material distributed 
-//  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
-//  CONDITIONS OF ANY KIND, either express or implied. If all or a portion of this 
-//  material is re-used, notice substantially similar to the following must be included:
-//
-//  This specification includes material developed at The Khronos Group 
-//  (http://www.khronos.org/). Khronos supplied such material on an "AS IS" BASIS, 
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, under 
-//  the terms of the Creative Commons Attribution 4.0 International (CC BY 4.0) 
-//  License (the "License"), available at https://creativecommons.org/licenses/by/4.0/. 
-//  All use of such material is governed by the term of the License. Khronos bears 
-//  no responsibility whatsoever for additions or modifications to its material.
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
 
 [[numerical_compliance]]
 == OpenCL Numerical Compliance
 
-This section describes features of the {cpp14} and IEEE 754 standards that must be supported by all OpenCL compliant devices.
+This section describes features of the <<cpp14-spec, {cpp14}>> and 
+<<ieee-754-spec, IEEE-754>> standards that must be supported by all OpenCL
+compliant devices.
 
-This section describes the functionality that must be supported by all OpenCL devices for single precision floating-point numbers.  Currently, only single precision floating-point is a requirement.  Half precision floating-point is an optional feature indicated by the *Float16* capability.  Double precision floating-point is also an optional feature indicated by the *Float64* capability.
+This section describes the functionality that must be supported by all
+OpenCL devices for single precision floating-point numbers.
+Currently, only single precision floating-point is a requirement.
+Half precision floating-point is an optional feature indicated by the
+*Float16* capability.
+Double precision floating-point is also an optional feature indicated by the
+*Float64* capability.
 
 === Rounding Modes
 
-Floating-point calculations may be carried out internally with extra precision and then rounded to fit into the destination type.  IEEE 754 defines four possible rounding modes:
+Floating-point calculations may be carried out internally with extra
+precision and then rounded to fit into the destination type.
+IEEE 754 defines four possible rounding modes:
 
-* _Round to nearest even_
-* _Round toward +infinity_
-* _Round toward -infinity_
-* _Round toward zero_
+  * _Round to nearest even_
+  * _Round toward +infinity_
+  * _Round toward -infinity_
+  * _Round toward zero_
 
-The complete set of rounding modes supported by the device are described by the +CL_DEVICE_SINGLE_FP_CONFIG+, +CL_DEVICE_HALF_FP_CONFIG+, and +CL_DEVICE_DOUBLE_FP_CONFIG+ device queries.
+The complete set of rounding modes supported by the device are described by
+the `CL_DEVICE_SINGLE_FP_CONFIG`, `CL_DEVICE_HALF_FP_CONFIG`, and
+`CL_DEVICE_DOUBLE_FP_CONFIG` device queries.
 
-For double precision operations, _Round to nearest even_ is a required rounding mode, and is therefore the default rounding mode for double precision operations.
+For double precision operations, _Round to nearest even_ is a required
+rounding mode, and is therefore the default rounding mode for double
+precision operations.
 
-For single precision operations, devices supporting the full profile must support _Round to nearest even_, therefore for full profile devices this is the default rounding mode for single precision operations.  Devices supporting the embedded profile may support either _Round to nearest even_ or _Round toward zero_ as the default rounding mode for single precision operations.
+For single precision operations, devices supporting the full profile must
+support _Round to nearest even_, therefore for full profile devices this is
+the default rounding mode for single precision operations.
+Devices supporting the embedded profile may support either _Round to nearest
+even_ or _Round toward zero_ as the default rounding mode for single
+precision operations.
 
-For half precision operations, devices may support either _Round to nearest even_ or _Round toward zero_ as the default rounding mode for half precision operations.
+For half precision operations, devices may support either _Round to nearest
+even_ or _Round toward zero_ as the default rounding mode for half precision
+operations.
 
-Only static selection of rounding mode is supported.  Dynamically reconfiguring the rounding mode as specified by the IEEE 754 spec is not supported.
+Only static selection of rounding mode is supported.
+Dynamically reconfiguring the rounding mode as specified by the IEEE 754
+spec is not supported.
 
 === Rounding Modes for Conversions
 
-The rounding mode for conversion operations may be specified explicitly via an *FPRoundingMode* decoration or may use an implicit rounding mode.  If no rounding mode is specified explicitly then the default rounding mode for OpenCL conversion operations is:
+Results of the following conversion instructions may include an optional
+*FPRoundingMode* decoration:
+
+* *OpConvertFToU*
+* *OpConvertFToS*
+* *OpConvertSToF*
+* *OpConvertUToF*
+* *OpFConvert*
+
+The *FPRoundingMode* decoration may not be added to results of any other
+instruction.
+
+If no rounding mode is specified explicitly via an *FPRoundingMode*
+decoration, then the default rounding mode for conversion operations is:
 
 * _Round to nearest even_, for conversions to floating-point types.
 * _Round toward zero_, for conversions from floating-point to integer types.
 
+=== Out-of-Range Conversions
+
+When a conversion operand is either greater than the greatest representable
+destination value or less than the least representable destination value,
+it is said to be out-of-range.
+
+Converting an out-of-range integer to an integer type without a
+*SaturatedConversion* decoration follows <<C99-spec, C99>>/<<cpp14-spec,
+C++14>> conversion rules.
+
+Converting an out-of-range floating point number to an integer type without
+a *SaturatedConversion* decoration is implementation-defined.
+
 === INF, NaN, and Denormalized Numbers
 
-INFs and NaNs must be supported.  Support for signaling NaNs is not required.
+INFs and NaNs must be supported.
+Support for signaling NaNs is not required.
 
-Support for denormalized numbers with single precision and half precision floating-point is optional.  Denormalized single precision or half precision floating-point numbers passed as the input or produced as the output of single precision or half precision floating-point operations may be flushed to zero.  Support for denormalized numbers is required for double precision floating-point.
+Support for denormalized numbers with single precision and half precision
+floating-point is optional.
+Denormalized single precision or half precision floating-point numbers
+passed as the input or produced as the output of single precision or half
+precision floating-point operations may be flushed to zero.
+Support for denormalized numbers is required for double precision
+floating-point.
 
-Support for INFs, NaNs, and denormalized numbers is described by the +CL_FP_DENORM+ and +CL_FP_INF_NAN+ bits in the +CL_DEVICE_SINGLE_FP_CONFIG+, +CL_DEVICE_HALF_FP_CONFIG+, and +CL_DEVICE_DOUBLE_FP_CONFIG+ device queries.
+Support for INFs, NaNs, and denormalized numbers is described by the
+`CL_FP_DENORM` and `CL_FP_INF_NAN` bits in the `CL_DEVICE_SINGLE_FP_CONFIG`,
+`CL_DEVICE_HALF_FP_CONFIG`, and `CL_DEVICE_DOUBLE_FP_CONFIG` device queries.
 
 === Floating-Point Exceptions
 
-Floating-point exceptions are disabled in OpenCL.  The result of a floating-point exception must match the IEEE 754 spec for the exceptions-not-enabled case.  Whether and when the implementation sets floating-point flags or raises floating-point exceptions is implementation-defined.
+Floating-point exceptions are disabled in OpenCL.
+The result of a floating-point exception must match the IEEE 754 spec for
+the exceptions-not-enabled case.
+Whether and when the implementation sets floating-point flags or raises
+floating-point exceptions is implementation-defined.
 
-This standard provides no method for querying, clearing or setting floating-point flags or trapping raised exceptions.  Due to non-performance, non-portability of trap mechanisms, and the impracticality of servicing precise exceptions in a vector context (especially on heterogeneous hardware), such features are discouraged.
+This standard provides no method for querying, clearing or setting
+floating-point flags or trapping raised exceptions.
+Due to non-performance, non-portability of trap mechanisms, and the
+impracticality of servicing precise exceptions in a vector context
+(especially on heterogeneous hardware), such features are discouraged.
 
-Implementations that nevertheless support such operations through an extension to the standard shall initialize with all exception flags cleared and the exception masks set so that exceptions raised by arithmetic operations do not trigger a trap to be taken.  If the underlying work is reused by the implementation, the implementation is however not responsible for re-clearing the flags or resetting exception masks to default values before entering the kernel.  That is to say that kernels that do not inspect flags or enable traps are licensed to expect that their arithmetic will not trigger a trap.  Those kernels that do examine flags or enable traps are responsible for clearing flag state and disabling all traps before returning control to the implementation.  Whether or when the underlying work-item (and accompanying global floating-point state if any) is reused is implementation-defined.
+Implementations that nevertheless support such operations through an
+extension to the standard shall initialize with all exception flags cleared
+and the exception masks set so that exceptions raised by arithmetic
+operations do not trigger a trap to be taken.
+If the underlying work is reused by the implementation, the implementation
+is however not responsible for re-clearing the flags or resetting exception
+masks to default values before entering the kernel.
+That is to say that kernels that do not inspect flags or enable traps are
+licensed to expect that their arithmetic will not trigger a trap.
+Those kernels that do examine flags or enable traps are responsible for
+clearing flag state and disabling all traps before returning control to the
+implementation.
+Whether or when the underlying work-item (and accompanying global
+floating-point state if any) is reused is implementation-defined.
 
 [[relative-error-as-ulps]]
 === Relative Error as ULPs
 
-In this section we discuss the maximum relative error defined as ulp (units in the last place).  Addition, subtraction, multiplication, fused multiply-add, and conversion between integer and a single precision floating-point format are IEEE 754 compliant and are therefore correctly rounded.  Conversion between floating-point formats and explicit conversions must be correctly rounded.
+In this section we discuss the maximum relative error defined as ulp (units
+in the last place).
+Addition, subtraction, multiplication, fused multiply-add, and conversion
+between integer and a single precision floating-point format are IEEE 754
+compliant and are therefore correctly rounded.
+Conversion between floating-point formats and explicit conversions must be
+correctly rounded.
 
 The ULP is defined as follows:
 ____
-+If x is a real number that lies between two finite consecutive floating-point numbers a and b, without being equal to one of them, then ulp(x) = |b − a|, otherwise ulp(x) is the distance between the two non-equal finite floating-point numbers nearest x.  Moreover, ulp(NaN) is NaN.+
+If x is a real number that lies between two finite consecutive
+floating-point numbers a and b, without being equal to one of them, then
+ulp(x) = |b - a|, otherwise ulp(x) is the distance between the two non-equal
+finite floating-point numbers nearest x.
+Moreover, ulp(NaN) is NaN.
 ____
 
-_Attribution: This definition was taken with consent from Jean-Michel Muller with slight clarification for behavior at zero.
-Refer to ftp://ftp.inria.fr/INRIA/publication/publi-pdf/RR/RR-5504.pdf_
+Attribution: This definition was taken with consent from Jean-Michel Muller
+with slight clarification for behavior at zero.  Refer to: <<ulp-definition,
+On the definition of ulp(x)>>.
 
-0 ULP is used for math functions that do not require rounding.  The reference value used to compute the ULP value is the infinitely precise result.
+0 ULP is used for math functions that do not require rounding.
+The reference value used to compute the ULP value is the infinitely precise
+result.
 
 ==== ULP Values for Math Instructions - Full Profile
 
-The ULP Values for Math Instructions table below describes the minimum accuracy of floating-point math arithmetic instructions for full profile devices given as ULP values. 
+The ULP Values for Math Instructions table below describes the minimum
+accuracy of floating-point math arithmetic instructions for full profile
+devices given as ULP values.
 
 [[ulp_values_for_math_instructions]]
 .ULP Values for Math Instructions - Full Profile
 [width="100%",cols="31%,23%,23%,23%",options="header"]
-|=======================================================================
-|*SPIR-V Instruction*
-|*Minimum Accuracy - Float64*
-|*Minimum Accuracy - Float32*
-|*Minimum Accuracy - Float16*
-
-|*OpFAdd*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpFSub*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpFMul*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpFDiv*
-|Correctly rounded
-|\<= 2.5 ulp 
-|Correctly rounded
-
-|*OpExtInst* *acos*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *acosh*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *acospi*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *asin*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *asinh*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *asinpi*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *atan*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *atanh*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *atanpi*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *atan2*
-|\<= 6 ulp
-|\<= 6 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *atan2pi*
-|\<= 6 ulp
-|\<= 6 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *cbrt*
-|\<= 2 ulp
-|\<= 2 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *ceil*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpExtInst* *copysign*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *cos*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *cosh*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *cospi*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *erfc*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 4 ulp
-
-|*OpExtInst* *erf*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 4 ulp
-
-|*OpExtInst* *exp*
-|\<= 3 ulp
-|\<= 3 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *exp2*
-|\<= 3 ulp
-|\<= 3 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *exp10*
-|\<= 3 ulp
-|\<= 3 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *expm1*
-|\<= 3 ulp
-|\<= 3 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *fabs*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *fdim*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpExtInst* *floor*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpExtInst* *fma*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpExtInst* *fmax*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *fmin*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *fmod*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *fract*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpExtInst* *frexp*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *hypot*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *ilogb*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *ldexp*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpExtInst* *lgamma*
-|Implementation-defined
-|Implementation-defined
-|Implementation-defined
-
-|*OpExtInst* *lgamma_r*
-|Implementation-defined
-|Implementation-defined
-|Implementation-defined
-
-|*OpExtInst* *log*
-|\<= 3 ulp
-|\<= 3 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *log2*
-|\<= 3 ulp
-|\<= 3 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *log10*
-|\<= 3 ulp
-|\<= 3 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *log1p*
-|\<= 2 ulp
-|\<= 2 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *logb*
-|0 ulp
-|0 ulp
-|0 ulp
-
-// TODO: Can we do any better for Float64 or Float16?
-|*OpExtInst* *mad*
-|Implementation-defined
-|Implemented either as a correctly rounded fma, or as a multiply followed by an add, both of which are correctly rounded
-|Implementation-defined 
-
-|*OpExtInst* *maxmag*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *minmag*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *modf*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *nan*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *nextafter*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *pow*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 4 ulp
-
-|*OpExtInst* *pown*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 4 ulp
-
-|*OpExtInst* *powr*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 4 ulp
-
-|*OpExtInst* *remainder*
-|0 ulp
-|0 ulp
-|0 ulp
-
-|*OpExtInst* *remquo*
-|0 ulp for the remainder, at least the lower 7 bits of the integral quotient
-|0 ulp for the remainder, at least the lower 7 bits of the integral quotient
-|0 ulp for the remainder, at least the lower 7 bits of the integral quotient
-
-|*OpExtInst* *rint*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpExtInst* *rootn*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 4 ulp
-
-|*OpExtInst* *round*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpExtInst* *rsqrt*
-|\<= 2 ulp
-|\<= 2 ulp
-|\<= 1 ulp
-
-|*OpExtInst* *sin*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *sincos*
-|\<= 4 ulp for sine and cosine values
-|\<= 4 ulp for sine and cosine values
-|\<= 2 ulp for sine and cosine values
-
-|*OpExtInst* *sinh*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *sinpi*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *sqrt*
-|Correctly rounded
-|\<= 3 ulp
-|Correctly rounded
-
-|*OpExtInst* *tan*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *tanh*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *tanpi*
-|\<= 6 ulp
-|\<= 6 ulp
-|\<= 2 ulp
-
-|*OpExtInst* *tgamma*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 4 ulp
-
-|*OpExtInst* *trunc*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
-
-|*OpExtInst* *half_cos*
+|====
+| *SPIR-V Instruction*
+| *Minimum Accuracy - Float64*
+| *Minimum Accuracy - Float32*
+| *Minimum Accuracy - Float16*
+
+| *OpFAdd*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpFSub*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpFMul*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpFDiv*
+| Correctly rounded
+| \<= 2.5 ulp
+| Correctly rounded
+
+| *OpExtInst* *acos*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *acosh*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *acospi*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *asin*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *asinh*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *asinpi*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *atan*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *atanh*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *atanpi*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *atan2*
+| \<= 6 ulp
+| \<= 6 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *atan2pi*
+| \<= 6 ulp
+| \<= 6 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *cbrt*
+| \<= 2 ulp
+| \<= 2 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *ceil*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpExtInst* *copysign*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *cos*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *cosh*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *cospi*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *erfc*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 4 ulp
+
+| *OpExtInst* *erf*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 4 ulp
+
+| *OpExtInst* *exp*
+| \<= 3 ulp
+| \<= 3 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *exp2*
+| \<= 3 ulp
+| \<= 3 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *exp10*
+| \<= 3 ulp
+| \<= 3 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *expm1*
+| \<= 3 ulp
+| \<= 3 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *fabs*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *fdim*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpExtInst* *floor*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpExtInst* *fma*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpExtInst* *fmax*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *fmin*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *fmod*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *fract*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpExtInst* *frexp*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *hypot*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *ilogb*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *ldexp*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpExtInst* *lgamma*
+| Implementation-defined
+| Implementation-defined
+| Implementation-defined
+
+| *OpExtInst* *lgamma_r*
+| Implementation-defined
+| Implementation-defined
+| Implementation-defined
+
+| *OpExtInst* *log*
+| \<= 3 ulp
+| \<= 3 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *log2*
+| \<= 3 ulp
+| \<= 3 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *log10*
+| \<= 3 ulp
+| \<= 3 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *log1p*
+| \<= 2 ulp
+| \<= 2 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *logb*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *mad*
+| Implemented either as a correctly rounded fma, or as a multiply followed
+  by an add, both of which are correctly rounded
+| Implemented either as a correctly rounded fma, or as a multiply followed
+  by an add, both of which are correctly rounded
+| Implemented either as a correctly rounded fma, or as a multiply followed
+  by an add, both of which are correctly rounded
+
+| *OpExtInst* *maxmag*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *minmag*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *modf*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *nan*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *nextafter*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *pow*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 4 ulp
+
+| *OpExtInst* *pown*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 4 ulp
+
+| *OpExtInst* *powr*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 4 ulp
+
+| *OpExtInst* *remainder*
+| 0 ulp
+| 0 ulp
+| 0 ulp
+
+| *OpExtInst* *remquo*
+| 0 ulp for the remainder, at least the lower 7 bits of the integral quotient
+| 0 ulp for the remainder, at least the lower 7 bits of the integral quotient
+| 0 ulp for the remainder, at least the lower 7 bits of the integral quotient
+
+| *OpExtInst* *rint*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpExtInst* *rootn*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 4 ulp
+
+| *OpExtInst* *round*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpExtInst* *rsqrt*
+| \<= 2 ulp
+| \<= 2 ulp
+| \<= 1 ulp
+
+| *OpExtInst* *sin*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *sincos*
+| \<= 4 ulp for sine and cosine values
+| \<= 4 ulp for sine and cosine values
+| \<= 2 ulp for sine and cosine values
+
+| *OpExtInst* *sinh*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *sinpi*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *sqrt*
+| Correctly rounded
+| \<= 3 ulp
+| Correctly rounded
+
+| *OpExtInst* *tan*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *tanh*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *tanpi*
+| \<= 6 ulp
+| \<= 6 ulp
+| \<= 2 ulp
+
+| *OpExtInst* *tgamma*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 4 ulp
+
+| *OpExtInst* *trunc*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
+
+| *OpExtInst* *half_cos*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_divide*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_exp*
+| *OpExtInst* *half_divide*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_exp2*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_exp10*
+| *OpExtInst* *half_exp*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_log*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_log2*
+| *OpExtInst* *half_exp2*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_log10*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_powr*
+| *OpExtInst* *half_exp10*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_recip*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_rsqrt*
+| *OpExtInst* *half_log*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_sin*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_sqrt*
+| *OpExtInst* *half_log2*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_tan*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_cos*
+| *OpExtInst* *half_log10*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_divide*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_exp*
+| *OpExtInst* *half_powr*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_exp2*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_exp10*
+| *OpExtInst* *half_recip*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_log*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_log2*
+| *OpExtInst* *half_rsqrt*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_log10*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_powr*
+| *OpExtInst* *half_sin*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_recip*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_rsqrt*
+| *OpExtInst* *half_sqrt*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_sin*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_sqrt*
+| *OpExtInst* *half_tan*
 |
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_tan*
+| *OpExtInst* *native_cos*
 |
-|Implementation-defined
+| Implementation-defined
 |
-|=======================================================================
+
+| *OpExtInst* *native_divide*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_exp*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_exp2*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_exp10*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_log*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_log2*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_log10*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_powr*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_recip*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_rsqrt*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_sin*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_sqrt*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_tan*
+|
+| Implementation-defined
+|
+|====
 
 ==== ULP Values for Math Instructions - Embedded Profile
 
-The ULP Values for Math instructions for Embedded Profile table below describes the minimum accuracy of floating-point math arithmetic operations given as ULP values for the embedded profile.
+The ULP Values for Math instructions for Embedded Profile table below
+describes the minimum accuracy of floating-point math arithmetic operations
+given as ULP values for the embedded profile.
 
 [[ulp_values_for_math_instructions_for_embedded_profile]]
 .ULP Values for Math Instructions - Embedded Profile
 [width="100%",cols="31%,23%,23%,23%",options="header"]
-|=======================================================================
-|*SPIR-V Instruction*
-|*Minimum Accuracy - Float64*
-|*Minimum Accuracy - Float32*
-|*Minimum Accuracy - Float16*
+|====
+| *SPIR-V Instruction*
+| *Minimum Accuracy - Float64*
+| *Minimum Accuracy - Float32*
+| *Minimum Accuracy - Float16*
 
-|*OpFAdd*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpFAdd*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpFSub*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpFSub*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpFMul*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpFMul*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpFDiv*
+| *OpFDiv*
 // TODO: For both Float32 and Float64?
-|\<= 3 ulp
-|\<= 3 ulp
-|\<= 1 ulp
+| \<= 3 ulp
+| \<= 3 ulp
+| \<= 1 ulp
 
-|*OpExtInst* *acos*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *acos*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *acosh*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *acosh*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *acospi*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 3 ulp
+| *OpExtInst* *acospi*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *asin*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *asin*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *asinh*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *asinh*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *asinpi*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 3 ulp
+| *OpExtInst* *asinpi*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *atan*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 3 ulp
+| *OpExtInst* *atan*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *atanh*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 3 ulp
+| *OpExtInst* *atanh*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *atanpi*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 3 ulp
+| *OpExtInst* *atanpi*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *atan2*
-|\<= 6 ulp
-|\<= 6 ulp
-|\<= 3 ulp
+| *OpExtInst* *atan2*
+| \<= 6 ulp
+| \<= 6 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *atan2pi*
-|\<= 6 ulp
-|\<= 6 ulp
-|\<= 3 ulp
+| *OpExtInst* *atan2pi*
+| \<= 6 ulp
+| \<= 6 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *cbrt*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
+| *OpExtInst* *cbrt*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
 
-|*OpExtInst* *ceil*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpExtInst* *ceil*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpExtInst* *copysign*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *copysign*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *cos*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
+| *OpExtInst* *cos*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
 
-|*OpExtInst* *cosh*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *cosh*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *cospi*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
+| *OpExtInst* *cospi*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
 
-|*OpExtInst* *erfc*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 4 ulp
+| *OpExtInst* *erfc*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 4 ulp
 
-|*OpExtInst* *erf*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 4 ulp
+| *OpExtInst* *erf*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 4 ulp
 
-|*OpExtInst* *exp*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *exp*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *exp2*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *exp2*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *exp10*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *exp10*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *expm1*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *expm1*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *fabs*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *fabs*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *fdim*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpExtInst* *fdim*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpExtInst* *floor*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpExtInst* *floor*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpExtInst* *fma*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpExtInst* *fma*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpExtInst* *fmax*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *fmax*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *fmin*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *fmin*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *fmod*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *fmod*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *fract*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpExtInst* *fract*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpExtInst* *frexp*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *frexp*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *hypot*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *hypot*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *ilogb*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *ilogb*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *ldexp*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpExtInst* *ldexp*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpExtInst* *lgamma*
-|Implementation-defined
-|Implementation-defined
-|Implementation-defined
+| *OpExtInst* *lgamma*
+| Implementation-defined
+| Implementation-defined
+| Implementation-defined
 
-|*OpExtInst* *lgamma_r*
-|Implementation-defined
-|Implementation-defined
-|Implementation-defined
+| *OpExtInst* *lgamma_r*
+| Implementation-defined
+| Implementation-defined
+| Implementation-defined
 
-|*OpExtInst* *log*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *log*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *log2*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *log2*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *log10*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *log10*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *log1p*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *log1p*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *logb*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *logb*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-// TODO: Can we do any better?
-|*OpExtInst* *mad*
-|Implemention-defined
-|Implemention-defined
-|Implemention-defined
+| *OpExtInst* *mad*
+| Implemention-defined
+| Implemention-defined
+| Implemention-defined
 
-|*OpExtInst* *maxmag*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *maxmag*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *minmag*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *minmag*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *modf*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *modf*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *nan*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *nan*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *nextafter*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *nextafter*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *pow*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 5 ulp
+| *OpExtInst* *pow*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 5 ulp
 
-|*OpExtInst* *pown*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 5 ulp
+| *OpExtInst* *pown*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 5 ulp
 
-|*OpExtInst* *powr*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 5 ulp
+| *OpExtInst* *powr*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 5 ulp
 
-|*OpExtInst* *remainder*
-|0 ulp
-|0 ulp
-|0 ulp
+| *OpExtInst* *remainder*
+| 0 ulp
+| 0 ulp
+| 0 ulp
 
-|*OpExtInst* *remquo*
-|0 ulp for the remainder, at least the lower 7 bits of the integral quotient
-|0 ulp for the remainder, at least the lower 7 bits of the integral quotient
-|0 ulp for the remainder, at least the lower 7 bits of the integral quotient
+| *OpExtInst* *remquo*
+| 0 ulp for the remainder, at least the lower 7 bits of the integral quotient
+| 0 ulp for the remainder, at least the lower 7 bits of the integral quotient
+| 0 ulp for the remainder, at least the lower 7 bits of the integral quotient
 
-|*OpExtInst* *rint*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpExtInst* *rint*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpExtInst* *rootn*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 5 ulp
+| *OpExtInst* *rootn*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 5 ulp
 
-|*OpExtInst* *round*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpExtInst* *round*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpExtInst* *rsqrt*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 1 ulp
+| *OpExtInst* *rsqrt*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 1 ulp
 
-|*OpExtInst* *sin*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
+| *OpExtInst* *sin*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
 
-|*OpExtInst* *sincos*
-|\<= 4 ulp for sine and cosine values
-|\<= 4 ulp for sine and cosine values
-|\<= 2 ulp for sine and cosine values
+| *OpExtInst* *sincos*
+| \<= 4 ulp for sine and cosine values
+| \<= 4 ulp for sine and cosine values
+| \<= 2 ulp for sine and cosine values
 
-|*OpExtInst* *sinh*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 3 ulp
+| *OpExtInst* *sinh*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *sinpi*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 2 ulp
+| *OpExtInst* *sinpi*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 2 ulp
 
 // TODO: For both Float32 and Float64?
-|*OpExtInst* *sqrt*
-|\<= 4 ulp
-|\<= 4 ulp
-|\<= 1 ulp
+| *OpExtInst* *sqrt*
+| \<= 4 ulp
+| \<= 4 ulp
+| \<= 1 ulp
 
-|*OpExtInst* *tan*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 3 ulp
+| *OpExtInst* *tan*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *tanh*
-|\<= 5 ulp
-|\<= 5 ulp
-|\<= 3 ulp
+| *OpExtInst* *tanh*
+| \<= 5 ulp
+| \<= 5 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *tanpi*
-|\<= 6 ulp
-|\<= 6 ulp
-|\<= 3 ulp
+| *OpExtInst* *tanpi*
+| \<= 6 ulp
+| \<= 6 ulp
+| \<= 3 ulp
 
-|*OpExtInst* *tgamma*
-|\<= 16 ulp
-|\<= 16 ulp
-|\<= 4 ulp
+| *OpExtInst* *tgamma*
+| \<= 16 ulp
+| \<= 16 ulp
+| \<= 4 ulp
 
-|*OpExtInst* *trunc*
-|Correctly rounded
-|Correctly rounded
-|Correctly rounded
+| *OpExtInst* *trunc*
+| Correctly rounded
+| Correctly rounded
+| Correctly rounded
 
-|*OpExtInst* *half_cos*
+| *OpExtInst* *half_cos*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_divide*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_exp*
+| *OpExtInst* *half_divide*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_exp2*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_exp10*
+| *OpExtInst* *half_exp*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_log*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_log2*
+| *OpExtInst* *half_exp2*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_log10*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_powr*
+| *OpExtInst* *half_exp10*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_recip*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_rsqrt*
+| *OpExtInst* *half_log*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_sin*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *half_sqrt*
+| *OpExtInst* *half_log2*
 |
-|\<= 8192 ulp
-|
-
-|*OpExtInst* *half_tan*
-|
-|\<= 8192 ulp
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_cos*
+| *OpExtInst* *half_log10*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_divide*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_exp*
+| *OpExtInst* *half_powr*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_exp2*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_exp10*
+| *OpExtInst* *half_recip*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_log*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_log2*
+| *OpExtInst* *half_rsqrt*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_log10*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_powr*
+| *OpExtInst* *half_sin*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_recip*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_rsqrt*
+| *OpExtInst* *half_sqrt*
 |
-|Implementation-defined
-|
-
-|*OpExtInst* *native_sin*
-|
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_sqrt*
+| *OpExtInst* *half_tan*
 |
-|Implementation-defined
+| \<= 8192 ulp
 |
 
-|*OpExtInst* *native_tan*
+| *OpExtInst* *native_cos*
 |
-|Implementation-defined
+| Implementation-defined
 |
-|=======================================================================
 
-==== ULP Values for Math Instructions - Fast Relaxed Math
+| *OpExtInst* *native_divide*
+|
+| Implementation-defined
+|
 
-The ULP Values for Math Instructions with Fast Relaxed Math table below describes the minimum accuracy of commonly used single precision floating-point math arithmetic instructions given as ULP values if the _-cl-fast-relaxed-math_ compiler option is specified when compiling or building the OpenCL program.
+| *OpExtInst* *native_exp*
+|
+| Implementation-defined
+|
 
-For derived implementations, the operations used in the derivation may themselves be relaxed according to the ULP Values for Math Instructions with Fast Relaxed Math table.
+| *OpExtInst* *native_exp2*
+|
+| Implementation-defined
+|
 
-The minimum accuracy of math functions not defined in the ULP Values for Math Instructions with Fast Relaxed Math table when the _-cl-fast-relaxed-math_ compiler option is specified is as defined in the <<ulp_values_for_math_instructions,ULP Values for Math Instructions for Full Profile>> table when operating in the full profile, and as defined in the <<ulp_values_for_math_instructions_for_embedded_profile,ULP Values for Math instructions for Embedded Profile>> table when operating in the embedded profile.
+| *OpExtInst* *native_exp10*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_log*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_log2*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_log10*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_powr*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_recip*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_rsqrt*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_sin*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_sqrt*
+|
+| Implementation-defined
+|
+
+| *OpExtInst* *native_tan*
+|
+| Implementation-defined
+|
+
+|====
+
+==== ULP Values for Math Instructions - Unsafe Math Optimizations Enabled
+
+The ULP Values for Math Instructions with Unsafe Math Optimizations table below
+describes the minimum accuracy of commonly used single precision
+floating-point math arithmetic instructions given as ULP values if the
+_-cl-unsafe-math-optimizations_ compiler option is specified when compiling or
+building the OpenCL program.
+
+For derived implementations, the operations used in the derivation may
+themselves be relaxed according to the ULP Values for Math Instructions with
+Unsafe Math Optimizations table.
+
+The minimum accuracy of math functions not defined in the ULP Values for
+Math Instructions with Unsafe Math Optimizations table when the
+_-cl-unsafe-math-optimizations_ compiler option is specified is as defined in the
+<<ulp_values_for_math_instructions,ULP Values for Math Instructions for Full
+Profile>> table when operating in the full profile, and as defined in the
+<<ulp_values_for_math_instructions_for_embedded_profile,ULP Values for Math
+instructions for Embedded Profile>> table when operating in the embedded
+profile.
+
+// TODO: Eventually add appropriate bolding to the instructions in the table below.
 
 [[ulp_values_for_math_instructions_with_fast_relaxed_math]]
-.ULP Values for Single Precision Math Instructions with _-cl-fast-relaxed-math_
-[width="75%",cols="40%,60%",options="header"]
-|=======================================================================
-|*SPIR-V Instruction*
-|*Minimum Accuracy*
+.ULP Values for Single Precision Math Instructions with _-cl-unsafe-math-optimizations_
+[width="100%",cols="30%,70%",options="header"]
+|====
+| *SPIR-V Instruction*
+| *Minimum Accuracy*
 
-|*OpFDiv* for 1.0 / _x_
-|\<= 2.5 ulp for x in the domain of 2^-126^ to 2^126^ for the full profile, and \<= 3 ulp for the embedded profile.
+| *OpFDiv* for 1.0 / _x_
+| \<= 2.5 ulp for x in the domain of 2^-126^ to 2^126^ for the full profile,
+  and \<= 3 ulp for the embedded profile.
 
-|*OpFDiv* for _x_ / _y_
-|\<= 2.5 ulp for x in the domain of 2^-62^ to 2^62^ and _y_ in the domain of 2^-62^ to 2^62^ for the full profile, and \<= 3 ulp for the embedded profile.
+| *OpFDiv* for _x_ / _y_
+| \<= 2.5 ulp for x in the domain of 2^-62^ to 2^62^ and _y_ in the domain
+  of 2^-62^ to 2^62^ for the full profile, and \<= 3 ulp for the embedded
+  profile.
 
-|*OpExtInst* *acos*
-|\<= 4096 ulp
+| *OpExtInst* *acos*
+| \<= 4096 ulp
 
-|*OpExtInst* *acosh*
-|Implemented as log( x + sqrt(x*x - 1) ).
+| *OpExtInst* *acosh*
+| Implemented as log( x + sqrt(x*x - 1) ).
 
-|*OpExtInst* *acospi*
-|Implemented as acos(x) * M_PI_F.
-For non-derived implementations, the error is \<= 8192 ulp.
+| *OpExtInst* *acospi*
+| Implemented as acos(x) * M_PI_F.
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *asin*
-|\<= 4096 ulp
+| *OpExtInst* *asin*
+| \<= 4096 ulp
 
-|*OpExtInst* *asinh*
-|Implemented as log( x + sqrt(x*x + 1) ).
+| *OpExtInst* *asinh*
+| Implemented as log( x + sqrt(x*x + 1) ).
 
-|*OpExtInst* *asinpi*
-|Implemented as asin(x) * M_PI_F.
-For non-derived implementations, the error is \<= 8192 ulp.
+| *OpExtInst* *asinpi*
+| Implemented as asin(x) * M_PI_F.
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *atan*
-|\<= 4096 ulp
+| *OpExtInst* *atan*
+| \<= 4096 ulp
 
-|*OpExtInst* *atanh*
-|Defined for x in the domain (-1, 1). For x in [-2^-10^, 2^-10^], implemented as x.
-For x outside of [-2^-10^, 2^-10^], implemented as 0.5f * log( (1.0f + x) / (1.0f - x) ).
-For non-derived implementations, the error is \<= 8192 ulp.
+| *OpExtInst* *atanh*
+| Defined for x in the domain (-1, 1).
+  For x in [-2^-10^, 2^-10^], implemented as x.
+  For x outside of [-2^-10^, 2^-10^], implemented as 0.5f * log( (1.0f + x)
+  / (1.0f - x) ).
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *atanpi*
-|Implemented as atan(x) * M_1_PI_F.
-For non-derived implementations, the error is \<= 8192 ulp.
+| *OpExtInst* *atanpi*
+| Implemented as atan(x) * M_1_PI_F.
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *atan2*
-|Implemented as atan(y/x) for x > 0, atan(y/x) + M_PI_F for x < 0 and y > 0 and atan(y/x) - M_PI_F for x < 0 and y < 0.
+| *OpExtInst* *atan2*
+| Implemented as atan(y/x) for x > 0, atan(y/x) + M_PI_F for x < 0 and y >
+  0, and atan(y/x) - M_PI_F for x < 0 and y < 0.
 
-|*OpExtInst* *atan2pi*
-|Implemented as atan2(y, x) * M_1_PI_F.
-For non-derived implementations, the error is \<= 8192 ulp.
+| *OpExtInst* *atan2pi*
+| Implemented as atan2(y, x) * M_1_PI_F.
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *cbrt*
-|Implemented as rootn(x, 3).
-For non-derived implementations, the error is \<= 8192 ulp.
+| *OpExtInst* *cbrt*
+| Implemented as rootn(x, 3).
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *cos*
-|For x in the domain [-π, π], the maximum absolute error is \<= 2^-11^ and larger otherwise.
+| *OpExtInst* *cos*
+| For x in the domain [-{pi}, {pi}], the maximum absolute error is \<=
+  2^-11^ and larger otherwise.
 
-|*OpExtInst* *cosh*
-|Defined for x in the domain [-88, 88] and implemented as 0.5f * ( exp(x) + exp(-x) ).
-For non-derived implementations, the error is \<= 8192 ULP.
+| *OpExtInst* *cosh*
+| Defined for x in the domain [-{inf}, {inf}] and implemented as 0.5f * (
+  exp(x) + exp(-x) ).
+  For non-derived implementations, the error is \<= 8192 ULP.
 
-|*OpExtInst* *cospi*
-|For x in the domain [-1, 1], the maximum absolute error is \<= 2^-11^ and larger otherwise.
+| *OpExtInst* *cospi*
+| For x in the domain [-1, 1], the maximum absolute error is \<= 2^-11^ and
+  larger otherwise.
 
-|*OpExtInst* *exp*
-|\<= 3 + floor( fabs(2 * x) ) ulp for the full profile, and \<= 4 ulp for the embedded profile.
+| *OpExtInst* *exp*
+| \<= 3 + floor( fabs(2 * x) ) ulp for the full profile, and \<= 4 ulp for
+  the embedded profile.
 
-|*OpExtInst* *exp2*
-|\<= 3 + floor( fabs(2 * x) ) ulp for the full profile, and \<= 4 ulp for the embedded profile.
+| *OpExtInst* *exp2*
+| \<= 3 + floor( fabs(2 * x) ) ulp for the full profile, and \<= 4 ulp for
+  the embedded profile.
 
-|*OpExtInst* *exp10*
-|Derived implementations implement this as exp2( x * log2(10) ).
-For non-derived implementations, the error is \<= 8192 ulp.
+| *OpExtInst* *exp10*
+| Derived implementations implement this as exp2( x * log2(10) ).
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *expm1*
-|Derived implementations implement this as exp(x) - 1.
-For non-derived implementations, the error is \<= 8192 ulp.
+| *OpExtInst* *expm1*
+| Derived implementations implement this as exp(x) - 1.
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *log*
-|For x in the domain [0.5, 2] the maximum absolute error is \<= 2^-21^; otherwise the maximum error is \<=3 ulp for the full profile and \<= 4 ulp for the embedded profile
+| *OpExtInst* *log*
+| For x in the domain [0.5, 2] the maximum absolute error is \<= 2^-21^;
+  otherwise the maximum error is \<=3 ulp for the full profile and \<= 4 ulp
+  for the embedded profile
 
-|*OpExtInst* *log2*
-|For x in the domain [0.5, 2] the maximum absolute error is \<= 2^-21^; otherwise the maximum error is \<=3 ulp for the full profile and \<= 4 ulp for the embedded profile
+| *OpExtInst* *log2*
+| For x in the domain [0.5, 2] the maximum absolute error is \<= 2^-21^;
+  otherwise the maximum error is \<=3 ulp for the full profile and \<= 4 ulp
+  for the embedded profile
 
-|*OpExtInst* *log10*
-|For x in the domain [0.5, 2] the maximum absolute error is \<= 2^-21^; otherwise the maximum error is \<=3 ulp for the full profile and \<= 4 ulp for the embedded profile
+| *OpExtInst* *log10*
+| For x in the domain [0.5, 2] the maximum absolute error is \<= 2^-21^;
+  otherwise the maximum error is \<=3 ulp for the full profile and \<= 4 ulp
+  for the embedded profile
 
-|*OpExtInst* *log1p*
-|Derived implementations implement this as log(x + 1).
-For non-derived implementations, the error is \<= 8192 ulp.
+| *OpExtInst* *log1p*
+| Derived implementations implement this as log(x + 1).
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *pow*
-|Undefined for x = 0 and y = 0.
-Undefined for x < 0 and non-integer y.
-Undefined for x < 0 and y outside the domain [-2^24^, 2^24^].
-For x > 0 or x < 0 and even y, derived implementations implement this as exp2( y * log2(x) ).
-For x < 0 and odd y, derived implementations implement this as -exp2( y * log2(fabs(x) ).
-For x == 0 and nonzero y, derived implementations return zero.
-For non-derived implementations, the error is \<= 8192 ULP.
-footnote:[On some implementations, +powr()+ or +pown()+ may perform faster than +pow()+.
-If +x+ is known to be +>= 0+, consider using +powr()+ in place of +pow()+, or if +y+ is known to be an integer, consider using +pown()+ in place of +pow()+.]
+| *OpExtInst* *pow*
+| Undefined for x = 0 and y = 0.
+  Undefined for x < 0 and non-integer y.
+  Undefined for x < 0 and y outside the domain [-2^24^, 2^24^].
+  For x > 0 or x < 0 and even y, derived implementations implement this as
+  exp2( y * log2(x) ).
+  For x < 0 and odd y, derived implementations implement this as -exp2( y *
+  log2(fabs(x) ).
+  For x == 0 and nonzero y, derived implementations return zero.
+  For non-derived implementations, the error is \<= 8192 ULP.
 
-|*OpExtInst* *pown*
-|Defined only for integer values of y.
-Undefined for x = 0 and y = 0.
-For x >= 0 or x < 0 and even y, derived implementations implement this as exp2( y * log2(x) ).
-For x < 0 and odd y, derived implementations implement this as -exp2( y * log2( fabs(x) ) ).
-For non-derived implementations, the error is \<= 8192 ulp.
+  On some implementations, powr() or pown() may perform faster
+  than pow().
+  If x is known to be >= 0, consider using powr() in place of pow(),
+  or if y is known to be an integer, consider using pown() in place of
+  pow().
 
-|*OpExtInst* *powr*
-|Defined only for x >= 0.
-Undefined for x = 0 and y = 0.
-Derived implementations implement this as exp2( y * log2(x) ).
-For non-derived implementations, the error is \<= 8192 ulp.
+| *OpExtInst* *pown*
+| Defined only for integer values of y.
+  Undefined for x = 0 and y = 0.
+  For x >= 0 or x < 0 and even y, derived implementations implement this as
+  exp2( y * log2(x) ).
+  For x < 0 and odd y, derived implementations implement this as -exp2( y *
+  log2( fabs(x) ) ).
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *rootn*
-|Defined for x > 0 when y is non-zero, derived implementations implement this case as exp2( log2(x) / y ). Defined for x < 0 when y is odd, derived implementations implement this case as -exp2( log2(-x) / y ).
-Defined for x = +/-0 when y > 0, derived implementations will return +0 in this case.
-For non-derived implementations, the error is \<= 8192 ULP.
+| *OpExtInst* *powr*
+| Defined only for x >= 0.
+  Undefined for x = 0 and y = 0.
+  Derived implementations implement this as exp2( y * log2(x) ).
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *sin*
-|For x in the domain [-π, π], the maximum absolute error is \<= 2^-11^ and larger otherwise.
+| *OpExtInst* *rootn*
+| Defined for x > 0 when y is non-zero, derived implementations implement
+  this case as exp2( log2(x) / y ).
+  Defined for x < 0 when y is odd, derived implementations implement this
+  case as -exp2( log2(-x) / y ).
+  Defined for x = +/-0 when y > 0, derived implementations will return +0 in
+  this case.
+  For non-derived implementations, the error is \<= 8192 ULP.
 
-|*OpExtInst* *sincos*
-|ulp values as defined for sin(x) and cos(x).
+| *OpExtInst* *sin*
+| For x in the domain [-{pi}, {pi}], the maximum absolute error is \<=
+  2^-11^ and larger otherwise.
 
-|*OpExtInst* *sinh*
-|Defined for x in the domain [-88, 88].
-For x in [-2^-10^, 2^-10^], derived implementations implement as x.
-For x outside of [-2^-10^, 2^-10^], derived implement as 0.5f * ( exp(x) - exp(-x) ).
-For non-derived implementations, the error is \<= 8192 ULP. 
+| *OpExtInst* *sincos*
+| ulp values as defined for sin(x) and cos(x).
 
-|*OpExtInst* *sinpi*
-|For x in the domain [-1, 1], the maximum absolute error is \<= 2^-11^ and larger otherwise.
+| *OpExtInst* *sinh*
+| Defined for x in the domain [-{inf}, {inf}].
+  For x in [-2^-10^, 2^-10^], derived implementations implement as x.
+  For x outside of [-2^-10^, 2^-10^], derived implement as 0.5f * ( exp(x) -
+  exp(-x) ).
+  For non-derived implementations, the error is \<= 8192 ULP.
 
-|*OpExtInst* *tan*
-|Derived implementations implement this as sin(x) * ( 1.0f / cos(x) ).
-For non-derived implementations, the error is \<= 8192 ulp.
+| *OpExtInst* *sinpi*
+| For x in the domain [-1, 1], the maximum absolute error is \<= 2^-11^ and
+  larger otherwise.
 
-|*OpExtInst* *tanh*
-|Defined for x in the domain [-88, 88].
-For x in [-2^-10^, 2^-10^], derived implementations implement as x.
-For x outside of [-2^-10^, 2^-10^], derived implementations implement as ( exp(x) - exp(-x) ) / ( exp(x) + exp(-x) ).
-For non-derived implementations, the error is \<= 8192 ULP.
+| *OpExtInst* *tan*
+| Derived implementations implement this as sin(x) * ( 1.0f / cos(x) ).
+  For non-derived implementations, the error is \<= 8192 ulp.
 
-|*OpExtInst* *tanpi*
-|Derived implementations implement this as tan(x * M_PI_F).
-For non-derived implementations, the error is \<= 8192 ulp for x in the domain [-1, 1].
+| *OpExtInst* *tanh*
+| Defined for x in the domain [-{inf}, {inf}].
+  For x in [-2^-10^, 2^-10^], derived implementations implement as x.
+  For x outside of [-2^-10^, 2^-10^], derived implementations implement as
+  (exp(x) - exp(-x)) / (exp(x) + exp(-x)).
+  For non-derived implementations, the error is \<= 8192 ULP.
 
-|*OpFMul* and *OpFAdd* for _x_ * _y_ + _z_
-|Implemented either as a correctly rounded fma or as a multiply and an add both of which are correctly rounded.
-|=======================================================================
+| *OpExtInst* *tanpi*
+| Derived implementations implement this as tan(x * M_PI_F).
+  For non-derived implementations, the error is \<= 8192 ulp for x in the
+  domain [-1, 1].
+
+| *OpFMul* and *OpFAdd*, +
+  for _x_ * _y_ + _z_
+| Implemented either as a correctly rounded fma or as a multiply and an add
+  both of which are correctly rounded.
+
+|====
 
 === Edge Case Behavior
 
-The edge case behavior of the math functions shall conform to sections F.9 and G.6 of ISO/IEC 9899:TC 2, except where noted below in the __<<additional-requirements-beyond-isoiec-9899tc2,Additional Requirements Beyond ISO/IEC 9899:TC2>> section__.
+The edge case behavior of the math functions shall conform to sections F.9
+and G.6 of ISO/IEC 9899:TC 2, except where noted below in the
+__<<additional-requirements-beyond-isoiec-9899tc2,Additional Requirements
+Beyond ISO/IEC 9899:TC2>> section__.
 
 [[additional-requirements-beyond-isoiec-9899tc2]]
 ==== Additional Requirements Beyond ISO/IEC 9899:TC2
 
-Functions that return a NaN with more than one NaN operand shall return one of the NaN operands.
-Functions that return a NaN operand may silence the NaN if it is a signaling NaN.
+Functions that return a NaN with more than one NaN operand shall return one
+of the NaN operands.
+Functions that return a NaN operand may silence the NaN if it is a signaling
+NaN.
 A non-signaling NaN shall be converted to a non-signaling NaN.
-A signaling NaN shall be converted to a NaN, and should be converted to a non-signaling NaN.
-How the rest of the NaN payload bits or the sign of NaN is converted is undefined.
+A signaling NaN shall be converted to a NaN, and should be converted to a
+non-signaling NaN.
+How the rest of the NaN payload bits or the sign of NaN is converted is
+undefined.
 
-The usual allowances for rounding error (__<<relative-error-as-ulps,Relative Error as ULPs>> section__) or flushing behavior (__<<edge-case-behavior-in-flush-to-zero-mode,Edge Case Behavior in Flush To Zero Mode>> section__) shall not apply for those values for which _section F.9_ of ISO/IEC 9899:,TC2, or __<<additional-requirements-beyond-isoiec-9899tc2,Additional Requirements Beyond ISO/IEC 9899:TC2>>__ and __<<edge-case-behavior-in-flush-to-zero-mode,Edge Case Behavior in Flush To Zero Mode>> sections__ below (and similar sections for other floating-point precisions) prescribe a result (e.g. ceil( -1 < x < 0 ) returns -0).
+The usual allowances for rounding error (__<<relative-error-as-ulps,Relative
+Error as ULPs>> section__) or flushing behavior
+(__<<edge-case-behavior-in-flush-to-zero-mode,Edge Case Behavior in Flush To
+Zero Mode>> section__) shall not apply for those values for which _section
+F.9_ of ISO/IEC 9899:,TC2, or
+__<<additional-requirements-beyond-isoiec-9899tc2,Additional Requirements
+Beyond ISO/IEC 9899:TC2>>__ and
+__<<edge-case-behavior-in-flush-to-zero-mode,Edge Case Behavior in Flush To
+Zero Mode>> sections__ below (and similar sections for other floating-point
+precisions) prescribe a result (e.g. ceil( -1 < x < 0 ) returns -0).
 Those values shall produce exactly the prescribed answers, and no other.
-Where the ± symbol is used, the sign shall be preserved.
-For example, sin(±0) = ±0 shall be interpreted to mean sin(+0) is +0 and sin(-0) is -0.
+Where the {plusmn} symbol is used, the sign shall be preserved.
+For example, sin({plusmn}0) = {plusmn}0 shall be interpreted to mean sin(+0)
+is +0 and sin(-0) is -0.
 
-* *OpExtInst* *acospi*:
-** acospi( 1 ) = +0.
-** acospi( x ) returns a NaN for | x | > 1.
+  * *OpExtInst* *acospi*:
+  ** acospi( 1 ) = +0.
+  ** acospi( x ) returns a NaN for | x | > 1.
 
-* *OpExtInst* *asinpi*:
-** asinpi( ±0 ) = ±0.
-** asinpi( x ) returns a NaN for | x | > 1.
+  * *OpExtInst* *asinpi*:
+  ** asinpi( {plusmn}0 ) = {plusmn}0.
+  ** asinpi( x ) returns a NaN for | x | > 1.
 
-* *OpExtInst* *atanpi*:
-** atanpi( ±0 ) = ±0.
-** atanpi ( ±∞ ) = ±0.5.
+  * *OpExtInst* *atanpi*:
+  ** atanpi( {plusmn}0 ) = {plusmn}0.
+  ** atanpi ( {plusmn}{inf} ) = {plusmn}0.5.
 
-* *OpExtInst* *atan2pi*:
-** atan2pi ( ±0, -0 ) = ±1.
-** atan2pi ( ±0, +0 ) = ± 0.
-** atan2pi ( ±0, x ) returns ± 1 for x < 0.
-** atan2pi ( ±0, x) returns ± 0 for x > 0.
-** atan2pi ( y, ±0 ) returns -0.5 for y < 0.
-** atan2pi ( y, ±0 ) returns 0.5 for y > 0.
-** atan2pi ( ±y, -∞ ) returns ± 1 for finite y > 0.
-** atan2pi ( ±y, +∞ ) returns ± 0 for finite y > 0.
-** atan2pi ( ±∞, x ) returns ± 0.5 for finite x.
-** atan2pi (±∞, -∞ ) returns ±0.75.
-** atan2pi (±∞, +∞ ) returns ±0.25.
+  * *OpExtInst* *atan2pi*:
+  ** atan2pi ( {plusmn}0, -0 ) = {plusmn}1.
+  ** atan2pi ( {plusmn}0, +0 ) = {plusmn} 0.
+  ** atan2pi ( {plusmn}0, x ) returns {plusmn} 1 for x < 0.
+  ** atan2pi ( {plusmn}0, x) returns {plusmn} 0 for x > 0.
+  ** atan2pi ( y, {plusmn}0 ) returns -0.5 for y < 0.
+  ** atan2pi ( y, {plusmn}0 ) returns 0.5 for y > 0.
+  ** atan2pi ( {plusmn}y, -{inf} ) returns {plusmn} 1 for finite y > 0.
+  ** atan2pi ( {plusmn}y, +{inf} ) returns {plusmn} 0 for finite y > 0.
+  ** atan2pi ( {plusmn}{inf}, x ) returns {plusmn} 0.5 for finite x.
+  ** atan2pi ({plusmn}{inf}, -{inf} ) returns {plusmn}0.75.
+  ** atan2pi ({plusmn}{inf}, +{inf} ) returns {plusmn}0.25.
 
-* *OpExtInst* *ceil*:
-** ceil( -1 < x < 0 ) returns -0.
+  * *OpExtInst* *ceil*:
+  ** ceil( -1 < x < 0 ) returns -0.
 
-* *OpExtInst* *cospi*:
-** cospi( ±0 ) returns 1
-** cospi( n + 0.5 ) is +0 for any integer n where n + 0.5 is representable.
-** cospi( ±∞ ) returns a NaN.
+  * *OpExtInst* *cospi*:
+  ** cospi( {plusmn}0 ) returns 1
+  ** cospi( n + 0.5 ) is +0 for any integer n where n + 0.5 is
+     representable.
+  ** cospi( {plusmn}{inf} ) returns a NaN.
 
-* *OpExtInst* *exp10*:
-** exp10( ±0 ) returns 1.
-** exp10( -∞ ) returns +0.
-** exp10( +∞ ) returns +∞.
+  * *OpExtInst* *exp10*:
+  ** exp10( {plusmn}0 ) returns 1.
+  ** exp10( -{inf} ) returns +0.
+  ** exp10( +{inf} ) returns +{inf}.
 
-* *OpExtInst* *distance*:
-** distance(x, y) calculates the distance from x to y without overflow or extraordinary precision loss due to underflow.
+  * *OpExtInst* *distance*:
+  ** distance(x, y) calculates the distance from x to y without overflow or
+     extraordinary precision loss due to underflow.
 
-* *OpExtInst* *fdim*:
-** fdim( any, NaN ) returns NaN.
-** fdim( NaN, any ) returns NaN.
+  * *OpExtInst* *fdim*:
+  ** fdim( any, NaN ) returns NaN.
+  ** fdim( NaN, any ) returns NaN.
 
-* *OpExtInst* *fmod*:
-** fmod( ±0, NaN ) returns NaN.
+  * *OpExtInst* *fmod*:
+  ** fmod( {plusmn}0, NaN ) returns NaN.
 
-* *OpExtInst* *fract*:
-** fract( x, iptr) shall not return a value greater than or equal to 1.0, and shall not return a value less than 0.
-** fract( +0, iptr ) returns +0 and +0 in iptr.
-** fract( -0, iptr ) returns -0 and -0 in iptr.
-** fract( +inf, iptr ) returns +0 and +inf in iptr.
-** fract( -inf, iptr ) returns -0 and -inf in iptr.
-** fract( NaN, iptr ) returns the NaN and NaN in iptr.
+  * *OpExtInst* *fract*:
+  ** fract( x, iptr) shall not return a value greater than or equal to 1.0,
+     and shall not return a value less than 0.
+  ** fract( +0, iptr ) returns +0 and +0 in iptr.
+  ** fract( -0, iptr ) returns -0 and -0 in iptr.
+  ** fract( +inf, iptr ) returns +0 and +inf in iptr.
+  ** fract( -inf, iptr ) returns -0 and -inf in iptr.
+  ** fract( NaN, iptr ) returns the NaN and NaN in iptr.
 
-* *OpExtInst* *frexp*:
-** frexp( ±∞, exp ) returns ±∞ and stores 0 in exp.
-** frexp( NaN, exp ) returns the NaN and stores 0 in exp.
+  * *OpExtInst* *frexp*:
+  ** frexp( {plusmn}{inf}, exp ) returns {plusmn}{inf} and stores 0 in exp.
+  ** frexp( NaN, exp ) returns the NaN and stores 0 in exp.
 
-* *OpExtInst* *length*:
-** length calculates the length of a vector without overflow or extraordinary precision loss due to underflow.
+  * *OpExtInst* *length*:
+  ** length calculates the length of a vector without overflow or
+     extraordinary precision loss due to underflow.
 
-* *OpExtInst* *lgamma_r*:
-** lgamma_r( x, signp ) returns 0 in signp if x is zero or a negative integer.
+  * *OpExtInst* *lgamma_r*:
+  ** lgamma_r( x, signp ) returns 0 in signp if x is zero or a negative
+     integer.
 
-* *OpExtInst* *nextafter*:
-** nextafter( -0, y > 0 ) returns smallest positive denormal value.
-** nextafter( +0, y < 0 ) returns smallest negative denormal value.
+  * *OpExtInst* *nextafter*:
+  ** nextafter( -0, y > 0 ) returns smallest positive denormal value.
+  ** nextafter( +0, y < 0 ) returns smallest negative denormal value.
 
-* *OpExtInst* *normalize*:
-** normalize shall reduce the vector to unit length, pointing in the same direction without overflow or extraordinary precision loss due to underflow.
-** normalize( v ) returns v if all elements of v are zero.
-** normalize( v ) returns a vector full of NaNs if any element is a NaN.
-** normalize( v ) for which any element in v is infinite shall proceed as if the elements in v were replaced as follows:
+  * *OpExtInst* *normalize*:
+  ** normalize shall reduce the vector to unit length, pointing in the same
+     direction without overflow or extraordinary precision loss due to
+     underflow.
+  ** normalize( v ) returns v if all elements of v are zero.
+  ** normalize( v ) returns a vector full of NaNs if any element is a NaN.
+  ** normalize( v ) for which any element in v is infinite shall proceed as
+     if the elements in v were replaced as follows:
 +
 [source]
 ----
@@ -1367,62 +1526,66 @@ for( i = 0; i < sizeof(v) / sizeof(v[0] ); i++ )
     v[i] = isinf(v[i] )  ?  copysign(1.0, v[i]) : 0.0 * v [i];
 ----
 
-* *OpExtInst* *pow*:
-** pow( ±0, -∞ ) returns +∞
+  * *OpExtInst* *pow*:
+  ** pow( {plusmn}0, -{inf} ) returns +{inf}
 
-* *OpExtInst* *pown*:
-** pown( x, 0 ) is 1 for any x, even zero, NaN or infinity.
-** pown( ±0, n ) is ±∞ for odd n < 0.
-** pown( ±0, n ) is +∞ for even n < 0.
-** pown( ±0, n ) is +0 for even n > 0.
-** pown( ±0, n ) is ±0 for odd n > 0.
+  * *OpExtInst* *pown*:
+  ** pown( x, 0 ) is 1 for any x, even zero, NaN or infinity.
+  ** pown( {plusmn}0, n ) is {plusmn}{inf} for odd n < 0.
+  ** pown( {plusmn}0, n ) is +{inf} for even n < 0.
+  ** pown( {plusmn}0, n ) is +0 for even n > 0.
+  ** pown( {plusmn}0, n ) is {plusmn}0 for odd n > 0.
 
-* *OpExtInst* *powr*:
-** powr( x, ±0 ) is 1 for finite x > 0.
-** powr( ±0, y ) is +∞ for finite y < 0.
-** powr( ±0, -∞) is +∞.
-** powr( ±0, y ) is +0 for y > 0.
-** powr( +1, y ) is 1 for finite y.
-** powr( x, y ) returns NaN for x < 0.
-** powr( ±0, ±0 ) returns NaN.
-** powr( +∞, ±0 ) returns NaN.
-** powr( +1, ±∞ ) returns NaN.
-** powr( x, NaN ) returns the NaN for x >= 0.
-** powr( NaN, y ) returns the NaN.
+  * *OpExtInst* *powr*:
+  ** powr( x, {plusmn}0 ) is 1 for finite x > 0.
+  ** powr( {plusmn}0, y ) is +{inf} for finite y < 0.
+  ** powr( {plusmn}0, -{inf}) is +{inf}.
+  ** powr( {plusmn}0, y ) is +0 for y > 0.
+  ** powr( +1, y ) is 1 for finite y.
+  ** powr( x, y ) returns NaN for x < 0.
+  ** powr( {plusmn}0, {plusmn}0 ) returns NaN.
+  ** powr( +{inf}, {plusmn}0 ) returns NaN.
+  ** powr( +1, {plusmn}{inf} ) returns NaN.
+  ** powr( x, NaN ) returns the NaN for x >= 0.
+  ** powr( NaN, y ) returns the NaN.
 
-* *OpExtInst* *rint*:
-** rint( -0.5 \<= x < 0 ) returns -0.
+  * *OpExtInst* *rint*:
+  ** rint( -0.5 \<= x < 0 ) returns -0.
 
-* *OpExtInst* *remquo*:
-** remquo(x, y, &quo) returns a NaN and 0 in quo if x is ±∞, or if y is 0 and the other argument is non-NaN or if either argument is a NaN.
+  * *OpExtInst* *remquo*:
+  ** remquo(x, y, &quo) returns a NaN and 0 in quo if x is {plusmn}{inf}, or
+     if y is 0 and the other argument is non-NaN or if either argument is a
+     NaN.
 
-* *OpExtInst* *rootn*:
-** rootn( ±0, n ) is ±∞ for odd n < 0.
-** rootn( ±0, n ) is +∞ for even n < 0.
-** rootn( ±0, n ) is +0 for even n > 0.
-** rootn( ±0, n ) is ±0 for odd n > 0.
-** rootn( x, n ) returns a NaN for x < 0 and n is even.
-** rootn( x, 0 ) returns a NaN.
+  * *OpExtInst* *rootn*:
+  ** rootn( {plusmn}0, n ) is {plusmn}{inf} for odd n < 0.
+  ** rootn( {plusmn}0, n ) is +{inf} for even n < 0.
+  ** rootn( {plusmn}0, n ) is +0 for even n > 0.
+  ** rootn( {plusmn}0, n ) is {plusmn}0 for odd n > 0.
+  ** rootn( x, n ) returns a NaN for x < 0 and n is even.
+  ** rootn( x, 0 ) returns a NaN.
 
-* *OpExtInst* *round*:
-** round( -0.5 < x < 0 ) returns -0.
+  * *OpExtInst* *round*:
+  ** round( -0.5 < x < 0 ) returns -0.
 
-* *OpExtInst* *sinpi*:
-** sinpi( ±0 ) returns ±0.
-** sinpi( +n) returns +0 for positive integers n.
-** sinpi( -n ) returns -0 for negative integers n.
-** sinpi( ±∞ ) returns a NaN.
+  * *OpExtInst* *sinpi*:
+  ** sinpi( {plusmn}0 ) returns {plusmn}0.
+  ** sinpi( +n) returns +0 for positive integers n.
+  ** sinpi( -n ) returns -0 for negative integers n.
+  ** sinpi( {plusmn}{inf} ) returns a NaN.
 
-* *OpExtInst* *tanpi*:
-** tanpi( ±0 ) returns ±0.
-** tanpi( ±∞ ) returns a NaN.
-** tanpi( n ) is copysign( 0.0, n ) for even integers n.
-** tanpi( n ) is copysign( 0.0, - n) for odd integers n.
-** tanpi( n + 0.5 ) for even integer n is +∞ where n + 0.5 is representable.
-** tanpi( n + 0.5 ) for odd integer n is -∞ where n + 0.5 is representable.
+  * *OpExtInst* *tanpi*:
+  ** tanpi( {plusmn}0 ) returns {plusmn}0.
+  ** tanpi( {plusmn}{inf} ) returns a NaN.
+  ** tanpi( n ) is copysign( 0.0, n ) for even integers n.
+  ** tanpi( n ) is copysign( 0.0, - n) for odd integers n.
+  ** tanpi( n + 0.5 ) for even integer n is +{inf} where n + 0.5 is
+     representable.
+  ** tanpi( n + 0.5 ) for odd integer n is -{inf} where n + 0.5 is
+     representable.
 
-* *OpExtInst* *trunc*:
-** trunc( -1 < x < 0 ) returns -0.
+  * *OpExtInst* *trunc*:
+  ** trunc( -1 < x < 0 ) returns -0.
 
 [[changes-to-isoiec-9899-tc2-behavior]]
 ==== Changes to ISO/IEC 9899: TC2 Behavior
@@ -1434,31 +1597,45 @@ for( i = 0; i < sizeof(v) / sizeof(v[0] ); i++ )
 gentype modf( gentype value, gentype *iptr )
 {
     *iptr = trunc( value );
-    return copysign( isinf( value ) ? 0.0 : value – *iptr, value );
+    return copysign( isinf( value ) ? 0.0 : value - *iptr, value );
 }
 ----
 
-*OpExtInst* *rint* always rounds according to round to nearest even rounding mode even if the caller is in some other rounding mode.
+*OpExtInst* *rint* always rounds according to round to nearest even rounding
+mode even if the caller is in some other rounding mode.
 
 [[edge-case-behavior-in-flush-to-zero-mode]]
 ==== Edge Case Behavior in Flush To Zero Mode
 
-If denormals are flushed to zero, then a function may return one of four results:
+If denormals are flushed to zero, then a function may return one of four
+results:
 
-1. Any conforming result for non-flush-to-zero mode.
-2. If the result given by 1. is a sub-normal before rounding, it may be flushed to zero.
-3. Any non-flushed conforming result for the function if one or more of its sub-normal operands are flushed to zero.
-4. If the result of 3. is a sub-normal before rounding, the result may be flushed to zero.
+  . Any conforming result for non-flush-to-zero mode.
+  . If the result given by 1 is a sub-normal before rounding, it may be
+    flushed to zero.
+  . Any non-flushed conforming result for the function if one or more of its
+    sub-normal operands are flushed to zero.
+  . If the result of 3 is a sub-normal before rounding, the result may be
+    flushed to zero.
 
-In each of the above cases, if an operand or result is flushed to zero, the sign of the zero is undefined.
+In each of the above cases, if an operand or result is flushed to zero, the
+sign of the zero is undefined.
 
-If subnormals are flushed to zero, a device may choose to conform to the following edge cases for *OpExtInst* *nextafter* instead of those listed in __<<additional-requirements-beyond-isoiec-9899tc2,Additional Requirements Beyond ISO/IEC 9899:TC2>> section__:
+If subnormals are flushed to zero, a device may choose to conform to the
+following edge cases for *OpExtInst* *nextafter* instead of those listed in
+__<<additional-requirements-beyond-isoiec-9899tc2,Additional Requirements
+Beyond ISO/IEC 9899:TC2>> section__:
 
-* nextafter ( +smallest normal, y < +smallest normal ) = +0.
-* nextafter ( -smallest normal, y > -smallest normal ) = -0.
-* nextafter ( -0, y > 0 ) returns smallest positive normal value.
-* nextafter ( +0, y < 0 ) returns smallest negative normal value.
+  * nextafter ( +smallest normal, y < +smallest normal ) = +0.
+  * nextafter ( -smallest normal, y > -smallest normal ) = -0.
+  * nextafter ( -0, y > 0 ) returns smallest positive normal value.
+  * nextafter ( +0, y < 0 ) returns smallest negative normal value.
 
-For clarity, subnormals or denormals are defined to be the set of representable numbers in the range 0 < x < TYPE_MIN  and -TYPE_MIN < x < -0.
-They do not include ±0.
-A non-zero number is said to be sub-normal before rounding if, after normalization, its radix-2 exponent is less than (TYPE_MIN_EXP - 1). footnote:[Here +TYPE_MIN+ and +TYPE_MIN_EXP+ should be substituted by constants appropriate to the floating-point type under consideration, such as +FLT_MIN+ and +FLT_MIN_EXP+ for float.]
+For clarity, subnormals or denormals are defined to be the set of
+representable numbers in the range 0 < x < TYPE_MIN and -TYPE_MIN < x < -0.
+They do not include {plusmn}0.
+A non-zero number is said to be sub-normal before rounding if, after
+normalization, its radix-2 exponent is less than (TYPE_MIN_EXP - 1).
+footnote:[Here `TYPE_MIN` and `TYPE_MIN_EXP` should be substituted by
+constants appropriate to the floating-point type under consideration, such
+as `FLT_MIN` and `FLT_MIN_EXP` for float.]

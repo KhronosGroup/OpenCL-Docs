@@ -1,147 +1,182 @@
-// Copyright 2017 The Khronos Group. 
-//
-//  Khronos licenses this file to you under the Creative Commons Attribution 4.0 
-//  International (CC BY 4.0) License (the "License"); you may not use this file 
-//  except in compliance with the License.  You may obtain a copy of the License 
-//  at https://creativecommons.org/licenses/by/4.0/
-//
-//  Unless required by applicable law or agreed to in writing, material distributed 
-//  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
-//  CONDITIONS OF ANY KIND, either express or implied. If all or a portion of this 
-//  material is re-used, notice substantially similar to the following must be included:
-//
-//  This specification includes material developed at The Khronos Group 
-//  (http://www.khronos.org/). Khronos supplied such material on an "AS IS" BASIS, 
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, under 
-//  the terms of the Creative Commons Attribution 4.0 International (CC BY 4.0) 
-//  License (the "License"), available at https://creativecommons.org/licenses/by/4.0/. 
-//  All use of such material is governed by the term of the License. Khronos bears 
-//  no responsibility whatsoever for additions or modifications to its material.
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
 
 [[opencl_extensions]]
 == OpenCL Extensions
 
-An OpenCL environment may be modified by OpenCL extensions that affect SPIR-V.  An implementation indicates support for an OpenCL extension by including the extension name in the host API +CL_PLATFORM_EXTENSIONS+ or +CL_DEVICE_EXTENSIONS+ string.  To enable the behavior described for an extension, a SPIR-V module must declare use of the extension using *OpExtension* and the name of the extension, for example:
+An OpenCL environment may be modified by <<opencl-extension-spec, OpenCL
+extensions>>.  For example, some OpenCL extensions may require support
+for support for additional SPIR-V capabilities or instructions, or by
+relaxing SPIR-V restrictions.
+Some OpenCL extensions may modify the OpenCL environment by requiring
+consumption of a SPIR-V module that uses a SPIR-V extension.  In this case,
+the implementation will include the OpenCL extension in the host API
+`CL_PLATFORM_EXTENSIONS` or `CL_DEVICE_EXTENSIONS` string, but not the
+corresponding SPIR-V extension.
+
+This section describes how the OpenCL environment is modified by Khronos
+(`khr`) OpenCL extensions.  Other OpenCL extensions, such as multi-vendor
+(`ext`) extensions or vendor-specific extensions, describe how they modify
+the OpenCL environment in their individual extension specifications.  The
+Khronos OpenCL extensions require no corresponding SPIR-V extensions.
+
+=== Declaring SPIR-V Extensions
+
+A SPIR-V module declares use of a SPIR-V extension using *OpExtension* and
+the name of the SPIR-V extension.  For example:
 
 ----
-OpExtension "cl_khr_extension_name"
+OpExtension "SPV_KHR_extension_name"
 ---- 
 
-This section describes how the OpenCL environment is modified by Khronos (+khr+) OpenCL extensions.  Other OpenCL extensions, such as multi-vendor (+ext+) extensions or vendor-specific extensions, describe how they modify the OpenCL environment in their individual extension documents.
+Only use of SPIR-V extensions may be declared in a SPIR-V module using
+*OpExtension*; there is never a need to declare use of an OpenCL extension
+in a SPIR-V module using *OpExtension*.
 
 === Full and Embedded Profile Extensions
 
-==== +cl_khr_3d_image_writes+
+==== `cl_khr_3d_image_writes`
 
-If the OpenCL environment supports the extension +cl_khr_3d_image_writes+, and use of the extension is declared in the module using *OpExtension*, then the environment must accept _Image_ operands to *OpImageWrite* that are declared with with dimensionality *3D*.
+If the OpenCL environment supports the extension `cl_khr_3d_image_writes`,
+then the environment must accept _Image_ operands to *OpImageWrite* that
+are declared with with dimensionality _Dim_ equal to *3D*.
 
-==== +cl_khr_depth_images+
+==== `cl_khr_depth_images`
 
-// TODO: How is image2d_depth_t represented in SPIR-V?
-// TODO: How is image2d_array_depth_t represented in SPIR-V?
-// TODO: Debatably this section isn't needed...
+If the OpenCL environment supports the extension `cl_khr_depth_images`,
+then the environment must accept modules that declare 2D depth image types
+using *OpTypeImage* with dimensionality _Dim_ equal to *2D* and _Depth_
+equal to  1, indicating a depth image.  2D depth images may optionally be
+_Arrayed_, if supported.
 
-If the OpenCL environment supports the extension +cl_khr_depth_images+, and use of the extension is declared in the module using *OpExtension*, then the following Image Channel Orders may additionally be returned by *OpImageQueryOrder*:
+Additionally, the following Image Channel Orders may be returned by
+*OpImageQueryOrder*:
 
-* *Depth*
+  * *Depth*
 
-==== +cl_khr_device_enqueue_local_arg_types+
+==== `cl_khr_device_enqueue_local_arg_types`
 
-If the OpenCL environment supports the extension +cl_khr_device_enqueue_local_arg_types+, and use of the extension is declared in the module using *OpExtension*, then then environment will allow _Invoke_ functions to be passed to *OpEnqueueKernel* with *Workgroup* memory pointer parameters of any type.
+If the OpenCL environment supports the extension
+`cl_khr_device_enqueue_local_arg_types`, then then environment will allow
+_Invoke_ functions to be passed to *OpEnqueueKernel* with *Workgroup*
+memory pointer parameters of any type.
 
-==== +cl_khr_fp16+
+==== `cl_khr_fp16`
 
-If the OpenCL environment supports the extension +cl_khr_fp16+, and use of the extension is declared in the module using *OpExtension*, then the environment must accept modules that declare the following SPIR-V capabilities:
+If the OpenCL environment supports the extension `cl_khr_fp16`, then the
+environment must accept modules that declare the following SPIR-V
+capabilities:
 
-* *Float16*
+  * *Float16*
 
-==== +cl_khr_fp64+
+==== `cl_khr_fp64`
 
-If the OpenCL environment supports the extension +cl_khr_fp64+, and use of the extension is declared in the module using *OpExtension*, then the environment must accept modules that declare the following SPIR-V capabilities:
+If the OpenCL environment supports the extension `cl_khr_fp64`, then the
+environment must accept modules that declare the following SPIR-V
+capabilities:
 
-* *Float64*
+  * *Float64*
 
-==== +cl_khr_gl_depth_images+
+==== `cl_khr_gl_depth_images`
 
-// TODO: Debatably this section isn't needed...
+If the OpenCL environment supports the extension `cl_khr_gl_depth_images`,
+then the following Image Channel Orders may additionally be returned by
+*OpImageQueryOrder*:
 
-If the OpenCL environment supports the extension +cl_khr_gl_depth_images+, and use of the extension is declared in the module using *OpExtension*, then:
+  * *DepthStencil*
 
-The following Image Channel Orders may additionally be returned by *OpImageQueryOrder*:
+Also, the following Image Channel Data Types may additionally be returned by
+*OpImageQueryFormat*:
 
-* *DepthStencil*
+  * *UnormInt24*
 
-Also, the following Image Channel Data Types may additionally be returned by *OpImageQueryFormat*:
-
-* *UnormInt24*
-
-==== +cl_khr_gl_msaa_sharing+
+==== `cl_khr_gl_msaa_sharing`
 
 // TODO: How does this affect the *ImageMSArray* capability?  This is currently a *Shader* capability.
-// TODO: How are the following represented in SPIR-V?
-//  image2d_msaa_depth_t
-//  image2d_array_msaa_depth_t
 
-If the OpenCL environment supports the extension +cl_khr_gl_msaa_sharing+, and use of the extension is declared in the module using *OpExtension*, then 2D multi-sampled image types may be declared using *OpTypeImage* with dimensionality _Dim_ equal to *2D* and _MS_ equal to 1, indicating multi-sampled content.
+If the OpenCL environment supports the extension `cl_khr_gl_msaa_sharing`,
+then the environment must accept modules that declare 2D multi-sampled
+image types using *OpTypeImage* with dimensionality _Dim_ equal to *2D* and
+_MS_ equal to 1, indicating multi-sampled content.  2D multi-sampled images
+may optionally be _Arrayed_ or _Depth_ images, if supported.
 
 The 2D multi-sampled images may be used with the following instructions:
 
-* *OpImageRead*
-* *OpImageQuerySizeLod*
-* *OpImageQueryFormat*
-* *OpImageQueryOrder*
-* *OpImageQuerySamples*
+  * *OpImageRead*
+  * *OpImageQuerySizeLod*
+  * *OpImageQueryFormat*
+  * *OpImageQueryOrder*
+  * *OpImageQuerySamples*
 
-//==== +cl_khr_initialize_memory+
+//==== `cl_khr_initialize_memory`
 // Do we need to say anything about this extension in this spec?
 
-==== +cl_khr_int64_base_atomics+ and +cl_khr_int64_extended_atomics+
+==== `cl_khr_int64_base_atomics` and `cl_khr_int64_extended_atomics`
 
-If the OpenCL environment supports the extension +cl_khr_int64_base_atomics+ or +cl_khr_int64_extended_atomics+, and use of either extension is declared in the module using *OpExtension*, then the environment must support 64-bit integer operands for all of the SPIR-V *Atomic Instructions*.
+If the OpenCL environment supports the extension `cl_khr_int64_base_atomics`
+or `cl_khr_int64_extended_atomics`, then the environment must support 64-bit
+integer operands for all of the SPIR-V *Atomic Instructions*.
 
-When the *WorkgroupMemory* _Memory Semantic_ is used the _Scope_ must be *Workgroup*.
+When the *WorkgroupMemory* _Memory Semantic_ is used the _Scope_ must be
+*Workgroup*.
 
-NOTE: OpenCL environments that consume SPIR-V must support both +cl_khr_int64_base_atomics+ and +cl_khr_int64_extended_atomics+ or neither of these extensions.  Only one of the extension strings need to be declared via *OpExtension*.
+Note: OpenCL environments that consume SPIR-V must support both
+`cl_khr_int64_base_atomics` and `cl_khr_int64_extended_atomics` or neither
+of these extensions.
 
-==== +cl_khr_mipmap_image+
+==== `cl_khr_mipmap_image`
 
-If the OpenCL environment supports the extension +cl_khr_mipmap_image+, and use of the extension is declared in the module using *OpExtension*, then the environment must accept non-zero optional *Lod* _Image Operands_ for the following instructions:
+If the OpenCL environment supports the extension `cl_khr_mipmap_image`,
+then the environment must accept non-zero optional *Lod* _Image Operands_
+for the following instructions:
 
-* *OpImageSampleExplicitLod*
-* *OpImageFetch*
-* *OpImageRead*
-* *OpImageQuerySizeLod*
+  * *OpImageSampleExplicitLod*
+  * *OpImageRead*
+  * *OpImageQuerySizeLod*
 
-NOTE: Implementations that support +cl_khr_mipmap_image+ are not guaranteed to support the *ImageMipmap* capability, since this extension does not require non-zero optional *Lod* _Image Operands_ for *OpImageWrite*.
+Note: Implementations that support `cl_khr_mipmap_image` are not guaranteed
+to support the *ImageMipmap* capability, since this extension does not
+require non-zero optional *Lod* _Image Operands_ for *OpImageWrite*.
 
-==== +cl_khr_mipmap_image_writes+
+==== `cl_khr_mipmap_image_writes`
 
-If the OpenCL environment supports the extension +cl_khr_mipmap_image_writes+, and use of the extension is declared in the module using *OpExtension*, then the environment must accept non-zero optional *Lod* _Image Operands_ for the following instructions:
+If the OpenCL environment supports the extension `cl_khr_mipmap_image_writes`,
+then the environment must accept non-zero optional *Lod* _Image Operands_
+for the following instructions:
 
-* *OpImageWrite*
+  * *OpImageWrite*
 
-NOTE: An implementation that supports +cl_khr_mipmap_image_writes+ must also support +cl_khr_mipmap_image+, and support for both extensions does guarantee support for the *ImageMipmap* capability. 
+Note: An implementation that supports `cl_khr_mipmap_image_writes` must also
+support `cl_khr_mipmap_image`, and support for both extensions does
+guarantee support for the *ImageMipmap* capability.
 
-==== +cl_khr_subgroups+
+==== `cl_khr_subgroups`
 
-If the OpenCL environment supports the extension +cl_khr_subgroups+, and use of the extension is declared in the module using *OpExtension*, then the environment will generally allows the scope for _Execution_ to include:
+If the OpenCL environment supports the extension `cl_khr_subgroups`, then
+the environment will generally allows the scope for _Execution_ to include:
 
-* *Subgroup*
+  * *Subgroup*
 
-However, the _Scope_ for _Execution_ for the *OpGroupAsyncCopy* and *OpGroupWaitEvents* instructions still is limited to:
+However, the _Scope_ for _Execution_ for the *OpGroupAsyncCopy* and
+*OpGroupWaitEvents* instructions still is limited to:
 
-* *Workgroup*
+  * *Workgroup*
 
-==== +cl_khr_subgroup_named_barrier+
+==== `cl_khr_subgroup_named_barrier`
 
-If the OpenCL environment supports the extension +cl_khr_subgroup_named_barrier+, and use of the extension is declared in the module using *OpExtension*, the the environment must accept modules that declare the following SPIR-V capabilities:
+If the OpenCL environment supports the extension
+`cl_khr_subgroup_named_barrier`, then the environment must accept modules
+that declare the following SPIR-V capabilities:
 
-* *NamedBarrier*
+  * *NamedBarrier*
 
 === Embedded Profile Extensions
 
-==== +cles_khr_int64+
+==== `cles_khr_int64`
 
-If the OpenCL environment supports the extension +cles_khr_int64+, and use of the extension is declared in the module using *OpExtension*, then the environment must accept modules that declare the following SPIR-V capabilities:
+If the OpenCL environment supports the extension `cles_khr_int64`, then the
+environment must accept modules that declare the following SPIR-V
+capabilities:
 
-* *Int64*
+  * *Int64*

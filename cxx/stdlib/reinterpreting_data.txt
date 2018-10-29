@@ -1,0 +1,77 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[reinterpreting-data-library]]
+=== Reinterpreting Data Library
+
+It is frequently necessary to reinterpret bits in a data type as another data type in OpenCL {cpp}.
+This is typically required when direct access to the bits in a floating-point type is needed, for example to mask off the sign bit or make use of the result of a vector relational operator on floating-point data.
+
+[[header-opencl_reinterpret-synopsis]]
+==== Header <opencl_reinterpret> Synopsis
+
+[source]
+----
+namespace cl
+{
+template <class T, class U>
+T as_type(U const& arg);
+
+}
+----
+
+[[reinterpreting-types]]
+==== Reinterpreting Types
+
+All data types described in <<device_builtin_scalar_data_types,Device built-in scalar data types>> and <<device_builtin_vector_data_types,Device built-in vector data types>> tables (except `bool` and `void`) may be also reinterpreted as another data type of the same size using the `as_type()` [[ftnref6]] <<ftn6,[6]>> function for scalar and vector data types.
+When the operand and result type contain the same number of elements, the bits in the operand shall be returned directly without modification as the new type.
+The usual type promotion for function arguments shall not be performed.
+
+For example, `as_type<float>(0x3f800000)` returns `1.0f`, which is the value that the bit pattern `0x3f800000` has if viewed as an IEEE-754 single precision value.
+
+When the operand and result type contain a different number of elements, the result shall be implementation-defined except if the operand is a 4-component vector and the result is a 3-component vector.
+In this case, the bits in the operand shall be returned directly without modification as the new type.
+That is, a conforming implementation shall explicitly define a behavior, but two conforming implementations need not have the same behavior when the number of elements in the result and operand types does not match.
+The implementation may define the result to contain all, some or none of the original bits in whatever order it chooses.
+It is an error to use the `as_type<T>` operator to reinterpret data to a type of a different number of bytes.
+
+[[examples-2]]
+==== Examples
+
+[[example-1-2]]
+===== Example 1
+
+Examples of reinterpreting data types using `as_type<>` function.
+[source]
+----
+#include <opencl_reinterpret>
+using namespace cl;
+
+kernel void Foo() {
+       float f = 1.0f;
+       uint u = as_type<uint>(f);      // Legal. Contains:  0x3f800000
+
+       float4 f = float4(1.0f, 2.0f, 3.0f, 4.0f);
+       // Legal. Contains:
+       // int4(0x3f800000, 0x40000000, 0x40400000, 0x40800000)
+       int4 i = as_type<int4>(f);
+
+       int i;
+       // Legal. Result is implementation-defined.
+       short2 j = as_type<short2>(i);
+
+       int4 i;
+       // Legal. Result is implementation-defined.
+       short8 j = as_type<short8>(i);
+
+       float4 f;
+       // Error.  Result and operand have different sizes
+       double4 g = as_type<double4>(f);
+
+       float4 f;
+       // Legal. g.xyz will have same values as f.xyz.  g.w is
+       // undefined
+       float3 g = as_type<float3>(f);
+}
+----

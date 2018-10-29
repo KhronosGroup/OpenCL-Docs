@@ -1,0 +1,150 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[edge-case-behavior]]
+=== Edge Case Behavior
+
+The edge case behavior of the math functions (see the <<math-functions, _Math Functions_>> section) shall conform to sections F.9 and G.6 of ISO/IEC 9899:TC 2, except where noted below in the <<additional-requirements-beyond-isoiec-9899tc2, _Additional Requirements Beyond ISO/IEC 9899:TC2_>> section.
+
+[[additional-requirements-beyond-isoiec-9899tc2]]
+==== Additional Requirements Beyond ISO/IEC 9899:TC2
+
+Functions that return a NaN with more than one NaN operand shall return one of the NaN operands.
+Functions that return a NaN operand may silence the NaN if it is a signaling NaN.
+A non-signaling NaN shall be converted to a non-signaling NaN.
+A signaling NaN shall be converted to a NaN, and should be converted to a non-signaling NaN.
+How the rest of the NaN payload bits or the sign of NaN is converted is undefined.
+
+The usual allowances for rounding error (see the <<relative-error-as-ulps, _Relative Error as ULPs_>> section) or flushing behavior (see the <<edge-case-behavior-in-flush-to-zero-mode, _Edge Case Behavior in Flush To Zero Mode_>> section) shall not apply for those values for which _section F.9_ of ISO/IEC 9899:,TC2, or the <<additional-requirements-beyond-isoiec-9899tc2, _Additional Requirements Beyond ISO/IEC 9899:TC2_>> and the <<edge-case-behavior-in-flush-to-zero-mode, _Edge Case Behavior in Flush To Zero Mode_>> sections below (and similar sections for other floating-point precisions) prescribe a result (e.g. ceil( -1 < x < 0 ) returns -0).
+Those values shall produce exactly the prescribed answers, and no other.
+Where the {plusmn} symbol is used, the sign shall be preserved.
+For example, sin({plusmn}0) = {plusmn}0 shall be interpreted to mean sin(+0) is +0 and sin(-0) is -0.
+
+  * acospi( 1 ) = +0.
+  * acospi( x ) returns a NaN for | x | > 1.
+  * asinpi( {plusmn}0 ) = {plusmn}0.
+  * asinpi( x ) returns a NaN for | x | > 1.
+  * atanpi( {plusmn}0 ) = {plusmn}0.
+  * atanpi ( {plusmn}{inf} ) = {plusmn}0.5.
+  * atan2pi ( {plusmn}0, -0 ) = {plusmn}1.
+  * atan2pi ( {plusmn}0, +0 ) = {plusmn}0.
+  * atan2pi ( {plusmn}0, x ) returns {plusmn}1 for x < 0.
+  * atan2pi ( {plusmn}0, x) returns {plusmn}0 for x > 0.
+  * atan2pi ( y, {plusmn}0 ) returns -0.5 for y < 0.
+  * atan2pi ( y, {plusmn}0 ) returns 0.5 for y > 0.
+  * atan2pi ( {plusmn}y, -{inf} ) returns {plusmn}1 for finite y > 0.
+  * atan2pi ( {plusmn}y, +{inf} ) returns {plusmn}0 for finite y > 0.
+  * atan2pi ( {plusmn}{inf}, x ) returns {plusmn}0.5 for finite x.
+  * atan2pi ( {plusmn}{inf}, -{inf} ) returns {plusmn}0.75.
+  * atan2pi ( {plusmn}{inf}, +{inf} ) returns {plusmn}0.25.
+  * ceil( -1 < x < 0 ) returns -0.
+  * cospi( {plusmn}0 ) returns 1
+  * cospi( n + 0.5 ) is +0 for any integer n where n + 0.5 is representable.
+  * cospi( {plusmn}{inf} ) returns a NaN.
+  * exp10( {plusmn}0 ) returns 1.
+  * exp10( -{inf} ) returns +0.
+  * exp10( +{inf} ) returns +{inf}.
+  * distance( x, y ) calculates the distance from x to y without overflow or extraordinary precision loss due to underflow.
+  * fdim( any, NaN ) returns NaN.
+  * fdim( NaN, any ) returns NaN.
+  * fmod( {plusmn}0, NaN ) returns NaN.
+  * frexp( {plusmn}{inf}, exp ) returns {plusmn}{inf} and stores 0 in exp.
+  * frexp( NaN, exp ) returns the NaN and stores 0 in exp.
+  * fract( x, iptr) shall not return a value greater than or equal to 1.0, and shall not return a value less than 0.
+  * fract( +0, iptr ) returns +0 and +0 in iptr.
+  * fract( -0, iptr ) returns -0 and -0 in iptr.
+  * fract( +inf, iptr ) returns +0 and +inf in iptr.
+  * fract( -inf, iptr ) returns -0 and -inf in iptr.
+  * fract( NaN, iptr ) returns the NaN and NaN in iptr.
+  * length calculates the length of a vector without overflow or extraordinary precision loss due to underflow.
+  * lgamma_r( x, signp ) returns 0 in signp if x is zero or a negative integer.
+  * nextafter( -0, y > 0 ) returns smallest positive denormal value.
+  * nextafter( +0, y < 0 ) returns smallest negative denormal value.
+  * normalize shall reduce the vector to unit length, pointing in the same direction without overflow or extraordinary precision loss due to underflow.
+  * normalize( v ) returns v if all elements of v are zero.
+  * normalize( v ) returns a vector full of NaNs if any element is a NaN.
+  * normalize( v ) for which any element in v is infinite shall proceed as if the elements in v were replaced as follows:
++
+[source]
+----
+for( i = 0; i < sizeof(v) / sizeof(v[0] ); i++ )
+    v[i] = isinf(v[i] )  ?  copysign(1.0, v[i]) : 0.0 * v [i];
+----
+
+  * pow( {plusmn}0, -{inf} ) returns +{inf}
+  * pown( x, 0 ) is 1 for any x, even zero, NaN or infinity.
+  * pown( {plusmn}0, n ) is {plusmn}{inf} for odd n < 0.
+  * pown( {plusmn}0, n ) is +{inf} for even n < 0.
+  * pown( {plusmn}0, n ) is +0 for even n > 0.
+  * pown( {plusmn}0, n ) is {plusmn}0 for odd n > 0.
+  * powr( x, {plusmn}0 ) is 1 for finite x > 0.
+  * powr( {plusmn}0, y ) is +{inf} for finite y < 0.
+  * powr( {plusmn}0, -{inf}) is +{inf}.
+  * powr( {plusmn}0, y ) is +0 for y > 0.
+  * powr( +1, y ) is 1 for finite y.
+  * powr( x, y ) returns NaN for x < 0.
+  * powr( {plusmn}0, {plusmn}0 ) returns NaN.
+  * powr( +{inf}, {plusmn}0 ) returns NaN.
+  * powr( +1, {plusmn}{inf} ) returns NaN.
+  * powr( x, NaN ) returns the NaN for x >= 0.
+  * powr( NaN, y ) returns the NaN.
+  * rint( -0.5 \<= x < 0 ) returns -0.
+  * remquo(x, y, &quo) returns a NaN and 0 in quo if x is {plusmn}{inf}, or if y is 0 and the other argument is non-NaN or if either argument is a NaN.
+  * rootn( {plusmn}0, n ) is {plusmn}{inf} for odd n < 0.
+  * rootn( {plusmn}0, n ) is +{inf} for even n < 0.
+  * rootn( {plusmn}0, n ) is +0 for even n > 0.
+  * rootn( {plusmn}0, n ) is {plusmn}0 for odd n > 0.
+  * rootn( x, n ) returns a NaN for x < 0 and n is even.
+  * rootn( x, 0 ) returns a NaN.
+  * round( -0.5 < x < 0 ) returns -0.
+  * sinpi( {plusmn}0 ) returns {plusmn}0.
+  * sinpi( +n) returns +0 for positive integers n.
+  * sinpi( -n ) returns -0 for negative integers n.
+  * sinpi( {plusmn}{inf} ) returns a NaN.
+  * tanpi( {plusmn}0 ) returns {plusmn}0.
+  * tanpi( {plusmn}{inf} ) returns a NaN.
+  * tanpi( n ) is copysign( 0.0, n ) for even integers n.
+  * tanpi( n ) is copysign( 0.0, - n) for odd integers n.
+  * tanpi( n + 0.5 ) for even integer n is +{inf} where n + 0.5 is representable.
+  * tanpi( n + 0.5 ) for odd integer n is -{inf} where n + 0.5 is representable.
+  * trunc( -1 < x < 0 ) returns -0.
+
+[[changes-to-isoiec-9899-tc2-behavior]]
+==== Changes to ISO/IEC 9899: TC2 Behavior
+
+`modf` behaves as though implemented by:
+
+[source]
+----
+gentype modf( gentype value, gentype *iptr )
+{
+    *iptr = trunc( value );
+    return copysign( isinf( value ) ? 0.0 : value - *iptr, value );
+}
+----
+
+rint always rounds according to round to nearest even rounding mode even if the caller is in some other rounding mode.
+
+[[edge-case-behavior-in-flush-to-zero-mode]]
+==== Edge Case Behavior in Flush To Zero Mode
+
+If denormals are flushed to zero, then a function may return one of four results:
+
+1. Any conforming result for non-flush-to-zero mode.
+2. If the result given by 1. is a sub-normal before rounding, it may be flushed to zero.
+3. Any non-flushed conforming result for the function if one or more of its sub-normal operands are flushed to zero.
+4. If the result of 3. is a sub-normal before rounding, the result may be flushed to zero.
+
+In each of the above cases, if an operand or result is flushed to zero, the sign of the zero is undefined.
+
+If subnormals are flushed to zero, a device may choose to conform to the following edge cases for nextafter instead of those listed in the <<additional-requirements-beyond-isoiec-9899tc2, _Additional Requirements Beyond ISO/IEC 9899:TC2_>> section:
+
+  * nextafter ( +smallest normal, y < +smallest normal ) = +0.
+  * nextafter ( -smallest normal, y > -smallest normal ) = -0.
+  * nextafter ( -0, y > 0 ) returns smallest positive normal value.
+  * nextafter ( +0, y < 0 ) returns smallest negative normal value.
+
+For clarity, subnormals or denormals are defined to be the set of representable numbers in the range 0 < x < `TYPE_MIN` and `-TYPE_MIN` < x < -0.
+They do not include {plusmn}0.
+A non-zero number is said to be sub-normal before rounding if after normalization, its radix-2 exponent is less than `(TYPE_MIN_EXP - 1)`. [[ftnref35]] <<ftn35,[35]>>

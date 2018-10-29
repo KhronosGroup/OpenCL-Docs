@@ -1,0 +1,656 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[device-enqueue-library]]
+=== Device Enqueue Library
+
+OpenCL {cpp} device enqueue functionality allows a kernel to enqueue the same device, without host interaction.
+A kernel may enqueue code represented by lambda syntax, and control execution order with event dependencies including user events and markers.
+`device_queue` follows all the rules for marker types as specified in the <<marker-types, _Marker Types_>> section.
+
+[[queue-host-type]]
+==== Queue Host Type
+
+The below table describes the OpenCL queue data type and the corresponding data type available to the application:
+
+.Host queue type
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Type in OpenCL {cpp}* | *API type for application*
+| `cl::device_queue`     | `cl_queue`
+|====
+
+[[header-opencl_device_queue-synopsis]]
+==== Header <opencl_device_queue> Synopsis
+[source]
+----
+namespace cl
+{
+enum class enqueue_status;
+enum class enqueue_policy;
+enum class event_status;
+enum class event_profiling_info;
+
+struct event
+{
+    event();
+    event(const event&) = default;
+    event(event&) = default;
+
+    event& operator=(const event&) = default;
+    event& operator=(event&&) = default;
+
+    bool is_valid() const noexcept;
+    void retain() noexcept;
+    void release() noexcept;
+
+    explicit operator bool() const noexcept;
+
+    void set_status(event_status status) noexcept;
+    void profiling_info(event_profiling_info name,
+                        global_ptr<long> value) noexcept;
+};
+
+event make_user_event();
+
+struct ndrange
+{
+    explicit ndrange(size_t global_work_size) noexcept;
+    ndrange(size_t global_work_size,
+            size_t local_work_size) noexcept;
+    ndrange(size_t global_work_offset,
+            size_t global_work_size,
+            size_t local_work_size) noexcept;
+
+    template <size_t N>
+    ndrange(const size_t (&global_work_size)[N]) noexcept;
+    template <size_t N>
+    ndrange(const size_t (&global_work_size)[N],
+            const size_t (&local_work_size)[N]) noexcept;
+    template <size_t N>
+    ndrange(const size_t (&global_work_offset)[N],
+            const size_t (&global_work_size)[N],
+            const size_t (&local_work_size)[N]) noexcept;
+};
+
+struct device_queue: marker_type
+{
+    device_queue() noexcept = delete;
+    device_queue(const device_queue&) = default;
+    device_queue(device_queue&&) = default;
+
+    device_queue& operator=(const device_queue&) = delete;
+    device_queue& operator=(device_queue&&) = delete;
+    device_queue* operator&() = delete;
+
+    template <class Fun, class... Args>
+    enqueue_status enqueue_kernel(enqueue_policy flag,
+                                  const ndrange &ndrange,
+                                  Fun fun,
+                                  Args... args) noexcept;
+
+    template <class Fun, class... Args>
+    enqueue_status enqueue_kernel(enqueue_policy flag,
+                                  uint num_events_in_wait_list,
+                                  const event *event_wait_list,
+                                  event *event_ret,
+                                  const ndrange &ndrange,
+                                  Fun fun,
+                                  Args... args) noexcept;
+
+    enqueue_status enqueue_marker(uint num_events_in_wait_list,
+                                  const event *event_wait_list,
+                                  event *event_ret) noexcept;
+};
+
+device_queue get_default_device_queue();
+
+template <class Fun, class... Args>
+uint get_kernel_work_group_size(Fun fun, Args... args);
+template <class Fun, class... Args>
+uint get_kernel_preferred_work_group_size_multiple(Fun fun,
+                                                   Args... args);
+template <class Fun, class... Args>
+uint get_kernel_sub_group_count_for_ndrange(const ndrange &ndrange,
+                                            Fun fun,
+                                            Args... args);
+template <class Fun, class... Args>
+uint get_kernel_max_sub_group_size_for_ndrange(const ndrange &ndrange,
+                                               Fun fun,
+                                               Args... args);
+template <class Fun, class... Args>
+uint get_kernel_local_size_for_sub_group_count(uint num_sub_groups,
+                                               Fun fun,
+                                               Args... args);
+template <class Fun, class... Args>
+uint get_kernel_max_num_sub_groups(Fun fun, Args... args);
+
+}
+----
+
+[[device_queue-class-methods]]
+==== device_queue class methods
+
+`device_queue` object represents work queue of the device.
+Device queue meets all requirements of the marker types as in the <<marker-types, _Marker Types_>> section.
+
+[[enqueue_kernel]]
+===== device_queue::enqueue_kernel
+
+[source]
+----
+template <class Fun, class... Args>
+enqueue_status enqueue_kernel(enqueue_policy policy,
+                              const ndrange &ndrange,
+                              Fun fun,
+                              Args... args) noexcept;
+----
+
+This method allows to enqueue functor or lambda `fun` on the device with specified `policy` over the specified `ndrange`.
+
+`args` are the arguments that will be passed to `fun` when kernel will be enqueued with the exception for `local_ptr` parameters.
+For local pointers user must supply the size of local memory that will be allocated using `local_ptr<T>::size_type\{num elements}`.
+Please see examples how to use `enqueue_kernel` are in the <<examples-7, _Examples_>> section.
+[source]
+----
+template <class Fun, class... Args>
+enqueue_status enqueue_kernel(enqueue_policy policy,
+                              uint num_events_in_wait_list,
+                              const event *event_wait_list,
+                              event *event_ret,
+                              const ndrange &ndrange,
+                              Fun fun,
+                              Args... args) noexcept;
+----
+
+This method enqueues functor or lambda `fun` in the same way as the overload above with the exception for the passed event list.
+If an event is returned, `enqueue_kernel` performs an implicit retain on the returned event.
+
+[[enqueue_marker]]
+===== device_queue::enqueue_marker
+[source]
+----
+enqueue_status enqueue_marker(uint num_events_in_wait_list,
+                              const event *event_wait_list,
+                              event *event_ret) noexcept;
+----
+
+This method enqueues a marker to device queue.
+The marker command waits for a list of events specified by `event_wait_list` to complete before the marker completes.
+`event_ret` must not be `nullptr` as otherwise this is a no-op.
+
+If an event is returned, `enqueue_marker` performs an implicit retain on the returned event.
+
+[[event-class-methods]]
+==== event class methods
+
+[[is_valid]]
+===== event::is_valid
+[source]
+----
+bool is_valid() const noexcept;
+----
+
+Returns `true` if event object is a valid event.
+Otherwise returns `false`.
+
+[[operator-bool]]
+===== event::operator bool
+[source]
+----
+explicit operator bool() const noexcept;
+----
+
+Returns `true` if event object is a valid event.
+Otherwise returns `false`.
+
+[[retain]]
+===== event::retain
+[source]
+----
+void retain() noexcept;
+----
+
+Increments the event reference count.
+Event must be an event returned by `enqueue_kernel` or `enqueue_marker` or a user event.
+
+[[release]]
+===== event::release
+[source]
+----
+void release() noexcept;
+----
+
+Decrements the event reference count.
+The event object is deleted once the event reference count is zero, the specific command identified by this event has completed (or terminated) and there are no commands in any device command queue that require a wait for this event to complete.
+Event must be an event returned by `enqueue_kernel`, `enqueue_marker` or a user event.
+
+[[set_status]]
+===== event::set_status
+[source]
+----
+void set_status(event_status status) noexcept;
+----
+
+Sets the execution status of a user event.
+Event must be a user event.
+`status` can be either `event_status::complete` or `event_status::error` value indicating an error.
+
+[[profiling_info]]
+===== event::profiling_info
+[source]
+----
+void profiling_info(event_profiling_info name,
+                    global_ptr<long> value) noexcept;
+----
+
+Captures the profiling information for functions that are enqueued as commands.
+The specific function being referred to is: `enqueue_kernel`.
+These enqueued commands are identified by unique event objects.
+The profiling information will be available in `value` once the command identified by event has completed.
+Event must be an event returned by `enqueue_kernel`.
+
+`name` identifies which profiling information is to be queried and can be:
+
+  * `event_profiling_info::exec_time`
++
+`value` is a pointer to two 64-bit values.
++
+The first 64-bit value describes the elapsed time `CL_PROFILING_COMMAND_END - CL_PROFILING_COMMAND_START` for the command identified by event in nanoseconds.
++
+The second 64-bit value describes the elapsed time `CL_PROFILING_COMMAND_COMPLETE - CL_PROFILING_COMMAND_START` for the command identified by event in nanoseconds.
+
+NOTE: `profiling_info` when called multiple times for the same event is undefined.
+
+[[other-operations]]
+==== Other operations
+
+[[get_default_device_queue]]
+===== get_default_device_queue
+[source]
+----
+device_queue get_default_device_queue();
+----
+
+Returns the default device queue.
+If a default device queue has not been created, `device_queue::is_valid()` will return `false`.
+
+[[make_user_event]]
+===== make_user_event
+[source]
+----
+event make_user_event();
+----
+
+Creates a user event.
+Returns the user event.
+The execution status of the user event created is set to `event_status::submitted`.
+
+[[get_kernel_work_group_size]]
+===== get_kernel_work_group_size
+[source]
+----
+template <class Fun, class... Args>
+uint get_kernel_work_group_size(Fun fun, Args... args);
+----
+
+This provides a mechanism to query the maximum work-group size that can be used to execute a functor on the current device.
+
+`fun` specifies the functor representing the kernel code that would be enqueued.
+
+`args` are the arguments that will be passed to `fun` when kernel will be enqueued with the exception for `local_ptr` parameters.
+For local pointers user must supply the size of local memory that will be allocated.
+
+[[get_kernel_preferred_work_group_size_multiple]]
+===== get_kernel_preferred_work_group_size_multiple
+[source]
+----
+template <class Fun, class... Args>
+uint get_kernel_preferred_work_group_size_multiple(Fun fun,
+                                                   Args... args);
+----
+
+Returns the preferred multiple of work-group size for launch.
+This is a performance hint.
+Specifying a work-group size that is not a multiple of the value returned by this query as the value of the local work size argument to enqueue will not fail to enqueue the functor for execution unless the work-group size specified is larger than the device maximum.
+
+`fun` specifies the functor representing the kernel code that would be enqueued.
+
+`args` are the arguments that will be passed to `fun` when kernel will be enqueued with the exception for `local_ptr` parameters.
+For local pointers user must supply the size of local memory that will be allocated.
+
+[[get_kernel_sub_group_count_for_ndrange]]
+===== get_kernel_sub_group_count_for_ndrange
+[source]
+----
+template <class Fun, class... Args>
+uint get_kernel_sub_group_count_for_ndrange(const ndrange &ndrange,
+                                            Fun fun,
+                                            Args... args);
+----
+
+Returns the number of sub-groups in each work-group of the dispatch (except for the last in cases where the global size does not divide cleanly into work-groups) given the combination of the passed ndrange and functor.
+
+`fun` specifies the functor representing the kernel code that would be enqueued.
+
+`args` are the arguments that will be passed to `fun` when kernel will be enqueued with the exception for `local_ptr` parameters.
+For local pointers user must supply the size of local memory that will be allocated.
+
+[[get_kernel_max_sub_group_size_for_ndrange]]
+===== get_kernel_max_sub_group_size_for_ndrange
+[source]
+----
+template <class Fun, class... Args>
+uint get_kernel_max_sub_group_size_for_ndrange(const ndrange &ndrange,
+                                               Fun fun,
+                                               Args... args);
+----
+
+Returns the maximum sub-group size for a functor.
+
+`fun` specifies the functor representing the kernel code that would be enqueued.
+
+`args` are the arguments that will be passed to `fun` when kernel will be enqueued with the exception for `local_ptr` parameters.
+For local pointers user must supply the size of local memory that will be allocated.
+
+[[get_kernel_local_size_for_sub_group_count]]
+===== get_kernel_local_size_for_sub_group_count
+[source]
+----
+template <class Fun, class... Args>
+uint get_kernel_local_size_for_sub_group_count(uint num_sub_groups,
+                                               Fun fun,
+                                               Args... args);
+----
+
+Returns a valid local size that would produce the requested number of sub-groups such that each sub-group is complete with no partial sub-groups.
+
+`fun` specifies the functor representing the kernel code that would be enqueued.
+
+`args` are the arguments that will be passed to `fun` when kernel will be enqueued with the exception for `local_ptr` parameters.
+For local pointers user must supply the size of local memory that will be allocated.
+
+[[get_kernel_max_num_sub_groups]]
+===== get_kernel_max_num_sub_groups
+[source]
+----
+template <class Fun, class... Args>
+uint get_kernel_max_num_sub_groups(Fun fun, Args... args);
+----
+
+Provides a mechanism to query the maximum number of sub-groups that can be used to execute the passed functor on the current device.
+
+`fun` specifies the functor representing the kernel code that would be enqueued.
+
+`args` are the arguments that will be passed to `fun` when kernel will be enqueued with the exception for `local_ptr` parameters.
+For local pointers user must supply the size of local memory that will be allocated.
+
+[[ndrange]]
+==== ndrange
+
+`ndrange` type is used to represent the size of the enqueued workload.
+The dimension of the workload ranges from 1 to 3.
+User can specify global work size, local work size and global work offset.
+Unspecified parameters are defaulted to 0.
+
+[[enqueue-policy]]
+==== Enqueue policy
+[source]
+----
+enum class enqueue_policy
+{
+    no_wait,
+    wait_kernel,
+    wait_work_group
+};
+----
+
+Enqueue policy enumerable is used to specify launch policy of enqueued kernel.
+It is defined as follows:
+
+.Enqueue policy
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Policy*  | *Description*
+| `no_wait`
+    | Indicates that the enqueued kernels do not need to wait for the parent kernel to finish execution before they begin execution.
+| `wait_kernel`
+    | Indicates that all work-items of the parent kernel must finish executing and all immediate [[ftnref14]] <<ftn14,[14]>> side effects committed before the enqueued child kernel may begin execution.
+| `wait_work_group` [[ftnref15]] <<ftn15,[15]>>
+    | Indicates that the enqueued kernels wait only for the work-group that enqueued the kernels to finish before they begin execution.
+|====
+
+[[enqueue-status]]
+==== Enqueue status
+[source]
+----
+enum class enqueue_status
+{
+    success,
+    failure,
+    invalid_queue,
+    invalid_ndrange,
+    invalid_event_wait_list,
+    queue_full,
+    invalid_arg_size,
+    event_allocation_failure,
+    out_of_resources
+};
+----
+
+The `enqueue_kernel` and `enqueue_marker` methods return `enqueue_status::success` if the command is enqueued successfully and return `enqueue_status::failure` otherwise.
+If the _-g_ compile option is specified in compiler options passed to `clBuildProgram`, the other errors may be returned instead of `enqueue_status::failure` to indicate why `enqueue_kernel` or `enqueue_marker` failed.
+Enqueue status is defined as follows:
+
+.Enqueue status
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Status*
+| *Description*
+
+| `success`
+|
+
+| `failure`
+|
+
+| `invalid_queue`
+| _queue_ is not a valid device queue.
+
+| `invalid_ndrange`
+| If `ndrange` is not a valid ND-range descriptor or if the program was compiled with _-cl-uniform-work-group-size_ and the local work size is specified in `ndrange` but the global work size specified in `ndrange` is not a multiple of the local work size.
+
+| `invalid_event_wait_list`
+| If `event_wait_list` is `nullptr` and `num_events_in_wait_list` > 0, or if `event_wait_list` is not `nullptr` and `num_events_in_wait_list` is 0, or if `event` objects in `event_wait_list` are not valid events.
+
+| `queue_full`
+| If _queue_ is full.
+
+| `invalid_arg_size`
+| If size of local memory arguments is 0.
+
+| `event_allocation_failure`
+| If `event_ret` is not `nullptr` and an event could not be allocated.
+
+| `out_of_resources`
+| If there is a failure to queue the kernel in _queue_ because of insufficient resources needed to execute the kernel.
+|====
+
+[[event-status]]
+==== Event status
+[source]
+----
+enum class event_status
+{
+    submitted,
+    complete,
+    error,
+};
+----
+
+Event status enumerable is used to set a user event status.
+It is defined as follows:
+
+.Event status
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Status*
+| *Description*
+
+| `submitted`
+| Initial status of a user event
+
+| `complete`
+|
+
+| `error`
+| Status indicating an error
+|====
+
+[[determining-when-a-parent-kernel-has-finished-execution]]
+==== Determining when a parent kernel has finished execution
+
+A parent kernel's execution status is considered to be complete when it and all its child kernels have finished execution.
+The execution status of a parent kernel will be `event_status::complete` if this kernel and all its child kernels finish execution successfully.
+The execution status of the kernel will be `event_status::error` if it or any of its child kernels encounter an error, or are abnormally terminated.
+
+For example, assume that the host enqueues a kernel `k` for execution on a device.
+Kernel `k` when executing on the device enqueues kernels `A` and `B` to a device queue(s).
+The `enqueue_kernel` call to enqueue kernel `B` specifies the event associated with kernel `A` in the `event_wait_list` argument i.e. wait for kernel `A` to finish execution before kernel `B` can begin execution.
+Let's assume kernel `A` enqueues kernels `X`, `Y` and `Z`.
+Kernel `A` is considered to have finished execution i.e. its execution status is `event_status::complete` only after `A` and the kernels `A` enqueued (and any kernels these enqueued kernels enqueue and so on) have finished execution.
+
+[[event-profiling-info]]
+==== Event profiling info
+[source]
+----
+enum class event_profiling_info
+{
+    exec_time,
+};
+----
+
+Event profiling info enumerable is used to determine the outcome of `event::profiling_info` function.
+It is defined as follows:
+
+.Event profiling info
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Status*
+| *Description*
+
+| `exec_time`
+|
+  Identifies profiling information to be queried.
+  If specified, the two 64-bit values are returned
+
+  The first 64-bit value describes the elapsed time: `CL_PROFILING_COMMAND_END - CL_PROFILING_COMMAND_START` for the command identified by event in nanoseconds.
+
+  The second 64-bit value describes the elapsed time `CL_PROFILING_COMMAND_COMPLETE - CL_PROFILING_COMMAND_START` for the command identified by event in nanoseconds.
+|====
+
+[[requirements-1]]
+==== Requirements
+
+Functor and lambda objects passed to `enqueue_kernel` method of device queue has to follow specific restrictions:
+
+  * It has to be trivially copyable.
+  * It has to be trivially copy constructible.
+  * It has to be trivially destructible.
+
+Code enqueuing function objects that do not meet this criteria is ill-formed.
+
+[[pointers-references-and-marker-types]]
+===== Pointers, references and marker types
+
+Functors that are enqueued cannot have any reference and pointer fields, nor can have fields of marker types.
+If object containing such fields is enqueued the behavior is undefined.
+
+The same restrictions apply to _capture-list_ variables in lambda.
+
+NOTE: This requirements are caused by the fact that kernel may be enqueued after parent kernel terminated all pointers and references will be invalidated by then.
+
+[[events]]
+===== Events
+
+Events can be used to identify commands enqueued to a command-queue from the host.
+These events created by the OpenCL runtime can only be used on the host i.e. as events passed in `event_wait_list` argument to various `clEnqueue`* APIs or runtime APIs that take events as arguments such as `clRetainEvent`, `clReleaseEvent`, `clGetEventProfilingInfo`.
+
+Similarly, events can be used to identify commands enqueued to a device queue (from a kernel).
+These event objects cannot be passed to the host or used by OpenCL runtime APIs such as the `clEnqueue`* APIs or runtime APIs that take event arguments.
+
+`clRetainEvent` and `clReleaseEvent` will return `CL_INVALID_OPERATION` if event specified is an event that refers to any kernel enqueued to a device queue using `enqueue_kernel` or `enqueue_marker` or is a user event created by `make_user_event`.
+
+Similarly, `clSetUserEventStatus` can only be used to set the execution status of events created using `clCreateUserEvent`.
+User events created on the device can be set using `event::set_status` method.
+
+[[restrictions-6]]
+==== Restrictions
+
+  * The `device_queue` type cannot be used with variables declared inside a class or union field, a pointer type, an array, global variables declared at program scope or the return type of a function.
+  * The `event` type cannot be used with variables declared inside a class or union field, global variables declared at program scope or the return type of a function.
+  * The `event` and `device_queue` type cannot be used with the `global`, `local`, `priv` and `constant` address space storage classes (see the <<explicit-address-space-storage-classes, _Explicit address space storage classes_>> section).
+  * The values returned by applying the `sizeof` operator to the `device_queue` and `event` types is implementation-defined.
+
+[[examples-7]]
+==== Examples
+
+[[example-1-7]]
+===== Example 1
+[source]
+----
+#include <opencl_device_queue>
+#include <opencl_work_item>
+using namespace cl;
+
+kernel void foo() {
+    auto q = get_default_device_queue();
+    q.enqueue_kernel(enqueue_policy::no_wait,
+                     ndrange( 1 ),
+                     [](){ uint tid = get_global_id(0); } );
+}
+----
+
+[[example-2-5]]
+===== Example 2
+
+Example of using the explicit local pointer class with `enqueue_kernel` method.
+[source]
+----
+#include <opencl_device_queue>
+#include <opencl_work_item>
+using namespace cl;
+
+kernel void foo(device_queue q) {
+    auto lambda = [](local_ptr<ushort16> p) { uint tid = get_global_id(0); };
+    q.enqueue_kernel(enqueue_policy::no_wait,
+                     ndrange{1},
+                     lambda,
+                     local_ptr<ushort16>::size_type{1});
+}
+----
+
+[[example-3-4]]
+===== Example 3
+
+Example of enqueuing a functor to a `device_queue` object.
+[source]
+----
+#include <opencl_device_queue>
+#include <opencl_work_item>
+using namespace cl;
+
+struct Lambda {
+    template <typename T>
+    void operator ()(T t) const { uint tid = get_global_id(0); }
+};
+
+kernel void foo(device_queue q) {
+    auto lambda = Lambda{};
+    q.enqueue_kernel(enqueue_policy::no_wait,
+                     ndrange{1},
+                     lambda,
+                     local_ptr<ushort16>::size_type{1});
+}
+----

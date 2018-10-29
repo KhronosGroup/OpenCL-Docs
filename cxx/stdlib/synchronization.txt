@@ -1,0 +1,226 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[synchronization-functions]]
+=== Synchronization Functions
+
+The OpenCL {cpp} library implements the following synchronization functions.
+
+[[header-opencl_synchronization-synopsis]]
+==== Header <opencl_synchronization> Synopsis
+
+[source]
+----
+namespace cl
+{
+void work_group_barrier(mem_fence flags,
+                        memory_scope scope = memory_scope_work_group);
+void sub_group_barrier(mem_fence flags,
+                       memory_scope scope = memory_scope_work_group);
+
+#ifdef cl_khr_subgroup_named_barrier
+struct work_group_named_barrier: marker_type
+{
+    work_group_named_barrier(uint sub_group_count);
+    work_group_named_barrier() = delete;
+    work_group_named_barrier(const work_group_named_barrier&) = default;
+    work_group_named_barrier(work_group_named_barrier&&) = default;
+
+    work_group_named_barrier& operator=(
+                                      const work_group_named_barrier&) = delete;
+    work_group_named_barrier& operator=(work_group_named_barrier&&) = delete;
+    work_group_named_barrier* operator&() = delete;
+
+    void wait(mem_fence flags,
+              memory_scope scope = memory_scope_work_group) const noexcept;
+};
+
+#endif
+
+}
+----
+
+[[synchronization-operations]]
+==== Synchronization operations
+
+[[work_group_barrier]]
+===== work_group_barrier
+
+[source]
+----
+void work_group_barrier(mem_fence flags,
+                        memory_scope scope  = memory_scope_work_group);
+----
+
+All work-items in a work-group executing the kernel on a processor must execute this function before any are allowed to continue execution beyond the `work_group_barrier`.
+This function must be encountered by all work-items in a work-group executing the kernel.
+These rules apply to ND-ranges implemented with uniform and non-uniform work-groups.
+
+If `work_group_barrier` is inside a conditional statement, then all work-items must enter the conditional if any work-item enters the conditional statement and executes the `work_group_barrier`.
+
+If `work_group_barrier` is inside a loop, all work-items must execute the `work_group_barrier` for each iteration of the loop before any are allowed to continue execution beyond the `work_group_barrier`.
+
+The `scope` argument specifies whether the memory accesses of work-items in the work-group to memory address space(s) identified by `flags` become visible to all work-items in the work-group, the device or all SVM devices.
+
+The `work_group_barrier` function can also be used to specify which memory operations i.e. to global memory, local memory or images become visible to the appropriate memory scope identified by `scope`.
+The `flags` argument specifies the memory address spaces.
+This is a bitfield and can be set to 0 or a combination of the following values ORed together.
+When these flags are ORed together the `work_group_barrier` acts as a combined barrier for all address spaces specified by the flags ordering memory accesses both within and across the specified address spaces.
+
+  * `mem_fence::local` - The `work_group_barrier` function will ensure that all local memory accesses become visible to all work-items in the work-group.
+    Note that the value of `scope` is ignored as the memory scope is always `memory_scope_work_group`.
+  * `mem_fence::global` - The `work_group_barrier` function ensure that all global memory accesses become visible to the appropriate scope as given by `scope`.
+  * `mem_fence::image` - The `work_group_barrier` function will ensure that all image memory accesses become visible to the appropriate scope as given by `scope`.
+    The value of `scope` must be `memory_scope_work_group` or `memory_scope_device`.
+
+`mem_fence::image` cannot be used together with `mem_fence::local` or `mem_fence::global`.
+
+The values of `flags` and `scope` must be the same for all work-items in the work-group.
+
+[[sub_group_barrier]]
+===== sub_group_barrier
+
+[source]
+----
+void sub_group_barrier(mem_fence flags,
+                       memory_scope scope = memory_scope_work_group);
+----
+
+All work-items in a sub-group executing the kernel on a processor must execute this function before any are allowed to continue execution beyond the sub-group barrier.
+This function must be encountered by all work-items in a sub-group executing the kernel.
+These rules apply to ND-ranges implemented with uniform and non-uniform work-groups.
+
+If `sub_group_barrier` is inside a conditional statement, then all work-items within the sub-group must enter the conditional if any work-item in the sub-group enters the conditional statement and executes the `sub_group_barrier`.
+
+If `sub_group_barrier` is inside a loop, all work-items within the sub-group must execute the `sub_group_barrier` for each iteration of the loop before any are allowed to continue execution beyond the `sub_group_barrier`.
+
+The `sub_group_barrier` function also queues a memory fence (reads and writes) to ensure correct ordering of memory operations to local or global memory.
+
+The `flags` argument specifies the memory address spaces.
+This is a bitfield and can be set to 0 or a combination of the following values ORed together.
+When these flags are ORed together the `sub_group_barrier` acts as a combined barrier for all address spaces specified by the flags ordering memory accesses both within and across the specified address spaces.
+
+`mem_fence::local` - The `sub_group_barrier` function will ensure that all local memory accesses become visible to all work-items in the sub-group.
+Note that the value of `scope` is ignored as the memory scope is always `memory_scope_work_group`.
+
+`mem_fence::global` - The `sub_group_barrier` function ensure that all global memory accesses become visible to the appropriate scope as given by `scope`.
+
+`mem_fence::image` - The `sub_group_barrier` function will ensure that all image memory accesses become visible to the appropriate scope as given by `scope`.
+The value of `scope` must be `memory_scope_work_group` or `memory_scope_device`.
+
+`mem_fence::image` cannot be used together with `mem_fence::local` or `mem_fence::global`.
+
+The values of `flags` and `scope` must be the same for all work-items in the sub-group.
+
+[[named-barriers]]
+==== Named barriers
+
+This section describes the optional *cl_khr_sub_group_named_barrier* extension which exposes the ability to perform barrier synchronization on flexible portions of an execution domain.
+
+If the *cl_khr_sub_group_named_barrier* extension is supported by a device, an application that wants to use it will need to define the `cl_khr_sub_group_named_barrier` macro before including the OpenCL {cpp} standard library headers or using the _-D_ compiler option (<<preprocessor_options,_Preprocessor options_>> section).
+
+An implementation shall support at least 8 named barriers per work-group.
+The exact maximum number can be queried using `clGetDeviceInfo` with `CL_DEVICE_MAX_NAMED_BARRIER_COUNT_KHR` from the OpenCL 2.2 Extension Specification.
+
+Restrictions:
+
+  * The `work_group_named_barrier` type cannot be used with variables declared inside a class or union field, a pointer type, an array, global variables declared at program scope or the return type of a function.
+  * The `work_group_named_barrier` type cannot be used with the `global`, `priv` and `constant` address space storage classes (see the the <<explicit-address-space-storage-classes, _Explicit address space storage classes_>> section).
+  * The value returned by applying the `sizeof` operator to the `work_group_named_barrier` type is implementation-defined.
+
+[[work_group_named_barrier]]
+===== work_group_named_barrier
+
+[source]
+----
+work_group_named_barrier(uint sub_group_count);
+----
+
+Initialize a new named barrier object to synchronize `sub_group_count` sub-groups in the current work-group.
+Construction of a named-barrier object is a work-group operation and hence must be called uniformly across the work-group.
+`sub_group_count` must be uniform across the work-group.
+
+Named barrier objects can be reconstructed and assigned to underlying entities by the compiler, or reused.
+Reused barriers will always be the same size and act in phases such that when each participating sub-group has waited the wait count is set to 0 and the entire process can start again.
+The internal wait count will cycle through the range from `0` to `sub_group_count` in each phase of use of the barrier.
+
+Named barrier objects can only be constructed within kernels, not within arbitrary functions.
+
+[[wait]]
+===== wait
+[source]
+----
+void wait(mem_fence flags,
+          memory_scope scope = memory_scope_work_group) const noexcept;
+----
+
+All work-items in a sub-group executing the kernel on a processor must execute this method before any are allowed to continue execution beyond the barrier.
+This function must be encountered by all work-items in a sub-group executing the kernel.
+
+These rules apply to ND-ranges implemented with uniform and non-uniform work-groups.
+
+If `wait` is called inside a conditional statement, then all work-items within the sub-group must enter the conditional if any work-item in the sub-group enters the conditional statement and executes the call to wait.
+
+If `wait` is called inside a loop, all work-items within the sub-group must execute the wait operation for each iteration of the loop before any are allowed to continue execution beyond the call to wait.
+The wait function causes the entire sub-group to wait until `sub_group_count` sub-groups have waited on the named barrier, where `sub_group_count` is the initialization value passed to the call to the constructor of the named barrier.
+Once the wait count equals `sub_group_count`, any sub-groups waiting at the named barrier will be released and the barrier's wait count reset to 0.
+
+The `flags` argument specifies the memory address spaces.
+This is a bitfield and can be set to 0 or a combination of the following values ORed together.
+When these flags are ORed together the wait acts as a combined wait operation for all address spaces specified by the flags ordering memory accesses both within and across the specified address spaces.
+
+`mem_fence::local` - The wait function will ensure that all local memory accesses become visible to all work-items in the sub-group.
+Note that the value of `scope` is ignored as the memory scope is always `memory_scope_work_group`.
+
+`mem_fence::global` - The wait function ensure that all global memory accesses become visible to the appropriate scope as given by `scope`.
+
+`mem_fence::image` cannot be specified as a flag for this function.
+
+The values of `flags` and `scope` must be the same for all work-items in the sub-group.
+
+The below example shows how to use the named barriers:
+
+[source]
+----
+#include <opencl_memory>
+#include <opencl_synchronization>
+#include <opencl_work_item>
+
+using namespace cl;
+
+void aFunction(work_group_named_barrier &b) {
+    while(...) {
+        // Do something in first set
+        b.wait(mem_fence::global);
+    }
+}
+
+kernel void aKernel() {
+    // Initialize a set of named barriers
+    local<work_group_named_barrier> a(4);
+    local<work_group_named_barrier> b(2);
+    local<work_group_named_barrier> c(2);
+
+    if(get_sub_group_id() < 4) {
+        a.wait(mem_fence::local);
+        if(get_sub_group_id() < 2) {
+            // Pass one of the named barriers to a function by reference
+            // Barrier cannot be constructed in a non-kernel function
+            aFunction(b);
+        } else {
+            // Do something else
+            c.wait(mem_fence::local);
+            // Continue
+        }
+
+        // Wait a second time on the first barrier
+        a.wait(mem_fence::global);
+    }
+
+
+    // Back to work-group uniform control flow,
+    // we can synchronize the entire group if necessary
+    work_group_barrier(mem_fence::global);
+}
+----

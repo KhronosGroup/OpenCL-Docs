@@ -1,0 +1,201 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[address-spaces]]
+=== Address Spaces
+
+The OpenCL {cpp} kernel language doesn't introduce any explicit named address spaces, but they are implemented as part of the standard library described in the <<address-spaces-library, _Address Spaces Library_>> section.
+There are 4 types of memory supported by all OpenCL devices: global, local, private and constant.
+The developers should be aware of them and know their limitations.
+
+[[implicit-storage-classes]]
+==== Implicit Storage Classes
+
+The OpenCL {cpp} compiler can deduce an address space based on the scope where an object is declared:
+
+  * If a variable is declared in program scope, with `static` or `extern` specifier and the standard library storage class (see the <<address-spaces-library, _Address Spaces Library_>> section) is not used, the variable is allocated in the global memory of a device.
+  * If a variable is declared in function scope, without `static` specifier and the standard library storage class (see the <<address-spaces-library, _Address Spaces Library_>> section) is not used, the variable is allocated in the private memory of a device.
+
+[[memory-pools]]
+==== Memory Pools
+
+[[global]]
+===== Global
+
+The variables are allocated from the global memory pool if they meet the criteria described in the <<implicit-storage-classes, _Implicit Storage Classes_>> section for the implicit global storage class or they are declared using explicit global storage class from the standard library (see the <<global-class, _global class_>> section).
+
+The global memory objects can be:
+
+  * Passed by pointer or reference to a kernel from the host.
+    In such case the host manages their visibility, lifetime and a type of allocation.
+  * Declared in the program source (`static`, `extern` and program scope global variables).
+    In such case they are:
+  ** the coarse-grained SVM allocations that can be usable by multiple kernels on the same device safely
+  ** not shared across devices
+  ** not accessible from the host
+  ** their lifetime is the same as a program
+
+The non-trivial constructors and destructors are supported with limitations described in the <<memory-initialization, _Memory initialization_>> section.
+
+The constructors of objects in global memory are executed before the first kernel execution in the program.
+The destructors executed at program release time.
+
+The additional restrictions may apply if the explicit global storage class is used.
+Please refer to the <<restrictions-2, _Restrictions_>> section for more details.
+
+[[local]]
+===== Local
+
+The local variables can be only allocated in a program using the explicit local storage class from the standard library (see the <<local-class, _local class_>> section).
+This type of memory is allocated for each work-group executing the kernel and exist only for the lifetime of the work-group executing the kernel.
+
+The non-trivial constructors and destructors are supported with limitations described in the <<memory-initialization, _Memory initialization_>> section.
+
+The constructors of objects in local memory are executed by one work-item before the kernel body execution.
+The destructors are executed by one work-item after the kernel body execution.
+
+NOTE: initialization of local variables can cause performance degradation.
+
+The additional restrictions may apply if the explicit local storage class is used.
+Please refer to the <<restrictions-2, _Restrictions_>> section for more details.
+
+[[private]]
+===== Private
+
+The variables are allocated from the private memory pool if they meet the criteria described in <<implicit-storage-classes,Implicit Storage Classes>> for the implicit private storage class or they were declared using explicit private storage class from the standard library (see the <<priv-class, _priv class_>> section).
+
+The non-trivial constructors and destructors are supported.
+
+The additional restrictions may apply if the explicit priv storage class is used.
+Please refer to the <<restrictions-2, _Restrictions_>> section for more details.
+
+[[constant]]
+===== Constant
+
+The constant variables can be only allocated in a program using the explicit constant storage class from the standard library (see the <<constant-class, _constant class_>> section).
+The variables declared using the `constant<T>` class refer to memory objects allocated from the global memory pool and which are accessed inside a kernel(s) as read-only variables.
+These read-only variables can be accessed by all (global) work-items of the kernel during its execution.
+
+The constant objects must be constructible at compile time, they cannot have any user defined constructors, destructors, methods and operators.
+Otherwise behavior is undefined.
+
+The additional restrictions may apply if the explicit constant storage class is used.
+Please refer to the <<restrictions-2, _Restrictions_>> section for more details.
+
+[[pointers-and-references]]
+==== Pointers and references
+
+All {cpp} pointers and references point to an object in the unnamed/generic address space if the explicit address space pointer classes are not used.
+The explicit address space pointer classes are implemented as a part of the standard library and they are described in the <<explicit-address-space-pointer-classes, _Explicit address space pointer classes_>> section.
+
+[[memory-initialization]]
+==== Memory initialization
+
+.Supported memory initializers
+[width="100%",cols="13%,12%,25%,25%,25%",options="header"]
+|====
+| *Storage memory (address space)*
+| *Scope type*
+3+| *Initialization type*
+|
+|
+| uninitialized (no constructor or trivial default constructor)
+
+  *AND*
+
+  trivial destructor
+| initialized by constant expression
+
+  *AND*
+
+  trivial destructor
+| custom initializer
+
+  *OR*
+
+  custom destructor
+
+.4+| local
+| program
+| supported (not zero-pre-init)
+| not supported
+| not supported
+
+| kernel
+| supported
+
+  Variables are not zero-pre-initialized.
+
+  Optional zero-pre-initialization possible using switch: -cl-zero-init-local-mem-vars
+| supported
+
+  Variables are not zero-pre-initialized.
+
+  Materialize temporary expressions are not supported.
+
+  Optional zero-pre-initialization possible using switch: -cl-zero-init-local-mem-vars
+| supported
+
+  Variables are not zero-pre-initialized.
+
+  Materialize temporary expressions are not supported.
+
+  Optional zero-pre-initialization possible using switch: -cl-zero-init-local-mem-vars
+
+| local (non-kernel)
+| not supported
+| not supported
+| not supported
+
+| class (static data member)
+| supported
+
+  Variables are not zero-pre-initialized.
+| not supported
+| not supported
+
+.3+| global
+| program
+| supported
+
+  Variables are zero-pre-initialized.
+| supported
+
+  Variables are zero or constexpr-pre-initialized.
+| supported
+
+| kernel / local
+| supported
+
+  Variables are zero-pre-initialized.
+| supported
+
+  Variables are zero or constexpr-pre-initialized.
+| not supported
+
+| class (static data member)
+| supported
+
+  Variables are zero-pre-initialized.
+| supported
+
+  Variables are zero or constexpr-pre-initialized.
+| not supported
+
+| constant
+| (any)
+| supported
+
+  Variables are zero-pre-initialized.
+| supported
+
+  Variables are zero or constexpr-pre-initialized.
+| not supported
+
+| private
+| (any)
+| supported
+| supported
+| supported
+|====

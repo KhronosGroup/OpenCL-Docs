@@ -1,0 +1,85 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[generic-type-name-notation]]
+== Generic Type Name Notation
+
+The generic type names are used when some entity has multiple overloads which differ only by argument(s).
+They can map to one or more built-in data types.
+The tables below describe these mappings in details.
+
+Assuming that `gentype` maps to built-in types: `float`, `int` and `uint`, when coming across definition:
+[source]
+----
+gentype function(gentype x);
+----
+
+reader should understand that such function has in fact three overloads:
+[source]
+----
+float function(float x);
+int function(int x);
+uint function(uint x);
+----
+
+Note that if a function signature has multiple usages of `gentype` they all should map to the same type.
+Following this rule such overloads are then invalid:
+[source]
+----
+float function(int x);
+uint function(float x);
+// etc.
+----
+
+If a function is meant to have such overloads, respective gentypes in its signature should be postfixed with numbers to indicate they represent different types.
+Declaration like this:
+[source]
+----
+cl::common_type_t<gentype1, gentype2> greater(gentype1 x, gentype2 y);
+----
+
+would match following overloads:
+
+[source]
+----
+cl::common_type_t<float, float> greater(float x, float y);
+cl::common_type_t<float, int> greater(float x, int y);
+cl::common_type_t<float, uint> greater(float x, uint y);
+cl::common_type_t<int, float> greater(int x, float y);
+
+// etc.
+----
+
+.generic types
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *generic type*
+| *corresponding built-in types*
+
+| `typen`
+a| scalar and all vector types of type
+
+Example:
+====
+`floatn` matches: `float`, `float2`, `float3`, `float4`, `float8` and `float16` +
+`floatn` doesn't match: `half`, `int2`
+====
+| `gentype`
+| unspecified in global context, should be defined whenever used
+
+| `sgentype`
+| subset of scalar types from types matched by `gentype`
+
+| `ugentype`
+| subset of unsigned integer types from types matched by `gentype`
+
+| `gentypeh`
+| `half`, `half2`, `half3`, `half4`, `half8` or `half16`
+
+| `gentypef`
+| `float`, `float2`, `float3`, `float4`, `float8` or `float16`
+
+| `gentyped`
+| `double`, `double2`, `double3`, `double4`, `double8` or `double16`
+|====

@@ -1,0 +1,1139 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[images-and-samplers-library]]
+=== Images and Samplers Library
+
+This section describes the image and sampler types and functions that can be used to read from and/or write to an image.
+`image1d`, `image1d_buffer`, `image1d_array`, `image2d`, `image2d_array`, `image3d`, `image2d_depth`, `image2d_array_depth`, `image2d_ms`, `image2d_array_ms`, `image2d_depth_ms`, `image2d_array_depth_ms` [[ftnref13]] <<ftn13,[13]>> and `sampler` follow the rules for marker types (see the <<marker-types, _Marker Types_>> section).
+The image and sampler types can only be used if the device support images i.e. `CL_DEVICE_IMAGE_SUPPORT` as described in table 4.3 in OpenCL 2.2 specification is `CL_TRUE`.
+
+[[image-and-sampler-host-types]]
+==== Image and Sampler Host Types
+
+The below table describes the OpenCL image and sampler data types and the corresponding data type available to the application:
+
+.Host image and sampler types
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Type in OpenCL {cpp}*
+| *API type for application*
+
+| `cl::image1d`, +
+  `cl::image1d_buffer`, +
+  `cl::image1d_array`, +
+  `cl::image2d`, +
+  `cl::image2d_array`, +
+  `cl::image3d`, +
+  `cl::image2d_depth`, +
+  `cl::image2d_array_depth`, +
+  `cl::image2d_ms`, +
+  `cl::image2d_array_ms`, +
+  `cl::image2d_depth_ms`, +
+  `cl::image2d_array_depth_ms`
+| `cl_image`
+
+| `cl::sampler`
+| `cl_sampler`
+|====
+
+[[header-opencl_image-synopsis]]
+==== Header <opencl_image> Synopsis
+
+[source]
+----
+namespace cl
+{
+enum class image_access;
+enum class image_channel_type;
+enum class image_channel_order;
+enum class addressing_mode;
+enum class normalized_coordinates;
+enum class filtering_mode;
+
+struct sampler;
+
+template <addressing_mode A, normalized_coordinates C, filtering_mode F>
+constexpr sampler make_sampler();
+
+template <class T, image_access A, image_dim Dim, bool Depth, bool Array,
+          bool MS>
+struct image;
+
+template <class T, image_access A = image_access::read>
+using image1d = image<T, A, image_dim::image_1d, false, false, false>;
+
+template <class T, image_access A = image_access::read>
+using image1d_buffer = image<T, A, image_dim::image_buffer, false, false,
+                             false>;
+
+template <class T, image_access A = image_access::read>
+using image1d_array = image<T, A, image_dim::image_1d, false, true, false>;
+
+template <class T, image_access A = image_access::read>
+using image2d = image<T, A, image_dim::image_2d, false, false, false>;
+
+template <class T, image_access A = image_access::read>
+using image2d_depth = image<T, A, image_dim::image_2d, true, false, false>;
+
+template <class T, image_access A = image_access::read>
+using image2d_array = image<T, A, image_dim::image_2d, false, true, false>;
+
+template <class T, image_access A = image_access::read>
+using image3d = image<T, A, image_dim::image_3d, false, false, false>;
+
+template <class T, image_access A = image_access::read>
+using image2d_array_depth = image<T, A, image_dim:: image_2d, true, true,
+                                  false>;
+
+#if defined(cl_khr_gl_msaa_sharing) && defined(cl_khr_gl_depth_images)
+template <class T, image_access A = image_access::read>
+using image2d_ms = image<T, A, image_dim::image_2d, false, false, true>;
+
+template <class T, image_access A = image_access::read>
+using image2d_array_ms = image<T, A, image_dim::image_2d, false, true, true>;
+
+template <class T, image_access A = image_access::read>
+using image2d_depth_ms = image<T, A, image_dim::image_2d, true, false, true>;
+
+template <class T, image_access A = image_access::read>
+using image2d_array_depth_ms = image<T, A, image_dim::image_2d, true, true,
+                                     true>;
+#endif
+
+}
+----
+
+Where `T` is the type of value returned when reading or sampling from given image or the type of color used to write to image.
+
+[[image-class]]
+==== image class
+
+Every image type has the following set of publicly available members and typedefs:
+
+[source]
+----
+template <class T, image_access A, image_dim Dim, bool Depth, bool Array,
+          bool MS>
+struct image: marker_type
+{
+    static constexpr image_dim dimension = Dim;
+    static constexpr size_t dimension_num = image_dim_num<Dim>::value;
+    static constexpr size_t image_size = dimension_num + (Array? 1: 0);
+    static constexpr image_access access = A;
+    static constexpr bool is_array = Array;
+    static constexpr bool is_depth = Depth;
+#if defined(cl_khr_gl_msaa_sharing) && defined(cl_khr_gl_depth_images)
+    static constexpr bool is_ms = MS;
+#else
+    static constexpr bool is_ms = false;
+#endif
+    typedef element_type T;
+    typedef integer_coord make_vector_t<int, image_size>;
+    typedef float_coord make_vector_t<float, image_size>;
+
+#ifdef cl_khr_mipmap_image
+    typedef gradient_coord make_vector_t<float, dimension_num>;
+#endif
+
+    struct pixel;
+
+    image() = delete;
+    image(const image&) = default;
+    image(image&&) = default;
+
+    image& operator=(const image&) = delete;
+    image& operator=(image&&) = delete;
+    image* operator&() = delete;
+};
+----
+
+[[image-element-types]]
+==== Image element types
+
+We can classify images into four categories: depth images which have the `Depth` template parameter set to `true`, multi-sample depth images which have the `Depth` and `MS` template parameters set to `true`, multi-sample which have the `MS` template parameter set to `true`, and the normal images which have the `Depth` and `MS` template parameters set to `false`.
+
+  * For non-multisample depth images the only valid element types are: `float` and `half` [[ftnref14]] <<ftn4,[4]>>
+  * For normal images the only valid element types are: `float4`, `half4` <<ftn4,[4]>>, `int4` and `uint4`
+  * For multi-sample 2D and multi-sample 2D array images the only valid element types are: `float4`, `int4` and `uint4`
+  * For multi-sample 2D depth and multi-sample 2D array depth images the only valid element type is: `float`
+
+Image type with invalid pixel type is ill formed.
+
+[[image-dimension]]
+==== Image dimension
+
+[source]
+----
+namespace cl
+{
+enum class image_dim
+{
+    image_1d,
+    image_2d,
+    image_3d,
+    image_buffer
+};
+
+template <image_dim Dim>
+struct image_dim_num;
+
+}
+----
+
+Image types present different set of methods depending on their dimensionality and arrayness.
+
+  * Images of dimension 1 (`image_dim::image_1d` and `image_dim::buffer`) have method:
++
+[source]
+----
+int width() const noexcept;
+----
+
+  * Images of dimension 2 (`image_dim::image_2d`)  have all methods of 1 dimensional images and
++
+[source]
+----
+int height() const noexcept;
+----
+
+  * Images of dimension 3 (`image_dim::image_3d`) have all methods of 2 dimensional images and
++
+[source]
+----
+int depth() const noexcept;
+----
+
+  * Arrayed images have additional method
++
+[source]
+----
+int array_size() const noexcept;
+----
+
+If the *cl_khr_mipmap_image* or *cl_khr_mipmap_image_writes* extension is enabled, then the following methods are also present:
+
+  * Images of dimension 1 (`image_dim::image_1d` and `image_dim::buffer`) have method:
++
+[source]
+----
+int width(int lod) const noexcept;
+----
+
+  * Images of dimension 2 (`image_dim::image_2d`) have all methods of 1 dimensional images and
++
+[source]
+----
+int height(int lod) const noexcept;
+----
+
+  * Images of dimension 3 (`image_dim::image_3d`) have all methods of 2 dimensional images and
++
+[source]
+----
+int depth(int lod) const noexcept;
+----
+
+  * Arrayed images have additional method
++
+[source]
+----
+int array_size(int lod) const noexcept;
+----
+
+If the *cl_khr_gl_msaa_sharing* and *cl_khr_gl_depth_images* extensions are enabled, then the following methods are also present:
+
+  * Images of dimension 2D (`image_dim::image_2d`) have method:
++
+[source]
+----
+int num_samples() const noexcept;
+----
+
+
+The following table describes the `image_dim_num` trait that return a number of dimensions based on `image_dim` parameter.
+
+.Image_dim_num trait
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Template*
+| *Value*
+
+| `template <image_dim Dim> struct image_dim_num;`
+| If `Dim` is `image_dim::image_1d` or `image_dim::image_buffer`, image dimension is 1. +
+  If `Dim` is `image_dim::image_2d`, image dimension is 2. +
+  If `Dim` is `image_dim::image_3d`, image dimension is 3.
+|====
+
+[[image-access]]
+==== Image access
+
+[source]
+----
+namespace cl
+{
+enum class image_access
+{
+    sample,
+    read,
+    write,
+    read_write
+};
+
+}
+----
+
+The non-multisample image template class specializations present different set of methods based on their access parameter.
+
+  * Images specified with `image_access::read` provide additional methods:
++
+[source]
+----
+element_type image::read(integer_coord coord) const noexcept;
+
+pixel image::operator[](integer_coord coord) const noexcept;
+
+element_type image::pixel::operator element_type() const noexcept;
+----
+
+  * Images specified with `image_access::write` provide additional method:
++
+[source]
+----
+void image::write(integer_coord coord, element_type color) noexcept;
+
+image::pixel image::operator[](integer_coord coord) noexcept;
+
+image::pixel & image::pixel::operator=(element_type color) noexcept;
+----
+
+  * Images specified with `image_access::read_write` provide additional methods:
++
+[source]
+----
+element_type image::read(integer_coord coord) const noexcept;
+
+void image::write(integer_coord coord, element_type color) noexcept;
+
+image::pixel image::operator[](integer_coord coord) noexcept;
+
+element_type image::pixel::operator element_type() const noexcept;
+
+image::pixel & image::pixel::operator=(element_type color) noexcept;
+----
+
+  * Images specified with `image_access::sample` provide additional methods:
++
+[source]
+----
+element_type image::read(integer_coord coord) const noexcept;
+
+element_type image::sample(const sampler &s,
+                           integer_coord coord) const noexcept;
+
+element_type image::sample(const sampler &s, float_coord coord) const noexcept;
+
+image::pixel image::operator[](integer_coord coord) const noexcept;
+
+element_type image::pixel::operator element_type() const noexcept;
+----
+
+
+If the *cl_khr_mipmap_image* extension is enabled the following methods are added to the non-multisample image types:
+
+  * Images specified with `image_access::sample` provide additional methods:
++
+[source]
+----
+element_type image::sample(const sampler &s, float_coord coord,
+                           float lod) const noexcept;
+
+element_type image::sample(const sampler &s, float_coord coord,
+                           gradient_coord gradient_x,
+                           gradient_coord gradient_y) const noexcept;
+----
+
+If the *cl_khr_mipmap_image_writes* extension is enabled the following methods are added to the non-multisample image types:
+
+  * Images specified with `image_access::write` provide additional method:
++
+[source]
+----
+void image::write(integer_coord coord, element_type color, int lod) noexcept;
+----
+
+If the *cl_khr_gl_msaa_sharing* and *cl_khr_gl_depth_images* extensions are enabled and the multisample image type is used, the following method is available:
+
+  * The multisample images specified with `image_access::read` provide method:
++
+[source]
+----
+element_type image::read(integer_coord coord, int sample) noexcept;
+----
+
+[[common-image-methods]]
+==== Common image methods
+
+Each image type implements a set of common methods:
+
+[source]
+----
+image_channel_type image::data_type() const noexcept;
+image_channel_order image::order() const noexcept;
+----
+
+If the *cl_khr_mipmap_image* or *cl_khr_mipmap_image_writes* extension is enabled, then the following method is also present in the non-multisample image types:
+
+[source]
+----
+int image::miplevels() const noexcept;
+----
+
+where `image_channel_type` and `image_channel_order` are defined as follows:
+
+[source]
+----
+namespace cl
+{
+enum class image_channel_type
+{
+    snorm_int8,
+    snorm_int16,
+    unorm_int8,
+    unorm_int16,
+    unorm_int24,
+    unorm_short_565,
+    unorm_short_555,
+    unorm_int_101010,
+    unorm_int_101010_2,
+    signed_int8,
+    signed_int16,
+    signed_int32,
+    unsigned_int8,
+    unsigned_int16,
+    unsigned_int32,
+    fp16,
+    fp32
+};
+
+enum class image_channel_order
+{
+    a,
+    r,
+    rx,
+    rg,
+    rgx,
+    ra,
+    rgb,
+    rgbx,
+    rgba,
+    argb,
+    bgra,
+    intensity,
+    luminance,
+    abgr,
+    depth,
+    depth_stencil,
+    srgb,
+    srgbx,
+    srgba,
+    sbgra
+};
+
+}
+----
+
+[[other-image-methods]]
+==== Other image methods
+
+[[imagesample]]
+===== image::sample
+
+[source]
+----
+element_type image::sample(const sampler &s, float_coord coord) const noexcept;
+----
+
+Reads a color value from the non-multisample image using sampler and floating point coordinates.
+
+[source]
+----
+element_type image::sample(const sampler &s, integer_coord coord) const noexcept;
+----
+
+Reads a color value from non-multisample image using sampler and integer coordinates.
+
+A sampler must use filter mode set to `filtering_mode::nearest`, normalized coordinates and addressing mode set to `addressing_mode::clamp_to_edge`, `addressing_mode::clamp`, `addressing_mode::none`, otherwise the values returned are undefined.
+
+[source]
+----
+element_type image::sample(const sampler &s, float_coord coord, float lod) const noexcept;
+----
+
+Reads a color value from non-multisample image using sampler and floating point coordinates in the mip-level specified by `lod`.
+
+Method is present for non-multisample images if the *cl_khr_mipmap_image* extension is enabled.
+
+[source]
+----
+element_type image::sample(const sampler &s, float_coord coord,
+                           gradient_coord gradient_x,
+                           gradient_coord gradient_y) const noexcept;
+----
+
+Use the gradients to compute the lod and coordinate `coord` to do an element lookup in the mip-level specified by the computed lod.
+
+Method is present if the *cl_khr_mipmap_image* extension is enabled.
+
+Based on the parameters with which image was created on host side the
+function will return different ranges of values
+
+  * returns floating-point values in the range [0.0, 1.0] for image objects created with `image_channel_type` set to one of the pre-defined packed formats or `image_channel_type::unorm_int8` or `image_channel_type::unorm_int16`.
+  * returns floating-point values in the range [-1.0, 1.0] for image objects created with `image_channel_type::snorm_int8` or `image_channel_type::snorm_int16`.
+  * returns floating-point values for image objects created with `image_channel_type::float16` or `image_channel_type::float32`.
+
+Values returned by `image::sample` where `T` is a floating-point type for image objects with `image_channel_type` values not specified in the description above are undefined.
+
+The `image::sample` functions that take an image object where `T` is a signed integer type can only be used with image objects created with:
+
+  * `image_channel_type::sint8`,
+  * `image_channel_type::sint16` and
+  * `image_channel_type::sint32`.
+
+If the `image_channel_type` is not one of the above values, the values returned by `image::sample` are undefined.
+
+The `image::sample` functions that take an image object where `T` is an unsigned integer type can only be used with image objects created with:
+
+  * `image_channel_type::uint8`,
+  * `image_channel_type::uint16` and
+  * `image_channel_type::uint32`.
+
+If the `image_channel_type` is not one of the above values, the values returned by `image::sample` are undefined.
+
+[[imageread]]
+===== image::read
+
+[source]
+----
+element_type image::read(integer_coord coord) const noexcept;
+----
+
+Reads a color value from non-multisample image without sampler and integral coordinates.
+If the *cl_khr_mipmap_image* extension is present, may also perform reads from mipmap layer 0.
+
+The image read function behaves exactly as the corresponding image sample function using a sampler
+that has filter mode set to `filtering_mode::nearest`, normalized coordinates set to
+`normalized_coordinates::unnormalized` and addressing mode set to  `addressing_mode::none`.
+There is one execption for cases where the image sample type is `image_channel_type::fp32`.
+In this exceptional case, when channel data values are denormalized, the image read function may return
+the denormalized data, while the sample function may flush denormalized channel data values to zero.
+The coordinates must be between 0 and image size in that dimension non inclusive.
+
+Based on the parameters with which image was created on host side the function will return different ranges of values
+
+  * returns floating-point values in the range [0.0, 1.0] for image objects created with `image_channel_type` set to one of the pre-defined packed formats or `image_channel_type::unorm_int8` or `image_channel_type::unorm_int16`.
+  * returns floating-point values in the range [-1.0, 1.0] for image objects created with `image_channel_type::snorm_int8` or `image_channel_type::snorm_int16`.
+  * returns floating-point values for image objects created with `image_channel_type::float16` or `image_channel_type::float32`.
+
+Values returned by `image::read` where `T` is a floating-point type for image objects with `image_channel_type` values not specified in the description above are undefined.
+
+The `image::read` functions that take an image object where `T` is a signed integer type can only be used with image objects created with:
+
+  * `image_channel_type::sint8`,
+  * `image_channel_type::sint16` and
+  * `image_channel_type::sint32`.
+
+If the `image_channel_type` is not one of the above values, the values returned by `image::read` are undefined.
+
+The `image::read` functions that take an image object where `T` is an unsigned integer type can only be used with image objects created with `image_channel_type` set to one of the following values:
+
+  * `image_channel_type::uint8`,
+  * `image_channel_type::uint16` and
+  * `image_channel_type::uint32`.
+
+If the `image_channel_type` is not one of the above values, the values returned by `image::read` are undefined.
+
+[source]
+----
+element_type image::read(integer_coord coord, int sample) noexcept;
+----
+
+Use the coordinate and sample to do an element lookup in the image object.
+Method is only available in the MSAA image types, and if the *cl_khr_gl_msaa_sharing* and *cl_khr_gl_depth_images* extensions are enabled.
+
+
+When a multisample image is accessed in a kernel, the access takes one vector of integers describing which pixel to fetch and an integer corresponding to the sample numbers describing which sample within the pixel to fetch.
+`sample` identifies the sample position in the multi-sample image.
+
+
+For best performance, we recommend that sample be a literal value so it is known at compile time and the OpenCL compiler can perform appropriate optimizations for multisample reads on the device.
+
+
+No standard sampling instructions are allowed on the multisample image.
+Accessing a coordinate outside the image and/or a sample that is outside the number of samples associated with each pixel in the image is undefined.
+
+[[imagewrite]]
+===== image::write
+
+[source]
+----
+void image::write(integer_coord coord, element_type color) noexcept;
+----
+
+Writes a color value to location specified by coordinates from non-multisample image.
+If the *cl_khr_mipmap_image_writes* extension is present, may also perform writes to mipmap layer 0.
+The coordinates must be between 0 and image size in that dimension non inclusive.
+
+
+Based on the parameters with which image was created on host side the function will perform appropriate data format conversions before writing a color value.
+
+[source]
+----
+void image::write(integer_coord coord, element_type color, int lod) noexcept;
+----
+
+Writes a color value to location specified by coordinates and lod from mipmap image.
+The coordinates must be between 0 and image size in that dimension non inclusive.
+
+
+Method is present if the *cl_khr_mipmap_image* extension is enabled.
+
+
+Based on the parameters with which image was created on host side the function will perform appropriate data format conversions before writing a color value.
+
+
+The `image::write` functions that take an image object where `T` is a floating-point type can only be used with image objects created with `image_channel_type` set to one of the pre-defined packed formats or set to:
+
+  * `image_channel_type::snorm_int8`
+  * `image_channel_type::unorm_int8`
+  * `image_channel_type::snorm_int16`
+  * `image_channel_type::unorm_int16`
+  * `image_channel_type::float16`
+  * `image_channel_type::float32`
+
+The `image::write` functions that take an image object where `T` is a signed integer type can only be used with image objects created with:
+
+  * `image_channel_type::sint8`
+  * `image_channel_type::sint16`
+  * `image_channel_type::sint32`
+
+
+The `image::write` functions that take an image object where `T` is an unsigned integer type can only be used with image objects created with:
+
+  * `image_channel_type::uint8`
+  * `image_channel_type::uint16`
+  * `image_channel_type::uint32`
+
+
+The behavior of `image::write` for image objects created with
+`image_channel_type` values not specified in the description above is undefined.
+
+[[imageoperator]]
+===== \image::operator[]
+
+[source]
+----
+pixel operator[](integer_coord coord) noexcept;
+
+pixel operator[](integer_coord coord) const noexcept;
+----
+
+Creates a pixel which can be used to read or/and write operation(s).
+It depends on image_access specified in the image.
+
+NOTE: The pixel stores a reference to image and coordinates.
+This operation can consume more private memory than `image::read` and `image::write` methods.
+It can also negatively impact performance.
+
+[[imagepixeloperator-element_type]]
+===== image::pixel::operator element_type
+
+[source]
+----
+element_type pixel::operator element_type() const noexcept;
+----
+
+Reads a color value from non-multisample image without sampler and integral coordinates specified in pixel.
+If the *cl_khr_mipmap_image* extension is present, may also perform reads from mipmap layer 0.
+
+
+This function is similar to `image::read` method.
+Please refer to description of this method for more details.
+
+[[imagepixeloperator]]
+===== image::pixel::operator=
+
+[source]
+----
+pixel & pixel::operator=(element_type color) noexcept;
+----
+
+Writes a color value to location specified by coordinates in pixel from non-multisample image.
+If the *cl_khr_mipmap_image_writes* extension is present, may also perform writes to mipmap layer 0.
+The coordinates specified in pixel must be between 0 and image size in that dimension non inclusive.
+
+Based on the parameters with which image was created on host side the function will perform appropriate data format conversions before writing a color value.
+
+This function is similar to `image::write` method.
+Please refer to description of this method for more details.
+
+[[imagewidth]]
+===== image::width
+
+[source]
+----
+int width() const noexcept;
+----
+
+Returns width of the image.
+
+[source]
+----
+int width(int lod) const noexcept;
+----
+
+Returns width of the mip-level specified by `lod`.
+
+Method is present in the non-multisample image types if the *cl_khr_mipmap_image* extension is enabled.
+
+[[imageheight]]
+===== image::height
+
+[source]
+----
+int height() const noexcept;
+----
+
+Returns height of the image.
+
+[source]
+----
+int height(int lod) const noexcept;
+----
+
+
+Returns height of the mip-level specified by `lod`.
+
+Method is present in the non-multisample image types if the *cl_khr_mipmap_image* extension is enabled.
+
+[[imagedepth]]
+===== image::depth
+
+[source]
+----
+int depth() const noexcept;
+----
+
+Returns depth of the image.
+
+[source]
+----
+int depth(int lod) const noexcept;
+----
+
+Returns depth of the mip-level specified by `lod`.
+
+Method is present in the non-multisample image types if the *cl_khr_mipmap_image* extension is enabled.
+
+[[imagearray_size]]
+===== image::array_size
+
+[source]
+----
+int array_size() const noexcept;
+----
+
+Returns size of the image array.
+
+[source]
+----
+int array_size(int lod) const noexcept;
+----
+
+Returns size of the image array specified by `lod`.
+
+Method is present in the non-multisample image types if the *cl_khr_mipmap_image* extension is enabled.
+
+[[imagesize]]
+===== image::size
+
+[source]
+----
+integer_coord size() const noexcept;
+----
+
+Returns appropriately sized vector, or scalar for 1 dimensional images, containing all image dimensions followed by array size.
+
+[[imagedata_type]]
+===== image::data_type
+
+[source]
+----
+image_channel_type image::data_type() const noexcept;
+----
+
+Returns format of the image as specified upon its creation on host side.
+
+[[imageorder]]
+===== image::order
+
+[source]
+----
+image_channel_order image::order() const noexcept;
+----
+
+Returns channel order of the image as specified upon its creation on host side.
+
+[[imagemiplevels]]
+===== image::miplevels
+
+[source]
+----
+int miplevels() const noexcept;
+----
+
+Returns number of mipmaps of image.
+Method is present if the *cl_khr_mipmap_image* or *cl_khr_mipmap_image_writes* extension is enabled.
+
+[[imagenum_samples]]
+===== image::num_samples
+
+[source]
+----
+int num_samples() const noexcept;
+----
+
+[[sampler]]
+==== Sampler
+
+[source]
+----
+namespace cl
+{
+struct sampler: marker_type
+{
+    sampler() = delete;
+    sampler(const sampler&) = default;
+    sampler(sampler&&) = default;
+
+    sampler& operator=(const sampler&) = delete;
+    sampler& operator=(sampler&&) = delete;
+    sampler* operator&() = delete;
+
+};
+
+template <addressing_mode A, normalized_coordinates C, filtering_mode F>
+constexpr sampler make_sampler();
+
+}
+----
+
+There are only two ways of acquiring a sampler inside of a kernel. One is to pass it as a kernel parameter from host using `clSetKernelArg`, the other one is to create one using make_sampler function in the kernel code. `make_sampler` function has three template parameters specifying behavior of sampler. Once acquired sampler can only be passed by reference as all other marker types. The sampler objects at non-program scope must be declared with static specifier.
+
+The maximum number of samplers that can be declared in a kernel can be queried using the `CL_DEVICE_MAX_SAMPLERS` token in `clGetDeviceInfo`.
+
+[[sampler-modes]]
+==== Sampler Modes
+
+[source]
+----
+namespace cl
+{
+enum class addressing_mode
+{
+    mirrored_repeat,
+    repeat,
+    clamp_to_edge,
+    clamp,
+    none
+};
+
+enum class normalized_coordinates
+{
+    normalized,
+    unnormalized
+};
+
+enum class filtering_mode
+{
+    nearest,
+    linear
+};
+
+}
+----
+
+The following tables describe the inline sampler parameters and their behavior.
+
+.Addressing modes
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Addressing mode*
+| *Description*
+
+| `mirrored_repeat`
+| Out of range coordinates will be flipped at every integer junction. This addressing mode can only be used with normalized coordinates. If normalized coordinates are not used, this addressing mode may generate image coordinates that are undefined.
+
+| `repeat`
+| Out of range image coordinates are wrapped to the valid range. This addressing mode can only be used with normalized coordinates. If normalized coordinates are not used, this addressing mode may generate image coordinates that are undefined.
+
+| `clamp_to_edge`
+| Out of range image coordinates are clamped to the extent.
+
+| `clamp`
+| Out of range image coordinates will return a border color.
+
+| `none`
+| For this addressing mode the programmer guarantees that the image coordinates used to sample elements of the image refer to a location inside the image; otherwise the results are undefined.
+|====
+
+For 1D and 2D image arrays, the addressing mode applies only to the _x_ and (_x, y_) coordinates.  The addressing mode for the coordinate which specifies the array index is always clamp_to_edge.
+
+.Normalized coordinates
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Normalized Coordinate Values*
+| *Description*
+
+| `normalized`
+| Specifies whether the _x_, _y_ and _z_ coordinates are passed in as normalized values.
+
+| `unnormalized`
+| Specifies whether the _x_, _y_ and _z_ coordinates are passed in as unnormalized values.
+|====
+
+Sampling from an image with samplers that differ in specification of coordinates normalization result in undefined behavior.
+
+.Coordinate filtering modes
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Filtering mode*
+| *Description*
+
+| `nearest`
+| Chooses a color of nearest pixel.
+
+| `linear`
+| Performs a linear sampling of adjacent pixels.
+|====
+
+Refer to _section 4.2_ in the OpenCL API specification for a description of these filter modes.
+
+[[determining-the-border-color-or-value]]
+==== Determining the border color or value
+
+If `<addressing mode>` in sampler is clamp, then out-of-range image coordinates return the border color. The border color selected depends on the image channel order and can be one of the following values:
+
+  * If the image channel order is `image_channel_order::a`, `image_channel_order::intensity`, `image_channel_order::rx`, `image_channel_order::ra`, `image_channel_order::rgx`, `image_channel_order::rgbx`, `image_channel_order::srgbx`, `image_channel_order::argb`, `image_channel_order::bgra`, `image_channel_order::abgr`, `image_channel_order::rgba`, `image_channel_order::srgba` or `image_channel_order::sbgra`, the border color is (0.0f, 0.0f, 0.0f, 0.0f).
+
+  * If the image channel order is `image_channel_order::r`, `image_channel_order::rg`, `image_channel_order::rgb`, or `image_channel_order::luminance`, the border color is (0.0f, 0.0f, 0.0f, 1.0f).
+
+  * If the image channel order is `image_channel_order::depth`, the border value is 0.0f.
+
+[[srgb-images]]
+==== sRGB Images
+
+The built-in image read functions perform sRGB to linear RGB conversions if the image is an sRGB image. Writes to sRGB images from a kernel is an optional extension. The *cl_khr_srgb_image_writes* extension will be reported in the `CL_DEVICE_EXTENSIONS` string if a device supports writing to sRGB images using `image::write`. `clGetSupportedImageFormats` will return the supported sRGB images if `CL_MEM_READ_WRITE` or `CL_MEM_WRITE_ONLY` is specified in `flags` argument and the device supports writing to an sRGB image. If the *cl_khr_srgb_image_writes* extension is supported and has been enabled, the built-in image write functions perform the linear to sRGB conversion.
+
+Only the R, G and B components are converted from linear to sRGB and vice-versa. The alpha component is returned as is.
+
+[[reading-and-writing-to-the-same-image-in-a-kernel]]
+==== Reading and writing to the same image in a kernel
+
+To read and write to the same image in a kernel, the image must be declared with the `image_access::read_write`. Only sampler-less reads and write functions can be called on an image declared with the `image_access::read_write` access qualifier. Calling the `image::sample` functions on an image declared with the `image_access::read_write` will result in a compilation error.
+
+The `atomic_fence` function from the <<fences, _Atomic Fences_>> section can be used to make sure that writes are visible to later reads by the same work-item. Without use of the `atomic_fence` function, write-read coherence on image objects is not guaranteed: if a work-item reads from an image to which it has previously written without an intervening atomic_fence, it is not guaranteed that those previous writes are visible to the work-item. Only a scope of `memory_order_acq_rel` is valid for `atomic_fence` when passed the `mem_fence::image` flag.  If multiple work-items are writing to and reading from multiple locations in an image, the `work_group_barrier` from the <<synchronization-functions, _Synchronization Functions_>> section should be used.
+
+Consider the following example:
+
+[source]
+----
+#include <opencl_work_item>
+#include <opencl_atomic>
+#include <opencl_image>
+using namespace cl;
+
+kernel void foo(image2d<float4, image_access::read_write> img, ... ) {
+    int2 coord;
+    coord.x = (int)get_global_id(0);
+    coord.y = (int)get_global_id(1);
+
+    float4 clr = img.read(coord);
+    //...
+    img.write(coord, clr);
+
+    // required to ensure that following read from image at
+    // location coord returns the latest color value.
+    atomic_fence(mem_fence::image,
+     memory_order_acq_rel,
+     memory_scope_work_item);
+
+    float4 clr_new = img.read(coord);
+    //...
+}
+----
+
+[[mapping-image-channels-to-color-values-returned-by-imagesample-imageread-and-color-values-passed-to-imagewrite-to-image-channels]]
+==== Mapping image channels to color values returned by image::sample, image::read and color values passed to image::write to image channels
+
+The following table describes the mapping of the number of channels of an image element to the appropriate components in the `float4`, `int4` or `uint4` vector data type for the color values returned by `image::sample`, `image::read` or supplied to `image::write`. The unmapped components will be set to 0.0 for red, green and blue channels and will be set to 1.0 for the alpha channel.
+
+.Image channel mappings
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Image Channel Order*
+| *float4, int4 or uint4 components of channel data*
+
+| r, rx
+| (r, 0.0, 0.0, 1.0)
+
+| a
+| (0.0, 0.0, 0.0, a)
+
+| rg, rgx
+| (r, g, 0.0, 1.0)
+
+| ra
+| (r, 0.0, 0.0, a)
+
+| rgb, rgbx, srgb, srgbx
+| (r, g, b, 1.0)
+
+| rgba, bgra, argb, abgr, srgba, sbgra
+| (r, g, b, a)
+
+| intensity
+| (I, I, I, I)
+
+| luminance
+| (L, L, L, 1.0)
+|====
+
+For `image_channel_order::depth` images, a scalar value is returned by `image::sample`, `image::read` or supplied to `image::write`.
+
+NOTE: A kernel that uses a sampler with the clamp addressing mode with multiple images may result in additional samplers being used internally by an implementation. If the same sampler is used with multiple images called via `image::sample`, then it is possible that an implementation may need to allocate an additional sampler to handle the different border color values that may be needed depending on the image formats being used.  The implementation allocated samplers will count against the maximum sampler values supported by the device and given by `CL_DEVICE_MAX_SAMPLERS`. Enqueuing a kernel that requires more samplers than the implementation can support will result in a `CL_OUT_OF_RESOURCES` error being returned.
+
+[[restrictions-4]]
+==== Restrictions
+
+  * The image and sampler types cannot be used with variables declared inside a class or union field, a pointer type, an array, global variables declared at program scope or the return type of a function.
+  * The image and sampler types cannot be used with the `global`, `local`, `priv` and `constant` address space storage classes (see the <<explicit-address-space-storage-classes, _Explicit address space storage classes_>> section).
+  * The values returned by applying the `sizeof` operator to the image and sampler types are implementation-defined.
+
+[[examples-5]]
+==== Examples
+
+[[example-1-5]]
+===== Example 1
+
+The example how to use an image object with sampler-less reads.
+[source]
+----
+#include <opencl_image>
+#include <opencl_work_item>
+using namespace cl;
+
+kernel void foo(image2d<float4, image_access::read> img) {
+    int2 coord;
+    coord.x = get_global_id(0);
+    coord.y = get_global_id(1);
+
+    float4 val = img.read(coord);
+}
+----
+
+[[example-2-3]]
+===== Example 2
+
+The example how to use an image object with `image_access::read_write` access and `atomic_fence` function.
+
+[source]
+----
+#include <opencl_image>
+#include <opencl_atomic>
+#include <opencl_work_item>
+using namespace cl;
+
+kernel void foo(image2d<float4, image_access::read_write> img) {
+    int2 coord;
+    coord.x = get_global_id(0);
+    coord.y = get_global_id(1);
+
+    float4 val1{0.5f};
+    img[coord] = val1;
+
+    atomic_fence(mem_fence::image, memory_order_acq_rel,
+                 memory_scope_work_item);
+
+    float4 val2 = img[coord];
+}
+----
+
+[[example-3-2]]
+===== Example 3
+
+The example how to use an image object with sampler passed by a kernel argument.
+
+[source]
+----
+#include <opencl_image>
+#include <opencl_work_item>
+using namespace cl;
+
+kernel void foo(image2d<float4, image_access::sample> img, sampler s) {
+    int2 coord;
+    coord.x = get_global_id(0);
+    coord.y = get_global_id(1);
+
+    float4 val = img.sample(s, coord);
+}
+----
+
+[[example-4-1]]
+===== Example 4
+
+The example how to use an image object with sampler declared at program scope.
+
+[source]
+----
+#include <opencl_image>
+#include <opencl_work_item>
+using namespace cl;
+
+sampler s = make_sampler<addressing_mode::clamp,
+                         normalized_coordinates::unnormalized,
+                         filtering_mode::nearest>();
+
+kernel void foo(image2d<float4, image_access::sample> img) {
+    int2 coord;
+    coord.x = get_global_id(0);
+    coord.y = get_global_id(1);
+
+    float4 val = img.sample(s, coord);
+}
+----
+
+[[example-5-1]]
+===== Example 5
+
+The example how to use an image object with sampler declared at non-program scope.
+
+[source]
+----
+#include <opencl_image>
+#include <opencl_work_item>
+using namespace cl;
+
+kernel void foo(image2d<float4, image_access::sample> img) {
+    int2 coord;
+    coord.x = get_global_id(0);
+    coord.y = get_global_id(1);
+
+    static sampler s = make_sampler<addressing_mode::clamp,
+                                    normalized_coordinates::unnormalized,
+                                    filtering_mode::nearest>();
+
+    float4 val = img.sample(s, coord);
+}
+----

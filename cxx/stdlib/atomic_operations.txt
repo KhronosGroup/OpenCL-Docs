@@ -1,0 +1,791 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[atomic-operations-library]]
+=== Atomic Operations Library
+
+The OpenCL {cpp} programming language implements a subset of the {cpp14} atomics (refer to _chapter 29_ of the {cpp14} specification) and synchronization operations.
+These operations play a special role in making assignments in one work-item visible to another.
+Please note that this chapter only presents synopsis of the atomics library and differences from {cpp14} specification.
+
+[[header-opencl_atomic-synopsis]]
+==== Header <opencl_atomic> Synopsis
+[source]
+----
+namespace cl
+{
+enum memory_order;
+enum memory_scope;
+
+template<class T> struct atomic;
+// specialization for scalar types T that satisfy cl::is_integral<T>
+template<> struct atomic<integral>;
+template<class T> struct atomic<T*>;
+
+using atomic_int = atomic<int>;
+using atomic_uint = atomic<unsigned int>;
+#if defined(cl_khr_int64_base_atomics) && defined(cl_khr_int64_extended_atomics)
+using atomic_long = atomic<long>;
+using atomic_ulong = atomic<unsigned long>;
+#endif
+using atomic_float = atomic<float>;
+#if defined(cl_khr_fp64) &&
+    defined(cl_khr_int64_base_atomics) &&
+    defined(cl_khr_int64_extended_atomics)
+using atomic_double = atomic<double>;
+#endif
+#if (defined(cl_khr_int64_base_atomics) &&
+     defined(cl_khr_int64_extended_atomics) &&
+     __INTPTR_WIDTH__ == 64) ||
+    __INTPTR_WIDTH__ == 32
+using atomic_intptr_t = atomic<intptr_t>;
+using atomic_uintptr_t = atomic<uintptr_t>;
+#endif
+#if (defined(cl_khr_int64_base_atomics) &&
+     defined(cl_khr_int64_extended_atomics) &&
+     __SIZE_WIDTH__ == 64) ||
+    __SIZE_WIDTH__ == 32
+using atomic_size_t = atomic<size_t>;
+#endif
+#if (defined(cl_khr_int64_base_atomics) &&
+     defined(cl_khr_int64_extended_atomics) &&
+     __PTRDIFF_WIDTH__ == 64) ||
+    __PTRDIFF_WIDTH__ == 32
+using atomic_ptrdiff_t = atomic<ptrdiff_t>;
+#endif
+
+// Please note that all operations taking memory_order as a parameter have,
+// in addition to cpp14 specification, additional parameter for memory_scope
+template <class T>
+bool atomic_is_lock_free(const volatile atomic<T>*) noexcept;
+template <class T>
+bool atomic_is_lock_free(const atomic<T>*) noexcept;
+template <class T>
+void atomic_init(volatile atomic<T>*, T) noexcept;
+template <class T>
+void atomic_init(atomic<T>*, T) noexcept;
+template <class T>
+void atomic_store(volatile atomic<T>*, T) noexcept;
+template <class T>
+void atomic_store(atomic<T>*, T) noexcept;
+template <class T>
+void atomic_store_explicit(volatile atomic<T>*, T, memory_order,
+                           memory_scope) noexcept;
+template <class T>
+void atomic_store_explicit(atomic<T>*, T, memory_order,
+                           memory_scope) noexcept;
+template <class T>
+T atomic_load(const volatile atomic<T>*) noexcept;
+template <class T>
+T atomic_load(const atomic<T>*) noexcept;
+template <class T>
+T atomic_load_explicit(const volatile atomic<T>*, memory_order,
+                       memory_scope) noexcept;
+template <class T>
+T atomic_load_explicit(const atomic<T>*, memory_order, memory_scope) noexcept;
+template <class T>
+T atomic_exchange(volatile atomic<T>*, T) noexcept;
+template <class T>
+T atomic_exchange(atomic<T>*, T) noexcept;
+template <class T>
+T atomic_exchange_explicit(volatile atomic<T>*, T, memory_order,
+                           memory_scope) noexcept;
+template <class T>
+T atomic_exchange_explicit(atomic<T>*, T, memory_order, memory_scope) noexcept;
+template <class T>
+bool atomic_compare_exchange_weak(volatile atomic<T>*, T*, T) noexcept;
+template <class T>
+bool atomic_compare_exchange_weak(atomic<T>*, T*, T) noexcept;
+template <class T>
+bool atomic_compare_exchange_strong(volatile atomic<T>*, T*, T) noexcept;
+template <class T>
+bool atomic_compare_exchange_strong(atomic<T>*, T*, T) noexcept;
+template <class T>
+bool atomic_compare_exchange_weak_explicit(volatile atomic<T>*, T*, T,
+                                           memory_order, memory_order,
+                                           memory_scope) noexcept;
+template <class T>
+bool atomic_compare_exchange_weak_explicit(atomic<T>*, T*, T, memory_order,
+                                           memory_order, memory_scope) noexcept;
+template <class T>
+bool atomic_compare_exchange_strong_explicit(volatile atomic<T>*, T*, T,
+                                             memory_order, memory_order,
+                                             memory_scope) noexcept;
+template <class T>
+bool atomic_compare_exchange_strong_explicit(atomic<T>*, T*, T,
+                                             memory_order, memory_order,
+                                             memory_scope) noexcept;
+
+// Please note that all operations taking memory_order as a parameter have
+// additional overloads, in addition to cpp14 specification, taking both
+// memory_order and memory_scope parameters.
+template <class T>
+T atomic_fetch_add(volatile atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_add(atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_add_explicit(volatile atomic<T>*, T, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_add_explicit(atomic<T>*, T, memory_order, memory_scope) noexcept;
+template <class T>
+T atomic_fetch_sub(volatile atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_sub(atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_sub_explicit(volatile atomic<T>*, T, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_sub_explicit(atomic<T>*, T, memory_order, memory_scope) noexcept;
+template <class T>
+T atomic_fetch_and(volatile atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_and(atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_and_explicit(volatile atomic<T>*, T, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_and_explicit(atomic<T>*, T, memory_order, memory_scope) noexcept;
+template <class T>
+T atomic_fetch_or(volatile atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_or(atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_or_explicit(volatile atomic<T>*, T, memory_order,
+                           memory_scope) noexcept;
+template <class T>
+T atomic_fetch_or_explicit(atomic<T>*, T, memory_order, memory_scope) noexcept;
+template <class T>
+T atomic_fetch_xor(volatile atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_xor(atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_xor_explicit(volatile atomic<T>*, T, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_xor_explicit(atomic<T>*, T, memory_order, memory_scope) noexcept;
+//OpenCL specific min/max atomics:
+T atomic_fetch_min(volatile atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_min(atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_min_explicit(volatile atomic<T>*, T, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_min_explicit(atomic<T>*, T, memory_order, memory_scope) noexcept;
+T atomic_fetch_max(volatile atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_max(atomic<T>*, T) noexcept;
+template <class T>
+T atomic_fetch_max_explicit(volatile atomic<T>*, T, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_max_explicit(atomic<T>*, T, memory_order, memory_scope) noexcept;
+
+template <class T>
+void atomic_store(atomic<T>* object, T value) noexcept;
+template <class T>
+void atomic_store(volatile atomic<T>* object, T value) noexcept;
+template <class T>
+void atomic_store_explicit(atomic<T>* object, T value, memory_order,
+                           memory_scope) noexcept;
+template <class T>
+void atomic_store_explicit(volatile atomic<T>* object, T value, memory_order,
+                           memory_scope) noexcept;
+
+template <class T>
+T atomic_load(atomic<T>* object) noexcept;
+template <class T>
+T atomic_load(volatile atomic<T>* object) noexcept;
+template <class T>
+T atomic_load_explicit(atomic<T>* object, memory_order, memory_scope) noexcept;
+template <class T>
+T atomic_load_explicit(volatile atomic<T>* object, memory_order,
+                       memory_scope) noexcept;
+
+template <class T>
+T atomic_exchange(atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_exchange(volatile atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_exchange_explicit(atomic<T>* object, T value, memory_order,
+                           memory_scope) noexcept;
+template <class T>
+T atomic_exchange_explicit(volatile atomic<T>* object, T value, memory_order,
+                           memory_scope) noexcept;
+
+template <class T>
+bool atomic_compare_exchange_strong(atomic<T>* object, T* expected,
+                                    T desired) noexcept;
+template <class T>
+bool atomic_compare_exchange_strong(volatile atomic<T>* object, T* expected,
+                                    T desired) noexcept;
+template <class T>
+bool atomic_compare_exchange_strong_explicit(atomic<T>* object, T* expected,
+                                             T desired, memory_order,
+                                             memory_scope) noexcept;
+template <class T>
+bool atomic_compare_exchange_strong_explicit(volatile atomic<T>* object,
+                                             T* expected, T desired,
+                                             memory_order,
+                                             memory_scope) noexcept;
+template <class T>
+bool atomic_compare_exchange_weak(atomic<T>* object, T* expected,
+                                  T desired) noexcept;
+template <class T>
+bool atomic_compare_exchange_weak(volatile atomic<T>* object, T* expected,
+                                  T desired) noexcept;
+template <class T>
+bool atomic_compare_exchange_weak_explicit(atomic<T>* object, T* expected,
+                                           T desired, memory_order,
+                                           memory_scope) noexcept;
+template <class T>
+bool atomic_compare_exchange_weak_explicit(volatile atomic<T>* object,
+                                           T* expected, T desired,
+                                           memory_order, memory_scope) noexcept;
+
+template <class T>
+T atomic_fetch_add(atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_fetch_add(volatile atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_fetch_add_explicit(atomic<T>* object, T value, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_add_explicit(volatile atomic<T>* object, T value, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_and(atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_fetch_and(volatile atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_fetch_and_explicit(atomic<T>* object, T value, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_and_explicit(volatile atomic<T>* object, T value, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_or(atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_fetch_or(volatile atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_fetch_or_explicit(atomic<T>* object, T value, memory_order,
+                           memory_scope) noexcept;
+template <class T>
+T atomic_fetch_or_explicit(volatile atomic<T>* object, T value, memory_order,
+                           memory_scope) noexcept;
+template <class T>
+T atomic_fetch_sub(atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_fetch_sub(volatile atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_fetch_sub_explicit(atomic<T>* object, T value, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_sub_explicit(volatile atomic<T>* object, T value, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_xor(atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_fetch_xor(volatile atomic<T>* object, T value) noexcept;
+template <class T>
+T atomic_fetch_xor_explicit(atomic<T>* object, T value, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T atomic_fetch_xor_explicit(volatile atomic<T>* object, T value, memory_order,
+                            memory_scope) noexcept;
+
+#if (defined(cl_khr_int64_base_atomics) &&
+     defined(cl_khr_int64_extended_atomics) &&
+     __SIZE_WIDTH__ == 64) ||
+    __SIZE_WIDTH__ == 32
+template <class T>
+T* atomic_fetch_add(atomic<T*>* object, ptrdiff_t value) noexcept;
+template <class T>
+T* atomic_fetch_add(volatile atomic<T*>* object, ptrdiff_t value) noexcept;
+template <class T>
+T* atomic_fetch_add_explicit(atomic<T*>* object, ptrdiff_t value, memory_order,
+                             memory_scope) noexcept;
+template <class T>
+T* atomic_fetch_add_explicit(volatile atomic<T*>* object, ptrdiff_t value,
+                             memory_order, memory_scope) noexcept;
+template <class T>
+T* atomic_fetch_and(atomic<T*>* object, ptrdiff_t value) noexcept;
+template <class T>
+T* atomic_fetch_and(volatile atomic<T*>* object, ptrdiff_t value) noexcept;
+template <class T>
+T* atomic_fetch_and_explicit(atomic<T*>* object, ptrdiff_t value, memory_order,
+                             memory_scope) noexcept;
+template <class T>
+T* atomic_fetch_and_explicit(volatile atomic<T*>* object, ptrdiff_t value,
+                             memory_order, memory_scope) noexcept;
+template <class T>
+T* atomic_fetch_or(atomic<T*>* object, ptrdiff_t value) noexcept;
+template <class T>
+T* atomic_fetch_or(volatile atomic<T*>* object, ptrdiff_t value) noexcept;
+template <class T>
+T* atomic_fetch_or_explicit(atomic<T*>* object, ptrdiff_t value, memory_order,
+                            memory_scope) noexcept;
+template <class T>
+T* atomic_fetch_or_explicit(volatile atomic<T*>* object, ptrdiff_t value,
+                            memory_order, memory_scope) noexcept;
+template <class T>
+T* atomic_fetch_sub(atomic<T*>* object, ptrdiff_t value) noexcept;
+template <class T>
+T* atomic_fetch_sub(volatile atomic<T*>* object, ptrdiff_t value) noexcept;
+template <class T>
+T* atomic_fetch_sub_explicit(atomic<T*>* object, ptrdiff_t value, memory_order,
+                             memory_scope) noexcept;
+template <class T>
+T* atomic_fetch_sub_explicit(volatile atomic<T*>* object, ptrdiff_t value,
+                             memory_order, memory_scope) noexcept;
+template <class T>
+T* atomic_fetch_xor(atomic<T*>* object, ptrdiff_t value) noexcept;
+template <class T>
+T* atomic_fetch_xor(volatile atomic<T*>* object, ptrdiff_t value) noexcept;
+template <class T>
+T* atomic_fetch_xor_explicit(atomic<T*>* object, ptrdiff_t value, memory_order,
+                             memory_scope) noexcept;
+template <class T>
+T* atomic_fetch_xor_explicit(volatile atomic<T*>* object, ptrdiff_t value,
+                             memory_order, memory_scope) noexcept;
+#endif
+
+void atomic_fence(mem_fence flags, memory_order order,
+                  memory_scope scope) noexcept;
+
+#define ATOMIC_VAR_INIT(value) as described in cpp14 specification [atomics.types.operations]
+
+}
+----
+
+[[order-and-scope]]
+==== Order and scope
+[source]
+----
+namespace cl
+{
+enum memory_order
+{
+    memory_order_relaxed,
+    memory_order_acquire,
+    memory_order_release,
+    memory_order_acq_rel,
+    memory_order_seq_cst
+};
+
+enum memory_scope
+{
+    memory_scope_all_svm_devices,
+    memory_scope_device,
+    memory_scope_work_group,
+    memory_scope_sub_group,
+    memory_scope_work_item
+};
+
+}
+----
+An enumeration `memory_order` is described in section [atomics.order] of {cpp14} specification. [[ftnref7]] <<ftn7,[7]>>
+
+The enumerated type `memory_scope` specifies whether the memory ordering constraints given by `memory_order` apply to work-items in a work-group or work-items of a kernel(s) executing on the device or across devices (in the case of shared virtual memory). Its enumeration constants are as follows:
+
+  * `memory_scope_work_item` [[ftnref8]] <<ftn8,[8]>>
+  * `memory_scope_sub_group`
+  * `memory_scope_work_group`
+  * `memory_scope_device`
+  * `memory_scope_all_svm_devices`
+
+The memory scope should only be used when performing atomic operations to global memory.
+Atomic operations to local memory only guarantee memory ordering in the work-group not across work-groups and therefore ignore the `memory_scope` value.
+
+NOTE: With fine-grained system SVM, sharing happens at the granularity of individual loads and stores anywhere in host memory.
+Memory consistency is always guaranteed at synchronization points, but to obtain finer control over consistency, the OpenCL atomics functions may be used to ensure that the updates to individual data values made by
+one unit of execution are visible to other execution units.
+In particular, when a host thread needs fine control over the consistency of memory that is shared with one or more OpenCL devices, it must use atomic and fence operations that are compatible with the {cpp14} atomic operations [[ftnref9]] <<ftn9,[9]>>.
+
+[[atomic-lock-free-property]]
+==== Atomic lock-free property
+
+OpenCL {cpp} requires all atomic types to be lock free.
+
+[[atomic-types]]
+==== Atomic types
+
+[source]
+----
+namespace cl
+{
+
+template <class T>
+struct atomic
+{
+    bool is_lock_free() const volatile noexcept;
+    bool is_lock_free() const noexcept;
+    void store(T, memory_order = memory_order_seq_cst,
+               memory_scope = memory_scope_device) volatile noexcept;
+    void store(T, memory_order = memory_order_seq_cst,
+               memory_scope = memory_scope_device) noexcept;
+    T load(memory_order = memory_order_seq_cst,
+           memory_scope = memory_scope_device) const volatile noexcept;
+    T load(memory_order = memory_order_seq_cst,
+           memory_scope = memory_scope_device) const noexcept;
+    operator T() const volatile noexcept;
+    operator T() const noexcept;
+    T exchange(T, memory_order = memory_order_seq_cst,
+               memory_scope = memory_scope_device) volatile noexcept;
+    T exchange(T, memory_order = memory_order_seq_cst,
+               memory_scope = memory_scope_device) noexcept;
+    bool compare_exchange_weak(T&, T, memory_order,
+                               memory_order, memory_scope) volatile noexcept;
+    bool compare_exchange_weak(T&, T, memory_order,
+                               memory_order, memory_scope) noexcept;
+    bool compare_exchange_strong(T&, T, memory_order,
+                                 memory_order, memory_scope) volatile noexcept;
+    bool compare_exchange_strong(T&, T, memory_order,
+                                 memory_order, memory_scope) noexcept;
+    bool compare_exchange_weak(T&, T, memory_order = memory_order_seq_cst,
+                          memory_scope = memory_scope_device) volatile noexcept;
+    bool compare_exchange_weak(T&, T, memory_order = memory_order_seq_cst,
+                               memory_scope = memory_scope_device) noexcept;
+    bool compare_exchange_strong(T&, T, memory_order = memory_order_seq_cst,
+                          memory_scope = memory_scope_device) volatile noexcept;
+    bool compare_exchange_strong(T&, T, memory_order = memory_order_seq_cst,
+                                 memory_scope = memory_scope_device) noexcept;
+    atomic() noexcept = default;
+    constexpr atomic(T) noexcept;
+    atomic(const atomic&) = delete;
+    atomic& operator=(const atomic&) = delete;
+    atomic& operator=(const atomic&) volatile = delete;
+    T operator=(T) volatile noexcept;
+    T operator=(T) noexcept;
+};
+
+template <>
+struct atomic<integral>
+{
+    bool is_lock_free() const volatile noexcept;
+    bool is_lock_free() const noexcept;
+    void store(integral, memory_order = memory_order_seq_cst,
+               memory_scope = memory_scope_device) volatile noexcept;
+    void store(integral, memory_order = memory_order_seq_cst,
+               memory_scope = memory_scope_device) noexcept;
+    integral load(memory_order = memory_order_seq_cst,
+                  memory_scope = memory_scope_device) const volatile noexcept;
+    integral load(memory_order = memory_order_seq_cst,
+                  memory_scope = memory_scope_device) const noexcept;
+    operator integral() const volatile noexcept;
+    operator integral() const noexcept;
+    integral exchange(integral, memory_order = memory_order_seq_cst,
+                      memory_scope = memory_scope_device) volatile noexcept;
+    integral exchange(integral, memory_order = memory_order_seq_cst,
+                      memory_scope = memory_scope_device) noexcept;
+    bool compare_exchange_weak(integral&, integral, memory_order,
+                               memory_order, memory_scope) volatile noexcept;
+    bool compare_exchange_weak(integral&, integral, memory_order, memory_order,
+                               memory_scope) noexcept;
+    bool compare_exchange_strong(integral&, integral, memory_order,
+                                 memory_order, memory_scope) volatile noexcept;
+    bool compare_exchange_strong(integral&, integral, memory_order,
+                                 memory_order, memory_scope) noexcept;
+    bool compare_exchange_weak(integral&, integral,
+                          memory_order = memory_order_seq_cst,
+                          memory_scope = memory_scope_device) volatile noexcept;
+    bool compare_exchange_weak(integral&, integral,
+                               memory_order = memory_order_seq_cst,
+                               memory_scope = memory_scope_device) noexcept;
+    bool compare_exchange_strong(integral&, integral,
+                          memory_order = memory_order_seq_cst,
+                          memory_scope = memory_scope_device) volatile noexcept;
+    bool compare_exchange_strong(integral&, integral,
+                                 memory_order = memory_order_seq_cst,
+                                 memory_scope = memory_scope_device) noexcept;
+    integral fetch_add(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) volatile noexcept;
+    integral fetch_add(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) noexcept;
+    integral fetch_sub(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) volatile noexcept;
+    integral fetch_sub(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) noexcept;
+    integral fetch_and(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) volatile noexcept;
+    integral fetch_and(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) noexcept;
+    integral fetch_or(integral, memory_order = memory_order_seq_cst,
+                      memory_scope = memory_scope_device) volatile noexcept;
+    integral fetch_or(integral, memory_order = memory_order_seq_cst,
+                      memory_scope = memory_scope_device) noexcept;
+    integral fetch_xor(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) volatile noexcept;
+    integral fetch_xor(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) noexcept;
+    integral fetch_min(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) volatile noexcept;
+    integral fetch_min(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) noexcept;
+    integral fetch_max(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) volatile noexcept;
+    integral fetch_max(integral, memory_order = memory_order_seq_cst,
+                       memory_scope = memory_scope_device) noexcept;
+    atomic() noexcept = default;
+    constexpr atomic(integral) noexcept;
+    atomic(const atomic&) = delete;
+    atomic& operator=(const atomic&) = delete;
+    atomic& operator=(const atomic&) volatile = delete;
+    integral operator=(integral) volatile noexcept;
+    integral operator=(integral) noexcept;
+    integral operator++(int) volatile noexcept;
+    integral operator++(int) noexcept;
+    integral operator--(int) volatile noexcept;
+    integral operator--(int) noexcept;
+    integral operator++() volatile noexcept;
+    integral operator++() noexcept;
+    integral operator--() volatile noexcept;
+    integral operator--() noexcept;
+    integral operator+=(integral) volatile noexcept;
+    integral operator+=(integral) noexcept;
+    integral operator-=(integral) volatile noexcept;
+    integral operator-=(integral) noexcept;
+    integral operator&=(integral) volatile noexcept;
+    integral operator&=(integral) noexcept;
+    integral operator|=(integral) volatile noexcept;
+    integral operator|=(integral) noexcept;
+    integral operator^=(integral) volatile noexcept;
+    integral operator^=(integral) noexcept;
+};
+
+#if (defined(cl_khr_int64_base_atomics) &&
+     defined(cl_khr_int64_extended_atomics) &&
+     __SIZE_WIDTH__ == 64) ||
+    __SIZE_WIDTH__ == 32
+template <class T>
+struct atomic<T*>
+{
+    bool is_lock_free() const volatile noexcept;
+    bool is_lock_free() const noexcept;
+    void store(T*, memory_order = memory_order_seq_cst,
+               memory_scope = memory_scope_device) volatile noexcept;
+    void store(T*, memory_order = memory_order_seq_cst,
+               memory_scope = memory_scope_device) noexcept;
+    T* load(memory_order = memory_order_seq_cst,
+            memory_scope = memory_scope_device) const volatile noexcept;
+    T* load(memory_order = memory_order_seq_cst,
+            memory_scope = memory_scope_device) const noexcept;
+    operator T*() const volatile noexcept;
+    operator T*() const noexcept;
+    T* exchange(T*, memory_order = memory_order_seq_cst,
+                memory_scope = memory_scope_device) volatile noexcept;
+    T* exchange(T*, memory_order = memory_order_seq_cst,
+                memory_scope = memory_scope_device) noexcept;
+    bool compare_exchange_weak(T*&, T*, memory_order,
+                               memory_order, memory_scope) volatile noexcept;
+    bool compare_exchange_weak(T*&, T*, memory_order,
+                               memory_order, memory_scope) noexcept;
+    bool compare_exchange_strong(T*&, T*, memory_order,
+                                 memory_order, memory_scope) volatile noexcept;
+    bool compare_exchange_strong(T*&, T*, memory_order,
+                                 memory_order, memory_scope) noexcept;
+    bool compare_exchange_weak(T*&, T*, memory_order = memory_order_seq_cst,
+                          memory_scope = memory_scope_device) volatile noexcept;
+    bool compare_exchange_weak(T*&, T*, memory_order = memory_order_seq_cst,
+                               memory_scope = memory_scope_device) noexcept;
+    bool compare_exchange_strong(T*&, T*, memory_order = memory_order_seq_cst,
+                          memory_scope = memory_scope_device) volatile noexcept;
+    bool compare_exchange_strong(T*&, T*, memory_order = memory_order_seq_cst,
+                                 memory_scope = memory_scope_device) noexcept;
+    T* fetch_add(ptrdiff_t, memory_order = memory_order_seq_cst,
+                 memory_scope = memory_scope_device) volatile noexcept;
+    T* fetch_add(ptrdiff_t, memory_order = memory_order_seq_cst,
+                 memory_scope = memory_scope_device) noexcept;
+    T* fetch_sub(ptrdiff_t, memory_order = memory_order_seq_cst,
+                 memory_scope = memory_scope_device) volatile noexcept;
+    T* fetch_sub(ptrdiff_t, memory_order = memory_order_seq_cst,
+                 memory_scope = memory_scope_device) noexcept;
+    atomic() noexcept = default;
+    constexpr atomic(T*) noexcept;
+    atomic(const atomic&) = delete;
+    atomic& operator=(const atomic&) = delete;
+    atomic& operator=(const atomic&) volatile = delete;
+    T* operator=(T*) volatile noexcept;
+    T* operator=(T*) noexcept;
+    T* operator++(int) volatile noexcept;
+    T* operator++(int) noexcept;
+    T* operator--(int) volatile noexcept;
+    T* operator--(int) noexcept;
+    T* operator++() volatile noexcept;
+    T* operator++() noexcept;
+    T* operator--() volatile noexcept;
+    T* operator--() noexcept;
+    T* operator+=(ptrdiff_t) volatile noexcept;
+    T* operator+=(ptrdiff_t) noexcept;
+    T* operator-=(ptrdiff_t) volatile noexcept;
+    T* operator-=(ptrdiff_t) noexcept;
+};
+#endif
+
+}
+----
+
+The _opencl_atomic_ header defines general specialization for class template `atomic<T>`.
+
+There are explicit specializations for integral types.
+Each of these specializations provides set of extra operators suitable for integral types.
+
+There is an explicit specialization of the atomic template for pointer types.
+
+All atomic classes have deleted copy constructor and deleted copy assignment operators.
+
+There are several typedefs for atomic types specified as follows:
+
+[source]
+----
+namespace cl
+{
+using atomic_int = atomic<int>;
+using atomic_uint = atomic<uint>;
+#if defined(cl_khr_int64_base_atomics) && defined(cl_khr_int64_extended_atomics)
+using atomic_long = atomic<long>;
+using atomic_ulong = atomic<ulong>;
+#endif
+using atomic_float = atomic<float>;
+#if defined(cl_khr_fp64) &&
+    defined(cl_khr_int64_base_atomics) &&
+    defined(cl_khr_int64_extended_atomics)
+using atomic_double = atomic<double>;
+#endif
+#if (defined(cl_khr_int64_base_atomics) &&
+     defined(cl_khr_int64_extended_atomics) &&
+     __INTPTR_WIDTH__ == 64) ||
+    __INTPTR_WIDTH__ == 32
+using atomic_intptr_t = atomic<intptr_t>;
+using atomic_uintptr_t = atomic<uintptr_t>;
+#endif
+#if (defined(cl_khr_int64_base_atomics) &&
+     defined(cl_khr_int64_extended_atomics) &&
+     __SIZE_WIDTH__ == 64) ||
+    __SIZE_WIDTH__ == 32
+using atomic_size_t = atomic<size_t>;
+#endif
+#if (defined(cl_khr_int64_base_atomics) &&
+     defined(cl_khr_int64_extended_atomics) &&
+     __PTRDIFF_WIDTH__ == 64) ||
+    __PTRDIFF_WIDTH__ == 32
+using atomic_ptrdiff_t = atomic<ptrdiff_t>;
+#endif
+
+}
+----
+
+[[flag-type-and-operations]]
+==== Flag type and operations
+
+[source]
+----
+namespace cl
+{
+struct atomic_flag
+{
+    bool test_and_set(memory_order = memory_order_seq_cst,
+                      memory_scope = memory_scope_device) volatile noexcept;
+    bool test_and_set(memory_order = memory_order_seq_cst,
+                      memory_scope = memory_scope_device) noexcept;
+    void clear(memory_order = memory_order_seq_cst,
+               memory_scope = memory_scope_device) volatile noexcept;
+    void clear(memory_order = memory_order_seq_cst,
+               memory_scope = memory_scope_device) noexcept;
+    atomic_flag() noexcept = default;
+    atomic_flag(const atomic_flag&) = delete;
+    atomic_flag& operator=(const atomic_flag&) = delete;
+    atomic_flag& operator=(const atomic_flag&) volatile = delete;
+};
+
+bool atomic_flag_test_and_set(volatile atomic_flag*) noexcept;
+bool atomic_flag_test_and_set(atomic_flag*) noexcept;
+bool atomic_flag_test_and_set_explicit(volatile atomic_flag*, memory_order,
+                                       memory_scope) noexcept;
+bool atomic_flag_test_and_set_explicit(atomic_flag*, memory_order,
+                                       memory_scope) noexcept;
+void atomic_flag_clear(volatile atomic_flag*) noexcept;
+void atomic_flag_clear(atomic_flag*) noexcept;
+void atomic_flag_clear_explicit(volatile atomic_flag*, memory_order,
+                                memory_scope) noexcept;
+void atomic_flag_clear_explicit(atomic_flag*, memory_order,
+                                memory_scope) noexcept;
+
+#define ATOMIC_FLAG_INIT as described in cpp14 specification [atomics.flag]
+
+}
+----
+
+[[fences]]
+==== Fences
+
+[[atomic_fence]]
+===== atomic_fence
+[source]
+----
+void atomic_fence(mem_fence flags, memory_order order, memory_scope scope) noexcept;
+----
+
+Orders loads or/and stores of a work-item executing a kernel.
+
+`flags` must be set to `mem_fence::global`, `mem_fence::local`, `mem_fence::image` or a combination of these values ORed together; otherwise the behavior is undefined.
+The behavior of calling `atomic_fence` with `mem_fence::global` and `mem_fence::local` ORed together is equivalent to calling `atomic_fence` individually for each of the fence values set in `flags`.
+`mem_fence::image` cannot be specified ORed with `mem_fence::global` and `mem_fence::local`.
+
+Depending on the value of order, this operation:
+
+* Has no effects, if `order == memory_order_relaxed`.
+* Is an acquire fence, if `order == memory_order_acquire`.
+* Is a release fence, if `order == memory_order_release`.
+* Is both an acquire fence and a release fence, if `order == memory_order_acq_rel`.
+* Is a sequentially consistent acquire and release fence, if `order == memory_order_seq_cst`.
+
+For images declared with the `image_access::read_write`, the `atomic_fence` must be called to make sure that writes to the image by a work-item become visible to that work-item on subsequent reads to that image by that work-item.
+Only a scope of `memory_order_acq_rel` is valid for `atomic_fence` when passed the `mem_fence::image` flag.
+
+[[bit-atomics]]
+==== 64-bit Atomics
+
+The optional extensions *cl_khr_int64_base_atomics* and *cl_khr_int64_extended_atomics* implement atomic operations on 64-bit signed and unsigned integers to locations in global and local memory.
+
+An application that wants to use 64-bit atomic types will need to define `cl_khr_int64_base_atomics` and `cl_khr_int64_extended_atomics` macros in the code before including the OpenCL {cpp} standard library headers or using _-D_ compiler option (see the <<preprocessor_options, _Preprocessor options_>> section).
+
+[[restrictions-3]]
+==== Restrictions
+
+* The generic `atomic<T>` class template is only available if `T` is `int`, `uint`, `long`, `ulong` [[ftnref10]] <<ftn10,[10]>>, `float`, `double` [[ftnref11]] <<ftn11,[11]>>, `intptr_t` [[ftnref12]] <<ftn12,[12]>>, `uintptr_t`, `size_t`, `ptrdiff_t`.
+* The `atomic_bool`, `atomic_char`, `atomic_uchar`, `atomic_short`, `atomic_ushort`, `atomic_intmax_t` and `atomic_uintmax_t` types are not supported by OpenCL {cpp}.
+* OpenCL {cpp} requires that the built-in atomic functions on atomic types are lock-free.
+* The atomic data types cannot be declared inside a kernel or non-kernel function unless they are declared as `static` keyword or in `local<T>` and `global<T>` containers.
+* The atomic operations on the private memory can result in undefined behavior.
+* `memory_order_consume` is not supported by OpenCL {cpp}.
+
+[[examples-4]]
+==== Examples
+
+[[example-1-4]]
+===== Example 1
+
+Examples of using atomic with and without an explicit address space
+storage class.
+[source]
+----
+#include <opencl_memory>
+#include <opencl_atomic>
+using namespace cl;
+
+atomic<int> a; // OK: atomic in the global memory
+local<atomic<int>> b; // OK: atomic in the local memory
+global<atomic<int>> c; // OK: atomic in the global memory
+
+kernel void foo() {
+    static global<atomic<int>> d; // OK: atomic in the global memory
+    atomic<global<int>> e; // error: class members cannot be
+                           //        in address space
+    local<atomic<int>> f; // OK: atomic in the local memory
+    static atomic<int> g; // OK: atomic in the global memory
+    atomic<int> h; // undefined behavior
+}
+----

@@ -1,0 +1,1011 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[supported-builtin-data-types]]
+=== Supported Built-in Data Types
+The following data types are supported.
+
+[[builtin-scalar-data-types]]
+==== Built-in Scalar Data Types
+
+[[device_builtin_scalar_data_types]]
+.Device Built-in scalar data types
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Type*
+| *Description*
+
+| `bool`
+| A data type which is either `true` or `false`. (_See section 2.14.6 lex.bool and section 3.9.1 basic.fundamental of the {cpp14} Specification._)
+
+| `char`, `signed char`
+| A signed two's complement 8-bit integer.
+
+| `unsigned char`
+| An unsigned 8-bit integer.
+
+| `short`
+| A signed two's complement 16-bit integer.
+
+| `unsigned short`
+| An unsigned 16-bit integer.
+
+| `int`
+| A signed two's complement 32-bit integer.
+
+| `unsigned int`
+| An unsigned 32-bit integer.
+
+| `long`
+| A signed two's complement 64-bit integer.
+
+| `unsigned long`
+| An unsigned 64-bit integer.
+
+| `float`
+| A 32-bit floating-point.
+  The float data type must conform to the IEEE 754 single precision storage format.
+
+| `double` [[ftnref2]] <<ftn2,[2]>>
+| A 64-bit floating-point.
+  The double data type must conform to the IEEE 754 double precision storage format.
+
+| `half`
+| A 16-bit floating-point.
+  The half data type must conform to the IEEE 754-2008 half precision storage format.
+
+| `void`
+| The `void` type comprises an empty set of values; it is an incomplete type that cannot be completed.
+|====
+
+Most built-in scalar data types are also declared as appropriate types in the OpenCL API (and header files) that can be used by an application.
+The following table describes the built-in scalar data type in the OpenCL {cpp} programming language and the corresponding data type available to the application:
+
+[[host_scalar_builtin_data_types]]
+.Host Scalar Built-in Data Types
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Type in OpenCL Language*
+| *API type for application*
+
+| `bool`
+| n/a, i.e., there is no corresponding `cl_bool` type.
+
+| `char`
+| `cl_char`
+
+| `unsigned char`, `uchar`
+| `cl_uchar`
+
+| `short`
+| `cl_short`
+
+| `unsigned short`, `ushort`
+| `cl_ushort`
+
+| `int`
+| `cl_int`
+
+| `unsigned int`, `uint`
+| `cl_uint`
+
+| `long`
+| `cl_long`
+
+| `unsigned long`, `ulong`
+| `cl_ulong`
+
+| `float`
+| `cl_float`
+
+| `double`
+| `cl_double`
+
+| `half`
+| `cl_half`
+
+| `void`
+| `void`
+|====
+
+[[builtin-half-data-type]]
+===== Built-in Half Data Type
+
+The `half` data type must be IEEE 754-2008 compliant.
+`half` numbers have 1 sign bit, 5 exponent bits, and 10 mantissa bits.
+The interpretation of the sign, exponent and mantissa is analogous to IEEE 754 floating-point numbers.
+
+The exponent bias is 15.
+The `half` data type must represent finite and normal numbers, denormalized numbers, infinities and NaN.
+Denormalized numbers for the `half` data type which may be generated when converting a `float` to a `half` using `vstore_half` and converting a `half` to a `float` using `vload_half` cannot be flushed to zero.
+
+Conversions from `float` to `half` correctly round the mantissa to 11 bits of precision.
+
+Conversions from `half` to `float` are lossless; all `half` numbers are exactly representable as `float` values.
+
+The `half` data type can only be used to declare a pointer to a buffer that contains `half` values.
+All other operations are not allowed if the *cl_khr_fp16* extension is not supported.
+
+A few valid examples are given below:
+[source]
+----
+#include <opencl_def>
+#include <opencl_memory>
+#include <opencl_vector_load_store>
+
+float bar(half *a) {
+  return cl::vload_half< 1 >(0, a);
+}
+
+kernel void foo(cl::global_ptr<half> pg) { //ok: a global pointer
+                                           // passed from the host
+    int offset = 1;
+
+    half *ptr = pg.get() + offset; //ok: half pointer arithmetic
+    float b = bar(ptr);
+
+    if(b < *ptr) { //not allowed: it is only supported if cl_khr_fp16
+                   // extension is enabled
+      //...
+    }
+}
+----
+
+The `half` scalar data type is required to be supported as a data storage format.
+Vector data load and store functions (described in the <<vector-data-load-and-store-functions, _Vector Data Load and Store Functions_>> section) must be supported.
+
+[[cl_khr_fp16-extension]]
+===== *cl_khr_fp16* extension
+
+This extension adds support for `half` scalar and vector types as built-in types that can be used for arithmetic operations, conversions etc.
+An application that wants to use `half` and `halfn` types will need to specify the `-cl-fp16-enable` compiler option (see the <<fp16_and_fp64_options, _Double and half-precision floating-point options_>> section).
+
+The OpenCL compiler accepts an h and H suffix on floating point literals, indicating the literal is typed as a `half`
+
+A few valid examples:
+[source]
+----
+#include <opencl_def>
+#include <opencl_memory>
+
+half bar(half a) {
+    half b = a;
+    b += 10.0h; //ok: cl_khr_fp16 extension is enabled. All arithmetic
+                // operations on half built-in type are available
+
+    return b;
+}
+
+kernel void foo(cl::global_ptr<half> pg) {
+    int offset = 1;
+
+    half *ptr = pg.get() + offset;
+    half b = bar(*ptr);
+
+    if(b < *ptr) { //ok: cl_khr_fp16 extension is enabled.
+                   // All comparison operations are available
+      //...
+    }
+}
+----
+
+[[hexadecimal-floating-point-literals]]
+===== Hexadecimal floating point literals
+
+Hexadecimal floating point literals are supported in OpenCL {cpp}.
+
+[source]
+----
+float f = 0x1.fffffep127f
+double d = 0x1.fffffffffffffp1023;
+half h = 0x1.ffcp15h;
+----
+
+[[builtin-vector-data-types]]
+==== Built-in Vector Data Types
+
+[[supported-vector-data-types]]
+===== Supported Vector Data Types
+
+The `bool`, `char`, `unsigned char`, `short`, `unsigned short`, `int`, `unsigned int`, `long`, `unsigned long`, `half`, `float` and `double` vector data types are supported.
+The vector data type is defined with the type name i.e. `bool`, `char`, `uchar`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `half`, `float` or `double` followed by a literal value _n_ that defines the number of elements in the vector.
+Supported values of _n_ are 2, 3, 4, 8, and 16 for all vector data types.
+
+[[device_builtin_vector_data_types]]
+.Device Built-in Vector Data Types
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Type*
+| *Description*
+
+| `bool__n__`
+| A vector of _n_ boolean values.
+
+| `char__n__`
+| A vector of _n_ 8-bit signed two's complement integer values.
+
+| `uchar__n__`
+| A vector of _n_ 8-bit unsigned integer values.
+
+| `short__n__`
+| vector of _n_ 16-bit signed two's complement integer values.
+
+| `ushort__n__`
+| A vector of _n_ 16-bit unsigned integer values.
+
+| `int__n__`
+| A vector of _n_ 32-bit signed two's complement integer values.
+
+| `uint__n__`
+| A vector of _n_ 32-bit unsigned integer values.
+
+| `long__n__`
+| A vector of _n_ 64-bit signed two's complement integer values.
+
+| `ulong__n__`
+| A vector of _n_ 64-bit unsigned integer values.
+
+| `half__n__`
+|  A vector of _n_ 16-bit floating-point values.
+
+| `float__n__`
+| A vector of _n_ 32-bit floating-point values.
+
+| `double__n__`
+| A vector of _n_ 64-bit floating-point values.
+|====
+
+The built-in vector data types are also declared as appropriate types in the OpenCL API (and header files) that can be used by an application.
+The following table describes the built-in vector data type in the OpenCL {cpp} programming language and the corresponding data type available to the application:
+
+[[host_builtin_vector_data_types]]
+.Host Built-in Vector Data Types
+[width="100%",cols="50%,50%",options="header"]
+|====
+| *Type in OpenCL Language*
+| *API type for application*
+
+| `bool__n__`
+| n/a, i.e., there is no corresponding `cl_bool__n__` type.
+
+| `char__n__`
+| `cl_char__n__`
+
+| `uchar__n__`
+| `cl_uchar__n__`
+
+| `short__n__`
+| `cl_short__n__`
+
+| `ushort__n__`
+| `cl_ushort__n__`
+
+| `int__n__`
+| `cl_int__n__`
+
+| `uint__n__`
+| `cl_uint__n__`
+
+| `long__n__`
+| `cl_long__n__`
+
+| `ulong__n__`
+| `cl_ulong__n__`
+
+| `half__n__`
+| `cl_half__n__`
+
+| `float__n__`
+| `cl_float__n__`
+
+| `double__n__`
+| `cl_double__n__`
+|====
+
+The `half__n__` vector data type is required to be supported as a data storage format.
+Vector data load and store functions (described in the <<vector-data-load-and-store-functions, _Vector Data Load and Store Functions_>> section) must be supported.
+
+Support for the `double__n__` vector data type is optional.
+
+[[vector-changes-to-cpp14-standard]]
+===== Vector Changes to {cpp14} standard
+
+1. Vector types are classified as fundamental (_[ISO/IEC 14882:2014: basic.fundamental, ch. 3.9.1]_) and literal types
++
+NOTE: A vector type behave similarly to a trivially destructible class with all data members of literal type and all of its constructors defined as constexpr constructors
+
+2. Abbreviating vector type as Tn, T is called the component type of a vector.
+The numerical value n specifies number of components in a vector.
+<<device_builtin_vector_data_types,Device built-in vector data types>> table specifies supported vector types.
++
+A vector type which component type is _integral type_ is called _integral vector type_.
+A vector type which component is _floating-point type_ is called _floating-point vector type_.
++
+[source]
+----
+float8 a; // component type: float, number of components: 8
+uint16 b; // component type: uint, number of components: 16
+----
+
+3. An _integral vector type_ can be used as type of value of non-type template-parameter.
+The change is introduced by following changes in {cpp} specification:
++
+--
+  * _[ISO/IEC 14882:2014: temp.param, ch. 14.1 (4, 4.1)]_ Template parameters: A non-type template-parameter shall have one of the following (optionally cv-qualified) types:
+  ** integral, integral vector or enumeration type,
+  ** integral, integral vector or enumeration type,
+  ** [ ... ]
+  * _[ISO/IEC 14882:2014: temp.param, ch. 14.1 (7)]_ Template parameters: A non-type _template-parameter_ shall not be declared to have floating point, floating-point vector, class, or void type.
+  *  _[ISO/IEC 14882:2014: temp.type, ch. 14.4 (1, 1.3)]_ Type equivalence: Two _template-ids_ refer to the same class, function, or variable if
+  ** [ ... ]
+  ** their corresponding non-type template arguments of integral, integral vector or enumeration type have identical values and
+  ** [ ... ]
+  * _[ISO/IEC 14882:2014: temp.res, ch. 14.6 (8, 8.3, 8.3.1)]_ Name resolution: [...] If the interpretation of such a construct in the hypothetical instantiation is different from the interpretation of the corresponding construct
+  ** integral, integral vector or enumeration type, in any actual instantiation of the template, the program is ill-formed; no diagnostic is required.
+    This can happen in situations including the following:
+  ** [ ... ]
+  ** constant expression evaluation (5.20) within the template instantiation uses
+  *** the value of a const object of integral, integral vector or unscoped enumeration type or
+  *** [ ... ]
+  ** [ ... ]
+--
+
+[[vector-component-access]]
+===== Vector Component Access
+
+1. The components of vector type can be accessed using swizzle expression.
+The syntax of a swizzle expression is similar to syntax used in class member access expression _[ISO/IEC 14882:2014: expr.ref, ch. 5.2.5]_:
+The swizzle expression is a postfix expression formed with a postfix expression followed by a dot `.` or an arrow `\->` and then followed by an _vector-swizzle-selector_. The postfix expression before the dot or arrow is evaluated. The result of that evaluation, together with the _vector-swizzle-selector_, determines the result of the entire postfix expression.
++
+[source]
+----
+float4 v1 = float4(1.0f, 2.0f, 3.0f, 4.0f);
+float4 *pv1 = &v1;
+
+float2 v2 = v1.xz; // v1.xz is a swizzle expression
+float3 v3 = pv1->s321; // pv1->s321 is a swizzle expression
+                       // equivalent to (*pv1).s321
+(*pv1).rgb = float3(0.0f, 0.5f, 1.0f); // (*pv1).rgb is a swizzle expression
+pv1->lo.hi = 0.0f; // pv1->lo and pv1->lo.hi are swizzle
+                   // expressions
+----
+
+2. For the first option (dot) the first expression shall have vector type or be a swizzle expression which results in vector-swizzle of vector type.
+For the second option (arrow) the first expression shall have pointer to vector type.
+The expression `E1\->E2` is converted to the equivalent form `(*(E1)).E2`; the remainder of <<vector-component-access,Vector Component Access>> will address only the first option (dot).
++
+NOTE: `(*(E1))` is lvalue. In either case, the _vector-swizzle-selector_ shall name a vector component selection of a swizzle.
++
+[source]
+----
+uint8 v1 = uint8(10, 11, 12, 13, 14, 15, 16, 17);
+
+uint4 v2 = v1.s7301; // correct
+uint3 v3 = (&v1)->s246; // correct
+uint4 v4 = v1->s0123; // ill-formed: v1 is not a pointer to
+                      //             vector type
+
+uint8 *pv1 = &v1;
+
+uint2 v5 = pv1->S13; // correct
+uint2 v6 = (*pv1).s0745.even; // correct
+uint4 v7 = pv1.odd; // ill-formed: pv1 is not vector or
+                    // vector-swizzle
+----
+
+3. Abbreviating _postfix-expression.vector-swizzle-selector_ as `E1.E2`, `E1` is called the vector expression.
+The type and value category of `E1.E2` are determined as follows.
+In the remainder of <<vector-component-access,Vector Component Access>>, _cq_ represents either `const` or the absence of `const` and _vq_ represents either `volatile` or the absence of `volatile`.
+cv represents an arbitrary set of cv-qualifiers, as defined in _[ISO/IEC 14882:2014: basic.type.qualifier, ch. 3.9.3]_ .
+
+4. _vector-swizzle-selector_ is subset of _identifier_ with following syntax:
++
+--
+{blank}
+_vector-swizzle-selector_:
+
+  * _vector-swizzle-xyzw-selector_:
+  ** _vector-swizzle-xyzw-selector-value_
+  ** _vector-swizzle-xyzw-selector vector-swizzle-xyzw-selector-value_
+  * _vector-swizzle-rgba-selector_:
+  ** _vector-swizzle-rgba-selector-value_
+  ** _vector-swizzle-rgba-selector vector-swizzle-rgba-selector-value_
+  * _vector-swizzle-special-selector_:
+  ** `hi`
+  ** `lo`
+  ** `even`
+  ** `odd`
+  * _vector-swizzle-num-selector_:
+  ** `s` _vector-swizzle-num-selector-values_
+  ** `S` _vector-swizzle-num-selector-values_
+--
++
+--
+{blank}
+_vector-swizzle-num-selector-values_:
+
+  * _vector-swizzle-num-selector-value_
+  * _vector-swizzle-num-selector-values vector-swizzle-num-selector-value_
+--
++
+{blank}
+_vector-swizzle-xyzw-selector-value_: one of `x y z w`
++
+{blank}
+_vector-swizzle-rgba-selector-value_: one of `r g b a`
++
+{blank}
+_vector-swizzle-num-selector-value_: one of `0 1 2 3 4 5 6 7 8 9 a b c d e f A B C D E F`
++
+--
+{blank}
+with following restrictions:
+
+  * _vector-swizzle-selector_ in a form of _vector-swizzle-special-selector_ shall only be used with vector expression with at least 2 components.
+  * _vector-swizzle-selector_ shall not select components beyond those available in vector expression.
++
+NOTE: <<selector_values_and_their_corresponding_components_in_swizzle,Selector values and their corresponding components in swizzle>> table describes relation between selector value and components.
+
+  * _vector-swizzle-selector_ shall have swizzle size of 1, 2, 3, 4, 8 or 16.
++
+NOTE: Result from the swizzle expression shall be either of scalar or of valid vector type.
+--
++
+{blank}
+If _vector-swizzle-selector_ does not meet requirements, the swizzle expression is ill-formed.
++
+[source]
+----
+int2 v2;
+int3 v3;
+int4 v4;
+int8 v8;
+int16 v16;
+
+v4.xyz = int3(1, 2, 3); // correct: xyz selector
+v4.baS01 = v8.lo; // ill-formed: baS01 is mix of rgba
+                  // and numerical selectors
+v3.rx = int2(20, 7); // ill-formed: mix of rgba and
+                     // xyzw selectors
+
+int v2c1 = v2.z; // correct: xyzw selector
+int v3c1 = v3.b; // correct: rgba selector
+int2 v4c1 = v4.ww; // correct: xyzw selector
+int3 v8c1 = v8.xyz; // ill-formed: xyzw and rgba selectors
+                    // are not allowed on vector expressions
+                    // with more than 4 components
+int2 v8c2 = v8.hi.xyz; // correct: xyzw selector on vector
+                       // expression v8.hi (vector-swizzle
+                       // of int4 type)
+
+int2 v3c2 = v3.odd; // correct: special selector
+int2 v3c2 = v3.x.even; // ill-formed: #1 vector expression
+                       // is invalid (vector swizzle of
+                       // scalar type)
+                       // #2 special selector cannot be
+                       // used with less than 2 components
+
+v3.x = 1; // correct: xyzw selector
+v3.w = 2; // ill-formed: there is no "w" component in int3
+v2.gb = v4.hi; // ill-formed: there is no "b" component in int2
+v8.S7890 = v4; // ill-formed: int8 allows numerical selector
+               // in range 0-7
+
+auto v16c1 = v16.s012; // correct: numerical selector
+auto v16c2 = v16.s467899; // ill-formed: swizzle expression
+                          // has not allowed size
+                          // (there is no int6 type)
+
+int16 vv1 = int16(v16.S98aabb01, v2, v2.gr, v3.xxxx); // correct
+int16 vv2 = int16(v16.S98aabb0123, v2.gr, v3.xxxx);
+                           // ill-formed:
+                           // although it sums up to 16
+                           // components the
+                           // S98aabb0123 selector has invalid
+                           // swizzle size (there is no int10)
+
+----
+
+5. _vector-swizzle-selector_, in a form of _vector-swizzle-xyzw-selector_, _vector-swizzle-rgba-selector_ or _vector-swizzle-num-selector_ can specify multiple values.
+Each value selects single component.
+Values in a selector can be repeated and specified in any order.
+A number of values in a selector including repeated values is called the swizzle size.
++
+[[selector_values_and_their_corresponding_components_in_swizzle]]
+.Selector values and their corresponding components in swizzle
+[width="100%",cols="25%,25%,25%,25%",options="header"]
+|====
+| **Selector**
+| **Selector value**
+| **Selected component**
+| **Required number of components in vector expression**
+
+| _vector-swizzle-xyzw-selector_
+| `x`
+| 1^st^
+| 2, 3 or 4
+
+| _vector-swizzle-xyzw-selector_
+| `y`
+| 2^nd^
+| 2, 3 or 4
+
+| _vector-swizzle-xyzw-selector_
+| `z`
+| 3^rd^
+| 3 or 4
+
+| _vector-swizzle-xyzw-selector_
+| `w`
+| 4^th^
+| 4
+
+| _vector-swizzle-rgba-selector_
+| `r`
+| 1^st^
+| 2, 3 or 4
+
+| _vector-swizzle-rgba-selector_
+| `g`
+| 2^nd^
+| 2, 3 or 4
+
+| _vector-swizzle-rgba-selector_
+| `b`
+| 3^rd^
+| 3 or 4
+
+| _vector-swizzle-rgba-selector_
+| `a`
+| 4^th^
+| 4
+
+| _vector-swizzle-num-selector_
+| `0`
+| 1^st^
+| 2, 3, 4, 8 or 16
+
+| _vector-swizzle-num-selector_
+| `1`
+| 2^nd^
+| 2, 3, 4, 8 or 16
+
+| _vector-swizzle-num-selector_
+| `2`
+| 3^rd^
+| 3, 4, 8 or 16
+
+| _vector-swizzle-num-selector_
+| `3`
+| 4^th^
+| 4, 8 or 16
+
+| _vector-swizzle-num-selector_
+| `4`
+| 5^th^
+| 8 or 16
+
+| _vector-swizzle-num-selector_
+| `5`
+| 6^th^
+| 8 or 16
+
+| _vector-swizzle-num-selector_
+| `6`
+| 7^th^
+| 8 or 16
+
+| _vector-swizzle-num-selector_
+| `7`
+| 8^th^
+| 8 or 16
+
+| _vector-swizzle-num-selector_
+| `8`
+| 9^th^
+| 16
+
+| _vector-swizzle-num-selector_
+| `9`
+| 10^th^
+| 16
+
+| _vector-swizzle-num-selector_
+| `a` or `A`
+| 11^th^
+| 16
+
+| _vector-swizzle-num-selector_
+| `b` or `B`
+| 12^th^
+| 16
+
+| _vector-swizzle-num-selector_
+| `c` or `C`
+| 13^th^
+| 16
+
+| _vector-swizzle-num-selector_
+| `d` or `D`
+| 14^th^
+| 16
+
+| _vector-swizzle-num-selector_
+| `e` or `E`
+| 15^th^
+| 16
+
+| _vector-swizzle-num-selector_
+| `f` or `F`
+| 16^th^
+| 16
+|====
+
+6. _vector-swizzle-selector_ in a form of _vector-swizzle-special-selector_ shall select:
+
++
+--
+  * if number of components in vector expression is 3, the same components as if number of components of the vector expression was 4 and the 4-th component was undefined.
++
+NOTE: If 4-th component is read, the returned value is undefined; all writes to 4-th component shall be discarded.
+
+  * otherwise, half of components of _vector expression_ with
+  ** `hi` - highest numerical selector values in ascending order (higher half of the vector)
+  ** `lo` - lowest numerical selector values in ascending order (lower half of the vector)
+  ** `even` - even numerical selector values in ascending order
+  ** `odd` - odd numerical selector values in ascending order
+--
+
++
+The following <<special_selector_values,Special selector values>> table describes special selector values and their numerical equivalents.
+
++
+[[special_selector_values]]
+.Special selector values
+[width="100%",cols="25%,25%,25%,25%",options="header"]
+|====
+| **Number of components in vector expression**
+| **Selector value**
+| **Equivalent numerical selector**
+| **Number of components in result vector swizzle (swizzle size)**
+
+| 2
+| `hi`
+| `s1`
+| 1
+
+| 3
+| `hi`
+| `s2?` <<ftn3,[3]>>
+| 2
+
+| 4
+| `hi`
+| `s23`
+| 2
+
+| 8
+| `hi`
+| `s4567`
+| 4
+
+| 16
+| `hi`
+| `s89abcdef`
+| 8
+
+| 2
+| `lo`
+| `s0`
+| 1
+
+| 3
+| `lo`
+| `s01`
+| 2
+
+| 4
+| `lo`
+| `s01`
+| 2
+
+| 8
+| `lo`
+| `s0123`
+| 4
+
+| 16
+| `lo`
+| `s01234567`
+| 8
+
+| 2
+| `even`
+| `s0`
+| 1
+
+| 3
+| `even`
+| `s02`
+| 2
+
+| 4
+| `even`
+| `s02`
+| 2
+
+| 8
+| `even`
+| `s0246`
+| 4
+
+| 16
+| `even`
+| `s02468ace`
+| 8
+
+| 2
+| `odd`
+| `s1`
+| 1
+
+| 3
+| `odd`
+| `s1?` <<ftn3,[3]>>
+| 2
+
+| 4
+| `odd`
+| `s13`
+| 2
+
+| 8
+| `odd`
+| `s1357`
+| 4
+
+| 16
+| `odd`
+| `s13579bdf`
+| 8
+|====
+
++
+[source]
+----
+float8 v = float8(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f);
+
+auto vv1 = v.hi;   // vv1 = float4(5, 6, 7, 8)
+auto vv2 = v.lo;  // vv2 = float4(1, 2, 3, 4)
+auto vv3 = v.even; // equivalent of v.s0246; vv3 = float4(1, 3, 5, 7)
+auto vv4 = v.odd;  // equivalent of v.s1357; vv4 = float4(2, 4, 6, 8)
+
+auto vv5 = v.odd.even; // vv5 = float2(2, 6)
+
+int3 sv = int3(10, 20, 30);
+
+// ? means undefined value
+auto svv1 = sv.hi;  // svv1 = int2(30, ?)
+auto svv2 = sv.odd; // svv2 = int2(20, ?)
+
+sv.hi = int2(-123, 456); // write to 4-th channel in sv is discarded;
+                         // equivalent of sv.s2 = int2(-123, 456).s0
+----
+
+7. The value of a swizzle expression `E1.E2` is _vector-swizzle_.
+The expression designates group of components of the object designated by expression `E1`.
+Selector `E2` specifies which components are designated, how many times and in which order.
++
+Assuming that in the type of a vector expression `E1` is `cv Tn` where `T` denotes type of components and `n` their number in vector type, the resulting _vector-swizzle_ shall have:
++
+--
+  * scalar type `cv T` if it is result of a swizzle expression with swizzle size of one or
+  * vector type `cv Tm` if it is result of a swizzle expression with swizzle size of two or more.
++
+NOTE: `m` is a swizzle size.
+--
++
+If `E1` is an lvalue, then `E1.E2` is an lvalue; if `E1` is an xvalue, then `E1.E2` is an xvalue; otherwise, it is a prvalue.
++
+[source]
+----
+long2 v;
+const long2  pv = &v;
+
+auto vc1 = pv->x; // pv->x is lvalue vector-swizzle of
+                  // scalar type: const long
+auto vc2 = pv->rg; // pv->rg is lvalue vector-swizzle of
+                   // vector type: const long2
+
+auto  vc3 = uchar4(1).xxy; // uchar4(1).xxy is prvalue
+                           // vector-swizzle
+                           // of vector type: uchar3
+
+v.x = long2(1, 2); // ill-formed: cannot assign prvalue of long2
+                   // to lvalue vector-swizzle of
+                   // scalar type: long - types do not
+                   // match
+
+----
+
+8. A _vector-swizzle_ with vector type `T` shall have the same number of components as number of components of `T`.
+Each component of the vector-swizzle refers to component from `E1` designated by corresponding value specified in selector `E2`, assuming that `E1.E2` is swizzle expression used to create the _vector-swizzle_.
++
+NOTE: First component refers to component from `E1` selected by first value in selector `E2`, second - by second value and so on.
++
+A _vector-swizzle_ with scalar type `T` shall behave as value of `T` and refer to component from `E1` designated by ``E2``'s value, assuming `E1.E2` is swizzle expression used to create the _vector-swizzle_.
++
+NOTE: It is similar to reference bounded to value of selected component from `E1`.
+
+9. A _vector-swizzle_ shall have scalar or vector type.
+The address-of operator `&` shall not be applied to _vector-swizzle_, so there are no pointers to _vector-swizzles_.
+A non-const reference shall not be bound to _vector-swizzle_.
++
+NOTE: If the initializer for a reference of type `const T&` is lvalue that refers to vector-swizzle, the reference is bound to a temporary initialized to hold the value of the vector-swizzle; the reference is not bound to the vector-swizzle directly.
++
+There is no declarator for _vector-swizzle_.
++
+NOTE: Any variable, member or type declaration shall not involve vector-swizzle; vector-swizzle cannot be stored.
++
+An _alignment-specifier_ shall not be applied to _vector-swizzle_.
++
+[source]
+----
+float4 v;
+
+auto pv1 = &v; // correct: pv1 points to v
+auto pv2 = &v.xy; // ill-formed: address-of operator & is not
+                  // allowed on vector-swizzle
+
+const auto &rv1 = v.xx; // correct: refers to temporary value of
+                        // float2 type initialized with
+                        // value of vector-swizzle
+float2 &rv2 = v.xy; // ill-formed: binding to non-const reference
+                    // is not allowed
+----
+
+10. A result _vector-swizzle_ from swizzle expression `E1.E2` is modifiable if:
++
+--
+  * Vector expression `E1` is modifiable lvalue and
+  * Each component selected by _vector-swizzle-selector_ `E2` is selected at most once.
+--
++
+Expression which modifies unmodifiable _vector-swizzle_ is ill-formed.
++
+Changes applied to modifiable _vector-swizzle_ are applied to components of `E1` referred by the _vector-swizzle_ or by its components.
++
+[source]
+----
+char4 v;
+const char4  cv;
+
+v.yx = char2(33, 45); // correct
+v.zzwx = cv; // ill-formed: v.zzwx is not modifiable
+             // (repeated components)
+cv.zxy = char3(1); // ill-formed: cv.zxy is not modifiable
+                   // (cv is const)
+----
+
+11. A prvalue for _vector-swizzle_ of `T` type can be converted to a prvalue of `T` type.
++
+This conversion is called _swizzle-to-vector_ conversion.
+_swizzle-to-vector_ conversion shall be applied if necessary in all contexts where lvalue-to-rvalue conversions are allowed.
++
+NOTE: swizzle-to-vector conversion shall be applied after lvalue-to-rvalue conversions and before any arithmetic conversions.
+
+12. A glvalue _vector-swizzle_ of scalar or vector type `T` can be used in all expressions where glvalue of type `T` can be used except those which do not meet requirements and restrictions for _vector-swizzle_.
++
+NOTE: For example the address-of operator `&` and binding to non-const reference are one of them.
+
+13. A swizzle expression `E1.E2` where `E2` selects all components of vector expression `E1` in order of their numerical selector values is called identity swizzle.
++
+NOTE: Components selected in `E2` are not repeated.
+
+14. Additional changes to {cpp} specification:
++
+  * _[ISO/IEC 14882:2014: expr.static.cast, ch. 5.2.9 (3)]_ static_cast: If value is not a bit-field or a _vector-swizzle_, [...]; if value is a _vector-swizzle_, the _lvalue-to-rvalue_ conversion and _swizzle-to-vector_ conversion are applied to the _vector-swizzle_ and the resulting prvalue is used as the expression of the `static_cast` for the remainder of this section; otherwise, [...]
+  * _[ISO/IEC 14882:2014: expr.unary.op, ch. 5.3.1 (5)]_ Unary operators: [...] The operand of `&` shall not be a bit-field or a _vector-swizzle_.
+  * _[ISO/IEC 14882:2014: expr.pre.incr, ch. 5.3.2 (1)]_ Increment and decrement: The result is the updated operand; it is an lvalue, and it is a bit-field or a _vector-swizzle_ if the operand is respectively a bit-field or a _vector-swizzle_.
+  * _[ISO/IEC 14882:2014: expr.sizeof, ch. 5.3.3 (2)]_ Sizeof: [...] When applied to a _vector-swizzle_ which has type `T`, the result is the same as result from `sizeof(T)`.
+  * _[ISO/IEC 14882:2014: expr.cond, ch. 5.16 (2.1)]_ Conditional operator: - [...] The conditional-expression is a bit-field or a _vector-swizzle_ if that operand is respectively a bit-field or a _vector-swizzle_.
+  * _[ISO/IEC 14882:2014: expr.cond, ch. 5.16 (4)]_ Conditional operator: If the second and third operands are glvalues of the same value category and have the same type, the result is of that type and value category and it is a bit-field if the second or the third operand is a bit-field, or if both are bit-fields.
+  The result is also a _vector-swizzle_ if the second or the third operand is a _vector-swizzle_, or if both are _vector-swizzles_.
++
+NOTE: An operand is converted to vector-swizzle if required by applying identity swizzle expression to it.
++
+  * _[ISO/IEC 14882:2014: expr.ass, ch. 5.18 (1)]_ Assignment and compound assignment operators: The result in all cases is a bit-field or a _vector-swizzle_ if the left operand is respectively a bit-field or a _vector-swizzle_.
+  * _[ISO/IEC 14882:2014: expr.comma, ch. 5.19 (1)]_ Comma operator: The type and value of the result are the type and value of the right operand; the result is of the same value category as its right operand, and is a bit-field if its right operand is a glvalue and a bit-field, and is a _vector-swizzle_ its right operand is a glvalue and a _vector-swizzle_.
+  * _[ISO/IEC 14882:2014: dcl.type.simple, ch. 7.1.6.2 (4, 4.1)]_ Simple type specifiers: For an expression e, the type denoted by decltype(e) is defined as follows:
+  ** if e is an unparenthesized id-expression or an unparenthesized class member access (5.2.5) or unparenthesized swizzle expression, `decltype(e)` is the type of the entity named by e. If there is no such entity, or if e names a set of overloaded functions, the program is ill-formed.
+
+[[vector-constructors]]
+===== Vector Constructors
+
+Vector constructors are defined to initialize a vector data type from a list of scalar or vectors.
+The forms of the constructors that are available is the set of possible argument lists for which all arguments have the same element type as the result vector, and the total number of elements is equal to the number of elements in the result vector.
+In addition, a form with a single scalar of the same type as the element type of the vector is available.
+
+For example, the following forms are available for `float4`:
+
+[source]
+----
+float4( float, float, float, float )
+float4( float2, float, float )
+float4( float, float2, float )
+float4( float, float, float2 )
+float4( float2, float2 )
+float4( float3, float )
+float4( float, float3 )
+float4( float )
+
+float4{ float, float, float, float }
+float4{ float2, float, float }
+float4{ float, float2, float }
+float4{ float, float, float2 }
+float4{ float2, float2 }
+float4{ float3, float }
+float4{ float, float3 }
+float4{ float }
+----
+
+Operands are evaluated by standard rules for function evaluation, except that implicit scalar-to-vector conversion shall not occur.
+The order in which the operands are evaluated is undefined.
+The operands are assigned to their respective positions in the result vector as they appear in memory order.
+That is, the first element of the first operand is assigned to result.x, the second element of the first operand (or the first element of the second operand if the first operand was a scalar) is assigned to result.y, etc.
+In the case of the form that has a single scalar operand, the operand is replicated across all lanes of the vector.
+
+Examples:
+
+[source]
+----
+float4 f = float4(1.0f, 2.0f, 3.0f, 4.0f);
+
+uint4  u = uint4(1); // u will be (1, 1, 1, 1).
+
+float4 f = float4(float2(1.0f, 2.0f),
+                  float2(3.0f, 4.0f));
+
+float4 f = float4(1.0f, float2(2.0f, 3.0f), 4.0f);
+
+float4 f = float4(1.0f, 2.0f); // error
+
+int4 i = (int4)(1, 2, 3, 4); // warning, vector literals (from OpenCL C) are
+                             // not part of OpenCL C++,
+                             // this expression will be evaluated to (int4)4,
+                             // and i will be (4, 4, 4, 4)
+----
+
+[[vector-types-and-usual-arithmetic-conversions]]
+===== Vector Types and Usual Arithmetic Conversions
+
+Many operators that expect operands of arithmetic type cause conversions and yield result types in a similar way.
+The purpose is to determine a common real type for the operands and result.
+For the specified operands, each operand is converted, without change of type domain, to a type whose corresponding real type is the common real type.
+For this purpose, all vector types shall be considered to have higher conversion ranks than scalars.
+Unless explicitly stated otherwise, the common real type is also the corresponding real type of the result, whose type domain is the type domain of the operands if they are the same, and complex otherwise.
+This pattern is called the usual arithmetic conversions.
+If the operands are of more than one vector type, then an error shall occur.
+Implicit conversions between vector types are not permitted, per the <<implicit-type-conversions, _Implicit Type Conversions_>> section.
+
+Otherwise, if there is only a single vector type, and all other operands are scalar types, the scalar types are converted to the type of the vector element, then widened into a new vector containing the same number of elements as the vector, by duplication of the scalar value across the width of the new vector.
+
+[[alignment-of-types]]
+==== Alignment of Types
+
+A data item declared to be a data type in memory is always aligned to the size of the data type in bytes.
+For example, a `float4` variable will be aligned to a 16-byte boundary, a `char2` variable will be aligned to a 2-byte boundary.
+
+For 3-component vector data types, the size of the data type is `4 * sizeof(component)`.
+This means that a 3-component vector data type will be aligned to a `4 * sizeof(component)` boundary.
+The `vload3` and `vstore3` built-in functions can be used to read and write, respectively, 3-component vector data types from an array of packed scalar data type.
+
+A built-in data type that is not a power of two bytes in size must be aligned to the next larger power of two.
+This rule applies to built-in types only, not structs or unions.
+
+The OpenCL {cpp} compiler is responsible for aligning data items to the appropriate alignment as required by the data type.
+For arguments to a kernel function declared to be a pointer to a data type, the OpenCL compiler can assume that the pointee is always appropriately aligned as required by the data type.
+The behavior of an unaligned load or store is undefined, except for the `vload__n__`, `vload_half__n__`, `vstore__n__`, and `vstore_half__n__` functions defined in the <<vector-data-load-and-store-functions, _Vector Data Load and Store Functions_>> section.
+The vector load functions can read a vector from an address aligned to the element type of the vector.
+The vector store functions can write a vector to an address aligned to the element type of the vector.

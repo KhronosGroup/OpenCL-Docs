@@ -1,0 +1,930 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[image-addressing-and-filtering]]
+== Image Addressing and Filtering
+
+Let w~t~, h~t~ and d~t~ be the width, height (or image array size for a 1D image array) and depth (or image array size for a 2D image array) of the image in pixels.
+Let coord.xy also referred to as (s,t) or coord.xyz also referred to as (s,t,r) be the coordinates specified to `image::read`.
+The sampler specified in `image::read` is used to determine how to sample the image and return an appropriate color.
+
+[[image-coordinates]]
+=== Image Coordinates
+
+This affects the interpretation of image coordinates.
+If image coordinates specified to `image::read` are normalized (as specified in the sampler), the s,t, and r coordinate values are multiplied by w~t~, h~t,~ and d~t~ respectively to generate the unnormalized coordinate values.
+For image arrays, the image array coordinate (i.e. t if it is a 1D image array or r if it is a 2D image array) specified to `image::read` must always be the unnormalized image coordinate value.
+
+Let (u,v,w) represent the unnormalized image coordinate values.
+
+[[addressing-and-filter-modes]]
+=== Addressing and Filter Modes
+
+We first describe how the addressing and filter modes are applied to generate the appropriate sample locations to read from the image if the addressing mode is not `addressing_mode::repeat` nor `addressing_mode::mirrored_repeat`.
+
+After generating the image coordinate (u,v,w) we apply the appropriate addressing and filter mode to generate the appropriate sample locations to read from the image.
+
+If values in (u,v,w) are INF or NaN, the behavior of `image::read` is undefined.
+
+[[filtering_modenearest]]
+==== filtering_mode::nearest
+
+When filter mode is `filtering_mode::nearest`, the image element in the image that is nearest (in Manhattan distance) to that specified by (u,v,w) is obtained.
+This means the image element at location (i,j,k) becomes the image element value, where
+
+[latexmath]
+++++
+\begin{array}{rcl}
+i &=& address\_mode((int)floor(u))\\
+j &=& address\_mode((int)floor(v))\\
+k &=& address\_mode((int)floor(w))
+\end{array}
+++++
+
+For a 3D image, the image element at location (i, j, k) becomes the color value.
+For a 2D image, the image element at location (i, j) becomes the color value.
+
+The below table describes the `address_mode` function.
+
+[[addressing_modes_to_generate_texel_location]]
+.Addressing modes to generate texel location
+[width="100%",cols="50%,50%",options="header"]
+|====
+a| *Addressing Mode*
+a| *Result of address_mode(coord)*
+
+a| `clamp_to_edge`
+a| clamp (coord, 0, size - 1)
+
+a| `clamp`
+a| clamp (coord, -1, size)
+
+a| `none`
+a| Coord
+|====
+
+The size term in <<addressing_modes_to_generate_texel_location,Addressing modes to generate texel location>> table is w~t~ for u, h~t~ for v and d~t~ for w.
+
+The clamp function used in <<addressing_modes_to_generate_texel_location,Addressing modes to generate texel location>> table is defined as:
+
+  :: latexmath:[clamp(a, b, c) = return (a < b) ? b : ((a > c) ? c : a)]
+
+If the selected texel location (i,j,k) refers to a location outside the image, the border color is used as the color value for this texel.
+
+[[filtering_modelinear]]
+==== filtering_mode::linear
+
+When filter mode is `filtering_mode::linear`, a 2 x 2 square of image elements for a 2D image or a 2 x 2 x 2 cube of image elements for a 3D image is selected.
+This 2 x 2 square or 2 x 2 x 2 cube is obtained as follows.
+
+Let
+
+[latexmath]
+++++
+\begin{aligned}
+i0 & = address\_mode((int)floor(u - 0.5))\\
+j0 & = address\_mode((int)floor(v - 0.5))\\
+k0 & = address\_mode((int)floor(w - 0.5))\\
+i1 & = address\_mode((int)floor(u - 0.5) + 1)\\
+j1 & = address\_mode((int)floor(v - 0.5) + 1)\\
+k1 & = address\_mode((int)floor(w - 0.5) + 1)\\
+a  & = frac(u - 0.5)\\
+b  & = frac(v - 0.5)\\
+c  & = frac(w - 0.5)
+\end{aligned}
+++++
+
+where frac(x) denotes the fractional part of x and is computed as x - floor(x).
+
+For a 3D image, the image element value is found as
+
+[latexmath]
+++++
+\begin{array}{rcl}
+T &=& (1 - a) * (1 - b) * (1 - c) * T_{i0j0k0}\\
+  & & {} + a * (1 - b) * (1 - c) * T_{i1j0k0}\\
+  & & {} + (1 - a) * b * (1 - c) * T_{i0j1k0}\\
+  & & {} + a * b * (1 - c) * T_{i1j1k0}\\
+  & & {} + (1 - a) * (1 - b) * c * T_{i0j0k1}\\
+  & & {} + a * (1 - b) * c * T_{i1j0k1}\\
+  & & {} + (1 - a) * b * c * T_{i0j1k1}\\
+  & & {} + a * b * c * T_{i1j1k1}
+\end{array}
+++++
+
+where T~ijk~ is the image element at location (i,j,k) in the 3D image.
+
+For a 2D image, the image element value is found as
+
+[latexmath]
+++++
+\begin{array}{rcl}
+T &=& (1 - a) * (1 - b) * T_{i0j0}\\
+  & & {} + a * (1 - b) * T_{i1j0}\\
+  & & {} + (1 - a) * b * T_{i0j1}\\
+  & & {} + a * b * T_{i1j1}
+\end{array}
+++++
+
+where T~ij~ is the image element at location (i,j) in the 2D image.
+
+If any of the selected T~ijk~ or T~ij~ in the above equations refers to a location outside the image, the border color is used as the color value for T~ijk~ or T~ij~.
+
+If the image channel type is `CL_FLOAT` or `CL_HALF_FLOAT` and any of the image elements T~ijk~ or T~ij~ is INF or NaN, the behavior of the built-in image read function is undefined.
+
+We now discuss how the addressing and filter modes are applied to generate the appropriate sample locations to read from the image if the addressing mode is `addressing_mode::repeat`.
+
+If values in (s,t,r) are INF or NaN, the behavior of the built-in image read functions is undefined.
+
+[[filtering_modenearest-1]]
+==== filtering_mode::nearest
+
+When filter mode is `filtering_mode::nearest`, the image element at location (i,j,k) becomes the image element value, with i, j and k computed as
+
+[latexmath]
+++++
+\begin{array}{l}
+u = (s - floor(s)) * w_t\\
+i = (int)floor(u)\\
+if\ (i > w_t - 1)\\
+\qquad i = i - w_t\\
+v = (t - floor(t)) * h_t\\
+j = (int)floor(v)\\
+if\ (j > h_t - 1)\\
+\qquad j = j - h_t\\
+w = (r - floor(r)) * d_t\\
+k = (int)floor(w)\\
+if\ (k > d_t - 1)\\
+\qquad k = k - d_t
+\end{array}
+++++
+
+For a 3D image, the image element at location (i, j, k) becomes the color value.
+For a 2D image, the image element at location (i, j) becomes the color value.
+
+[[filtering_modelinear-1]]
+==== filtering_mode::linear
+
+When filter mode is `filtering_mode::linear`, a 2 x 2 square of image elements for a 2D image or a 2 x 2 x 2 cube of image elements for a 3D image is selected.
+This 2 x 2 square or 2 x 2 x 2 cube is obtained as follows.
+
+Let
+
+[latexmath]
+++++
+\begin{array}{l}
+u = (s - floor(s)) * w_t\\
+i0 = (int)floor(u - 0.5)\\
+i1 = i0 + 1\\
+if (i0 < 0)\\
+i0 = w_t + i0\\
+if\ (i1 > w_t - 1)\\
+\qquad i1 = i1 - w_t\\
+v = (t - floor(t)) * h_t\\
+j0 = (int)floor(v - 0.5)\\
+j1 = j0 + 1\\
+if (j0 < 0)\\
+j0 = h_t + j0\\
+if\ (j1 > h_t - 1)\\
+\qquad j1 = j1 - h_t\\
+w = (r - floor(r)) * d_t\\
+k0 = (int)floor(w - 0.5)\\
+k1 = k0 + 1\\
+if (k0 < 0)\\
+\qquad k0 = d_t + k0\\
+if\ (k1 > d_t - 1)\\
+\qquad k1 = k1 - d_t\\
+a = frac(u - 0.5)\\
+b = frac(v - 0.5)\\
+c = frac(w - 0.5)
+\end{array}
+++++
+
+where frac(x) denotes the fractional part of x and is computed as x - floor(x).
+
+For a 3D image, the image element value is found as
+
+[latexmath]
+++++
+\begin{array}{rcl}
+T &=& (1 - a) * (1 - b) * (1 - c) * T_{i0j0k0}\\
+  & & {} + a * (1 - b) * (1 - c) * T_{i1j0k0}\\
+  & & {} + (1 - a) * b * (1 - c) * T_{i0j1k0}\\
+  & & {} + a * b * (1 - c) * T_{i1j1k0}\\
+  & & {} + (1 - a) * (1 - b) * c * T_{i0j0k1}\\
+  & & {} + a * (1 - b) * c * T_{i1j0k1}\\
+  & & {} + (1 - a) * b * c * T_{i0j1k1}\\
+  & & {} + a * b * c * T_{i1j1k1}
+\end{array}
+++++
+
+where T~ijk~ is the image element at location (i,j,k) in the 3D image.
+
+For a 2D image, the image element value is found as
+
+[latexmath]
+++++
+\begin{array}{rcl}
+T &=& (1 - a) * (1 - b) * T_{i0j0}\\
+  & & {} + a * (1 - b) * T_{i1j0}\\
+  & & {} + (1 - a) * b * T_{i0j1}\\
+  & & {} + a * b * T_{i1j1}
+\end{array}
+++++
+
+where T~ij~ is the image element at location (i,j) in the 2D image.
+
+If the image channel type is `CL_FLOAT` or `CL_HALF_FLOAT` and any of the image elements T~ijk~ or T~ij~ is INF or NaN, the behavior of the built-in image read function is undefined.
+
+We now discuss how the addressing and filter modes are applied to generate the appropriate sample locations to read from the image if the addressing mode is `addressing_mode::repeat`.
+The `addressing_mode::mirrored_repeat` addressing mode causes the image to be read as if it is tiled at every integer seam with the interpretation of the image data flipped at each integer crossing.
+For example, the (s,t,r) coordinates between 2 and 3 are addressed into the image as coordinates from 1 down to 0.
+If values in (s,t,r) are INF or NaN, the behavior of the built-in image read functions is undefined.
+
+[[filtering_modenearest-2]]
+==== filtering_mode::nearest
+
+When filter mode is `filtering_mode::nearest`, the image element at location (i,j,k) becomes the image element value, with i,j and k computed as
+
+[latexmath]
+++++
+\begin{array}{rcl}
+s' &=& 2.0f * rint(0.5f * s)\\
+s' &=& fabs(s - s')\\
+u  &=& s' * w_t\\
+i  &=& (int)floor(u)\\
+i  &=& min(i, w_t - 1)\\
+t' &=& 2.0f * rint(0.5f * t)\\
+t' &=& fabs(t - t')\\
+v  &=& t' * h_t\\
+j  &=& (int)floor(v)\\
+j  &=& min(j, h_t - 1)\\
+r' &=& 2.0f * rint(0.5f * r)\\
+r' &=& fabs(r - r')\\
+w  &=& r' * d_t\\
+k  &=& (int)floor(w)\\
+k  &=& min(k, d_t - 1)
+\end{array}
+++++
+
+For a 3D image, the image element at location (i, j, k) becomes the color value.
+For a 2D image, the image element at location (i, j) becomes the color value.
+
+[[filtering_modelinear-2]]
+==== filtering_mode::linear
+
+When filter mode is `filtering_mode::linear`, a 2 x 2 square of image elements for a 2D image or a 2 x 2 x 2 cube of image elements for a 3D image is selected.
+This 2 x 2 square or 2 x 2 x 2 cube is obtained as follows.
+
+Let
+
+[latexmath]
+++++
+\begin{array}{rcl}
+s' &=& 2.0f * rint(0.5f * s)\\
+s' &=& fabs(s - s')\\
+u  &=& s' * w_t\\
+i0 &=& (int)floor(u - 0.5f)\\
+i1 &=& i0 + 1\\
+i0 &=& max(i0, 0)\\
+i1 &=& min(i1, w_t - 1)\\
+t' &=& 2.0f * rint(0.5f * t)\\
+t' &=& fabs(t - t')\\
+v  &=& t' * h_t\\
+j0 &=& (int)floor(v - 0.5f)\\
+j1 &=& j0 + 1\\
+j0 &=& max(j0, 0)\\
+j1 &=& min(j1, h_t - 1)\\
+r' &=& 2.0f * rint(0.5f * r)\\
+r' &=& fabs(r - r')\\
+w  &=& r' * d_t\\
+k0 &=& (int)floor(w - 0.5f)\\
+k1 &=& k0 + 1\\
+k0 &=& max(k0, 0)\\
+k1 &=& min(k1, d_t - 1)\\
+a  &=& frac(u - 0.5)\\
+b  &=& frac(v - 0.5)\\
+c  &=& frac(w - 0.5)
+\end{array}
+++++
+
+where frac(x) denotes the fractional part of x and is computed as x - floor(x).
+
+For a 3D image, the image element value is found as
+
+[latexmath]
+++++
+\begin{array}{rcl}
+T &=& (1 - a) * (1 - b) * (1 - c) * T_{i0j0k0}\\
+  & & {} + a * (1 - b) * (1 - c) * T_{i1j0k0}\\
+  & & {} + (1 - a) * b * (1 - c) * T_{i0j1k0}\\
+  & & {} + a * b * (1 - c) * T_{i1j1k0}\\
+  & & {} + (1 - a) * (1 - b) * c * T_{i0j0k1}\\
+  & & {} + a * (1 - b) * c * T_{i1j0k1}\\
+  & & {} + (1 - a) * b * c * T_{i0j1k1}\\
+  & & {} + a * b * c * T_{i1j1k1}
+\end{array}
+++++
+
+where T~ijk~ is the image element at location (i,j,k) in the 3D image.
+
+For a 2D image, the image element value is found as
+
+[latexmath]
+++++
+\begin{array}{rcl}
+T &=& (1 - a) * (1 - b) * T_{i0j0}\\
+  & & {} + a * (1 - b) * T_{i1j0}\\
+  & & {} + (1 - a) * b * T_{i0j1}\\
+  & & {} + a * b * T_{i1j1}
+\end{array}
+++++
+
+where T~ij~ is the image element at location (i,j) in the 2D image.
+
+For a 1D image, the image element value is found as
+
+[latexmath]
+++++
+T = (1 - a) * T_i0 + a * T_i1
+++++
+
+where T~i~ is the image element at location (i) in the 1D image.
+
+If the image channel type is `CL_FLOAT` or `CL_HALF_FLOAT` and any of the image elements T~ijk~ or T~ij~ is INF or NaN, the behavior of the built-in image read function is undefined.
+
+NOTE: If the sampler is specified as using unnormalized coordinates (floating-point or integer coordinates), filter mode set to `filtering_mode::nearest` and addressing mode set to one of the following modes - `addressing_mode::none`, `addressing_mode::clamp_to_edge` or `addressing_mode::clamp`, the location of the image element in the image given by (i, j, k) will be computed without any loss of precision.
+For all other sampler combinations of normalized or unnormalized coordinates, filter and addressing modes, the relative error or precision of the addressing mode calculations and the image filter operation are not defined by this revision of the OpenCL specification.
+To ensure a minimum precision of image addressing and filter calculations across any OpenCL device, for these sampler combinations, developers should unnormalize the image coordinate in the kernel and implement the linear filter in the kernel with appropriate calls to `image::read` with a sampler that uses unnormalized coordinates, filter mode set to `filtering_mode::nearest`, addressing mode set to `addressing_mode::none`, `addressing_mode::clamp_to_edge` or `addressing_mode::clamp` and finally performing the interpolation of color values read from the image to generate the filtered color value.
+
+[[conversion-rules]]
+=== Conversion Rules
+
+In this section we discuss conversion rules that are applied when reading and writing images in a kernel.
+
+[[conversion-rules-for-normalized-integer-channel-data-types]]
+==== Conversion rules for normalized integer
+
+In this section we discuss converting normalized integer channel data types to half-precision and single-precision floating-point values and vice-versa.
+
+[[converting-normalized-integer-channel-data-types-to-half-precision-floating-point-values]]
+===== Converting normalized integer channel data types to half precision floating-point values
+
+For images created with image channel data type of `CL_UNORM_INT8` and `CL_UNORM_INT16`, `image::read` will convert the channel values from an 8-bit or 16-bit unsigned integer to normalized half precision floating-point values in the range [0.0h ... 1.0h].
+
+For images created with image channel data type of `CL_SNORM_INT8` and `CL_SNORM_INT16`, `image::read` will convert the channel values from an 8-bit or 16-bit signed integer to normalized half precision floating-point values in the range [-1.0h ... 1.0h].
+
+These conversions are performed as follows:
+
+  * `CL_UNORM_INT8` (8-bit unsigned integer) -> `half`
++
+[latexmath]
+++++
+normalized\_half\_value(x)=round\_to\_half(\frac{x}{255})
+++++
+
+  * `CL_UNORM_INT_101010` (10-bit unsigned integer) -> `half`
++
+[latexmath]
+++++
+normalized\_half\_value(x)=round\_to\_half(\frac{x}{1023})
+++++
+
+  * `CL_UNORM_INT16` (16-bit unsigned integer) -> `half`
++
+[latexmath]
+++++
+normalized\_half\_value(x)=round\_to\_half(\frac{x}{65535})
+++++
+
+  * `CL_SNORM_INT8` (8-bit signed integer) -> `half`
++
+[latexmath]
+++++
+normalized\_half\_value(x)=max(-1.0h, round\_to\_half(\frac{x}{127}))
+++++
+
+  * `CL_SNORM_INT16` (16-bit signed integer) -> `half`
++
+[latexmath]
+++++
+normalized\_half\_value(x)=max(-1.0h, round\_to\_half(\frac{x}{32767}))
+++++
+
+The precision of the above conversions is \<= 1.5 ulp except for the following cases.
+
+For `CL_UNORM_INT8`:
+
+  * 0 must convert to 0.0h and
+  * 255 must convert to 1.0h
+
+For `CL_UNORM_INT_101010`:
+
+  * 0 must convert to 0.0h and
+  * 1023 must convert to 1.0h
+
+For `CL_UNORM_INT16`:
+
+  * 0 must convert to 0.0h and
+  * 65535 must convert to 1.0h
+
+For `CL_SNORM_INT8`:
+
+  * -128 and -127 must convert to -1.0h,
+  * 0 must convert to 0.0h and
+  * 127 must convert to 1.0h
+
+For `CL_SNORM_INT16`:
+
+  * -32768 and -32767 must convert to -1.0h,
+  * 0 must convert to 0.0h and
+  * 32767 must convert to 1.0h
+
+[[converting-half-precision-floating-point-values-to-normalized-integer-channel-data-types]]
+===== Converting half precision floating-point values to normalized integer channel data types
+
+For images created with image channel data type of `CL_UNORM_INT8` and `CL_UNORM_INT16`, `image::write` will convert the half precision floating-point color value to an 8-bit or 16-bit unsigned integer.
+
+For images created with image channel data type of `CL_SNORM_INT8` and `CL_SNORM_INT16`, `image::write` will convert the half precision floating-point color value to an 8-bit or 16-bit signed integer.
+
+OpenCL implementations may choose to approximate the rounding mode used in the conversions described below.
+When approximate rounding is used instead of the preferred rounding, the result of the conversion must satisfy the bound given below.
+
+The conversions from half precision floating-point values to normalized integer values are performed is as follows:
+
+  * `half` -> `CL_UNORM_INT8` (8-bit unsigned integer)
++
+[latexmath]
+++++
+\begin{aligned}
+f(x)=max(0,min(255,255 \times x))\\
+\\
+f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint8(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint8(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+|f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+  * `half` -> `CL_UNORM_INT16` (16-bit unsigned integer)
++
+[latexmath]
+++++
+\begin{aligned}
+f(x)=max(0,min(65535,65535 \times x))\\
+\\
+f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint16(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint16(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+|f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+  * `half` -> `CL_SNORM_INT8` (8-bit signed integer)
++
+[latexmath]
+++++
+\begin{aligned}
+f(x)=max(-128,min(127,127 \times x))\\
+\\
+f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint8(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint8(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+|f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+  * `half` -> `CL_SNORM_INT16` (16-bit signed integer)
++
+[latexmath]
+++++
+\begin{aligned}
+f(x)=max(-32768,min(32767,32767 \times x))\\
+\\
+f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint16(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint16(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+|f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+[[converting-normalized-integer-channel-data-types-to-floating-point-values]]
+===== Converting normalized integer channel data types to floating-point values
+
+For images created with image channel data type of `CL_UNORM_INT8` and `CL_UNORM_INT16`, `image::read` will convert the channel values from an 8-bit or 16-bit unsigned integer to normalized floating-point values in the range [0.0f ... 1.0f].
+
+For images created with image channel data type of `CL_SNORM_INT8` and `CL_SNORM_INT16`, `image::read` will convert the channel values from an 8-bit or 16-bit signed integer to normalized floating-point values in the range [-1.0f ... 1.0f].
+
+These conversions are performed as follows:
+
+  * `CL_UNORM_INT8` (8-bit unsigned integer) -> `float`
++
+[latexmath]
+++++
+normalized\_float\_value(x)=round\_to\_float(\frac{x}{255})
+++++
+
+  * `CL_UNORM_INT_101010` (10-bit unsigned integer) -> `float`
++
+[latexmath]
+++++
+normalized\_float\_value(x)=round\_to\_float(\frac{x}{1023})
+++++
+
+  * `CL_UNORM_INT16` (16-bit unsigned integer) -> `float`
++
+[latexmath]
+++++
+normalized\_float\_value(x)=round\_to\_float(\frac{x}{65535})
+++++
+
+  * `CL_SNORM_INT8` (8-bit signed integer) -> `float`
++
+[latexmath]
+++++
+normalized\_float\_value(x)=max(-1.0f, round\_to\_float(\frac{x}{127}))
+++++
+
+  * `CL_SNORM_INT16` (16-bit signed integer) -> `float`
++
+[latexmath]
+++++
+normalized\_float\_value(x)=max(-1.0f, round\_to\_float(\frac{x}{32767}))
+++++
+
+The precision of the above conversions is \<= 1.5 ulp except for the following cases.
+
+For `CL_UNORM_INT8`:
+
+  * 0 must convert to 0.0f and
+  * 255 must convert to 1.0f
+
+For `CL_UNORM_INT_101010`:
+
+  * 0 must convert to 0.0f and
+  * 1023 must convert to 1.0f
+
+For `CL_UNORM_INT16`:
+
+  * 0 must convert to 0.0f and
+  * 65535 must convert to 1.0f
+
+For `CL_SNORM_INT8`:
+
+  * -128 and -127 must convert to -1.0f,
+  * 0 must convert to 0.0f and
+  * 127 must convert to 1.0f
+
+For `CL_SNORM_INT16`:
+
+  * -32768 and -32767 must convert to -1.0f,
+  * 0 must convert to 0.0f and
+  * 32767 must convert to 1.0f
+
+[[converting-floating-point-values-to-normalized-integer-channel-data-types]]
+===== Converting floating-point values to normalized integer channel data types
+
+For images created with image channel data type of `CL_UNORM_INT8` and `CL_UNORM_INT16`, `image::write` will convert the floating-point color value to an 8-bit or 16-bit unsigned integer.
+
+For images created with image channel data type of `CL_SNORM_INT8` and `CL_SNORM_INT16`, `image::write` will convert the floating-point color value to an 8-bit or 16-bit signed integer.
+
+OpenCL implementations may choose to approximate the rounding mode used in the conversions described below.
+When approximate rounding is used instead of the preferred rounding, the result of the conversion must satisfy the bound given below.
+
+The conversions from half precision floating-point values to normalized integer values are performed is as follows:
+
+  * `float` -> `CL_UNORM_INT8` (8-bit unsigned integer)
++
+[latexmath]
+++++
+\begin{aligned}
+f(x)=max(0,min(255,255 \times x))\\
+\\
+f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint8(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint8(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+|f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+  * `float` -> `CL_UNORM_INT_101010` (10-bit unsigned integer)
++
+[latexmath]
+++++
+\begin{aligned}
+f(x)=max(0,min(1023,1023 \times x))\\
+\\
+f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint10(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint10(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+|f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+  * `float` -> `CL_UNORM_INT16` (16-bit unsigned integer)
++
+[latexmath]
+++++
+\begin{aligned}
+f(x)=max(0,min(65535,65535 \times x))\\
+\\
+f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint16(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint16(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+|f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+  * `float` -> `CL_SNORM_INT8` (8-bit signed integer)
++
+[latexmath]
+++++
+\begin{aligned}
+f(x)=max(-128,min(127,127 \times x))\\
+\\
+f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint8(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint8(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+|f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+  * `float` -> `CL_SNORM_INT16` (16-bit signed integer)
++
+[latexmath]
+++++
+\begin{aligned}
+f(x)=max(-32768,min(32767,32767 \times x))\\
+\\
+f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint16(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint16(f(x)) & \quad x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & \quad x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+|f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+[[conversion-rules-for-half-precision-floating-point-channel-data-type]]
+==== Conversion rules for half precision floating-point channel data type
+
+For images created with a channel data type of `CL_HALF_FLOAT`, the conversions of half to float and half to half are lossless (as described in the <<builtin-half-data-type, _Built-in Half Data Type_>> section).
+Conversions from float to half round the mantissa using the round to nearest even or round to zero rounding mode.
+Denormalized numbers for the half data type which may be generated when converting a float to a half  may be flushed to zero.
+A float NaN must be converted to an appropriate NaN in the half type.
+A float INF must be converted to an appropriate INF in the half type.
+
+[[conversion-rules-for-floating-point-channel-data-type]]
+==== Conversion rules for floating-point channel data type
+
+The following rules apply for reading and writing images created with channel data type of `CL_FLOAT`.
+
+  * NaNs may be converted to a NaN value(s) supported by the device.
+  * Denorms can be flushed to zero.
+  * All other values must be preserved.
+
+[[conversion-rules-for-signed-and-unsigned-8-bit-16-bit-and-32-bit-integer-channel-data-types]]
+==== Conversion rules for signed and unsigned 8-bit, 16-bit and 32-bit integer channel data types
+
+Calls to `image::read` with channel data type values of `CL_SIGNED_INT8`, `CL_SIGNED_INT16` and `CL_SIGNED_INT32` return the unmodified integer values stored in the image at specified location.
+
+Calls to `image::read` with channel data type values of `CL_UNSIGNED_INT8`, `CL_UNSIGNED_INT16` and `CL_UNSIGNED_INT32` return the unmodified integer values stored in the image at specified location.
+
+Calls to `image::write` will perform one of the following conversions:
+
+32 bit signed integer -> 8-bit signed integer
+
+[source]
+----
+convert_cast<char,saturate::on>(i)
+----
+
+32 bit signed integer -> 16-bit signed integer
+
+[source]
+----
+convert_cast<short,saturate::on>(i)
+----
+
+32 bit signed integer -> 32-bit signed integer
+
+----
+no conversion is performed
+----
+
+Calls to image::write will perform one of the following conversions:
+
+32 bit unsigned integer -> 8-bit unsigned integer
+
+[source]
+----
+convert_cast<uchar,saturate::on>(i)
+----
+
+32 bit unsigned integer -> 16-bit unsigned integer
+
+[source]
+----
+convert_cast<ushort,saturate::on>(i)
+----
+
+32 bit unsigned integer -> 32-bit unsigned integer
+
+----
+no conversion is performed
+----
+
+The conversions described in this section must be correctly saturated.
+
+[[conversion-rules-for-srgba-and-sbgra-images]]
+==== Conversion rules for sRGBA and sBGRA images
+
+Standard RGB data, which roughly displays colors in a linear ramp of luminosity levels such that an average observer, under average viewing conditions, can view them as perceptually equal steps on an average display.
+All 0's maps to 0.0f, and all 1's maps to 1.0f.
+The sequence of unsigned integer encodings between all 0's and all 1's represent a nonlinear progression in the floating-point interpretation of the numbers between 0.0f to 1.0f.
+For more detail, see the <<sRGB-spec, SRGB color standard>>.
+
+Conversion from sRGB space is automatically done by image::read built-in functions if the image channel order is one of the sRGB values described above.
+When reading from an sRGB image, the conversion from sRGB to linear RGB is performed before the filter specified in the sampler specified to image::sample is applied.
+If the format has an alpha channel, the alpha data is stored in linear color space.
+Conversion to sRGB space is automatically done by image::write built-in functions if the image channel order is one of the sRGB values described above and the device supports writing to sRGB images.
+
+If the format has an alpha channel, the alpha data is stored in linear color space.
+
+1. The following process is used by image::read and image::sample to convert a normalized 8-bit unsigned integer sRGB color value x to a floating-point linear RGB color value y:
+a. Convert a normalized 8-bit unsigned integer sRGB value x to a floating-point sRGB value r as per rules described in the <<converting-floating-point-values-to-normalized-integer-channel-data-types, _Converting floating-point values to normalized integer channel data types_>> section.
++
+[latexmath]
+++++
+r=normalized\_float\_value(x)
+++++
+
+b. Convert a floating-point sRGB value r to a floating-point linear RGB color value y:
++
+[latexmath]
+++++
+\begin{aligned}
+c_{linear}(x) =
+\begin{cases}
+ \frac{r}{12.92} & \quad r \geq 0 \text{ and } r \leq 0.04045\\[1em]
+ (\frac{r + 0.055}{1.055})^{2.4} & \quad r > 0.04045 \text{ and } \leq 1
+\end{cases}\\
+\\
+y = c_{linear}(r)
+\end{aligned}
+++++
+
+2. The following process is used by `image::write` to convert a linear RGB floating-point color value y to a normalized 8-bit unsigned integer sRGB value x:
+a. Convert a floating-point linear RGB value y to a normalized floating point sRGB value r:
++
+[latexmath]
+++++
+\begin{aligned}
+c_{linear}(x) =
+\begin{cases}
+ 0 & \quad y \geq NaN \text{ or } y < 0\\
+ 12.92 \times y & \quad y \geq 0 \text{ and } y < 0.0031308\\
+ 1.055 \times y^{(\frac{1}{2.4})} & \quad y \geq 0.0031308 \text{ and } y \leq 1\\
+ 1 & \quad y > 1
+\end{cases}\\
+\\
+r = c_{sRGB}(y)
+\end{aligned}
+++++
+
+b. Convert a normalized floating-point sRGB value r to a normalized 8-bit unsigned integer sRGB value x as per rules described in <<converting-normalized-integer-channel-data-types-to-half-precision-floating-point-values,Converting normalized integer channel data types to half precision floating-point values>> section.
++
+[latexmath]
+++++
+\begin{aligned}
+g(r) =
+\begin{cases}
+ f_{preferred}(r) & \quad \text{if rounding mode is round to even}\\
+ f_{approx}(r) & \quad \text{if implementation-defined rounding mode}
+\end{cases}\\
+\\
+x = g(r)
+\end{aligned}
+++++
+
+The accuracy required of using `image::read` and `image::sample` to convert a normalized 8-bit unsigned integer sRGB color value x to a floating-point linear RGB color value y is given by:
+[latexmath]
+++++
+|x-255 \times c_{sRGB}(y)|\leq 0.5
+++++
+
+The accuracy required of using `image::write` to convert a linear RGB floating-point color value y to a normalized 8-bit unsigned integer sRGB value x is given by:
+[latexmath]
+++++
+|x-255 \times c_{sRGB}(y)|\leq 0.6
+++++
+
+[[selecting-an-image-from-an-image-array]]
+=== Selecting an Image from an Image Array
+
+Let (u,v,w)  represent the unnormalized image coordinate values for reading from and/or writing to a 2D image in a 2D image array.
+
+When read using a sampler, the 2D image layer selected is computed as:
+
+[latexmath]
+++++
+layer = clamp(rint(w), 0, d_t - 1)
+++++
+
+otherwise the layer selected is computed as:
+
+[latexmath]
+++++
+layer = w
+++++
+
+(since w is already an integer) and the result is undefined if w is not one of the integers 0, 1, ... d~t~ - 1.
+
+Let (u,v)  represent the unnormalized image coordinate values for reading from and/or writing to a 1D image in a 1D image array.
+
+When read using a sampler, the 1D image layer selected is computed as:
+
+[latexmath]
+++++
+layer = clamp(rint(v), 0, h_t - 1)
+++++
+
+otherwise the layer selected is computed as:
+
+[latexmath]
+++++
+layer = v
+++++
+
+(since v is already an integer) and the result is undefined if v is not one of the integers 0, 1, ... h~t~ - 1.

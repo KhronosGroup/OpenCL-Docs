@@ -1,0 +1,273 @@
+// Copyright 2017-2018 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[integer-functions]]
+=== Integer Functions
+
+This section describes the OpenCL {cpp} library integer functions that take scalar or vector arguments.
+Vector versions of integer functions operate component-wise.
+Descriptions are always per-component.
+
+Here `gentype` matches: `char__n__`, `uchar__n__`, `short__n__`, `ushort__n__`, `int__n__`, `uint__n__`, `long__n__` and `ulong__n__`.
+
+[[header-opencl_integer-synopsis]]
+==== Header <opencl_integer> Synopsis
+[source]
+----
+namespace cl
+{
+//bitwise functions
+gentype clz(gentype x);
+gentype ctz(gentype x);
+gentype popcount(gentype x);
+gentype rotate(gentype v, gentype i);
+
+shortn upsample(charn hi, ucharn lo);
+ushortn upsample(ucharn hi, ucharn lo);
+intn upsample(shortn hi, ushortn lo);
+uintn upsample(ushortn hi, ushortn lo);
+longn upsample(intn hi, uintn lo);
+ulongn upsample(uintn hi, uintn lo);
+
+//numeric functions
+ugentype abs(gentype x);
+ugentype abs_diff(gentype x, gentype y);
+gentype  add_sat(gentype x, gentype y);
+gentype  hadd(gentype x, gentype y);
+gentype  rhadd(gentype x, gentype y);
+gentype  clamp(gentype x, gentype minval, gentype maxval);
+gentype  clamp(gentype x, sgentype minval, sgentype maxval);
+gentype  mad_hi(gentype a, gentype b, gentype c);
+gentype  mad_sat(gentype a, gentype b, gentype c);
+gentype  max(gentype x, gentype y);
+gentype  max(gentype x, sgentype y);
+gentype  min(gentype x, gentype y);
+gentype  min(gentype x, sgentype y);
+gentype  mul_hi(gentype x, gentype y);
+gentype  sub_sat(gentype x, gentype y);
+
+//24-bits functions
+intn mad24(intn x, intn y, intn z);
+uintn mad24(uintn x, uintn y, uintn z);
+intn mul24(intn x, intn y);
+uintn mul24(uintn x, uintn y);
+
+}
+----
+
+[[bitwise-operations]]
+==== Bitwise operations
+
+[[clz]]
+===== clz
+[source]
+----
+gentype clz(gentype x);
+----
+
+Returns the number of leading 0-bits in `x`, starting at the most significant bit position.
+If `x` is `0`, returns the size in bits of the type of `x` or component type of `x`, if `x` is a vector.
+
+[[ctz]]
+===== ctz
+[source]
+----
+gentype ctz(gentype x);
+----
+
+Returns the count of trailing 0-bits in `x`.
+If `x` is `0`, returns the size in bits of the type of `x` or component type of `x`, if `x` is a vector.
+
+[[rotate]]
+===== rotate
+[source]
+----
+gentype rotate(gentype v, gentype i);
+----
+
+For each element in `v`, the bits are shifted left by the number of bits given by the corresponding element in `i` (subject to usual shift modulo rules described in the <<expressions, _Expressions_>> section).
+Bits shifted off the left side of the element are shifted back in from the right.
+
+[[upsample]]
+===== upsample
+[source]
+----
+shortn upsample(charn hi, ucharn lo);
+ushortn upsample(ucharn hi, ucharn lo);
+
+intn upsample(shortn hi, ushortn lo);
+uintn upsample(ushortn hi, ushortn lo);
+
+longn upsample(intn hi, uintn lo);
+ulongn upsample(uintn hi, uintn lo);
+----
+
+`result[i] = ((short)hi[i] << 8) | lo[i]`
+
+`result[i] = ((ushort)hi[i] << 8) | lo[i]`
+
+`result[i] = ((int)hi[i] << 16) | lo[i]`
+
+`result[i] = ((uint)hi[i] << 16) | lo[i]`
+
+`result[i] = ((long)hi[i] << 32) | lo[i]`
+
+`result[i] = ((ulong)hi[i] << 32) | lo[i]`
+
+[[popcount]]
+===== popcount
+[source]
+----
+gentype popcount(gentype x);
+----
+
+Returns the number of non-zero bits in `x`.
+
+[[numeric-functions]]
+==== Numeric functions
+
+[[abs]]
+===== abs
+[source]
+----
+ugentype abs(gentype x);
+----
+
+Returns `|x|`.
+
+[[abs_diff]]
+===== abs_diff
+[source]
+----
+ugentype abs_diff(gentype x, gentype y);
+----
+
+Returns `|x - y|` without modulo overflow.
+
+[[add_sat]]
+===== add_sat
+[source]
+----
+gentype add_sat(gentype x, gentype y);
+----
+
+Returns `x + y` and saturates the result.
+
+[[hadd]]
+===== hadd
+[source]
+----
+gentype hadd(gentype x, gentype y);
+----
+
+Returns `(x + y) >> 1`.
+The intermediate sum does not modulo overflow.
+
+[[rhadd]]
+===== rhadd
+
+`rhadd` [[ftnref23]] <<ftn23,[23]>>:
+[source]
+----
+gentype rhadd(gentype x, gentype y);
+----
+
+Returns `(x + y + 1) >> 1`.
+The intermediate sum does not modulo overflow.
+
+[[clamp]]
+===== clamp
+[source]
+----
+gentype clamp(gentype x, gentype minval, gentype maxval);
+gentype clamp(gentype x, sgentype minval, sgentype maxval);
+----
+
+Returns `min(max(x, minval), maxval)`.
+
+Results are undefined if `minval > maxval`.
+
+[[mad_hi]]
+===== mad_hi
+[source]
+----
+gentype mad_hi(gentype a, gentype b, gentype c);
+----
+
+Returns `mul_hi(a, b) + c`.
+
+[[mad_sat]]
+===== mad_sat
+[source]
+----
+gentype mad_sat(gentype a, gentype b, gentype c);
+----
+
+Returns `a * b + c` and saturates the result.
+
+[[max]]
+===== max
+[source]
+----
+gentype max(gentype x, gentype y);
+gentype max(gentype x, sgentype y);
+----
+
+Returns `y` if `x < y`, otherwise it returns `x`.
+
+[[min]]
+===== min
+[source]
+----
+gentype min(gentype x, gentype y);
+gentype min(gentype x, sgentype y);
+----
+
+Returns `y` if `y < x`, otherwise it returns `x`.
+
+[[mul_hi]]
+===== mul_hi
+[source]
+----
+gentype mul_hi(gentype x, gentype y);
+----
+
+Computes `x * y` and returns the high half of the product of `x` and `y`.
+
+[[sub_sat]]
+===== sub_sat
+[source]
+----
+gentype sub_sat(gentype x, gentype y);
+----
+
+Returns `x - y` and saturates the result.
+
+[[bits-operations]]
+==== 24-bits operations
+
+In this section fast integer functions are described that can be used for optimizing performance of kernels.
+
+[[mad24]]
+===== mad24
+[source]
+----
+intn mad24(intn x, intn y, intn z);
+uintn mad24(uintn x, uintn y, uintn z);
+----
+
+Multiply two 24-bit integer values `x` and `y` and add the 32-bit integer result to the 32-bit integer `z`.
+Refer to definition of mul24 to see how the 24-bit integer multiplication is performed.
+
+[[mul24]]
+[source]
+----
+intn mul24(intn x, intn y);
+uintn mul24(uintn x, uintn y);
+----
+
+Multiply two 24-bit integer values `x` and `y`.
+`x` and `y` are 32-bit integers but only the low 24-bits are used to perform the multiplication.
+`mul24` should only be used when values in `x` and `y` are in the range [-2^23^, 2^23^-1] if `x` and `y` are signed integers and in the range [0, 2^24^-1] if `x` and `y` are unsigned integers.
+If `x` and `y` are not in this range, the multiplication result is implementation-defined.
