@@ -246,15 +246,11 @@ all arguments and the return type.
   log__~r~__\|_x_\|.
 
 | gentype *mad* (gentype _a_, gentype _b_, gentype _c_)
-| *mad* approximates _a_ * _b_ + _c_.
-  Whether or how the product of _a_ * _b_ is rounded and how supernormal or
-  subnormal intermediate products are handled is not defined.
-  *mad* is intended to be used where speed is preferred over accuracy.
-  TODO: footnote 63.
-
-63 The user is cautioned that for some usages, e.g. *mad*(a, b, -a*b),
-the definition of *mad*() is loose enough that +
-almost any result is allowed from *mad*() for some values of a and b. +
+| *mad* computes _a_ * _b_ + _c_.
+  The function may compute _a_ * _b_ + _c_ with reduced accuracy
+  in the embedded profile.  See the SPIR-V OpenCL environment specification
+  for details. On some hardware the mad instruction may provide better
+  performance than expanded computation of _a_ * _b_ + _c_.
 
 | gentype *maxmag* (gentype _x_, gentype _y_)
 | Returns _x_ if \|_x_\| > \|_y_\|, _y_ if \|_y_\| > \|_x_\|, otherwise
@@ -683,12 +679,26 @@ The vector data load (*vload__n__*) and store (*vstore__n__*) functions
 described in _table 6.13_ (also listed below) are extended to include
 versions that read from or write to double scalar or vector values.
 The generic type `gentype` is extended to include `double`.
-// TODO: Does gentypen include scalar double?  See cl_khr_fp16.
 The generic type `gentypen` is extended to include `double2`, `double3`,
 `double4`, `double8` and `double16`.
 The *vstore_half*, **vstore_half__n __**and **vstorea_half__n __**
 functions are extended to allow a double precision scalar or vector
 value to be written to memory as half values.
+
+Note: *vload3* reads (_x_,_y_,_z_) components from address
+`(_p_ + (_offset_ * 3))` into a 3-component vector.
+*vstore3*, and *vstore_half3* write (_x_,_y_,_z_) components from a
+3-component vector to address `(_p_ + (_offset_ * 3))`.
+In addition, *vloada_half3* reads (_x_,_y_,_z_) components from address
+`(_p_ + (_offset_ * 4))` into a 3-component vector and *vstorea_half3*
+writes (_x_,_y_,_z_) components from a 3-component vector to address
+`(_p_ + (_offset_ * 4))`.
+Whether *vloada_half3* and *vstorea_half3* read/write padding data
+between the third vector element and the next alignment boundary is
+implementation defined.
+*vloada_* and *vstoreaa_* variants are provided to access data that is
+aligned to the size of the vector, and are intended to enable performance
+on hardware that can take advantage of the increased alignment.
 
 ._Double Precision Vector Data Load and Store Functions_
 [cols=",",options="header",]
@@ -809,17 +819,6 @@ value to be written to memory as half values.
   **vstorea_half__n__** uses the current rounding mode.
   The default current rounding mode is round to nearest even.
 |====
-
-
-// TODO: footnotes?
-
-__66 +
-**vload__3 __**reads _x_, _y_, _z_ components from address (_p_ +
-(_offset_ * 3)) into a 3-component vector. *vstore__3__*, and +
-**vstore_half__3 __**write _x_, _y_, _z_ components from a 3-component
-vector to address (_p_ + (_offset_ * 3)). +
-In addition **vstorea_half__3 __**writes _x_, _y_, _z_ components from a
-3-component vector to address (_p_ + (_offset_ * 4)).
 
 [[cl_khr_fp64-async-copies-from-global-to-local-memory-local-to-global-memory-and-prefetch]]
 ==== Async Copies from Global to Local Memory, Local to Global Memory, and Prefetch
