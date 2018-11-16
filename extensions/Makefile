@@ -19,7 +19,7 @@
 # - pdf
 #
 
-all: html pdf
+all: html
 full: html_full pdf_full
 
 QUIET ?= @
