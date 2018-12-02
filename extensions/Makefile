@@ -68,7 +68,7 @@ pdf_full: $(PDFDIR)/extensions.pdf pdf
 
 $(HTMLDIR)/extensions.html: $(TOPDOC) $(COMMONDOCS)
 	$(QUIET)if test ! -d $(HTMLDIR) ; then $(MKDIR) $(HTMLDIR) ; fi
-	$(QUIET)$(ASCIIDOC) $(AD_HTML_OPTIONS) -o $@ $(TOPDOC)
+	$(QUIET)$(ASCIIDOC) $(AD_HTML_OPTIONS) -a toclevels=2 -o $@ $(TOPDOC)
 	$(QUIET)dos2unix $@ 2> /dev/null
 
 $(HTMLDIR)/%.html : %.asciidoc
