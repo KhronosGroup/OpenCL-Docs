@@ -2,49 +2,59 @@
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
-[[optional-extensions]]
-== Optional Extensions
+[[extensions-overview]]
+== Extensions Overview
 
-This document describes the list of optional features supported by OpenCL
-2.2.
-Optional extensions may be supported by some OpenCL devices.
+This document describes the list of optional features supported by OpenCL.
 Optional extensions are not required to be supported by a conformant OpenCL
-implementation, but are expected to be widely available; they define
-functionality that is likely to move into the required feature set in a
-future revision of the OpenCL specification.
-A brief description of how OpenCL extensions are defined is provided below.
+implementation, but are expected to be widely available, and in some cases may define
+functionality that is likely to be required in a future revision of the
+OpenCL specification.
 
-For OpenCL extensions approved by the OpenCL working group, the following
-naming conventions are used:
+This document describes all extensions that have been approved by the OpenCL
+working group.
+It is a _unified_ specification, meaning that the extensions described in this
+document are not specific to a specific core OpenCL specification version.
+
+OpenCL extensions approved by the OpenCL working group may be _promoted_ to
+core features in later revisions of OpenCL.
+When this occurs, the feature described by the extension specification
+is merged into the core OpenCL specification.
+The extension will continue to be documented in this specification, both for
+backwards compatibility and for devices that wish to support the feature
+but that are unable to support the newer core OpenCL version.
+
+[[naming-convention-for-optional-extensions]]
+=== Naming Convention for Optional Extensions
+
+OpenCL extensions approved by the OpenCL working group use the following
+naming convention:
 
   * A unique _name string_ of the form `"*cl_khr_<__name__>*"` is associated
     with each extension.
     If the extension is supported by an implementation, this string will be
-    present in the implementation's CL_PLATFORM_EXTENSIONS string or
-    CL_DEVICE_EXTENSIONS string.
+    present in the implementation's `CL_PLATFORM_EXTENSIONS` string or
+    `CL_DEVICE_EXTENSIONS` string.
   * All API functions defined by the extension will have names of the form
     *cl<__function_name__>KHR*.
   * All enumerants defined by the extension will have names of the form
     *CL_<__enum_name__>_KHR.*
 
-OpenCL extensions approved by the OpenCL working group can be _promoted_ to
-required core features in later revisions of OpenCL.
-When this occurs, the extension specifications are merged into the core
-specification.
-Functions and enumerants that are part of such promoted extensions will have
-the *KHR* affix removed.
+Functions and enumerants defined by extensions that are promoted to
+core features will have their *KHR* affix removed.
 OpenCL implementations of such later revisions must also export the name
-strings of promoted extensions in the CL_PLATFORM_EXTENSIONS or
-CL_DEVICE_EXTENSIONS string, and support the *KHR*-affixed versions of
+strings of promoted extensions in the `CL_PLATFORM_EXTENSIONS` or
+`CL_DEVICE_EXTENSIONS` string, and support the *KHR*-affixed versions of
 functions and enumerants as a transition aid.
 
-For vendor extensions, the following naming conventions are used:
+Vendor extensions are strongly encouraged to follow a similar naming
+convention:
 
   * A unique _name string_ of the form `"*cl_<__vendor_name__>_<__name>__*"`
     is associated with each extension.
     If the extension is supported by an implementation, this string will be
-    present in the implementation's CL_PLATFORM_EXTENSIONS string or
-    CL_DEVICE_EXTENSIONS string.
+    present in the implementation's `CL_PLATFORM_EXTENSIONS` string or
+    `CL_DEVICE_EXTENSIONS` string.
   * All API functions defined by the vendor extension will have names of the
     form *cl<__function_name__><__vendor_name__>*.
   * All enumerants defined by the vendor extension will have names of the
@@ -57,7 +67,7 @@ The *#pragma OPENCL EXTENSION* directive controls the behavior of the OpenCL
 compiler with respect to extensions.
 The *#pragma OPENCL EXTENSION* directive is defined as:
 
-[source]
+[source,c]
 ----
 #pragma OPENCL EXTENSION <extension_name> : <behavior>
 #pragma OPENCL EXTENSION all : <behavior>
@@ -105,7 +115,7 @@ previously issued extension directives, but only if the _behavior_ is set to
 
 The initial state of the compiler is as if the directive
 
-[source]
+[source,c]
 ----
 #pragma OPENCL EXTENSION all : disable
 ----
@@ -125,7 +135,7 @@ An extension which adds the extension string `"cl_khr_3d_image_writes"`
 should also add a preprocessor `#define` called *`cl_khr_3d_image_writes`*.
 A kernel can now use this preprocessor `#define` to do something like:
 
-[source]
+[source,c]
 ----
 #ifdef cl_khr_3d_image_writes
     // do something using the extension
@@ -139,7 +149,7 @@ A kernel can now use this preprocessor `#define` to do something like:
 
 The function
 indexterm:[clGetExtensionFunctionAddressForPlatform]
-[source]
+[source,c]
 ----
 void* clGetExtensionFunctionAddressForPlatform(cl_platform_id platform,
                                                const char *funcname)
@@ -183,7 +193,7 @@ sharing extension).
 The following convention must be followed for all extensions affecting the
 host API:
 
-[source]
+[source,c]
 ----
 #ifndef extension_name
 #define extension_name 1
@@ -205,21 +215,21 @@ where `TAG` can be `KHR`, `EXT` or `vendor-specific`.
 Consider, for example, the *cl_khr_gl_sharing* extension.
 This extension would add the following to cl_gl_ext.h:
 
-[source]
+[source,c]
 ----
 #ifndef cl_khr_gl_sharing
 #define cl_khr_gl_sharing 1
 
 // all data typedefs, token #defines, prototypes, and
 // function pointer typedefs for this extension
-#define CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR -1000
-#define CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR 0x2006
-#define CL_DEVICES_FOR_GL_CONTEXT_KHR 0x2007
-#define CL_GL_CONTEXT_KHR 0x2008
-#define CL_EGL_DISPLAY_KHR 0x2009
-#define CL_GLX_DISPLAY_KHR 0x200A
-#define CL_WGL_HDC_KHR 0x200B
-#define CL_CGL_SHAREGROUP_KHR 0x200C
+#define CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR  -1000
+#define CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR    0x2006
+#define CL_DEVICES_FOR_GL_CONTEXT_KHR           0x2007
+#define CL_GL_CONTEXT_KHR                       0x2008
+#define CL_EGL_DISPLAY_KHR                      0x2009
+#define CL_GLX_DISPLAY_KHR                      0x200A
+#define CL_WGL_HDC_KHR                          0x200B
+#define CL_CGL_SHAREGROUP_KHR                   0x200C
 
 // function pointer typedefs must use the
 // following naming convention
