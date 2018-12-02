@@ -14,13 +14,19 @@
 
 # OpenCL Extension makefile
 #
-# Default targets:
+# Default target:
 # - html
-# - pdf
+#
+# Targets:
+# - html: builds individual HTML extension specifications
+# - pdf: builds individual PDF extension specifications
+# - html_full: builds individual HTML extension specifications and
+#       a combined HTML doc with all specifications
+# - pdf_full: builds individual PDF extension specifications and
+#       a combined PDF doc with all specifications
 #
 
-all: html pdf
-full: html_full pdf_full
+all: html
 
 QUIET ?= @
 ASCIIDOC ?= asciidoc.py
@@ -62,7 +68,7 @@ pdf_full: $(PDFDIR)/extensions.pdf pdf
 
 $(HTMLDIR)/extensions.html: $(TOPDOC) $(COMMONDOCS)
 	$(QUIET)if test ! -d $(HTMLDIR) ; then $(MKDIR) $(HTMLDIR) ; fi
-	$(QUIET)$(ASCIIDOC) $(AD_HTML_OPTIONS) -o $@ $(TOPDOC)
+	$(QUIET)$(ASCIIDOC) $(AD_HTML_OPTIONS) -a toclevels=2 -o $@ $(TOPDOC)
 	$(QUIET)dos2unix $@ 2> /dev/null
 
 $(HTMLDIR)/%.html : %.asciidoc
@@ -92,6 +98,3 @@ clean_html:
 clean_pdf:
 	$(QUIET)$(RM) $(EXTENSIONS_XML) $(EXTENSIONS_PDF)
 	$(QUIET)$(RM) $(PDFDIR)/extensions.pdf.xml $(PDFDIR)/extensions.pdf
-
-package:
-	cd .. && tar cvzf opencl-extensions.tar.gz --exclude .git --exclude *~ opencl-extensions 
