@@ -47,7 +47,7 @@ your local workspace in with native platform line endings.)
 Rationale:
 > Many OpenCL specifications use AsciiDoc markup.  Using AsciiDoc markup for
 > extensions reduces the work required to integrate an extension into the main
-> specfication, produces well-formatted output, and simplifies the process of
+> specification, produces well-formatted output, and simplifies the process of
 > authoring well-formatted output.  Also, AsciiDoc is readable as plain text, 
 > and is easily diff-able with standard tools such as `git`.
 
