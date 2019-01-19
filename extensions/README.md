@@ -4,9 +4,9 @@ This is a Khronos repository for tracking discussion of extensions
 to the OpenCL API, OpenCL C, and OpenCL C++ specifications.
 
 The process for extending OpenCL is described below.  The recommended
-format of an OpenCL extension is documented in the 
+format of an OpenCL extension is documented in the
 [cl_extension_template.asciidoc](cl_extension_template.asciidoc) file, in this
-repository. 
+repository.
 
 ## Format and Lifecycle of an Extension
 
@@ -31,13 +31,18 @@ Rationale:
 > It is important for reviewers to easily track incremental changes to an
 > extension as it evolves.
 
-When an extension is complete, it should be published to the OpenCL Registry.
+When an extension is complete, the corresponding HTML document should be
+published to the OpenCL Registry. The 'extensionshtml' target in
+../Makefile will generate individual HTML documents in ../out/html/ for
+each extension specification in this directory, as well as a document
+containing all extensions in ../out/html/extensions.html.
+
 
 ## Extension Contents
 
-The extension file content is UTF-8 text with AsciiDoc markup.  For 
-portability, use of non-ASCII characters is discouraged except where 
-essential, for example, for contributor names. 
+The extension file content is UTF-8 text with Asciidoctor markup.  For
+portability, use of non-ASCII characters is discouraged except where
+essential, for example, for contributor names.
 
 Use the native line endings style for your platform.
 (The `git` repository is configured so that text documents are stored
@@ -45,10 +50,10 @@ with line endings encoded as linefeed-only, but they are written to
 your local workspace in with native platform line endings.)
 
 Rationale:
-> Many OpenCL specifications use AsciiDoc markup.  Using AsciiDoc markup for
-> extensions reduces the work required to integrate an extension into the main
+> Most OpenCL specifications use Asciidoctor markup. Using it for extensions
+> reduces the work required to integrate them into the main
 > specification, produces well-formatted output, and simplifies the process of
-> authoring well-formatted output.  Also, AsciiDoc is readable as plain text, 
+> authoring well-formatted output.  Also, asciidoctor is readable as plain text,
 > and is easily diff-able with standard tools such as `git`.
 
 ## Token Registration
@@ -64,7 +69,7 @@ be registered in the OpenCL Registry.
 Different token semantics require different names.  When a named enumerated
 token might change semantics during the evolution of the extension from
 vendor to EXT and finally to KHR, then the token name should use a corresponding
-suffix.  For example CL_FOO_ENUM would be named CL_FOO_ENUM_EXT in an EXT 
+suffix.  For example CL_FOO_ENUM would be named CL_FOO_ENUM_EXT in an EXT
 extension, and it would be named CL_FOO_ENUM_KHR in a KHR extension.
 
 Naming summary:
@@ -78,8 +83,8 @@ Naming summary:
   is required.  This is a high bar, requiring working group agreement that
   the final semantics are already achieved.
 * Aliasing:  If an extension evolves from a vendor extension to an EXT or
-  a KHR or to the core spec without changing semantics then the spec can 
-  add an alias: a new name with a new suffix but denoting the same numeric 
+  a KHR or to the core spec without changing semantics then the spec can
+  add an alias: a new name with a new suffix but denoting the same numeric
   value.
 * Follow existing conventions.  For example, if introducing a new device
   query, the token name should start with CL_DEVICE.
