@@ -1,0 +1,118 @@
+// Copyright (c) 2014-2019 Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+
+= clGetContextInfo(3)
+
+== Name
+clGetContextInfo - Query information about an OpenCL context
+
+== C Specification
+
+To query information about a context, call the function:
+
+include::{api}/protos/clGetContextInfo.txt[]
+
+
+== Parameters
+
+_context_ specifies the OpenCL context being queried.
+
+_param_name_ is an enumeration constant that specifies the information to
+query.
+
+_param_value_ is a pointer to memory where the appropriate result being
+queried is returned.
+If _param_value_ is `NULL`, it is ignored.
+
+_param_value_size_ specifies the size in bytes of memory pointed to by
+_param_value_.
+This size must be greater than or equal to the size of return type as
+described in the link:{html_spec_relative}#context-info-table[Context Attributes] table.
+
+_param_value_size_ret_ returns the actual size in bytes of data being
+queried by _param_name_.
+If _param_value_size_ret_ is `NULL`, it is ignored.
+
+
+== Description
+
+// refBody
+
+The list of supported _param_name_ values and the information returned in
+_param_value_ by *clGetContextInfo* is described in the
+link:{html_spec_relative}#context-info-table[Context Attributes] table.
+
+[[context-info-table]]
+.List of supported param_names by *clGetContextInfo*
+[width="100%",cols="<34%,<33%,<33%",options="header"]
+|====
+| *cl_context_info* | Return Type | Information returned in param_value
+| *CL_CONTEXT_REFERENCE_COUNT*^12^
+  | cl_uint
+      | Return the _context_ reference count.
+| *CL_CONTEXT_NUM_DEVICES*
+  | cl_uint
+      | Return the number of devices in _context_.
+| *CL_CONTEXT_DEVICES*
+  | cl_device_id[]
+      | Return the list of devices and sub-devices in _context_.
+| *CL_CONTEXT_PROPERTIES*
+  | cl_context_properties[]
+      | Return the properties argument specified in *clCreateContext* or
+        *clCreateContextFromType*.
+
+        If the _properties_ argument specified in *clCreateContext* or
+        *clCreateContextFromType* used to create _context_ is not `NULL`, the
+        implementation must return the values specified in the properties
+        argument.
+
+        If the _properties_ argument specified in *clCreateContext* or
+        *clCreateContextFromType* used to create _context_ is `NULL`, the
+        implementation may return either a _param_value_size_ret_ of 0
+        i.e. there is no context property value to be returned or can return
+        a context property value of 0 (where 0 is used to terminate the
+        context properties list) in the memory that _param_value_ points
+        to.
+|====
+
+12::
+    The reference count returned should be considered immediately stale.
+    It is unsuitable for general use in applications.
+    This feature is provided for identifying memory leaks.
+
+*clGetContextInfo* returns CL_SUCCESS if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * CL_INVALID_CONTEXT if _context_ is not a valid context.
+  * CL_INVALID_VALUE if _param_name_ is not one of the supported values or
+    if size in bytes specified by _param_value_size_ is < size of return
+    type as specified in the link:{html_spec_relative}#context-info-table[Context Attributes]
+    table and _param_value_ is not a `NULL` value.
+  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+
+
+== See Also
+
+No cross-references are available
+
+
+== Document Notes
+
+For more information, see the OpenCL Specification at URL
+
+https://www.khronos.org/registry/OpenCL/specs/2.2/html/OpenCL_API.html#clGetContextInfo
+
+This page is extracted from the OpenCL Specification. 
+Fixes and changes should be made to the Specification, not directly.
+
+include::footer.txt[]
+

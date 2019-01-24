@@ -1,0 +1,122 @@
+// Copyright (c) 2014-2019 Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+
+= clGetDeviceIDs(3)
+
+== Name
+clGetDeviceIDs - Query devices available on a platform
+
+== C Specification
+
+The list of devices available on a platform can be obtained using the
+following function^3^.
+
+include::{api}/protos/clGetDeviceIDs.txt[]
+
+
+== Parameters
+
+_platform_ refers to the platform ID returned by *clGetPlatformIDs* or can
+be `NULL`.
+If _platform_ is `NULL`, the behavior is implementation-defined.
+
+_device_type_ is a bitfield that identifies the type of OpenCL device.
+The _device_type_ can be used to query specific OpenCL devices or all OpenCL
+devices available.
+The valid values for _device_type_ are specified in the
+link:{html_spec_relative}#device-categories-table[Device Categories] table.
+
+3::
+    *clGetDeviceIDs* may return all or a subset of the actual physical
+    devices present in the platform and that match _device_type_.
+
+_num_entries_ is the number of cl_device_id entries that can be added to
+_devices_.
+If _devices_ is not `NULL`, the _num_entries_ must be greater than zero.
+
+_devices_ returns a list of OpenCL devices found.
+The cl_device_id values returned in _devices_ can be used to identify a
+specific OpenCL device.
+If _devices_ argument is `NULL`, this argument is ignored.
+The number of OpenCL devices returned is the minimum of the value specified
+by _num_entries_ or the number of OpenCL devices whose type matches
+_device_type_.
+
+_num_devices_ returns the number of OpenCL devices available that match
+_device_type_.
+If _num_devices_ is `NULL`, this argument is ignored.
+
+
+== Description
+
+// refBody
+
+[[device-categories-table]]
+.List of OpenCL Device Categories
+[width="100%",cols="<50%,<50%",options="header"]
+|====
+| *cl_device_type* | Description
+| *CL_DEVICE_TYPE_CPU*
+  | An OpenCL device that is the host processor.
+    The host processor runs the OpenCL implementations and is a single or
+    multi-core CPU.
+| *CL_DEVICE_TYPE_GPU*
+  | An OpenCL device that is a GPU.
+    By this we mean that the device can also be used to accelerate a 3D API
+    such as OpenGL or DirectX.
+| *CL_DEVICE_TYPE_ACCELERATOR*
+  | Dedicated OpenCL accelerators (for example the IBM CELL Blade).
+    These devices communicate with the host processor using a peripheral
+    interconnect such as PCIe.
+| *CL_DEVICE_TYPE_CUSTOM*
+  | Dedicated accelerators that do not support programs written in an OpenCL
+    kernel language,
+| *CL_DEVICE_TYPE_DEFAULT*
+  | The default OpenCL device in the system.
+    The default device cannot be a *CL_DEVICE_TYPE_CUSTOM* device.
+| *CL_DEVICE_TYPE_ALL*
+  | All OpenCL devices available in the system except
+    *CL_DEVICE_TYPE_CUSTOM* devices..
+|====
+
+*clGetDeviceIDs* returns CL_SUCCESS if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * CL_INVALID_PLATFORM if _platform_ is not a valid platform.
+  * CL_INVALID_DEVICE_TYPE if _device_type_ is not a valid value.
+  * CL_INVALID_VALUE if _num_entries_ is equal to zero and _devices_ is not
+    `NULL` or if both _num_devices_ and _devices_ are `NULL`.
+  * CL_DEVICE_NOT_FOUND if no OpenCL devices that matched _device_type_ were
+    found.
+  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+
+The application can query specific capabilities of the OpenCL device(s)
+returned by *clGetDeviceIDs*.
+This can be used by the application to determine which device(s) to use.
+
+
+== See Also
+
+No cross-references are available
+
+
+== Document Notes
+
+For more information, see the OpenCL Specification at URL
+
+https://www.khronos.org/registry/OpenCL/specs/2.2/html/OpenCL_API.html#clGetDeviceIDs
+
+This page is extracted from the OpenCL Specification. 
+Fixes and changes should be made to the Specification, not directly.
+
+include::footer.txt[]
+

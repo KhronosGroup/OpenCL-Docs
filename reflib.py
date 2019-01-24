@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2016-2018 The Khronos Group Inc.
+# Copyright (c) 2016-2019 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -360,8 +360,9 @@ def fixupRefs(pageMap, specFile, file):
 
 # Patterns used to recognize interesting lines in an asciidoc source file.
 # These patterns are only compiled once.
-includePat = re.compile('^include::(\.\./)+api/+(?P<type>\w+)/(?P<name>\w+).txt\[\]')
-validPat   = re.compile('^include::(\.\./)+validity/(?P<type>\w+)/(?P<name>\w+).txt\[\]')
+includePat = re.compile('^include::{api}/+(?P<type>\w+)/(?P<name>\w+).txt\[\]')
+endifPat   = re.compile('^endif::(?P<condition>[\w_+,]+)\[\]')
+validPat   = re.compile('^// *refError|^include::(\.\./)+validity/(?P<type>\w+)/(?P<name>\w+).txt\[\]')
 beginPat   = re.compile('^\[open,(?P<attribs>refpage=.*)\]')
 # attribute key/value pairs of an open block
 attribStr  = "([a-z]+)='([^'\\\\]*(?:\\\\.[^'\\\\]*)*)'"
@@ -407,6 +408,11 @@ def findRefs(file, filename):
         if matches != None:
             logDiag('Matched open block pattern')
             attribs = matches.group('attribs')
+
+            # If the previous open block wasn't closed, raise an error
+            if openBlockState != 'outside':
+                logErr('Nested open block starting at line', line, 'of',
+                       filename)
 
             openBlockState = 'start'
 
@@ -504,6 +510,8 @@ def findRefs(file, filename):
             type = matches.group('type')
             name = matches.group('name')
             if pi != None:
+                if pi.include != None:
+                    logDiag('found multiple includes for this block')
                 if pi.type and type != pi.type:
                     logWarn('ERROR: pageMap[' + name + '] type:',
                             pi.type, 'does not match type:', type)
@@ -512,6 +520,22 @@ def findRefs(file, filename):
                 logDiag('added TYPE =', pi.type, 'INCLUDE =', pi.include)
             else:
                 logWarn('interface include:: line NOT inside block')
+
+            line = line + 1
+            continue
+
+        # Vulkan 1.1 markup allows the last API include construct to be
+        # followed by an asciidoctor endif:: construct (and also preceded,
+        # at some distance).
+        # This looks for endif:: immediately following an include:: line
+        # and, if found, moves the include boundary to this line.
+        matches = endifPat.search(file[line])
+        if matches != None and pi != None:
+            if pi.include == line - 1:
+                logDiag('Matched endif pattern following include; moving include')
+                pi.include = line
+            else:
+                logDiag('Matched endif pattern (not following include)')
 
             line = line + 1
             continue

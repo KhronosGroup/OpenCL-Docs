@@ -14,16 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# genRef.py - create Vulkan ref pages from spec source files
-#
+# genRef.py - create API ref pages from spec source files
 #
 # Usage: genRef.py files
 
 from reflib import *
-import vkapi
+import clapi as api
 import argparse, copy, io, os, pdb, re, string, sys
 
-# Return True if name is a Vulkan extension name (ends with an upper-case
+# Used in some boilerplate text written by the script
+apiName = 'OpenCL'
+
+# Rather than conditionalize the script, if there are no aliases in the API
+# map, create an empty alias map
+if 'api.alias' not in globals():
+    api.alias = {}
+
+# Return True if name is an API extension name (ends with an upper-case
 # author ID). This assumes that author IDs are at least two characters.
 def isextension(name):
     return name[-2:].isalpha() and name[-2:].isupper()
@@ -45,24 +52,24 @@ def printFooter(fp):
     print('', file=fp)
 
 
-# Add a spec asciidoc macro prefix to a Vulkan name, depending on its type
+# Add a spec asciidoc macro prefix to an API name, depending on its type
 # (protos, structs, enums, etc.)
 def macroPrefix(name):
-    if name in vkapi.basetypes.keys():
+    if name in api.basetypes.keys():
         return 'basetype:' + name
-    elif name in vkapi.defines.keys():
+    elif name in api.defines.keys():
         return 'slink:' + name
-    elif name in vkapi.enums.keys():
+    elif name in api.enums.keys():
         return 'elink:' + name
-    elif name in vkapi.flags.keys():
+    elif name in api.flags.keys():
         return 'elink:' + name
-    elif name in vkapi.funcpointers.keys():
+    elif name in api.funcpointers.keys():
         return 'tlink:' + name
-    elif name in vkapi.handles.keys():
+    elif name in api.handles.keys():
         return 'slink:' + name
-    elif name in vkapi.protos.keys():
+    elif name in api.protos.keys():
         return 'flink:' + name
-    elif name in vkapi.structs.keys():
+    elif name in api.structs.keys():
         return 'slink:' + name
     elif name == 'TBD':
         return 'No cross-references are available'
@@ -70,15 +77,15 @@ def macroPrefix(name):
         return 'UNKNOWN:' + name
 
 # Return an asciidoc string with a list of 'See Also' references for the
-# Vulkan entity 'name', based on the relationship mapping in vkapi.py and
+# API entity 'name', based on the relationship mapping in api.py and
 # the additional references in explicitRefs. If no relationships are
 # available, return None.
 def seeAlsoList(apiName, explicitRefs = None):
     refs = {}
 
     # Add all the implicit references to refs
-    if apiName in vkapi.mapDict.keys():
-        for name in sorted(vkapi.mapDict[apiName].keys()):
+    if apiName in api.mapDict.keys():
+        for name in sorted(api.mapDict[apiName].keys()):
             refs[name] = None
 
     # Add all the explicit references
@@ -108,13 +115,18 @@ def remapIncludes(lines, baseDir, specDir):
         if matches != None:
             path = matches.group('path')
 
-            # Relative path to include file from here
-            incPath = specDir + '/' + path
-            # Remap to be relative to baseDir
-            newPath = os.path.relpath(incPath, baseDir)
-            newLine = 'include::' + newPath + '[]\n'
-            logDiag('remapIncludes: remapping', line, '->', newLine)
-            newLines.append(newLine)
+            if path[0] != '{':
+                # Relative path to include file from here
+                incPath = specDir + '/' + path
+                # Remap to be relative to baseDir
+                newPath = os.path.relpath(incPath, baseDir)
+                newLine = 'include::' + newPath + '[]\n'
+                logDiag('remapIncludes: remapping', line, '->', newLine)
+                newLines.append(newLine)
+            else:
+                # An asciidoctor variable starts the path.
+                # This must be an absolute path, not needing to be rewritten.
+                newLines.append(line)
         else:
             newLines.append(line)
     return newLines
@@ -172,15 +184,17 @@ def refPageTail(pageName, seeAlso, fp, auto = False):
     # This is difficult to get working properly in asciidoc
     # specURL = 'link:{vkspecpath}/vkspec.html'
 
-    # Where to find the current all-extensions Vulkan HTML spec, so xrefs in
+    # Where to find the current all-extensions HTML spec, so xrefs in
     # the asciidoc source that aren't to ref pages can link into it instead.
-    specURL = 'https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html'
+    # N.b. this will need to change on a per-refpage basis if there are
+    # multiple documents involved.
+    specURL = 'https://www.khronos.org/registry/OpenCL/specs/2.2/html/OpenCL_API.html'
 
     if seeAlso == None:
         seeAlso = 'No cross-references are available\n'
 
     notes = [
-        'For more information, see the Vulkan Specification at URL',
+        'For more information, see the ' + apiName + ' Specification at URL',
         '',
         specURL + '#' + pageName,
         '',
@@ -194,7 +208,7 @@ def refPageTail(pageName, seeAlso, fp, auto = False):
             ])
     else:
         notes.extend([
-            'This page is extracted from the Vulkan Specification. ',
+            'This page is extracted from the ' + apiName + ' Specification. ',
             'Fixes and changes should be made to the Specification, '
             'not directly.',
             ])
@@ -307,7 +321,7 @@ def autoGenEnumsPage(baseDir, pi, file):
         'For more information, see:\n\n',
         embedRef,
         '  * The See Also section for other reference pages using this type.\n',
-        '  * The Vulkan Specification.\n' ])
+        '  * The ' + apiName + ' Specification.\n' ])
 
     refPageHead(pi.name,
                 pi.desc,
@@ -318,12 +332,12 @@ def autoGenEnumsPage(baseDir, pi, file):
     refPageTail(pi.name, seeAlsoList(pi.name, pi.refs), fp, auto = True)
     fp.close()
 
-# Pattern to break apart a Vk*Flags{authorID} name, used in autoGenFlagsPage.
+# Pattern to break apart a API *Flags{authorID} name, used in autoGenFlagsPage.
 flagNamePat = re.compile('(?P<name>\w+)Flags(?P<author>[A-Z]*)')
 
-# Autogenerate a single reference page in baseDir for a Vk*Flags type
+# Autogenerate a single reference page in baseDir for an API *Flags type
 #   baseDir - base directory to emit page into
-#   flagName - Vk*Flags name
+#   flagName - API *Flags name
 def autoGenFlagsPage(baseDir, flagName):
     pageName = baseDir + '/' + flagName + '.txt'
     fp = open(pageName, 'w', encoding='utf-8')
@@ -344,7 +358,7 @@ def autoGenFlagsPage(baseDir, flagName):
     else:
         logWarn('autoGenFlagsPage:', pageName, 'does not end in "Flags{author ID}". Cannot infer FlagBits type.')
         flagBits = None
-        desc = 'Unknown Vulkan flags type'
+        desc = 'Unknown API flags type'
 
     # Description text
     if flagBits != None:
@@ -356,7 +370,7 @@ def autoGenFlagsPage(baseDir, flagName):
     else:
         txt = ''.join([
             'etext:' + flagName,
-            ' is an unknown Vulkan type, assumed to be a bitmask.\n' ])
+            ' is an unknown API type, assumed to be a bitmask.\n' ])
 
     refPageHead(flagName,
                 desc,
@@ -367,9 +381,9 @@ def autoGenFlagsPage(baseDir, flagName):
     refPageTail(flagName, seeAlsoList(flagName), fp, auto = True)
     fp.close()
 
-# Autogenerate a single handle page in baseDir for a Vk* handle type
+# Autogenerate a single handle page in baseDir for an API handle type
 #   baseDir - base directory to emit page into
-#   handleName - Vk* handle name
+#   handleName - API handle name
 # @@ Need to determine creation function & add handles/ include for the
 # @@ interface in generator.py.
 def autoGenHandlePage(baseDir, handleName):
@@ -382,13 +396,13 @@ def autoGenHandlePage(baseDir, handleName):
     logDiag('autoGenHandlePage:', pageName)
 
     # Short description
-    desc = 'Vulkan object handle'
+    desc = apiName + ' object handle'
 
     descText = ''.join([
         'sname:' + handleName,
         ' is an object handle type, referring to an object used\n',
-        'by the Vulkan implementation. These handles are created or allocated\n',
-        'by the vk @@ TBD @@ function, and used by other Vulkan structures\n',
+        'by the ' + apiName + ' implementation. These handles are created or allocated\n',
+        'by the @@ TBD @@ function, and used by other ' + apiName + ' structures\n',
         'and commands in the See Also section below.\n' ])
 
     refPageHead(handleName,
@@ -441,7 +455,7 @@ def genRef(specFile, baseDir):
             logWarn('genRef: Cannot extract or autogenerate:', pi.name)
 
 # Generate baseDir/apispec.txt, the single-page version of the ref pages.
-# This assumes there's a page for everything in the vkapi.py dictionaries.
+# This assumes there's a page for everything in the api.py dictionaries.
 # Extensions (KHR, EXT, etc.) are currently skipped
 def genSinglePageRef(baseDir):
     # Accumulate head of page
@@ -449,7 +463,7 @@ def genSinglePageRef(baseDir):
 
     printCopyrightSourceComments(head)
 
-    print('= Vulkan API Reference Pages',
+    print('= ' + apiName + ' API Reference Pages',
           ':data-uri:',
           ':icons: font',
           ':doctype: book',
@@ -467,14 +481,14 @@ def genSinglePageRef(baseDir):
     # this for us.
 
     sections = [
-        [ vkapi.protos,       'protos',       'Vulkan Commands' ],
-        [ vkapi.handles,      'handles',      'Object Handles' ],
-        [ vkapi.structs,      'structs',      'Structures' ],
-        [ vkapi.enums,        'enums',        'Enumerations' ],
-        [ vkapi.flags,        'flags',        'Flags' ],
-        [ vkapi.funcpointers, 'funcpointers', 'Function Pointer Types' ],
-        [ vkapi.basetypes,    'basetypes',    'Vulkan Scalar types' ],
-        [ vkapi.defines,      'defines',      'C Macro Definitions' ] ]
+        [ api.protos,       'protos',       apiName + ' Commands' ],
+        [ api.handles,      'handles',      'Object Handles' ],
+        [ api.structs,      'structs',      'Structures' ],
+        [ api.enums,        'enums',        'Enumerations' ],
+        [ api.flags,        'flags',        'Flags' ],
+        [ api.funcpointers, 'funcpointers', 'Function Pointer Types' ],
+        [ api.basetypes,    'basetypes',    apiName + ' Scalar types' ],
+        [ api.defines,      'defines',      'C Macro Definitions' ] ]
 
     # Accumulate body of page
     body = io.StringIO()
@@ -492,11 +506,11 @@ def genSinglePageRef(baseDir):
         for refPage in sorted(apiDict.keys()):
             # Don't generate links for aliases, which are included with the
             # aliased page
-            if refPage not in vkapi.alias:
-                if refPage not in vkapi.flags:
+            if refPage not in api.alias:
+                if refPage not in api.flags:
                     # Add page to body
                     print('include::' + refPage + '.txt[]', file=body)
-                elif vkapi.flags[refPage] is not None:
+                elif api.flags[refPage] is not None:
                     # Add page to body
                     print('include::' + refPage + '.txt[]', file=body)
                 else:
@@ -516,7 +530,7 @@ def genSinglePageRef(baseDir):
                 # aliased refpage
                 logWarn('(Benign) Not including', refPage,
                         'in single-page reference',
-                        'because it is an alias of', vkapi.alias[refPage])
+                        'because it is an alias of', api.alias[refPage])
 
         print('\n' + ':leveloffset: 0' + '\n', file=body)
 
@@ -564,9 +578,9 @@ if __name__ == '__main__':
         genRef(file, baseDir)
 
     # Now figure out which pages *weren't* generated from the spec.
-    # This relies on the dictionaries of API constructs in vkapi.py.
+    # This relies on the dictionaries of API constructs in api.py.
 
-    # For Flags (e.g. Vk*Flags types), it's easy to autogenerate pages.
+    # For Flags (e.g. *Flags types), it's easy to autogenerate pages.
     if not results.noauto:
         # autoGenFlagsPage is no longer needed because they are added to
         # the spec sources now.
@@ -581,12 +595,12 @@ if __name__ == '__main__':
         #        autoGenHandlePage(baseDir, page)
 
         sections = [
-            [ vkapi.flags,        'Flags Type' ],
-            [ vkapi.enums,        'Enum Type ' ],
-            [ vkapi.structs,      'Structure ' ],
-            [ vkapi.protos,       'Command   ' ],
-            [ vkapi.funcpointers, 'Funcptr   ' ],
-            [ vkapi.basetypes,    'Base Type ' ] ]
+            [ api.flags,        'Flags Type' ],
+            [ api.enums,        'Enum Type ' ],
+            [ api.structs,      'Structure ' ],
+            [ api.protos,       'Command   ' ],
+            [ api.funcpointers, 'Funcptr   ' ],
+            [ api.basetypes,    'Base Type ' ] ]
 
         # Summarize pages that weren't generated, for good or bad reasons
 
@@ -594,9 +608,9 @@ if __name__ == '__main__':
             for page in apiDict.keys():
                 if not (page in genDict.keys()):
                     # Page was not generated - why not?
-                    if page in vkapi.alias:
-                        logWarn('(Benign, is an alias) Ref page for', title, page, 'is aliased into', vkapi.alias[page])
-                    elif page in vkapi.flags and vkapi.flags[page] is None:
+                    if page in api.alias:
+                        logWarn('(Benign, is an alias) Ref page for', title, page, 'is aliased into', api.alias[page])
+                    elif page in api.flags and api.flags[page] is None:
                         logWarn('(Benign, no FlagBits defined) No ref page generated for ', title,
                                 page)
                     else:

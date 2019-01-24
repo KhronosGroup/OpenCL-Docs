@@ -1,0 +1,201 @@
+// Copyright (c) 2014-2019 Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+
+= clCreateSubDevices(3)
+
+== Name
+clCreateSubDevices - Create sub-devices partitioning an OpenCL device
+
+== C Specification
+
+To create sub-devices partitioning an OpenCL device, call the function:
+
+include::{api}/protos/clCreateSubDevices.txt[]
+
+
+== Parameters
+
+_in_device_ is the device to be partitioned.
+
+_properties_ specifies how _in_device_ is to be partitioned, described by a
+partition name and its corresponding value.
+Each partition name is immediately followed by the corresponding desired
+value.
+The list is terminated with 0.
+The list of supported partitioning schemes is described in the
+link:{html_spec_relative}#subdevice-partition-table[Subdevice Partition] table.
+Only one of the listed partitioning schemes can be specified in
+_properties_.
+
+_num_devices_ is the size of memory pointed to by _out_devices_ specified as
+the number of cl_device_id entries.
+
+_out_devices_ is the buffer where the OpenCL sub-devices will be returned.
+If _out_devices_ is `NULL`, this argument is ignored.
+If _out_devices_ is not `NULL`, _num_devices_ must be greater than or equal
+to the number of sub-devices that _device_ may be partitioned into according
+to the partitioning scheme specified in _properties_.
+
+_num_devices_ret_ returns the number of sub-devices that _device_ may be
+partitioned into according to the partitioning scheme specified in
+_properties_.
+If _num_devices_ret_ is `NULL`, it is ignored.
+
+
+== Description
+
+// refBody
+
+*clCreateSubDevices* creates an array of sub-devices that each reference a
+non-intersecting set of compute units within _in_device_, according to the
+partition scheme given by _properties_.
+The output sub-devices may be used in every way that the root (or parent)
+device can be used, including creating contexts, building programs, further
+calls to *clCreateSubDevices* and creating command-queues.
+When a command-queue is created against a sub-device, the commands enqueued
+on the queue are executed only on the sub-device.
+
+[[subdevice-partition-table]]
+._List of supported partition schemes by_ *clCreateSubDevices*
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_device_partition_property enum* | Partition value | Description
+| *CL_DEVICE_PARTITION_EQUALLY*
+  | cl_uint
+      | Split the aggregate device into as many smaller aggregate devices as
+        can be created, each containing _n_ compute units.
+        The value _n_ is passed as the value accompanying this property.
+        If _n_ does not divide evenly into
+        CL_DEVICE_PARTITION_MAX_COMPUTE_UNITS, then the remaining compute
+        units are not used.
+| *CL_DEVICE_PARTITION_BY_COUNTS*
+  | cl_uint
+      | This property is followed by a
+        CL_DEVICE_PARTITION_BY_COUNTS_LIST_END terminated list of compute
+        unit counts.
+        For each non-zero count _m_ in the list, a sub-device is created
+        with _m_ compute units in it.
+        CL_DEVICE_PARTITION_BY_COUNTS_LIST_END is defined to be 0.
+
+        The number of non-zero count entries in the list may not exceed
+        CL_DEVICE_PARTITION_MAX_SUB_DEVICES.
+
+        The total number of compute units specified may not exceed
+        CL_DEVICE_PARTITION_MAX_COMPUTE_UNITS.
+| *CL_DEVICE_PARTITION_BY_AFFINITY_DOMAIN*
+  | cl_device_affinity_ domain
+      | Split the device into smaller aggregate devices containing one or
+        more compute units that all share part of a cache hierarchy.
+        The value accompanying this property may be drawn from the following
+        list:
+
+        CL_DEVICE_AFFINITY_DOMAIN_NUMA - Split the device into sub-devices
+        comprised of compute units that share a NUMA node.
+
+        CL_DEVICE_AFFINITY_DOMAIN_L4_CACHE - Split the device into
+        sub-devices comprised of compute units that share a level 4 data
+        cache.
+
+        CL_DEVICE_AFFINITY_DOMAIN_L3_CACHE - Split the device into
+        sub-devices comprised of compute units that share a level 3 data
+        cache.
+
+        CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE - Split the device into
+        sub-devices comprised of compute units that share a level 2 data
+        cache.
+
+        CL_DEVICE_AFFINITY_DOMAIN_L1_CACHE - Split the device into
+        sub-devices comprised of compute units that share a level 1 data
+        cache.
+
+        CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITIONABLE - Split the device
+        along the next partitionable affinity domain.
+        The implementation shall find the first level along which the device
+        or sub-device may be further subdivided in the order NUMA, L4, L3,
+        L2, L1, and partition the device into sub-devices comprised of
+        compute units that share memory subsystems at this level.
+
+        The user may determine what happened by calling
+        *clGetDeviceInfo*(CL_DEVICE_PARTITION_TYPE) on the sub-devices.
+|====
+
+
+*clCreateSubDevices* returns CL_SUCCESS if the partition is created
+successfully.
+Otherwise, it returns a `NULL` value with the following error values
+returned in _errcode_ret_:
+
+  * CL_INVALID_DEVICE if _in_device_ is not valid.
+  * CL_INVALID_VALUE if values specified in _properties_ are not valid or if
+    values specified in _properties_ are valid but not supported by the
+    device.
+  * CL_INVALID_VALUE if _out_devices_ is not `NULL` and _num_devices_ is
+    less than the number of sub-devices created by the partition scheme.
+  * CL_DEVICE_PARTITION_FAILED if the partition name is supported by the
+    implementation but in_device could not be further partitioned.
+  * CL_INVALID_DEVICE_PARTITION_COUNT if the partition name specified in
+    _properties_ is CL_DEVICE_PARTITION_BY_COUNTS and the number of
+    sub-devices requested exceeds CL_DEVICE_PARTITION_MAX_SUB_DEVICES or the
+    total number of compute units requested exceeds
+    CL_DEVICE_PARTITION_MAX_COMPUTE_UNITS for _in_device_, or the number of
+    compute units requested for one or more sub-devices is less than zero or
+    the number of sub-devices requested exceeds
+    CL_DEVICE_PARTITION_MAX_COMPUTE_UNITS for _in_device_.
+  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+
+A few examples that describe how to specify partition properties in
+_properties_ argument to *clCreateSubDevices* are given below:
+
+To partition a device containing 16 compute units into two sub-devices, each
+containing 8 compute units, pass the following in _properties_:
+
+[source,c]
+----
+{ CL_DEVICE_PARTITION_EQUALLY, 8, 0 }
+----
+
+To partition a device with four compute units into two sub-devices with one
+sub-device containing 3 compute units and the other sub-device 1 compute
+unit, pass the following in properties argument:
+
+[source,c]
+----
+{ CL_DEVICE_PARTITION_BY_COUNTS,
+  3, 1, CL_DEVICE_PARTITION_BY_COUNTS_LIST_END, 0 }
+----
+
+To split a device along the outermost cache line (if any), pass the
+following in properties argument:
+
+[source,c]
+----
+{ CL_DEVICE_PARTITION_BY_AFFINITY_DOMAIN,
+  CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITIONABLE,
+  0 }
+----
+
+
+== See Also
+
+No cross-references are available
+
+
+== Document Notes
+
+For more information, see the OpenCL Specification at URL
+
+https://www.khronos.org/registry/OpenCL/specs/2.2/html/OpenCL_API.html#clCreateSubDevices
+
+This page is extracted from the OpenCL Specification. 
+Fixes and changes should be made to the Specification, not directly.
+
+include::footer.txt[]
+
