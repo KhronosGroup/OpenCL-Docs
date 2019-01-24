@@ -25,6 +25,12 @@ import argparse, copy, io, os, pdb, re, string, sys
 # Used in some boilerplate text written by the script
 apiName = 'OpenCL'
 
+# Where to find the current all-extensions HTML spec, so xrefs in
+# the asciidoc source that aren't to ref pages can link into it instead.
+# N.b. this will need to change on a per-refpage basis if there are
+# multiple documents involved.
+specURL = 'https://www.khronos.org/registry/OpenCL/specs/2.2/html/OpenCL_API.html'
+
 # Rather than conditionalize the script, if there are no aliases in the API
 # map, create an empty alias map
 if 'api.alias' not in globals():
@@ -77,7 +83,7 @@ def macroPrefix(name):
         return 'UNKNOWN:' + name
 
 # Return an asciidoc string with a list of 'See Also' references for the
-# API entity 'name', based on the relationship mapping in api.py and
+# API entity 'name', based on the relationship mapping in the api module and
 # the additional references in explicitRefs. If no relationships are
 # available, return None.
 def seeAlsoList(apiName, explicitRefs = None):
@@ -181,15 +187,6 @@ def refPageHead(pageName, pageDesc, specText, fieldName, fieldText, descText, fp
           sep='\n', file=fp)
 
 def refPageTail(pageName, seeAlso, fp, auto = False):
-    # This is difficult to get working properly in asciidoc
-    # specURL = 'link:{vkspecpath}/vkspec.html'
-
-    # Where to find the current all-extensions HTML spec, so xrefs in
-    # the asciidoc source that aren't to ref pages can link into it instead.
-    # N.b. this will need to change on a per-refpage basis if there are
-    # multiple documents involved.
-    specURL = 'https://www.khronos.org/registry/OpenCL/specs/2.2/html/OpenCL_API.html'
-
     if seeAlso == None:
         seeAlso = 'No cross-references are available\n'
 
@@ -332,7 +329,8 @@ def autoGenEnumsPage(baseDir, pi, file):
     refPageTail(pi.name, seeAlsoList(pi.name, pi.refs), fp, auto = True)
     fp.close()
 
-# Pattern to break apart a API *Flags{authorID} name, used in autoGenFlagsPage.
+# Pattern to break apart an API *Flags{authorID} name, used in
+# autoGenFlagsPage.
 flagNamePat = re.compile('(?P<name>\w+)Flags(?P<author>[A-Z]*)')
 
 # Autogenerate a single reference page in baseDir for an API *Flags type
@@ -358,7 +356,7 @@ def autoGenFlagsPage(baseDir, flagName):
     else:
         logWarn('autoGenFlagsPage:', pageName, 'does not end in "Flags{author ID}". Cannot infer FlagBits type.')
         flagBits = None
-        desc = 'Unknown API flags type'
+        desc = 'Unknown ' + apiName + ' flags type'
 
     # Description text
     if flagBits != None:
@@ -370,7 +368,7 @@ def autoGenFlagsPage(baseDir, flagName):
     else:
         txt = ''.join([
             'etext:' + flagName,
-            ' is an unknown API type, assumed to be a bitmask.\n' ])
+            ' is an unknown ' + apiName + ' type, assumed to be a bitmask.\n' ])
 
     refPageHead(flagName,
                 desc,
@@ -455,7 +453,7 @@ def genRef(specFile, baseDir):
             logWarn('genRef: Cannot extract or autogenerate:', pi.name)
 
 # Generate baseDir/apispec.txt, the single-page version of the ref pages.
-# This assumes there's a page for everything in the api.py dictionaries.
+# This assumes there's a page for everything in the api module dictionaries.
 # Extensions (KHR, EXT, etc.) are currently skipped
 def genSinglePageRef(baseDir):
     # Accumulate head of page
@@ -578,7 +576,7 @@ if __name__ == '__main__':
         genRef(file, baseDir)
 
     # Now figure out which pages *weren't* generated from the spec.
-    # This relies on the dictionaries of API constructs in api.py.
+    # This relies on the dictionaries of API constructs in the api module.
 
     # For Flags (e.g. *Flags types), it's easy to autogenerate pages.
     if not results.noauto:
