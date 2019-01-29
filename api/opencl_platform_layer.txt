@@ -19,21 +19,19 @@ The list of platforms available can be obtained with the function:
 
 include::{api}/protos/clGetPlatformIDs.txt[]
 
-_num_entries_ is the number of cl_platform_id entries that can be added to
-_platforms_.
-If _platforms_ is not `NULL`, the _num_entries_ must be greater than zero.
+  * _num_entries_ is the number of cl_platform_id entries that can be added to
+    _platforms_.
+    If _platforms_ is not `NULL`, the _num_entries_ must be greater than zero.
+  * _platforms_ returns a list of OpenCL platforms found.
+    The cl_platform_id values returned in _platforms_ can be used to identify a
+    specific OpenCL platform.
+    If _platforms_ is `NULL`, this argument is ignored.
+    The number of OpenCL platforms returned is the minimum of the value
+    specified by _num_entries_ or the number of OpenCL platforms available.
+  * _num_platforms_ returns the number of OpenCL platforms available.
+    If _num_platforms_ is `NULL`, this argument is ignored.
 
-_platforms_ returns a list of OpenCL platforms found.
-The cl_platform_id values returned in _platforms_ can be used to identify a
-specific OpenCL platform.
-If _platforms_ argument is `NULL`, this argument is ignored.
-The number of OpenCL platforms returned is the minimum of the value
-specified by _num_entries_ or the number of OpenCL platforms available.
-
-_num_platforms_ returns the number of OpenCL platforms available.
-If _num_platforms_ is `NULL`, this argument is ignored.
-
-// refBody
+// refError
 
 *clGetPlatformIDs* returns CL_SUCCESS if the function is executed
 successfully.
@@ -123,6 +121,8 @@ in the <<platform-queries-table, Platform Queries>> table.
         *clGetDeviceAndHostTimer*.
 |====
 
+// refError
+
 *clGetPlatformInfo* returns CL_SUCCESS if the function is executed
 successfully.
 Otherwise, it returns one of the following errors^2^.
@@ -154,41 +154,35 @@ Otherwise, it returns one of the following errors^2^.
 [open,refpage='clGetDeviceIDs',desc='Query devices available on a platform',type='protos']
 --
 The list of devices available on a platform can be obtained using the
-following function^3^.
+function^3^:
 
 include::{api}/protos/clGetDeviceIDs.txt[]
 
-_platform_ refers to the platform ID returned by *clGetPlatformIDs* or can
-be `NULL`.
-If _platform_ is `NULL`, the behavior is implementation-defined.
-
-_device_type_ is a bitfield that identifies the type of OpenCL device.
-The _device_type_ can be used to query specific OpenCL devices or all OpenCL
-devices available.
-The valid values for _device_type_ are specified in the
-<<device-categories-table, Device Categories>> table.
+  * _platform_ refers to the platform ID returned by *clGetPlatformIDs* or can
+    be `NULL`.
+    If _platform_ is `NULL`, the behavior is implementation-defined.
+  * _device_type_ is a bitfield that identifies the type of OpenCL device.
+    The _device_type_ can be used to query specific OpenCL devices or all OpenCL
+    devices available.
+    The valid values for _device_type_ are specified in the
+    <<device-categories-table, Device Categories>> table.
+  * _num_entries_ is the number of cl_device_id entries that can be added to
+    _devices_.
+    If _devices_ is not `NULL`, the _num_entries_ must be greater than zero.
+  * _devices_ returns a list of OpenCL devices found.
+    The cl_device_id values returned in _devices_ can be used to identify a
+    specific OpenCL device.
+    If _devices_ is `NULL`, this argument is ignored.
+    The number of OpenCL devices returned is the minimum of the value specified
+    by _num_entries_ or the number of OpenCL devices whose type matches
+    _device_type_.
+  * _num_devices_ returns the number of OpenCL devices available that match
+    _device_type_.
+    If _num_devices_ is `NULL`, this argument is ignored.
 
 3::
     *clGetDeviceIDs* may return all or a subset of the actual physical
     devices present in the platform and that match _device_type_.
-
-_num_entries_ is the number of cl_device_id entries that can be added to
-_devices_.
-If _devices_ is not `NULL`, the _num_entries_ must be greater than zero.
-
-_devices_ returns a list of OpenCL devices found.
-The cl_device_id values returned in _devices_ can be used to identify a
-specific OpenCL device.
-If _devices_ argument is `NULL`, this argument is ignored.
-The number of OpenCL devices returned is the minimum of the value specified
-by _num_entries_ or the number of OpenCL devices whose type matches
-_device_type_.
-
-_num_devices_ returns the number of OpenCL devices available that match
-_device_type_.
-If _num_devices_ is `NULL`, this argument is ignored.
-
-// refBody
 
 [[device-categories-table]]
 .List of OpenCL Device Categories
@@ -218,6 +212,8 @@ If _num_devices_ is `NULL`, this argument is ignored.
     *CL_DEVICE_TYPE_CUSTOM* devices..
 |====
 
+// refError
+
 *clGetDeviceIDs* returns CL_SUCCESS if the function is executed
 successfully.
 Otherwise, it returns one of the following errors:
@@ -244,33 +240,27 @@ To get specific information about an OpenCL device, call the function:
 
 include::{api}/protos/clGetDeviceInfo.txt[]
 
-_device_ may be a device returned by *clGetDeviceIDs* or a sub-device
-created by *clCreateSubDevices*.
-If _device_ is a sub-device, the specific information for the sub-device
-will be returned.
-The information that can be queried using *clGetDeviceInfo* is specified in
-the <<device-queries-table, Device Queries>> table.
-
-_param_name_ is an enumeration constant that identifies the device
-information being queried.
-It can be one of the following values as specified in the
-<<device-queries-table, Device Queries>> table.
-
-_param_value_ is a pointer to memory location where appropriate values for a
-given _param_name_, as specified in the <<device-queries-table, Device
-Queries>> table, will be returned.
-If _param_value_ is `NULL`, it is ignored.
-
-_param_value_size_ specifies the size in bytes of memory pointed to by
-_param_value_.
-This size in bytes must be {geq} size of return type specified in the
-<<device-queries-table, Device Queries>> table.
-
-_param_value_size_ret_ returns the actual size in bytes of data being
-queried by _param_name_.
-If _param_value_size_ret_ is `NULL`, it is ignored.
-
-// refBody
+  * _device_ may be a device returned by *clGetDeviceIDs* or a sub-device
+    created by *clCreateSubDevices*.
+    If _device_ is a sub-device, the specific information for the sub-device
+    will be returned.
+    The information that can be queried using *clGetDeviceInfo* is specified in
+    the <<device-queries-table, Device Queries>> table.
+  * _param_name_ is an enumeration constant that identifies the device
+    information being queried.
+    It can be one of the following values as specified in the
+    <<device-queries-table, Device Queries>> table.
+  * _param_value_ is a pointer to memory location where appropriate values for a
+    given _param_name_, as specified in the <<device-queries-table, Device
+    Queries>> table, will be returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size in bytes must be {geq} size of return type specified in the
+    <<device-queries-table, Device Queries>> table.
+  * _param_value_size_ret_ returns the actual size in bytes of data being
+    queried by _param_name_.
+    If _param_value_size_ret_ is `NULL`, it is ignored.
 
 The device queries described in the <<device-queries-table, Device Queries>>
 table should return the same information for a root-level device i.e. a
@@ -1004,6 +994,8 @@ device except for the following queries:
     If the platform profile returned is EMBEDDED_PROFILE, then devices that
     are only EMBEDDED_PROFILE are supported.
 
+// refError
+
 *clGetDeviceInfo* returns CL_SUCCESS if the function is executed
 successfully.
 Otherwise, it returns one of the following errors:
@@ -1027,21 +1019,17 @@ To query device and host timestamps, call the function:
 
 include::{api}/protos/clGetDeviceAndHostTimer.txt[]
 
-_device_ is a device returned by *clGetDeviceIDs*.
-
-_device_timestamp_ will be updated with the value of the device timer in
-nanoseconds.
-The resolution of the timer is the same as the device profiling timer
-returned by *clGetDeviceInfo* and the CL_DEVICE_PROFILING_TIMER_RESOLUTION
-query.
-
-_host_timestamp_ will be updated with the value of the host timer in
-nanoseconds at the closest possible point in time to that at which
-_device_timer_ was returned.
-The resolution of the timer may be queried via *clGetPlatformInfo* and the
-flag CL_PLATFORM_HOST_TIMER_RESOLUTION.
-
-// refBody
+  * _device_ is a device returned by *clGetDeviceIDs*.
+  * _device_timestamp_ will be updated with the value of the device timer in
+    nanoseconds.
+    The resolution of the timer is the same as the device profiling timer
+    returned by *clGetDeviceInfo* and the CL_DEVICE_PROFILING_TIMER_RESOLUTION
+    query.
+  * _host_timestamp_ will be updated with the value of the host timer in
+    nanoseconds at the closest possible point in time to that at which
+    _device_timer_ was returned.
+    The resolution of the timer may be queried via *clGetPlatformInfo* and the
+    flag CL_PLATFORM_HOST_TIMER_RESOLUTION.
 
 *clGetDeviceAndHostTimer* returns a reasonably synchronized pair of
 timestamps from the device timer and the host timer as seen by _device_.
@@ -1054,6 +1042,8 @@ which query function is used.
 The timestamp returned from *clGetEventProfilingInfo* for an event on a
 device and a device timestamp queried from the same device will always be in
 the same timebase.
+
+// refError
 
 *clGetDeviceAndHostTimer* will return CL_SUCCESS with a time value in
 _host_timestamp_ if provided.
@@ -1073,14 +1063,11 @@ To query the host clock, call the function:
 
 include::{api}/protos/clGetHostTimer.txt[]
 
-_device_ is a device returned by *clGetDeviceIDs*.
-
-_host_timestamp_ will be updated with the value of the current timer in
-nanoseconds.
-The resolution of the timer may be queried via *clGetPlatformInfo* and the
-flag CL_PLATFORM_HOST_TIMER_RESOLUTION.
-
-// refBody
+  * _device_ is a device returned by *clGetDeviceIDs*.
+  * _host_timestamp_ will be updated with the value of the current timer in
+    nanoseconds.
+    The resolution of the timer may be queried via *clGetPlatformInfo* and the
+    flag CL_PLATFORM_HOST_TIMER_RESOLUTION.
 
 *clGetHostTimer* returns the current value of the host clock as seen by
 _device_.
@@ -1117,33 +1104,27 @@ To create sub-devices partitioning an OpenCL device, call the function:
 
 include::{api}/protos/clCreateSubDevices.txt[]
 
-_in_device_ is the device to be partitioned.
-
-_properties_ specifies how _in_device_ is to be partitioned, described by a
-partition name and its corresponding value.
-Each partition name is immediately followed by the corresponding desired
-value.
-The list is terminated with 0.
-The list of supported partitioning schemes is described in the
-<<subdevice-partition-table, Subdevice Partition>> table.
-Only one of the listed partitioning schemes can be specified in
-_properties_.
-
-_num_devices_ is the size of memory pointed to by _out_devices_ specified as
-the number of cl_device_id entries.
-
-_out_devices_ is the buffer where the OpenCL sub-devices will be returned.
-If _out_devices_ is `NULL`, this argument is ignored.
-If _out_devices_ is not `NULL`, _num_devices_ must be greater than or equal
-to the number of sub-devices that _device_ may be partitioned into according
-to the partitioning scheme specified in _properties_.
-
-_num_devices_ret_ returns the number of sub-devices that _device_ may be
-partitioned into according to the partitioning scheme specified in
-_properties_.
-If _num_devices_ret_ is `NULL`, it is ignored.
-
-// refBody
+  * _in_device_ is the device to be partitioned.
+  * _properties_ specifies how _in_device_ is to be partitioned, described by a
+    partition name and its corresponding value.
+    Each partition name is immediately followed by the corresponding desired
+    value.
+    The list is terminated with 0.
+    The list of supported partitioning schemes is described in the
+    <<subdevice-partition-table, Subdevice Partition>> table.
+    Only one of the listed partitioning schemes can be specified in
+    _properties_.
+  * _num_devices_ is the size of memory pointed to by _out_devices_ specified as
+    the number of cl_device_id entries.
+  * _out_devices_ is the buffer where the OpenCL sub-devices will be returned.
+    If _out_devices_ is `NULL`, this argument is ignored.
+    If _out_devices_ is not `NULL`, _num_devices_ must be greater than or equal
+    to the number of sub-devices that _device_ may be partitioned into according
+    to the partitioning scheme specified in _properties_.
+  * _num_devices_ret_ returns the number of sub-devices that _device_ may be
+    partitioned into according to the partitioning scheme specified in
+    _properties_.
+    If _num_devices_ret_ is `NULL`, it is ignored.
 
 *clCreateSubDevices* creates an array of sub-devices that each reference a
 non-intersecting set of compute units within _in_device_, according to the
@@ -1218,6 +1199,7 @@ on the queue are executed only on the sub-device.
         *clGetDeviceInfo*(CL_DEVICE_PARTITION_TYPE) on the sub-devices.
 |====
 
+// refError
 
 *clCreateSubDevices* returns CL_SUCCESS if the partition is created
 successfully.
@@ -1283,14 +1265,14 @@ To retain a device, call the function:
 
 include::{api}/protos/clRetainDevice.txt[]
 
-_device_ is the OpenCL device to retain.
-
-// refBody
+  * _device_ is the OpenCL device to retain.
 
 *clRetainDevice* increments the _device_ reference count if _device_ is a
 valid sub-device created by a call to *clCreateSubDevices*.
 If _device_ is a root level device i.e. a cl_device_id returned by
 *clGetDeviceIDs*, the _device_ reference count remains unchanged.
+
+// refError
 
 *clRetainDevice* returns CL_SUCCESS if the function is executed successfully
 or the device is a root-level device.
@@ -1310,14 +1292,14 @@ To release a device, call the function:
 
 include::{api}/protos/clReleaseDevice.txt[]
 
-_device_ is the OpenCL device to retain.
-
-// refBody
+  * _device_ is the OpenCL device to retain.
 
 *clReleaseDevice* decrements the _device_ reference count if device is a
 valid sub-device created by a call to *clCreateSubDevices*.
 If _device_ is a root level device i.e. a cl_device_id returned by
 *clGetDeviceIDs*, the _device_ reference count remains unchanged.
+
+// refError
 
 *clReleaseDevice* returns CL_SUCCESS if the function is executed
 successfully.
@@ -1346,52 +1328,45 @@ To create an OpenCL context, call the function:
 
 include::{api}/protos/clCreateContext.txt[]
 
-_properties_ specifies a list of context property names and their
-corresponding values.
-Each property name is immediately followed by the corresponding desired
-value.
-The list is terminated with 0.
-The list of supported properties is described in the
-<<context-properties-table, Context Properties>> table.
-_properties_ can be `NULL` in which case the platform that is selected is
-implementation-defined.
-
-_num_devices_ is the number of devices specified in the _devices_ argument.
-
-_devices_ is a pointer to a list of unique devices^10^ returned by
-*clGetDeviceIDs* or sub-devices created by *clCreateSubDevices* for a
-platform.
-
+  * _properties_ specifies a list of context property names and their
+    corresponding values.
+    Each property name is immediately followed by the corresponding desired
+    value.
+    The list is terminated with 0.
+    The list of supported properties is described in the
+    <<context-properties-table, Context Properties>> table.
+    _properties_ can be `NULL` in which case the platform that is selected is
+    implementation-defined.
+  * _num_devices_ is the number of devices specified in the _devices_ argument.
+  * _devices_ is a pointer to a list of unique devices^10^ returned by
+    *clGetDeviceIDs* or sub-devices created by *clCreateSubDevices* for a
+    platform.
++
 10::
     Duplicate devices specified in _devices_ are ignored.
+  * _pfn_notify_ is a callback function that can be registered by the
+    application.
+    This callback function will be used by the OpenCL implementation to report
+    information on errors during context creation as well as errors that occur
+    at runtime in this context.
+    This callback function may be called asynchronously by the OpenCL
+    implementation.
+    It is the applications responsibility to ensure that the callback function
+    is thread-safe.
+    If _pfn_notify_ is `NULL`, no callback function is registered.
+  * _user_data_ will be passed as the _user_data_ argument when _pfn_notify_ is
+    called.
+    _user_data_ can be `NULL`.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
 
-_pfn_notify_ is a callback function that can be registered by the
-application.
-This callback function will be used by the OpenCL implementation to report
-information on errors during context creation as well as errors that occur
-at runtime in this context.
-This callback function may be called asynchronously by the OpenCL
-implementation.
-It is the applications responsibility to ensure that the callback function
-is thread-safe.
-The parameters to this callback function are:
+The parameters to the callback function _pfn_notify_ are:
 
   * _errinfo_ is a pointer to an error string.
   * _private_info_ and _cb_ represent a pointer to binary data that is
     returned by the OpenCL implementation that can be used to log additional
     information helpful in debugging the error.
   * _user_data_ is a pointer to user supplied data.
-
-If _pfn_notify_ is `NULL`, no callback function is registered.
-
-_user_data_ will be passed as the _user_data_ argument when _pfn_notify_ is
-called.
-_user_data_ can be `NULL`.
-
-_errcode_ret_ will return an appropriate error code.
-If _errcode_ret_ is `NULL`, no error code is returned.
-
-// refBody
 
 Contexts are used by the OpenCL runtime for managing objects such as
 command-queues, memory, program and kernel objects and for executing kernels
@@ -1421,6 +1396,8 @@ NOTE: There are a number of cases where error notifications need to be
 delivered due to an error that occurs outside a context.
 Such notifications may not be delivered through the _pfn_notify_ callback.
 Where these notifications go is implementation-defined.
+
+// refError
 
 *clCreateContext* returns a valid non-zero context and _errcode_ret_ is set
 to CL_SUCCESS if the context is created successfully.
@@ -1454,29 +1431,30 @@ function:
 
 include::{api}/protos/clCreateContextFromType.txt[]
 
-_properties_ specifies a list of context property names and their
-corresponding values.
-Each property name is immediately followed by the corresponding desired
-value.
-The list of supported properties is described in the
-<<context-properties-table, Context Properties>> table.
-_properties_ can also be `NULL` in which case the platform that is selected
-is implementation-defined.
-
-_device_type_ is a bit-field that identifies the type of device and is
-described in the <<device-categories-table, Device Categories>> table.
-
-_pfn_notify_ and _user_data_ are described in *clCreateContext*.
-
-_errcode_ret_ will return an appropriate error code.
-If _errcode_ret_ is `NULL`, no error code is returned.
-
-// refBody
+  * _properties_ specifies a list of context property names and their
+    corresponding values.
+    Each property name is immediately followed by the corresponding desired
+    value.
+    The list of supported properties is described in the
+    <<context-properties-table, Context Properties>> table.
+    _properties_ can also be `NULL` in which case the platform that is selected
+    is implementation-defined.
+  * _device_type_ is a bit-field that identifies the type of device and is
+    described in the <<device-categories-table, Device Categories>> table.
+  * _pfn_notify_ and _user_data_ are described in *clCreateContext*.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
 
 Only devices that are returned by *clGetDeviceIDs* for _device_type_ are
 used to create the context.
 The context does not reference any sub-devices that may have been created
 from these devices.
+
+11::
+    *clCreateContextfromType* may return all or a subset of the actual
+    physical devices present in the platform and that match device_type.
+
+// refError
 
 *clCreateContextFromType* returns a valid non-zero context and _errcode_ret_
 is set to CL_SUCCESS if the context is created successfully.
@@ -1501,10 +1479,6 @@ returned in _errcode_ret_:
     by the OpenCL implementation on the device.
   * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
-
-11::
-    *clCreateContextfromType* may return all or a subset of the actual
-    physical devices present in the platform and that match device_type.
 --
 
 [open,refpage='clRetainContext',desc='Retain an OpenCL context',type='protos',xrefs='clCreateContext clReleaseContext']
@@ -1513,9 +1487,7 @@ To retain a context, call the function:
 
 include::{api}/protos/clRetainContext.txt[]
 
-_context_ specifies the OpenCL context to retain.
-
-// refBody
+  * _context_ specifies the OpenCL context to retain.
 
 *clRetainContext* increments the _context_ reference count.
 
@@ -1526,6 +1498,8 @@ However, it is possible that the application may delete the context without
 informing the library.
 Allowing functions to attach to (i.e. retain) and release a context solves
 the problem of a context being used by a library no longer being valid.
+
+// refError
 
 *clRetainContext* returns CL_SUCCESS if the function is executed
 successfully.
@@ -1544,9 +1518,7 @@ To release a context, call the function:
 
 include::{api}/protos/clReleaseContext.txt[]
 
-_context_ specifies the OpenCL context to release.
-
-// refBody
+  * _context_ specifies the OpenCL context to release.
 
 *clReleaseContext* decrements the _context_ reference count.
 After the reference count becomes zero and all the objects attached to
@@ -1554,6 +1526,8 @@ _context_ (such as memory objects, command-queues) are released, the
 _context_ is deleted.
 Using this function to release a reference that was not obtained by creating
 the object or by calling *clRetainContext* causes undefined behavior.
+
+// refError
 
 *clReleaseContext* returns CL_SUCCESS if the function is executed
 successfully.
@@ -1572,25 +1546,19 @@ To query information about a context, call the function:
 
 include::{api}/protos/clGetContextInfo.txt[]
 
-_context_ specifies the OpenCL context being queried.
-
-_param_name_ is an enumeration constant that specifies the information to
-query.
-
-_param_value_ is a pointer to memory where the appropriate result being
-queried is returned.
-If _param_value_ is `NULL`, it is ignored.
-
-_param_value_size_ specifies the size in bytes of memory pointed to by
-_param_value_.
-This size must be greater than or equal to the size of return type as
-described in the <<context-info-table, Context Attributes>> table.
-
-_param_value_size_ret_ returns the actual size in bytes of data being
-queried by _param_name_.
-If _param_value_size_ret_ is `NULL`, it is ignored.
-
-// refBody
+  * _context_ specifies the OpenCL context being queried.
+  * _param_name_ is an enumeration constant that specifies the information to
+    query.
+  * _param_value_ is a pointer to memory where the appropriate result being
+    queried is returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of return type as
+    described in the <<context-info-table, Context Attributes>> table.
+  * _param_value_size_ret_ returns the actual size in bytes of data being
+    queried by _param_name_.
+    If _param_value_size_ret_ is `NULL`, it is ignored.
 
 The list of supported _param_name_ values and the information returned in
 _param_value_ by *clGetContextInfo* is described in the
@@ -1633,6 +1601,8 @@ _param_value_ by *clGetContextInfo* is described in the
     The reference count returned should be considered immediately stale.
     It is unsuitable for general use in applications.
     This feature is provided for identifying memory leaks.
+
+// refError
 
 *clGetContextInfo* returns CL_SUCCESS if the function is executed
 successfully.
