@@ -78,7 +78,7 @@ command-queue properties will be used.
         If CL_QUEUE_ON_DEVICE is set,
         CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE^1^ must also be set.
 
-        CL_QUEUE_ON_DEVICE_DEFAULT^2^ --indicates that this is the default
+        CL_QUEUE_ON_DEVICE_DEFAULT^2^ - indicates that this is the default
         device queue.
         This can only be used with CL_QUEUE_ON_DEVICE.
 
@@ -474,7 +474,7 @@ returned in _errcode_ret_:
     context.
 --
 
-[open,refpage='clCreateSubBuffer',desc='',type='protos']
+[open,refpage='clCreateSubBuffer',desc='',type='protos',xrefs='cl_buffer_region']
 --
 The function
 
@@ -514,36 +514,17 @@ descriptor that _buffer_create_info_ points to is described in the
 |====
 | *cl_buffer_create_type* | Description
 | *CL_BUFFER_CREATE_TYPE_REGION*
- a| Create a buffer object that represents a
-    specific region in buffer.
---
-buffer_create_info is a pointer to the following structure:
+  | Create a buffer object that represents a specific region in _buffer_.
 
-[source,c]
-----
-typedef struct _cl_buffer_region {
-    size_t origin;
-    size_t size;
-} cl_buffer_region;
-----
+    _buffer_create_info_ is a pointer to a *<<cl_buffer_region>>* structure
+    specifying a region of the buffer.
 
-(_origin_, _size_) defines the offset and size in bytes in buffer.
+    If _buffer_ is created with CL_MEM_USE_HOST_PTR, the _host_ptr_
+    associated with the buffer object returned is _host_ptr + origin_.
 
-If buffer is created with CL_MEM_USE_HOST_PTR, the host_ptr associated with
-the buffer object returned is _host_ptr + origin_.
-
-The buffer object returned references the data store allocated for buffer
-and points to a specific region given by (origin, size) in this data store.
-
-CL_INVALID_VALUE is returned in errcode_ret if the region specified by
-(origin, size) is out of bounds in buffer.
-
-CL_INVALID_BUFFER_SIZE if size is 0.
-
-CL_MISALIGNED_SUB_BUFFER_OFFSET is returned in errcode_ret if there are no
-devices in context associated with buffer for which the origin value is
-aligned to the CL_DEVICE_MEM_BASE_ADDR_ALIGN value.
---
+    The buffer object returned references the data store allocated for
+    buffer and points to the region specified by _buffer_create_info_ in
+    this data store.
 |====
 
 *clCreateSubBuffer* returns CL_SUCCESS if the function is executed
@@ -562,18 +543,28 @@ Otherwise, it returns one of the following errors in _errcode_ret_:
     CL_MEM_HOST_READ_ONLY and _flags_ specify CL_MEM_HOST_WRITE_ONLY, or if
     _buffer_ was created with CL_MEM_HOST_NO_ACCESS and _flags_ specify
     CL_MEM_HOST_READ_ONLY or CL_MEM_HOST_WRITE_ONLY.
-  * CL_INVALID_VALUE if value specified in _buffer_create_type_ is not
+  * CL_INVALID_VALUE if the value specified in _buffer_create_type_ is not
     valid.
   * CL_INVALID_VALUE if value(s) specified in _buffer_create_info_ (for a
     given _buffer_create_type_) is not valid or if _buffer_create_info_ is
     `NULL`.
-  * CL_INVALID_BUFFER_SIZE if _size_ is 0.
   * CL_MEM_OBJECT_ALLOCATION_FAILURE if there is a failure to allocate
     memory for sub-buffer object.
   * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+// These errors are
+  * CL_INVALID_VALUE if the region specified by the *<<cl_buffer_region>>*
+    structure passed in _buffer_create_info_ is out of bounds in _buffer_.
+  * CL_INVALID_BUFFER_SIZE if the _size_ field of the *<<cl_buffer_region>>*
+    structure passed in _buffer_create_info_ is 0.
+// What is _context_ for this function? It's not a parameter. Is it the
+// context with which _buffer_ was created?
+  * CL_MISALIGNED_SUB_BUFFER_OFFSET if there are no devices in _context_
+    associated with _buffer_ for which the _origin_ field of the
+    *<<cl_buffer_region>>* structure passed in _buffer_create_info_ is
+    aligned to the CL_DEVICE_MEM_BASE_ADDR_ALIGN value.
 
 [NOTE]
 ====
@@ -584,6 +575,19 @@ sub-buffer objects created with the same buffer object is undefined.
 Only reading from both a buffer object and its sub-buffer objects or reading
 from multiple overlapping sub-buffer objects is defined.
 ====
+--
+
+[open,refpage='cl_buffer_region',desc='',type='structs',xrefs='clCreateSubBuffer']
+--
+The *cl_buffer_region* structure specifies a region of a buffer object:
+
+include::{api}/structs/cl_buffer_region.txt[]
+
+  * _origin_ is the offset in bytes of the region.
+  * _size_ is the size in bytes of the region.
+
+Constraints on the values of _origin_ and _size_ are specified for the
+*<<clCreateSubBuffer>>* function to which this structure is passed.
 --
 
 
@@ -7718,6 +7722,7 @@ clSetUserEventStatus(ev1, CL_COMPLETE);
 clReleaseMemObject(buf2);
 ----
 ====
+--
 
 [open,refpage='clWaitForEvents',desc='',type='protos']
 --
@@ -7746,6 +7751,7 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+--
 
 [open,refpage='clGetEventInfo',desc='',type='protos']
 --
