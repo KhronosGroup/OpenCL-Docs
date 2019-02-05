@@ -13,7 +13,6 @@
 # limitations under the License.
 
 QUIET	    ?=
-ASCIIDOC    ?= asciidoc
 ASCIIDOCTOR ?= asciidoctor
 XMLLINT     ?= xmllint
 DBLATEX     ?= dblatex
@@ -80,6 +79,11 @@ ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
 ADOCEXTS     = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb
 ADOCOPTS     = -d book $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
 
+# ADOCHTMLOPTS relies on the relative runtime path from the output HTML
+# file to the katex scripts being set with KATEXDIR. This is overridden
+# by some targets.
+# ADOCHTMLOPTS also relies on the absolute build-time path to the
+# 'stylesdir' containing our custom CSS.
 KATEXDIR     = ../katex
 ADOCHTMLEXTS = -r $(CURDIR)/config/katex_replace.rb
 ADOCHTMLOPTS = $(ADOCHTMLEXTS) -a katexpath=$(KATEXDIR) \
@@ -109,7 +113,7 @@ $(OUTDIR)/katex/README.md: katex/README.md
 	$(QUIET)$(RMRF)  $(OUTDIR)/katex
 	$(QUIET)$(CP) -rf katex $(OUTDIR)
 
-all: api env ext cxx c icdinst
+all: api env ext extensions cxx c icdinst
 
 allman: manhtmlpages
 
@@ -119,15 +123,17 @@ env: envhtml envpdf
 
 ext: exthtml extpdf
 
+extensions: extensionshtml extensionspdf
+
 cxx: cxxhtml cxxpdf
 
 c: chtml cpdf
 
 icdinst: icdinsthtml icdinstpdf
 
-html: apihtml envhtml exthtml cxxhtml chtml icdinsthtml
+html: apihtml envhtml exthtml extensionshtml cxxhtml chtml icdinsthtml
 
-pdf: apipdf envpdf extpdf cxxpdf cpdf icdinstpdf
+pdf: apipdf envpdf extpdf extensionspdf cxxpdf cpdf icdinstpdf
 
 # Spec targets.
 # There is some complexity to try and avoid short virtual targets like
@@ -212,6 +218,44 @@ else
 	$(QUIET)$(CURDIR)/config/optimize-pdf $@
 	$(QUIET)rm $@
 	$(QUIET)mv $(PDFDIR)/$(EXTSPEC)-optimized.pdf $@
+endif
+
+# Individual extensions spec(s)
+EXTDIR = extensions
+EXTENSIONSSPEC = extensions
+EXTENSIONSSPECSRC = $(EXTDIR)/$(EXTENSIONSSPEC).txt \
+    $(shell grep ^include:: $(EXTDIR)/$(EXTENSIONSSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+
+# Included extension documents
+EXTENSIONS := $(notdir $(wildcard $(EXTDIR)/[A-Za-z]*.asciidoc))
+EXTENSIONS_HTML = $(patsubst %.asciidoc,$(HTMLDIR)/%.html,$(EXTENSIONS))
+EXTENSIONS_PDF = $(patsubst %.asciidoc,$(PDFDIR)/%.pdf,$(EXTENSIONS))
+
+extensionshtml: $(HTMLDIR)/$(EXTENSIONSSPEC).html $(EXTENSIONSSPECSRC) $(EXTENSIONS_HTML)
+
+$(HTMLDIR)/$(EXTENSIONSSPEC).html: $(EXTENSIONSSPECSRC) katexinst
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTDIR)/$(EXTENSIONSSPEC).txt
+
+# I don't know why the pattern rule below requires vpath be overridden
+# to point to the extensions/ directory, since the rule itself already
+# points there.
+vpath %.asciidoc $(EXTDIR)
+
+$(HTMLDIR)/%.html: $(EXTDIR)/%.asciidoc
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $<
+
+extensionspdf: $(PDFDIR)/$(EXTENSIONSSPEC).pdf $(EXTENSIONSSPECSRC)
+
+$(PDFDIR)/$(EXTENSIONSSPEC).pdf: $(EXTENSIONSSPECSRC)
+	$(QUIET)$(MKDIR) $(PDFDIR)
+	$(QUIET)$(MKDIR) $(PDFMATHDIR)
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(EXTDIR)/$(EXTENSIONSSPEC).txt
+ifndef GS_EXISTS
+	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
+else
+	$(QUIET)$(CURDIR)/config/optimize-pdf $@
+	$(QUIET)rm $@
+	$(QUIET)mv $(PDFDIR)/$(EXTENSIONSSPEC)-optimized.pdf $@
 endif
 
 # C++ (cxx) spec
