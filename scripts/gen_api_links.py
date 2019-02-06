@@ -65,7 +65,12 @@ else:
             continue
 
         # Strip the trailing newline:
-        line=line[0:-1]
+        line = line[0:-1]
+
+        # Create a variant of the name that precedes underscores with
+        # "zero width" spaces.  This causes some long names to be
+        # broken at more intuitive places.
+        sline = line.replace("_", "_&#8203;")
 
         # Example:
         #
@@ -73,7 +78,7 @@ else:
         # :clEnqueueNDRangeKernel_label: pass:q[*clEnqueueNDRangeKernel*]
         # :clEnqueueNDRangeKernel: <<clEnqueueNDRangeKernel,{clEnqueueNDRangeKernel_label}>>
         docFile.write('// ' + line + '\n')
-        docFile.write(':' + line + '_label: pass:q[*' + line + '*]\n')
+        docFile.write(':' + line + '_label: pass:q[*' + sline + '*]\n')
         docFile.write(':' + line + ': <<' + line + ',{' + line + '_label}>>\n')
         docFile.write('\n')
 
@@ -110,7 +115,12 @@ else:
             continue
 
         # Strip the trailing newline:
-        line=line[0:-1]
+        line = line[0:-1]
+
+        # Create a variant of the name that precedes underscores with
+        # "zero width" spaces.  This causes some long names to be
+        # broken at more intuitive places.
+        sline = line.replace("_", "_&#8203;")
 
         # Example:
         #
@@ -119,7 +129,7 @@ else:
         #:CL_MEM_READ_ONLY: <<CL_MEM_READ_ONLY,{CL_MEM_READ_ONLY_label}>>
         #:CL_MEM_READ_ONLY_anchor: [[CL_MEM_READ_ONLY]]{CL_MEM_READ_ONLY}
         docFile.write('// ' + line + '\n')
-        docFile.write(':' + line + '_label: pass:q[`' + line + '`]\n')
+        docFile.write(':' + line + '_label: pass:q[`' + sline + '`]\n')
         docFile.write(':' + line + ': <<' + line + ',{' + line + '_label}>>\n')
         docFile.write(':' + line + '_anchor: [[' + line + ']]{' + line + '}\n')
         docFile.write('\n')
