@@ -44,9 +44,8 @@ if __name__ == "__main__":
 	nameFuncsDoc = 'api-funcs.asciidoc'
 	nameEnumsDoc = 'api-enums.asciidoc'
 
-	nameXMLFile = 'cl.xml'
-
-	specpath = "cl.xml"
+	#specpath = "cl.xml"
+	specpath = "https://raw.githubusercontent.com/KhronosGroup/OpenCL-Registry/master/xml/cl.xml"
 
 	if len(sys.argv) > 1:
 		specpath = sys.argv[1]
