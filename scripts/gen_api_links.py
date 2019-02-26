@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 # Copyright (c) 2019 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,9 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import OrderedDict
+
 import sys
-import os
-import re
+import urllib
+import xml.etree.ElementTree as etree
+import urllib.request
+
+def parse_xml(path):
+	file = urllib.request.urlopen(path) if path.startswith("http") else open(path, 'r')
+	with file:
+		tree = etree.parse(file)
+		return tree
 
 # File Header:
 def GetHeader():
@@ -29,119 +40,88 @@ def GetFooter():
     return """
 """
 
-printHelp = False
+if __name__ == "__main__":
+	nameFuncsDoc = 'api-funcs.asciidoc'
+	nameEnumsDoc = 'api-enums.asciidoc'
 
-nameFuncsDoc = 'api-funcs.asciidoc'
-nameEnumsDoc = 'api-enums.asciidoc'
+	nameXMLFile = 'cl.xml'
 
-nameFuncsDict = 'api-funcs.list'
-nameEnumsDict = 'api-enums.list'
+	specpath = "cl.xml"
 
-if ( len(sys.argv) == 2 ) and ( sys.argv[1] == '-h' or sys.argv[1] == '-?' ):
-    printHelp = True
+	if len(sys.argv) > 1:
+		specpath = sys.argv[1]
 
-if printHelp:
-    print('usage: gen_api_links.py')
-elif not os.path.exists(nameFuncsDict) or not os.path.exists(nameEnumsDict):
-    print('error: dictionary file ' + nameFuncsDict + ' or ' + nameEnumsDict + ' does not exist!')
-else:
-    print('Generating funcs from source: ' + nameFuncsDict)
+	print('Generating dictionaries from: ' + specpath)
 
-    srcFile = open(nameFuncsDict, 'rU')
-    docFile = open(nameFuncsDoc, 'w')
+	spec = parse_xml(specpath)
 
-    docFile.write( GetHeader() )
+	# Generate the API functions dictionary:
 
-    numberOfFuncs = 0
+	funcFile = open(nameFuncsDoc, 'w')
+	funcFile.write( GetHeader() )
+	numberOfFuncs = 0
 
-    for line in srcFile:
-        # Skip empty lines or whitespace lines:
-        if not line or line.isspace():
-            continue
+	for feature in spec.findall('feature/require'):
+		for api in feature.findall('command'):
+			name = api.get('name')
+			#print('found api: ' + name)
 
-        # Skip comment lines (lines beginning with '#'):
-        comment = re.search("^#.*", line)
-        if comment:
-            continue
+			# Create a variant of the name that precedes underscores with
+			# "zero width" spaces.  This causes some long names to be
+			# broken at more intuitive places.
+			sName = name.replace("_", "_&#8203;")
 
-        # Strip the trailing newline:
-        line = line[0:-1]
+			# Example:
+			#
+			# // clEnqueueNDRangeKernel
+			# :clEnqueueNDRangeKernel_label: pass:q[*clEnqueueNDRangeKernel*]
+			# :clEnqueueNDRangeKernel: <<clEnqueueNDRangeKernel,{clEnqueueNDRangeKernel_label}>>
+			funcFile.write('// ' + name + '\n')
+			funcFile.write(':' + name + '_label: pass:q[*' + sName + '*]\n')
+			funcFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
+			funcFile.write('\n')
 
-        # Create a variant of the name that precedes underscores with
-        # "zero width" spaces.  This causes some long names to be
-        # broken at more intuitive places.
-        sline = line.replace("_", "_&#8203;")
+			numberOfFuncs = numberOfFuncs + 1
 
-        # Example:
-        #
-        # // clEnqueueNDRangeKernel
-        # :clEnqueueNDRangeKernel_label: pass:q[*clEnqueueNDRangeKernel*]
-        # :clEnqueueNDRangeKernel: <<clEnqueueNDRangeKernel,{clEnqueueNDRangeKernel_label}>>
-        docFile.write('// ' + line + '\n')
-        docFile.write(':' + line + '_label: pass:q[*' + sline + '*]\n')
-        docFile.write(':' + line + ': <<' + line + ',{' + line + '_label}>>\n')
-        docFile.write('\n')
+	funcFile.write( GetFooter() )
+	funcFile.close()
+	('Successfully generated file: ' + nameFuncsDoc)
+	print('Found ' + str(numberOfFuncs) + ' API functions.')
+	
+	# Generate the API enums dictionary:
 
-        numberOfFuncs = numberOfFuncs + 1
+	enumFile = open(nameEnumsDoc, 'w')
+	enumFile.write( GetHeader() )
+	numberOfEnums = 0
 
-        #print('Not sure what to do with: ' + line)
+	for enums in spec.findall('enums'):
+		# Skip Vendor Extension Enums
+		vendor = enums.get('vendor')
+		if not vendor or vendor == 'Khronos':
+			for enum in enums.findall('enum'):
+				name = enum.get('name')
+				#print('found enum: ' + name)
 
-    docFile.write( GetFooter() )
+				# Create a variant of the name that precedes underscores with
+				# "zero width" spaces.  This causes some long names to be
+				# broken at more intuitive places.
+				sName = name.replace("_", "_&#8203;")
 
-    srcFile.close()
-    docFile.close()
+				# Example:
+				#
+				# // CL_MEM_READ_ONLY
+				#:CL_MEM_READ_ONLY_label: pass:q[`CL_MEM_READ_ONLY`]
+				#:CL_MEM_READ_ONLY: <<CL_MEM_READ_ONLY,{CL_MEM_READ_ONLY_label}>>
+				#:CL_MEM_READ_ONLY_anchor: [[CL_MEM_READ_ONLY]]{CL_MEM_READ_ONLY}
+				enumFile.write('// ' + name + '\n')
+				enumFile.write(':' + name + '_label: pass:q[`' + sName + '`]\n')
+				enumFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
+				enumFile.write(':' + name + '_anchor: [[' + name + ']]{' + name + '}\n')
+				enumFile.write('\n')
 
-    print('Successfully generated file: ' + nameFuncsDoc)
-    print('Found ' + str(numberOfFuncs) + ' API functions.')
+				numberOfEnums = numberOfEnums + 1
 
-
-    print('Generating enums from source: ' + nameEnumsDict)
-
-    srcFile = open(nameEnumsDict, 'rU')
-    docFile = open(nameEnumsDoc, 'w')
-
-    docFile.write( GetHeader() )
-
-    numberOfEnums = 0
-
-    for line in srcFile:
-        # Skip empty lines or whitespace lines:
-        if not line or line.isspace():
-            continue
-
-        # Skip comment lines (lines beginning with '#'):
-        comment = re.search("^#.*", line)
-        if comment:
-            continue
-
-        # Strip the trailing newline:
-        line = line[0:-1]
-
-        # Create a variant of the name that precedes underscores with
-        # "zero width" spaces.  This causes some long names to be
-        # broken at more intuitive places.
-        sline = line.replace("_", "_&#8203;")
-
-        # Example:
-        #
-        # // CL_MEM_READ_ONLY
-        #:CL_MEM_READ_ONLY_label: pass:q[`CL_MEM_READ_ONLY`]
-        #:CL_MEM_READ_ONLY: <<CL_MEM_READ_ONLY,{CL_MEM_READ_ONLY_label}>>
-        #:CL_MEM_READ_ONLY_anchor: [[CL_MEM_READ_ONLY]]{CL_MEM_READ_ONLY}
-        docFile.write('// ' + line + '\n')
-        docFile.write(':' + line + '_label: pass:q[`' + sline + '`]\n')
-        docFile.write(':' + line + ': <<' + line + ',{' + line + '_label}>>\n')
-        docFile.write(':' + line + '_anchor: [[' + line + ']]{' + line + '}\n')
-        docFile.write('\n')
-
-        numberOfEnums = numberOfEnums + 1
-
-        #print('Not sure what to do with: ' + line)
-
-    docFile.write( GetFooter() )
-
-    srcFile.close()
-    docFile.close()
-
-    print('Successfully generated file: ' + nameEnumsDoc)
-    print('Found ' + str(numberOfEnums) + ' API enumerations.')
+	enumFile.write( GetFooter() )
+	enumFile.close()
+	print('Successfully generated file: ' + nameEnumsDoc)
+	print('Found ' + str(numberOfEnums) + ' API enumerations.')
