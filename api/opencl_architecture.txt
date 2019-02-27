@@ -146,7 +146,7 @@ each command passes through six states.
 
   . *Queued*: The command is enqueued to a command-queue.
     A command may reside in the queue until it is flushed either explicitly
-    (a call to *clFlush*) or implicitly by some other command.
+    (a call to {clFlush}) or implicitly by some other command.
   . *Submitted*: The command is flushed from the command-queue and submitted
     for execution on the device.
     Once flushed from the command-queue, a command will execute after any
@@ -619,9 +619,9 @@ The synchronization points defined in OpenCL include:
   * *Command-queue barrier:* The command-queue barrier ensures that all
     previously enqueued commands have completed before subsequently enqueued
     commands can be launched.
-  * *clFinish:* This function blocks until all previously enqueued commands
-    in the command queue have completed after which *clFinish* defines a
-    synchronization point and the *clFinish* function returns.
+  * {clFinish}: This function blocks until all previously enqueued commands
+    in the command queue have completed after which {clFinish} defines a
+    synchronization point and the {clFinish} function returns.
 
 
 A synchronization point between a pair of commands (A and B) assures that
@@ -1001,17 +1001,17 @@ There are three types of SVM in OpenCL
 | | Granularity of sharing | Memory Allocation | Mechanisms to enforce Consistency | Explicit updates between host and device
 | Non-SVM buffers
   | OpenCL Memory objects(buffer)
-      | *clCreateBuffer*
+      | {clCreateBuffer}
           | Host synchronization points on the same or between devices.
               | yes, through Map and Unmap commands.
 | Coarse-Grained buffer SVM
   | OpenCL Memory objects (buffer)
-      | *clSVMAlloc*
+      | {clSVMAlloc}
           | Host synchronization points between devices
               | yes, through Map and Unmap commands.
 | Fine-Grained buffer SVM
   | Bytes within OpenCL Memory objects (buffer)
-      | *clSVMAlloc*
+      | {clSVMAlloc}
           | Synchronization points plus atomics (if supported)
               | No
 | Fine-Grained system SVM
@@ -1853,10 +1853,10 @@ following:
     sharing that enqueues a kernel to a host command-queue to manipulate the
     contents of a region of a buffer that the host thread then accesses
     after the kernel completes.
-    To do this, the host thread can call *clEnqueueMapBuffer* to enqueue a
+    To do this, the host thread can call {clEnqueueMapBuffer} to enqueue a
     blocking-mode map command to map that buffer region, specifying that the
     map command must wait on an event signaling the kernels completion.
-    When *clEnqueueMapBuffer* returns, any memory operations performed by
+    When {clEnqueueMapBuffer} returns, any memory operations performed by
     the kernel to that buffer region will global- happen-before subsequent
     memory operations made by the host thread.
   . If a command *C* has an event *E* that signals its completion, then *C*
@@ -1865,7 +1865,7 @@ following:
     event *E* that signals its completion, then *E* global-synchronizes-with
     an API call *X* that waits on *E*.
     For example, if a host thread or kernel-instance calls the
-    wait-for-events function on *E* (e.g. the *clWaitForEvents* function
+    wait-for-events function on *E* (e.g. the {clWaitForEvents} function
     called from a host thread), then *E* global-synchronizes-with that
     wait-for-events function call.
   . If commands *C* and *C1* are enqueued in that sequence onto an in-order
@@ -1884,7 +1884,7 @@ following:
     In addition, the event signaling the completion of *C*
     global-synchronizes-with all commands enqueued after *C* in the
     command-queue.
-  . If a host thread executes a *clFinish* call *X*, then the events of all
+  . If a host thread executes a {clFinish} call *X*, then the events of all
     commands enqueued prior to *X* in the command-queue
     global-synchronizes-with *X*.
   . The start of a kernel-instance *K* global-synchronizes-with all
@@ -1902,7 +1902,7 @@ following:
   . If *C* is a command that waits for an event *E*'s completion, and API
     function call *X* sets the status of a user event *E*'s status to
     CL_COMPLETE (for example, from a host thread using a
-    *clSetUserEventStatus* function), then *X* global-synchronizes-with *C*.
+    {clSetUserEventStatus} function), then *X* global-synchronizes-with *C*.
   . If a device enqueues a command *C* with the
     CLK_ENQUEUE_FLAGS_WAIT_KERNEL flag, then the end state of the parent
     kernel instance global-synchronizes with *C*.
@@ -1940,8 +1940,8 @@ operations, then the host and devices can concurrently read the same memory
 locations and can concurrently update non-overlapping memory regions, but
 attempts to update the same memory locations are undefined.
 Memory consistency is guaranteed at the OpenCL synchronization points
-without the need for calls to *clEnqueueMapBuffer* and
-*clEnqueueUnmapMemObject*.
+without the need for calls to {clEnqueueMapBuffer} and
+{clEnqueueUnmapMemObject}.
 For fine-grained SVM buffers it is guaranteed that at synchronization points
 only values written by the kernel will be updated.
 No writes to fine-grained SVM buffers can be introduced that were not in the
@@ -1958,7 +1958,7 @@ synchronization points between commands in command- queues.
 Four of the rules listed above (2, 4, 7, and 8) cover these OpenCL
 synchronization points.
 
-A map operation (*clEnqueueMapBuffer* or *clEnqueueMapImage*) performed on a
+A map operation ({clEnqueueMapBuffer} or {clEnqueueMapImage}) performed on a
 non-SVM buffer or a coarse-grained SVM buffer is allowed to overwrite the
 entire target region with the latest runtime view of the data as seen by the
 command with which the map operation synchronizes, whether the values were
@@ -2010,7 +2010,7 @@ devices, and command queues.
 
 The device version is an indication of the device's capabilities separate
 from the runtime and compiler as represented by the device info returned by
-*clGetDeviceInfo*.
+{clGetDeviceInfo}.
 Examples of attributes associated with the device version are resource
 limits (e.g., minimum size of local memory per compute unit) and extended
 functionality (e.g., list of supported KHR extensions).
