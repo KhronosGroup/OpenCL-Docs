@@ -28,11 +28,10 @@ This is described in <<shared-opencl-objects, Shared OpenCL Objects>>
 
 [open,refpage='clCreateCommandQueueWithProperties',desc='',type='protos']
 --
-The function
+To create a host or device command-queue on a specific device, call the
+function:
 
-include::{api}/protos/clCreateCommandQueueWithProperties.txt[]
-
-creates a host or device command-queue on a specific device.
+include::{generated}/api/protos/clCreateCommandQueueWithProperties.txt[]
 
   * _context_ must be a valid OpenCL context.
   * _device_ must be a device or sub-device associated with _context_.
@@ -135,13 +134,18 @@ returned in _errcode_ret_:
 
 [open,refpage='clSetDefaultDeviceCommandQueue',desc='',type='protos']
 --
-The function
+To replace the default command queue on a device, call the function
 
-include::{api}/protos/clSetDefaultDeviceCommandQueue.txt[]
+include::{generated}/api/protos/clSetDefaultDeviceCommandQueue.txt[]
 
-replaces the default command queue on the _device_.
+  * _context_ is the OpenCL context used to create _command_queue_.
+  * _device_ is a valid OpenCL device associated with _context_.
+  * _command_queue_ specifies a command queue object which replaces the
+    default device command queue
 
-// Jon - Missing parameter descriptions
+*clSetDefaultDeviceCommandQueue* may be used to replace a default device
+command queue created with *clCreateCommandQueueWithProperties* and the
+CL_QUEUE_ON_DEVICE_DEFAULT flag.
 
 // refError
 
@@ -158,21 +162,26 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
-
-*clSetDefaultDeviceCommandQueue* may be used to replace a default device
-command queue created with *clCreateCommandQueueWithProperties* and the
-CL_QUEUE_ON_DEVICE_DEFAULT flag.
 --
 
 [open,refpage='clRetainCommandQueue',desc='',type='protos']
 --
-The function
+To retain a command queue, call the function
 
-include::{api}/protos/clRetainCommandQueue.txt[]
+include::{generated}/api/protos/clRetainCommandQueue.txt[]
 
-increments the _command_queue_ reference count.
+  * _command_queue_ specifies the command-queue to be retained.
 
-// Jon - Missing parameter descriptions
+The _command_queue_ reference count is incremented.
+
+*clCreateCommandQueueWithProperties* performs an implicit retain.
+This is very helpful for 3^rd^ party libraries, which typically get a
+command-queue passed to them by the application.
+However, it is possible that the application may delete the command-queue
+without informing the library.
+Allowing functions to attach to (i.e. retain) and release a command-queue
+solves the problem of a command-queue being used by a library no longer
+being valid.
 
 // refError
 
@@ -186,26 +195,26 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
-
-*clCreateCommandQueueWithProperties* performs an implicit retain.
-This is very helpful for 3^rd^ party libraries, which typically get a
-command-queue passed to them by the application.
-However, it is possible that the application may delete the command-queue
-without informing the library.
-Allowing functions to attach to (i.e. retain) and release a command-queue
-solves the problem of a command-queue being used by a library no longer
-being valid.
 --
 
 [open,refpage='clReleaseCommandQueue',desc='',type='protos']
 --
-The function
+To release a command queue, call the function
 
-include::{api}/protos/clReleaseCommandQueue.txt[]
+include::{generated}/api/protos/clReleaseCommandQueue.txt[]
 
-// Jon - Missing parameter descriptions
+  * _command_queue_ specifies the command-queue to be released.
 
-decrements the _command_queue_ reference count.
+The _command_queue_ reference count is decremented.
+
+After the _command_queue_ reference count becomes zero and all commands
+queued to _command_queue_ have finished (eg.
+kernel-instances, memory object updates etc.), the command-queue is deleted.
+
+*clReleaseCommandQueue* performs an implicit flush to issue any previously
+queued OpenCL commands in _command_queue_.
+Using this function to release a reference that was not obtained by creating
+the object or by calling *clRetainCommandQueue* causes undefined behavior.
 
 // refError
 
@@ -219,24 +228,13 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
-
-After the _command_queue_ reference count becomes zero and all commands
-queued to _command_queue_ have finished (eg.
-kernel-instances, memory object updates etc.), the command-queue is deleted.
-
-*clReleaseCommandQueue* performs an implicit flush to issue any previously
-queued OpenCL commands in _command_queue_.
-Using this function to release a reference that was not obtained by creating
-the object or by calling *clRetainCommandQueue* causes undefined behavior.
 --
 
 [open,refpage='clGetCommandQueueInfo',desc='',type='protos']
 --
-The function
+To query information about a command-queue, call the function
 
-include::{api}/protos/clGetCommandQueueInfo.txt[]
-
-can be used to query information about a command-queue.
+include::{generated}/api/protos/clGetCommandQueueInfo.txt[]
 
   * _command_queue_ specifies the command-queue being queried.
   * _param_name_ specifies the information to query.
@@ -335,7 +333,7 @@ float), vector data type, or a user-defined structure.
 --
 A *buffer object* is created using the following function
 
-include::{api}/protos/clCreateBuffer.txt[]
+include::{generated}/api/protos/clCreateBuffer.txt[]
 
   * _context_ is a valid OpenCL context used to create the buffer object.
   * _flags_ is a bit-field that is used to specify allocation and usage
@@ -343,8 +341,13 @@ include::{api}/protos/clCreateBuffer.txt[]
     buffer object and how it will be used.
     The <<memory-flags-table,Memory Flags>> table describes the possible values
     for _flags_.
-    If value specified for _flags_ is 0, the default is used which is
+    If the value specified for _flags_ is 0, the default is used which is
     CL_MEM_READ_WRITE.
+  * _size_ is the size in bytes of the buffer memory object to be allocated.
+  * _host_ptr_ is a pointer to the buffer data that may already be allocated
+    by the application.
+    The size of the buffer that _host_ptr_ points to must be {geq} _size_
+    bytes.
 
 [[memory-flags-table]]
 .List of supported cl_mem_flags values
@@ -427,11 +430,6 @@ include::{api}/protos/clCreateBuffer.txt[]
     CL_MEM_HOST_NO_ACCESS are mutually exclusive.
 |====
 
-  * _size_ is the size in bytes of the buffer memory object to be allocated.
-  * _host_ptr_ is a pointer to the buffer data that may already be allocated by
-    the application.
-    The size of the buffer that _host_ptr_ points to must be {geq} _size_ bytes.
-
 The user is responsible for ensuring that data passed into and out of OpenCL
 images are natively aligned relative to the start of the buffer as per
 kernel language or IL requirements.
@@ -488,12 +486,10 @@ returned in _errcode_ret_:
 
 [open,refpage='clCreateSubBuffer',desc='',type='protos',xrefs='cl_buffer_region']
 --
-The function
+To create a new buffer object (referred to as a sub-buffer object) from an
+existing buffer object, call the function
 
-include::{api}/protos/clCreateSubBuffer.txt[]
-
-can be used to create a new buffer object (referred to as a sub-buffer
-object) from an existing buffer object.
+include::{generated}/api/protos/clCreateSubBuffer.txt[]
 
   * _buffer_ must be a valid buffer object and cannot be a sub-buffer object.
   * _flags_ is a bit-field that is used to specify allocation and usage
@@ -593,7 +589,7 @@ from multiple overlapping sub-buffer objects is defined.
 --
 The *cl_buffer_region* structure specifies a region of a buffer object:
 
-include::{api}/structs/cl_buffer_region.txt[]
+include::{generated}/api/structs/cl_buffer_region.txt[]
 
   * _origin_ is the offset in bytes of the region.
   * _size_ is the size in bytes of the region.
@@ -610,9 +606,11 @@ host memory or write to a buffer object from host memory.
 
 [open,refpage='clEnqueueReadBuffer',desc='',type='protos']
 --
-include::{api}/protos/clEnqueueReadBuffer.txt[]
+To read from a buffer object to host memory, call one of the functions
 
-include::{api}/protos/clEnqueueWriteBuffer.txt[]
+include::{generated}/api/protos/clEnqueueReadBuffer.txt[]
+
+include::{generated}/api/protos/clEnqueueWriteBuffer.txt[]
 
   * _command_queue_ is a valid host command-queue in which the read / write
     command will be queued.
@@ -722,44 +720,16 @@ The following functions enqueue commands to read a 2D or 3D rectangular
 region from a buffer object to host memory or write a 2D or 3D rectangular
 region to a buffer object from host memory.
 
-include::{api}/protos/clEnqueueReadBufferRect.txt[]
+include::{generated}/api/protos/clEnqueueReadBufferRect.txt[]
 
-include::{api}/protos/clEnqueueWriteBufferRect.txt[]
+include::{generated}/api/protos/clEnqueueWriteBufferRect.txt[]
 
   * _command_queue_ refers is a valid host command-queue in which the read /
     write command will be queued.
     _command_queue_ and _buffer_ must be created with the same OpenCL context.
   * _buffer_ refers to a valid buffer object.
   * _blocking_read_ and _blocking_write_ indicate if the read and write
-    operations are _blocking_ or _non-blocking_.
-If _blocking_read_ is CL_TRUE i.e. the read command is blocking,
-*clEnqueueReadBufferRect* does not return until the buffer data has been
-read and copied into memory pointed to by _ptr_.
-
-If _blocking_read_ is CL_FALSE i.e. the read command is non-blocking,
-*clEnqueueReadBufferRect* queues a non-blocking read command and returns.
-The contents of the buffer that _ptr_ points to cannot be used until the
-read command has completed.
-The _event_ argument returns an event object which can be used to query the
-execution status of the read command.
-When the read command has completed, the contents of the buffer that _ptr_
-points to can be used by the application.
-
-If _blocking_write_ is CL_TRUE, the write command is blocking and does not
-return until the command is complete, including transfer of the data.
-The memory pointed to by _ptr_ can be reused by the application after the
-*clEnqueueWriteBufferRect* call returns.
-
-If _blocking_write_ is CL_FALSE, the OpenCL implementation will use _ptr_ to
-perform a non-blocking write.
-As the write is non-blocking the implementation can return immediately.
-The memory pointed to by _ptr_ cannot be reused by the application after the
-call returns.
-The _event_ argument returns an event object which can be used to query the
-execution status of the write command.
-When the write command has completed, the memory pointed to by _ptr_ can
-then be reused by the application.
-
+    operations are _blocking_ or _non-blocking_ (see below).
   * _buffer_origin_ defines the (_x_, _y_, _z_) offset in the memory region
     associated with _buffer_.
     For a 2D rectangle region, the _z_ value given by _buffer_origin_[2] should
@@ -817,6 +787,35 @@ then be reused by the application.
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
 
+
+If _blocking_read_ is CL_TRUE i.e. the read command is blocking,
+*clEnqueueReadBufferRect* does not return until the buffer data has been
+read and copied into memory pointed to by _ptr_.
+
+If _blocking_read_ is CL_FALSE i.e. the read command is non-blocking,
+*clEnqueueReadBufferRect* queues a non-blocking read command and returns.
+The contents of the buffer that _ptr_ points to cannot be used until the
+read command has completed.
+The _event_ argument returns an event object which can be used to query the
+execution status of the read command.
+When the read command has completed, the contents of the buffer that _ptr_
+points to can be used by the application.
+
+If _blocking_write_ is CL_TRUE, the write command is blocking and does not
+return until the command is complete, including transfer of the data.
+The memory pointed to by _ptr_ can be reused by the application after the
+*clEnqueueWriteBufferRect* call returns.
+
+If _blocking_write_ is CL_FALSE, the OpenCL implementation will use _ptr_ to
+perform a non-blocking write.
+As the write is non-blocking the implementation can return immediately.
+The memory pointed to by _ptr_ cannot be reused by the application after the
+call returns.
+The _event_ argument returns an event object which can be used to query the
+execution status of the write command.
+When the write command has completed, the memory pointed to by _ptr_ can
+then be reused by the application.
+
 // refError
 
 *clEnqueueReadBufferRect* and *clEnqueueWriteBufferRect* return CL_SUCCESS
@@ -871,7 +870,7 @@ Otherwise, it returns one of the following errors:
 [NOTE]
 ====
 Calling *clEnqueueReadBuffer* to read a region of the buffer object with the
-_ptr_ argument value set to _host_ptr_ + _offset_, where _host_ptr_ is a
+_ptr_ argument value set to _host_ptr_  _offset_, where _host_ptr_ is a
 pointer to the memory region specified when the buffer object being read is
 created with CL_MEM_USE_HOST_PTR, must meet the following requirements in
 order to avoid undefined behavior:
@@ -925,12 +924,10 @@ order to avoid undefined behavior:
 
 [open,refpage='clEnqueueCopyBuffer',desc='',type='protos']
 --
-The function
+To enqueue a command to copy a buffer object identified by _src_buffer_ to
+another buffer object identified by _dst_buffer_, call the function
 
-include::{api}/protos/clEnqueueCopyBuffer.txt[]
-
-enqueues a command to copy a buffer object identified by _src_buffer_ to
-another buffer object identified by _dst_buffer_.
+include::{generated}/api/protos/clEnqueueCopyBuffer.txt[]
 
   * _command_queue_ refers to a host command-queue in which the copy command
     will be queued.
@@ -1011,29 +1008,11 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueCopyBufferRect',desc='',type='protos']
 --
-The function
-
-include::{api}/protos/clEnqueueCopyBufferRect.txt[]
-
-enqueues a command to copy a 2D or 3D rectangular region from the buffer
+To enqueue a command to copy a 2D or 3D rectangular region from the buffer
 object identified by _src_buffer_ to a 2D or 3D region in the buffer object
-identified by _dst_buffer_.
-Copying begins at the source offset and destination offset which are
-computed as described below in the description for _src_origin_ and
-_dst_origin_.
-Each byte of the region's width is copied from the source offset to the
-destination offset.
-After copying each width, the source and destination offsets are incremented
-by their respective source and destination row pitches.
-After copying each 2D rectangle, the source and destination offsets are
-incremented by their respective source and destination slice pitches.
+identified by _dst_buffer_, call the function
 
-[NOTE]
-====
-If _src_buffer_ and _dst_buffer_ are the same buffer object, _src_row_pitch_
-must equal _dst_row_pitch_ and _src_slice_pitch_ must equal
-_dst_slice_pitch_.
-====
+include::{generated}/api/protos/clEnqueueCopyBufferRect.txt[]
 
   * _command_queue_ refers to the host command-queue in which the copy command
     will be queued.
@@ -1092,6 +1071,23 @@ _dst_slice_pitch_.
     If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
+
+Copying begins at the source offset and destination offset which are
+computed as described below in the description for _src_origin_ and
+_dst_origin_.
+Each byte of the region's width is copied from the source offset to the
+destination offset.
+After copying each width, the source and destination offsets are incremented
+by their respective source and destination row pitches.
+After copying each 2D rectangle, the source and destination offsets are
+incremented by their respective source and destination slice pitches.
+
+[NOTE]
+====
+If _src_buffer_ and _dst_buffer_ are the same buffer object, _src_row_pitch_
+must equal _dst_row_pitch_ and _src_slice_pitch_ must equal
+_dst_slice_pitch_.
+====
 
 // refError
 
@@ -1156,16 +1152,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueFillBuffer',desc='',type='protos']
 --
-The function
+To enqueue a command to fill a buffer object with a pattern of a given
+pattern size, call the function
 
-include::{api}/protos/clEnqueueFillBuffer.txt[]
-
-enqueues a command to fill a buffer object with a pattern of a given pattern
-size.
-The usage information which indicates whether the memory object can be read
-or written by a kernel and/or the host and is given by the cl_mem_flags
-argument value specified when _buffer_ is created is ignored by
-*clEnqueueFillBuffer*.
+include::{generated}/api/protos/clEnqueueFillBuffer.txt[]
 
   * _command_queue_ refers to the host command-queue in which the fill command
     will be queued.
@@ -1214,6 +1204,11 @@ argument value specified when _buffer_ is created is ignored by
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
 
+The usage information which indicates whether the memory object can be read
+or written by a kernel and/or the host and is given by the cl_mem_flags
+argument value specified when _buffer_ is created is ignored by
+*clEnqueueFillBuffer*.
+
 // refError
 
 *clEnqueueFillBuffer* returns CL_SUCCESS if the function is executed
@@ -1252,12 +1247,11 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueMapBuffer',desc='',type='protos']
 --
-The function
+To enqueue a command to map a region of the buffer object given by _buffer_
+into the host address space and returns a pointer to this mapped region,
+call the function
 
-include::{api}/protos/clEnqueueMapBuffer.txt[]
-
-enqueues a command to map a region of the buffer object given by _buffer_
-into the host address space and returns a pointer to this mapped region.
+include::{generated}/api/protos/clEnqueueMapBuffer.txt[]
 
   * _command_queue_ must be a valid host command-queue.
   * _blocking_map_ indicates if the map operation is _blocking_ or
@@ -1424,13 +1418,31 @@ The minimum number of elements in a memory object is one.
 A *1D image*, *1D image buffer*, *1D image array*, *2D image*, *2D image
 array* and *3D image object* can be created using the following function
 
-include::{api}/protos/clCreateImage.txt[]
+include::{generated}/api/protos/clCreateImage.txt[]
 
   * _context_ is a valid OpenCL context on which the image object is to be
     created.
   * _flags_ is a bit-field that is used to specify allocation and usage
     information about the image memory object being created and is described in
     the <<memory-flags-table,Memory Flags>> table.
+  * _image_format_ is a pointer to a structure that describes format properties
+    of the image to be allocated.
+    A 1D image buffer or 2D image can be created from a buffer by specifying a
+    buffer object in the _image_desc->mem_object_.
+    A 2D image can be created from another 2D image object by specifying an
+    image object in the _image_desc_->_mem_object_.
+    Refer to <<image-format-descriptor, Image Format Descriptor>> for a detailed
+    description of the image format descriptor.
+  * _image_desc_ is a pointer to a structure that describes type and dimensions
+    of the image to be allocated.
+    Refer to <<image-descriptor, Image Descriptor>> for a detailed description
+    of the image descriptor.
+  * _host_ptr_ is a pointer to the image data that may already be allocated by
+    the application.
+    It is only used to initialize the image, and can be freed after the call to
+    *clCreateImage*.
+    Refer to table below for a description of how large the buffer that
+    _host_ptr_ points to must be.
 
 For all image types except CL_MEM_OBJECT_IMAGE1D_BUFFER, if value specified
 for _flags_ is 0, the default is used which is CL_MEM_READ_WRITE.
@@ -1450,25 +1462,6 @@ If the CL_MEM_HOST_WRITE_ONLY, CL_MEM_HOST_READ_ONLY or
 CL_MEM_HOST_NO_ACCESS values are not specified in _flags_, they are
 inherited from the corresponding memory access qualifiers associated with
 _mem_object_.
-
-  * _image_format_ is a pointer to a structure that describes format properties
-    of the image to be allocated.
-    A 1D image buffer or 2D image can be created from a buffer by specifying a
-    buffer object in the _image_desc->mem_object_.
-    A 2D image can be created from another 2D image object by specifying an
-    image object in the _image_desc_->_mem_object_.
-    Refer to <<image-format-descriptor, Image Format Descriptor>> for a detailed
-    description of the image format descriptor.
-  * _image_desc_ is a pointer to a structure that describes type and dimensions
-    of the image to be allocated.
-    Refer to <<image-descriptor, Image Descriptor>> for a detailed description
-    of the image descriptor.
-  * _host_ptr_ is a pointer to the image data that may already be allocated by
-    the application.
-    It is only used to initialize the image, and can be freed after the call to
-    *clCreateImage*.
-    Refer to table below for a description of how large the buffer that
-    _host_ptr_ points to must be.
 
 [width="100%",cols="<50%,<50%",options="header"]
 |====
@@ -1572,7 +1565,7 @@ returned in _errcode_ret_:
 The *cl_image_format* image format descriptor structure describes an image
 format, and is defined as:
 
-include::{api}/structs/cl_image_format.txt[]
+include::{generated}/api/structs/cl_image_format.txt[]
 
   * `image_channel_order` specifies the number of channels and the channel
     layout i.e. the memory layout in which channels are stored in the image.
@@ -1709,7 +1702,7 @@ then the call to *clCreateImage* will return a `NULL` memory object.
 The *cl_image_desc* image descriptor structure describes the type and
 dimensions of an image or image array, and is defined as:
 
-include::{api}/structs/cl_image_desc.txt[]
+include::{generated}/api/structs/cl_image_desc.txt[]
 
   * `image_type` describes the image type and must be either
     CL_MEM_OBJECT_IMAGE1D, CL_MEM_OBJECT_IMAGE1D_BUFFER,
@@ -1881,20 +1874,10 @@ undefined.
 
 [open,refpage='clGetSupportedImageFormats',desc='',type='protos']
 --
-The function
+To get the list of image formats supported by an OpenCL implementation for a
+specified context, image type, and allocation information, call the function
 
-include::{api}/protos/clGetSupportedImageFormats.txt[]
-
-can be used to get the list of image formats supported by an OpenCL
-implementation when the following information about an image memory object
-is specified:
-
-  * Context
-  * Image type 1D, 2D, or 3D image, 1D image buffer, 1D or 2D image array.
-  * Image object allocation information
-
-*clGetSupportedImageFormats* returns a union of image formats supported by
-all devices in the context.
+include::{generated}/api/protos/clGetSupportedImageFormats.txt[]
 
   * _context_ is a valid OpenCL context on which the image object(s) will be
     created.
@@ -1926,6 +1909,16 @@ all devices in the context.
     specific _context_ and values specified by _flags_.
     If _num_image_formats_ is `NULL`, it is ignored.
 
+*clGetSupportedImageFormats* returns a union of image formats supported by
+all devices in the context.
+
+// The following information about an image memory object
+// is specified:
+//
+//   * Context
+//   * Image type 1D, 2D, or 3D image, 1D image buffer, 1D or 2D image array.
+//   * Image object allocation information
+
 // refError
 
 *clGetSupportedImageFormats* returns CL_SUCCESS if the function is executed
@@ -1951,8 +1944,11 @@ must be greater than or equal to the minimum values specified in the
 --
 
 
+[[minimum-list-of-supported-image-formats]]
 ==== Minimum List of Supported Image Formats
 
+[open,refpage='supportedImageFormats',desc='Minimum List of Supported Image Formats',type='freeform',anchor='minimum-list-of-supported-image-formats']
+--
 For 1D, 1D image from buffer, 2D, 3D image objects, 1D and 2D image array
 objects, the mandated minimum list of image formats that can be read from
 and written to by different kernel instances when correctly ordered by event
@@ -2063,6 +2059,7 @@ Write>> table.
         CL_HALF_FLOAT +
         CL_FLOAT
 |====
+--
 
 
 [[image-format-mapping]]
@@ -2106,9 +2103,9 @@ The following functions enqueue commands to read from an image or image
 array object to host memory or write to an image or image array object from
 host memory.
 
-include::{api}/protos/clEnqueueReadImage.txt[]
+include::{generated}/api/protos/clEnqueueReadImage.txt[]
 
-include::{api}/protos/clEnqueueWriteImage.txt[]
+include::{generated}/api/protos/clEnqueueWriteImage.txt[]
 
   * _command_queue_ refers to the host command-queue in which the read / write
     command will be queued.
@@ -2116,35 +2113,6 @@ include::{api}/protos/clEnqueueWriteImage.txt[]
   * _image_ refers to a valid image or image array object.
   * _blocking_read_ and _blocking_write_ indicate if the read and write
     operations are _blocking_ or _non-blocking_.
-
-If _blocking_read_ is CL_TRUE i.e. the read command is blocking,
-*clEnqueueReadImage* does not return until the buffer data has been read and
-copied into memory pointed to by _ptr_.
-
-If _blocking_read_ is CL_FALSE i.e. the read command is non-blocking,
-*clEnqueueReadImage* queues a non-blocking read command and returns.
-The contents of the buffer that _ptr_ points to cannot be used until the
-read command has completed.
-The _event_ argument returns an event object which can be used to query the
-execution status of the read command.
-When the read command has completed, the contents of the buffer that _ptr_
-points to can be used by the application.
-
-If _blocking_write_ is CL_TRUE, the write command is blocking and does not
-return until the command is complete, including transfer of the data.
-The memory pointed to by _ptr_ can be reused by the application after the
-*clEnqueueWriteImage* call returns.
-
-If _blocking_write_ is CL_FALSE, the OpenCL implementation will use _ptr_ to
-perform a non-blocking write.
-As the write is non-blocking the implementation can return immediately.
-The memory pointed to by _ptr_ cannot be reused by the application after the
-call returns.
-The _event_ argument returns an event object which can be used to query the
-execution status of the write command.
-When the write command has completed, the memory pointed to by _ptr_ can
-then be reused by the application.
-
   * _origin_ defines the (_x_, _y_, _z_) offset in pixels in the 1D, 2D or 3D
     image, the (_x_, _y_) offset and the image index in the 2D image array or
     the (_x_) offset and the image index in the 1D image array.
@@ -2207,6 +2175,34 @@ then be reused by the application.
     If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
+
+If _blocking_read_ is CL_TRUE i.e. the read command is blocking,
+*clEnqueueReadImage* does not return until the buffer data has been read and
+copied into memory pointed to by _ptr_.
+
+If _blocking_read_ is CL_FALSE i.e. the read command is non-blocking,
+*clEnqueueReadImage* queues a non-blocking read command and returns.
+The contents of the buffer that _ptr_ points to cannot be used until the
+read command has completed.
+The _event_ argument returns an event object which can be used to query the
+execution status of the read command.
+When the read command has completed, the contents of the buffer that _ptr_
+points to can be used by the application.
+
+If _blocking_write_ is CL_TRUE, the write command is blocking and does not
+return until the command is complete, including transfer of the data.
+The memory pointed to by _ptr_ can be reused by the application after the
+*clEnqueueWriteImage* call returns.
+
+If _blocking_write_ is CL_FALSE, the OpenCL implementation will use _ptr_ to
+perform a non-blocking write.
+As the write is non-blocking the implementation can return immediately.
+The memory pointed to by _ptr_ cannot be reused by the application after the
+call returns.
+The _event_ argument returns an event object which can be used to query the
+execution status of the write command.
+When the write command has completed, the memory pointed to by _ptr_ can
+then be reused by the application.
 
 // refError
 
@@ -2289,11 +2285,9 @@ undefined behavior:
 
 [open,refpage='clEnqueueCopyImage',desc='',type='protos']
 --
-The function
+To enqueue a command to copy image objects, call the function
 
-include::{api}/protos/clEnqueueCopyImage.txt[]
-
-enqueues a command to copy image objects.
+include::{generated}/api/protos/clEnqueueCopyImage.txt[]
 
   * _src_image_ and _dst_image_ can be 1D, 2D, 3D image or a 1D, 2D image array
     objects.
@@ -2418,15 +2412,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueFillImage',desc='',type='protos']
 --
-The function
+To enqueue a command to fill an image object with a specified color, call
+the function
 
-include::{api}/protos/clEnqueueFillImage.txt[]
-
-enqueues a command to fill an image object with a specified color.
-The usage information which indicates whether the memory object can be read
-or written by a kernel and/or the host and is given by the cl_mem_flags
-argument value specified when _image_ is created is ignored by
-*clEnqueueFillImage*.
+include::{generated}/api/protos/clEnqueueFillImage.txt[]
 
   * _command_queue_ refers to the host command-queue in which the fill command
     will be queued.
@@ -2488,6 +2477,11 @@ argument value specified when _image_ is created is ignored by
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
 
+The usage information which indicates whether the memory object can be read
+or written by a kernel and/or the host and is given by the cl_mem_flags
+argument value specified when _image_ is created is ignored by
+*clEnqueueFillImage*.
+
 // refError
 
 *clEnqueueFillImage* returns CL_SUCCESS if the function is executed
@@ -2528,11 +2522,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueCopyImageToBuffer',desc='',type='protos']
 --
-The function
+To enqueue a command to copy an image object to a buffer object, call the
+function
 
-include::{api}/protos/clEnqueueCopyImageToBuffer.txt[]
-
-enqueues a command to copy an image object to a buffer object.
+include::{generated}/api/protos/clEnqueueCopyImageToBuffer.txt[]
 
   * _command_queue_ must be a valid host command-queue.
     The OpenCL context associated with _command_queue_, _src_image_ and
@@ -2644,11 +2637,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueCopyBufferToImage',desc='',type='protos']
 --
-The function
+To enqueue a command to copy a buffer object to an image object, call the
+function
 
-include::{api}/protos/clEnqueueCopyBufferToImage.txt[]
-
-enqueues a command to copy a buffer object to an image object.
+include::{generated}/api/protos/clEnqueueCopyBufferToImage.txt[]
 
   * _command_queue_ must be a valid host command-queue.
     The OpenCL context associated with _command_queue_, _src_buffer_ and
@@ -2677,18 +2669,6 @@ enqueues a command to copy a buffer object to an image object.
     _region_[2] must be 1.
     If _dst_image_ is a 1D image array object, _region_[2] must be 1.
     The values in _region_ cannot be 0.
-
-The size in bytes of the region to be copied from _src_buffer_ referred to
-as _src_cb_ is computed as _width_ {times} _height_ {times} _depth_ {times}
-_bytes/image element_ if _dst_image_ is a 3D image object, is computed as
-_width_ {times} _height_ {times} _bytes/image element_ if _dst_image_ is a
-2D image, is computed as _width_ {times} _height_ {times} _arraysize_
-{times} _bytes/image element_ if _dst_image_ is a 2D image array object, is
-computed as _width_ {times} _bytes/image element_ if _dst_image_ is a 1D
-image or 1D image buffer object and is computed as _width_ {times}
-_arraysize_ {times} _bytes/image element_ if _dst_image_ is a 1D image array
-object.
-
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
     complete before this particular command can be executed.
     If _event_wait_list_ is `NULL`, then this particular command does not wait
@@ -2712,6 +2692,17 @@ object.
     If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
+
+The size in bytes of the region to be copied from _src_buffer_ referred to
+as _src_cb_ is computed as _width_ {times} _height_ {times} _depth_ {times}
+_bytes/image element_ if _dst_image_ is a 3D image object, is computed as
+_width_ {times} _height_ {times} _bytes/image element_ if _dst_image_ is a
+2D image, is computed as _width_ {times} _height_ {times} _arraysize_
+{times} _bytes/image element_ if _dst_image_ is a 2D image array object, is
+computed as _width_ {times} _bytes/image element_ if _dst_image_ is a 1D
+image or 1D image buffer object and is computed as _width_ {times}
+_arraysize_ {times} _bytes/image element_ if _dst_image_ is a 1D image array
+object.
 
 // refError
 
@@ -2765,12 +2756,11 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueMapImage',desc='',type='protos']
 --
-The function
+To enqueue a command to map a region in the image object given by _image_
+into the host address space and returns a pointer to this mapped region,
+call the function
 
-include::{api}/protos/clEnqueueMapImage.txt[]
-
-enqueues a command to map a region in the image object given by _image_ into
-the host address space and returns a pointer to this mapped region.
+include::{generated}/api/protos/clEnqueueMapImage.txt[]
 
   * _command_queue_ must be a valid host command-queue.
   * _image_ is a valid image object.
@@ -2778,20 +2768,6 @@ the host address space and returns a pointer to this mapped region.
     same.
   * _blocking_map_ indicates if the map operation is _blocking_ or
     _non-blocking_.
-
-If _blocking_map_ is CL_TRUE, *clEnqueueMapImage* does not return until the
-specified region in _image_ is mapped into the host address space and the
-application can access the contents of the mapped region using the pointer
-returned by *clEnqueueMapImage*.
-
-If _blocking_map_ is CL_FALSE i.e. map operation is non-blocking, the
-pointer to the mapped region returned by *clEnqueueMapImage* cannot be used
-until the map command has completed.
-The _event_ argument returns an event object which can be used to query the
-execution status of the map command.
-When the map command is completed, the application can access the contents
-of the mapped region using the pointer returned by *clEnqueueMapImage*.
-
   * _map_flags_ is a bit-field and is described in the
     <<memory-map-flags-table,Memory Map Flags>> table.
   * _origin_ defines the (_x_, _y_, _z_) offset in pixels in the 1D, 2D or 3D
@@ -2847,6 +2823,19 @@ of the mapped region using the pointer returned by *clEnqueueMapImage*.
     array.
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
+
+If _blocking_map_ is CL_TRUE, *clEnqueueMapImage* does not return until the
+specified region in _image_ is mapped into the host address space and the
+application can access the contents of the mapped region using the pointer
+returned by *clEnqueueMapImage*.
+
+If _blocking_map_ is CL_FALSE i.e. map operation is non-blocking, the
+pointer to the mapped region returned by *clEnqueueMapImage* cannot be used
+until the map command has completed.
+The _event_ argument returns an event object which can be used to query the
+execution status of the map command.
+When the map command is completed, the application can access the contents
+of the mapped region using the pointer returned by *clEnqueueMapImage*.
 
 // refError
 
@@ -2936,9 +2925,9 @@ Object Queries>>.
 [open,refpage='clGetImageInfo',desc='',type='protos']
 --
 To get information specific to an image object created with *clCreateImage*,
-use the following function
+call the function
 
-include::{api}/protos/clGetImageInfo.txt[]
+include::{generated}/api/protos/clGetImageInfo.txt[]
 
   * _image_ specifies the image object being queried.
   * _param_name_ specifies the information to query.
@@ -2955,22 +2944,6 @@ include::{api}/protos/clGetImageInfo.txt[]
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
-
-// refError
-
-*clGetImageInfo* returns CL_SUCCESS if the function is executed
-successfully.
-Otherwise, it returns one of the following errors:
-
-  * CL_INVALID_VALUE if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<image-info-table,Image Object Queries>> table and _param_value_ is
-    not `NULL`.
-  * CL_INVALID_MEM_OBJECT if _image_ is a not a valid image object.
-  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
 
 [[image-info-table]]
 .List of supported param_names by *clGetImageInfo*
@@ -3021,6 +2994,22 @@ Otherwise, it returns one of the following errors:
   | cl_uint
       | Return `num_samples` associated with _image_.
 |====
+
+// refError
+
+*clGetImageInfo* returns CL_SUCCESS if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * CL_INVALID_VALUE if _param_name_ is not valid, or if size in bytes
+    specified by _param_value_size_ is < size of return type as described in
+    the <<image-info-table,Image Object Queries>> table and _param_value_ is
+    not `NULL`.
+  * CL_INVALID_MEM_OBJECT if _image_ is a not a valid image object.
+  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 --
 
 
@@ -3042,9 +3031,9 @@ A pipe object encapsulates the following information:
 
 [open,refpage='clCreatePipe',desc='',type='protos']
 --
-A *pipe object* is created using the following function
+To create a *pipe object*, call the function
 
-include::{api}/protos/clCreatePipe.txt[]
+include::{generated}/api/protos/clCreatePipe.txt[]
 
   * _context_ is a valid OpenCL context used to create the pipe object.
   * _flags_ is a bit-field that is used to specify allocation and usage
@@ -3106,9 +3095,9 @@ Object Queries>>.
 [open,refpage='clGetPipeInfo',desc='',type='protos']
 --
 To get information specific to a pipe object created with *clCreatePipe*,
-use the following function
+call the function
 
-include::{api}/protos/clGetPipeInfo.txt[]
+include::{generated}/api/protos/clGetPipeInfo.txt[]
 
   * _pipe_ specifies the pipe object being queried.
   * _param_name_ specifies the information to query.
@@ -3167,13 +3156,13 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clRetainMemObject',desc='',type='protos']
 --
-The function
+To retain a memory object, call the function
 
-include::{api}/protos/clRetainMemObject.txt[]
+include::{generated}/api/protos/clRetainMemObject.txt[]
 
-// Jon - no parameter description
+  * _memobj_ specifies the memory object to be retained.
 
-increments the _memobj_ reference count.
+The _memobj_ reference count is incremented.
 
 // refError
 
@@ -3194,13 +3183,13 @@ perform an implicit retain.
 
 [open,refpage='clReleaseMemObject',desc='',type='protos']
 --
-The function
+To release a memory object, call the function
 
-include::{api}/protos/clReleaseMemObject.txt[]
+include::{generated}/api/protos/clReleaseMemObject.txt[]
 
-// Jon - no parameter description
+  * _memobj_ specifies the memory object to be released.
 
-decrements the _memobj_ reference count.
+The _memobj_ reference count is decremented.
 
 // refError
 
@@ -3225,21 +3214,9 @@ the object or by calling *clRetainMemObject* causes undefined behavior.
 
 [open,refpage='clSetMemObjectDestructorCallback',desc='',type='protos']
 --
-The function
+To register a user callback function with a memory object, call the function
 
-include::{api}/protos/clSetMemObjectDestructorCallback.txt[]
-
-registers a user callback function with a memory object.
-Each call to *clSetMemObjectDestructorCallback* registers the specified user
-callback function on a callback stack associated with _memobj_.
-The registered user callback functions are called in the reverse order in
-which they were registered.
-The user callback functions are called and then the memory objects resources
-are freed and the memory object is deleted.
-This provides a mechanism for the application (and libraries) using _memobj_
-to be notified when the memory referenced by _host_ptr_, specified when the
-memory object is created and used as the storage bits for the memory object,
-can be reused or freed.
+include::{generated}/api/protos/clSetMemObjectDestructorCallback.txt[]
 
   * _memobj_ is a valid memory object.
   * _pfn_notify_ is the callback function that can be registered by the
@@ -3257,6 +3234,17 @@ can be reused or freed.
   * _user_data_ will be passed as the _user_data_ argument when _pfn_notify_ is
     called.
     _user_data_ can be `NULL`.
+
+Each call to *clSetMemObjectDestructorCallback* registers the specified user
+callback function on a callback stack associated with _memobj_.
+The registered user callback functions are called in the reverse order in
+which they were registered.
+The user callback functions are called and then the memory objects resources
+are freed and the memory object is deleted.
+This provides a mechanism for the application (and libraries) using _memobj_
+to be notified when the memory referenced by _host_ptr_, specified when the
+memory object is created and used as the storage bits for the memory object,
+can be reused or freed.
 
 // refError
 
@@ -3317,13 +3305,10 @@ of OpenCL APIs is considered to be undefined.
 
 [open,refpage='clEnqueueUnmapMemObject',desc='',type='protos']
 --
-The function
+To enqueue a command to unmap a previously mapped region of a memory object,
+call the function
 
-include::{api}/protos/clEnqueueUnmapMemObject.txt[]
-
-enqueues a command to unmap a previously mapped region of a memory object.
-Reads or writes from the host using the pointer returned by
-*clEnqueueMapBuffer* or *clEnqueueMapImage* are considered to be complete.
+include::{generated}/api/protos/clEnqueueUnmapMemObject.txt[]
 
   * _command_queue_ must be a valid host command-queue.
   * _memobj_ is a valid memory (buffer or image) object.
@@ -3355,6 +3340,20 @@ Reads or writes from the host using the pointer returned by
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
 
+Reads or writes from the host using the pointer returned by
+*clEnqueueMapBuffer* or *clEnqueueMapImage* are considered to be complete.
+
+*clEnqueueMapBuffer* and *clEnqueueMapImage* increment the mapped count of
+the memory object.
+The initial mapped count value of the memory object is zero.
+Multiple calls to *clEnqueueMapBuffer*, or *clEnqueueMapImage* on the same
+memory object will increment this mapped count by appropriate number of
+calls.
+*clEnqueueUnmapMemObject* decrements the mapped count of the memory object.
+
+*clEnqueueMapBuffer*, and *clEnqueueMapImage* act as synchronization points
+for a region of the buffer object being mapped.
+
 // refError
 
 *clEnqueueUnmapMemObject* returns CL_SUCCESS if the function is executed
@@ -3378,17 +3377,6 @@ Otherwise, it returns one of the following errors:
   * CL_INVALID_CONTEXT if context associated with _command_queue_ and
     _memobj_ are not the same or if the context associated with
     _command_queue_ and events in _event_wait_list_ are not the same.
-
-*clEnqueueMapBuffer* and *clEnqueueMapImage* increment the mapped count of
-the memory object.
-The initial mapped count value of the memory object is zero.
-Multiple calls to *clEnqueueMapBuffer*, or *clEnqueueMapImage* on the same
-memory object will increment this mapped count by appropriate number of
-calls.
-*clEnqueueUnmapMemObject* decrements the mapped count of the memory object.
-
-*clEnqueueMapBuffer*, and *clEnqueueMapImage* act as synchronization points
-for a region of the buffer object being mapped.
 --
 
 
@@ -3458,12 +3446,60 @@ This could be used to:
 
 [open,refpage='clEnqueueMigrateMemObjects',desc='',type='protos']
 --
-The function
+To enqueue a command to indicate which device a set of memory objects should
+be associated with, call the function
 
-include::{api}/protos/clEnqueueMigrateMemObjects.txt[]
+include::{generated}/api/protos/clEnqueueMigrateMemObjects.txt[]
 
-enqueues a command to indicate which device a set of memory objects should
-be associated with.
+  * _command_queue_ is a valid host command-queue.
+    The specified set of memory objects in _mem_objects_ will be migrated to the
+    OpenCL device associated with _command_queue_ or to the host if the
+    CL_MIGRATE_MEM_OBJECT_HOST has been specified.
+  * _num_mem_objects_ is the number of memory objects specified in
+    _mem_objects_.
+  * _mem_objects_ is a pointer to a list of memory objects.
+  * _flags_ is a bit-field that is used to specify migration options.
+    The <<migration-flags-table,Memory Migration Flags>> describes the possible
+    values for flags.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
+    complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not wait
+    on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+    The context associated with events in _event_wait_list_ and _command_queue_
+    must be the same.
+    The memory associated with _event_wait_list_ can be reused or freed after
+    the function returns.
+  * _event_ returns an event object that identifies this particular command and
+    can be used to query or queue a wait for this particular command to
+    complete.
+    _event_ can be `NULL` in which case it will not be possible for the
+    application to query the status of this command or queue a wait for this
+    command to complete.
+    If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
+    _event_ argument should not refer to an element of the _event_wait_list_
+    array.
+
+[[migration-flags-table]]
+.Supported values for cl_mem_migration_flags
+[width="100%",cols="<50%,<50%",options="header"]
+|====
+| *cl_mem_migration flags* | Description
+| *CL_MIGRATE_MEM_OBJECT_HOST*
+  | This flag indicates that the specified set of memory objects are to be
+    migrated to the host, regardless of the target command-queue.
+| *CL_MIGRATE_MEM_OBJECT_CONTENT_UNDEFINED*
+  | This flag indicates that the contents of the set of memory objects are
+    undefined after migration.
+    The specified set of memory objects are migrated to the device
+    associated with _command_queue_ without incurring the overhead of
+    migrating their contents.
+|====
+
 Typically, memory objects are implicitly migrated to a device for which
 enqueued commands, using the memory object, are targeted.
 *clEnqueueMigrateMemObjects* allows this migration to be explicitly
@@ -3489,56 +3525,6 @@ The user is responsible for managing the event dependencies, associated with
 this command, in order to avoid overlapping access to memory objects.
 Improperly specified event dependencies passed to
 *clEnqueueMigrateMemObjects* could result in undefined results.
-
-  * _command_queue_ is a valid host command-queue.
-    The specified set of memory objects in _mem_objects_ will be migrated to the
-    OpenCL device associated with _command_queue_ or to the host if the
-    CL_MIGRATE_MEM_OBJECT_HOST has been specified.
-  * _num_mem_objects_ is the number of memory objects specified in
-    _mem_objects_.
-  * _mem_objects_ is a pointer to a list of memory objects.
-  * _flags_ is a bit-field that is used to specify migration options.
-    The <<migration-flags-table,Memory Migration Flags>> describes the possible
-    values for flags.
-
-[[migration-flags-table]]
-.Supported values for cl_mem_migration_flags
-[width="100%",cols="<50%,<50%",options="header"]
-|====
-| *cl_mem_migration flags* | Description
-| *CL_MIGRATE_MEM_OBJECT_HOST*
-  | This flag indicates that the specified set of memory objects are to be
-    migrated to the host, regardless of the target command-queue.
-| *CL_MIGRATE_MEM_OBJECT_CONTENT_UNDEFINED*
-  | This flag indicates that the contents of the set of memory objects are
-    undefined after migration.
-    The specified set of memory objects are migrated to the device
-    associated with _command_queue_ without incurring the overhead of
-    migrating their contents.
-|====
-
-  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
-    complete before this particular command can be executed.
-    If _event_wait_list_ is `NULL`, then this particular command does not wait
-    on any event to complete.
-    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
-    If _event_wait_list_ is not `NULL`, the list of events pointed to by
-    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
-    greater than 0.
-    The events specified in _event_wait_list_ act as synchronization points.
-    The context associated with events in _event_wait_list_ and _command_queue_
-    must be the same.
-    The memory associated with _event_wait_list_ can be reused or freed after
-    the function returns.
-  * _event_ returns an event object that identifies this particular command and
-    can be used to query or queue a wait for this particular command to
-    complete.
-    _event_ can be `NULL` in which case it will not be possible for the
-    application to query the status of this command or queue a wait for this
-    command to complete.
-    If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
-    _event_ argument should not refer to an element of the _event_wait_list_
-    array.
 
 // refError
 
@@ -3577,9 +3563,9 @@ Otherwise, it returns one of the following errors:
 [open,refpage='clGetMemObjectInfo',desc='',type='protos']
 --
 To get information that is common to all memory objects (buffer and image
-objects), use the following function
+objects), call the function
 
-include::{api}/protos/clGetMemObjectInfo.txt[]
+include::{generated}/api/protos/clGetMemObjectInfo.txt[]
 
   * _memobj_ specifies the memory object being queried.
   * _param_name_ specifies the information to query.
@@ -3596,22 +3582,6 @@ include::{api}/protos/clGetMemObjectInfo.txt[]
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
-
-// refError
-
-*clGetMemObjectInfo* returns CL_SUCCESS if the function is executed
-successfully.
-Otherwise, it returns one of the following errors:
-
-  * CL_INVALID_VALUE if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<mem-info-table,Memory Object Info>> table and _param_value_ is not
-    `NULL`.
-  * CL_INVALID_MEM_OBJECT if _memobj_ is a not a valid memory object.
-  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
 
 [[mem-info-table]]
 .List of supported param_names by *clGetMemObjectInfo*
@@ -3703,6 +3673,22 @@ Otherwise, it returns one of the following errors:
     The reference count returned should be considered immediately stale.
     It is unsuitable for general use in applications.
     This feature is provided for identifying memory leaks.
+
+// refError
+
+*clGetMemObjectInfo* returns CL_SUCCESS if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * CL_INVALID_VALUE if _param_name_ is not valid, or if size in bytes
+    specified by _param_value_size_ is < size of return type as described in
+    the <<mem-info-table,Memory Object Info>> table and _param_value_ is not
+    `NULL`.
+  * CL_INVALID_MEM_OBJECT if _memobj_ is a not a valid memory object.
+  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 --
 
 
@@ -3805,19 +3791,27 @@ must be the same for the host and all OpenCL devices in the context.
 
 [open,refpage='clSVMAlloc',desc='',type='protos']
 --
-The function
+To allocate a shared virtual memory buffer (referred to as a SVM buffer)
+that can be shared by the host and all devices in an OpenCL context that
+support shared virtual memory, call the function
 
-include::{api}/protos/clSVMAlloc.txt[]
-
-allocates a shared virtual memory buffer (referred to as a SVM buffer) that
-can be shared by the host and all devices in an OpenCL context that support
-shared virtual memory.
+include::{generated}/api/protos/clSVMAlloc.txt[]
 
   * _context_ is a valid OpenCL context used to create the SVM buffer.
   * _flags_ is a bit-field that is used to specify allocation and usage
     information.
     The <<svm-flags-table,SVM Memory Flags>> table describes the possible values
     for _flags_.
+  * _size_ is the size in bytes of the SVM buffer to be allocated.
+  * _alignment_ is the minimum alignment in bytes that is required for the newly
+    created buffers memory region.
+    It must be a power of two up to the largest data type supported by the
+    OpenCL device.
+    For the full profile, the largest data type is long16.
+    For the embedded profile, it is long16 if the device supports 64-bit
+    integers; otherwise it is int16.
+    If alignment is 0, a default alignment will be used that is equal to the
+    size of largest data type supported by the OpenCL implementation.
 
 [[svm-flags-table]]
 .List of supported cl_svm_mem_flags_ values
@@ -3861,16 +3855,27 @@ Similarly, if CL_MEM_SVM_ATOMICS is not specified, the buffer can be created
 without support for SVM atomic operations (refer to an OpenCL kernel
 language specifications).
 
-  * _size_ is the size in bytes of the SVM buffer to be allocated.
-  * _alignment_ is the minimum alignment in bytes that is required for the newly
-    created buffers memory region.
-    It must be a power of two up to the largest data type supported by the
-    OpenCL device.
-    For the full profile, the largest data type is long16.
-    For the embedded profile, it is long16 if the device supports 64-bit
-    integers; otherwise it is int16.
-    If alignment is 0, a default alignment will be used that is equal to the
-    size of largest data type supported by the OpenCL implementation.
+Calling *clSVMAlloc* does not itself provide consistency for the shared
+memory region.
+When the host cannot use the SVM atomic operations, it must rely on OpenCLs
+guaranteed memory consistency at synchronization points.
+
+For SVM to be used efficiently, the host and any devices sharing a buffer
+containing virtual memory pointers should have the same endianness.
+If the context passed to *clSVMAlloc* has devices with mixed endianness and
+the OpenCL implementation is unable to implement SVM because of that mixed
+endianness, *clSVMAlloc* will fail and return `NULL`.
+
+Although SVM is generally not supported for image objects, *clCreateImage*
+may create an image from a buffer (a 1D image from a buffer or a 2D image
+from buffer) if the buffer specified in its image description parameter is a
+SVM buffer.
+Such images have a linear memory representation so their memory can be
+shared using SVM.
+However, fine grained sharing and atomics are not supported for image reads
+and writes in a kernel.
+
+// refError
 
 *clSVMAlloc* returns a valid non-`NULL` shared virtual memory address if the
 SVM buffer is successfully allocated.
@@ -3891,35 +3896,14 @@ Otherwise, like *malloc*, it returns a `NULL` pointer value.
   * _alignment_ is not a power of two or the OpenCL implementation cannot
     support the specified alignment for at least one device in _context_.
   * There was a failure to allocate resources.
-
-Calling *clSVMAlloc* does not itself provide consistency for the shared
-memory region.
-When the host cannot use the SVM atomic operations, it must rely on OpenCLs
-guaranteed memory consistency at synchronization points.
-
-For SVM to be used efficiently, the host and any devices sharing a buffer
-containing virtual memory pointers should have the same endianness.
-If the context passed to *clSVMAlloc* has devices with mixed endianness and
-the OpenCL implementation is unable to implement SVM because of that mixed
-endianness, *clSVMAlloc* will fail and return `NULL`.
-
-Although SVM is generally not supported for image objects, *clCreateImage*
-may create an image from a buffer (a 1D image from a buffer or a 2D image
-from buffer) if the buffer specified in its image description parameter is a
-SVM buffer.
-Such images have a linear memory representation so their memory can be
-shared using SVM.
-However, fine grained sharing and atomics are not supported for image reads
-and writes in a kernel.
 --
 
 [open,refpage='clSVMFree',desc='',type='protos']
 --
-The function
+To free a shared virtual memory buffer allocated using *clSVMAlloc*, call
+the function
 
-include::{api}/protos/clSVMFree.txt[]
-
-frees a shared virtual memory buffer allocated using *clSVMAlloc*.
+include::{generated}/api/protos/clSVMFree.txt[]
 
   * _context_ is a valid OpenCL context used to create the SVM buffer.
   * _svm_pointer_ must be the value returned by a call to *clSVMAlloc*.
@@ -3946,12 +3930,10 @@ system memory pointer.
 
 [open,refpage='clEnqueueSVMFree',desc='',type='protos']
 --
-The function
+To enqueue a command to free the shared virtual memory allocated using
+*clSVMAlloc* or a shared system memory pointer, call the function
 
-include::{api}/protos/clEnqueueSVMFree.txt[]
-
-enqueues a command to free the shared virtual memory allocated using
-*clSVMAlloc* or a shared system memory pointer.
+include::{generated}/api/protos/clEnqueueSVMFree.txt[]
 
   * _command_queue_ is a valid host command-queue.
   * _svm_pointers_ and _num_svm_pointers_ specify shared virtual memory pointers
@@ -4024,9 +4006,9 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueSVMMemcpy',desc='',type='protos']
 --
-The following function enqueues a command to do a memcpy operation.
+To enqueue a command to do a memcpy operation, call the function
 
-include::{api}/protos/clEnqueueSVMMemcpy.txt[]
+include::{generated}/api/protos/clEnqueueSVMMemcpy.txt[]
 
   * _command_queue_ refers to the host command-queue in which the read / write
     command will be queued.
@@ -4037,26 +4019,11 @@ include::{api}/protos/clEnqueueSVMMemcpy.txt[]
   * If _blocking_copy_ is CL_TRUE i.e. the copy command is blocking,
     *clEnqueueSVMMemcpy* does not return until the buffer data has been copied
     into memory pointed to by _dst_ptr_.
-
-If _blocking_copy_ is CL_FALSE i.e. the copy command is non-blocking,
-*clEnqueueSVMMemcpy* queues a non-blocking copy command and returns.
-The contents of the buffer that _dst_ptr_ points to cannot be used until the
-copy command has completed.
-The _event_ argument returns an event object which can be used to query the
-execution status of the read command.
-When the copy command has completed, the contents of the buffer that
-_dst_ptr_ points to can be used by the application.
-
   * _size_ is the size in bytes of data being copied.
   * _dst_ptr_ is the pointer to a host or SVM memory allocation where data is
     copied to.
   * _src_ptr_ is the pointer to a host or SVM memory allocation where data is
     copied from.
-
-If the memory allocation(s) containing _dst_ptr_ and/or _src_ptr_ are
-allocated using *clSVMAlloc* and either is not allocated from the same
-context from which _command_queue_ was created the behavior is undefined.
-
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
     complete before this particular command can be executed.
     If _event_wait_list_ is `NULL`, then this particular command does not wait
@@ -4079,6 +4046,19 @@ context from which _command_queue_ was created the behavior is undefined.
     If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
+
+If _blocking_copy_ is CL_FALSE i.e. the copy command is non-blocking,
+*clEnqueueSVMMemcpy* queues a non-blocking copy command and returns.
+The contents of the buffer that _dst_ptr_ points to cannot be used until the
+copy command has completed.
+The _event_ argument returns an event object which can be used to query the
+execution status of the read command.
+When the copy command has completed, the contents of the buffer that
+_dst_ptr_ points to can be used by the application.
+
+If the memory allocation(s) containing _dst_ptr_ and/or _src_ptr_ are
+allocated using *clSVMAlloc* and either is not allocated from the same
+context from which _command_queue_ was created the behavior is undefined.
 
 // refError
 
@@ -4108,12 +4088,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueSVMMemFill',desc='',type='protos']
 --
-The function
+To enqueue a command to fill a region in memory with a pattern of a given
+pattern size, call the function
 
-include::{api}/protos/clEnqueueSVMMemFill.txt[]
-
-enqueues a command to fill a region in memory with a pattern of a given
-pattern size.
+include::{generated}/api/protos/clEnqueueSVMMemFill.txt[]
 
   * _command_queue_ refers to the host command-queue in which the fill command
     will be queued.
@@ -4192,31 +4170,14 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueSVMMap',desc='',type='protos']
 --
-The function
+To enqueue a command that will allow the host to update a region of a SVM
+buffer, call the function
 
-include::{api}/protos/clEnqueueSVMMap.txt[]
-
-enqueues a command that will allow the host to update a region of a SVM
-buffer.
-Note that since we are enqueuing a command with a SVM buffer, the region is
-already mapped in the host address space.
+include::{generated}/api/protos/clEnqueueSVMMap.txt[]
 
   * _command_queue_ must be a valid host command-queue.
   * _blocking_map_ indicates if the map operation is _blocking_ or
     _non-blocking_.
-
-If _blocking_map_ is CL_TRUE, *clEnqueueSVMMap* does not return until the
-application can access the contents of the SVM region specified by _svm_ptr_
-and _size_ on the host.
-
-If _blocking_map_ is CL_FALSE i.e. map operation is non-blocking, the region
-specified by _svm_ptr_ and _size_ cannot be used until the map command has
-completed.
-The _event_ argument returns an event object which can be used to query the
-execution status of the map command.
-When the map command is completed, the application can access the contents
-of the region specified by _svm_ptr_ and _size_.
-
   * _map_flags_ is a bit-field and is described in the
     <<memory-map-flags-table,Memory Map Flags>> table.
   * _svm_ptr_ and _size_ are a pointer to a memory region and size in bytes that
@@ -4248,6 +4209,21 @@ of the region specified by _svm_ptr_ and _size_.
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
 
+If _blocking_map_ is CL_TRUE, *clEnqueueSVMMap* does not return until the
+application can access the contents of the SVM region specified by _svm_ptr_
+and _size_ on the host.
+
+If _blocking_map_ is CL_FALSE i.e. map operation is non-blocking, the region
+specified by _svm_ptr_ and _size_ cannot be used until the map command has
+completed.
+The _event_ argument returns an event object which can be used to query the
+execution status of the map command.
+When the map command is completed, the application can access the contents
+of the region specified by _svm_ptr_ and _size_.
+
+Note that since we are enqueuing a command with a SVM buffer, the region is
+already mapped in the host address space.
+
 // refError
 
 *clEnqueueSVMMap* returns CL_SUCCESS if the function is executed
@@ -4276,13 +4252,11 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueSVMUnmap',desc='',type='protos']
 --
-The function
-
-include::{api}/protos/clEnqueueSVMUnmap.txt[]
-
-enqueues a command to indicate that the host has completed updating the
+To enqueue a command to indicate that the host has completed updating the
 region given by _svm_ptr_ and which was specified in a previous call to
-*clEnqueueSVMMap*.
+*clEnqueueSVMMap*, call the function
+
+include::{generated}/api/protos/clEnqueueSVMUnmap.txt[]
 
   * _command_queue_ must be a valid host command-queue.
   * _svm_ptr_ is a pointer that was specified in a previous call to
@@ -4314,6 +4288,9 @@ region given by _svm_ptr_ and which was specified in a previous call to
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
 
+*clEnqueueSVMMap* and *clEnqueueSVMUnmap* act as synchronization points for
+the region of the SVM buffer specified in these calls.
+
 // refError
 
 *clEnqueueSVMUnmap* returns CL_SUCCESS if the function is executed
@@ -4333,9 +4310,6 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
-
-*clEnqueueSVMMap* and *clEnqueueSVMUnmap* act as synchronization points for
-the region of the SVM buffer specified in these calls.
 
 [NOTE]
 ====
@@ -4362,20 +4336,10 @@ buffers allocated using *clSVMAlloc* or fine-grained system allocations).
 
 [open,refpage='clEnqueueSVMMigrateMem',desc='',type='protos']
 --
-The function
+To enqueue a command to indicate which device a set of ranges of SVM
+allocations should be associated with, call the function
 
-include::{api}/protos/clEnqueueSVMMigrateMem.txt[]
-
-enqueues a command to indicate which device a set of ranges of SVM
-allocations should be associated with.
-Once the event returned by *clEnqueueSVMMigrateMem* has become CL_COMPLETE,
-the ranges specified by svm pointers and sizes have been successfully
-migrated to the device associated with command queue.
-
-The user is responsible for managing the event dependencies associated with
-this command in order to avoid overlapping access to SVM allocations.
-Improperly specified event dependencies passed to *clEnqueueSVMMigrateMem*
-could result in undefined results.
+include::{generated}/api/protos/clEnqueueSVMMigrateMem.txt[]
 
   * _command_queue_ is a valid host command queue.
     The specified set of allocation ranges will be migrated to the OpenCL device
@@ -4417,6 +4381,15 @@ could result in undefined results.
     that waits for this command to complete.
     If the _event_wait_list_ and _event_ arguments are not `NULL`, the _event_
     argument should not refer to an element of the _event_wait_list_ array.
+
+Once the event returned by *clEnqueueSVMMigrateMem* has become CL_COMPLETE,
+the ranges specified by svm pointers and sizes have been successfully
+migrated to the device associated with command queue.
+
+The user is responsible for managing the event dependencies associated with
+this command in order to avoid overlapping access to SVM allocations.
+Improperly specified event dependencies passed to *clEnqueueSVMMigrateMem*
+could result in undefined results.
 
 // refError
 
@@ -4493,11 +4466,9 @@ functions.
 
 [open,refpage='clCreateSamplerWithProperties',desc='',type='protos']
 --
-The function
+To create a sampler object, call the function
 
-include::{api}/protos/clCreateSamplerWithProperties.txt[]
-
-creates a sampler object.
+include::{generated}/api/protos/clCreateSamplerWithProperties.txt[]
 
   * _context_ must be a valid OpenCL context.
   * _sampler_properties_ specifies a list of sampler property names and their
@@ -4576,13 +4547,13 @@ returned in _errcode_ret_:
 
 [open,refpage='clRetainSampler',desc='',type='protos']
 --
-The function
+To retain a sampler object, call the function
 
-include::{api}/protos/clRetainSampler.txt[]
+include::{generated}/api/protos/clRetainSampler.txt[]
 
-// Jon - no parameter description
+  * _sampler_ specifies the sampler to be released.
 
-increments the _sampler_ reference count.
+The _sampler_ reference count is incremented.
 *clCreateSamplerWithProperties* performs an implicit retain.
 
 // refError
@@ -4600,13 +4571,13 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clReleaseSampler',desc='',type='protos']
 --
-The function
+To release a sampler object, call the function
 
-include::{api}/protos/clReleaseSampler.txt[]
+include::{generated}/api/protos/clReleaseSampler.txt[]
 
-// Jon - no parameter description
+  * _sampler_ specifies the sampler to be released.
 
-decrements the _sampler_ reference count.
+The _sampler_ reference count is decremented.
 The sampler object is deleted after the reference count becomes zero and
 commands queued for execution on a command-queue(s) that use _sampler_ have
 finished.
@@ -4632,11 +4603,9 @@ the object or by calling *clRetainSampler* causes undefined behavior.
 
 [open,refpage='clGetSamplerInfo',desc='',type='protos']
 --
-The function
+To return information about a sampler object, call the function
 
-include::{api}/protos/clGetSamplerInfo.txt[]
-
-returns information about the sampler object.
+include::{generated}/api/protos/clGetSamplerInfo.txt[]
 
   * _sampler_ specifies the sampler being queried.
   * _param_name_ specifies the information to query.
@@ -4722,19 +4691,10 @@ A program object encapsulates the following information:
 
 [open,refpage='clCreateProgramWithSource',desc='',type='protos']
 --
-The function
+To creates a program object for a context and load source code into that
+object, call the function
 
-include::{api}/protos/clCreateProgramWithSource.txt[]
-
-creates a program object for a context, and loads the source code specified
-by the text strings in the _strings_ array into the program object.
-The devices associated with the program object are the devices associated
-with _context_.
-The source code specified by _strings_ is either an OpenCL C program source,
-header or implementation-defined source for custom devices that support an
-online compiler.
-OpenCL C++ is not supported as an online-compiled kernel language through
-this interface.
+include::{generated}/api/protos/clCreateProgramWithSource.txt[]
 
   * _context_ must be a valid OpenCL context.
   * _strings_ is an array of _count_ pointers to optionally null-terminated
@@ -4749,6 +4709,17 @@ this interface.
     terminator in its count.
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
+
+The source code specified by _strings_ will be loaded into the program
+object.
+
+The devices associated with the program object are the devices associated
+with _context_.
+The source code specified by _strings_ is either an OpenCL C program source,
+header or implementation-defined source for custom devices that support an
+online compiler.
+OpenCL C++ is not supported as an online-compiled kernel language through
+this interface.
 
 // refError
 
@@ -4769,19 +4740,21 @@ returned in _errcode_ret_:
 
 [open,refpage='clCreateProgramWithIL',desc='',type='protos']
 --
-The function
+To creates a program object for a context and load code in an intermediate
+language into that object, call the function
 
-include::{api}/protos/clCreateProgramWithIL.txt[]
-
-creates a program object for a context, and loads the IL pointed to by _il_
-and with length in bytes _length_ into the program object.  The devices
-associated with the program object are the devices associated with _context_.
+include::{generated}/api/protos/clCreateProgramWithIL.txt[]
 
   * _context_ must be a valid OpenCL context.
   * _il_ is a pointer to a _length_-byte block of memory containing SPIR-V or an
     implementation-defined intermediate language.
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
+
+The IL pointed to by _il_ and with length in bytes _length_ will be loaded
+into the program object.
+The devices associated with the program object are the devices associated
+with _context_.
 
 // refError
 
@@ -4804,24 +4777,16 @@ returned in _errcode_ret_:
 
 [open,refpage='clCreateProgramWithBinary',desc='',type='protos']
 --
-The function
+To create a program object for a context and load binary bits into that
+object, call the function
 
-include::{api}/protos/clCreateProgramWithBinary.txt[]
-
-creates a program object for a context, and loads the binary bits specified
-by _binary_ into the program object.
+include::{generated}/api/protos/clCreateProgramWithBinary.txt[]
 
   * _context_ must be a valid OpenCL context.
   * _device_list_ is a pointer to a list of devices that are in _context_.
     _device_list_ must be a non-`NULL` value.
     The binaries are loaded for devices specified in this list.
   * _num_devices_ is the number of devices listed in _device_list_.
-
-The devices associated with the program object will be the list of devices
-specified by _device_list_.
-The list of devices specified by _device_list_ must be devices associated
-with _context_.
-
   * _lengths_ is an array of the size in bytes of the program binaries to be
     loaded for devices specified by _device_list_.
   * _binaries_ is an array of pointers to program binaries to be loaded for
@@ -4831,8 +4796,14 @@ with _context_.
     corresponding binary is given by _lengths_[i].
     _lengths_[i] cannot be zero and _binaries_[i] cannot be a `NULL` pointer.
 
-The program binaries specified by _binaries_ contain the bits that describe
-one of the following:
+The devices associated with the program object will be the list of devices
+specified by _device_list_.
+The list of devices specified by _device_list_ must be devices associated
+with _context_.
+
+The program binaries specified by _binaries_ will be loaded into the program
+object.
+They contain bits that describe one of the following:
 
   * a program executable to be run on the device(s) associated with
     _context_,
@@ -4857,6 +4828,15 @@ The program binary can consist of either or both:
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
+OpenCL allows applications to create a program object using the program
+source or binary and build appropriate program executables.
+This can be very useful as it allows applications to load program source and
+then compile and link to generate a program executable online on its first
+instance for appropriate OpenCL devices in the system.
+These executables can now be queried and cached by the application.
+The cached executables can be read and loaded by the application, which can
+help significantly reduce the application initialization time.
+
 // refError
 
 *clCreateProgramWithBinary* returns a valid non-zero program object and
@@ -4878,38 +4858,26 @@ returned in _errcode_ret_:
     by the OpenCL implementation on the device.
   * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
-
-OpenCL allows applications to create a program object using the program
-source or binary and build appropriate program executables.
-This can be very useful as it allows applications to load program source and
-then compile and link to generate a program executable online on its first
-instance for appropriate OpenCL devices in the system.
-These executables can now be queried and cached by the application.
-The cached executables can be read and loaded by the application, which can
-help significantly reduce the application initialization time.
 --
 
 [open,refpage='clCreateProgramWithBuiltInKernels',desc='',type='protos']
 --
-The function
+To create a program object for a context and loads the information related
+to the built-in kernels into that object, call the function
 
-include::{api}/protos/clCreateProgramWithBuiltInKernels.txt[]
-
-creates a program object for a context, and loads the information related to
-the built-in kernels into a program object.
+include::{generated}/api/protos/clCreateProgramWithBuiltInKernels.txt[]
 
   * _context_ must be a valid OpenCL context.
   * _num_devices_ is the number of devices listed in _device_list_.
   * _device_list_ is a pointer to a list of devices that are in _context_.
     _device_list_ must be a non-`NULL` value.
     The built-in kernels are loaded for devices specified in this list.
+  * _kernel_names_ is a semi-colon separated list of built-in kernel names.
 
 The devices associated with the program object will be the list of devices
 specified by _device_list_.
 The list of devices specified by _device_list_ must be devices associated
 with _context_.
-
-  * _kernel_names_ is a semi-colon separated list of built-in kernel names.
 
 // refError
 
@@ -4937,13 +4905,13 @@ returned in _errcode_ret_:
 
 [open,refpage='clRetainProgram',desc='',type='protos']
 --
-The function
+To retain a program object, call the function
 
-include::{api}/protos/clRetainProgram.txt[]
+include::{generated}/api/protos/clRetainProgram.txt[]
 
-// Jon - no parameter description
+  * _program_ is the program object to be retained.
 
-increments the _program_ reference count.
+The _program_ reference count is incremented.
 All *clCreateProgram* APIs do an implicit retain.
 
 // refError
@@ -4961,13 +4929,13 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clReleaseProgram',desc='',type='protos']
 --
-The function
+To release a program object, call the function
 
-include::{api}/protos/clReleaseProgram.txt[]
+include::{generated}/api/protos/clReleaseProgram.txt[]
 
-// Jon - no parameter description
+  * _program_ is the program object to be released.
 
-decrements the _program_ reference count.
+The _program_ reference count is decremented.
 The program object is deleted after all kernel objects associated with
 _program_ have been deleted and the _program_ reference count becomes zero.
 
@@ -4989,20 +4957,10 @@ the object or by calling *clRetainProgram* causes undefined behavior.
 
 [open,refpage='clSetProgramReleaseCallback',desc='',type='protos']
 --
-The function
+To register a user callback function with a program object, call the
+function
 
-include::{api}/protos/clSetProgramReleaseCallback.txt[]
-
-registers a user callback function with a program object.
-Each call to *clSetProgramReleaseCallback* registers the specified user
-callback function on a callback stack associated with program.
-The registered user callback functions are called in the reverse order in
-which they were registered.
-The user callback functions are called after destructors (if any) for
-program scope global variables (if any) are called and before the program is
-released.
-This provides a mechanism for the application (and libraries) to be notified
-when destructors are complete.
+include::{generated}/api/protos/clSetProgramReleaseCallback.txt[]
 
   * _program_ is a valid program object
   * _pfn_notify_ is the callback function that can be registered by the
@@ -5020,6 +4978,16 @@ when destructors are complete.
      _user_data_ will be passed as the _user_data_ argument when _pfn_notify_ is
      called.
      user data can be `NULL`.
+
+Each call to *clSetProgramReleaseCallback* registers the specified user
+callback function on a callback stack associated with program.
+The registered user callback functions are called in the reverse order in
+which they were registered.
+The user callback functions are called after destructors (if any) for
+program scope global variables (if any) are called and before the program is
+released.
+This provides a mechanism for the application (and libraries) to be notified
+when destructors are complete.
 
 // refError
 
@@ -5040,11 +5008,9 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clSetProgramSpecializationConstant',desc='',type='protos']
 --
-The function
+To set the value of a specialization constant, call the function
 
-include::{api}/protos/clSetProgramSpecializationConstant.txt[]
-
-sets the value of a specialization constant.
+include::{generated}/api/protos/clSetProgramSpecializationConstant.txt[]
 
   * _program_ must be a valid OpenCL program created from an intermediate format
     module (e.g. SPIR-V).
@@ -5101,25 +5067,9 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clBuildProgram',desc='',type='protos']
 --
-The function
+To build (compile & link) a program executable, call the function
 
-include::{api}/protos/clBuildProgram.txt[]
-
-builds (compiles & links) a program executable from the program source or
-binary for all the devices or a specific device(s) in the OpenCL context
-associated with _program_.
-OpenCL allows program executables to be built using the source or the
-binary.
-*clBuildProgram* must be called for _program_ created using
-*clCreateProgramWithSource*, *clCreateProgramWithIL* or
-*clCreateProgramWithBinary* to build the program executable for one or more
-devices associated with _program_.
-If _program_ is created with *clCreateProgramWithBinary*, then the program
-binary must be an executable binary (not a compiled binary or library).
-
-The executable binary can be queried using *clGetProgramInfo*(_program_,
-CL_PROGRAM_BINARIES, ...) and can be specified to
-*clCreateProgramWithBinary* to create a new program object.
+include::{generated}/api/protos/clBuildProgram.txt[]
 
   * _program_ is the program object.
   * _device_list_ is a pointer to a list of devices associated with _program_.
@@ -5159,6 +5109,22 @@ CL_PROGRAM_BINARIES, ...) and can be specified to
     is thread-safe.
   ** _user_data_ will be passed as an argument when _pfn_notify_ is called.
      _user_data_ can be `NULL`.
+
+The program executable is built from the program source or binary for all
+the devices, or a specific device(s) in the OpenCL context associated with
+_program_.
+OpenCL allows program executables to be built using the source or the
+binary.
+*clBuildProgram* must be called for _program_ created using
+*clCreateProgramWithSource*, *clCreateProgramWithIL* or
+*clCreateProgramWithBinary* to build the program executable for one or more
+devices associated with _program_.
+If _program_ is created with *clCreateProgramWithBinary*, then the program
+binary must be an executable binary (not a compiled binary or library).
+
+The executable binary can be queried using *clGetProgramInfo*(_program_,
+CL_PROGRAM_BINARIES, ...) and can be specified to
+*clCreateProgramWithBinary* to create a new program object.
 
 // refError
 
@@ -5220,18 +5186,10 @@ OpenCL programs are compiled and linked to support the following:
 
 [open,refpage='clCompileProgram',desc='',type='protos']
 --
-The function
+To compile a program's source for all the devices or a specific device(s) in
+the OpenCL context associated with the program, call the function
 
-include::{api}/protos/clCompileProgram.txt[]
-
-compiles a programs source for all the devices or a specific device(s) in
-the OpenCL context associated with _program_.
-The pre-processor runs before the program sources are compiled.
-The compiled binary is built for all devices associated with _program_ or
-the list of devices specified.
-The compiled binary can be queried using *clGetProgramInfo*(_program_,
-CL_PROGRAM_BINARIES, ...) and can be passed to *clCreateProgramWithBinary*
-to create a new program object.
+include::{generated}/api/protos/clCompileProgram.txt[]
 
   * _program_ is the program object that is the compilation target.
   * _device_list_ is a pointer to a list of devices associated with _program_.
@@ -5261,6 +5219,32 @@ to create a new program object.
     <<preprocessor-options, Preprocessor options>>).
     If multiple entries in _header_include_names_ refer to the same header name,
     the first one encountered will be used.
+  * _pfn_notify_ is a function pointer to a notification routine.
+    The notification routine is a callback function that an application can
+    register and which will be called when the program executable has been built
+    (successfully or unsuccessfully).
+    If _pfn_notify_ is not `NULL`, *clCompileProgram* does not need to wait for
+    the compiler to complete and can return immediately once the compilation can
+    begin.
+    The compilation can begin if the context, program whose sources are being
+    compiled, list of devices, input headers, programs that describe input
+    headers and compiler options specified are all valid and appropriate host
+    and device resources needed to perform the compile are available.
+    If _pfn_notify_ is `NULL`, *clCompileProgram* does not return until the
+    compiler has completed.
+    This callback function may be called asynchronously by the OpenCL
+    implementation.
+    It is the applications responsibility to ensure that the callback function
+    is thread-safe.
+  ** _user_data_ will be passed as an argument when _pfn_notify_ is called.
+     _user_data_ can be `NULL`.
+
+The pre-processor runs before the program sources are compiled.
+The compiled binary is built for all devices associated with _program_ or
+the list of devices specified.
+The compiled binary can be queried using *clGetProgramInfo*(_program_,
+CL_PROGRAM_BINARIES, ...) and can be passed to *clCreateProgramWithBinary*
+to create a new program object.
 
 If _program_ was created using *clCreateProgramWithIL*, then
 _num_input_headers_, _input_headers_, and _header_include_names_ are
@@ -5306,26 +5290,6 @@ clCompileProgram(program_A,
                  NULL, NULL); // pfn_notify & user_data
 ----
 
-  * _pfn_notify_ is a function pointer to a notification routine.
-    The notification routine is a callback function that an application can
-    register and which will be called when the program executable has been built
-    (successfully or unsuccessfully).
-    If _pfn_notify_ is not `NULL`, *clCompileProgram* does not need to wait for
-    the compiler to complete and can return immediately once the compilation can
-    begin.
-    The compilation can begin if the context, program whose sources are being
-    compiled, list of devices, input headers, programs that describe input
-    headers and compiler options specified are all valid and appropriate host
-    and device resources needed to perform the compile are available.
-    If _pfn_notify_ is `NULL`, *clCompileProgram* does not return until the
-    compiler has completed.
-    This callback function may be called asynchronously by the OpenCL
-    implementation.
-    It is the applications responsibility to ensure that the callback function
-    is thread-safe.
-  ** _user_data_ will be passed as an argument when _pfn_notify_ is called.
-     _user_data_ can be `NULL`.
-
 // refError
 
 *clCompileProgram* returns CL_SUCCESS if the function is executed
@@ -5367,22 +5331,11 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clLinkProgram',desc='',type='protos']
 --
-The function
+To link a set of compiled program objects and libraries for all the devices
+or a specific device(s) in the OpenCL context and create a library or
+executable, call the function
 
-include::{api}/protos/clLinkProgram.txt[]
-
-links a set of compiled program objects and libraries for all the devices or
-a specific device(s) in the OpenCL context and creates a library or
-executable.
-*clLinkProgram* creates a new program object which contains the library or
-executable.
-The library or executable binary can be queried using
-*clGetProgramInfo*(_program_, CL_PROGRAM_BINARIES, ...) and can be specified
-to *clCreateProgramWithBinary* to create a new program object.
-
-The devices associated with the returned program object will be the list of
-devices specified by _device_list_ or if _device_list_ is `NULL` it will be
-the list of devices associated with _context_.
+include::{generated}/api/protos/clLinkProgram.txt[]
 
   * _context_ must be a valid OpenCL context.
   * _device_list_ is a pointer to a list of devices that are in _context_.
@@ -5421,8 +5374,11 @@ the list of devices associated with _context_.
     The notification routine is a callback function that an application can
     register and which will be called when the program executable has been built
     (successfully or unsuccessfully).
+  ** _user_data_ will be passed as an argument when _pfn_notify_ is called.
+     _user_data_ can be `NULL`.
+
 If _pfn_notify_ is not `NULL`, *clLinkProgram* does not need to wait for the
-linker to complete and can return immediately once the linking operation can
+linker to complete, and can return immediately once the linking operation can
 begin.
 Once the linker has completed, the _pfn_notify_ callback function is called
 which returns the program object returned by *clLinkProgram*.
@@ -5435,8 +5391,15 @@ is thread-safe.
 If _pfn_notify_ is `NULL`, *clLinkProgram* does not return until the linker
 has completed.
 
-  ** _user_data_ will be passed as an argument when _pfn_notify_ is called.
-     _user_data_ can be `NULL`.
+*clLinkProgram* creates a new program object which contains the library or
+executable.
+The library or executable binary can be queried using
+*clGetProgramInfo*(_program_, CL_PROGRAM_BINARIES, ...) and can be specified
+to *clCreateProgramWithBinary* to create a new program object.
+
+The devices associated with the returned program object will be the list of
+devices specified by _device_list_ or if _device_list_ is `NULL` it will be
+the list of devices associated with _context_.
 
 The linking operation can begin if the context, list of devices, input
 programs and linker options specified are all valid and appropriate host and
@@ -5802,14 +5765,14 @@ The following options can be specified when linking a program executable.
 
 [open,refpage='clUnloadPlatformCompiler',desc='',type='protos']
 --
-The function
+To unload an OpenCL compiler for a platform, call the function
 
-include::{api}/protos/clUnloadPlatformCompiler.txt[]
+include::{generated}/api/protos/clUnloadPlatformCompiler.txt[]
 
-// Jon - no parameter description
+  * _platform_ is the platform to unload.
 
-allows the implementation to release the resources allocated by the OpenCL
-compiler for _platform_.
+This function allows the implementation to release the resources allocated
+by the OpenCL compiler for _platform_.
 This is a hint from the application and does not guarantee that the compiler
 will not be used in the future or that the compiler will actually be
 unloaded by the implementation.
@@ -5831,11 +5794,9 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clGetProgramInfo',desc='',type='protos']
 --
-The function
+To return information about a program object, call the function
 
-include::{api}/protos/clGetProgramInfo.txt[]
-
-returns information about the program object.
+include::{generated}/api/protos/clGetProgramInfo.txt[]
 
   * _program_ specifies the program object being queried.
   * _param_name_ specifies the information to query.
@@ -5998,11 +5959,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clGetProgramBuildInfo',desc='',type='protos']
 --
-The function
+To return build information for each device in the program object, call the
+function:
 
-include::{api}/protos/clGetProgramBuildInfo.txt[]
-
-returns build information for each device in the program object.
+include::{generated}/api/protos/clGetProgramBuildInfo.txt[]
 
   * _program_ specifies the program object being queried.
   * _device_ specifies the device for which build information is being queried.
@@ -6147,7 +6107,7 @@ a program and the argument values to be used when executing this
 --
 To create a kernel object, use the function
 
-include::{api}/protos/clCreateKernel.txt[]
+include::{generated}/api/protos/clCreateKernel.txt[]
 
   * _program_ is a program object with a successfully built executable.
   * _kernel_name_ is a function name in the program declared with the
@@ -6179,14 +6139,10 @@ returned in _errcode_ret_:
 
 [open,refpage='clCreateKernelsInProgram',desc='',type='protos']
 --
-The function
+To create kernel objects for all kernel functions in a program,
+call the function
 
-include::{api}/protos/clCreateKernelsInProgram.txt[]
-
-creates kernel objects for all kernel functions in _program_.
-Kernel objects are not created for any `+__kernel+` functions in _program_
-that do not have the same function definition across all devices for which a
-program executable has been successfully built.
+include::{generated}/api/protos/clCreateKernelsInProgram.txt[]
 
   * _program_ is a program object with a successfully built executable.
   * _num_kernels_ is the size of memory pointed to by _kernels_ specified as the
@@ -6199,21 +6155,9 @@ program executable has been successfully built.
   * _num_kernels_ret_ is the number of kernels in _program_.
     If _num_kernels_ret_ is `NULL`, it is ignored.
 
-// refError
-
-*clCreateKernelsInProgram* will return CL_SUCCESS if the kernel objects were
-successfully allocated.
-Otherwise, it returns one of the following errors:
-
-  * CL_INVALID_PROGRAM if _program_ is not a valid program object.
-  * CL_INVALID_PROGRAM_EXECUTABLE if there is no successfully built
-    executable for any device in _program_.
-  * CL_INVALID_VALUE if _kernels_ is not `NULL` and _num_kernels_ is less
-    than the number of kernels in _program_.
-  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+Kernel objects are not created for any `+__kernel+` functions in _program_
+that do not have the same function definition across all devices for which a
+program executable has been successfully built.
 
 Kernel objects can only be created once you have a program object with a
 valid program source or binary loaded into the program object and the
@@ -6231,17 +6175,34 @@ with _kernel_.
 Devices associated with a program object for which a valid program
 executable has been built can be used to execute kernels declared in the
 program object.
+
+// refError
+
+*clCreateKernelsInProgram* will return CL_SUCCESS if the kernel objects were
+successfully allocated.
+Otherwise, it returns one of the following errors:
+
+  * CL_INVALID_PROGRAM if _program_ is not a valid program object.
+  * CL_INVALID_PROGRAM_EXECUTABLE if there is no successfully built
+    executable for any device in _program_.
+  * CL_INVALID_VALUE if _kernels_ is not `NULL` and _num_kernels_ is less
+    than the number of kernels in _program_.
+  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+
 --
 
 [open,refpage='clRetainKernel',desc='',type='protos']
 --
-The function
+To retain a kernel object, call the function
 
-include::{api}/protos/clRetainKernel.txt[]
+include::{generated}/api/protos/clRetainKernel.txt[]
 
-// Jon - no parameter description
+  * _kernel_ is the kernel object to be retained.
 
-increments the _kernel_ reference count.
+The _kernel_ reference count is incremented.
 
 // refError
 
@@ -6260,13 +6221,19 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clReleaseKernel',desc='',type='protos']
 --
-The function
+To release a kernel object, call the function
 
-include::{api}/protos/clReleaseKernel.txt[]
+include::{generated}/api/protos/clReleaseKernel.txt[]
 
-// Jon - no parameter description
+  * _kernel_ is the kernel object to be released.
 
-decrements the _kernel_ reference count.
+The _kernel_ reference count is decremented.
+
+The kernel object is deleted once the number of instances that are retained
+to _kernel_ become zero and the kernel object is no longer needed by any
+enqueued commands that use _kernel_.
+Using this function to release a reference that was not obtained by creating
+the object or by calling *clRetainKernel* causes undefined behavior.
 
 // refError
 
@@ -6279,12 +6246,6 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
-
-The kernel object is deleted once the number of instances that are retained
-to _kernel_ become zero and the kernel object is no longer needed by any
-enqueued commands that use _kernel_.
-Using this function to release a reference that was not obtained by creating
-the object or by calling *clRetainKernel* causes undefined behavior.
 --
 
 
@@ -6294,35 +6255,16 @@ To execute a kernel, the kernel arguments must be set.
 
 [open,refpage='clSetKernelArg',desc='',type='protos']
 --
-The function
+To set the argument value for a specific argument of a kernel, call the
+function
 
-include::{api}/protos/clSetKernelArg.txt[]
-
-is used to set the argument value for a specific argument of a kernel.
+include::{generated}/api/protos/clSetKernelArg.txt[]
 
   * _kernel_ is a valid kernel object.
   * _arg_index_ is the argument index.
     Arguments to the kernel are referred by indices that go from 0 for the
     leftmost argument to _n_ - 1, where _n_ is the total number of arguments
-    declared by a kernel.
-
-For example, consider the following kernel:
-
-[source,c]
-----
-kernel void image_filter (int n,
-                          int m,
-                          constant float *filter_weights,
-                          read_only image2d_t src_image,
-                          write_only image2d_t dst_image)
-{
-...
-}
-----
-
-Argument index values for `image_filter` will be 0 for `n`, 1 for `m`, 2 for
-`filter_weights`, 3 for `src_image` and 4 for `dst_image`.
-
+    declared by a kernel (see below).
   * _arg_size_ specifies the size of the argument value.
     If the argument is a memory object, the size is the size of the memory
     object.
@@ -6342,6 +6284,23 @@ Argument index values for `image_filter` will be 0 for `n`, 1 for `m`, 2 for
     The argument value specified is the value used by all API calls that enqueue
     _kernel_ (*clEnqueueNDRangeKernel*) until the argument value is changed by a
     call to *clSetKernelArg* for _kernel_.
+
+For example, consider the following kernel:
+
+[source,c]
+----
+kernel void image_filter (int n,
+                          int m,
+                          constant float *filter_weights,
+                          read_only image2d_t src_image,
+                          write_only image2d_t dst_image)
+{
+...
+}
+----
+
+Argument index values for `image_filter` will be 0 for `n`, 1 for `m`, 2 for
+`filter_weights`, 3 for `src_image` and 4 for `dst_image`.
 
 If the argument is a memory object (buffer, pipe, image or image array), the
 _arg_value_ entry will be a pointer to the appropriate buffer, pipe, image
@@ -6450,12 +6409,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clSetKernelArgSVMPointer',desc='',type='protos']
 --
-The function
+To set a SVM pointer as the argument value for a specific argument of a
+kernel, call the function
 
-include::{api}/protos/clSetKernelArgSVMPointer.txt[]
-
-is used to set a SVM pointer as the argument value for a specific argument
-of a kernel.
+include::{generated}/api/protos/clSetKernelArgSVMPointer.txt[]
 
   * _kernel_ is a valid kernel object.
   * _arg_index_ is the argument index.
@@ -6492,12 +6449,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clSetKernelExecInfo',desc='',type='protos']
 --
-The function
+To pass additional information other than argument values to a kernel, call
+the function
 
-include::{api}/protos/clSetKernelExecInfo.txt[]
-
-can be used to pass additional information other than argument values to a
-kernel.
+include::{generated}/api/protos/clSetKernelExecInfo.txt[]
 
   * _kernel_ specifies the kernel object being queried.
   * _param_name_ specifies the information to be passed to kernel.
@@ -6617,32 +6572,19 @@ Only one _param_value_ will be stored for each value of _param_name_.
 
 [open,refpage='clCloneKernel',desc='',type='protos']
 --
-The function
+To clone a kernel object, call the function
 
-include::{api}/protos/clCloneKernel.txt[]
-
-is used to make a shallow copy of the kernel object, its arguments and any
-information passed to the kernel object using *clSetKernelExecInfo*.
-If the kernel object was ready to be enqueued before copying it, the clone
-of the kernel object is ready to enqueue.
+include::{generated}/api/protos/clCloneKernel.txt[]
 
   * _source_kernel_ is a valid cl_kernel object that will be copied.
     _source_kernel_ will not be modified in any way by this function.
   * _errcode_ret_ will be assigned an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
-// refError
-
-*clCloneKernel* returns a valid non-zero kernel object and _errcode_ret_ is
-set to CL_SUCCESS if the kernel is successfully copied.
-Otherwise it returns a `NULL` value with one of the following error values
-returned in _errcode_ret_:
-
-  * CL_INVALID_KERNEL if _kernel_ is not a valid kernel object.
-  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+Cloning is used to make a shallow copy of the kernel object, its arguments
+and any information passed to the kernel object using *clSetKernelExecInfo*.
+If the kernel object was ready to be enqueued before copying it, the clone
+of the kernel object is ready to enqueue.
 
 The returned kernel object is an exact copy of _source_kernel_, with one
 caveat: the reference count on the returned kernel object is set as if it
@@ -6667,6 +6609,19 @@ Only the data stored in the kernel object is copied; data referenced by the
 kernels arguments are not copied.
 For example, if a buffer or pointer argument is set on a kernel object, the
 pointer is copied but the underlying memory allocation is not.
+
+// refError
+
+*clCloneKernel* returns a valid non-zero kernel object and _errcode_ret_ is
+set to CL_SUCCESS if the kernel is successfully copied.
+Otherwise it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * CL_INVALID_KERNEL if _kernel_ is not a valid kernel object.
+  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 --
 
 
@@ -6674,11 +6629,9 @@ pointer is copied but the underlying memory allocation is not.
 
 [open,refpage='clGetKernelInfo',desc='',type='protos']
 --
-The function
+To return information about a kernel object, call the function
 
-include::{api}/protos/clGetKernelInfo.txt[]
-
-returns information about the kernel object.
+include::{generated}/api/protos/clGetKernelInfo.txt[]
 
   * _kernel_ specifies the kernel object being queried.
   * _param_name_ specifies the information to query.
@@ -6760,12 +6713,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clGetKernelWorkGroupInfo',desc='',type='protos']
 --
-The function
+To return information about the kernel object that may be specific to a
+device, call the function
 
-include::{api}/protos/clGetKernelWorkGroupInfo.txt[]
-
-returns information about the kernel object that may be specific to a
-device.
+include::{generated}/api/protos/clGetKernelWorkGroupInfo.txt[]
 
   * _kernel_ specifies the kernel object being queried.
   * _device_ identifies a specific device in the list of devices associated with
@@ -6880,11 +6831,9 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clGetKernelSubGroupInfo',desc='',type='protos']
 --
-The function
+To return information about a kernel object, call the function
 
-include::{api}/protos/clGetKernelSubGroupInfo.txt[]
-
-returns information about the kernel object.
+include::{generated}/api/protos/clGetKernelSubGroupInfo.txt[]
 
   * _kernel_ specifies the kernel object being queried.
   * _device_ identifies a specific device in the list of devices associated with
@@ -7007,16 +6956,9 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clGetKernelArgInfo',desc='',type='protos']
 --
-The function
+To return information about the arguments of a kernel, call the function
 
-include::{api}/protos/clGetKernelArgInfo.txt[]
-
-returns information about the arguments of a kernel.
-
-Kernel argument information is only available if the program object
-associated with _kernel_ is created with *clCreateProgramWithSource* and the
-program executable was built with the `-cl-kernel-arg-info option` specified
-in options argument to *clBuildProgram* or *clCompileProgram*.
+include::{generated}/api/protos/clGetKernelArgInfo.txt[]
 
   * _kernel_ specifies the kernel object being queried.
   * _arg_indx_ is the argument index.
@@ -7037,6 +6979,11 @@ in options argument to *clBuildProgram* or *clCompileProgram*.
   * _param_value_size ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
+
+Kernel argument information is only available if the program object
+associated with _kernel_ is created with *clCreateProgramWithSource* and the
+program executable was built with the `-cl-kernel-arg-info option` specified
+in options argument to *clBuildProgram* or *clCompileProgram*.
 
 [[kernel-argument-info-table]]
 .*clGetKernelArgInfo* parameter queries
@@ -7141,11 +7088,9 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueNDRangeKernel',desc='',type='protos']
 --
-The function
+To enqueue a command to execute a kernel on a device, call the function
 
-include::{api}/protos/clEnqueueNDRangeKernel.txt[]
-
-enqueues a command to execute a kernel on a device.
+include::{generated}/api/protos/clEnqueueNDRangeKernel.txt[]
 
   * _command_queue_ is a valid host command-queue.
     The kernel will be queued for execution on the device associated with
@@ -7188,6 +7133,29 @@ enqueues a command to execute a kernel on a device.
     The explicitly specified _local_work_size_ will be used to determine how to
     break the global work-items specified by _global_work_size_ into appropriate
     work-group instances.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
+    complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not wait
+    on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+    The context associated with events in _event_wait_list_ and _command_queue_
+    must be the same.
+    The memory associated with _event_wait_list_ can be reused or freed after
+    the function returns.
+  * _event_ returns an event object that identifies this particular
+    kernel-instance.
+    Event objects are unique and can be used to identify a particular
+    kernel-instance later on.
+    If _event_ is `NULL`, no event will be created for this kernel-instance and
+    therefore it will not be possible for the application to query or queue a
+    wait for this particular kernel-instance.
+    If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
+    _event_ argument should not refer to an element of the _event_wait_list_
+    array.
 
 Enabling non-uniform work-groups requires the _kernel_'s program to be
 compiled without the `-cl-uniform-work-group-size` flag.
@@ -7244,30 +7212,6 @@ local ID.
 The local ID, which can also be read by the kernel, is computed using the
 value given by _local_work_size_.
 The starting local ID is always (0, 0, ..., 0).
-
-  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
-    complete before this particular command can be executed.
-    If _event_wait_list_ is `NULL`, then this particular command does not wait
-    on any event to complete.
-    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
-    If _event_wait_list_ is not `NULL`, the list of events pointed to by
-    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
-    greater than 0.
-    The events specified in _event_wait_list_ act as synchronization points.
-    The context associated with events in _event_wait_list_ and _command_queue_
-    must be the same.
-    The memory associated with _event_wait_list_ can be reused or freed after
-    the function returns.
-  * _event_ returns an event object that identifies this particular
-    kernel-instance.
-    Event objects are unique and can be used to identify a particular
-    kernel-instance later on.
-    If _event_ is `NULL`, no event will be created for this kernel-instance and
-    therefore it will not be possible for the application to query or queue a
-    wait for this particular kernel-instance.
-    If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
-    _event_ argument should not refer to an element of the _event_wait_list_
-    array.
 
 // refError
 
@@ -7360,12 +7304,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueNativeKernel',desc='',type='protos']
 --
-The function
+To enqueue a command to execute a native C/C++ function not compiled using
+the OpenCL compiler, call the function
 
-include::{api}/protos/clEnqueueNativeKernel.txt[]
-
-enqueues a command to execute a native C/C++ function not compiled using the
-OpenCL compiler.
+include::{generated}/api/protos/clEnqueueNativeKernel.txt[]
 
   * _command_queue_ is a valid host command-queue.
     A native user function can only be executed on a command-queue created on a
@@ -7375,15 +7317,6 @@ OpenCL compiler.
   * _user_func_ is a pointer to a host-callable user function.
   * _args_ is a pointer to the args list that _user_func_ should be called with.
   * _cb_args_ is the size in bytes of the args list that _args_ points to.
-
-The data pointed to by _args_ and _cb_args_ bytes in size will be copied and
-a pointer to this copied region will be passed to _user_func_.
-The copy needs to be done because the memory objects (cl_mem values) that
-_args_ may contain need to be modified and replaced by appropriate pointers
-to global memory.
-When *clEnqueueNativeKernel* returns, the memory region pointed to by _args_
-can be reused by the application.
-
   * _num_mem_objects_ is the number of buffer objects that are passed in _args_.
   * _mem_list_ is a list of valid buffer objects, if _num_mem_objects_ > 0.
     The buffer object values specified in _mem_list_ are memory object handles
@@ -7394,6 +7327,14 @@ can be reused by the application.
     by pointers to global memory.
   * _event_wait_list_, _num_events_in_wait_list_ and _event_ are as described in
     *clEnqueueNDRangeKernel*.
+
+The data pointed to by _args_ and _cb_args_ bytes in size will be copied and
+a pointer to this copied region will be passed to _user_func_.
+The copy needs to be done because the memory objects (cl_mem values) that
+_args_ may contain need to be modified and replaced by appropriate pointers
+to global memory.
+When *clEnqueueNativeKernel* returns, the memory region pointed to by _args_
+can be reused by the application.
 
 // refError
 
@@ -7515,11 +7456,9 @@ be used to report appropriate error information.
 
 [open,refpage='clCreateUserEvent',desc='',type='protos']
 --
-The function
+To create a user event object, call the function
 
-include::{api}/protos/clCreateUserEvent.txt[]
-
-creates a user event object.
+include::{generated}/api/protos/clCreateUserEvent.txt[]
 
   * _context_ must be a valid OpenCL context.
   * _errcode_ret_ will return an appropriate error code.
@@ -7547,11 +7486,9 @@ CL_SUBMITTED.
 
 [open,refpage='clSetUserEventStatus',desc='',type='protos']
 --
-The function
+To set the execution status of a user event object, call the function
 
-include::{api}/protos/clSetUserEventStatus.txt[]
-
-sets the execution status of a user event object.
+include::{generated}/api/protos/clSetUserEventStatus.txt[]
 
   * _event_ is a user event object created using *clCreateUserEvent*.
   * _execution_status_ specifies the new execution status to be set and can be
@@ -7560,22 +7497,6 @@ sets the execution status of a user event object.
     event to be terminated.
     *clSetUserEventStatus* can only be called once to change the execution
     status of _event_.
-
-// refError
-
-*clSetUserEventStatus* returns CL_SUCCESS if the function was executed
-successfully.
-Otherwise, it returns one of the following errors:
-
-  * CL_INVALID_EVENT if _event_ is not a valid user event object.
-  * CL_INVALID_VALUE if the _execution_status_ is not CL_COMPLETE or a
-    negative integer value.
-  * CL_INVALID_OPERATION if the _execution_status_ for _event_ has already
-    been changed by a previous call to *clSetUserEventStatus*.
-  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
 
 [NOTE]
 ====
@@ -7608,18 +7529,35 @@ clSetUserEventStatus(ev1, CL_COMPLETE);
 clReleaseMemObject(buf2);
 ----
 ====
+
+// refError
+
+*clSetUserEventStatus* returns CL_SUCCESS if the function was executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * CL_INVALID_EVENT if _event_ is not a valid user event object.
+  * CL_INVALID_VALUE if the _execution_status_ is not CL_COMPLETE or a
+    negative integer value.
+  * CL_INVALID_OPERATION if the _execution_status_ for _event_ has already
+    been changed by a previous call to *clSetUserEventStatus*.
+  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 --
 
 [open,refpage='clWaitForEvents',desc='',type='protos']
 --
-The function
+To wait for events to complete, call the function
 
-include::{api}/protos/clWaitForEvents.txt[]
+include::{generated}/api/protos/clWaitForEvents.txt[]
 
-// Jon - no parameter description
+  * _num_events_ is the number of events in _event_list_.
+  * _event_list_ is a pointer to a list of event object handles.
 
-waits on the host thread for commands identified by event objects in
-_event_list_ to complete.
+This function waits on the host thread for commands identified by event
+objects in _event_list_ to complete.
 A command is considered complete if its execution status is CL_COMPLETE or a
 negative value.
 The events specified in _event_list_ act as synchronization points.
@@ -7645,11 +7583,9 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clGetEventInfo',desc='',type='protos']
 --
-The function
+To return information about an event object, call the function
 
-include::{api}/protos/clGetEventInfo.txt[]
-
-returns information about the event object.
+include::{generated}/api/protos/clGetEventInfo.txt[]
 
   * _event_ specifies the event object being queried.
   * _param_name_ specifies the information to query.
@@ -7777,19 +7713,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clSetEventCallback',desc='',type='protos']
 --
-The function
+To register a user callback function for a specific command execution
+status, call the function
 
-include::{api}/protos/clSetEventCallback.txt[]
-
-registers a user callback function for a specific command execution status.
-The registered callback function will be called when the execution status of
-command associated with _event_ changes to an execution status equal to or
-past the status specified by _command_exec_status_.
-
-Each call to *clSetEventCallback* registers the specified user callback
-function on a callback stack associated with _event_.
-The order in which the registered user callback functions are called is
-undefined.
+include::{generated}/api/protos/clSetEventCallback.txt[]
 
   * _event_ is a valid event object.
   * _command_exec_callback_type_ specifies the command execution status for
@@ -7804,12 +7731,6 @@ undefined.
     execution model as defined by the OpenCL specification has changed.
     For example, it is not valid to assume that a corresponding memory transfer
     has completed unless the event is in a state CL_COMPLETE.
-
-21::
-    The callback function registered for a command_exec_callback_type value
-    of CL_COMPLETE will be called when the command has completed
-    successfully or is abnormally terminated.
-
   * _pfn_event_notify_ is the event callback function that can be registered by
     the application.
     This callback function may be called asynchronously by the OpenCL
@@ -7830,6 +7751,20 @@ undefined.
   * _user_data_ will be passed as the _user_data_ argument when _pfn_notify_ is
     called.
     _user_data_ can be `NULL`.
+
+21::
+    The callback function registered for a command_exec_callback_type value
+    of CL_COMPLETE will be called when the command has completed
+    successfully or is abnormally terminated.
+
+The registered callback function will be called when the execution status of
+command associated with _event_ changes to an execution status equal to or
+past the status specified by _command_exec_status_.
+
+Each call to *clSetEventCallback* registers the specified user callback
+function on a callback stack associated with _event_.
+The order in which the registered user callback functions are called is
+undefined.
 
 All callbacks registered for an event object must be called.
 All enqueued callbacks shall be called before the event object is destroyed.
@@ -7879,13 +7814,13 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clRetainEvent',desc='',type='protos']
 --
-The function
+To retain an event object, call the function
 
-include::{api}/protos/clRetainEvent.txt[]
+include::{generated}/api/protos/clRetainEvent.txt[]
 
-// Jon - no parameter description
+  * _event_ is the event object to be retained.
 
-increments the _event_ reference count.
+The _event_ reference count is incremented.
 The OpenCL commands that return an event perform an implicit retain.
 
 // refError
@@ -7902,25 +7837,13 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clReleaseEvent',desc='',type='protos']
 --
-To release an event, use the following function
+To release an event object, call the function
 
-include::{api}/protos/clReleaseEvent.txt[]
+include::{generated}/api/protos/clReleaseEvent.txt[]
 
-decrements the _event_ reference count.
+  * _event_ is the event object to be released.
 
-// Jon - no parameter description
-
-// refError
-
-*clReleaseEvent* returns CL_SUCCESS if the function is executed
-successfully.
-Otherwise, it returns one of the following errors:
-
-  * CL_INVALID_EVENT if _event_ is not a valid event object.
-  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+The _event_ reference count is decremented.
 
 The event object is deleted once the reference count becomes zero, the
 specific command identified by this event has completed (or terminated) and
@@ -7947,6 +7870,18 @@ As a result the waiting tasks will wait forever, and associated events,
 cl_mem objects, command queues and contexts are likely to leak.
 In-order command queues caught up in this deadlock may cease to do any work.
 ====
+
+// refError
+
+*clReleaseEvent* returns CL_SUCCESS if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * CL_INVALID_EVENT if _event_ is not a valid event object.
+  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 --
 
 
@@ -7955,21 +7890,23 @@ In-order command queues caught up in this deadlock may cease to do any work.
 
 [open,refpage='clEnqueueMarkerWithWaitList',desc='',type='protos']
 --
-The function
+To enqueue a marker command which waits for events or commands to complete,
+call the function
 
-include::{api}/protos/clEnqueueMarkerWithWaitList.txt[]
-
-enqueues a marker command which waits for either a list of events to
-complete, or if the list is empty it waits for all commands previously
-enqueued in _command_queue_ to complete before it completes.
-This command returns an _event_ which can be waited on, i.e. this event can
-be waited on to insure that all events either in the _event_wait_list_ or
-all previously enqueued commands, queued before this command to
-_command_queue_, have completed.
+include::{generated}/api/protos/clEnqueueMarkerWithWaitList.txt[]
 
   * _command_queue_ is a valid host command-queue.
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
     complete before this particular command can be executed.
+  * _event_ returns an event object that identifies this particular command.
+    Event objects are unique and can be used to identify this marker command
+    later on.
+    _event_ can be `NULL` in which case it will not be possible for the
+    application to query the status of this command or queue a wait for this
+    command to complete.
+    If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
+    _event_ argument should not refer to an element of the _event_wait_list_
+    array.
 
 If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
 If _event_wait_list_ is not `NULL`, the list of events pointed to by
@@ -7984,15 +7921,13 @@ the function returns.
 If _event_wait_list_ is `NULL`, then this particular command waits until all
 previous enqueued commands to _command_queue_ have completed.
 
-  * _event_ returns an event object that identifies this particular command.
-    Event objects are unique and can be used to identify this marker command
-    later on.
-    _event_ can be `NULL` in which case it will not be possible for the
-    application to query the status of this command or queue a wait for this
-    command to complete.
-    If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
-    _event_ argument should not refer to an element of the _event_wait_list_
-    array.
+The marker command either waits for a list of events to complete, or if the
+list is empty it waits for all commands previously enqueued in
+_command_queue_ to complete before it completes.
+This command returns an _event_ which can be waited on, i.e. this event can
+be waited on to insure that all events either in the _event_wait_list_ or
+all previously enqueued commands, queued before this command to
+_command_queue_, have completed.
 
 // refError
 
@@ -8016,19 +7951,10 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clEnqueueBarrierWithWaitList',desc='',type='protos']
 --
-The function
+To enqueue a barrier command which waits for events or commands to complete,
+call the function
 
-include::{api}/protos/clEnqueueBarrierWithWaitList.txt[]
-
-enqueues a barrier command which waits for either a list of events to
-complete, or if the list is empty it waits for all commands previously
-enqueued in _command_queue_ to complete before it completes.
-This command blocks command execution, that is, any following commands
-enqueued after it do not execute until it completes.
-This command returns an _event_ which can be waited on, i.e. this event can
-be waited on to insure that all events either in the _event_wait_list_ or
-all previously enqueued commands, queued before this command to
-_command_queue_, have completed
+include::{generated}/api/protos/clEnqueueBarrierWithWaitList.txt[]
 
   * _command_queue_ is a valid host command-queue.
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
@@ -8042,8 +7968,6 @@ _command_queue_, have completed
     must be the same.
     The memory associated with _event_wait_list_ can be reused or freed after
     the function returns.
-If _event_wait_list_ is `NULL`, then this particular command waits until all
-previous enqueued commands to _command_queue_ have completed.
   * _event_ returns an event object that identifies this particular command.
     Event objects are unique and can be used to identify this barrier command
     later on.
@@ -8053,6 +7977,19 @@ previous enqueued commands to _command_queue_ have completed.
     If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
+
+If _event_wait_list_ is `NULL`, then this particular command waits until all
+previous enqueued commands to _command_queue_ have completed.
+
+The barrier command either waits for a list of events to complete, or if the
+list is empty it waits for all commands previously enqueued in
+_command_queue_ to complete before it completes.
+This command blocks command execution, that is, any following commands
+enqueued after it do not execute until it completes.
+This command returns an _event_ which can be waited on, i.e. this event can
+be waited on to insure that all events either in the _event_wait_list_ or
+all previously enqueued commands, queued before this command to
+_command_queue_, have completed.
 
 // refError
 
@@ -8144,11 +8081,10 @@ enqueuing a command store a timestamp for each of their state transitions.
 
 [open,refpage='clGetEventProfilingInfo',desc='',type='protos']
 --
-If profiling is enabled, the function
+To return profiling information for a command associated with an event when
+profiling is enabled, call the function
 
-include::{api}/protos/clGetEventProfilingInfo.txt[]
-
-returns profiling information for the command associated with event.
+include::{generated}/api/protos/clGetEventProfilingInfo.txt[]
 
   * _event_ specifies the event object.
   * _param_name_ specifies the profiling data to query.
@@ -8235,29 +8171,17 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clFlush',desc='',type='protos']
 --
-The function
+To flush commands to a device, call the function
 
-include::{api}/protos/clFlush.txt[]
+include::{generated}/api/protos/clFlush.txt[]
 
-// Jon - no parameter description
+  * _command_queue_ is the command queue to flush.
 
-issues all previously queued OpenCL commands in _command_queue_to the device
-associated with_command_queue_.
+All previously queued OpenCL commands in _command_queue_ are issued to the
+device associated with _command_queue_.
 *clFlush* only guarantees that all queued commands to _command_queue_ will
 eventually be submitted to the appropriate device.
 There is no guarantee that they will be complete after *clFlush* returns.
-
-// refError
-
-*clFlush* returns CL_SUCCESS if the function call was executed successfully.
-Otherwise, it returns one of the following errors:
-
-  * CL_INVALID_COMMAND_QUEUE if _command_queue_ is not a valid host
-    command-queue.
-  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
 
 Any blocking commands queued in a command-queue and *clReleaseCommandQueue*
 perform an implicit flush of the command-queue.
@@ -8274,18 +8198,31 @@ event objects to wait on by commands enqueued in a different command-queue,
 the application must call a *clFlush* or any blocking commands that perform
 an implicit flush of the command-queue where the commands that refer to
 these event objects are enqueued.
+
+// refError
+
+*clFlush* returns CL_SUCCESS if the function call was executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * CL_INVALID_COMMAND_QUEUE if _command_queue_ is not a valid host
+    command-queue.
+  * CL_OUT_OF_RESOURCES if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 --
 
 [open,refpage='clFinish',desc='',type='protos']
 --
-The function
+To wait for completion of commands on a device, call the function
 
-include::{api}/protos/clFinish.txt[]
+include::{generated}/api/protos/clFinish.txt[]
 
-// Jon - no parameter description
+  * _command_queue_ is the command queue to wait for.
 
-blocks until all previously queued OpenCL commands in _command_queue_ are
-issued to the associated device and have completed.
+All previously queued OpenCL commands in _command_queue_ are issued to the
+associated device, and the function blocks until all previously queued
+commands have completed.
 *clFinish* does not return until all previously queued commands in
 _command_queue_ have been processed and completed.
 *clFinish* is also a synchronization point.

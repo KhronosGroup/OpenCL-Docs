@@ -68,8 +68,6 @@ language grammar.
 This document describes modifications and restrictions to C99 supported in
 OpenCL C.
 
-// Jon - new section defining "C11"
-
 In addition, some features of OpenCL C are based on the <<C11-spec,ISO/IEC
 9899:2011 C language>> Specification (a.k.a. "`C11 Specification`" or just
 "`C11`".
@@ -84,6 +82,9 @@ The following data types are supported.
 
 [[built-in-scalar-data-types]]
 === Built-in Scalar Data Types
+
+[open,refpage='scalarDataTypes',desc='Built-in Scalar Data Types',type='freeform',spec='clang',anchor='built-in-scalar-data-types',xrefs='alignmentOfDataTypes halfDataType otherDataTypes reservedDataTypes vectorDataTypes']
+--
 
 The following table describes the list of built-in scalar data types.
 
@@ -182,10 +183,14 @@ application:
 | `uintptr_t`                | n/a
 | `void`                     | `void`
 |====
+--
 
 
 [[the-half-data-type]]
-==== The `half` data type
+==== The `half` Data Type
+
+[open,refpage='halfDataType',desc='The half Data Type',type='freeform',spec='clang',anchor='the-half-data-type',xrefs='alignmentOfDataTypes otherDataTypes reservedDataTypes scalarDataTypes vectorDataTypes']
+--
 
 The `half` data type must be IEEE 754-2008 compliant.
 `half` numbers have 1 sign bit, 5 exponent bits, and 10 mantissa bits.
@@ -207,7 +212,7 @@ contains `half` values.
 A few valid examples are given below:
 
 [source,c]
-----
+----------
 void
 bar (__global half *p)
 {
@@ -223,17 +228,17 @@ foo (__global half *pg, __local half *pl)
     ptr = pg + offset;
     bar(ptr);
 }
-----
+----------
 
 Below are some examples that are not valid usage of the `half` type:
 
 [source,c]
-----
+----------
 half a;
 half b[100];
 half *p;
 a = *p; //  not allowed. must use *vload_half* function
-----
+----------
 
 Loads from a pointer to a `half` and stores to a pointer to a `half` can be
 performed using the <<vector-data-load-and-store-functions,vector data load
@@ -244,10 +249,14 @@ convert them to a scalar or vector `float` value.
 The store functions take a scalar or vector `float` value as input, convert
 it to a `half` scalar or vector value (with appropriate rounding mode) and
 write the `half` scalar or vector value to memory.
+--
 
 
 [[built-in-vector-data-types]]
 === Built-in Vector Data Types^4^
+
+[open,refpage='vectorDataTypes',desc='Built-in Vector Data Types',type='freeform',spec='clang',anchor='built-in-vector-data-types',xrefs='alignmentOfDataTypes otherDataTypes reservedDataTypes scalarDataTypes']
+--
 
 The `char`, `unsigned char`, `short`, `unsigned short`, `int`, `unsigned
 int`, `long`, `unsigned long`, and `float` vector data types are supported.
@@ -317,10 +326,14 @@ application:
 | `float__n__`              | `cl_float__n__`
 | `double__n__`             | `cl_double__n__`
 |====
+--
 
 
 [[other-built-in-data-types]]
 === Other Built-in Data Types
+
+[open,refpage='otherDataTypes',desc='Other Built-in Data Types',type='freeform',spec='clang',anchor='other-built-in-data-types',xrefs='alignmentOfDataTypes reservedDataTypes scalarDataTypes vectorDataTypes']
+--
 
 The following table describes the list of additional data types supported by
 OpenCL.
@@ -405,10 +418,14 @@ available to the application:
 | `queue_t`          | `cl_command_queue`
 | `clk_event_t`      | `cl_event`
 |====
+--
 
 
 [[reserved-data-types]]
 === Reserved Data Types
+
+[open,refpage='reservedDataTypes',desc='Reserved Data Types',type='freeform',spec='clang',anchor='reserved-data-types',xrefs='alignmentOfDataTypes otherDataTypes scalarDataTypes vectorDataTypes']
+--
 
 The data type names described in the following table are reserved and cannot
 be used by applications as type names.
@@ -459,10 +476,14 @@ where _n_ is any value other than 2, 3, 4, 8 and 16, are also reserved.
   `ulong long__n__`
     | A 128-bit unsigned integer scalar and vector.
 |====
+--
 
 
 [[alignment-of-types]]
 === Alignment of Types
+
+[open,refpage='alignmentOfDataTypes',desc='Alignment of Data Types',type='freeform',spec='clang',anchor='alignment-of-types',xrefs='otherDataTypes reservedDataTypes scalarDataTypes ectorDataTypes']
+--
 
 A data item declared to be a data type in memory is always aligned to the
 size of the data type in bytes.
@@ -494,6 +515,7 @@ The vector load functions can read a vector from an address aligned to the
 element type of the vector.
 The vector store functions can write a vector to an address aligned to the
 element type of the vector.
+--
 
 
 [[vector-literals]]
@@ -517,7 +539,7 @@ type of the vector is available.
 For example, the following forms are available for `float4`:
 
 [source,c]
-----
+----------
 (float4)( float, float, float, float )
 (float4)( float2, float, float )
 (float4)( float, float2, float )
@@ -526,7 +548,7 @@ For example, the following forms are available for `float4`:
 (float4)( float3, float )
 (float4)( float, float3 )
 (float4)( float )
-----
+----------
 
 Operands are evaluated by standard rules for function evaluation, except
 that implicit scalar widening shall not occur.
@@ -543,14 +565,14 @@ Examples:
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 float4 f = (float4)(1.0f, 2.0f, 3.0f, 4.0f);
 uint4 u = (uint4)(1); //  u will be (1, 1, 1, 1).
 float4 f = (float4)((float2)(1.0f, 2.0f),
 (float2)(3.0f, 4.0f));
 float4 f = (float4)(1.0f, (float2)(2.0f, 3.0f), 4.0f);
 float4 f = (float4)(1.0f, 2.0f); //  error
-----
+----------
 
 
 [[vector-components]]
@@ -569,7 +591,7 @@ Accessing components beyond those declared for the vector type is an error
 so, for example:
 
 [source,c]
-----
+----------
 float2 pos;
 pos.x = 1.0f; // is legal
 pos.z = 1.0f; // is illegal
@@ -577,32 +599,32 @@ pos.z = 1.0f; // is illegal
 float3 pos;
 pos.z = 1.0f; // is legal
 pos.w = 1.0f; // is illegal
-----
+----------
 
 The component selection syntax allows multiple components to be selected by
 appending their names after the period (*.*).
 
 [source,c]
-----
+----------
 float4 c;
 
 c.xyzw = (float4)(1.0f, 2.0f, 3.0f, 4.0f);
 c.z = 1.0f;
 c.xy = (float2)(3.0f, 4.0f);
 c.xyz = (float3)(3.0f, 4.0f, 5.0f);
-----
+----------
 
 The component selection syntax also allows components to be permuted or
 replicated.
 
 [source,c]
-----
+----------
 float4 pos = (float4)(1.0f, 2.0f, 3.0f, 4.0f);
 
 float4 swiz= pos.wzyx; // swiz = (4.0f, 3.0f, 2.0f, 1.0f)
 
 float4 dup = pos.xxyy; // dup = (1.0f, 1.0f, 2.0f, 2.0f)
-----
+----------
 
 The component group notation can occur on the left hand side of an
 expression.
@@ -612,7 +634,7 @@ vector type, depending on number of components specified.
 Each component must be a supported scalar or vector type.
 
 [source,c]
-----
+----------
 float4 pos = (float4)(1.0f, 2.0f, 3.0f, 4.0f);
 
 pos.xw = (float2)(5.0f, 6.0f);// pos = (5.0f, 2.0f, 3.0f, 6.0f)
@@ -630,7 +652,7 @@ x = (float16)(a.xxxx, b.xyz, c.xyz, d.xyz, a.yzw);
 
 // illegal - component a.xxxxxxx is not a valid vector type
 x = (float16)(a.xxxxxxx, b.xyz, c.xyz, d.xyz);
-----
+----------
 
 Elements of vector data types can also be accessed using a numeric index to
 refer to the appropriate element in the vector.
@@ -654,9 +676,9 @@ The numeric indices must be preceded by the letter `s` or `S`.
 In the following example
 
 [source,c]
-----
+----------
 float8 f;
-----
+----------
 
 `f.s0` refers to the 1^st^ element of the `float8` variable `f` and `f.s7`
 refers to the 8^th^ element of the `float8` variable `f`.
@@ -664,9 +686,9 @@ refers to the 8^th^ element of the `float8` variable `f`.
 In the following example
 
 [source,c]
-----
+----------
 float16 x;
-----
+----------
 
 `x.sa` (or `x.sA`) refers to the 11^th^ element of the `float16` variable
 `x` and `x.sf` (or `x.sF`) refers to the 16^th^ element of the `float16`
@@ -679,13 +701,13 @@ cannot be intermixed with `.xyzw` notation used to access elements of a 1 ..
 For example
 
 [source,c]
-----
+----------
 float4 f, a;
 
 a = f.x12w;       // illegal use of numeric indices with .xyzw
 
 a.xyzw = f.s0123; // valid
-----
+----------
 
 Vector data types can use the `.lo` (or `.even`) and `.hi` (or `.odd`)
 suffixes to get smaller vector types or to combine smaller vector types to a
@@ -702,7 +724,7 @@ The `.odd` suffix refers to the odd elements of a vector.
 Some examples to help illustrate this are given below:
 
 [source,c]
-----
+----------
 float4 vf;
 
 float2 low = vf.lo;    // returns vf.xy
@@ -710,7 +732,7 @@ float2 high = vf.hi;   // returns vf.zw
 
 float2 even = vf.even; // returns vf.xz
 float2 odd = vf.odd;   // returns vf.yw
-----
+----------
 
 The suffixes `.lo` (or `.even`) and `.hi` (or `.odd`) for a 3-component
 vector type operate as if the 3-component vector type is a 4-component
@@ -719,7 +741,7 @@ vector type with the value in the `w` component undefined.
 Some examples are given below:
 
 [source,c]
-----
+----------
 float8 vf;
 float4 odd = vf.odd;
 float4 even = vf.even;
@@ -760,14 +782,14 @@ void transpose( float4 m[4] )
 float3 vf = (float3)(1.0f, 2.0f, 3.0f);
 float2 low = vf.lo; // (1.0f, 2.0f);
 float2 high = vf.hi; // (3.0f, _undefined_);
-----
+----------
 
 It is an error to take the address of a vector element and will result in a
 compilation error.
 For example:
 
 [source,c]
-----
+----------
 float8 vf;
 
 float *f = &vf.x; m         // is illegal
@@ -777,7 +799,7 @@ float4 *odd = &vf.odd;      // is illegal
 float4 *even = &vf.even;    // is illegal
 float2 *high = &vf.even.hi; // is illegal
 float2 *low = &vf.odd.lo;   // is illegal
-----
+----------
 
 
 [[aliasing-rules]]
@@ -850,10 +872,10 @@ In the example below:
 [9] Unless the *cl_khr_fp16* extension is supported and has been enabled.
 
 [source,c]
-----
+----------
 float f = 1.0f;
 int i = (int)f;
-----
+----------
 
 `f` stores `0x3F800000` and `i` stores `0x1` which is the floating-point
 value `1.0f` in `f` converted to an integer value.
@@ -862,7 +884,7 @@ Explicit casts between vector types are not legal.
 The examples below will generate a compilation error.
 
 [source,c]
-----
+----------
 int4 i;
 uint4 u = (uint4) i; //  not allowed
 
@@ -871,7 +893,7 @@ int4 i = (int4) f; //  not allowed
 
 float4 f;
 int8 i = (int8) f; //  not allowed
-----
+----------
 
 Scalar to vector conversions may be performed by casting the scalar to the
 desired vector data type.
@@ -887,7 +909,7 @@ otherwise.
 Below are some correct examples of explicit casts.
 
 [source,c]
-----
+----------
 float f = 1.0f;
 float4 va = (float4)f;
 
@@ -908,7 +930,7 @@ uchar4 vtrue = (uchar4)true;
 
 // vtrue is a uchar4 vector with elements (0xff, 0xff,
 // 0xff, 0xff).
-----
+----------
 
 
 [[explicit-conversions]]
@@ -917,9 +939,9 @@ uchar4 vtrue = (uchar4)true;
 Explicit conversions may be performed using the
 
 [source,c]
-----
+----------
 convert_destType(sourceType)
-----
+----------
 
 suite of functions.
 These provide a full set of type conversions between supported
@@ -934,18 +956,18 @@ The number of elements in the source and destination vectors must match.
 In the example below:
 
 [source,c]
-----
+----------
 uchar4 u;
 int4 c = convert_int4(u);
-----
+----------
 
 `convert_int4` converts a `uchar4` vector `u` to an `int4` vector `c`.
 
 [source,c]
-----
+----------
 float f;
 int i = convert_int(f);
-----
+----------
 
 `convert_int` converts a `float` scalar `f` to an int scalar `i`.
 
@@ -956,16 +978,16 @@ behavior.
 The full form of the scalar convert function is:
 
 [source,c]
-----
+----------
 destType *convert_destType<_sat><_roundingMode>*(sourceType)
-----
+----------
 
 The full form of the vector convert function is:
 
 [source,c]
-----
+----------
 destType__n__ *convert_destType__n__<_sat><_roundingMode>*(sourceType__n__)
-----
+----------
 
 
 [[data-types]]
@@ -1048,7 +1070,7 @@ formats.
 Example 1:
 
 [source,c]
-----
+----------
 short4 s;
 
 // negative values clamped to 0
@@ -1057,12 +1079,12 @@ ushort4 u = convert_ushort4_sat( s );
 // values > CHAR_MAX converted to CHAR_MAX
 // values < CHAR_MIN converted to CHAR_MIN
 char4 c = convert_char4_sat( s );
-----
+----------
 
 Example 2:
 
 [source,c]
-----
+----------
 float4 f;
 
 // values implementation defined for
@@ -1081,12 +1103,12 @@ int4 i3 = convert_int4_rte( f );
 // similar to convert_int4_sat, except that floating-point values
 // are rounded to the nearest integer instead of truncated
 int4 i4 = convert_int4_sat_rte( f );
-----
+----------
 
 Example 3:
 
 [source,c]
-----
+----------
 int4 i;
 
 // convert ints to floats using the default rounding mode.
@@ -1096,7 +1118,7 @@ float4 f = convert_float4( i );
 // be exactly represented as floats should round up to the
 // next representable float.
 float4 f = convert_float4_rtp( i );
-----
+----------
 
 
 [[reinterpreting-data-as-another-type]]
@@ -1138,7 +1160,7 @@ then the value of the additional bytes is undefined.
 Examples:
 
 [source,c]
-----
+----------
 // d only if double precision is supported
 union { float f; uint u; double d; } u;
 
@@ -1153,11 +1175,14 @@ u.f = 1.0f; // u.u contains 0x3f800000, u.d contains an
 u.d = 1.0;  // u.u contains 0x3ff00000 (big endian) or 0
             // (little endian). u.f contains either 0x1.ep0f
             // (big endian) or 0.0f (little endian)
-----
+----------
 
 
 [[reinterpreting-types-using-as_type-and-as_typen]]
 ==== Reinterpreting Types Using *as_type*() and *as_type__n__*()
+
+[open,refpage='as_typen',desc='Reinterpreting Types',type='freeform',spec='clang',anchor='reinterpreting-types-using-as_type-and-as_typen',xrefs='scalarDataTypes vectorDataTypes']
+--
 
 All data types described in <<table-builtin-scalar-types>> and
 <<table-builtin-vector-types>> (except `bool`, `half`^12^ and `void`) may be
@@ -1218,7 +1243,7 @@ Examples:
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 float f = 1.0f;
 uint u = as_uint(f); // Legal. Contains:  0x3f800000
 
@@ -1248,7 +1273,8 @@ double4 g = as_double4(f); // Only if double precision is supported.
 float4 f;
 // Legal. g.xyz will have same values as f.xyz. g.w is undefined
 float3 g = as_float3(f);
-----
+----------
+--
 
 
 [[pointer-casting]]
@@ -1334,6 +1360,8 @@ be illegal.
 [[operators-arithmetic]]
 === Arithmetic Operators
 
+[open,refpage='arithmeticOperators',desc='Arithmetic Operator',type='freeform',spec='clang',anchor='operators-arithmetic',xrefs='']
+--
 The arithmetic operators add (*+*), subtract (*-*), multiply (***) and
 divide (*/*) operate on built-in integer and floating-point scalar, and
 vector data types.
@@ -1365,18 +1393,24 @@ Division by zero for floating-point types will result in {plusmn}{inf} or
 NaN as prescribed by the IEEE-754 standard.
 Use the built-in functions *dot* and *cross* to get, respectively, the
 vector dot product and the vector cross product.
+--
 
 
 [[operators-unary]]
 === Unary Operators
 
+[open,refpage='unaryOperators',desc='Unary Operators',type='freeform',spec='clang',anchor='operators-unary',xrefs='']
+--
 The arithmetic unary operators (*+* and *-*) operate on built-in scalar and
 vector types.
+--
 
 
 [[operators-prepost]]
-=== Operators
+=== Pre- and Post-Operators
 
+[open,refpage='prePostOperators',desc='Pre- and Post-Operators',type='freeform',spec='clang',anchor='operators-prepost',xrefs='']
+--
 The arithmetic post- and pre-increment and decrement operators (*--* and
 *++*) operate on built-in scalar and vector types except the built-in scalar
 and vector `float` types^15^.
@@ -1401,11 +1435,14 @@ Also, `(_a_{pp})--` is not guaranteed to return _a_, if _a_ has fractional
 value.
 In non-default rounding modes, `(_a_{pp})--` may produce the same result as
 `_a_{pp}` or `_a_--` for large _a_.
+--
 
 
 [[operators-relational]]
 === Relational Operators
 
+[open,refpage='relationalOperators',desc='Relational Operators',type='freeform',spec='clang',anchor='operators-relational',xrefs='']
+--
 The relational operators^16^ greater than (*>*), less than (*<*), greater
 than or equal (*>=*), and less than or equal (*\<=*) operate on scalar and
 vector types.
@@ -1446,11 +1483,14 @@ relation is _false_ and -1 (i.e. all bits set) if the specified relation is
 _true_.
 The relational operators always return 0 if either argument is not a number
 (NaN).
+--
 
 
 [[operators-equality]]
 === Equality Operators
 
+[open,refpage='equalityOperators',desc='Equality Operators',type='freeform',spec='clang',anchor='operators-equality',xrefs='']
+--
 The equality operators^17^ equal (*==*) and not equal (*!=*) operate on
 built-in scalar and vector types.
 All equality operators result in an integer type.
@@ -1494,11 +1534,14 @@ not a number (NaN).
 The equality operator not equal (*!=*) returns 1 (for scalar source
 operands) or -1 (for vector source operands) if one or both arguments are
 not a number (NaN).
+--
 
 
 [[operators-bitwise]]
 === Bitwise Operators
 
+[open,refpage='bitwiseOperators',desc='Bitwise Operators',type='freeform',spec='clang',anchor='operators-bitwise',xrefs='']
+--
 The bitwise operators and (*&*), or (*|*), exclusive or (*^*), and not
 (*+~+*) operate on all scalar and vector built-in types except the built-in
 scalar and vector `float` types.
@@ -1509,11 +1552,14 @@ vector operand.
 The scalar type is then widened to a vector that has the same number of
 components as the vector operand.
 The operation is done component-wise resulting in the same size vector.
+--
 
 
 [[operators-logical]]
 === Logical Operators
 
+[open,refpage='logicalOperators',desc='Logical Operators',type='freeform',spec='clang',anchor='operators-logical',xrefs='']
+--
 The logical operators and (*&&*) and or (*||*) operate on all scalar and
 vector built-in types.
 For scalar built-in types only, and (*&&*) will only evaluate the right hand
@@ -1545,11 +1591,14 @@ For scalar types, the logical operators shall return 0 if the result of the
 operation is _false_ and 1 if the result is _true_.
 For vector types, the logical operators shall return 0 if the result of the
 operation is _false_ and -1 (i.e. all bits set) if the result is _true_.
+--
 
 
 [[operators-logical-unary]]
 === Unary Logical Operator
 
+[open,refpage='unaryLogicalOperator',desc='Unary Logical Operator',type='freeform',spec='clang',anchor='operators-logical-unary',xrefs='']
+--
 The logical unary operator not (*!*) operates on all scalar and vector
 built-in types.
 For built-in vector types, the operators are applied component-wise.
@@ -1570,11 +1619,14 @@ compares equal to 0.
 For vector types, the unary operator shall return a 0 if the value of its
 operand compares unequal to 0, and -1 (i.e. all bits set) if the value of
 its operand compares equal to 0.
+--
 
 
 [[operators-ternary-selection]]
 === Ternary Selection Operator
 
+[open,refpage='selectionOperator',desc='Ternary Selection Operator',type='freeform',spec='clang',anchor='operators-ternary-selection',xrefs='']
+--
 The ternary selection operator (*?:*) operates on three expressions (_exp1_
 *?* _exp2_ *:* _exp3_).
 This operator evaluates the first expression _exp1_, which can be a scalar
@@ -1591,11 +1643,14 @@ vector and the other is a scalar and the scalar may be subject to the usual
 arithmetic conversion to the element type used by the vector operand and
 widened to the same type as the vector type.
 This resulting matching type is the type of the entire expression.
+--
 
 
 [[operators-shift]]
 === Shift Operators
 
+[open,refpage='shiftOperators',desc='Shift Operators',type='freeform',spec='clang',anchor='operators-shift',xrefs='']
+--
 The operators right-shift (*>>*), left-shift (*<<*) operate on all scalar
 and vector built-in types except the built-in scalar and vector `float`
 types.
@@ -1623,11 +1678,14 @@ If `E1` has an unsigned type or if `E1` has a signed type and a nonnegative
 value, the vacated bits are filled with zeros.
 If `E1` has a signed type and a negative value, the vacated bits are filled
 with ones.
+--
 
 
 [[operators-sizeof]]
 === Sizeof Operator
 
+[open,refpage='sizeofOperator',desc='Sizeof Operator',type='freeform',spec='clang',anchor='operators-sizeof',xrefs='']
+--
 The `sizeof` operator yields the size (in bytes) of its operand, including
 any <<alignment-of-types,padding bytes needed for alignment>>, which may be
 an expression or the parenthesized name of a type.
@@ -1668,19 +1726,25 @@ The behavior of applying the `sizeof` operator to the `bool`, `image2d_t`,
 `image3d_t`, `image2d_array_t`, `image2d_depth_t`, `image2d_array_depth_t`,
 `image1d_t`, `image1d_buffer_t` or `image1d_array_t`, `sampler_t`,
 `clk_event_t`, `queue_t` and `event_t` types is implementation-defined.
+--
 
 
 [[operators-comma]]
 === Comma Operator
 
+[open,refpage='commaOperator',desc='Comma Operator',type='freeform',spec='clang',anchor='operators-comma',xrefs='']
+--
 The comma (*,*) operator operates on expressions by returning the type and
 value of the right-most expression in a comma separated list of expressions.
 All expressions are evaluated, in order, from left to right.
+--
 
 
 [[operators-indirection]]
 === Indirection Operator
 
+[open,refpage='indirectionOperator',desc='Indirection Operator',type='freeform',spec='clang',anchor='operators-indirection',xrefs='']
+--
 The unary (**+*+**) operator denotes indirection.
 If the operand points to an object, the result is an l-value designating the
 object.
@@ -1695,11 +1759,14 @@ of object pointed to, and the address of an object after the end of its
 lifetime.
 If *P* is an l-value and *T* is the name of an object pointer type, *(T)P*
 is an l-value that has a type compatible with that to which *T* points.
+--
 
 
 [[operators-address]]
 === Address Operator
 
+[open,refpage='addressOperator',desc='Address Operator',type='freeform',spec='clang',anchor='operators-address',xrefs='']
+--
 The unary (*&*) operator returns the address of its operand.
 If the operand has type "`__type__`", the result has type "`pointer to
 __type__`".
@@ -1718,11 +1785,14 @@ operand^23^.
 *&(E1[E2])* to **\((E1){plus}(E2))**.
 It is always true that if *E* is an l-value that is a valid operand of the
 unary *&* operator, *&E* is an l-value equal to *E*.
+--
 
 
 [[operators-assignment]]
 === Assignment Operator
 
+[open,refpage='assignmentOperator',desc='Assignment Operator',type='freeform',spec='clang',anchor='operators-assignment',xrefs='']
+--
 Assignments of values to variable names are done with the assignment
 operator (*=*), like
 
@@ -1775,6 +1845,7 @@ operator _op_ and assignment (*=*).
 Except for the `sizeof` operator, the `half` data type cannot be used with
 any of the operators described in this section.
 ====
+--
 
 
 [[vector-operations]]
@@ -1787,41 +1858,41 @@ independently on each component of the vector, in a component-wise fashion.
 For example,
 
 [source,c]
-----
+----------
 float4 v, u;
 float f;
 
 v = u + f;
-----
+----------
 
 will be equivalent to
 
 [source,c]
-----
+----------
 v.x = u.x + f;
 v.y = u.y + f;
 v.z = u.z + f;
 v.w = u.w + f;
-----
+----------
 
 And
 
 [source,c]
-----
+----------
 float4 v, u, w;
 
 w = v + u;
-----
+----------
 
 will be equivalent to
 
 [source,c]
-----
+----------
 w.x = v.x + u.x;
 w.y = v.y + u.y;
 w.z = v.z + u.z;
 w.w = v.w + u.w;
-----
+----------
 
 and likewise for most operators and all integer and floating-point vector
 types.
@@ -1829,6 +1900,9 @@ types.
 
 [[address-space-qualifiers]]
 == Address Space Qualifiers
+
+[open,refpage='addressSpaceQualifiers',desc='Address Space Qualifiers',type='freeform',spec='clang',anchor='address-space-qualifiers',xrefs='constant genericAddressSpace global local private']
+--
 
 OpenCL implements the following disjoint named address spaces: `+__global+`,
 `+__local+`, `+__constant+` and `+__private+`.
@@ -1854,7 +1928,7 @@ defaults to `+__global+` if not specified.
 Examples:
 
 [source,c]
-----
+----------
 // declares a pointer p in the global address space that
 // points to an object in the global address space
 global int *p;
@@ -1865,7 +1939,7 @@ void foo (...)
     float x[4];
     ...
 }
-----
+----------
 
 OpenCL 2.0 adds support for an unnamed generic address space.
 Pointers that are declared without pointing to a named address space point
@@ -1890,13 +1964,13 @@ illegal if A and B are named address spaces and A is not the same as B.
 Examples:
 
 [source,c]
-----
+----------
 private int f() { ... }          // should generate an error
 
 local int *f() { ... }           // allowed
 
 local int * private f() { ... }; // should generate an error.
-----
+----------
 
 The `+__global+`, `+__constant+`, `+__local+`, `+__private+`, `global`,
 `constant`, `local`, and `private` names are reserved for use as address
@@ -1909,10 +1983,14 @@ The size of pointers to different address spaces may differ.
 It is not correct to assume that, for example, `+sizeof(__global int *)+`
 always equals `+sizeof(__local int *)+`.
 ====
+--
 
 
 [[global-or-global]]
 === `+__global+` (or `global`)
+
+[open,refpage='global',desc='global Address Space Qualifiers',type='freeform',spec='clang',anchor='global-or-global',xrefs='addressSpaceQualifiers constant genericAddressSpace local private']
+--
 
 The `+__global+` or `global` address space name is used to refer to memory
 objects (buffer or image objects) allocated from the `global` memory pool.
@@ -1927,7 +2005,7 @@ object is allocated via appropriate API calls in the host code.
 Some examples are:
 
 [source,c]
-----
+----------
 global float4 *color; // An array of float4 elements
 
 typedef struct {
@@ -1936,7 +2014,7 @@ typedef struct {
 } foo_t;
 
 global foo_t *my_info; // An array of foo_t elements.
-----
+----------
 
 As image objects are always allocated from the `global` address space, the
 `+__global+` or `global` qualifier should not be specified for image types.
@@ -1964,7 +2042,7 @@ initialized, but only with constant expressions.
 Examples:
 
 [source,c]
-----
+----------
 global int foo;         // OK.
 int foo;                // OK. Declared in the global address space
 global uchar buf[512];  // OK.
@@ -2000,14 +2078,18 @@ global image2d_t im; // Error. Invalid type for program scope
 global event_t ev;   // Error. Invalid type for program scope variables
 
 global int *bad_ptr; // Error. No implicit address space
-----
+----------
 
 The `const` qualifier can also be used with the `+__global+` qualifier to
 specify a read-only buffer memory object.
+--
 
 
 [[local-or-local]]
 === `+__local+` (or `local`)
+
+[open,refpage='local',desc='local Address Space Qualifiers',type='freeform',spec='clang',anchor='local-or-local',xrefs='addressSpaceQualifiers constant genericAddressSpace global private']
+--
 
 The `+__local+` or `local` address space name is used to describe variables
 that need to be allocated in local memory and are shared by all work-items
@@ -2021,7 +2103,7 @@ Some examples of variables allocated in the `+__local+` address space inside
 a kernel function are:
 
 [source,c]
-----
+----------
 kernel void my_func(...)
 {
     local float a;     // A single float allocated
@@ -2037,13 +2119,13 @@ kernel void my_func(...)
         local float c; // not allowed.
     }
 }
-----
+----------
 
 Variables allocated in the `+__local+` address space inside a kernel
 function cannot be initialized.
 
 [source,c]
-----
+----------
 kernel void my_func(...)
 {
     local float a = 1; // not allowed
@@ -2051,7 +2133,7 @@ kernel void my_func(...)
     local float b;
     b = 1;             // allowed
 }
-----
+----------
 
 [NOTE]
 ====
@@ -2059,10 +2141,14 @@ Variables allocated in the `+__local+` address space inside a kernel
 function are allocated for each work-group executing the kernel and exist
 only for the lifetime of the work-group executing the kernel.
 ====
+--
 
 
 [[constant-or-constant]]
 === `+__constant+` (or `constant`)
+
+[open,refpage='constant',desc='constant Address Space Qualifiers',type='freeform',spec='clang',anchor='constant-or-constant',xrefs='addressSpaceQualifiers genericAddressSpace global local private']
+--
 
 The `+__constant+` or `constant` address space name is used to describe
 variables allocated in `global` memory and which are accessed inside a
@@ -2098,20 +2184,28 @@ This behavior is implementation defined.
 Thus portable code must conservatively assume that each variable declared
 inside a function or in program scope allocated in the `+__constant+`
 address space counts as a separate constant argument.
+--
 
 
 [[private-or-private]]
 === `+__private+` (or `private`)
+
+[open,refpage='private',desc='private Address Space Qualifiers',type='freeform',spec='clang',anchor='private-or-private',xrefs='addressSpaceQualifiers constant genericAddressSpace global local']
+--
 
 Variables inside a kernel function not declared with an address space
 qualifier, all variables inside non-kernel functions, and all function
 arguments are in the `+__private+` or `private` address space.
 [line-through]*Variables declared as pointers are considered to point to the
 `+__private+` address space if an address space qualifier is not specified*.
+--
 
 
 [[the-generic-address-space]]
 === The generic address space
+
+[open,refpage='genericAddressSpace',desc='The Generic Address Space',type='freeform',spec='clang',anchor='the-generic-address-space',xrefs='addressSpaceQualifiers constant global local private']
+--
 
 The following rules apply when using pointers that point to the generic
 address space:
@@ -2132,7 +2226,7 @@ In this example, function `foo` is declared with an argument that is a
 pointer with no address space qualifier.
 
 [source,c]
-----
+----------
 void foo(int *a)
 {
     *a = *a + 2;
@@ -2151,14 +2245,14 @@ kernel void k2(global int *a)
     foo(a);
     ...
 }
-----
+----------
 
 In the example below, `var` is in the unnamed generic address space which
 gets mapped to the `global` or `local` address space depending on the result
 of the conditional expression.
 
 [source,c]
-----
+----------
 kernel void bar(global int *g, local int *l)
 {
     int *var;
@@ -2170,13 +2264,13 @@ kernel void bar(global int *g, local int *l)
     *var = 42;
     ...
 }
-----
+----------
 
 The example below is an example with one unnamed generic address space
 pointer with multiple named address space assignments.
 
 [source,c]
-----
+----------
 int *ptr;
 global int g;
 ptr = &g; // legal
@@ -2189,13 +2283,13 @@ ptr = &p; // legal
 
 constant int c;
 ptr = &c; // illegal
-----
+----------
 
 The example below is an example with one unnamed generic address space
 pointer being assigned to point to several named address spaces.
 
 [source,c]
-----
+----------
 global int *gp;
 local int *lp;
 private int *pp;
@@ -2210,7 +2304,8 @@ p = pp; // legal
 gp = p; // compile-time error
 lp = p; // compile-time error
 pp = p; // compile-time error
-----
+----------
+--
 
 
 // Formerly "Changes to ISO/IEC 9899:1999"
@@ -2298,7 +2393,7 @@ space).
 Examples:
 
 [source,c]
-----
+----------
 kernel void test1()
 {
     global int arr[5] = { 0, 1, 2, 3, 4 };
@@ -2317,7 +2412,7 @@ kernel void test1()
     if (p <= q)
         printf("true\n");
 }
-----
+----------
 
 *Clause 6.5.9 - Equality operators, add another constraint paragraph*:
 
@@ -2347,7 +2442,7 @@ performed as applicable:
 Examples:
 
 [source,c]
-----
+----------
 int *ptr = NULL;
 local int lval = SOME_VAL;
 local int *lptr = &lval;
@@ -2370,12 +2465,12 @@ if (lptr == gptr) // illegal, compiler error
 {
     ...
 }
-----
+----------
 
 Consider the following example:
 
 [source,c]
-----
+----------
 bool callee(int *p1, int *p2)
 {
     if (p1 == p2)
@@ -2391,7 +2486,7 @@ void caller()
     // behavior of callee is undefined
     bool b = callee(gptr, pptr);
 }
-----
+----------
 
 The behavior of callee is undefined as gptr and pptr are in different
 address spaces.
@@ -2401,7 +2496,7 @@ operator is replaced with a relational operator.
 Examples:
 
 [source,c]
-----
+----------
 int *ptr = NULL;
 local int *lptr = NULL;
 global int *gptr = NULL;
@@ -2433,7 +2528,7 @@ if (l == NULL) // legal
 {
     ...
 }
-----
+----------
 
 *Clause 6.5.9 - Equality operators, replace first sentence of paragraph 6
 with*:
@@ -2449,7 +2544,7 @@ the address spaces must overlap.
 Examples:
 
 [source,c]
-----
+----------
 kernel void test1()
 {
     global int arr[5] = { 0, 1, 2, 3, 4 };
@@ -2466,7 +2561,7 @@ kernel void test1()
     // address spaces
     val = (q >= p) ? q : r;
 }
-----
+----------
 
 *Clause 6.5.16.1 - Simple assignment, change the third and fourth bullets of
 paragraph 1 to*:
@@ -2484,7 +2579,7 @@ paragraph 1 to*:
 Examples:
 
 [source,c]
-----
+----------
 kernel void f()
 {
 int *ptr;
@@ -2500,7 +2595,7 @@ lptr = gptr; // illegal: no implicit cast from
 ptr = gptr;  // legal: implicit cast from global to generic,
              // then assign
 }
-----
+----------
 
 *Clause 6.7.2.1 - Structure and union specifiers, add a new constraint
 paragraph*:
@@ -2517,6 +2612,9 @@ spaces.
 [[access-qualifiers]]
 == Access Qualifiers
 
+[open,refpage='accessQualifiers',desc='Access Qualifiers',type='freeform',spec='clang',anchor='access-qualifiers',xrefs='kernel optionalAttributeQualifiers']
+--
+
 Image objects specified as arguments to a kernel can be declared to be
 read-only, write-only or read-write.
 [line-through]#A kernel cannot read from and write to the same image
@@ -2532,14 +2630,14 @@ If no qualifier is provided, `read_only` is assumed.
 In the following example
 
 [source,c]
-----
+----------
 kernel void
 foo (read_only image2d_t imageA,
      write_only image2d_t imageB)
 {
     ...
 }
-----
+----------
 
 imageA is a read-only 2D image object, and image is a write-only 2D image
 object.
@@ -2558,6 +2656,7 @@ can be used with pipes>>.
 The `+__read_only+`, `+__write_only+`, `+__read_write+`, `read_only`,
 `write_only` and `read_write` names are reserved for use as access
 qualifiers and shall not be used otherwise.
+--
 
 
 [[function-qualifiers]]
@@ -2566,6 +2665,9 @@ qualifiers and shall not be used otherwise.
 
 [[kernel-or-kernel]]
 === `+__kernel+` (or `kernel`)
+
+[open,refpage='kernel',desc='Qualifiers for Kernel Functions',type='freeform',spec='clang',anchor='kernel-or-kernel',xrefs='accessQualifiers optionalAttributeQualifiers',alias='functionQualifiers']
+--
 
 The `+__kernel+` (or `kernel`) qualifier declares a function to be a kernel
 that can be executed by an application on an OpenCL device(s).
@@ -2586,10 +2688,14 @@ APIs such as *clEnqueueNDRangeKernel*.
 
 The `+__kernel+` and `kernel` names are reserved for use as functions
 qualifiers and shall not be used otherwise.
+--
 
 
 [[optional-attribute-qualifiers]]
 === Optional Attribute Qualifiers
+
+[open,refpage='optionalAttributeQualifiers',desc='Optional Attribute Qualifiers',type='freeform',spec='clang',anchor='optional-attribute-qualifiers',xrefs='accessQualifiers kernel',alias='nosvm reqd_work_group_size vec_type_hint work_group_size_hint']
+--
 
 The `+__kernel+` qualifier can be used with the keyword __attribute__ to
 declare additional information about the kernel function as described below.
@@ -2627,7 +2733,7 @@ work-items in any dimension modulo N is not zero.
 Examples:
 
 [source,c]
-----
+----------
 // autovectorize assuming float4 as the
 // basic computation width
 __kernel __attribute__((vec_type_hint(float4)))
@@ -2642,7 +2748,7 @@ void foo( __global float4 *p ) { ... }
 // as the basic computation width
 __kernel
 void foo( __global float4 *p ) { ... }
-----
+----------
 
 If for example, a `+__kernel+` function is declared with
 
@@ -2692,10 +2798,14 @@ virtual memory region.
 ====
 `+__attribute__((nosvm))+` is deprecated, and the compiler can ignore it.
 ====
+--
 
 
 [[storage-class-specifiers]]
 == Storage-Class Specifiers
+
+[open,refpage='storageSpecifiers',desc='Storage-Class Specifiers',type='freeform',spec='clang',anchor='storage-class-specifiers',alias='typedef extern static']
+--
 
 The `typedef`, `extern` and `static` storage-class specifiers are supported.
 The `auto` and `register` storage-class specifiers are not supported.
@@ -2710,7 +2820,7 @@ a function declared in the `global` or `constant` address space.
 Examples:
 
 [source,c]
-----
+----------
 extern constant float4 noise_table[256];
 static constant float4 color_table[256];
 
@@ -2735,11 +2845,15 @@ kernel void my_func(image2d_t img, global float *a)
     }
     ...
 }
-----
+----------
+--
 
 
 [[restrictions]]
 == Restrictions
+
+[open,refpage='restrictions',desc='Restrictions',type='freeform',spec='clang',anchor='restrictions']
+--
 
 [NOTE]
 ====
@@ -2768,7 +2882,6 @@ are no longer present in OpenCL C 2.0.
     Elements of an image can only be accessed using the built-in
     <<image-read-and-write-functions,image read and write functions>>.
 +
---
 An image type cannot be used to declare a variable, a structure or union
 field, an array of images, a pointer to an image, or the return type of a
 function.
@@ -2778,19 +2891,18 @@ An image type cannot be used with the `+__global+`, `+__private+`,
 access qualifier unless the *cl_khr_3d_image_writes* extension is enabled.
 An image type cannot be used with the `+__read_write+` access qualifier which
 is reserved for future use.#
-
++
 The sampler type (`sampler_t`) can only be used as the type of a function
 argument or a variable declared in the program scope or the outermost scope
 of a kernel function.
 The behavior of a sampler variable declared in a non-outermost scope of a
 kernel function is implementation-defined.
 A sampler argument or variable cannot be modified.
-
++
 The sampler type cannot be used to declare a structure or union field, an
 array of samplers, a pointer to a sampler, or the return type of a function.
 The sampler type cannot be used with the `+__local+` and `+__global+`
 address space qualifiers.
---
   . [[restrictions-bitfield]] Bit-field struct members are currently not
     supported.
   . [[restrictions-variable-length]] Variable length arrays and structures
@@ -2827,18 +2939,18 @@ address space qualifiers.
   . [line-through]#Built-in types that are less than 32-bits in size, i.e.
     `char`, `uchar`, `char2`, `uchar2`, `short`, `ushort`, and `half`, have
     the following restriction:#
++
     * [line-through]#Writes to a pointer (or arrays) of type `char`,
       `uchar`, `char2`, `uchar2`, `short`, `ushort`, and `half` or to
       elements of a struct that are of type `char`, `uchar`, `char2`,
       `uchar2`, `short` and `ushort` are not supported.
       Refer to _section 9.9_ for additional information.#
 +
---
 [line-through]#The kernel example below shows what memory operations are not
 supported on built-in types less than 32-bits in size.#
-
++
 [source,c,role="line-through"]
-----
+----------
 kernel void
 do_proc (__global char *pA, short b,
          __global short *pB)
@@ -2852,8 +2964,7 @@ do_proc (__global char *pA, short b,
     px[1] = pA[1]; // error. px cannot be written.
     pB[id] = b; // error. pB cannot be written
 }
-----
---
+----------
   . The type qualifiers `const`, `restrict` and `volatile` as defined by the
     C99 specification are supported.
     These qualifiers cannot be used with `image2d_t`, `image3d_t`,
@@ -2879,10 +2990,14 @@ do_proc (__global char *pA, short b,
   . Implicit function declaration is not supported.
 
 [25] Unless the *cl_khr_fp16* extension is supported and has been enabled.
+--
 
 
 [[preprocessor-directives-and-macros]]
 == Preprocessor Directives and Macros
+
+[open,refpage='preprocessorDirectives',desc='Preprocessor Directives and Macros',type='freeform',spec='clang',anchor='preprocessor-directives-and-macros']
+--
 
 The preprocessing directives defined by the C99 specification are supported.
 
@@ -2904,14 +3019,14 @@ following forms whose meanings are described elsewhere:
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 // on-off-switch is one of ON, OFF, or DEFAULT
 #pragma OPENCL FP_CONTRACT on-off-switch
 
 #pragma OPENCL EXTENSION extensionname : behavior
 
 #pragma OPENCL EXTENSION all : behavior
-----
+----------
 
 The following predefined macro names are available.
 
@@ -2959,14 +3074,14 @@ The following predefined macro names are available.
     Also refer to the value of the <<opencl-device-queries,
     `CL_DEVICE_ENDIAN_LITTLE` device query>>.
 
-`+__kernel_exec(X, type__n__)+` (and `kernel_exec(X, type__n__)`) 
+`+__kernel_exec(X, type__n__)+` (and `kernel_exec(X, type__n__)`)
     is defined as
 
 [source,c]
-----
+----------
 __kernel __attribute__((work_group_size_hint(X, 1, 1))) \
     __attribute__((vec_type_hint(type__n__)))
-----
+----------
 
 `+__IMAGE_SUPPORT__+` ::
     Used to determine if the OpenCL device supports images.
@@ -2990,6 +3105,7 @@ The macro names defined by the C99 specification but not currently supported
 by OpenCL are reserved for future use.
 
 The predefined identifier `+__func__+` is available.
+--
 
 
 [[attribute-qualifiers]]
@@ -3047,6 +3163,9 @@ in _section 11_ - *References*] for the details.
 [[specifying-attributes-of-types]]
 === Specifying Attributes of Types
 
+[open,refpage='attributes-types',desc='Specifying Attribute of Types',type='freeform',spec='clang',anchor='specifying-attributes-of-types']
+--
+
 The keyword `+__attribute__+` allows you to specify special attributes of
 enum, struct and union types when you define such types.
 This keyword is followed by an attribute specification inside double
@@ -3067,17 +3186,16 @@ This attribute specifies a minimum alignment (in bytes) for variables of the
 specified type.
 For example, the declarations:
 +
---
 [source,c]
-----
+----------
 struct S { short f[3]; } __attribute__ ((aligned (8)));
 typedef int more_aligned_int __attribute__ ((aligned (8)));
-----
-
+----------
++
 force the compiler to insure (as far as it can) that each variable whose
 type is `struct S` or `more_aligned_int` will be allocated and aligned _at
 least_ on a 8-byte boundary.
-
++
 Note that the alignment of any given struct or union type is required by the
 ISO C standard to be at least a perfect multiple of the lowest common
 multiple of the alignments of all of the members of the struct or union in
@@ -3087,19 +3205,19 @@ union type by attaching an aligned attribute to any one of the members of
 such a type, but the notation illustrated in the example above is a more
 obvious, intuitive, and readable way to request the compiler to adjust the
 alignment of an entire struct or union type.
-
++
 As in the preceding example, you can explicitly specify the alignment (in
 bytes) that you wish the compiler to use for a given struct or union type.
 Alternatively, you can leave out the alignment factor and just ask the
 compiler to align a type to the maximum useful alignment for the target
 machine you are compiling for.
 For example, you could write:
-
++
 [source,c]
-----
+----------
 struct S { short f[3]; } __attribute__ ((aligned));
-----
-
+----------
++
 Whenever you leave out the alignment factor in an aligned attribute
 specification, the compiler automatically sets the alignment for the type to
 the largest alignment which is ever used for any data type on the target
@@ -3108,7 +3226,7 @@ In the example above, the size of each `short` is 2 bytes, and therefore the
 size of the entire `struct S` type is 6 bytes.
 The smallest power of two which is greater than or equal to that is 8, so
 the compiler sets the alignment for the entire `struct S` type to 8 bytes.
-
++
 Note that the effectiveness of aligned attributes may be limited by inherent
 limitations of the OpenCL device and compiler.
 For some devices, the OpenCL compiler may only be able to arrange for
@@ -3117,11 +3235,10 @@ If the OpenCL compiler is only able to align variables up to a maximum of 8
 byte alignment, then specifying `aligned(16)` in an `+__attribute__+` will
 still only provide you with 8 byte alignment.
 See your platform-specific documentation for further information.
-
++
 The aligned attribute can only increase the alignment; but you can decrease
 it by specifying packed as well.
 See below.
---
 
 `packed` ::
 
@@ -3131,16 +3248,15 @@ required.
 When attached to an enum definition, it indicates that the smallest integral
 type should be used.
 +
---
 Specifying this attribute for struct and union types is equivalent to
 specifying the packed attribute on each of the structure or union members.
-
++
 In the following example struct `my_packed_struct`'s members are packed
 closely together, but the internal layout of its `s` member is not packed.
 To do that, struct `my_unpacked_struct` would need to be packed, too.
-
++
 [source,c]
-----
+----------
 struct my_unpacked_struct
 {
     char c;
@@ -3153,12 +3269,13 @@ struct __attribute__ ((packed)) my_packed_struct
     int i;
     struct my_unpacked_struct s;
 };
-----
-
+----------
++
 You may only specify this attribute on the definition of a enum, struct or
 union, not on a `typedef` which does not also define the enumerated type,
 structure or union.
 --
+
 
 [[specifying-attributes-of-functions]]
 === Specifying Attributes of Functions
@@ -3169,6 +3286,9 @@ qualifiers currently supported.
 
 [[specifying-attributes-of-variables]]
 === Specifying Attributes of Variables
+
+[open,refpage='attributes-variables',desc='Specifying Attribute of Variables',type='freeform',spec='clang',anchor='specifying-attributes-of-variables']
+--
 
 The keyword `+__attribute__+` allows you to specify special attributes of
 variables or structure fields.
@@ -3182,27 +3302,26 @@ This attribute specifies a minimum alignment for the variable or structure
 field, measured in bytes.
 For example, the declaration:
 +
---
 [source,c]
-----
+----------
 int x __attribute__ ((aligned (16))) = 0;
-----
-
+----------
++
 causes the compiler to allocate the global variable `x` on a 16-byte
 boundary.
 The alignment value specified must be a power of two.
-
++
 You can also specify the alignment of structure fields.
 For example, to create a double-word aligned `int` pair, you could write:
-
++
 [source,c]
-----
+----------
 struct foo { int x[2] __attribute__ ((aligned (8))); };
-----
-
+----------
++
 This is an alternative to creating a union with a `double` member that
 forces the union to be double-word aligned.
-
++
 As in the preceding examples, you can explicitly specify the alignment (in
 bytes) that you wish the compiler to use for a given variable or structure
 field.
@@ -3210,24 +3329,24 @@ Alternatively, you can leave out the alignment factor and just ask the
 compiler to align a variable or field to the maximum useful alignment for
 the target machine you are compiling for.
 For example, you could write:
-
++
 [source,c]
-----
+----------
 short array[3] __attribute__ ((aligned));
-----
-
+----------
++
 Whenever you leave out the alignment factor in an aligned attribute
 specification, the OpenCL compiler automatically sets the alignment for the
 declared variable or field to the largest alignment which is ever used for
 any data type on the target device you are compiling for.
-
++
 When used on a struct, or struct member, the aligned attribute can only
 increase the alignment; in order to decrease it, the packed attribute must
 be specified as well.
 When used as part of a `typedef`, the aligned attribute can both increase
 and decrease alignment, and specifying the packed attribute will generate a
 warning.
-
++
 Note that the effectiveness of aligned attributes may be limited by inherent
 limitations of the OpenCL device and compiler.
 For some devices, the OpenCL compiler may only be able to arrange for
@@ -3236,7 +3355,6 @@ If the OpenCL compiler is only able to align variables up to a maximum of 8
 byte alignment, then specifying `aligned(16)` in an `+__attribute__+` will
 still only provide you with 8 byte alignment.
 See your platform-specific documentation for further information.
---
 
 `packed` ::
 
@@ -3244,27 +3362,26 @@ The packed attribute specifies that a variable or structure field should
 have the smallest possible alignment -- one byte for a variable, unless you
 specify a larger value with the aligned attribute.
 +
---
 Here is a structure in which the field `x` is packed, so that it immediately
 follows a:
-
++
 [source,c]
-----
+----------
 struct foo
 {
     char a;
     int x[2] __attribute__ ((packed));
 };
-----
-
+----------
++
 An attribute list placed at the beginning of a user-defined type applies to
 the variable of that type and not the type, while attributes following the
 type body apply to the type.
-
++
 For example:
-
++
 [source,c]
-----
+----------
 /* a has alignment of 128 */
 __attribute__((aligned(128))) struct A {int i;} a;
 
@@ -3275,8 +3392,7 @@ __attribute__((aligned(32))) b ;
 struct A a1; /* a1 has alignment of 4 */
 
 struct B b1; /* b1 has alignment of 32 */
-----
---
+----------
 
 `endian (_endiantype_)` ::
 
@@ -3287,17 +3403,16 @@ variable uses the endianness of the device on which the kernel will be
 executed.
 The default is `device`.
 +
---
 For example:
-
++
 [source,c]
-----
+----------
 global float4 *p __attribute__ ((endian(host)));
-----
-
+----------
++
 specifies that data stored in memory pointed to by p will be in the host
 endian format.
-
++
 The endian attribute can only be applied to pointer types that are in the
 `global` or `constant` address space.
 The endian attribute cannot be used for variables that are not a pointer
@@ -3310,25 +3425,32 @@ pointer is assigned to another.
 [[specifying-attributes-of-blocks-and-control-flow-statements]]
 === Specifying Attributes of Blocks and Control-Flow-Statements
 
+[open,refpage='attributes-blocksAndControlFlow',desc='Specifying Attribute of Blocks and Control-Flow-Statements',type='freeform',spec='clang',anchor='specifying-attributes-of-blocks-and-control-flow-statements']
+--
+
 For basic blocks and control-flow-statements the attribute is placed before
 the structure in question, for example:
 
 [source,c]
-----
+----------
 __attribute__((attr1)) {...}
 
 for __attribute__((attr2)) (...) __attribute__((attr3)) {...}
-----
+----------
 
 Here `attr1` applies to the block in braces and `attr2` and `attr3` apply to
 the loop's control construct and body, respectively.
 
 No attribute qualifiers for blocks and control-flow-statements are currently
 defined.
+--
 
 
 [[specifying-attribute-for-unrolling-loops]]
 === Specifying Attribute For Unrolling Loops
+
+[open,refpage='attributes-loopUnroll',desc='Specifying Attribute For Unrolling Loops',type='freeform',spec='clang',anchor='specifying-attribute-for-unrolling-loops']
+--
 
 The `+__attribute__((opencl_unroll_hint))+` and
 `+__attribute__((opencl_unroll_hint(n)))+` attribute qualifiers can be used
@@ -3352,34 +3474,34 @@ appear immediately before the loop to be affected.
 Examples:
 
 [source,c]
-----
+----------
 __attribute__((opencl_unroll_hint(2)))
 while (*s != 0)
     *p++ = *s++;
-----
+----------
 
 The tells the compiler to unroll the above while loop by a factor of 2.
 
 [source,c]
-----
+----------
 __attribute__((opencl_unroll_hint))
 for (int i=0; i<2; i++)
 {
     ...
 }
-----
+----------
 
 In the example above, the compiler will determine how much to unroll the
 loop.
 
 [source,c]
-----
+----------
 __attribute__((opencl_unroll_hint(1)))
 for (int i=0; i<32; i++)
 {
     ...
 }
-----
+----------
 
 The above is an example where the loop should not be unrolled.
 
@@ -3387,31 +3509,31 @@ Below are some examples of invalid usage of
 `+__attribute__((opencl_unroll_hint(n)))+`.
 
 [source,c]
-----
+----------
 __attribute__((opencl_unroll_hint(-1)))
 while (...)
 {
     ...
 }
-----
+----------
 
 The above example is an invalid usage of the loop unroll factor as the loop
 unroll factor is negative.
 
 [source,c]
-----
+----------
 __attribute__((opencl_unroll_hint))
 if (...)
 {
     ...
 }
-----
+----------
 
 The above example is invalid because the unroll attribute qualifier is used
 on a non-loop construct
 
 [source,c]
-----
+----------
 kernel void
 my_kernel( ... )
 {
@@ -3422,10 +3544,11 @@ my_kernel( ... )
         ...
     }
 }
-----
+----------
 
 The above example is invalid because the loop unroll factor is not a
 compile-time constant expression.
+--
 
 
 [[extending-attribute-qualifiers]]
@@ -3451,6 +3574,8 @@ information provided is in some sense correct.
 [[blocks]]
 == Blocks
 
+[open,refpage='blocks',desc='Blocks',type='freeform',spec='clang',anchor='blocks']
+--
 OpenCL C 2.0 adds support for the clang block syntax^26^.
 Like function types, the Block type is a pair consisting of a result value
 type and a list of parameter types very similar to a function type.
@@ -3464,6 +3589,7 @@ Additionally, blocks based closures are supported by the clang open source C
 compiler as well as Mac OS X's C and Objective C compilers.
 Specifically, Mac OS X's Grand Central Dispatch allows applications to queue
 tasks as a block.
+--
 
 
 [[declaring-and-using-a-block]]
@@ -3486,7 +3612,7 @@ If you declare a Block as a variable, you can then use it just as you would
 a function:
 
 [source,c]
-----
+----------
 int multiplier = 7;
 
 int (^myBlock)(int) = ^(int num) {
@@ -3495,7 +3621,7 @@ int (^myBlock)(int) = ^(int num) {
 
 printf("%d\n", myBlock(3));
 // prints 21
-----
+----------
 
 
 [[declaring-a-block-reference]]
@@ -3508,10 +3634,10 @@ The Block type fully interoperates with the rest of the C type system.
 The following are valid Block variable declarations:
 
 [source,c]
-----
+----------
 void (^blockReturningVoidWithVoidArgument)(void);
 int (^blockReturningIntWithIntAndCharArguments)(int, char);
-----
+----------
 
 A Block that takes no arguments must specify `void` in the argument list.
 A Block reference may not be dereferenced via the pointer dereference
@@ -3526,12 +3652,12 @@ be best practice when you use a block with a given signature in multiple
 places:
 
 [source,c]
-----
+----------
 typedef float (^MyBlockType)(float, float);
 
 MyBlockType myFirstBlock = // ...;
 MyBlockType mySecondBlock = // ...;
-----
+----------
 
 
 [[block-literal-expressions]]
@@ -3539,8 +3665,6 @@ MyBlockType mySecondBlock = // ...;
 
 A Block literal expression produces a reference to a Block.
 It is introduced by the use of the *^* token as a unary operator.
-
-// Jon - changed this from weird ::= markup to BNF as used earlier
 
 [role="bnf"]
 --
@@ -3559,9 +3683,9 @@ is allowed as a function reference.
 The following Block literal:
 
 [source,c]
-----
+----------
 ^ void (void) { printf("hello world**\n**"); }
-----
+----------
 
 produces a reference to a Block with no arguments with no return value.
 
@@ -3576,16 +3700,16 @@ void )` argument list may also be omitted.
 So:
 
 [source,c]
-----
+----------
 ^ ( void ) { printf("hello world**\n**"); }
-----
+----------
 
 and:
 
 [source,c]
-----
+----------
 ^ { printf("hello world**\n**"); }
-----
+----------
 
 are exactly equivalent constructs for the same expression.
 
@@ -3617,11 +3741,11 @@ variables at global or local `static` scope.
 You can also declare a Block as a global literal in program scope.
 
 [source,c]
-----
+----------
 int GlobalInt = 0;
 
 int (^getGlobalInt)(void) = ^{ return GlobalInt; };
-----
+----------
 
 
 [[control-flow]]
@@ -3685,7 +3809,7 @@ are described below.
 Example 1:
 
 [source,c]
-----
+----------
 void foo(int *x, int (^bar)(int, int))
 {
     *x = bar(*x, *x);
@@ -3699,12 +3823,12 @@ void k(global int *x, global int *z)
     else
         foo(x, ^int(int x, int y){return (x*y)-*z;}); // legal
 }
-----
+----------
 
 Example 2:
 
 [source,c]
-----
+----------
 kernel
 void k(global int *x, global int *z)
 {
@@ -3715,12 +3839,12 @@ void k(global int *x, global int *z)
     }
     *x = foo(x, tmp);
 }
-----
+----------
 
 Example 3:
 
 [source,c]
-----
+----------
 int GlobalInt = 0;
 int (^getGlobalInt)(void) = ^{ return GlobalInt; }; // legal
 int (^getAnotherGlobalInt)(void);                   // illegal
@@ -3734,12 +3858,12 @@ void foo()
                                    // a global block variable
     ...
 }
-----
+----------
 
 Example 4:
 
 [source,c]
-----
+----------
 void (^bl0)(void) = ^{
     ...
 };
@@ -3756,12 +3880,12 @@ kernel void k()
         bl1(); // illegal because bl1 would have to be captured
     };
 }
-----
+----------
 
 Example 5:
 
 [source,c]
-----
+----------
 struct v {
     int arr[2];
 } s = {0, 1};
@@ -3777,7 +3901,7 @@ s.arr[1] = arr[1] = 8;
 
 bl1(); // prints - 1
 bl2(); // prints - 8
-----
+----------
 
 
 [[built-in-functions]]
@@ -3805,6 +3929,9 @@ that operate on mixed scalar and vector types, however.
 
 [[work-item-functions]]
 === Work-Item Functions
+
+[open,refpage='workItemFunctions',desc='Work-Item Functions',type='freeform',spec='clang',anchor='work-item-functions',xrefs='',alias='get_enqueued_local_size get_global_id get_global_linear_id get_global_offset get_global_size get_group_id get_local_id get_local_linear_id get_local_size get_num_groups get_work_dim']
+--
 
 The following table describes the list of built-in work-item functions that
 can be used to query the number of dimensions, the global and local work
@@ -3924,10 +4051,14 @@ identifier of each work-item when this kernel is being executed on a device.
 
 [28] I.e. the _global_work_size_ values specified to *clEnqueueNDRangeKernel*
 are not evenly divisible by the _local_work_size_ values for each dimension.
+--
 
 
 [[math-functions]]
 === Math Functions
+
+[open,refpage='mathFunctions',desc='Math Functions',type='freeform',spec='clang',anchor='math-functions',xrefs='commonFunctions integerFunctions',alias='acos asin atan cbrt ceil copysign cos erf exp fabs fdim floor fma fmax fmin fmod fract frexp hypot ilogb ldexp lgamma log mad mag modf nan nextafter pow remainder remquo rint rootn round sin sqrt tan tgamma trunc divide recip']
+--
 
 The built-in math functions are categorized into the following:
 
@@ -4323,7 +4454,11 @@ The *half_* functions may return any result allowed by
 Specification>>) is not in force.
 Support for denormal values is implementation-defined for *native_*
 functions.
+--
 
+
+[open,refpage='mathConstants',desc='Math Constants',type='freeform',spec='clang',anchor='table-builtin-half-native-math',xrefs='mathFunctions',alias='MAXFLOAT HUGE_VALF INFINITY NAN HUGE_VAL']
+--
 The following symbolic constants are available.
 Their values are of type `float` and are accurate within the precision of a
 single precision floating-point number.
@@ -4355,10 +4490,14 @@ constants will also be available:
       `HUGE_VAL` evaluates to +infinity.
       Used as an error value returned by the built-in math functions.
 |====
+--
 
 
 [[floating-point-macros-and-pragmas]]
 ==== Floating-point macros and pragmas
+
+[open,refpage='fpMacros',desc='Floating-Point Macros And Pragmas',type='freeform',spec='clang',anchor='floating-point-macros-and-pragmas',alias='FP_CONTRACT FP_FAST_FMAF FP_FAST_FMA macroLimits']
+--
 
 The `FP_CONTRACT` pragma can be used to allow (if the state is on) or
 disallow (if the state is off) the implementation to contract expressions.
@@ -4378,11 +4517,11 @@ The pragma definition to set `FP_CONTRACT` is:
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 // on-off-switch is one of ON, OFF, or DEFAULT.
 // The DEFAULT value is ON.
 #pragma OPENCL FP_CONTRACT on-off-switch
-----
+----------
 
 The `FP_FAST_FMAF` macro indicates whether the *fma* function is fast
 compared with direct code for single precision floating-point.
@@ -4395,7 +4534,7 @@ These constant expressions are suitable for use in `#if` preprocessing
 directives.
 
 [source,c]
-----
+----------
 #define FLT_DIG         6
 #define FLT_MANT_DIG    24
 #define FLT_MAX_10_EXP  +38
@@ -4406,7 +4545,7 @@ directives.
 #define FLT_MAX         0x1.fffffep127f
 #define FLT_MIN         0x1.0p-126f
 #define FLT_EPSILON     0x1.0p-23f
-----
+----------
 
 The following table describes the built-in macro names given above in the
 OpenCL C programming language and the corresponding macro names available to
@@ -4468,7 +4607,7 @@ These constant expressions are suitable for use in `#if` preprocessing
 directives.
 
 [source,c]
-----
+----------
 #define DBL_DIG         15
 #define DBL_MANT_DIG    53
 #define DBL_MAX_10_EXP  +308
@@ -4478,7 +4617,7 @@ directives.
 #define DBL_MAX         0x1.fffffffffffffp1023
 #define DBL_MIN         0x1.0p-1022
 #define DBL_EPSILON     0x1.0p-52
-----
+----------
 
 The following table describes the built-in macro names given above in the
 OpenCL C programming language and the corresponding macro names available to
@@ -4519,10 +4658,14 @@ double type.
 | `M_SQRT2`    | Value of {sqrt}2
 | `M_SQRT1_2`  | Value of 1 / {sqrt}2
 |====
+--
 
 
 [[integer-functions]]
 === Integer Functions
+
+[open,refpage='integerFunctions',desc='Integer Functions',type='freeform',spec='clang',anchor='integer-functions',xrefs='commonFunctions',alias='abs add_sat clamp_common clz ctz hadd mad24 mad_hi mad_sat integerMax integerMin mul24 mul_hi popcount rotate sub_sat upsample']
+--
 
 The following table describes the built-in integer functions that take
 scalar or vector arguments.
@@ -4656,13 +4799,15 @@ take `int`, `int2`, `int3`, `int4`, `int8`, `int16`, `uint`, `uint2`,
       If _x_ and _y_ are not in this range, the multiplication result is
       implementation-defined.
 |====
+--
+
 
 The macro names given in the following list must use the values specified.
 The values shall all be constant expressions suitable for use in `#if`
 preprocessing directives.
 
 [source,c]
-----
+----------
 #define CHAR_BIT        8
 #define CHAR_MAX        SCHAR_MAX
 #define CHAR_MIN        SCHAR_MIN
@@ -4678,7 +4823,7 @@ preprocessing directives.
 #define USHRT_MAX       65535
 #define UINT_MAX        0xffffffff
 #define ULONG_MAX       0xffffffffffffffffUL
-----
+----------
 
 The following table describes the built-in macro names given above in the
 OpenCL C programming language and the corresponding macro names available to
@@ -4707,6 +4852,9 @@ the application.
 
 [[common-functions]]
 === Common Functions^33^
+
+[open,refpage='commonFunctions',desc='Common Functions',type='freeform',spec='clang',anchor='common-functions',xrefs='integerFunctions',alias='clamp_integer degrees max min mix radians sign smoothstep step']
+--
 
 [33] The *mix* and *smoothstep* functions can be implemented using
 contractions such as *mad* or *fma*.
@@ -4775,24 +4923,24 @@ even rounding mode.
       This is useful in cases where you would want a threshold function with
       a smooth transition.
 
---
 This is equivalent to:
 
 [source,c]
-----
+----------
 gentype t;
 t = clamp ((x - edge0) / (edge1 - edge0), 0, 1);
 return t * t * (3 - 2 * t);
-----
+----------
 
 Results are undefined if _edge0_ >= _edge1_ or if _x_, _edge0_ or _edge1_ is
 a NaN.
---
 | gentype *sign*(gentype _x_)
     | Returns 1.0 if _x_ > 0, -0.0 if _x_ = -0.0, +0.0 if _x_ = +0.0, or
       -1.0 if _x_ < 0.
       Returns 0.0 if _x_ is a NaN.
 |====
+
+--
 
 
 [[geometric-functions]]
@@ -4800,6 +4948,9 @@ a NaN.
 
 [34] The geometric functions can be implemented using contractions such as
 *mad* or *fma*.
+
+[open,refpage='geometricFunctions',desc='Geometric Functions',type='freeform',spec='clang',anchor='geometric-functions',xrefs='integerFunctions',alias='cross dot distance length normalize fast_distance fast_length fast_normalize']
+--
 
 The following table describes the list of built-in geometric functions.
 These all operate component-wise.
@@ -4844,23 +4995,23 @@ even rounding mode.
 | float__n__ *fast_normalize*(float__n__ _p_)
    a| Returns a vector in the same direction as _p_ but with a length of 1.
       *fast_normalize* is computed as:
---
++
 _p_ * *half_rsqrt*(__p.x__^2^ + __p.y__^2^ + ...)
-
++
 The result shall be within 8192 ulps error from the infinitely precise
 result of
-
++
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 if (all(p == 0.0f))
     result = p;
 else
     result = p / sqrt(p.x^2 + p.y^2 + ...);
-----
-
+----------
++
 with the following exceptions:
-
++
 . If the sum of squares is greater than `FLT_MAX` then the value of the
   floating-point values in the result vector are undefined.
 . If the sum of squares is less than `FLT_MIN` then the implementation
@@ -4868,12 +5019,15 @@ with the following exceptions:
 . If the device is in "`denorms are flushed to zero`" mode, individual
   operand elements with magnitude less than *sqrt*(`FLT_MIN`) may be flushed
   to zero before proceeding with the calculation.
---
 |====
+--
 
 
 [[relational-functions]]
 === Relational Functions
+
+[open,refpage='relationalFunctions',desc='Relational Functions',type='freeform',spec='clang',anchor='relational-functions',xrefs='integerFunctions',alias='all any bitselect isequal isfinite isgreater isgreaterequal isinf isless islessequal islessgreater isnan isnormal isnotequal isordered isunordered select signbit']
+--
 
 The <<operators-relational,relational>> and <<operators-equality,equality>>
 operators (*<*, *\<=*, *>*, *>=*, *!=*, *==*) can be used with scalar and
@@ -5028,10 +5182,14 @@ not a number (NaN) and the argument type is a vector.
 [36] The above definition means that the behavior of select and the ternary
 operator for vector and scalar types is dependent on different
 interpretations of the bit pattern of _c_.
+--
 
 
 [[vector-data-load-and-store-functions]]
-===  Vector Data Load and Store Functions
+=== Vector Data Load and Store Functions
+
+[open,refpage='vectorDataLoadandStoreFunctions',desc='Vector Data Load and Store Functions',type='freeform',spec='clang',anchor='vector-data-load-and-store-functions',xrefs='',alias='']
+--
 
 The following table describes the list of supported functions that allow you
 to read and write vector types from a pointer to memory.
@@ -5217,11 +5375,14 @@ The pointer argument p can be a pointer to `global`, `local`, `constant`, or
 The vector data load and store functions variants that take pointer
 arguments which point to the generic address space are also supported.
 ====
+--
 
 
 [[synchronization-functions]]
 === Synchronization Functions
 
+[open,refpage='syncFunctions',desc='Synchronization Functions',type='freeform',spec='clang',anchor='synchronization-functions',alias='barrier work_group_barrier']
+--
 The OpenCL C programming language implements the following synchronization
 functions.
 
@@ -5303,10 +5464,14 @@ functions.
 For backward compatibility, *barrier* is also supported.
 
 [40] Refer to the <<atomic-functions, description of `memory_scope`>>.
+--
 
 
 [[address-space-qualifier-functions]]
 === Address Space Qualifier Functions
+
+[open,refpage='addressSpaceQualifierFuncs',desc='Address Space Qualifier Functions',type='freeform',spec='clang',anchor='address-space-qualifier-functions',xrefs='qualifiers',alias='get_fence to_global to_local to_private']
+--
 
 The OpenCL C programming language implements the following address space
 qualifier functions.
@@ -5337,10 +5502,14 @@ types supported by OpenCL C or a user defined type.
   cl_mem_fence_flags **get_fence**(const gentype *_ptr_)
     | Returns a valid memory fence value for _ptr_.
 |====
+--
 
 
 [[async-copies]]
 === Async Copies from Global to Local Memory, Local to Global Memory, and Prefetch
+
+[open,refpage='asyncCopyFunctions',desc='Async Copy Functions',type='freeform',spec='clang',anchor='async-copies',xrefs='',alias='async_work_group_copy async_work_group_strided_copy prefetch wait_group_events']
+--
 
 The OpenCL C programming language implements the following functions that
 provide asynchronous copies between `global` and local memory and a prefetch
@@ -5454,6 +5623,7 @@ The kernel must wait for the completion of all async copies using the
 *wait_group_events* built-in function before exiting; otherwise the behavior
 is undefined.
 ====
+--
 
 
 [[atomic-functions]]
@@ -5528,6 +5698,9 @@ compatible with those in C11.
 [[the-atomic_var_init-macro]]
 ==== The `ATOMIC_VAR_INIT` macro
 
+[open,refpage='ATOMIC_VAR_INIT',desc='ATOMIC_VAR_INIT macro',type='freeform',spec='clang',anchor='the-atomic_var_init-macro',xrefs='atomic_init']
+--
+
 The `ATOMIC_VAR_INIT` macro expands to a token sequence suitable for
 initializing an atomic object of a type that is initialization-compatible
 with value.
@@ -5537,9 +5710,9 @@ however, the default (zero) initialization for objects with `static` storage
 duration is guaranteed to produce a valid state.
 
 [source,c]
-----
+----------
 #define ATOMIC_VAR_INIT(C value)
-----
+----------
 
 This macro can only be used to initialize atomic objects that are declared
 in program scope in the `global` address space.
@@ -5547,38 +5720,46 @@ in program scope in the `global` address space.
 Examples:
 
 [source,c]
-----
+----------
 global atomic_int guide = ATOMIC_VAR_INIT(42);
-----
+----------
 
 Concurrent access to the variable being initialized, even via an atomic
 operation, constitutes a data-race.
+--
 
 
 [[the-atomic_init-function]]
 ==== The atomic_init function
 
-The atomic_init function non-atomically initializes the atomic object
+[open,refpage='atomic_init',desc='The atomic_init function',type='freeform',spec='clang',anchor='the-atomic_init-function',xrefs='ATOMIC_VAR_INIT']
+--
+
+The `atomic_init` function non-atomically initializes the atomic object
 pointed to by obj to the value value.
 
 [source,c]
-----
+----------
 void atomic_init(volatile A *obj, C value)
-----
+----------
 
 Examples:
 
 [source,c]
-----
+----------
 local atomic_int local_guide;
 if (get_local_id(0) == 0)
     atomic_init(&guide, 42);
 work_group_barrier(CLK_LOCAL_MEM_FENCE);
-----
+----------
+--
 
 
 [[order-and-consistency]]
 ==== Order and Consistency
+
+[open,refpage='memory_order',desc='Memory Operation Order and Consistency',type='freeform',spec='clang',anchor='order-and-consistency']
+--
 
 The enumerated type `memory_order` specifies the detailed regular
 (non-atomic) memory synchronization operations as defined in
@@ -5594,10 +5775,14 @@ Its enumeration constants are as follows:
 
 The `memory_order` can be used when performing atomic operations to `global`
 or `local` memory.
+--
 
 
 [[memory-scope]]
 ==== Memory Scope
+
+[open,refpage='memory_scope',desc='Memory Operation Scope',type='freeform',spec='clang',anchor='memory-scope']
+--
 
 The enumerated type `memory_scope` specifies whether the memory ordering
 constraints given by `memory_order` apply to work-items in a work-group or
@@ -5618,19 +5803,22 @@ global memory.
 Atomic operations to `local` memory only guarantee memory ordering in the
 work-group not across work-groups and therefore ignore the `memory_scope`
 value.
+--
 
 
 [[fences]]
 ==== Fences
 
+[open,refpage='atomic_work_item_fence',desc='Fences',type='freeform',spec='clang',anchor='fences',xrefs='atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_init atomic_load atomic_store atomic_work_item_fence']
+--
 The following fence operations are supported.
 
 [source,c]
-----
+----------
 void atomic_work_item_fence(cl_mem_fence_flags flags,
                             memory_order order,
                             memory_scope scope)
-----
+----------
 
 `flags` must be set to `CLK_GLOBAL_MEM_FENCE`, `CLK_LOCAL_MEM_FENCE`,
 `CLK_IMAGE_MEM_FENCE` or a combination of these values ORed together;
@@ -5658,10 +5846,14 @@ For images declared with the `read_write` qualifier, the
 `atomic_work_item_fence` must be called to make sure that writes to the
 image by a work-item become visible to that work-item on subsequent reads to
 that image by that work-item.
+--
 
 
 [[atomic-integer-and-floating-point-types]]
 ==== Atomic integer and floating-point types
+
+[open,refpage='atomicTypes',desc='Atomic Integer And Floating-Point Types',type='freeform',spec='clang',anchor='atomic-integer-and-floating-point-types',alias='atomic_int atomic_uint atomic_long atomic_ulong atomic_float atomic_double atomic_intptr_t atomic_uintptr_t atomic_size_t atomic_ptrdiff_t']
+--
 
 The list of supported atomic type names are:
 
@@ -5697,6 +5889,7 @@ types or the atomic_flag type.
 The representation of atomic integer, floating-point and pointer types have
 the same size as their corresponding regular types.
 The atomic_flag type must be implemented as a 32-bit integer.
+--
 
 
 [[operations-on-atomic-types]]
@@ -5707,10 +5900,13 @@ many instances of those kinds.
 This section specifies each general kind.
 
 
-===== *The atomic_store functions*
+[[atomic_store]]
+===== *The atomic_store Functions*
 
+[open,refpage='atomic_store',desc='The atomic_store Functions',type='freeform',spec='clang',anchor='atomic_store',xrefs='atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_init atomic_load atomic_store atomic_work_item_fence']
+--
 [source,c]
-----
+----------
 void atomic_store(volatile A *object, C desired)
 
 void atomic_store_explicit(volatile A *object,
@@ -5721,19 +5917,23 @@ void atomic_store_explicit(volatile A *object,
                            C desired,
                            memory_order order,
                            memory_scope scope)
-----
+----------
 
 The _order_ argument shall not be `memory_order_acquire`, nor
 `memory_order_acq_rel`.
 Atomically replace the value pointed to by _object_ with the value of
 _desired_.
 Memory is affected according to the value of _order_.
+--
 
 
-===== *The atomic_load functions*
+[[atomic_load]]
+===== *The atomic_load Functions*
 
+[open,refpage='atomic_load',desc='The atomic_load Functions',type='freeform',spec='clang',anchor='atomic_load',xrefs='atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_init atomic_load atomic_store atomic_work_item_fence']
+--
 [source,c]
-----
+----------
 C atomic_load(volatile A *object)
 
 C atomic_load_explicit(volatile A *object,
@@ -5742,18 +5942,22 @@ C atomic_load_explicit(volatile A *object,
 C atomic_load_explicit(volatile A *object,
                        memory_order order,
                        memory_scope scope)
-----
+----------
 
 The _order_ argument shall not be `memory_order_release` nor
 `memory_order_acq_rel`.
 Memory is affected according to the value of _order_.
 Atomically returns the value pointed to by _object_.
+--
 
 
-===== *The atomic_exchange functions*
+[[atomic_exchange]]
+===== *The atomic_exchange Functions*
 
+[open,refpage='atomic_exchange',desc='The atomic_exchange Functions',type='freeform',spec='clang',anchor='atomic_exchange',xrefs='atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_init atomic_load atomic_store atomic_work_item_fence']
+--
 [source,c]
-----
+----------
 C atomic_exchange(volatile A *object, C desired)
 
 C atomic_exchange_explicit(volatile A *object,
@@ -5764,7 +5968,7 @@ C atomic_exchange_explicit(volatile A *object,
                            C desired,
                            memory_order order,
                            memory_scope scope)
-----
+----------
 
 Atomically replace the value pointed to by object with desired.
 Memory is affected according to the value of order.
@@ -5772,12 +5976,16 @@ These operations are read-modify-write operations (as defined by
 <<C11-spec,section 5.1.2.4 of the C11 Specification>>).
 Atomically returns the value pointed to by object immediately before the
 effects.
+--
 
 
-===== *The atomic_compare_exchange functions*
+[[atomic_compare_exchange]]
+===== *The atomic_compare_exchange Functions*
 
+[open,refpage='atomic_compare_exchange',desc='The atomic_compare_exchange Functions',type='freeform',spec='clang',anchor='atomic_compare_exchange',xrefs='atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_init atomic_load atomic_store atomic_work_item_fence']
+--
 [source,c]
-----
+----------
 bool atomic_compare_exchange_strong(
     volatile A *object,
     C *expected, C desired)
@@ -5815,7 +6023,7 @@ bool atomic_compare_exchange_weak_explicit(
     memory_order success,
     memory_order failure,
     memory_scope scope)
-----
+----------
 
 The _failure_ argument shall not be `memory_order_release` nor
 `memory_order_acq_rel`.
@@ -5836,12 +6044,12 @@ Otherwise, these operations are atomic load operations.
 The effect of the compare-and-exchange operations is
 
 [source,c]
-----
+----------
 if (memcmp(object, expected, sizeof(*object) == 0)
     memcpy(object, &desired, sizeof(*object));
 else
     memcpy(expected, object, sizeof(*object));
-----
+----------
 ====
 
 The weak compare-and-exchange operations may fail spuriously^48^.
@@ -5853,10 +6061,14 @@ memory contents that were originally there.
 a broader class of machines, e.g. load-locked store-conditional machines.
 
 These generic functions return the result of the comparison.
+--
 
 
-===== *The `atomic_fetch` and modify functions*
+[[atomic_fetch_key]]
+===== *The atomic_fetch and modify Functions*
 
+[open,refpage='atomic_fetch_key',desc='The atomic_fetch and modify Functions',type='freeform',spec='clang',anchor='atomic_fetch_key',xrefs='atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_init atomic_load atomic_store atomic_work_item_fence']
+--
 The following operations perform arithmetic and bitwise computations.
 All of these operations are applicable to an object of any atomic integer
 type.
@@ -5885,7 +6097,7 @@ For *atomic_fetch* and modify functions with *key* = `or`, `xor`, `and`,
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 C atomic_fetch_key(volatile A *object, M operand)
 
 C atomic_fetch_key_explicit(volatile A *object,
@@ -5896,7 +6108,7 @@ C atomic_fetch_key_explicit(volatile A *object,
                             M operand,
                             memory_order order,
                             memory_scope scope)
-----
+----------
 
 Atomically replaces the value pointed to by object with the result of the
 computation applied to the value pointed to by `object` and the given
@@ -5911,17 +6123,21 @@ For address types, the result may be an undefined address, but the
 operations otherwise have no undefined behavior.
 Returns atomically the value pointed to by `object` immediately before the
 effects.
+--
 
 
-===== *Atomic flag type and operations*
+[[atomic_flag]]
+===== *Atomic Flag Type and Operations*
 
-The atomic_flag type provides the classic test-and-set functionality.
+[open,refpage='atomic_flag',desc='Atomic Flag Type and Operations',type='freeform',spec='clang',anchor='atomic_flag',xrefs='atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_init atomic_load atomic_store atomic_work_item_fence']
+--
+The `atomic_flag` type provides the classic test-and-set functionality.
 It has two states, _set_ (value is non-zero) and _clear_ (value is 0).
-Operations on an object of type atomic_flag shall be lock free.
+Operations on an object of type `atomic_flag` shall be lock free.
 
-The macro `ATOMIC_FLAG_INIT` may be used to initialize an atomic_flag to the
+The macro `ATOMIC_FLAG_INIT` may be used to initialize an `atomic_flag` to the
 _clear_ state.
-An atomic_flag that is not explicitly initialized with `ATOMIC_FLAG_INIT` is
+An `atomic_flag` that is not explicitly initialized with `ATOMIC_FLAG_INIT` is
 initially in an indeterminate state.
 
 This macro can only be used for atomic objects that are declared in program
@@ -5930,15 +6146,19 @@ scope in the `global` address space with the `atomic_flag` type.
 Example:
 
 [source,c]
-----
+----------
 global atomic_flag guard = `ATOMIC_FLAG_INIT`;
-----
+----------
+--
 
 
-===== *The atomic_flag_test_and_set functions*
+[[atomic_flag_test_and_set]]
+===== *The atomic_flag_test_and_set Functions*
 
+[open,refpage='atomicFlagTestAndSet',desc='The atomic_flag_test_and_set Functions',type='freeform',spec='clang',anchor='atomic_flag_test_and_set',xrefs='atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_init atomic_load atomic_store atomic_work_item_fence']
+--
 [source,c]
-----
+----------
 bool atomic_flag_test_and_set(
     volatile atomic_flag *object)
 
@@ -5950,19 +6170,23 @@ bool atomic_flag_test_and_set_explicit(
     volatile atomic_flag *object,
     memory_order order,
     memory_scope scope)
-----
+----------
 
 Atomically sets the value pointed to by `object` to _true_.
 Memory is affected according to the value of `order`.
 These operations are atomic read-modify-write operations (as defined by
 <<C11-spec,section 5.1.2.4 of the C11 Specification>>).
 Returns atomically the value of the `object` immediately before the effects.
+--
 
 
-===== *The atomic_flag_clear functions*
+[[atomic_flag_clear]]
+===== *The atomic_flag_clear Functions*
 
+[open,refpage='atomic_flag_clear',desc='The atomic_flag_clear Functions',type='freeform',spec='clang',anchor='atomic_flag_clear',xrefs='atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_init atomic_load atomic_store atomic_work_item_fence']
+--
 [source,c]
-----
+----------
 void atomic_flag_clear(volatile atomic_flag *object)
 
 void atomic_flag_clear_explicit(
@@ -5973,17 +6197,20 @@ void atomic_flag_clear_explicit(
     volatile atomic_flag *object,
     memory_order order,
     memory_scope scope)
-----
+----------
 
 The `order` argument shall not be `memory_order_acquire` nor
 `memory_order_acq_rel`.
 Atomically sets the value pointed to by object to false.
 Memory is affected according to the value of order.
+--
 
 
-[[restrictions-2]]
+[[atomic-restrictions]]
 ==== Restrictions
 
+[open,refpage='atomicRestrictions',desc='Restrictions on Atomic Operations',type='freeform',spec='clang',anchor='atomic-restrictions',xrefs='atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_init atomic_load atomic_store atomic_work_item_fence']
+--
   * All operations on atomic types must be performed using the built-in
     atomic functions.
     C11 and C++11 support operators on atomic types.
@@ -5994,15 +6221,19 @@ Memory is affected according to the value of order.
     supported by OpenCL C.
   * OpenCL C requires that the built-in atomic functions on atomic types are
     lock-free.
-  * The _Atomic type specifier and _Atomic type qualifier are not supported
+  * The _Atomic_ type specifier and _Atomic_ type qualifier are not supported
     by OpenCL C.
   * The behavior of atomic operations where pointer arguments to the atomic
     functions refers to an atomic type in the `private` address space is
     undefined.
+--
 
 
 [[miscellaneous-vector-functions]]
 === Miscellaneous Vector Functions
+
+[open,refpage='miscVectorFunctions',desc='Miscellaneous Vector Functions',type='freeform',spec='clang',anchor='miscellaneous-vector-functions',xrefs='',alias='shuffle vec_step']
+--
 
 The OpenCL C programming language implements the following additional
 built-in vector functions.
@@ -6063,7 +6294,7 @@ integer data types.
       For *shuffle2*, only the *ilogb*(2_m_-1)+1 least significant bits of
       each _mask_ element are considered.
       Other bits in the mask shall be ignored.
---
+
 The elements of the input vectors are numbered from left to right across one
 or both of the vectors.
 For this purpose, the number of elements in a vector is given by
@@ -6074,7 +6305,7 @@ which element of the one or two input vectors the result element gets.
 Examples:
 
 [source,c]
-----
+----------
 uint4 mask = (uint4)(3, 2, 1, 0);
 float4 a;
 float4 r = shuffle(a, mask);
@@ -6091,25 +6322,27 @@ float8 a;
 float4 b;
 
 b = shuffle(a, mask);
-----
+----------
 
 Examples that are not valid are:
 
 [source,c]
-----
+----------
 uint8 mask;
 short16 a;
 short8 b;
 
 b = shuffle(a, mask); //  not valid
-----
---
+----------
 |====
+--
 
 
 [[printf]]
 === printf
 
+[open,refpage='printfFunction',desc='printf Function',type='freeform',spec='clang',anchor='printf']
+--
 The OpenCL C programming language implements the *printf* function.
 
 [[table-printf]]
@@ -6131,6 +6364,7 @@ The OpenCL C programming language implements the *printf* function.
 
       *printf* returns 0 if it was executed successfully and -1 otherwise.
 |====
+--
 
 
 [[printf-output-synchronization]]
@@ -6461,39 +6695,39 @@ floating number with the given precision.
 A few examples of printf are given below:
 
 [source,c]
-----
+----------
 float4  f = (float4)(1.0f, 2.0f, 3.0f, 4.0f);
 uchar4 uc = (uchar4)(0xFA, 0xFB, 0xFC, 0xFD);
 
 printf("f4 = %2.2v4hlf\n", f);
 printf("uc = %#v4hhx\n", uc);
-----
+----------
 
 The above two printf calls print the following:
 
 [source,c]
-----
+----------
 f4 = 1.00,2.00,3.00,4.00
 uc = 0xfa,0xfb,0xfc,0xfd
-----
+----------
 
 A few examples of valid use cases of printf for the conversion specifier *s*
 are given below.
 The argument value must be a pointer to a literal string.
 
 [source,c]
-----
+----------
 kernel void my_kernel( ... )
 {
     printf("%s\n", "this is a test string\n");
 }
-----
+----------
 
 A few examples of invalid use cases of printf for the conversion specifier
 *s* are given below:
 
 [source,c]
-----
+----------
 kernel void my_kernel(global char *s, ... )
 {
     printf("%s\n", s);
@@ -6501,14 +6735,14 @@ kernel void my_kernel(global char *s, ... )
     printf("%s\n", p);
     printf("%s\n", &p[3]);
 }
-----
+----------
 
 A few examples of invalid use cases of printf where data types given by the
 vector specifier and length modifier do not match the argument type are
 given below:
 
 [source,c]
-----
+----------
 kernel void my_kernel(global char *s, ... )
 {
     uint2 ui = (uint2)(0x12345678, 0x87654321);
@@ -6516,7 +6750,7 @@ kernel void my_kernel(global char *s, ... )
     printf("unsigned short value = (%#v2hx)\n", ui)
     printf("unsigned char value = (%#v2hhx)\n", ui)
 }
-----
+----------
 
 
 [[differences-between-opencl-c-and-c99-printf]]
@@ -6579,6 +6813,9 @@ component.
 [[samplers]]
 ==== Samplers
 
+[open,refpage='samplers',desc='Image Samplers',type='freeform',spec='clang',anchor='samplers',alias='sampler_t']
+--
+
 The image read functions take a sampler argument.
 The sampler can be passed as an argument to the kernel using
 *clSetKernelArg*, or can be declared in the outermost scope of kernel
@@ -6601,23 +6838,23 @@ Samplers can also be declared as global constants in the program source
 using the following syntax.
 
 [source,c]
-----
+----------
 const sampler_t <sampler name> = <value>
-----
+----------
 
 or
 
 [source,c]
-----
+----------
 constant sampler_t <sampler name> = <value>
-----
+----------
 
 or
 
 [source,c]
-----
+----------
 __constant sampler_t <sampler_name> = <value>
-----
+----------
 
 Note that samplers declared using the `constant` qualifier are not counted
 towards the maximum number of arguments pointing to the constant address
@@ -6692,17 +6929,18 @@ The sampler fields are described in the following table.
 *Examples*:
 
 [source,c]
-----
+----------
 const sampler_t samplerA = CLK_NORMALIZED_COORDS_TRUE |
                            CLK_ADDRESS_REPEAT |
                            CLK_FILTER_NEAREST;
-----
+----------
 
 `samplerA` specifies a sampler that uses normalized coordinates, the repeat
 addressing mode and a nearest filter.
 
 The maximum number of samplers that can be declared in a kernel can be
 queried using the `CL_DEVICE_MAX_SAMPLERS` token in *clGetDeviceInfo*.
+--
 
 
 [[determining-the-border-color-or-value]]
@@ -6744,6 +6982,9 @@ The alpha component is returned as is.
 
 [[built-in-image-read-functions]]
 ==== Built-in Image Read Functions
+
+[open,refpage='imageReadFunctions',desc='Built-in Image Read Functions',type='freeform',spec='clang',anchor='built-in-image-read-functions',xrefs='imageQueryFunctions imageSamplerlessReadFunctions imageWriteFunctions',alias='read_imagef read_imagei read_imageui']
+--
 
 The following built-in function calls to read images with a sampler^58^ are
 supported.
@@ -7175,10 +7416,14 @@ supported for `image1d_buffer_t` image types.
       above are undefined.
 | |
 |====
+--
 
 
 [[built-in-image-sampler-less-read-functions]]
 ==== Built-in Image Sampler-less Read Functions
+
+[open,refpage='imageSamplerlessReadFunctions',desc='Built-in Image Sampler-less Read Functions',type='freeform',spec='clang',anchor='built-in-image-sampler-less-read-functions',xrefs='imageQueryFunctions imageReadFunctions imageWriteFunctions']
+--
 
 The sampler-less image read functions behave exactly as the corresponding
 <<built-in-image-read-functions,built-in image read functions>> that take
@@ -7481,10 +7726,14 @@ For samplerless read functions this may be `read_only` or `read_write`.
       above are undefined.
 | |
 |====
+--
 
 
 [[built-in-image-write-functions]]
 ==== Built-in Image Write Functions
+
+[open,refpage='imageWriteFunctions',desc='Built-in Image Write Functions',type='freeform',spec='clang',anchor='built-in-image-write-functions',xrefs='imageQueryFunctions imageReadFunctions imageSamplerlessReadFunctions',alias='write_imagef write_imagei write_imageui']
+--
 
 The following built-in function calls to write images are supported.
 Note that image writes to sRGB images are only supported if the
@@ -7759,10 +8008,14 @@ For write functions this may be `write_only` or `read_write`.
       are not in the range [0, image width-1], [0, image height-1], and [0,
       image depth-1], respectively, is undefined.
 |====
+--
 
 
 [[built-in-image-query-functions]]
 ==== Built-in Image Query Functions
+
+[open,refpage='imageQueryFunctions',desc='Built-in Image Query Functions',type='freeform',spec='clang',anchor='built-in-image-query-functions',xrefs='imageReadFunctions imageSamplerlessReadFunctions imageWriteFunctions',alias='get_image_width get_image_height get_image_depth get_image_channel_data_type get_image_channel_order get_image_dim get_image_array_size']
+--
 
 The following built-in function calls to query image information are
 supported.
@@ -7875,6 +8128,7 @@ The values returned by *get_image_channel_data_type* and
 Specification>>.
 For example, both `CL_UNORM_INT8` and `CLK_UNORM_INT8` refer to an image
 channel data type that is an unnormalized unsigned 8-bit integer.
+--
 
 
 [[reading-and-writing-to-the-same-image-in-a-kernel]]
@@ -7892,7 +8146,7 @@ an image, the *work_group_barrier*(`CLK_IMAGE_MEM_FENCE`) should be used.
 Consider the following example:
 
 [source,c]
-----
+----------
 kernel void
 foo(read_write image2d_t img, ... )
 {
@@ -7915,7 +8169,7 @@ foo(read_write image2d_t img, ... )
     ...
 
 }
-----
+----------
 
 
 [[mapping-image-channels-to-color-values-returned-by-read_image-and-color-values-passed-to-write_image-to-image-channels]]
@@ -7965,6 +8219,9 @@ support will result in a `CL_OUT_OF_RESOURCES` error being returned.
 
 [[work-group-functions]]
 === Work-group Functions
+
+[open,refpage='workGroupFunctions',desc='Work-group Functions',type='freeform',spec='clang',anchor='work-group-functions',xrefs='',alias='work_group_all work_group_any work_group_broadcast work_group_reduce work_group_scan_exclusive work_group_scan_inclusive']
+--
 
 The OpenCL C programming language implements the following built-in
 functions that operate on a work-group level.
@@ -8038,14 +8295,14 @@ Similarly if *op* = max, the identity I is `INT_MIN`, 0, `LONG_MIN`, 0 and
 Consider the following example:
 
 [source,c]
-----
+----------
 void foo(int *p)
 {
     ...
     int prefix_sum_val = work_group_scan_inclusive_add(
                             p[get_local_id(0)]);
 }
-----
+----------
 
 For the example above, let's assume that the work-group size is 8 and _p_
 points to the following elements [3 1 7 0 4 1 6 3].
@@ -8070,6 +8327,7 @@ The order of floating-point operations is not guaranteed for the
 The order of these floating-point operations is also non-deterministic for a
 given work-group.
 ====
+--
 
 
 [[pipe-functions]]
@@ -8087,11 +8345,11 @@ and vector data types.
 Examples:
 
 [source,c]
-----
+----------
 pipe int4 pipeA; // a pipe with int4 packets
 
 pipe user_type_t pipeB; // a pipe with user_type_t packets
-----
+----------
 
 The `read_only` (or `+__read_only+`) and `write_only` (or `+__write_only+`)
 qualifiers must be used with the `pipe` qualifier when a pipe is a parameter
@@ -8106,14 +8364,14 @@ qualifier is a compilation error.
 In the following example
 
 [source,c]
-----
+----------
 kernel void
 foo (read_only pipe fooA_t pipeA,
      write_only pipe fooB_t pipeB)
 {
     ...
 }
-----
+----------
 
 `pipeA` is a read-only pipe object, and `pipeB` is a write-only pipe object.
 
@@ -8134,6 +8392,9 @@ The macro `CLK_NULL_RESERVE_ID` refers to an invalid reservation ID.
 
 [[built-in-pipe-read-and-write-functions]]
 ==== Built-in Pipe Read and Write Functions
+
+[open,refpage='pipeFunctions',desc='Built-in Pipe Read and Write Functions',type='freeform',spec='clang',anchor='built-in-pipe-read-and-write-functions',xrefs='pipeWorkgroupFunctions pipeQueryFunctions',alias='commit_read_pipe commit_write_pipe is_valid_reserve_id read_pipe reserve_read_pipe reserve_write_pipe write_pipe']
+--
 
 The OpenCL C programming language implements the following built-in
 functions that read from or write to a pipe.
@@ -8197,10 +8458,14 @@ is supported.
     | Return _true_ if _reserve_id_ is a valid reservation ID and _false_
       otherwise.
 |====
+--
 
 
 [[built-in-work-group-pipe-read-and-write-functions]]
 ==== Built-in Work-group Pipe Read and Write Functions
+
+[open,refpage='pipeWorkgroupFunctions',desc='Built-in Work-group Pipe Read and Write Functions',type='freeform',spec='clang',anchor='built-in-work-group-pipe-read-and-write-functions',xrefs='pipeFunctions pipeQueryFunctions',alias='work_group_commit_read_pipe work_group_commit_write_pipe work_group_reserve_read_pipe work_group_reserve_write_pipe']
+--
 
 The OpenCL C programming language implements the following built-in pipe
 functions that operate at a work-group level.
@@ -8271,10 +8536,14 @@ Work-group based reservations made by a work-group are ordered in the pipe
 as they are ordered in the program.
 The order of work-group based reservations by different work-groups is
 implementation defined.
+--
 
 
 [[built-in-pipe-query-functions]]
 ==== Built-in Pipe Query Functions
+
+[open,refpage='pipeQueryFunctions',desc='Built-in Pipe Query Functions',type='freeform',spec='clang',anchor='built-in-pipe-query-functions',xrefs='pipeFunctions pipeWorkgroupFunctions',alias='get_pipe_max_packets get_pipe_num_packets']
+--
 
 The OpenCL C programming language implements the following built-in query
 functions for a pipe.
@@ -8304,6 +8573,7 @@ For pipe query functions this may be `read_only` or `write_only`.
     | Returns the maximum number of packets specified when _pipe_ was
       created.
 |====
+--
 
 
 [[restrictions-4]]
@@ -8339,6 +8609,9 @@ The following behavior is undefined:
 [[enqueuing-kernels]]
 === Enqueuing Kernels
 
+[open,refpage='enqueue_kernel',desc='Enqueuing Kernels',type='freeform',spec='clang',anchor='enqueuing-kernels',xrefs='enqueue_marker']
+--
+
 OpenCL 2.0 allows a kernel to independently enqueue to the same device,
 without host interaction.
 A kernel may enqueue code represented by Block syntax, and control execution
@@ -8352,6 +8625,7 @@ used to enqueue a kernel(s).
 
 The macro `CLK_NULL_EVENT` refers to an invalid device event.
 The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
+--
 
 
 [[built-in-functions-enqueuing-a-kernel]]
@@ -8413,7 +8687,7 @@ block:
 Below are some examples of how to enqueue a block.
 
 [source,c]
-----
+----------
 kernel void
 my_func_A(global int *a, global int *b, global int *c)
 {
@@ -8452,12 +8726,12 @@ my_func_C(global int *a, global int *b, global int *c)
                    my_block_A);
     ...
 }
-----
+----------
 
 The example below shows how to declare a block literal and enqueue it.
 
 [source,c]
-----
+----------
 kernel void
 my_func(global int *a, global int *b)
 {
@@ -8488,7 +8762,7 @@ my_func(global int *a, global int *b)
                        b[id] += a[id];
                    };
 }
-----
+----------
 
 [NOTE]
 ====
@@ -8500,7 +8774,7 @@ the `local` or `private` address space.
 Example:
 
 [source,c]
-----
+----------
 kernel void
 foo(global int *a, local int *lptr, ...)
 {
@@ -8512,7 +8786,7 @@ foo(global int *a, local int *lptr, ...)
                        local int *p = lptr; // undefined behavior
                    } );
 }
-----
+----------
 
 
 [[arguments-that-are-a-pointer-type-to-local-address-space]]
@@ -8531,7 +8805,7 @@ the enqueued block.
 Some examples follow:
 
 [source,c]
-----
+----------
 kernel void
 my_func_A_local_arg1(global int *a, local int *lptr, ...)
 {
@@ -8585,7 +8859,7 @@ my_func_C(global int *a, ...)
                    my_blk_A,
                    local_mem_size, local_mem_size*4);
 }
-----
+----------
 
 
 [[a-complete-example]]
@@ -8600,7 +8874,7 @@ enqueue a new instance of dp_func_A .
 This process is repeated until all the work is completed.
 
 [source,c]
-----
+----------
 kernel void
 dp_func_A(queue_t q, ...)
 {
@@ -8647,7 +8921,7 @@ evaluate_dp_work_A(queue_t q,...)
     }
     ...
 }
-----
+----------
 
 
 [[determining-when-a-child-kernel-begins-execution]]
@@ -8723,6 +8997,9 @@ execution.
 [[built-in-functions-kernel-query-functions]]
 ==== Built-in Functions - Kernel Query Functions
 
+[open,refpage='kernelQueryFunctions',desc='Built-in Functions - Kernel Query Functions',type='freeform',spec='clang',anchor='built-in-functions-kernel-query-functions',xrefs='enqueue_kernel',alias='get_kernel_preferred get_kernel_work_group_size']
+--
+
 [[table-builtin-kernel-query]]
 .Built-in Kernel Query Functions
 [cols=",",]
@@ -8745,10 +9022,14 @@ execution.
       enqueue_kernel will not fail to enqueue the block for execution unless
       the work-group size specified is larger than the device maximum.
 |====
+--
 
 
 [[built-in-functions-queuing-other-commands]]
 ==== Built-in Functions - Queuing other commands
+
+[open,refpage='enqueue_marker',desc='Built-in Functions - Queuing Other Commands',type='freeform',spec='clang',anchor='built-in-functions-queuing-other-commands',xrefs='enqueue_kernel']
+--
 
 The following table describes the list of built-in functions that can be
 used to enqueue commands such as a marker.
@@ -8788,10 +9069,14 @@ enqueue the marker command:
     could not be allocated.
   * `CLK_OUT_OF_RESOURCES` if there is a failure to queue the block in
     _queue_ because of insufficient resources needed to execute the kernel.
+--
 
 
 [[built-in-functions-event-functions]]
 ==== Built-in Functions - Event Functions
+
+[open,refpage='eventFunctions',desc='Built-in Event Functions',type='freeform',spec='clang',anchor='built-in-functions-event-functions',xrefs='',alias='capture_event_profiling_info create_user_event is_valid_event release_event retain_event set_user_event_status']
+--
 
 The following table describes the list of built-in functions that work on
 events.
@@ -8831,13 +9116,13 @@ events.
 | |
 | void *capture_event_profiling_info*(clk_event_t _event_,
   clk_profiling_info _name_, global void *_value_)
-    | Captures the profiling information for functions that are enqueued as
+   a| Captures the profiling information for functions that are enqueued as
       commands.
       The specific function being referred to is: enqueue_kernel.
       These enqueued commands are identified by unique event objects.
       The profiling information will be available in _value_ once the
       command identified by _event_ has completed.
---
+
 _event_ must be an event returned by enqueue_kernel.
 
 _name_ identifies which profiling information is to be queried and can be:
@@ -8859,7 +9144,6 @@ command identified by _event_ in nanoseconds.
 The behavior of capture_event_profiling_info when called multiple times for
 the same _event_ is undefined.
 ====
---
 |====
 
 Events can be used to identify commands enqueued to a command-queue from the
@@ -8888,7 +9172,7 @@ The example below shows how events can be used with kernels enqueued to
 multiple device queues.
 
 [source,c]
-----
+----------
 extern void barA_kernel(...);
 extern void barB_kernel(...);
 
@@ -8920,13 +9204,13 @@ foo(queue_t q0, queue q1, ...)
     release_event(evt0);
 
 }
-----
+----------
 
 The example below shows how the marker command can be used with kernels
 enqueued to a device queue.
 
 [source,c]
-----
+----------
 kernel void
 foo(queue_t q, ...)
 {
@@ -8963,11 +9247,15 @@ foo(queue_t q, ...)
     release_event(events[1]);
     release_event(marker_event);
 }
-----
+----------
+--
 
 
 [[built-in-functions-helper-functions]]
 ==== Built-in Functions - Helper Functions
+
+[open,refpage='helperFunctions',desc='Built-in Helper Functions',type='freeform',spec='clang',anchor='built-in-functions-helper-functions',xrefs='',alias='get_default_queue ndrange ndrange_1D ndrange_2D ndrange_3D']
+--
 
 [[table-builtin-helper]]
 .Built-in Helper Functions
@@ -8998,6 +9286,7 @@ foo(queue_t q, ...)
   const size_t _local_work_size_[3])
     | Builds a 1D, 2D or 3D ND-range descriptor.
 |====
+--
 
 
 [[opencl-numerical-compliance]]
@@ -9691,10 +9980,10 @@ For example, *sin*({plusmn}0) = {plusmn}0 shall be interpreted to mean
      as if the elements in _v_ were replaced as follows:
 +
 [source,c]
-----
+----------
 for (i = 0; i < sizeof(v) / sizeof(v[0]); i++)
    v[i] = isinf(v[i]) ? copysign(1.0, v[i]) : 0.0 * v[i];
-----
+----------
   :: *pow*({plusmn}0, -{inf}) returns +{inf}
   :: *pown*(_x_, 0) is 1 for any _x_, even zero, NaN or infinity.
   :: *pown*({plusmn}0, _n_) is {plusmn}{inf} for odd _n_ < 0.
@@ -9745,13 +10034,13 @@ for (i = 0; i < sizeof(v) / sizeof(v[0]); i++)
 *modf* behaves as though implemented by:
 
 [source,c]
-----
+----------
 gentype modf(gentype value, gentype *iptr)
 {
     *iptr = trunc( value );
     return copysign(isinf( value ) ? 0.0 : value - *iptr, value);
 }
-----
+----------
 
 *rint* always rounds according to round to nearest even rounding mode even
 if the caller is in some other rounding mode.
@@ -9846,11 +10135,11 @@ This means the image element at location (_i_,_j_,_k_) becomes the image
 element value, where
 
 [source,c]
-----
+----------
 i = address_mode((int)floor(u))
 j = address_mode((int)floor(v))
 k = address_mode((int)floor(w))
-----
+----------
 
 For a 3D image, the image element at location (_i_,_j_,_k_) becomes the
 color value.
@@ -9876,9 +10165,9 @@ The `clamp` function used in this table is defined as:
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 clamp(a, b, c) = return (a < b) ? b : ((a > c) ? c : a)
-----
+----------
 
 If the selected texel location (_i_,_j_,_k_) refers to a location outside
 the image, the border color is used as the color value for this texel.
@@ -9893,7 +10182,7 @@ This 2{times}2 square or 2{times}2{times}2 cube is obtained as follows.
 Let
 
 [source,c]
-----
+----------
 i0 = address_mode((int)floor(u - 0.5))
 j0 = address_mode((int)floor(v - 0.5))
 k0 = address_mode((int)floor(w - 0.5))
@@ -9903,7 +10192,7 @@ k1 = address_mode((int)floor(w - 0.5) + 1)
 a = frac(u - 0.5)
 b = frac(v - 0.5)
 c = frac(w - 0.5)
-----
+----------
 
 where `frac(x)` denotes the fractional part of x and is computed as `x -
 floor(x)`.
@@ -9912,7 +10201,7 @@ For a 3D image, the image element value is found as
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * (1 - b) * (1 - c) * T_i1j0k0
     + (1 - a) * b * (1 - c) * T_i0j1k0
@@ -9921,7 +10210,7 @@ T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * (1 - b) * c * T_i1j0k1
     + (1 - a) * b * c * T_i0j1k1
     + a * b * c * T_i1j1k1
-----
+----------
 
 where `T_ijk` is the image element at location (_i_,_j_,_k_) in the 3D image.
 
@@ -9929,12 +10218,12 @@ For a 2D image, the image element value is found as
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 T = (1 - a) * (1 - b) * T_i0j0
     + a * (1 - b) * T_i1j0
     + (1 - a) * b * T_i0j1
     + a * b * T_i1j1
-----
+----------
 
 where `T_ij` is the image element at location (_i_,_j_) in the 2D image.
 
@@ -9961,7 +10250,7 @@ computed as
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 u = (s - floor(s)) * w_t
 i = (int)floor(u)
 if (i > w_t - 1)
@@ -9976,7 +10265,7 @@ w = (r - floor(r)) * d_t
 k = (int)floor(w)
 if (k > d_t - 1)
     k = k - d_t
-----
+----------
 
 
 For a 3D image, the image element at location (_i_,_j_,_k_) becomes the
@@ -9995,7 +10284,7 @@ Let
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 u = (s - floor(s)) * w_t
 i0 = (int)floor(u - 0.5)
 i1 = i0 + 1
@@ -10023,7 +10312,7 @@ if (k1 > d_t - 1)
 a = frac(u - 0.5)
 b = frac(v - 0.5)
 c = frac(w - 0.5)
-----
+----------
 
 where `frac(x)` denotes the fractional part of x and is computed as `x -
 floor(x)`.
@@ -10032,7 +10321,7 @@ For a 3D image, the image element value is found as
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * (1 - b) * (1 - c) * T_i1j0k0
     + (1 - a) * b * (1 - c) * T_i0j1k0
@@ -10041,7 +10330,7 @@ T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * (1 - b) * c * T_i1j0k1
     + (1 - a) * b * c * T_i0j1k1
     + a * b * c * T_i1j1k1
-----
+----------
 
 where `T_ijk` is the image element at location (_i_,_j_,_k_) in the 3D image.
 
@@ -10049,12 +10338,12 @@ For a 2D image, the image element value is found as
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 T = (1 - a) * (1 - b) * T_i0j0
     + a * (1 - b) * T_i1j0
     + (1 - a) * b * T_i0j1
     + a * b * T_i1j1
-----
+----------
 
 where `T_ij` is the image element at location (_i_,_j_) in the 2D image.
 
@@ -10081,7 +10370,7 @@ as
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 s' = 2.0f * rint(0.5f * s)
 s' = fabs(s - s')
 u = s' * w_t
@@ -10099,7 +10388,7 @@ r' = fabs(r - r')
 w = r' * d_t
 k = (int)floor(w)
 k = min(k, d_t - 1)
-----
+----------
 
 For a 3D image, the image element at location (_i_,_j_,_k_) becomes the
 color value.
@@ -10117,7 +10406,7 @@ Let
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 s' = 2.0f * rint(0.5f * s)
 s' = fabs(s - s')
 u = s' * w_t
@@ -10145,7 +10434,7 @@ k1 = min(k1, d_t - 1)
 a = frac(u - 0.5)
 b = frac(v - 0.5)
 c = frac(w - 0.5)
-----
+----------
 
 where `frac(x)` denotes the fractional part of x and is computed as `x -
 floor(x)`.
@@ -10154,7 +10443,7 @@ For a 3D image, the image element value is found as
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * (1 - b) * (1 - c) * T_i1j0k0
     + (1 - a) * b * (1 - c) * T_i0j1k0
@@ -10163,7 +10452,7 @@ T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * (1 - b) * c * T_i1j0k1
     + (1 - a) * b * c * T_i0j1k1
     + a * b * c * T_i1j1k1
-----
+----------
 
 where `T_ijk` is the image element at location (_i_,_j_,_k_) in the 3D image.
 
@@ -10171,12 +10460,12 @@ For a 2D image, the image element value is found as
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 T = (1 - a) * (1 - b) * T_i0j0
     + a * (1 - b) * T_i1j0
     + (1 - a) * b * T_i0j1
     + a * b * T_i1j1
-----
+----------
 
 where `T_ij` is the image element at location (_i_,_j_) in the 2D image.
 
@@ -10184,10 +10473,10 @@ For a 1D image, the image element value is found as
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 T = (1 - a) * T_i0
     + a * T_i1
-----
+----------
 
 where `T_i` is the image element at location (_i_) in the 1D image.
 
@@ -10479,7 +10768,7 @@ using *read_imagef*.
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 // Convert the normalized 8-bit unsigned integer R, G and B channel values
 // to a floating-point value (call it c) as per rules described in section
 // 8.3.1.1.
@@ -10488,7 +10777,7 @@ if (c <= 0.04045),
     result = c / 12.92;
 else
     result = powr((c + 0.055) / 1.055, 2.4);
-----
+----------
 
 The resulting floating point value, if converted back to an sRGB value
 without rounding to a 8-bit unsigned integer value, must be within 0.5 ulp
@@ -10500,7 +10789,7 @@ integer sRGB value using *write_imagef*.
 
 [source,c]
 [subs="verbatim,quotes,macros"]
-----
+----------
 if (c is NaN)
     c = 0.0;
 if (c > 1.0)
@@ -10514,7 +10803,7 @@ else
 
 scaled_reference_result = c * 255
 channel_component = floor(scaled_reference_result + 0.5);
-----
+----------
 
 The precision of the above conversion should be such that
 
@@ -10555,8 +10844,6 @@ otherwise the layer selected is computed as:
 (since _v_ is already an integer) and the result is undefined if _v_ is not
 one of the integers 0, 1, ... h~t~ - 1.
 
-
-// Jon - new section for external normative references
 
 [[references]]
 = Normative References

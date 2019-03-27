@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2013-2018 The Khronos Group Inc.
+# Copyright (c) 2013-2019 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,21 +21,20 @@ from cgenerator import CGeneratorOptions, COutputGenerator
 from docgenerator import DocGeneratorOptions, DocOutputGenerator
 from extensionmetadocgenerator import ExtensionMetaDocGeneratorOptions, ExtensionMetaDocOutputGenerator
 from pygenerator import PyOutputGenerator
-from validitygenerator import ValidityOutputGenerator
-from hostsyncgenerator import HostSynchronizationOutputGenerator
-from extensionStubSource import ExtensionStubSourceOutputGenerator
+from clconventions import OpenCLConventions
 
 # Simple timer functions
 startTime = None
 
 def startTimer(timeit):
     global startTime
-    startTime = time.process_time()
+    if timeit:
+        startTime = time.process_time()
 
 def endTimer(timeit, msg):
     global startTime
-    endTime = time.process_time()
-    if (timeit):
+    if timeit:
+        endTime = time.process_time()
         write(msg, endTime - startTime, file=sys.stderr)
         startTime = None
 
@@ -90,7 +89,7 @@ def makeGenOpts(args):
     # Copyright text prefixing all headers (list of strings).
     prefixStrings = [
         '/*',
-        '** Copyright (c) 2015-2018 The Khronos Group Inc.',
+        '** Copyright (c) 2015-2019 The Khronos Group Inc.',
         '**',
         '** Licensed under the Apache License, Version 2.0 (the "License");',
         '** you may not use this file except in compliance with the License.',
@@ -121,6 +120,9 @@ def makeGenOpts(args):
     protectFeature = protect
     protectProto = protect
 
+    # An API style conventions object
+    conventions = OpenCLConventions()
+
     # API include files for spec and ref pages
     # Overwrites include subdirectories in spec source tree
     # The generated include files do not include the calling convention
@@ -131,6 +133,7 @@ def makeGenOpts(args):
     genOpts['apiinc'] = [
           DocOutputGenerator,
           DocGeneratorOptions(
+            conventions       = conventions,
             filename          = 'timeMarker',
             directory         = directory,
             apiname           = 'opencl',
@@ -145,7 +148,7 @@ def makeGenOpts(args):
             apicall           = '',
             apientry          = '',
             apientryp         = '*',
-            alignFuncParam    = 48,
+            alignFuncParam    = 0,
             expandEnumerants  = False)
         ]
 
@@ -153,6 +156,7 @@ def makeGenOpts(args):
     genOpts['clapi.py'] = [
           PyOutputGenerator,
           DocGeneratorOptions(
+            conventions       = conventions,
             filename          = 'clapi.py',
             directory         = directory,
             apiname           = 'opencl',
@@ -169,6 +173,7 @@ def makeGenOpts(args):
     genOpts['extinc'] = [
           ExtensionMetaDocOutputGenerator,
           ExtensionMetaDocGeneratorOptions(
+            conventions       = conventions,
             filename          = 'timeMarker',
             directory         = directory,
             apiname           = 'opencl',
@@ -241,7 +246,7 @@ def makeGenOpts(args):
     #         apicall           = 'VKAPI_ATTR ',
     #         apientry          = 'VKAPI_CALL ',
     #         apientryp         = 'VKAPI_PTR *',
-    #         alignFuncParam    = 48)
+    #         alignFuncParam    = 0)
     #
     #     genOpts[headername] = [ COutputGenerator, opts ]
 
@@ -258,6 +263,7 @@ def makeGenOpts(args):
     genOpts['cl.h'] = [
           COutputGenerator,
           CGeneratorOptions(
+            conventions       = conventions,
             filename          = 'cl.h',
             directory         = directory,
             apiname           = 'opencl',
@@ -277,7 +283,8 @@ def makeGenOpts(args):
             apicall           = 'CL_API_ENTRY ',
             apientry          = 'CL_API_CALL ',
             apientryp         = 'CL_API_CALL *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 0,
+            genEnumBeginEndRange = False)
         ]
 
 # Generate a target based on the options in the matching genOpts{} object.
@@ -295,7 +302,7 @@ def genTarget(args):
     # Create generator options with specified parameters
     makeGenOpts(args)
 
-    if (args.target in genOpts.keys()):
+    if args.target in genOpts.keys():
         createGenerator = genOpts[args.target][0]
         options = genOpts[args.target][1]
 
@@ -395,27 +402,27 @@ if __name__ == '__main__':
         reg.loadElementTree(tree)
         endTimer(args.time, '* Time to parse ElementTree =')
 
-    if (args.validate):
+    if args.validate:
         reg.validateGroups()
 
-    if (args.dump):
+    if args.dump:
         write('* Dumping registry to regdump.txt', file=sys.stderr)
         reg.dumpReg(filehandle = open('regdump.txt', 'w', encoding='utf-8'))
 
     # create error/warning & diagnostic files
-    if (args.errfile):
+    if args.errfile:
         errWarn = open(args.errfile, 'w', encoding='utf-8')
     else:
         errWarn = sys.stderr
 
-    if (args.diagfile):
+    if args.diagfile:
         diag = open(args.diagfile, 'w', encoding='utf-8')
     else:
         diag = None
 
-    if (args.debug):
+    if args.debug:
         pdb.run('genTarget(args)')
-    elif (args.profile):
+    elif args.profile:
         import cProfile, pstats
         cProfile.run('genTarget(args)', 'profile.txt')
         p = pstats.Stats('profile.txt')
