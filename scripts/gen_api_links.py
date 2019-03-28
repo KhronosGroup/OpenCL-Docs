@@ -96,7 +96,7 @@ if __name__ == "__main__":
 	for enums in spec.findall('enums'):
 		# Skip Vendor Extension Enums
 		vendor = enums.get('vendor')
-		if not vendor or vendor == 'Khronos':
+		if not vendor or vendor == 'Khronos' or vendor == 'Multiple':
 			for enum in enums.findall('enum'):
 				name = enum.get('name')
 				#print('found enum: ' + name)
