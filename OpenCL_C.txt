@@ -38,10 +38,6 @@ include::copyrights.txt[]
 
 <<<
 
-include::api/acknowledgements.txt[]
-
-<<<
-
 // :numbered:
 
 :leveloffset: 1
@@ -3792,11 +3788,11 @@ to function pointers.
   ** Block variable declarations are implicitly qualified with const.
      Therefore all block variables must be initialized at declaration time
      and may not be reassigned.
-  ** A block cannot be the return value of a function.
+  ** A block cannot be a return value or a parameter of a function.
+  ** Blocks cannot be used as expressions of the ternary selection operator
+     (*?:*).
   * The unary operators (*** and *&*) cannot be used with a Block.
   * Pointers to Blocks are not allowed.
-  * Blocks cannot be used as expressions of the ternary selection operator
-    (*?:*).
   * A Block cannot capture another Block variable declared in the outer
     scope (Example 4).
   * Block capture semantics follows regular C argument passing convention,
@@ -9437,10 +9433,15 @@ currently undefined.
 | *atanh*               | {leq} 5 ulp
 | *cbrt*                | {leq} 2 ulp
 | *ceil*                | Correctly rounded
+| *clamp*               | 0 ulp
 | *copysign*            | 0 ulp
 | *cos*                 | {leq} 4 ulp
 | *cosh*                | {leq} 4 ulp
 | *cospi*               | {leq} 4 ulp
+| *cross*               | absolute error tolerance of 'max * max * (3 * FLT_EPSILON)', where max is the maximum input operand value
+| *degrees*             | {leq} 2 ulp
+| *distance*            | {leq} 3 + (1.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
+| *dot*                 | absolute error tolerance of 'max * max * (2 * (n - 1)) * FLT_EPSILON', For vector width n and maximum input operand value 'max'
 | *erfc*                | {leq} 16 ulp
 | *erf*                 | {leq} 16 ulp
 | *exp*                 | {leq} 3 ulp
@@ -9458,6 +9459,7 @@ currently undefined.
 | *frexp*               | 0 ulp
 | *hypot*               | {leq} 4 ulp
 | *ilogb*               | 0 ulp
+| *length*              | {leq} 3 + 0.5 * ((0.5 * n) + (0.5 * (n - 1))) ulp, for gentype with vector width n
 | *ldexp*               | Correctly rounded
 | *log*                 | {leq} 3 ulp
 | *log2*                | {leq} 3 ulp
@@ -9467,25 +9469,33 @@ currently undefined.
 | *mad*                 | Implemented either as a correctly rounded fma or
                           as a multiply followed by an add both of which are
                           correctly rounded
+| *max*                 | 0 ulp
 | *maxmag*              | 0 ulp
+| *min*                 | 0 ulp
 | *minmag*              | 0 ulp
+| *mix*                 | absolute error tolerance of 1e-3
 | *modf*                | 0 ulp
 | *nan*                 | 0 ulp
 | *nextafter*           | 0 ulp
+| *normalize*           | {leq} 2.5 + (0.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
 | *pow*(_x_, _y_)       | {leq} 16 ulp
 | *pown*(_x_, _y_)      | {leq} 16 ulp
 | *powr*(_x_, _y_)      | {leq} 16 ulp
+| *radians*             | {leq} 2 ulp
 | *remainder*           | 0 ulp
 | *remquo*              | 0 ulp
 | *rint*                | Correctly rounded
 | *rootn*               | {leq} 16 ulp
 | *round*               | Correctly rounded
 | *rsqrt*               | {leq} 2 ulp
+| *sign*                | 0 ulp
 | *sin*                 | {leq} 4 ulp
 | *sincos*              | {leq} 4 ulp for sine and cosine values
 | *sinh*                | {leq} 4 ulp
 | *sinpi*               | {leq} 4 ulp
+| *smoothstep*          | absolute error tolerance of 1e-5
 | *sqrt*                | {leq} 3 ulp
+| *step*                | 0 ulp
 | *tan*                 | {leq} 5 ulp
 | *tanh*                | {leq} 5 ulp
 | *tanpi*               | {leq} 6 ulp
@@ -9506,6 +9516,10 @@ currently undefined.
 | *half_sin*            | {leq} 8192 ulp
 | *half_sqrt*           | {leq} 8192 ulp
 | *half_tan*            | {leq} 8192 ulp
+| |
+| *fast_distance*       | {leq} 8192 + (1.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
+| *fast_length*         | {leq} 8192 + (0.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
+| *fast_normalize*      | {leq} 8192.5 + (0.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
 | |
 | *native_cos*          | Implementation-defined
 | *native_divide*       | Implementation-defined
@@ -9555,10 +9569,15 @@ is the infinitely precise result.
 | *atanh*           | {leq} 5 ulp
 | *cbrt*            | {leq} 4 ulp
 | *ceil*            | Correctly rounded
+| *clamp*           | 0 ulp
 | *copysign*        | 0 ulp
 | *cos*             | {leq} 4 ulp
 | *cosh*            | {leq} 4 ulp
 | *cospi*           | {leq} 4 ulp
+| *cross*           | Implementation-defined
+| *degrees*         | {leq} 2 ulp
+| *distance*        | Implementation-defined
+| *dot*             | Implementation-defined
 | *erfc*            | {leq} 16 ulp
 | *erf*             | {leq} 16 ulp
 | *exp*             | {leq} 4 ulp
@@ -9577,31 +9596,40 @@ is the infinitely precise result.
 | *hypot*           | {leq} 4 ulp
 | *ilogb*           | 0 ulp
 | *ldexp*           | Correctly rounded
+| *length*          | Implementation-defined
 | *log*             | {leq} 4 ulp
 | *log2*            | {leq} 4 ulp
 | *log10*           | {leq} 4 ulp
 | *log1p*           | {leq} 4 ulp
 | *logb*            | 0 ulp
 | *mad*             | Any value allowed (infinite ulp)
+| *max*             | 0 ulp
 | *maxmag*          | 0 ulp
+| *min*             | 0 ulp
 | *minmag*          | 0 ulp
+| *mix*             | Implementation-defined
 | *modf*            | 0 ulp
 | *nan*             | 0 ulp
+| *normalize*       | Implementation-defined
 | *nextafter*       | 0 ulp
 | *pow*(_x_, _y_)       | {leq} 16 ulp
 | *pown*(_x_, _y_)      | {leq} 16 ulp
 | *powr*(_x_, _y_)      | {leq} 16 ulp
+| *radians*         | {leq} 2 ulp
 | *remainder*       | 0 ulp
 | *remquo*          | 0 ulp
 | *rint*            | Correctly rounded
 | *rootn*           | {leq} 16 ulp
 | *round*           | Correctly rounded
 | *rsqrt*           | {leq} 4 ulp
+| *sign*            | 0 ulp
 | *sin*             | {leq} 4 ulp
 | *sincos*          | {leq} 4 ulp for sine and cosine values
 | *sinh*            | {leq} 4 ulp
 | *sinpi*           | {leq} 4 ulp
+| *smoothstep*      | Implementation-defined
 | *sqrt*            | {leq} 4 ulp
+| *step*            | 0 ulp
 | *tan*             | {leq} 5 ulp
 | *tanh*            | {leq} 5 ulp
 | *tanpi*           | {leq} 6 ulp
@@ -9622,6 +9650,10 @@ is the infinitely precise result.
 | *half_sin*        | {leq} 8192 ulp
 | *half_sqrt*       | {leq} 8192 ulp
 | *half_tan*        | {leq} 8192 ulp
+| |
+| *fast_distance*   | Implementation-defined
+| *fast_length*     | Implementation-defined
+| *fast_normalize*  | Implementation-defined
 | |
 | *native_cos*      | Implementation-defined
 | *native_divide*   | Implementation-defined
@@ -9828,10 +9860,15 @@ is the infinitely precise result.
 | *atanh*           | {leq} 5 ulp
 | *cbrt*            | {leq} 2 ulp
 | *ceil*            | Correctly rounded
+| *clamp*           | 0 ulp
 | *copysign*        | 0 ulp
 | *cos*             | {leq} 4 ulp
 | *cosh*            | {leq} 4 ulp
 | *cospi*           | {leq} 4 ulp
+| *cross*           | absolute error tolerance of 'max * max * (3 * FLT_EPSILON)', where max is the maximum input operand value
+| *degrees*         | {leq} 2 ulp
+| *distance*        | {leq} 2 * (3 + 0.5 * ((1.5 * n) + (0.5 * (n - 1)))) For vector width n
+| *dot*             | absolute error tolerance of 'max * max * (2 * (n - 1)) * FLT_EPSILON', For vector width n and maximum input operand value 'max'
 | *erfc*            | {leq} 16 ulp
 | *erf*             | {leq} 16 ulp
 | *exp*             | {leq} 3 ulp
@@ -9849,6 +9886,7 @@ is the infinitely precise result.
 | *frexp*           | 0 ulp
 | *hypot*           | {leq} 4 ulp
 | *ilogb*           | 0 ulp
+| *length*          | {leq} 2 * (3 + 0.5 * ((0.5 * n) + (0.5 * (n - 1)))) For vector width n
 | *ldexp*           | Correctly rounded
 | *log*             | {leq} 3 ulp
 | *log2*            | {leq} 3 ulp
@@ -9856,24 +9894,32 @@ is the infinitely precise result.
 | *log1p*           | {leq} 2 ulp
 | *logb*            | 0 ulp
 | *mad*             | Any value allowed (infinite ulp)
+| *max*             | 0 ulp
 | *maxmag*          | 0 ulp
+| *min*             | 0 ulp
 | *minmag*          | 0 ulp
+| *mix*             | Implementation-defined
 | *modf*            | 0 ulp
 | *nan*             | 0 ulp
 | *nextafter*       | 0 ulp
+| *normalize*       | {leq} 2 * (2.5 + 0.5 * ((0.5 * n) + (0.5 * (n - 1)))) For vector width n
 | *pow*(_x_, _y_)   | {leq} 16 ulp
 | *pown*(_x_, _y_)  | {leq} 16 ulp
 | *powr*(_x_, _y_)  | {leq} 16 ulp
+| *radians*         | {leq} 2 ulp
 | *remainder*       | 0 ulp
 | *remquo*          | 0 ulp
 | *rint*            | Correctly rounded
 | *rootn*           | {leq} 16 ulp
 | *round*           | Correctly rounded
 | *rsqrt*           | {leq} 2 ulp
+| *sign*            | 0 ulp
 | *sin*             | {leq} 4 ulp
 | *sincos*          | {leq} 4 ulp for sine and cosine values
 | *sinh*            | {leq} 4 ulp
 | *sinpi*           | {leq} 4 ulp
+| *smoothstep*      | Implementation-defined
+| *step*            | 0 ulp
 | *fsqrt*           | Correctly rounded
 | *tan*             | {leq} 5 ulp
 | *tanh*            | {leq} 5 ulp
@@ -10884,3 +10930,6 @@ one of the integers 0, 1, ... h~t~ - 1.
     Default RGB colour space - sRGB`",
     https://webstore.iec.ch/publication/6169 .
 
+<<<
+
+include::api/acknowledgements.txt[]

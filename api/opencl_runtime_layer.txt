@@ -1733,7 +1733,6 @@ include::{generated}/api/structs/cl_image_desc.txt[]
 5::
     Note that reading and writing 2D image arrays from a kernel with
     `image_array_size`=1 may be lower performance than 2D images.
-
   * `image_row_pitch` is the scan-line pitch in bytes.
     This must be 0 if _host_ptr_ is `NULL` and can be either 0 or {geq}
     `image_width` {times} size of element in bytes if _host_ptr_ is not `NULL`.
@@ -1744,7 +1743,7 @@ include::{generated}/api/structs/cl_image_desc.txt[]
     For a 2D image created from a buffer, the pitch specified (or computed if
     pitch specified is 0) must be a multiple of the maximum of the
     CL_DEVICE_IMAGE_PITCH_ALIGNMENT value for all devices in the context
-    associated with `image_desc`->`mem_object` and that support images.
+    associated with the buffer specified by _mem_object_ that support images.
   * `image_slice_pitch` is the size in bytes of each 2D slice in the 3D image or
     the size in bytes of each image in a 1D or 2D image array.
     This must be 0 if _host_ptr_ is `NULL`.
@@ -1796,11 +1795,11 @@ descriptor information associated with `mem_object`.
 Image elements are stored according to their image format as described in
 <<image-format-descriptor, Image Format Descriptor>>.
 
-If the buffer object specified by `mem_object` is created with
+If the buffer object specified by _mem_object_ was created with
 CL_MEM_USE_HOST_PTR, the _host_ptr_ specified to *clCreateBuffer* must be
-aligned to the minimum of the *CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT* value
+aligned to the maximum of the *CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT* value
 for all devices in the context associated with the buffer specified by
-`mem_object` and that support images.
+_mem_object_ that support images.
 
 Creating a 2D image object from another 2D image object allows users to
 create a new image object that shares the image data store with `mem_object`
@@ -3694,7 +3693,7 @@ Otherwise, it returns one of the following errors:
 
 == Shared Virtual Memory
 
-OpenCL 2.2 adds support for shared virtual memory (a.k.a.
+OpenCL 2.0 added support for shared virtual memory (a.k.a.
 SVM).
 SVM allows the host and kernels executing on devices to directly share
 complex, pointer-containing data structures such as trees and linked lists.
@@ -3712,7 +3711,7 @@ Many platforms such as those with integrated CPU-GPU processors and ones
 using the SVM-related PCI-SIG IOMMU services can do better, and can support
 sharing at a granularity smaller than a buffer.
 We call this fine-grained sharing.
-OpenCL 2.0 requires that the host and all OpenCL 2.2 devices support
+OpenCL 2.2 requires that the host and all OpenCL 2.0 or newer devices support
 coarse-grained sharing at a minimum.
 
   * Coarse-grained sharing: Coarse-grain sharing may be used for memory and
