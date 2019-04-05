@@ -567,9 +567,7 @@ Otherwise, it returns one of the following errors in _errcode_ret_:
     structure passed in _buffer_create_info_ is out of bounds in _buffer_.
   * CL_INVALID_BUFFER_SIZE if the _size_ field of the *<<cl_buffer_region>>*
     structure passed in _buffer_create_info_ is 0.
-// Jon - what is _context_ for this function? It's not a parameter. Is it the
-// context with which _buffer_ was created?
-  * CL_MISALIGNED_SUB_BUFFER_OFFSET if there are no devices in _context_
+  * CL_MISALIGNED_SUB_BUFFER_OFFSET if there are no devices in the context
     associated with _buffer_ for which the _origin_ field of the
     *<<cl_buffer_region>>* structure passed in _buffer_create_info_ is
     aligned to the CL_DEVICE_MEM_BASE_ADDR_ALIGN value.
@@ -604,7 +602,7 @@ Constraints on the values of _origin_ and _size_ are specified for the
 The following functions enqueue commands to read from a buffer object to
 host memory or write to a buffer object from host memory.
 
-[open,refpage='clEnqueueReadBuffer',desc='',type='protos']
+[open,refpage='clEnqueueReadBuffer',desc='',type='protos',alias='clEnqueueWriteBuffer']
 --
 To read from a buffer object to host memory, call one of the functions
 
@@ -617,36 +615,7 @@ include::{generated}/api/protos/clEnqueueWriteBuffer.txt[]
     _command_queue_ and _buffer_ must be created with the same OpenCL context.
   * _buffer_ refers to a valid buffer object.
   * _blocking_read_ and _blocking_write_ indicate if the read and write
-    operations are _blocking_ or _non-blocking_.
-
-If _blocking_read_ is CL_TRUE i.e. the read command is blocking,
-*clEnqueueReadBuffer* does not return until the buffer data has been read
-and copied into memory pointed to by _ptr_.
-
-If _blocking_read_ is CL_FALSE i.e. the read command is non-blocking,
-*clEnqueueReadBuffer* queues a non-blocking read command and returns.
-The contents of the buffer that _ptr_ points to cannot be used until the
-read command has completed.
-The _event_ argument returns an event object which can be used to query the
-execution status of the read command.
-When the read command has completed, the contents of the buffer that _ptr_
-points to can be used by the application.
-
-If _blocking_write_ is CL_TRUE, the write command is blocking and does not
-return until the command is complete, including transfer of the data.
-The memory pointed to by _ptr_ can be reused by the application after the
-*clEnqueueWriteBuffer* call returns.
-
-If _blocking_write_ is CL_FALSE, the OpenCL implementation will use _ptr_ to
-perform a non-blocking write.
-As the write is non-blocking the implementation can return immediately.
-The memory pointed to by _ptr_ cannot be reused by the application after the
-call returns.
-The _event_ argument returns an event object which can be used to query the
-execution status of the write command.
-When the write command has completed, the memory pointed to by _ptr_ can
-then be reused by the application.
-
+    operations are _blocking_ or _non-blocking_ (see below).
   * _offset_ is the offset in bytes in the buffer object to read from or write
     to.
   * _size_ is the size in bytes of data being read or written.
@@ -676,6 +645,34 @@ then be reused by the application.
     array.
 
 // refError
+
+If _blocking_read_ is CL_TRUE i.e. the read command is blocking,
+*clEnqueueReadBuffer* does not return until the buffer data has been read
+and copied into memory pointed to by _ptr_.
+
+If _blocking_read_ is CL_FALSE i.e. the read command is non-blocking,
+*clEnqueueReadBuffer* queues a non-blocking read command and returns.
+The contents of the buffer that _ptr_ points to cannot be used until the
+read command has completed.
+The _event_ argument returns an event object which can be used to query the
+execution status of the read command.
+When the read command has completed, the contents of the buffer that _ptr_
+points to can be used by the application.
+
+If _blocking_write_ is CL_TRUE, the write command is blocking and does not
+return until the command is complete, including transfer of the data.
+The memory pointed to by _ptr_ can be reused by the application after the
+*clEnqueueWriteBuffer* call returns.
+
+If _blocking_write_ is CL_FALSE, the OpenCL implementation will use _ptr_ to
+perform a non-blocking write.
+As the write is non-blocking the implementation can return immediately.
+The memory pointed to by _ptr_ cannot be reused by the application after the
+call returns.
+The _event_ argument returns an event object which can be used to query the
+execution status of the write command.
+When the write command has completed, the memory pointed to by _ptr_ can
+then be reused by the application.
 
 *clEnqueueReadBuffer* and *clEnqueueWriteBuffer* return CL_SUCCESS if the
 function is executed successfully.
@@ -714,7 +711,7 @@ Otherwise, it returns one of the following errors:
     required by the OpenCL implementation on the host.
 --
 
-[open,refpage='clEnqueueReadBufferRect',desc='',type='protos']
+[open,refpage='clEnqueueReadBufferRect',desc='',type='protos',alias='clEnqueueWriteBufferRect']
 --
 The following functions enqueue commands to read a 2D or 3D rectangular
 region from a buffer object to host memory or write a 2D or 3D rectangular
@@ -2096,7 +2093,7 @@ parameter and any other image parameter.
 
 === Reading, Writing and Copying Image Objects
 
-[open,refpage='clEnqueueReadImage',desc='',type='protos']
+[open,refpage='clEnqueueReadImage',desc='',type='protos',alias='clEnqueueWriteImage']
 --
 The following functions enqueue commands to read from an image or image
 array object to host memory or write to an image or image array object from

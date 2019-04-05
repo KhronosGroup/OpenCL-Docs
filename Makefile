@@ -391,7 +391,7 @@ buildmanpages: $(MANHTML)
 $(MANHTMLDIR)/%.html: KATEXDIR = ../../katex
 $(MANHTMLDIR)/%.html: $(MANDIR)/%.txt $(MANCOPYRIGHT) $(GENDEPENDS) katexinst
 	$(QUIET)$(MKDIR) $(MANHTMLDIR)
-	$(QUIET)$(ASCIIDOC) -b html5 -a cross-file-links \
+	$(QUIET)$(ASCIIDOCTOR) -b html5 -a cross-file-links \
 	    $(ADOCOPTS) $(ADOCHTMLOPTS) -d manpage -o $@ $<
 
 # Targets generated from the XML and registry processing scripts
