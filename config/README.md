@@ -1,5 +1,12 @@
 # OpenCL Asciidoctor Configuration Files
 
+## Macros
+
+The macros in `spec-macros.rb` and `spec-macros/extension.rb` are described
+in the "Vulkan Documentation and Extensions: Procedures and Conventions"
+document (see the [Vulkan
+registry](http://www.khronos.org/registry/vulkan/)).
+
 ## Support for Math
 
 katex_replace.rb inserts KaTeX `<script>` tags from `math.js` for HTML5, and
