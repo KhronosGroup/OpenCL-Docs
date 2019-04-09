@@ -615,7 +615,34 @@ include::{generated}/api/protos/clEnqueueWriteBuffer.txt[]
     _command_queue_ and _buffer_ must be created with the same OpenCL context.
   * _buffer_ refers to a valid buffer object.
   * _blocking_read_ and _blocking_write_ indicate if the read and write
-    operations are _blocking_ or _non-blocking_.
+    operations are _blocking_ or _non-blocking_ (see below).
+  * _offset_ is the offset in bytes in the buffer object to read from or write
+    to.
+  * _size_ is the size in bytes of data being read or written.
+  * _ptr_ is the pointer to buffer in host memory where data is to be read into
+    or to be written from.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
+    complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not wait
+    on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+    The context associated with events in _event_wait_list_ and _command_queue_
+    must be the same.
+    The memory associated with _event_wait_list_ can be reused or freed after
+    the function returns.
+  * _event_ returns an event object that identifies this particular read / write
+    command and can be used to query or queue a wait for this particular command
+    to complete.
+    _event_ can be `NULL` in which case it will not be possible for the
+    application to query the status of this command or queue a wait for this
+    command to complete.
+    If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
+    _event_ argument should not refer to an element of the _event_wait_list_
+    array.
 
 If _blocking_read_ is {CL_TRUE} i.e. the read command is blocking,
 {clEnqueueReadBuffer} does not return until the buffer data has been read
@@ -644,34 +671,6 @@ The _event_ argument returns an event object which can be used to query the
 execution status of the write command.
 When the write command has completed, the memory pointed to by _ptr_ can
 then be reused by the application.
-
-  * _offset_ is the offset in bytes in the buffer object to read from or write
-    to.
-  * _size_ is the size in bytes of data being read or written.
-  * _ptr_ is the pointer to buffer in host memory where data is to be read into
-    or to be written from.
-  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
-    complete before this particular command can be executed.
-    If _event_wait_list_ is `NULL`, then this particular command does not wait
-    on any event to complete.
-    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
-    If _event_wait_list_ is not `NULL`, the list of events pointed to by
-    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
-    greater than 0.
-    The events specified in _event_wait_list_ act as synchronization points.
-    The context associated with events in _event_wait_list_ and _command_queue_
-    must be the same.
-    The memory associated with _event_wait_list_ can be reused or freed after
-    the function returns.
-  * _event_ returns an event object that identifies this particular read / write
-    command and can be used to query or queue a wait for this particular command
-    to complete.
-    _event_ can be `NULL` in which case it will not be possible for the
-    application to query the status of this command or queue a wait for this
-    command to complete.
-    If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
-    _event_ argument should not refer to an element of the _event_wait_list_
-    array.
 
 // refError
 
