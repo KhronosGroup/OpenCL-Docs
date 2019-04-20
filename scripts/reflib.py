@@ -131,6 +131,10 @@ def isempty(s):
 #   validity - index of validity include
 #   end - index of last line of the page (heuristic validity include, or // refEnd)
 #   refs - cross-references on // refEnd line, if supplied
+#   spec - 'spec' attribute in refpage open block, if supplied, or None
+#       for the default ('api') type
+#   anchor - 'anchor' attribute in refpage open block, if supplied, or
+#       inferred to be the same as the 'name'
 class pageInfo:
     def __init__(self):
         self.extractPage = True
@@ -147,6 +151,8 @@ class pageInfo:
         self.validity = None
         self.end      = None
         self.refs     = ''
+        self.spec     = None
+        self.anchor   = None
 
 # Print a single field of a pageInfo struct, possibly None
 #   desc - string description of field

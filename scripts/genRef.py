@@ -656,8 +656,8 @@ def genExtension(baseDir, name, info):
                  sections=sections,
                  tail_content=makeExtensionInclude(name))
     refPageTail(pageName=name,
-                specType=pi.spec,
-                specAnchor=pi.anchor,
+                specType=None,
+                specAnchor=name,
                 seeAlso=seeAlsoList(name, declares),
                 fp=fp,
                 auto=True)
