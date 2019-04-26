@@ -344,7 +344,7 @@ clean_pdf:
 
 clean_generated:
 	$(QUIET)$(RMRF) $(APIINCDIR)/* $(SCRIPTS)/clapi.py
-	$(QUIET)$(RM) man/apispec.txt $(LOGFILE) $(MANGENSOURCES)
+	$(QUIET)$(RM) man/apispec.txt $(MANGENSOURCES) $(MANTMP)
 	$(QUIET)$(RMRF) $(PDFMATHDIR)
 
 # Ref page targets for individual pages
@@ -359,6 +359,8 @@ MANSECTION  := 3
 MANCOPYRIGHT = $(MANDIR)/copyright-ccby.txt $(MANDIR)/footer.txt
 MANSOURCES   = $(filter-out $(MANCOPYRIGHT) $(MANDIR)/apispec.txt, $(wildcard $(MANDIR)/[A-Za-z]*.txt))
 MANGENSOURCES= $(filter-out $(MANDIR)/intro.txt, $(MANSOURCES))
+MANTMP	     = $(LOGFILE) $(MANDIR)/tocbody $(MANDIR)/toc.html \
+	       $(MANDIR)/rewritebody $(MANDIR)/.htaccess
 
 # Generation of ref page asciidoctor sources by extraction from the
 # specification(s).
@@ -377,8 +379,10 @@ SCRIPTS = scripts
 GENREF = $(SCRIPTS)/genRef.py
 
 man/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(SCRIPTS)/clapi.py
-	$(PYTHON) $(GENREF) -toc man/tocbody -log $(LOGFILE) $(SPECFILES)
+	$(PYTHON) $(GENREF) -rewrite man/rewritebody -toc man/tocbody \
+	    -log $(LOGFILE) $(SPECFILES)
 	cat man/tochead man/tocbody man/toctail > man/toc.html
+	cat man/rewritehead man/rewritebody > man/.htaccess
 
 # These targets are HTML5 ref pages
 #
@@ -389,6 +393,7 @@ man/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(SCRIPTS)/clapi.py
 manhtmlpages: man/apispec.txt $(GENDEPENDS)
 	$(MAKE) -e buildmanpages
 	$(CP) $(MANDIR)/*.jpg $(MANDIR)/*.gif $(MANDIR)/*.css $(MANDIR)/*.html $(MANHTMLDIR)
+	$(CP) $(MANDIR)/.htaccess $(MANHTMLDIR)/.htaccess
 
 MANHTMLDIR  = $(OUTDIR)/man/html
 MANHTML     = $(MANSOURCES:$(MANDIR)/%.txt=$(MANHTMLDIR)/%.html)

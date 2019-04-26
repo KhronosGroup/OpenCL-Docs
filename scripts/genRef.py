@@ -700,6 +700,9 @@ if __name__ == '__main__':
     parser.add_argument('-extension', action='append',
                         default=[],
                         help='Specify an extension or extensions to add to targets')
+    parser.add_argument('-rewrite', action='store',
+                        default=None,
+                        help='Name of output file to write Apache mod_rewrite directives to')
     parser.add_argument('-toc', action='store',
                         default=None,
                         help='Name of output file to write an alphabetical TOC to')
@@ -790,12 +793,26 @@ if __name__ == '__main__':
 
         genSinglePageRef(baseDir)
 
+    if results.rewrite:
+        # Generate Apache rewrite directives for refpage aliases
+        fp = open(results.rewrite, 'w', encoding='utf-8')
+
+        for page in pages:
+            p = pages[page]
+            rewrite = p.name
+
+            if page != rewrite:
+                print('RewriteRule ^', page, '.html$ ', rewrite, '.html',
+                      sep='', file=fp)
+        fp.close()
+
     if results.toc:
+        # Generate dynamic portion of refpage TOC
         fp = open(results.toc, 'w', encoding='utf-8')
 
         # Run through dictionary of pages generating an TOC
-        print('{}{}'.format(12 * ' ', '<li class="Level1">Alphabetic Contents'), file=fp)
-        print('{}{}'.format(16 * ' ', '<ul class="Level2">'), file=fp)
+        print(12 * ' ', '<li class="Level1">Alphabetic Contents', sep='', file=fp)
+        print(16 * ' ', '<ul class="Level2">', sep='', file=fp)
         lastLetter = None
 
         for page in sorted(pages, key=str.upper):
@@ -805,27 +822,30 @@ if __name__ == '__main__':
             if letter != lastLetter:
                 if lastLetter:
                     # End previous block
-                    print('{}{}'.format(24 * ' ', '</ul>'), file=fp)
-                    print('{}{}'.format(20 * ' ', '</li>'), file=fp)
+                    print(24 * ' ', '</ul>', sep='', file=fp)
+                    print(20 * ' ', '</li>', sep='', file=fp)
                 # Start new block
-                print('{}{}{}'.format(20 * ' ', '<li>', letter), file=fp)
-                print('{}{}'.format(24 * ' ', '<ul class="Level3">'), file=fp)
+                print(20 * ' ', '<li>', letter, sep='', file=fp)
+                print(24 * ' ', '<ul class="Level3">', sep='', file=fp)
                 lastLetter = letter
 
             # Add this page to the list
-            print('{}<li><a href="{}.html" target="pagedisplay">{}</a></li>'.format(28 * ' ',
-                  p.name, page), file=fp)
+            print(28 * ' ', '<li><a href="', p.name, '.html"',
+                  'target="pagedisplay">', page, '</a></li>',
+                  sep='', file=fp)
 
         if lastLetter:
             # Close the final letter block
-            print('{}{}'.format(24 * ' ', '</ul>'), file=fp)
-            print('{}{}'.format(20 * ' ', '</li>'), file=fp)
+            print(24 * ' ', '</ul>', sep='', file=fp)
+            print(20 * ' ', '</li>', sep='', file=fp)
 
         # Close the list
-        print('{}{}'.format(16 * ' ', '</ul>'), file=fp)
-        print('{}{}'.format(12 * ' ', '</li>'), file=fp)
+        print(16 * ' ', '</ul>', sep='', file=fp)
+        print(12 * ' ', '</li>', sep='', file=fp)
 
         # print('name {} -> page {}'.format(page, pages[page].name))
+
+        fp.close()
 
     # if results.toc:
     #     fp = open(results.toc, 'a', encoding='utf-8')
