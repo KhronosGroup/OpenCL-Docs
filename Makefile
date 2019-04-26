@@ -42,7 +42,8 @@ VERBOSE =
 # NOTEOPTS   sets options controlling which NOTEs are generated
 # ATTRIBOPTS sets the api revision and enables MathJax generation, and
 #	     the path to generate include files
-# ADOCOPTS   options for asciidoc->HTML5 output
+# ADOCOPTS   options for asciidoc->HTML5 output (book document type)
+# ADOCMANOPTS options for asciidoc->HTML5 output (manpage document type)
 # Currently unused in CL spec
 NOTEOPTS     = -a editing-notes
 # Spell out RFC2822 format as not all date commands support -R
@@ -76,6 +77,7 @@ ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
 
 ADOCEXTS     = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb -r $(CURDIR)/config/spec-macros.rb
 ADOCOPTS     = -d book $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
+ADOCMANOPTS  = -d manpage $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
 
 # ADOCHTMLOPTS relies on the relative runtime path from the output HTML
 # file to the katex scripts being set with KATEXDIR. This is overridden
@@ -342,7 +344,7 @@ clean_pdf:
 
 clean_generated:
 	$(QUIET)$(RMRF) $(APIINCDIR)/* $(SCRIPTS)/clapi.py
-	$(QUIET)$(RM) man/apispec.txt $(LOGFILE) $(MANSOURCES)
+	$(QUIET)$(RM) man/apispec.txt $(LOGFILE) $(MANGENSOURCES)
 	$(QUIET)$(RMRF) $(PDFMATHDIR)
 
 # Ref page targets for individual pages
@@ -356,6 +358,7 @@ MANSECTION  := 3
 
 MANCOPYRIGHT = $(MANDIR)/copyright-ccby.txt $(MANDIR)/footer.txt
 MANSOURCES   = $(filter-out $(MANCOPYRIGHT) $(MANDIR)/apispec.txt, $(wildcard $(MANDIR)/[A-Za-z]*.txt))
+MANGENSOURCES= $(filter-out $(MANDIR)/intro.txt, $(MANSOURCES))
 
 # Generation of ref page asciidoctor sources by extraction from the
 # specification(s).
@@ -369,11 +372,13 @@ MANSOURCES   = $(filter-out $(MANCOPYRIGHT) $(MANDIR)/apispec.txt, $(wildcard $(
 LOGFILE = man/logfile
 ## Temporary - eventually should be all spec asciidoctor source files
 SPECFILES = $(wildcard api/*.txt) OpenCL_C.txt
+##SPECFILES = api/opencl_platform_layer.txt
 SCRIPTS = scripts
 GENREF = $(SCRIPTS)/genRef.py
 
 man/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(SCRIPTS)/clapi.py
-	$(PYTHON) $(GENREF) -log $(LOGFILE) $(SPECFILES)
+	$(PYTHON) $(GENREF) -toc man/tocbody -log $(LOGFILE) $(SPECFILES)
+	cat man/tochead man/tocbody man/toctail > man/toc.html
 
 # These targets are HTML5 ref pages
 #
@@ -383,6 +388,7 @@ man/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(SCRIPTS)/clapi.py
 # running the recursive make, so it doesn't trigger twice
 manhtmlpages: man/apispec.txt $(GENDEPENDS)
 	$(MAKE) -e buildmanpages
+	$(CP) $(MANDIR)/*.jpg $(MANDIR)/*.gif $(MANDIR)/*.css $(MANDIR)/*.html $(MANHTMLDIR)
 
 MANHTMLDIR  = $(OUTDIR)/man/html
 MANHTML     = $(MANSOURCES:$(MANDIR)/%.txt=$(MANHTMLDIR)/%.html)
@@ -392,7 +398,12 @@ $(MANHTMLDIR)/%.html: KATEXDIR = ../../katex
 $(MANHTMLDIR)/%.html: $(MANDIR)/%.txt $(MANCOPYRIGHT) $(GENDEPENDS) katexinst
 	$(QUIET)$(MKDIR) $(MANHTMLDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 -a cross-file-links \
-	    $(ADOCOPTS) $(ADOCHTMLOPTS) -d manpage -o $@ $<
+	    $(ADOCMANOPTS) $(ADOCHTMLOPTS) -o $@ $<
+
+$(MANHTMLDIR)/intro.html: $(MANDIR)/intro.txt $(MANCOPYRIGHT)
+	$(QUIET)$(MKDIR) $(MANHTMLDIR)
+	$(QUIET)$(ASCIIDOCTOR) -b html5 -a cross-file-links \
+	    $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $<
 
 # Targets generated from the XML and registry processing scripts
 #   clapi.py - Python encoding of the registry

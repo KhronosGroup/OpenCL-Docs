@@ -24,6 +24,7 @@ import os
 import re
 import sys
 from collections import OrderedDict
+from pprint import pprint
 from reflib import (findRefs, fixupRefs, loadFile, logDiag, logWarn,
                     printPageInfo, setLogFile)
 from reg import Registry
@@ -482,6 +483,8 @@ def autoGenHandlePage(baseDir, handleName):
     fp.close()
 
 # Extract reference pages from a spec asciidoc source file
+# Returns a dictionary where the keys are page names (including aliases),
+# and the values are the pageInfo structures for that page / alias.
 #   specFile - filename to extract from
 #   baseDir - output directory to generate page in
 #
@@ -502,6 +505,7 @@ def genRef(specFile, baseDir):
     fixupRefs(pageMap, specFile, file)
 
     # Create each page, if possible
+    pages = {}
 
     for name in sorted(pageMap):
         pi = pageMap[name]
@@ -520,6 +524,12 @@ def genRef(specFile, baseDir):
         else:
             # Don't extract this page
             logWarn('genRef: Cannot extract or autogenerate:', pi.name)
+
+        pages[pi.name] = pi
+        for alias in pi.alias.split():
+            pages[alias] = pi
+
+    return pages
 
 # Generate baseDir/apispec.txt, the single-page version of the ref pages.
 # This assumes there's a page for everything in the api module dictionaries.
@@ -690,6 +700,9 @@ if __name__ == '__main__':
     parser.add_argument('-extension', action='append',
                         default=[],
                         help='Specify an extension or extensions to add to targets')
+    parser.add_argument('-toc', action='store',
+                        default=None,
+                        help='Name of output file to write an alphabetical TOC to')
     parser.add_argument('-registry', action='store',
                         default=conventions.registry_path,
                         help='Use specified registry file instead of default')
@@ -702,8 +715,12 @@ if __name__ == '__main__':
 
     baseDir = results.baseDir
 
+    # Dictionary of pages & aliases
+    pages = {}
+
     for file in results.files:
-        genRef(file, baseDir)
+        d = genRef(file, baseDir)
+        pages.update(d)
 
     # Now figure out which pages *weren't* generated from the spec.
     # This relies on the dictionaries of API constructs in the api module.
@@ -772,3 +789,46 @@ if __name__ == '__main__':
                         logWarn('No ref page generated for  ', title, page)
 
         genSinglePageRef(baseDir)
+
+    if results.toc:
+        fp = open(results.toc, 'w', encoding='utf-8')
+
+        # Run through dictionary of pages generating an TOC
+        print('{}{}'.format(12 * ' ', '<li class="Level1">Alphabetic Contents'), file=fp)
+        print('{}{}'.format(16 * ' ', '<ul class="Level2">'), file=fp)
+        lastLetter = None
+
+        for page in sorted(pages, key=str.upper):
+            p = pages[page]
+            letter = page[0:1].upper()
+
+            if letter != lastLetter:
+                if lastLetter:
+                    # End previous block
+                    print('{}{}'.format(24 * ' ', '</ul>'), file=fp)
+                    print('{}{}'.format(20 * ' ', '</li>'), file=fp)
+                # Start new block
+                print('{}{}{}'.format(20 * ' ', '<li>', letter), file=fp)
+                print('{}{}'.format(24 * ' ', '<ul class="Level3">'), file=fp)
+                lastLetter = letter
+
+            # Add this page to the list
+            print('{}<li><a href="{}.html" target="pagedisplay">{}</a></li>'.format(28 * ' ',
+                  p.name, page), file=fp)
+
+        if lastLetter:
+            # Close the final letter block
+            print('{}{}'.format(24 * ' ', '</ul>'), file=fp)
+            print('{}{}'.format(20 * ' ', '</li>'), file=fp)
+
+        # Close the list
+        print('{}{}'.format(16 * ' ', '</ul>'), file=fp)
+        print('{}{}'.format(12 * ' ', '</li>'), file=fp)
+
+        # print('name {} -> page {}'.format(page, pages[page].name))
+
+    # if results.toc:
+    #     fp = open(results.toc, 'a', encoding='utf-8')
+    #     for page in sorted(pages, key=str.upper):
+    #         p = pages[page]
+    #         print("pages['{}'] = {{ 'name' : {}, 'type': {} }}".format(page, p.name, p.type), file=fp)

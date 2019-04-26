@@ -600,7 +600,8 @@ class OutputGenerator:
     # aligncol - if non-zero, attempt to align the nested <name> element
     #   at this column
     def makeCParamDecl(self, param, aligncol):
-        paramdecl = '    ' + noneStr(param.text)
+        indent = '    '
+        paramdecl = indent + noneStr(param.text)
         for elem in param:
             text = noneStr(elem.text)
             tail = noneStr(elem.tail)
@@ -620,6 +621,9 @@ class OutputGenerator:
                 newLen = len(paramdecl)
                 self.logMsg('diag', 'Adjust length of parameter decl from', oldLen, 'to', newLen, ':', paramdecl)
             paramdecl += text + tail
+        if aligncol == 0:
+            # Squeeze out multiple spaces other than the identation
+            paramdecl = indent + ' '.join(paramdecl.split())
         return paramdecl
 
     # getCParamTypeLength - return the length of the type field is an indented, formatted
@@ -704,6 +708,12 @@ class OutputGenerator:
             else:
                 pdecl += text + tail
                 tdecl += text + tail
+
+        if self.genOpts.alignFuncParam == 0:
+            # Squeeze out multiple spaces - there is no indentation
+            pdecl = ' '.join(pdecl.split())
+            tdecl = ' '.join(tdecl.split())
+
         # Now add the parameter declaration list, which is identical
         # for prototypes and typedefs. Concatenate all the text from
         # a <param> node without the tags. No tree walking required
