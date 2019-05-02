@@ -431,5 +431,6 @@ apiinc: $(APIINCDIR)/timeMarker
 
 $(APIINCDIR)/timeMarker: $(APIXML) $(GENSCRIPT)
 	$(QUIET)$(MKDIR) -p $(APIINCDIR)
+	$(QUIET)$(PYTHON) $(SCRIPTS)/gen_dictionaries.py -registry $(APIXML) -o $(APIINCDIR)
 	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(APIINCDIR) apiinc
 
