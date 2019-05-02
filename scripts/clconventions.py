@@ -203,7 +203,8 @@ class OpenCLConventions(ConventionsBase):
     @property
     def extra_refpage_headers(self):
         """Return any extra text to add to refpage headers."""
-        return 'include::../config/attribs.txt[]'
+        return 'include::../config/attribs.txt[]\n' + \
+            'include::{generated}/api/api-dictionary-no-links.asciidoc[]'
 
     @property
     def extension_index_prefixes(self):
