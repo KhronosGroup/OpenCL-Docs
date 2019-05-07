@@ -72,6 +72,7 @@ if __name__ == "__main__":
     
     numberOfFuncs = 0
 
+    # Add core API functions with and without links:
     for feature in spec.findall('feature/require'):
         for api in feature.findall('command'):
             name = api.get('name')
@@ -97,7 +98,32 @@ if __name__ == "__main__":
             # // clEnqueueNDRangeKernel
             # :clEnqueueNDRangeKernel: pass:q[*clEnqueueNDRangeKernel*]
             nolinkFile.write('// ' + name + '\n')
-            nolinkFile.write(':' + name + '_label: pass:q[*' + sName + '*]\n')
+            nolinkFile.write(':' + name + ': pass:q[*' + sName + '*]\n')
+            nolinkFile.write('\n')
+
+            numberOfFuncs = numberOfFuncs + 1
+
+    # Add extension API functions without links:
+    for extension in spec.findall('extensions/extension/require'):
+        for api in extension.findall('command'):
+            name = api.get('name')
+            #print('found extension api: ' +name)
+
+            # Create a variant of the name that precedes underscores with
+            # "zero width" spaces.  This causes some long names to be
+            # broken at more intuitive places.
+            sName = name.replace("_", "_&#8203;")
+
+            # Example without link:
+            #
+            # // clGetGLObjectInfo
+            # :clGetGLObjectInfo: pass:q[*clGetGLObjectInfo*]
+            linkFile.write('// ' + name + '\n')
+            linkFile.write(':' + name + ': pass:q[*' + sName + '*]\n')
+            linkFile.write('\n')
+
+            nolinkFile.write('// ' + name + '\n')
+            nolinkFile.write(':' + name + ': pass:q[*' + sName + '*]\n')
             nolinkFile.write('\n')
 
             numberOfFuncs = numberOfFuncs + 1
