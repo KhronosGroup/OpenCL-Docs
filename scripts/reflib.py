@@ -130,7 +130,12 @@ def isempty(s):
 #   body - index of first line of body text
 #   validity - index of validity include
 #   end - index of last line of the page (heuristic validity include, or // refEnd)
-#   refs - cross-references on // refEnd line, if supplied
+#   alias - aliases of this name, if supplied, or ''
+#   refs - cross-references to other pages, if supplied, or ''
+#   spec - 'spec' attribute in refpage open block, if supplied, or None
+#       for the default ('api') type
+#   anchor - 'anchor' attribute in refpage open block, if supplied, or
+#       inferred to be the same as the 'name'
 class pageInfo:
     def __init__(self):
         self.extractPage = True
@@ -146,7 +151,10 @@ class pageInfo:
         self.body     = None
         self.validity = None
         self.end      = None
+        self.alias    = ''
         self.refs     = ''
+        self.spec     = None
+        self.anchor   = None
 
 # Print a single field of a pageInfo struct, possibly None
 #   desc - string description of field
@@ -452,6 +460,7 @@ def findRefs(file, filename):
             refpage_type = None
             spec_type = None
             anchor = None
+            alias = None
             xrefs = None
 
             for (key,value) in matches:
@@ -466,6 +475,8 @@ def findRefs(file, filename):
                     spec_type = value
                 elif key == 'anchor':
                     anchor = value
+                elif key == 'alias':
+                    alias = value
                 elif key == 'xrefs':
                     xrefs = value
                 else:
@@ -482,11 +493,14 @@ def findRefs(file, filename):
                 pi.type = refpage_type
                 pi.spec = spec_type
                 pi.anchor = anchor
+                if alias:
+                    pi.alias = alias
                 if xrefs:
                     pi.refs = xrefs
                 logDiag('open block for', name, 'added DESC =', desc,
-                        'TYPE =', refpage_type, 'XREFS =', xrefs,
-                        'SPEC =', spec_type, 'ANCHOR =', anchor)
+                        'TYPE =', refpage_type, 'ALIAS =', alias,
+                        'XREFS =', xrefs, 'SPEC =', spec_type,
+                        'ANCHOR =', anchor)
 
             line = line + 1
             continue
