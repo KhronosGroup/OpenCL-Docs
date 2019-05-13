@@ -626,11 +626,13 @@ class OutputGenerator:
             paramdecl = indent + ' '.join(paramdecl.split())
         return paramdecl
 
-    # getCParamTypeLength - return the length of the type field is an indented, formatted
-    # declaration for a <param> or <member> block (e.g. function parameter
-    # or structure/union member).
+    # getCParamTypeLength - return the length of the type field in an
+    # indented, formatted declaration for a <param> or <member> block (e.g.
+    # function parameter or structure/union member). This relies on the
+    # presence of the <name> tag; if not present, return zero.
     # param - Element (<param> or <member>) to identify
     def getCParamTypeLength(self, param):
+        newLen = 0
         paramdecl = '    ' + noneStr(param.text)
         for elem in param:
             text = noneStr(elem.text)
