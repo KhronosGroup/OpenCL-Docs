@@ -1,0 +1,86 @@
+// Copyright 2017-2019 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[validation-rules]]
+== Validation Rules
+
+The following are a list of validation rules that apply to SPIR-V modules
+executing in all OpenCL environments:
+
+The _Execution Model_ declared in *OpEntryPoint* must be *Kernel*.
+
+The _Addressing Model_ declared in *OpMemoryModel* must be either:
+
+  * *Physical32* (for OpenCL devices reporting `32` for `CL_DEVICE_ADDRESS_BITS`)
+  * *Physical64* (for OpenCL devices reporting `64` for `CL_DEVICE_ADDRESS_BITS`)
+  
+The _Memory Model_ declared in *OpMemoryModel* must be *OpenCL*.
+
+For all *OpTypeInt* integer type-declaration instructions:
+
+  * _Signedness_ must be 0, indicating no signedness semantics.
+  
+For all *OpTypeImage* type-declaration instructions:
+  * _Sampled Type_ must be *OpTypeVoid*.
+  * _Sampled_ must be 0, indicating that the image usage will be known at
+     run time, not at compile time.
+  * _MS_ must be 0, indicating single-sampled content.
+  * _Arrayed_ may only be set to 1, indicating arrayed content, when _Dim_
+     is set to *1D* or *2D*.
+  * _Image Format_ must be *Unknown*, indicating that the image does not
+     have a specified format.
+  * The optional image _Access Qualifier_ must be present.
+  
+The image write instruction *OpImageWrite* must not include any optional
+_Image Operands_.
+
+The image read instructions *OpImageRead* and *OpImageSampleExplicitLod* 
+must not include the optional _Image Operand_ *ConstOffset*.
+
+For all *Atomic Instructions*:
+
+  * Only 32-bit integer types are supported for the _Result Type_ and/or
+    type of _Value_.
+  * The _Pointer_ operand must be a pointer to the *Function*, *Workgroup*,
+    or *CrossWorkGroup* _Storage Classes_.  Note that an *Atomic Instruction*
+    on a pointer to the *Function* _Storage Class_ is valid, but does not
+    have defined behavior.
+
+Recursion is not supported.
+The static function call graph for an entry point must not contain cycles.
+
+Whether irreducible control flow is legal is implementation defined.
+
+For the instructions *OpGroupAsyncCopy* and *OpGroupWaitEvents*,
+_Scope_ for _Execution_ must be:
+
+  * *Workgroup*
+
+For all other instructions, _Scope_ for _Execution_ must be one of:
+
+  * *Workgroup*
+  * *Subgroup* (OpenCL 2.1 and Newer)
+
+In an OpenCL 1.2 environment,
+for the *Barrier Instructions* *OpControlBarrier* and *OpMemoryBarrier*, the
+_Scope_ for _Memory_ must be *Workgroup*, and the _Memory Semantics_ must be
+*SequentiallyConsistent*.
+
+In an OpenCL 1.2 environment,
+for the *Atomic Instructions*, the _Scope_ for _Memory_ must be *Device*,
+and the _Memory Semantics_ must be *Relaxed*.
+
+Otherwise, _Scope_ for _Memory_ must be one of:
+
+  * *CrossDevice*
+  * *Device*
+  * *Workgroup*
+  * *Invocation*
+  * *Subgroup* (OpenCL 2.1 and Newer)
+
+In OpenCL 2.0 and newer environments,
+the _Pointer_ operand to all *Atomic Instructions* may be a pointer to
+the *Generic* _Storage Class_, however behavior is still undefined if
+the *Generic* pointer represents a pointer to the *Function*
+_Storage Class_.
