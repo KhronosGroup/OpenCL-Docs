@@ -1,0 +1,117 @@
+// Copyright (c) 2014-2019 Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+
+= clGetExtensionFunctionAddressForPlatform(3)
+
+== Name
+
+clGetExtensionFunctionAddressForPlatform - Returns the address of the extension function named by _funcname_ for a given _platform_.
+
+== C Specification
+
+[source,c]
+----
+void* clGetExtensionFunctionAddressForPlatform(cl_platform_id platform,
+                                               const char *funcname)
+----
+
+== Parameters
+
+  * _platform_ - Refers to the platform ID returned by
+    flink:clGetPlatformIDs.
+  * _funcname_ - Name of an extension function.
+
+== Description
+
+The function `clGetExtensionFunctionAddressForPlatform` returns the address of the extension function named by _funcname_ for a given _platform_.
+The pointer returned should be cast to a function pointer type matching the extension function's definition defined in the appropriate extension specification and header file.
+
+A return value of NULL indicates that the specified function does not exist for the implementation or _platform_ is not a valid platform.
+A non-NULL return value for `clGetExtensionFunctionAddressForPlatform` does not guarantee that an extension function is actually supported by the platform.
+The application must also make a corresponding query using flink:clGetPlatformInfo (platform, `CL_PLATFORM_EXTENSIONS`, ... ) or
+flink:clGetDeviceInfo (device,`CL_DEVICE_EXTENSIONS`, ... ) to determine if an extension is supported by the OpenCL implementation.
+
+`clGetExtensionFunctionAddressForPlatform` may not be queried for core (non-extension) functions in OpenCL.
+For functions that are queryable with `clGetExtensionFunctionAddressForPlatform`, implementations may choose to also export those functions statically from the object libraries implementing those functions.
+However, portable applications cannot rely on this behavior.
+
+Function pointer typedefs must be declared for all extensions that add API entrypoints.
+These typedefs are a required part of the extension interface, to be provided in an appropriate header (such as `cl_ext.h` if the extension is an OpenCL extension, or `cl_gl_ext.h` if the extension is an OpenCL/OpenGL sharing extension).
+
+== Notes
+
+Since there is no way to qualify the query with a device, the function pointer returned must work for all implementations of that extension on different devices for a platform.
+The behavior of calling a device extension function on a device not supporting that extension is undefined.
+
+If the reflink:cl_khr_icd extension is enabled, for functions supported by the ICD Loader, `clGetExtensionFunctionAddress` will return the function pointer of the ICD Loader implementation.
+For extension functions which the ICD Loader is unaware of, the function `clGetExtensionFunctionAddress` will determine the vendor implementation to return based on the string passed in.
+The ICD Loader will return the result from querying `clGetExtensionFunctionAddress` on the vendor ICD enumerated by the ICD Loader whose ICD suffix is a suffix of the function name being queried.
+If no such vendor exists or the suffix of the function is `KHR` or `EXT` then `clGetExtensionFunctionAddress` will return NULL.
+
+== Example
+
+The following convention must be followed for all extensions affecting the host API, where TAG can be `KHR`, `EXT` or vendor-specific:
+
+[source,c]
+----
+#ifndef extension_name
+#define extension_name       1
+
+// all data typedefs, token #defines, prototypes, and
+// function pointer typedefs for this extension
+
+// function pointer typedefs must use the
+// following naming convention
+typedef CL_API_ENTRY return type
+      (CL_API_CALL *clextension_func_nameTAG_fn)(...);
+
+#endif // extension_name
+----
+
+Consider, for example, the reflink:cl_khr_gl_sharing extension.
+This extension would add the following to `cl_gl_ext.h`:
+
+[source,c]
+----
+#ifndef cl_khr_gl_sharing
+#define cl_khr_gl_sharing     1
+
+// all data typedefs, token #defines, prototypes, and
+// function pointer typedefs for this extension
+#define CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR -1000
+#define CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR   0x2006
+#define CL_DEVICES_FOR_GL_CONTEXT_KHR          0x2007
+#define CL_GL_CONTEXT_KHR                      0x2008
+#define CL_EGL_DISPLAY_KHR                     0x2009
+#define CL_GLX_DISPLAY_KHR                     0x200A
+#define CL_WGL_HDC_KHR                         0x200B
+#define CL_CGL_SHAREGROUP_KHR                  0x200C
+
+// function pointer typedefs must use the
+// following naming convention
+typedef CL_API_ENTRY cl_int
+     (CL_API_CALL *clGetGLContextInfoKHR_fn)(
+              const cl_context_properties * /* properties */,
+              cl_gl_context_info /* param_name */,
+              size_t /* param_value_size */,
+              void * /* param_value */,
+              size_t * /_param_value_size_ret_/);
+#endif // cl_khr_gl_sharing
+----
+
+== See Also
+
+reflink:EXTENSION
+
+== Document Notes
+
+For more information, see the OpenCL Extension Specification at URL
+
+https://www.khronos.org/registry/OpenCL/specs/2.2/html/OpenCL_Ext.html#clGetExtensionFunctionAddressForPlatform
+
+include::footer.txt[]
