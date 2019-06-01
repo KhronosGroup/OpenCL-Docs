@@ -1,0 +1,279 @@
+// Copyright (c) 2014-2019 Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+
+= convert_T(3)
+
+== Name
+
+convert_T - Explicit type conversions using `convert_T()`
+
+== C Specification
+
+[source,c]
+----
+convert_destType(sourceType)
+destType convert_destType<_sat><roundingMode> (sourceType)
+destTypen convert_destTypen<_sat><roundingMode> (sourceType)
+----
+
+== Description
+
+Explicit conversions may be performed using the
+
+[source,c]
+----------
+convert_destType(sourceType)
+----------
+
+suite of functions.
+These provide a full set of type conversions between supported
+<<built-in-scalar-data-types,scalar>>,
+<<built-in-vector-data-types,vector>>, and
+<<other-built-in-data-types,other>> data types except for the following
+types: `bool`, `half`, `size_t`, `ptrdiff_t`, `intptr_t`, `uintptr_t`, and
+`void`.
+
+The number of elements in the source and destination vectors must match.
+
+In the example below:
+
+[source,c]
+----------
+uchar4 u;
+int4 c = convert_int4(u);
+----------
+
+`convert_int4` converts a `uchar4` vector `u` to an `int4` vector `c`.
+
+[source,c]
+----------
+float f;
+int i = convert_int(f);
+----------
+
+`convert_int` converts a `float` scalar `f` to an int scalar `i`.
+
+The behavior of the conversion may be modified by one or two optional
+modifiers that specify saturation for out-of-range inputs and rounding
+behavior.
+
+The full form of the scalar convert function is:
+
+[source,c]
+----------
+destType *convert_destType<_sat><_roundingMode>*(sourceType)
+----------
+
+The full form of the vector convert function is:
+
+[source,c]
+----------
+destType__n__ *convert_destType__n__<_sat><_roundingMode>*(sourceType__n__)
+----------
+
+
+[[data-types]]
+=== Data Types
+
+Conversions are available for the following scalar types: `char`, `uchar`,
+`short`, `ushort`, `int`, `uint`, `long`, `ulong`, `float`, and built-in
+vector types derived therefrom.
+The operand and result type must have the same number of elements.
+The operand and result type may be the same type in which case the
+conversion has no effect on the type or value of an expression.
+
+Conversions between integer types follow the conversion rules specified in
+<<C99-spec,sections 6.3.1.1 and 6.3.1.3 of the C99 Specification>> except
+for <<out-of-range-behavior,out-of-range behavior and saturated
+conversions>>.
+
+
+[[rounding-modes]]
+=== Rounding Modes
+
+Conversions to and from floating-point type shall conform to IEEE-754
+rounding rules.
+Conversions may have an optional rounding mode modifier described in the
+following table.
+
+[[table-rounding-mode]]
+.Rounding Modes
+[cols=",",]
+|====
+| *Modifier*            | *Rounding Mode Description*
+| `_rte`                | Round to nearest even
+| `_rtz`                | Round toward zero
+| `_rtp`                | Round toward positive infinity
+| `_rtn`                | Round toward negative infinity
+| no modifier specified | Use the default rounding mode for this destination
+                          type, `_rtz` for conversion to integers or the
+                          default rounding mode for conversion to
+                          floating-point types.
+|====
+
+By default, conversions to integer type use the `_rtz` (round toward zero)
+rounding mode and conversions to floating-point type^10^ use the default
+rounding mode.
+The only default floating-point rounding mode supported is round to nearest
+even i.e the default rounding mode will be `_rte` for floating-point types.
+
+[10] For conversions to floating-point format, when a finite source value
+exceeds the maximum representable finite floating-point destination value,
+the rounding mode will affect whether the result is the maximum finite
+floating-point value or infinity of same sign as the source value, per
+IEEE-754 rules for rounding.
+
+
+[[out-of-range-behavior]]
+=== Out-of-Range Behavior and Saturated Conversions
+
+When the conversion operand is either greater than the greatest
+representable destination value or less than the least representable
+destination value, it is said to be out-of-range.
+The result of out-of-range conversion is determined by the conversion rules
+specified by <<C99-spec,section 6.3 of the C99 Specification>>.
+When converting from a floating-point type to integer type, the behavior is
+implementation-defined.
+
+Conversions to integer type may opt to convert using the optional saturated
+mode by appending the _sat modifier to the conversion function name.
+When in saturated mode, values that are outside the representable range
+shall clamp to the nearest representable value in the destination format.
+(NaN should be converted to 0).
+
+Conversions to floating-point type shall conform to IEEE-754 rounding rules.
+The `_sat` modifier may not be used for conversions to floating-point
+formats.
+
+
+[[explicit-conversion-examples]]
+=== Explicit Conversion Examples
+
+Example 1:
+
+[source,c]
+----------
+short4 s;
+
+// negative values clamped to 0
+ushort4 u = convert_ushort4_sat( s );
+
+// values > CHAR_MAX converted to CHAR_MAX
+// values < CHAR_MIN converted to CHAR_MIN
+char4 c = convert_char4_sat( s );
+----------
+
+Example 2:
+
+[source,c]
+----------
+float4 f;
+
+// values implementation defined for
+// f > INT_MAX, f < INT_MIN or NaN
+int4 i = convert_int4( f );
+
+// values > INT_MAX clamp to INT_MAX, values < INT_MIN clamp
+// to INT_MIN. NaN should produce 0.
+// The _rtz_ rounding mode is used to produce the integer values.
+int4 i2 = convert_int4_sat( f );
+
+// similar to convert_int4, except that floating-point values
+// are rounded to the nearest integer instead of truncated
+int4 i3 = convert_int4_rte( f );
+
+// similar to convert_int4_sat, except that floating-point values
+// are rounded to the nearest integer instead of truncated
+int4 i4 = convert_int4_sat_rte( f );
+----------
+
+Example 3:
+
+[source,c]
+----------
+int4 i;
+
+// convert ints to floats using the default rounding mode.
+float4 f = convert_float4( i );
+
+// convert ints to floats. integer values that cannot
+// be exactly represented as floats should round up to the
+// next representable float.
+float4 f = convert_float4_rtp( i );
+----------
+
+=== Reinterpreting Data As Another Type
+
+It is frequently necessary to reinterpret bits in a data type as another
+data type in OpenCL.
+This is typically required when direct access to the bits in a
+floating-point type is needed, for example to mask off the sign bit or make
+use of the result of a vector <<operators-relational,relational operator>>
+on floating-point data^11^.
+Several methods to achieve this (non-) conversion are frequently practiced
+in C, including pointer aliasing, unions and memcpy.
+Of these, only memcpy is strictly correct in C99.
+Since OpenCL does not provide *memcpy*, other methods are needed.
+
+[11] In addition, some other extensions to the C language designed to support
+particular vector ISA (e.g. AltiVec{trade}, CELL Broadband Engine{trade}
+Architecture) use such conversions in conjunction with swizzle operators to
+achieve type unconversion.
+So as to support legacy code of this type, *as_typen*() allows conversions
+between vectors of the same size but different numbers of elements, even
+though the behavior of this sort of conversion is not likely to be portable
+except to other OpenCL implementations for the same hardware architecture.
+AltiVec is a trademark of Motorola Inc.
+Cell Broadband Engine is a trademark of Sony Computer Entertainment, Inc.
+
+=== Reinterpreting Types Using Unions
+
+The OpenCL language extends the union to allow the program to access a
+member of a union object using a member of a different type.
+The relevant bytes of the representation of the object are treated as an
+object of the type used for the access.
+If the type used for access is larger than the representation of the object,
+then the value of the additional bytes is undefined.
+
+Examples:
+
+[source,c]
+----------
+// d only if double precision is supported
+union { float f; uint u; double d; } u;
+
+u.u = 1;    // u.f contains 2**-149.  u.d is undefined --
+            // depending on endianness the low or high half
+            // of d is unknown
+
+u.f = 1.0f; // u.u contains 0x3f800000, u.d contains an
+            // undefined value -- depending on endianness
+            // the low or high half of d is unknown
+
+u.d = 1.0;  // u.u contains 0x3ff00000 (big endian) or 0
+            // (little endian). u.f contains either 0x1.ep0f
+            // (big endian) or 0.0f (little endian)
+----------
+
+== See Also
+
+reflink:as_typen,
+reflink:scalarDataTypes,
+reflink:vectorDataTypes
+
+== Document Notes
+
+For more information, see the OpenCL C Specification at URL
+
+https://www.khronos.org/registry/OpenCL/specs/2.2/html/OpenCL_C.html#explicit-conversions
+
+This page is extracted from the OpenCL C Specification.
+Fixes and changes should be made to the Specification, not directly.
+
+include::footer.txt[]
+
