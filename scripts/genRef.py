@@ -224,9 +224,8 @@ def refPageTail(pageName,
         seeAlso = 'No cross-references are available\n'
 
     notes = [
-        'For more information, see the ' + specName + ' Specification at URL',
-        '',
-        '{}#{}'.format(specURL, specAnchor),
+        'For more information, see the {}#{}[{} Specification^]'.format(
+            specURL, specAnchor, specName),
         '',
         ]
 
@@ -316,7 +315,7 @@ def emitPage(baseDir, specDir, pi, file):
 
     # Substitute xrefs to point at the main spec
     specLinksPattern = re.compile(r'<<([^>,]+)[,]?[ \t\n]*([^>,]*)>>')
-    specLinksSubstitute = r'link:{}#\1[\2]'.format(specURL)
+    specLinksSubstitute = r'link:{}#\1[\2^]'.format(specURL)
     if specText is not None:
         specText, _ = specLinksPattern.subn(specLinksSubstitute, specText)
     if fieldText is not None:
