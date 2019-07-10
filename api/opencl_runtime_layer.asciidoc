@@ -75,7 +75,7 @@ include::{generated}/api/protos/clCreateCommandQueueWithProperties.txt[]
         If {CL_QUEUE_ON_DEVICE} is set,
         {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE}^1^ must also be set.
 
-        {CL_QUEUE_ON_DEVICE_DEFAULT}^2^ - indicates that this is the default
+        {CL_QUEUE_ON_DEVICE_DEFAULT_anchor}^2^ - indicates that this is the default
         device queue.
         This can only be used with {CL_QUEUE_ON_DEVICE}.
 
@@ -145,7 +145,7 @@ include::{generated}/api/protos/clSetDefaultDeviceCommandQueue.txt[]
 
 {clSetDefaultDeviceCommandQueue} may be used to replace a default device
 command queue created with {clCreateCommandQueueWithProperties} and the
-CL_QUEUE_ON_DEVICE_DEFAULT flag.
+{CL_QUEUE_ON_DEVICE_DEFAULT} flag.
 
 // refError
 
@@ -428,6 +428,12 @@ include::{generated}/api/protos/clCreateBuffer.txt[]
 
     {CL_MEM_HOST_WRITE_ONLY} or {CL_MEM_HOST_READ_ONLY} and
     {CL_MEM_HOST_NO_ACCESS} are mutually exclusive.
+| {CL_MEM_KERNEL_READ_AND_WRITE_anchor}
+  | This flag is only used by {clGetSupportedImageFormats} to query image
+    formats that may be both read from and written to by the same kernel
+    instance.
+    To create a memory object that may be read from and written to use
+    {CL_MEM_READ_WRITE}.
 |====
 
 The user is responsible for ensuring that data passed into and out of OpenCL
@@ -1576,18 +1582,41 @@ include::{generated}/api/structs/cl_image_format.txt[]
 
 [[image-channel-order-table]]
 .List of supported Image Channel Order Values
-[width="100%",cols="<100%",options="header"]
+[width="100%",cols="<50%,<50%",options="header"]
 |====
-| Enum values that can be specified in channel_order
-| {CL_R}, {CL_Rx} or {CL_A}
-| {CL_INTENSITY}
-| {CL_LUMINANCE}
-| {CL_DEPTH}
-| {CL_RG}, {CL_RGx} or {CL_RA}
-| {CL_RGB} or {CL_RGBx}
-| {CL_RGBA}
-| {CL_sRGB}, {CL_sRGBx}, {CL_sRGBA}, or {CL_sBGRA}
-| {CL_ARGB}, {CL_BGRA}, or {CL_ABGR}
+| Image Channel Order | Description
+| {CL_R_anchor}, {CL_A_anchor},
+  | Single channel image formats where the single channel represents a `RED` or `ALPHA` component.
+| {CL_DEPTH_anchor}
+  | A single channel image format where the single channel represents a `DEPTH` component.
+| {CL_LUMINANCE_anchor}
+  | A single channel image format where the single channel represents a `LUMINANCE` value.
+    The `LUMINANCE` value is replicated into the `RED`, `GREEN`, and `BLUE` components.
+| {CL_INTENSITY_anchor},
+  | A single channel image format where the single channel represents an `INTENSITY` value.
+    The `INTENSITY` value is replicated into the `RED`, `GREEN`, `BLUE`, and `ALPHA` components.
+| {CL_RG_anchor}, {CL_RA_anchor}
+  | Two channel image formats.
+    The first channel always represents a `RED` component.
+    The second channel represents a `GREEN` component or an `ALPHA` component.
+| {CL_Rx_anchor}
+  | A two channel image format, where the first channel represents a `RED` component and the second channel is ignored.
+| {CL_RGB_anchor}
+  | A three channel image format, where the three channels represent `RED`, `GREEN`, and `BLUE` components.
+| {CL_RGx_anchor}
+  | A three channel image format, where the first two channels represent `RED` and `GREEN` components and the third channel is ignored.
+| {CL_RGBA_anchor}, {CL_ARGB_anchor}, {CL_BGRA_anchor}, {CL_ABGR_anchor}
+  | Four channel image formats, where the four channels represent `RED`, `GREEN`, `BLUE`, and `ALPHA` components.
+| {CL_RGBx_anchor}
+  | A four channel image format, where the first three channels represent `RED`, `GREEN`, and `BLUE` components and the fourth channel is ignored.
+| {CL_sRGB_anchor}
+  | A three channel image format, where the three channels represent `RED`, `GREEN`, and `BLUE` components in the sRGB color space.
+| {CL_sRGBA_anchor}, {CL_sBGRA_anchor}
+  | Four channel image formats, where the first three channels represent `RED`, `GREEN`, and `BLUE` components in the sRGB color space.
+    The fourth channel represents an `ALPHA` component.
+| {CL_sRGBx_anchor}
+  | A four channel image format, where the three channels represent `RED`, `GREEN`, and `BLUE` components in the sRGB color space.
+    The fourth channel is ignored.
 |====
 
 [[image-channel-data-types-table]]
@@ -1877,18 +1906,16 @@ include::{generated}/api/protos/clGetSupportedImageFormats.txt[]
 
   * _context_ is a valid OpenCL context on which the image object(s) will be
     created.
-  * _flags_ is a bit-field that is used to specify allocation and usage
-    information about the image memory object being queried and is described in
+  * _flags_ is a bit-field that is used to specify usage
+    information about the image formats being queried and is described in
     the <<memory-flags-table,Memory Flags>> table.
-    To get a list of supported image formats that can be read from or written to
-    by a kernel, _flags_ must be set to {CL_MEM_READ_WRITE} (get a list of images
-    that can be read from and written to by different kernel instances when
-    correctly ordered by event dependencies), {CL_MEM_READ_ONLY} (list of images
-    that can be read from by a kernel) or {CL_MEM_WRITE_ONLY} (list of images that
-    can be written to by a kernel).
-    To get a list of supported image formats that can be both read from and
-    written to by the same kernel instance, _flags_ must be set to
-    {CL_MEM_KERNEL_READ_AND_WRITE}.
+    _flags_ may be {CL_MEM_READ_WRITE} to query image formats that may be read
+    from and written to by different kernel instances when correctly ordered by
+    event dependencies, or {CL_MEM_READ_ONLY} to query image formats that may
+    be read from by a kernel, or {CL_MEM_WRITE_ONLY} to query image formats that
+    may be written to by a kernel, or {CL_MEM_KERNEL_READ_AND_WRITE} to query
+    image formats that may be both read from and written to by the same kernel
+    instance.
     Please see <<image-format-mapping, Image Format Mapping>> for clarification.
   * _image_type_ describes the image type and must be either
     {CL_MEM_OBJECT_IMAGE1D}, {CL_MEM_OBJECT_IMAGE1D_BUFFER}, {CL_MEM_OBJECT_IMAGE2D},
@@ -2056,7 +2083,6 @@ _Minimum list of required image formats: kernel read and write
         {CL_FLOAT}
 |====
 --
-
 
 [[image-format-mapping]]
 ==== Image format mapping to OpenCL kernel language image access qualifiers
@@ -3589,13 +3615,13 @@ include::{generated}/api/protos/clGetMemObjectInfo.txt[]
   | cl_mem_object_type
       | Returns one of the following values:
 
-        {CL_MEM_OBJECT_BUFFER} if _memobj_ is created with {clCreateBuffer} or
+        {CL_MEM_OBJECT_BUFFER_anchor} if _memobj_ is created with {clCreateBuffer} or
         {clCreateSubBuffer}.
 
         cl_image_desc.image_type argument value if _memobj_ is created with
         {clCreateImage}.
 
-        {CL_MEM_OBJECT_PIPE} if _memobj_ is created with {clCreatePipe}.
+        {CL_MEM_OBJECT_PIPE_anchor} if _memobj_ is created with {clCreatePipe}.
 | {CL_MEM_FLAGS_anchor}
   | cl_mem_flags
       | Return the flags argument value specified when _memobj_ is created
@@ -4482,7 +4508,7 @@ include::{generated}/api/protos/clCreateSamplerWithProperties.txt[]
 
 [[sampler-properties-table]]
 .List of supported sampler creation properties by <<clCreateSamplerWithProperties>>
-[width="100%",cols="<34%,<33%,<33%",options="header"]
+[width="100%",cols="2,1,3",options="header"]
 |====
 | *cl_sampler_properties* enum | Property Value | Description
 | {CL_SAMPLER_NORMALIZED_COORDS_anchor}
@@ -4496,24 +4522,37 @@ include::{generated}/api/protos/clCreateSamplerWithProperties.txt[]
   | cl_addressing_mode
       | Specifies how out-of-range image coordinates are handled when
         reading from an image.
-
         Valid values are:
 
-        {CL_ADDRESS_MIRRORED_REPEAT} +
-        {CL_ADDRESS_REPEAT} +
-        {CL_ADDRESS_CLAMP_TO_EDGE} +
-        {CL_ADDRESS_CLAMP} +
-        {CL_ADDRESS_NONE}
+        {CL_ADDRESS_NONE_anchor} - Behavior is undefined for out-of-range
+        image coordinates.
+
+        {CL_ADDRESS_CLAMP_TO_EDGE_anchor} - Out-of-range image coordinates
+        are clamped to the edge of the image.
+
+        {CL_ADDRESS_CLAMP_anchor} - Out-of-range image coordinates are
+        assigned a border color value.
+
+        {CL_ADDRESS_REPEAT_anchor} - Out-of-range image coordinates read
+        from the image as-if the image data were replicated in all dimensions.
+
+        {CL_ADDRESS_MIRRORED_REPEAT_anchor} - Out-of-range image coordinates
+        read from the image as-if the image data were replicated in all
+        dimensions, mirroring the image contents at the edge of each
+        replication.
 
         The default is {CL_ADDRESS_CLAMP}.
 | {CL_SAMPLER_FILTER_MODE_anchor}
   | cl_filter_mode
-      | Specifies the type of filter that must be applied when reading an
+      | Specifies the type of filter that is applied when reading an
         image.
         Valid values are:
 
-        {CL_FILTER_NEAREST} +
-        {CL_FILTER_LINEAR}
+        {CL_FILTER_NEAREST_anchor} - Returns the image element nearest
+        to the image coordinate.
+
+        {CL_FILTER_LINEAR_anchor} - Returns a weighted average of the
+        four image elements nearest to the image coordinate.
 
         The default value is {CL_FILTER_NEAREST}.
 |====
@@ -5987,68 +6026,68 @@ include::{generated}/api/protos/clGetProgramBuildInfo.txt[]
 | {CL_PROGRAM_BUILD_STATUS_anchor}
   | cl_build_status
       | Returns the build, compile or link status, whichever was performed
-        last on program for device.
+        last on the specified _program_ object for _device_.
 
         This can be one of the following:
 
         {CL_BUILD_NONE_anchor} - The build status returned if no {clBuildProgram},
         {clCompileProgram} or {clLinkProgram} has been performed on the
-        specified program object for device.
+        specified _program_ object for _device).
 
         {CL_BUILD_ERROR_anchor} - The build status returned if {clBuildProgram},
-        {clCompileProgram} or {clLinkProgram} whichever was performed last
-        on the specified program object for device generated an error.
+        {clCompileProgram} or {clLinkProgram} - whichever was performed last
+        on the specified _program_ object for _device_ - generated an error.
 
         {CL_BUILD_SUCCESS_anchor} - The build status returned if {clBuildProgram},
-        {clCompileProgram} or {clLinkProgram} whichever was performed last
-        on the specified program object for device was successful.
+        {clCompileProgram} or {clLinkProgram} - whichever was performed last
+        on the specified _program_ object for _device_ - was successful.
 
         {CL_BUILD_IN_PROGRESS_anchor} - The build status returned if
-        {clBuildProgram}, {clCompileProgram} or {clLinkProgram} whichever
-        was performed last on the specified program object for device has
+        {clBuildProgram}, {clCompileProgram} or {clLinkProgram} - whichever
+        was performed last on the specified _program_ object for _device_ - has
         not finished.
 | {CL_PROGRAM_BUILD_OPTIONS_anchor}
   | char[]
       | Return the build, compile or link options specified by the options
         argument in {clBuildProgram}, {clCompileProgram} or {clLinkProgram},
-        whichever was performed last on program for device.
+        whichever was performed last on the specified _program_ object for
+        _device_.
 
-        If build status of program for device is {CL_BUILD_NONE}, an empty
-        string is returned.
+        If build status of the specified _program_ for _device_ is
+        {CL_BUILD_NONE}, an empty string is returned.
 | {CL_PROGRAM_BUILD_LOG_anchor}
   | char[]
       | Return the build, compile or link log for {clBuildProgram},
         {clCompileProgram} or {clLinkProgram}, whichever was performed last
         on program for device.
 
-        If build status of program for device is {CL_BUILD_NONE}, an empty
-        string is returned.
+        If build status of the specified _program_ for _device_ is
+        {CL_BUILD_NONE}, an empty string is returned.
 | {CL_PROGRAM_BINARY_TYPE_anchor}
   | cl_program_binary_type
       | Return the program binary type for device.
         This can be one of the following values:
 
-        {CL_PROGRAM_BINARY_TYPE_NONE} - There is no binary associated with
-        device.
+        {CL_PROGRAM_BINARY_TYPE_NONE_anchor} - There is no binary associated
+        with the specified _program_ object for _device_.
 
-        {CL_PROGRAM_BINARY_TYPE_COMPILED_OBJECT} - A compiled binary is
-        associated with device.
-        This is the case if program was created using
-        {clCreateProgramWithSource} and compiled using {clCompileProgram} or
-        a compiled binary is loaded using {clCreateProgramWithBinary}.
+        {CL_PROGRAM_BINARY_TYPE_COMPILED_OBJECT_anchor} - A compiled binary is
+        associated with _device_.
+        This is the case when the specified _program_ object was created using
+        {clCreateProgramWithSource} and compiled using {clCompileProgram}, or
+        when a compiled binary was loaded using {clCreateProgramWithBinary}.
 
-        {CL_PROGRAM_BINARY_TYPE_LIBRARY} - A library binary is associated with
-        device.
-        This is the case if program was created by {clLinkProgram} which is
-        called with the `-create-library` link option or if a library binary
-        is loaded using {clCreateProgramWithBinary}.
+        {CL_PROGRAM_BINARY_TYPE_LIBRARY_anchor} - A library binary is
+        associated with _device_.
+        This is the case when the specified _program_ object was linked by
+        {clLinkProgram} using the `-create-library` link option, or when a
+        compiled library binary was loaded using {clCreateProgramWithBinary}.
 
-        {CL_PROGRAM_BINARY_TYPE_EXECUTABLE} - An executable binary is
-        associated with device.
-        This is the case if program was created by {clLinkProgram} without
-        the `-create-library link` option or program was created by
-        {clBuildProgram} or an executable binary is loaded using
-        {clCreateProgramWithBinary}.
+        {CL_PROGRAM_BINARY_TYPE_EXECUTABLE_anchor} - An executable binary is
+        associated with _device_.
+        This is the case when the specified _program_ object was linked by
+        {clLinkProgram} without the `-create-library` link option, or when an
+        executable binary was built using {clBuildProgram}.
 | {CL_PROGRAM_BUILD_GLOBAL_VARIABLE_TOTAL_SIZE_anchor}
   | size_t
       | The total amount of storage, in bytes, used by program variables in
@@ -6984,7 +7023,7 @@ in options argument to {clBuildProgram} or {clCompileProgram}.
 
 [[kernel-argument-info-table]]
 .List of supported param_names by <<clGetKernelArgInfo>>
-[width="100%",cols="<34%,<33%,<33%",options="header"]
+[width="100%",cols="2,1,3",options="header"]
 |====
 | *cl_kernel_arg_info* | Return Type | Info. returned in _param_value_
 | {CL_KERNEL_ARG_ADDRESS_QUALIFIER_anchor}
@@ -6993,10 +7032,10 @@ in options argument to {clBuildProgram} or {clCompileProgram}.
         _arg_indx_.
         This can be one of the following values:
 
-        {CL_KERNEL_ARG_ADDRESS_GLOBAL} +
-        {CL_KERNEL_ARG_ADDRESS_LOCAL} +
-        {CL_KERNEL_ARG_ADDRESS_CONSTANT} +
-        {CL_KERNEL_ARG_ADDRESS_PRIVATE}
+        {CL_KERNEL_ARG_ADDRESS_GLOBAL_anchor} +
+        {CL_KERNEL_ARG_ADDRESS_LOCAL_anchor} +
+        {CL_KERNEL_ARG_ADDRESS_CONSTANT_anchor} +
+        {CL_KERNEL_ARG_ADDRESS_PRIVATE_anchor}
 
         If no address qualifier is specified, the default address qualifier
         which is {CL_KERNEL_ARG_ADDRESS_PRIVATE} is returned.
@@ -7006,10 +7045,10 @@ in options argument to {clBuildProgram} or {clCompileProgram}.
         _arg_indx_.
         This can be one of the following values:
 
-        {CL_KERNEL_ARG_ACCESS_READ_ONLY} +
-        {CL_KERNEL_ARG_ACCESS_WRITE_ONLY} +
-        {CL_KERNEL_ARG_ACCESS_READ_WRITE} +
-        {CL_KERNEL_ARG_ACCESS_NONE}
+        {CL_KERNEL_ARG_ACCESS_READ_ONLY_anchor} +
+        {CL_KERNEL_ARG_ACCESS_WRITE_ONLY_anchor} +
+        {CL_KERNEL_ARG_ACCESS_READ_WRITE_anchor} +
+        {CL_KERNEL_ARG_ACCESS_NONE_anchor}
 
         If argument is not an image type and is not declared with the pipe
         qualifier, {CL_KERNEL_ARG_ACCESS_NONE} is returned.
@@ -7028,12 +7067,15 @@ in options argument to {clBuildProgram} or {clCompileProgram}.
         qualifiers.
 | {CL_KERNEL_ARG_TYPE_QUALIFIER_anchor}
   | cl_kernel_arg_type_qualifier
-      | Returns the type qualifier specified for the argument given by
-        _arg_indx_.
-        The returned value can be: {CL_KERNEL_ARG_TYPE_CONST}^17^,
-        {CL_KERNEL_ARG_TYPE_RESTRICT}, {CL_KERNEL_ARG_TYPE_VOLATILE}^18^, a
-        combination of the above enums, {CL_KERNEL_ARG_TYPE_PIPE}, or
-        {CL_KERNEL_ARG_TYPE_NONE}.
+      | Returns a bitfield describing one or more type qualifiers specified
+        for the argument given by _arg_indx_.
+        The returned values can be:
+        
+        {CL_KERNEL_ARG_TYPE_CONST_anchor}^17^ +
+        {CL_KERNEL_ARG_TYPE_RESTRICT_anchor} +
+        {CL_KERNEL_ARG_TYPE_VOLATILE_anchor}^18^ +
+        {CL_KERNEL_ARG_TYPE_PIPE_anchor}, or +
+        {CL_KERNEL_ARG_TYPE_NONE_anchor}
 
         {CL_KERNEL_ARG_TYPE_NONE} is returned for all parameters passed by
         value.
@@ -7041,7 +7083,6 @@ in options argument to {clBuildProgram} or {clCompileProgram}.
   | char[]
       | Returns the name specified for the argument given by _arg_indx_.
 |====
-
 
 17::
     {CL_KERNEL_ARG_TYPE_CONST} is returned for
@@ -7623,35 +7664,35 @@ include::{generated}/api/protos/clGetEventInfo.txt[]
       | Return the command associated with event.
         Can be one of the following values:
 
-        {CL_COMMAND_NDRANGE_KERNEL} +
-        {CL_COMMAND_NATIVE_KERNEL} +
-        {CL_COMMAND_READ_BUFFER} +
-        {CL_COMMAND_WRITE_BUFFER} +
-        {CL_COMMAND_COPY_BUFFER} +
-        {CL_COMMAND_READ_IMAGE} +
-        {CL_COMMAND_WRITE_IMAGE} +
-        {CL_COMMAND_COPY_IMAGE} +
-        {CL_COMMAND_COPY_BUFFER_TO_IMAGE} +
-        {CL_COMMAND_COPY_IMAGE_TO_BUFFER} +
-        {CL_COMMAND_MAP_BUFFER} +
-        {CL_COMMAND_MAP_IMAGE} +
-        {CL_COMMAND_UNMAP_MEM_OBJECT} +
-        {CL_COMMAND_MARKER} +
-        {CL_COMMAND_ACQUIRE_GL_OBJECTS} +
-        {CL_COMMAND_RELEASE_GL_OBJECTS} +
-        {CL_COMMAND_READ_BUFFER_RECT} +
-        {CL_COMMAND_WRITE_BUFFER_RECT} +
-        {CL_COMMAND_COPY_BUFFER_RECT} +
-        {CL_COMMAND_USER} +
-        {CL_COMMAND_BARRIER} +
-        {CL_COMMAND_MIGRATE_MEM_OBJECTS} +
-        {CL_COMMAND_FILL_BUFFER} +
-        {CL_COMMAND_FILL_IMAGE} +
-        {CL_COMMAND_SVM_FREE} +
-        {CL_COMMAND_SVM_MEMCPY} +
-        {CL_COMMAND_SVM_MEMFILL} +
-        {CL_COMMAND_SVM_MAP} +
-        {CL_COMMAND_SVM_UNMAP}
+        {CL_COMMAND_NDRANGE_KERNEL_anchor} +
+        {CL_COMMAND_NATIVE_KERNEL_anchor} +
+        {CL_COMMAND_READ_BUFFER_anchor} +
+        {CL_COMMAND_WRITE_BUFFER_anchor} +
+        {CL_COMMAND_COPY_BUFFER_anchor} +
+        {CL_COMMAND_READ_IMAGE_anchor} +
+        {CL_COMMAND_WRITE_IMAGE_anchor} +
+        {CL_COMMAND_COPY_IMAGE_anchor} +
+        {CL_COMMAND_COPY_BUFFER_TO_IMAGE_anchor} +
+        {CL_COMMAND_COPY_IMAGE_TO_BUFFER_anchor} +
+        {CL_COMMAND_MAP_BUFFER_anchor} +
+        {CL_COMMAND_MAP_IMAGE_anchor} +
+        {CL_COMMAND_UNMAP_MEM_OBJECT_anchor} +
+        {CL_COMMAND_MARKER_anchor} +
+        {CL_COMMAND_ACQUIRE_GL_OBJECTS_anchor} +
+        {CL_COMMAND_RELEASE_GL_OBJECTS_anchor} +
+        {CL_COMMAND_READ_BUFFER_RECT_anchor} +
+        {CL_COMMAND_WRITE_BUFFER_RECT_anchor} +
+        {CL_COMMAND_COPY_BUFFER_RECT_anchor} +
+        {CL_COMMAND_USER_anchor} +
+        {CL_COMMAND_BARRIER_anchor} +
+        {CL_COMMAND_MIGRATE_MEM_OBJECTS_anchor} +
+        {CL_COMMAND_FILL_BUFFER_anchor} +
+        {CL_COMMAND_FILL_IMAGE_anchor} +
+        {CL_COMMAND_SVM_FREE_anchor} +
+        {CL_COMMAND_SVM_MEMCPY_anchor} +
+        {CL_COMMAND_SVM_MEMFILL_anchor} +
+        {CL_COMMAND_SVM_MAP_anchor} +
+        {CL_COMMAND_SVM_UNMAP_anchor}
 | {CL_EVENT_COMMAND_EXECUTION_STATUS_anchor}^19^
   | cl_int
       | Return the execution status of the command identified by event.
