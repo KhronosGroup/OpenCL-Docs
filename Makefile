@@ -103,6 +103,7 @@ ADOCPDFOPTS  = $(ADOCPDFEXTS) -a mathematical-format=svg \
 # GENDEPENDS could have multiple dependencies.
 GENERATED  = $(CURDIR)/generated
 APIINCDIR  = $(GENERATED)/api
+VERSIONDIR = $(APIINCDIR)/version-notes
 GENDEPENDS = $(APIINCDIR)/timeMarker
 
 .PHONY: directories
@@ -429,9 +430,11 @@ $(MANHTMLDIR)/intro.html: $(MANDIR)/intro.txt $(MANCOPYRIGHT)
 # generation script, such as
 #   '-diag diag'
 
-REGISTRY   = xml
-APIXML	   = $(REGISTRY)/cl.xml
-GENSCRIPT  = $(SCRIPTS)/gencl.py
+REGISTRY       = xml
+APIXML	       = $(REGISTRY)/cl.xml
+GENSCRIPT      = $(SCRIPTS)/gencl.py
+DICTSCRIPT     = $(SCRIPTS)/gen_dictionaries.py
+VERSIONSCRIPT  = $(SCRIPTS)/gen_version_notes.py
 GENSCRIPTOPTS  = $(VERSIONOPTIONS) $(EXTOPTIONS) $(GENSCRIPTEXTRA) -registry $(APIXML)
 GENSCRIPTEXTRA =
 
@@ -440,8 +443,10 @@ $(SCRIPTS)/clapi.py: $(APIXML) $(GENSCRIPT)
 
 apiinc: $(APIINCDIR)/timeMarker
 
-$(APIINCDIR)/timeMarker: $(APIXML) $(GENSCRIPT)
+$(APIINCDIR)/timeMarker: $(APIXML) $(DICTSCRIPT) $(GENSCRIPT) $(VERSIONSCRIPT)
 	$(QUIET)$(MKDIR) -p $(APIINCDIR)
-	$(QUIET)$(PYTHON) $(SCRIPTS)/gen_dictionaries.py -registry $(APIXML) -o $(APIINCDIR)
+	$(QUIET)$(PYTHON) $(DICTSCRIPT) -registry $(APIXML) -o $(APIINCDIR)
+	$(QUIET)$(MKDIR) -p $(VERSIONDIR)
+	$(QUIET)$(PYTHON) $(VERSIONSCRIPT) -registry $(APIXML) -o $(VERSIONDIR)
 	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(APIINCDIR) apiinc
 
