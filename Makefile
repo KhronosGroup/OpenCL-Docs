@@ -382,7 +382,7 @@ MANTMP	     = $(LOGFILE) $(MANDIR)/tocbody $(MANDIR)/toc.html \
 # For now, all core and extension ref pages are extracted by genRef.py.
 LOGFILE = man/logfile
 ## Temporary - eventually should be all spec asciidoctor source files
-SPECFILES = $(wildcard api/*.txt) $(wildcard man/static/*.txt) OpenCL_API.txt OpenCL_C.txt
+SPECFILES = $(wildcard api/*.asciidoc) $(wildcard man/static/*.txt) OpenCL_API.txt OpenCL_C.txt
 ##SPECFILES = api/opencl_platform_layer.txt
 SCRIPTS = scripts
 GENREF = $(SCRIPTS)/genRef.py
