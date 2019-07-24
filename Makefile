@@ -391,7 +391,8 @@ man/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(SCRIPTS)/clapi.py
 	$(PYTHON) $(GENREF) -rewrite man/rewritebody -toc man/tocbody \
 	    -log $(LOGFILE) $(SPECFILES)
 	cat man/tochead man/tocbody man/toctail > man/toc.html
-	cat man/rewritehead man/rewritebody > man/.htaccess
+	cat man/rewritehead > man/.htaccess
+	sort < man/rewritebody >> man/.htaccess
 	$(CP) -p $(MANDIR)/static/*.txt $(MANDIR)/
 
 # These targets are HTML5 ref pages
