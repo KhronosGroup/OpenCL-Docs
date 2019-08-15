@@ -69,15 +69,9 @@ class OpenCLConventions(ConventionsBase):
         return paramtype == 'void' and paramname == self.nextpointer_member_name
 
     def generate_structure_type_from_name(self, structname):
-        """Generate a structure type name, like VK_STRUCTURE_TYPE_CREATE_INSTANCE_INFO"""
-        structure_type_parts = []
-        # Tokenize into "words"
-        for elem in re.findall(r'(([A-Z][a-z]+)|([A-Z][A-Z]+))', structname):
-            if elem[0] == 'Vk':
-                structure_type_parts.append('VK_STRUCTURE_TYPE')
-            else:
-                structure_type_parts.append(elem[0].upper())
-        return '_'.join(structure_type_parts)
+        """Generate a structure type name token from a structure name.
+           This should never be called for OpenCL, just other APIs."""
+        return ''
 
     @property
     def warning_comment(self):
