@@ -24,7 +24,6 @@ import os
 import re
 import sys
 from collections import OrderedDict
-from pprint import pprint
 from reflib import (findRefs, fixupRefs, loadFile, logDiag, logWarn,
                     printPageInfo, setLogFile)
 from reg import Registry
@@ -743,7 +742,7 @@ if __name__ == '__main__':
             for prefix in conventions.extension_index_prefixes:
                 # Splits up into chunks, sorted within each chunk.
                 filtered_extensions = sorted(
-                    [name for name in ext_names
+                    [name for name in desired_extensions
                      if name.startswith(prefix) and name not in extensions])
                 for name in filtered_extensions:
                     extensions[name] = None
@@ -796,7 +795,7 @@ if __name__ == '__main__':
         # Generate Apache rewrite directives for refpage aliases
         fp = open(results.rewrite, 'w', encoding='utf-8')
 
-        for page in pages:
+        for page in sorted(pages):
             p = pages[page]
             rewrite = p.name
 
@@ -829,7 +828,7 @@ if __name__ == '__main__':
                 lastLetter = letter
 
             # Add this page to the list
-            print(28 * ' ', '<li><a href="', p.name, '.html"',
+            print(28 * ' ', '<li><a href="', p.name, '.html" ',
                   'target="pagedisplay">', page, '</a></li>',
                   sep='', file=fp)
 
