@@ -17,6 +17,8 @@
 # Working-group-specific style conventions,
 # used in generation.
 
+import re
+
 from conventions import ConventionsBase
 
 
@@ -65,6 +67,11 @@ class OpenCLConventions(ConventionsBase):
     def is_nextpointer_member(self, paramtype, paramname):
         """Determine if member type and name match the next pointer chain member."""
         return paramtype == 'void' and paramname == self.nextpointer_member_name
+
+    def generate_structure_type_from_name(self, structname):
+        """Generate a structure type name token from a structure name.
+           This should never be called for OpenCL, just other APIs."""
+        return ''
 
     @property
     def warning_comment(self):
