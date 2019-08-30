@@ -1935,8 +1935,7 @@ the region of memory that is used to allocate the object.
 The C syntax for type qualifiers is extended in OpenCL to include an address
 space name as a valid type qualifier.
 If the type of an object is qualified by an address space name, the object
-is allocated in the specified address name; otherwise, the object is
-allocated in the generic address space.
+is allocated in the specified address space name.
 
 The address space names without the `+__+` prefix, i.e. `global`, `local`,
 `constant` and `private`, may be substituted for the corresponding address
@@ -1948,6 +1947,8 @@ All function arguments shall be in the `+__private+` address space.
 The address space for a variable at program scope, a `static` or `extern`
 variable inside a function can either be `+__global+` or `+__constant+`, but
 defaults to `+__global+` if not specified.
+The address space for all other variables defaults to `+__private+` if not
+specified.
 
 Examples:
 
@@ -1968,12 +1969,10 @@ void foo (...)
 OpenCL 2.0 adds support for an unnamed generic address space.
 Pointers that are declared without pointing to a named address space point
 to the generic address space.
-Before referring to the region pointed to, the pointer must be associated
-with a named address space.
-Functions written with pointer arguments and return values which do not
-declare an address space are defined to point to the generic address space.
+Pointer function arguments and return values which do not declare an address
+space are defined to point to the generic address space.
 
-kernel function arguments declared to be a pointer or an array of a type
+Kernel function arguments declared to be a pointer or an array of a type
 must point to one of the named address spaces `+__global+`, `+__local+` or
 `+__constant+`.
 
@@ -1982,7 +1981,7 @@ for the `constant` address space.
 
 A pointer to address space A can only be assigned to a pointer to the same
 address space A or a pointer to the generic address space.
-Casting a pointer to address space A to a pointer to address space is
+Casting a pointer to address space A to a pointer to address space B is
 illegal if A and B are named address spaces and A is not the same as B.
 
 Examples:
@@ -2077,7 +2076,7 @@ static int foo;         // OK. Declared in the global address space
 static global int foo;  // OK.
 
 int *foo;               // OK. foo is allocated in global address space.
-                        // pointer to foo in generic address space
+                        // foo points to a location in generic address space.
 
 void func(...)
 {
@@ -2271,9 +2270,9 @@ kernel void k2(global int *a)
 }
 ----------
 
-In the example below, `var` is in the unnamed generic address space which
-gets mapped to the `global` or `local` address space depending on the result
-of the conditional expression.
+In the example below, `var` is a pointer to the unnamed generic address space.
+A pointer to the `global` or `local` address space may be assigned to `var`
+depending on the result of a conditional expression.
 
 [source,c]
 ----------
@@ -2290,8 +2289,12 @@ kernel void bar(global int *g, local int *l)
 }
 ----------
 
-The example below is an example with one unnamed generic address space
-pointer with multiple named address space assignments.
+In the example below, the same pointer to the unnamed generic address
+space is used to point to objects allocated in different named address spaces.
+A pointer to the unnamed generic address space may point to
+objects in the `global`, `local`, and `private` address spaces,
+but it is not legal for a pointer to the unnamed generic address to
+point to an object in the `constant` address space.
 
 [source,c]
 ----------
@@ -2309,25 +2312,35 @@ constant int c;
 ptr = &c; // illegal
 ----------
 
-The example below is an example with one unnamed generic address space
-pointer being assigned to point to several named address spaces.
+In the example below, pointers to named address spaces are assigned to
+a pointer to the unnamed generic address space.
+It is legal to assign a pointer to the `global`, `local`, and `private`
+address spaces to a pointer to the unnamed generic address space without
+an explicit cast.
+It is not legal to assign a pointer to the `constant` address space to
+a pointer to the unnamed generic address space.
+It is also not legal to assign a pointer to the unnamed generic address
+space to a pointer to a named address space without a cast.
 
 [source,c]
 ----------
 global int *gp;
 local int *lp;
 private int *pp;
+constant int *cp;
 
 int *p;
 p = gp; // legal
 p = lp; // legal
 p = pp; // legal
+p = cp; // illegal
 
 // it is illegal to convert from a generic pointer
 // to an explicit address space pointer without a cast:
 gp = p; // compile-time error
 lp = p; // compile-time error
 pp = p; // compile-time error
+cp = p; // compile-time error
 ----------
 --
 
