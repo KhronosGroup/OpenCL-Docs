@@ -14,104 +14,98 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 
 from generator import GeneratorOptions, OutputGenerator, regSortFeatures, noneStr, write
 
 class DocGeneratorOptions(GeneratorOptions):
-    """DocGeneratorOptions - subclass of GeneratorOptions.
+    """DocGeneratorOptions - subclass of GeneratorOptions for
+    generating declaration snippets for the spec.
 
     Shares many members with CGeneratorOptions, since
-    both are writing C-style declarations:
+    both are writing C-style declarations."""
 
-    prefixText - list of strings to prefix generated header with
+    def __init__(self,
+                 prefixText="",
+                 apicall='',
+                 apientry='',
+                 apientryp='',
+                 indentFuncProto=True,
+                 indentFuncPointer=False,
+                 alignFuncParam=0,
+                 secondaryInclude=False,
+                 expandEnumerants=True,
+                 extEnumerantAdditions=False,
+                 extEnumerantFormatString=" (Added by the {} extension)",
+                 **kwargs):
+        """Constructor.
+
+        Since this generator outputs multiple files at once,
+        the filename is just a "stamp" to indicate last generation time.
+
+        Shares many parameters/members with CGeneratorOptions, since
+        both are writing C-style declarations:
+
+        - prefixText - list of strings to prefix generated header with
         (usually a copyright statement + calling convention macros).
-    apicall - string to use for the function declaration prefix,
+        - apicall - string to use for the function declaration prefix,
         such as APICALL on Windows.
-    apientry - string to use for the calling convention macro,
+        - apientry - string to use for the calling convention macro,
         in typedefs, such as APIENTRY.
-    apientryp - string to use for the calling convention macro
+        - apientryp - string to use for the calling convention macro
         in function pointer typedefs, such as APIENTRYP.
-    directory - directory into which to generate include files
-    indentFuncProto - True if prototype declarations should put each
+        - indentFuncProto - True if prototype declarations should put each
         parameter on a separate line
-    indentFuncPointer - True if typedefed function pointers should put each
+        - indentFuncPointer - True if typedefed function pointers should put each
         parameter on a separate line
-    alignFuncParam - if nonzero and parameters are being put on a
+        - alignFuncParam - if nonzero and parameters are being put on a
         separate line, align parameter names at the specified column
 
-    Additional members:
+        Additional parameters/members:
 
-    expandEnumerants - if True, add BEGIN/END_RANGE macros in enumerated
-      type declarations
-    secondaryInclude - if True, add secondary (no xref anchor) versions
-      of generated files
-    """
+        - expandEnumerants - if True, add BEGIN/END_RANGE macros in enumerated
+        type declarations
+        - secondaryInclude - if True, add secondary (no xref anchor) versions
+        of generated files
+        """
+        GeneratorOptions.__init__(self, **kwargs)
+        self.prefixText = prefixText
+        """list of strings to prefix generated header with (usually a copyright statement + calling convention macros)."""
 
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.',
-                 apiname = None,
-                 profile = None,
-                 versions = '.*',
-                 emitversions = '.*',
-                 defaultExtensions = None,
-                 addExtensions = None,
-                 removeExtensions = None,
-                 emitExtensions = None,
-                 sortProcedure = regSortFeatures,
-                 prefixText = "",
-                 apicall = '',
-                 apientry = '',
-                 apientryp = '',
-                 indentFuncProto = True,
-                 indentFuncPointer = False,
-                 alignFuncParam = 0,
-                 secondaryInclude = False,
-                 expandEnumerants = True):
-        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
-                                  versions, emitversions, defaultExtensions,
-                                  addExtensions, removeExtensions,
-                                  emitExtensions, sortProcedure)
-        self.prefixText      = prefixText
-        self.apicall         = apicall
-        self.apientry        = apientry
-        self.apientryp       = apientryp
+        self.apicall = apicall
+        """string to use for the function declaration prefix, such as APICALL on Windows."""
+
+        self.apientry = apientry
+        """string to use for the calling convention macro, in typedefs, such as APIENTRY."""
+
+        self.apientryp = apientryp
+        """string to use for the calling convention macro in function pointer typedefs, such as APIENTRYP."""
+
         self.indentFuncProto = indentFuncProto
+        """True if prototype declarations should put each parameter on a separate line"""
+
         self.indentFuncPointer = indentFuncPointer
-        self.alignFuncParam  = alignFuncParam
+        """True if typedefed function pointers should put each parameter on a separate line"""
+
+        self.alignFuncParam = alignFuncParam
+        """if nonzero and parameters are being put on a separate line, align parameter names at the specified column"""
+
         self.secondaryInclude = secondaryInclude
+        """if True, add secondary (no xref anchor) versions of generated files"""
+
         self.expandEnumerants = expandEnumerants
+        """if True, add BEGIN/END_RANGE macros in enumerated type declarations"""
 
-# DocOutputGenerator - subclass of OutputGenerator.
-# Generates AsciiDoc includes with C-language API interfaces, for reference
-# pages and the corresponding specification. Similar to COutputGenerator,
-# but each interface is written into a different file as determined by the
-# options, only actual C types are emitted, and none of the boilerplate
-# preprocessor code is emitted.
-#
-# ---- methods ----
-# DocOutputGenerator(errFile, warnFile, diagFile) - args as for
-#   OutputGenerator. Defines additional internal state.
-# ---- methods overriding base class ----
-# beginFile(genOpts)
-# endFile()
-# beginFeature(interface, emit)
-# endFeature()
-# genType(typeinfo,name)
-# genStruct(typeinfo,name)
-# genGroup(groupinfo,name)
-# genEnum(enuminfo, name)
-# genCmd(cmdinfo)
 class DocOutputGenerator(OutputGenerator):
-    """Generate specified API interfaces in a specific style, such as a C header"""
+    """DocOutputGenerator - subclass of OutputGenerator.
 
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        OutputGenerator.__init__(self, errFile, warnFile, diagFile)
+    Generates AsciiDoc includes with C-language API interfaces, for reference
+    pages and the corresponding specification. Similar to COutputGenerator,
+    but each interface is written into a different file as determined by the
+    options, only actual C types are emitted, and none of the boilerplate
+    preprocessor code is emitted."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # Keep track of all extension numbers
         self.extension_numbers = set()
 
@@ -124,25 +118,27 @@ class DocOutputGenerator(OutputGenerator):
     def beginFeature(self, interface, emit):
         # Start processing in superclass
         OutputGenerator.beginFeature(self, interface, emit)
-        # Verify that each extension has a unique number during doc generation
-        extension_number = interface.get('number')
-        if extension_number is not None and extension_number != "0":
-            if extension_number in self.extension_numbers:
-                self.logMsg('error', 'Duplicate extension number ', extension_number, ' detected in feature ', interface.get('name'), '\n')
-                exit(1)
-            else:
-                self.extension_numbers.add(extension_number)
+        # Verify that each <extension> has a unique number during doc
+        # generation
+        if interface.tag == 'extension':
+            extension_number = interface.get('number')
+            if extension_number is not None and extension_number != "0":
+                if extension_number in self.extension_numbers:
+                    self.logMsg('error', 'Duplicate extension number ', extension_number, ' detected in feature ', interface.get('name'), '\n')
+                    exit(1)
+                else:
+                    self.extension_numbers.add(extension_number)
 
     def endFeature(self):
         # Finish processing in superclass
         OutputGenerator.endFeature(self)
 
-    # Generate an include file
-    #
-    # directory - subdirectory to put file in
-    # basename - base name of the file
-    # contents - contents of the file (Asciidoc boilerplate aside)
     def writeInclude(self, directory, basename, contents):
+        """Generate an include file.
+
+        - directory - subdirectory to put file in
+        - basename - base name of the file
+        - contents - contents of the file (Asciidoc boilerplate aside)"""
         # Create subdirectory, if needed
         directory = self.genOpts.directory + '/' + directory
         self.makeDir(directory)
@@ -176,9 +172,8 @@ class DocOutputGenerator(OutputGenerator):
             write('----', file=fp)
             fp.close()
 
-    #
-    # Type generation
     def genType(self, typeinfo, name, alias):
+        "Generate type."
         OutputGenerator.genType(self, typeinfo, name, alias)
         typeElem = typeinfo.elem
         # If the type is a struct type, traverse the embedded <member> tags
@@ -195,7 +190,7 @@ class DocOutputGenerator(OutputGenerator):
                 # If the type is an alias, just emit a typedef declaration
                 body = 'typedef ' + alias + ' ' + name + ';\n'
                 self.writeInclude(OutputGenerator.categoryToPath[category],
-                    name, body)
+                                  name, body)
             else:
                 # Replace <apientry /> tags with an APIENTRY-style string
                 # (from self.genOpts). Copy other text through unchanged.
@@ -210,23 +205,15 @@ class DocOutputGenerator(OutputGenerator):
                 if body:
                     if category in OutputGenerator.categoryToPath:
                         self.writeInclude(OutputGenerator.categoryToPath[category],
-                            name, body + '\n')
+                                          name, body + '\n')
                     else:
                         self.logMsg('diag', '# NOT writing include file for type:',
-                            name, '- bad category: ', category)
+                                    name, '- bad category: ', category)
                 else:
                     self.logMsg('diag', '# NOT writing empty include file for type', name)
 
-    # Struct (e.g. C "struct" type) generation.
-    # This is a special case of the <type> tag where the contents are
-    # interpreted as a set of <member> tags instead of freeform C
-    # C type declarations. The <member> tags are just like <param>
-    # tags - they are a declaration of a struct or union member.
-    # Only simple member declarations are supported (no nested
-    # structs etc.)
-    # If alias is not None, then this struct aliases another; just
-    #   generate a typedef of that alias.
     def genStruct(self, typeinfo, typeName, alias):
+        """Generate struct."""
         OutputGenerator.genStruct(self, typeinfo, typeName, alias)
 
         typeElem = typeinfo.elem
@@ -236,9 +223,7 @@ class DocOutputGenerator(OutputGenerator):
         else:
             body = 'typedef ' + typeElem.get('category') + ' ' + typeName + ' {\n'
 
-            targetLen = 0
-            for member in typeElem.findall('.//member'):
-                targetLen = max(targetLen, self.getCParamTypeLength(member))
+            targetLen = self.getMaxCParamTypeLength(typeinfo)
             for member in typeElem.findall('.//member'):
                 body += self.makeCParamDecl(member, targetLen + 4)
                 body += ';\n'
@@ -246,11 +231,8 @@ class DocOutputGenerator(OutputGenerator):
 
         self.writeInclude('structs', typeName, body)
 
-    # Group (e.g. C "enum" type) generation.
-    # These are concatenated together with other types.
-    # If alias is not None, it is the name of another group type
-    #   which aliases this type; just generate that alias.
     def genGroup(self, groupinfo, groupName, alias):
+        """Generate group (e.g. C "enum" type)."""
         OutputGenerator.genGroup(self, groupinfo, groupName, alias)
 
         if alias:
@@ -263,10 +245,8 @@ class DocOutputGenerator(OutputGenerator):
 
         self.writeInclude('enums', groupName, body)
 
-    # Enumerant generation
-    # <enum> tags may specify their values in several ways, but are usually
-    # just integers.
     def genEnum(self, enuminfo, name, alias):
+        """Generate enumerant."""
         OutputGenerator.genEnum(self, enuminfo, name, alias)
         self.logMsg('diag', '# NOT writing compile-time constant', name)
 
@@ -274,15 +254,16 @@ class DocOutputGenerator(OutputGenerator):
         # body = '#define ' + name.ljust(33) + ' ' + strVal
         # self.writeInclude('consts', name, body)
 
-    # Command generation
     def genCmd(self, cmdinfo, name, alias):
+        "Generate command."
         OutputGenerator.genCmd(self, cmdinfo, name, alias)
 
         return_type = cmdinfo.elem.find('proto/type')
         if self.genOpts.conventions.requires_error_validation(return_type):
             # This command returns an API result code, so check that it
             # returns at least the required errors.
-            required_errors = self.genOpts.conventions.required_errors
+            # TODO move this to consistency_tools
+            required_errors = set(self.genOpts.conventions.required_errors)
             errorcodes = cmdinfo.elem.get('errorcodes').split(',')
             if not required_errors.issubset(set(errorcodes)):
                 self.logMsg('error', 'Missing required error code for command: ', name, '\n')
