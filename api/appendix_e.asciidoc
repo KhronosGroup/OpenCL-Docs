@@ -108,8 +108,14 @@ The following features are added to the OpenCL 1.2 platform layer and
 runtime (_sections 4 and 5_):
 
   * Custom devices and built-in kernels are supported.
+    {clCreateProgramWithBuiltinKernels} has been added to allow creation of
+    _cl_program_ using built-in kernels.
   * Device partitioning that allows a device to be partitioned based on a
-    number of partitioning schemes supported by the device.
+    number of partitioning schemes supported by the device.  This is done by
+    using {clCreateSubDevices} to create a new _cl_device_id_ based on a
+    partitioning.
+  * {clCompileProgram} and {clLinkProgram} to allow handling these aspects
+    {clBuildProgram} separately.
   * Extend _cl_mem_flags_ to describe how the host accesses the data in a
     cl_mem object.
   * {clEnqueueFillBuffer} and {clEnqueueFillImage} to support filling a
@@ -131,6 +137,9 @@ runtime (_sections 4 and 5_):
   * {clGetKernelArgInfo} API that returns information about the arguments of
     a kernel.
   * {clEnqueueMarkerWithWaitList} and {clEnqueueBarrierWithWaitList} APIs.
+  * {clUnloadPlatformCompiler} to request that a single platform's compiler is
+    unloaded.  This is compatible with the `cl_khr_icd` extension if that is
+    supported, unlike {clUnloadCompiler}.
 
 The following features are added to the OpenCL C programming language
 (_section 6_) in OpenCL 1.2:
@@ -168,22 +177,38 @@ The following queries are deprecated (see glossary) in OpenCL 1.2:
 The following features are added to the OpenCL 2.0 platform layer and
 runtime (_sections 4 and 5_):
 
-  * Shared virtual memory.
+  * Shared virtual memory.  The associated API additions are:
+  ** {clSetKernelArgSVMPointer} to control which shared virtual memory (SVM)
+     pointer to associate with a kernel instance.
+  ** {clSVMAlloc}, {clSVMFree} and {clEnqueueSVMFree} to allocate and free
+     memory for use with SVM.
+  ** {clEnqueueSVMMap} and {clEnqueueSVMUnmap} to map and unmap to update
+     regions of an SVM buffer from host.
+  ** {clEnqueueSVMMemcpy} and {clEnqueueSVMMemFill} to copy or fill SVM memory
+     regions.
   * Device queues used to enqueue kernels on the device.
+  ** {clCreateCommandQueueWithProperties} is added to allow creation of a
+     command queue with properties that affect both host command queues and
+     device queues.
   * Pipes.
+  ** {clCreatePipe} and {clGetPipeInfo} have been added to the API for host
+     side creation and querying of pipes.
   * Images support for 2D image from buffer, depth images and sRGB images.
+  * {clCreateSamplerWithProperties}.
 
 The following modifications are made to the OpenCL 2.0 platform layer and
 runtime (sections 4 and 5):
 
   * All API calls except {clSetKernelArg}, {clSetKernelArgSVMPointer} and
     {clSetKernelExecInfo} are thread-safe.
+    Note that this statement does not imply that other API calls were not
+    thread-safe in earlier versions of the specification.
 
 The following features are added to the OpenCL C programming language
 (_section 6_) in OpenCL 2.0:
 
   * Clang Blocks.
-  * Kernels enqueing kernels to a device queue.
+  * Kernels enqueuing kernels to a device queue.
   * Program scope variables in global address space.
   * Generic address space.
   * C1x atomics.
@@ -194,7 +219,7 @@ The following features are added to the OpenCL C programming language
 
 The following APIs are deprecated (see glossary) in OpenCL 2.0:
 
-  * {clCreateCommandQueue}, {clCreateSampler} and {clEnqueueTask}
+  * {clCreateCommandQueue}, {clCreateSampler} and {clEnqueueTask}.
 
 The following queries are deprecated (see glossary) in OpenCL 2.0:
 
@@ -240,6 +265,8 @@ runtime (sections 4 and 5):
 
   * All API calls except {clSetKernelArg}, {clSetKernelArgSVMPointer},
     {clSetKernelExecInfo} and {clCloneKernel} are thread-safe.
+    Note that this statement does not imply that other API calls were not
+    thread-safe in earlier versions of the specification.
 
 The OpenCL C kernel language is no longer chapter 6.
 The OpenCL C kernel language is not updated for OpenCL 2.1.
