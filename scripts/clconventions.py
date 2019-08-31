@@ -83,7 +83,7 @@ class OpenCLConventions(ConventionsBase):
         """Return suffix of generated Asciidoctor files"""
         return '.txt'
 
-    def api_name(self, spectype = 'api'):
+    def api_name(self, spectype='api'):
         """Return API or specification name for citations in ref pages.ref
            pages should link to for
 
@@ -220,7 +220,7 @@ class OpenCLConventions(ConventionsBase):
 
     @property
     def unified_flag_refpages(self):
-        """Returns True if Flags/FlagBits refpages are unified, False if
+        """Return True if Flags/FlagBits refpages are unified, False if
            they're separate.
         """
         return False
@@ -237,3 +237,12 @@ class OpenCLConventions(ConventionsBase):
         """
         return ('scripts', 'style')
 
+    @property
+    def should_skip_checking_codes(self):
+        """Return True if more than the basic validation of return codes should
+        be skipped for a command.
+
+        OpenCL has a different style of error handling than OpenXR or
+        Vulkan, so these checks are not appropriate."""
+
+        return True
