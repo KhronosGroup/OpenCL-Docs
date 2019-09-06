@@ -27,12 +27,12 @@ GENOPTS =
 # Generate API headers from XML. Many other files can be generated
 # from XML using the scripts, but they are all generated in ../ as
 # part of the process of building the Specification.
+# (generated headers are not supported yet)
 #
 # Targets:
 #
 # default / install - regenerate headers
 # validate - run XML validator against the schema.
-# test - check if header compiles.
 # clean_dirt - remove intermediate files.
 # clean - remove installed and intermediate files.
 
@@ -61,18 +61,6 @@ platform: $(PLATFORM_HEADERS)
 # Verify registry XML file against the schema
 validate:
 	jing -c registry.rnc cl.xml
-
-# Test that vulkan_core.h compiles
-
-# Platforms to test
-TESTDEFS = -DVK_USE_PLATFORM_XCB_KHR -DVK_USE_PLATFORM_XLIB_KHR
-
-test: $(HEADERS) $(VULKAN)/vulkan.h $(VULKAN)/vk_platform.h
-	gcc -Wall -pedantic -std=c99 -c -I$(INCLUDE) test.c
-	g++ -Wall -c -std=c++98 -I$(INCLUDE) test.c
-	g++ -Wall -c -std=c++11 -I$(INCLUDE) test.c
-	gcc $(TESTDEFS) -Wall -pedantic -std=c99 -c -I$(INCLUDE) test.c
-	rm test.o
 
 ################################################
 
