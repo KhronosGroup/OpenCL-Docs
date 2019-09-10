@@ -85,11 +85,19 @@ The following features are added to the OpenCL C programming language
 The following features in OpenCL 1.0 are deprecated (see glossary) in OpenCL
 1.1:
 
-  * The {clSetCommandQueueProperty} API is no longer supported in OpenCL
-    1.1.
-  * The `__ROUNDING_MODE__` macro is no longer supported in OpenCL C 1.1.
-  * The cl-strict-aliasing option that can be specified in _options_
-    argument to {clBuildProgram} is no longer supported in OpenCL 1.1.
+// Bugzilla 6140
+  * The {clSetCommandQueueProperty} API is deprecated, which simplifies
+    implementations and possibly improves performance by enforcing that
+    command queue properties are invariant.
+    Applications are encouraged to create multiple command queues with
+    different properties versus modifying the properties of a single
+    command queue.
+// Bugzilla 6628
+  * The `-cl-strict-aliasing` build option has been deprecated.
+    It is no longer required after defining type-based aliasing rules.
+// Bugzilla 5593 and 6068
+  * The *cl_khr_select_fprounding_mode* extension is deprecated and its
+    use is no longer recommended.
 
 The following new extensions are added to _section 9_ in OpenCL 1.1:
 
@@ -100,7 +108,6 @@ The following modifications are made to the OpenCL ES Profile described in
 _section 10_ in OpenCL 1.1:
 
   * 64-bit integer support is optional.
-
 
 == Summary of changes from OpenCL 1.1 to OpenCL 1.2
 
@@ -156,21 +163,34 @@ The following features are added to the OpenCL C programming language
   ** *printf* function described in _section 6.12.13_.
   * Storage class specifiers extern and static as described in _section
     6.8_.
-  * Macros `CL_VERSION_1_2` and `__OPENCL_C_VERSION__`.
+  * Macros `CL_VERSION_1_2` and `+__OPENCL_C_VERSION__+`.
 
 The following APIs in OpenCL 1.1 are deprecated (see glossary) in OpenCL
 1.2:
 
-  * {clEnqueueMarker}, {clEnqueueBarrier} and {clEnqueueWaitForEvents}
-  * {clCreateImage2D} and {clCreateImage3D}
-  * {clUnloadCompiler} and {clGetExtensionFunctionAddress}
-  * {clCreateFromGLTexture2D} and {clCreateFromGLTexture3D}
+// Bugzilla 6597
+  * The {clEnqueueMarker}, {clEnqueueBarrier} and {clEnqueueWaitForEvents}
+    APIs are deprecated to simplify the API.
+    The {clEnqueueMarkerWithWaitList} and {clEnqueueBarrierWithWaitList}
+    APIs provide equivalent functionality and support explicit event
+    wait lists.
+// No Bugzilla
+  * The {clCreateImage2D}, {clCreateImage3D} {clCreateFromGLTexture2D} and
+    {clCreateFromGLTexture3D} APIs are deprecated to simplify the API.
+    The {clCreateImage} and {clCreateFromGLTexture} APIs provide equivalent
+    functionality and support additional image types and properties.
+// Bugzilla 5391 - cl_khr_icd specification
+  * {clUnloadCompiler} and {clGetExtensionFunctionAddress} APIs are deprecated.
+    The {clUnloadPlatformCompiler} and {clGetExtensionFunctionAddressForPlatform}
+    APIs provide equivalent functionality are compatible with the `cl_khr_icd`
+    extension.
 
 The following queries are deprecated (see glossary) in OpenCL 1.2:
 
-  * {CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE_anchor} in _table 4.3_ queried using
-    {clGetDeviceInfo}.
-
+// Bugzilla 7832
+  * The {CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE_anchor} query is deprecated.
+    The minimum data type alignment can be derived from
+    {CL_DEVICE_MEM_BASE_ADDR_ALIGN}.
 
 == Summary of changes from OpenCL 1.2 to OpenCL 2.0
 
@@ -219,21 +239,49 @@ The following features are added to the OpenCL C programming language
 
 The following APIs are deprecated (see glossary) in OpenCL 2.0:
 
-  * {clCreateCommandQueue}, {clCreateSampler} and {clEnqueueTask}.
+// Bugzilla 7971
+  * The {clCreateCommandQueue} API has been deprecated to simplify
+    the API.
+    The {clCreateCommandQueueWithProperties} API provides equivalent
+    functionality and supports specifying additional command queue
+    properties.
+// Bugzilla 8093 - cl_khr_mipmap_image specification
+  * The {clCreateSampler} API has been deprecated to simplify the
+    API.
+    The {clCreateSamplerWithProperties} API provides equivalent
+    functionality and supports specifying additional sampler
+    properties.
+// Bugzilla 10270
+  * The {clEnqueueTask} API has been deprecated to simplify the API.
+    The {clEnqueueNDRangeKernel} API provides equivalent functionality.
 
 The following queries are deprecated (see glossary) in OpenCL 2.0:
 
-  * {CL_DEVICE_HOST_UNIFIED_MEMORY_anchor} in _table 4.3_ queried using
-    {clGetDeviceInfo}.
-  * {CL_IMAGE_BUFFER_anchor} in _table 5.10_ is deprecated.
-  * {CL_DEVICE_QUEUE_PROPERTIES_anchor} is replaced by
-    {CL_DEVICE_QUEUE_ON_HOST_PROPERTIES}.
-  * The explicit memory fence functions defined in section 6.12.9 of the
-    OpenCL 1.2 specification.
-  * The OpenCL 1.2 atomic built-in functions for 32-bit integer and
-    floating-point data types defined in section 6.12.11 of the OpenCL 1.2
-    specification.
-
+// Bugzilla 7156
+  * The {CL_DEVICE_HOST_UNIFIED_MEMORY_anchor} query is deprecated.
+    This query was purely informational and had different meanings
+    for different implementations.
+    Its use is no longer recommended.
+// Bugzilla 7954
+  * The {CL_IMAGE_BUFFER_anchor} query has been deprecated to simplify
+    the API.
+    The {CL_MEM_ASSOCIATED_MEMOBJECT} query provides equivalent
+    functionality.
+// Bugzilla 7971
+  * The {CL_DEVICE_QUEUE_PROPERTIES_anchor} query has been deprecated
+    and replaced by {CL_DEVICE_QUEUE_ON_HOST_PROPERTIES}.
+// Bugzilla 8761
+  * Atomics and Fences
+  ** The Explicit Memory Fence Functions defined in section 6.12.9 of the
+     OpenCL 1.2 specification have been deprecated to simplify the
+     programming language.
+     The *atomic_work_item_fence* function provides equivalent
+     functionality.
+  ** The Atomic Functions defined in section 6.12.11 of the OpenCL 1.2
+     specification have been deprecated to simplify the programing
+     language.
+     The *atomic_fetch* and modify functions provide equivalent
+     functionality.
 
 == Summary of changes from OpenCL 2.0 to OpenCL 2.1
 
@@ -268,13 +316,11 @@ runtime (sections 4 and 5):
     Note that this statement does not imply that other API calls were not
     thread-safe in earlier versions of the specification.
 
-The OpenCL C kernel language is no longer chapter 6.
-The OpenCL C kernel language is not updated for OpenCL 2.1.
+Note that the OpenCL C kernel language is not updated for OpenCL 2.1.
 The OpenCL 2.0 kernel language will still be consumed by OpenCL 2.1
 runtimes.
 
-The SPIR-V IL specification has been added.
-
+The SPIR-V and OpenCL Environment specifications have been added.
 
 == Summary of changes from OpenCL 2.1 to OpenCL 2.2
 
