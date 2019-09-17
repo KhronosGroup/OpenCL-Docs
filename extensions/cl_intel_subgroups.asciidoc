@@ -19,6 +19,9 @@
 // C++ unless it is required.
 //:language: {basebackend@docbook:c++:cpp}
 
+:CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR: pass:q[`CL_&#8203;KERNEL_&#8203;MAX_&#8203;SUB_&#8203;GROUP_&#8203;SIZE_&#8203;FOR_&#8203;NDRANGE_&#8203;KHR`]
+:CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR: pass:q[`CL_&#8203;KERNEL_&#8203;SUB_&#8203;GROUP_&#8203;COUNT_&#8203;FOR_&#8203;NDRANGE_&#8203;KHR`]
+
 == Name Strings
 
 `cl_intel_subgroups`
@@ -39,7 +42,7 @@ Biju George, Intel
 
 == Notice
 
-Copyright (c) 2019 Intel Corporation.  All rights reserved.
+Copyright (c) 2018-2019 Intel Corporation.  All rights reserved.
 
 == Status
 
@@ -48,7 +51,7 @@ Final Draft
 == Version
 
 Built On: {docdate} +
-Revision: 7
+Revision: 8
 
 == Dependencies
 
@@ -174,7 +177,7 @@ gentype sub_group_scan_inclusive_max( gentype x)
 These built-in functions are unique to the Intel subgroups extension and are not part of the Khronos subgroups extension: ::
 +
 --
-For the sub_group_shuffle, sub_group_shuffle_down, sub_group_shuffle_up, and sub_group_shuffle_xor functions, `gentype` is `float`, `float2`, `float4`, `float8`, `float16`, `int`, `int2`, `int4`, `int8`, `int16`, `uint`, `uint2`,`uint4`, `uint8`, `uint16`, `long`, or `ulong`.
+For the sub_group_shuffle, sub_group_shuffle_down, sub_group_shuffle_up, and sub_group_shuffle_xor functions, `gentype` is `float`, `float2`, `float3`, `float4`, `float8`, `float16`, `int`, `int2`, `int3`, `int4`, `int8`, `int16`, `uint`, `uint2`, `uint3`, `uint4`, `uint8`, `uint16`, `long`, or `ulong`.
 
 If cl_khr_fp16 is supported, `gentype` also includes `half`.
 
@@ -370,7 +373,7 @@ If _param_value_size_ret_ is `NULL`, it is ignored.
 [width="100%",cols="<25%,<25%,<25%,<25%",options="header"]
 |====
 | *cl_kernel_sub_group_info* | Input Type | Return Type | Info. returned in _param_value_
-| *CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR*
+| {CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR}
   | size_t *
       | size_t
           | Returns the maximum sub-group size for this kernel.
@@ -383,7 +386,7 @@ If _param_value_size_ret_ is `NULL`, it is ignored.
             dispatch.
             The number of dimensions in the ND-range will be inferred from
             the value specified for _input_value_size_.
-| *CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR*
+| {CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR}
   | size_t *
       | size_t
           | Returns the number of sub-groups that will be present in each
@@ -410,7 +413,7 @@ Otherwise, it returns one of the following errors:
     specified by _param_value_size_ is less than the size of return type as described in
     the table above and _param_value_ is not `NULL`.
   * `CL_INVALID_VALUE` if _param_name_ is
-    `CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE` and the size in bytes specified by
+    {CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR} and the size in bytes specified by
     _input_value_size_ is not valid or if _input_value_ is `NULL`.
   * `CL_INVALID_KERNEL` if _kernel_ is a not a valid kernel object.
   * `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required
@@ -676,7 +679,7 @@ These are new functions: ::
 The OpenCL C programming language implements the following built-in functions to allow data to be exchanged among work items in a subgroup.
 These built-in functions need not be encountered by all work items in a subgroup executing the kernel, however, data may only be shuffled among work items encountering the subgroup shuffle function.
 Shuffling data from a work item that does not encounter the subgroup shuffle function will produce undefined results.
-For these functions, `gentype` is `float`, `float2`, `float4`, `float8`, `float16`, `int`, `int2`, `int4`, `int8`, `int16`, `uint`, `uint2`, `uint4`, `uint8`, `uint16`, `long`, or `ulong`.
+For these functions, `gentype` is `float`, `float2`, `float3`, `float4`, `float8`, `float16`, `int`, `int2`, `int3`, `int4`, `int8`, `int16`, `uint`, `uint2`, `uint3`, `uint4`, `uint8`, `uint16`, `long`, or `ulong`.
 
 If `cl_khr_fp16` is supported, `gentype` also includes `half`.
 
@@ -907,6 +910,8 @@ Additionally, if the _buffer_ that the sub-buffer is created from was created wi
 
 * If the pointer _p_ is computed from an SVM pointer kernel argument, then the SVM pointer kernel argument must be 32-bit (4-byte) aligned for reads, and must be 128-bit (16-byte) aligned for writes.
 
+* Behavior is undefined if the subgroup size is smaller than the maximum subgroup size; in other words, if this is a partial subgroup.
+
 The following restrictions apply to the subgroup image block read and write functions:
 
 * The behavior of the subgroup image block read and write built-ins is undefined for images with an element size greater than four bytes (such as `CL_RGBA` + `CL_FLOAT`).
@@ -917,6 +922,8 @@ The following restrictions apply to the subgroup image block read and write func
 
 * When reading or writing a 2D image created from a buffer with the subgroup block read and write built-ins, if the buffer is a cl_mem that is a sub-buffer, then the _origin_ must be a multiple of 32-bytes.
 Additionally, if the _buffer_ that the sub-buffer is created from was created with CL_MEM_USE_HOST_PTR, then the _host_ptr_ for the _buffer_ must be 256-bit (32-byte) aligned.
+
+* Behavior is undefined if the subgroup size is smaller than the maximum subgroup size; in other words, if this is a partial subgroup.
 --
 
 == Issues
@@ -943,6 +950,7 @@ None.
 |5|2018-11-15|Ben Ashbaugh|Converted to asciidoc.
 |6|2018-12-02|Ben Ashbaugh|Added back a section that was inadvertently removed during conversion to asciidoc.
 |7|2019-01-15|Ben Ashbaugh|Fixed a typo in the summary section of new built-in functions.
+|8|2019-09-17|Ben Ashbaugh|Added vec3 types for shuffles, restriction for block reads and writes and partial subgroups, and asciidoctor formatting fixes.
 |========================================
 
 //************************************************************************
