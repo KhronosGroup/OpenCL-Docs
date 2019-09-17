@@ -16,7 +16,7 @@
 
 == Name Strings
 
-+cl_intel_spirv_media_block_io+
+`cl_intel_spirv_media_block_io`
 
 == Contact
 
@@ -30,7 +30,7 @@ Pawel Jurek, Intel
 
 == Notice
 
-Copyright (c) 2018 Intel Corporation.  All rights reserved.
+Copyright (c) 2018-2019 Intel Corporation.  All rights reserved.
 
 == Status
 
@@ -39,23 +39,23 @@ Final Draft
 == Version
 
 Built On: {docdate} +
-Revision: 1
+Revision: 2
 
 == Dependencies
 
 This extension is written against the OpenCL SPIR-V Environment Specification Version 2.2, Revision v2.2-3.
 
-This extension requires OpenCL support for SPIR-V, either via OpenCL 2.1 or via the +cl_khr_il_program+ extension, and support for the +cl_intel_media_block_io+ extension.
+This extension requires OpenCL support for SPIR-V, either via OpenCL 2.1 or via the `cl_khr_il_program` extension, and support for the `cl_intel_media_block_io` extension.
 
-This extension interacts with the +cl_intel_packed_yuv+ extension.
+This extension interacts with the `cl_intel_packed_yuv` extension.
 
-This extension interacts with the +cl_intel_planar_yuv+ extension.
+This extension interacts with the `cl_intel_planar_yuv` extension.
 
 == Overview
 
-This extension defines how modules using the SPIR-V extension +SPV_INTEL_media_block_io+ may behave in an OpenCL environment.
+This extension defines how modules using the SPIR-V extension `SPV_INTEL_media_block_io` may behave in an OpenCL environment.
 
-This extension is a companion to the +cl_intel_media_block_io+ OpenCL extension, and the functionality described in this extension and +SPV_INTEL_media_block_io+ is sufficient to implement the built-in functions defined in the +cl_intel_media_block_io+ extension.
+This extension is a companion to the `cl_intel_media_block_io` OpenCL extension, and the functionality described in this extension and `SPV_INTEL_media_block_io` is sufficient to implement the built-in functions defined in the `cl_intel_media_block_io` extension.
 
 == New API Functions
 
@@ -67,20 +67,20 @@ None.
 
 == Modifications to the OpenCL SPIR-V Environment Specification
 
-=== Add a new Section 7.1.X - +cl_intel_spirv_media_block_io+
+=== Add a new Section 7.1.X - `cl_intel_spirv_media_block_io`
 
-If the OpenCL environment supports the extension +cl_intel_spirv_media_block_io+, then the environment must accept SPIR-V modules that declare use of the +SPV_INTEL_media_block_io+ extension via *OpExtension*.
+If the OpenCL environment supports the extension `cl_intel_spirv_media_block_io`, then the environment must accept SPIR-V modules that declare use of the `SPV_INTEL_media_block_io` extension via *OpExtension*.
 
-If the OpenCL environment supports the extension +cl_intel_spirv_media_block_io+ and use of the +SPV_INTEL_media_block_io+ extension is declared in the module via *OpExtension*, then the environment must accept modules that declare the following SPIR-V capabilities:
+If the OpenCL environment supports the extension `cl_intel_spirv_media_block_io` and use of the `SPV_INTEL_media_block_io` extension is declared in the module via *OpExtension*, then the environment must accept modules that declare the following SPIR-V capabilities:
 
 * *SubgroupImageMediaBlockIOINTEL*
 
 Additionally, the environment must accept the following types for 'Result Type' for *OpSubgroupImageMediaBlockReadINTEL*, and for the type of 'Data' for *OpSubgroupImageMediaBlockWriteINTEL*:
 
 * Scalars and *OpTypeVectors* with 2, 4, 8, or 16 _Component Count_ components of the following _Component Type_ types:
-** *OpTypeInt* with a _Width_ of 8 bits and _Signedness_ of 0 (equivalent to +char+ and +uchar+)
-** *OpTypeInt* with a _Width_ of 16 bits and _Signedness_ of 0 (equivalent to +short+ and +ushort+)
-** *OpTypeInt* with a _Width_ of 32 bits and _Signedness_ of 0 (equivalent to +int+ and +uint+)
+** *OpTypeInt* with a _Width_ of 8 bits and _Signedness_ of 0 (equivalent to `char` and `uchar`)
+** *OpTypeInt* with a _Width_ of 16 bits and _Signedness_ of 0 (equivalent to `short` and `ushort`)
+** *OpTypeInt* with a _Width_ of 32 bits and _Signedness_ of 0 (equivalent to `int` and `uint`)
 
 For _Image_:
 
@@ -88,15 +88,15 @@ For _Image_:
 * _Depth_ must be 0 (not a depth image)
 * _Arrayed_ must be 0 (non-arrayed content)
 * _MS_ must be 0 (single-sampled content)
-* (equivalent to +image2d_t+)
+* (equivalent to `image2d_t`)
 
 For 'Coordinate', the following types are supported:
 
-* *OpTypeVectors* with 2 _Component Count_ components of _Component Type_ *OpTypeInt* with a _Width_ of 32 bits and _Signedness_ of 0 (equivalent to +int2+)
+* *OpTypeVectors* with 2 _Component Count_ components of _Component Type_ *OpTypeInt* with a _Width_ of 32 bits and _Signedness_ of 0 (equivalent to `int2`)
 
 For 'Width' and 'Height', the following type is supported:
 
-* Scalars of *OpTypeInt* with a _Width_ of 32 bits and a _Signedness_ of 0 (equivalent to +int+)
+* Scalars of *OpTypeInt* with a _Width_ of 32 bits and a _Signedness_ of 0 (equivalent to `int`)
 
 === Add a new Section 7.1.X.1 - Notes and Restrictions
 
@@ -131,23 +131,23 @@ The 'Image' operand must be created such that the image byte width, defined as t
 
 For *OpSubgroupImageMediaBlockReadINTEL*, if the 'Image Format' size is smaller than the block read 'Component Type', then an out-of-bounds read will return data replicated from the nearest edge element, otherwise out-of-bound read behavior is undefined.  For example:
 
-* For an image with 'Image Format' size equal to a single byte (for example *R8*), and a 32-bit boundary value +B0B1B2B3+, replicating off the left edge may result in the 32-bit value +B0B0B0B0+, and replicating off the right edge may result in the 32-bit value +B3B3B3B3+.
-* For an image with an 'Image Format' size equal to two bytes (for example *R16*), replicating off the left edge may result in the 32-bit value +B0B1B0B1+, and replicating off the right edge may result in the 32-bit value +B2B3B2B3+.
+* For an image with 'Image Format' size equal to a single byte (for example *R8*), and a 32-bit boundary value `B0B1B2B3`, replicating off the left edge may result in the 32-bit value `B0B0B0B0`, and replicating off the right edge may result in the 32-bit value `B3B3B3B3`.
+* For an image with an 'Image Format' size equal to two bytes (for example *R16*), replicating off the left edge may result in the 32-bit value `B0B1B0B1`, and replicating off the right edge may result in the 32-bit value `B2B3B2B3`.
 * For an image with an 'Image Format' size equal to four bytes (for example *Rgba8*), the entire boundary value is replicated, for both the left or right edges.
 * Because the maximum 'Component Type' is a four byte component type, there is no defined out-of-bounds behavior for images with an 'Image Format' size greater than four bytes.
 * As a special case, an image with a packed YUV 'Image Format' (and hence an 'Image Format' size equal to two bytes) behaves as follows:
-** Replicating off of the left edge replicates the UV components and the first Y component, so, for example, replicating the 32-bit boundary value +Y0U0Y1V0+ will result in the 32-bit value +Y0U0Y0V0+.
-** Replicating off the right edge replicates the UV components and the second Y component, so, for example, replicating the 32-bit boundary value +Y0U0Y1V0+ will result in the 32-bit value +Y1U0Y1V0+.
+** Replicating off of the left edge replicates the UV components and the first Y component, so, for example, replicating the 32-bit boundary value `Y0U0Y1V0` will result in the 32-bit value `Y0U0Y0V0`.
+** Replicating off the right edge replicates the UV components and the second Y component, so, for example, replicating the 32-bit boundary value `Y0U0Y1V0` will result in the 32-bit value `Y1U0Y1V0`.
 
 For *OpSubgroupImageMediaBlockWriteINTEL*, if the 'Image Format' size is smaller than the block write 'Component Type', then out-of-bounds writes will be dropped, otherwise out-of-bounds write behavior is undefined.
 
 When reading or writing a 2D 'Image' created from a buffer:
 
-* The 'image row pitch' is required to be a multiple of 64-bytes, in addition to the +CL_DEVICE_IMAGE_PITCH_ALIGNMENT+ requirements.
+* The 'image row pitch' is required to be a multiple of 64-bytes, in addition to the `CL_DEVICE_IMAGE_PITCH_ALIGNMENT` requirements.
 
-* If the buffer is a +cl_mem+ that was created with +CL_MEM_USE_HOST_PTR+, then the _host_ptr_ must be 256-bit (32-byte) aligned.
+* If the buffer is a `cl_mem` that was created with `CL_MEM_USE_HOST_PTR`, then the _host_ptr_ must be 256-bit (32-byte) aligned.
 
-* If the buffer is a +cl_mem+ that is a sub-buffer, then the _origin_ must be a multiple of 32-bytes.  Additionally, if the _buffer_ that the sub-buffer is created from was created with +CL_MEM_USE_HOST_PTR+, then the _host_ptr_ for the _buffer_ must be 256-bit (32-byte) aligned.
+* If the buffer is a `cl_mem` that is a sub-buffer, then the _origin_ must be a multiple of 32-bytes.  Additionally, if the _buffer_ that the sub-buffer is created from was created with `CL_MEM_USE_HOST_PTR`, then the _host_ptr_ for the _buffer_ must be 256-bit (32-byte) aligned.
 
 * The maximum 'Height' is further restricted to 16 rows or less.
 
@@ -171,13 +171,14 @@ None.
 |========================================
 |Rev|Date|Author|Changes
 |1|2018-10-29|Ben Ashbaugh|*Initial revision*
+|2|2019-09-17|Ben Ashbaugh|Minor formatting fixes for asciidoctor.
 |========================================
 
 //************************************************************************
 //Other formatting suggestions:
 //
 //* Use *bold* text for host APIs, or [source] syntax highlighting.
-//* Use +mono+ text for device APIs, or [source] syntax highlighting.
-//* Use +mono+ text for extension names, types, or enum values.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
 //* Use _italics_ for parameters.
 //************************************************************************
