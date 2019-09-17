@@ -260,6 +260,30 @@ else
 	$(QUIET)mv $(PDFDIR)/$(EXTENSIONSSPEC)-optimized.pdf $@
 endif
 
+# Language Extensions spec
+EXTSPEC = OpenCL_LangExt
+EXTSPECSRC = $(EXTSPEC).txt $(GENDEPENDS) \
+    $(shell grep ^include:: $(EXTSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+
+exthtml: $(HTMLDIR)/$(EXTSPEC).html $(EXTSPECSRC)
+
+$(HTMLDIR)/$(EXTSPEC).html: $(EXTSPECSRC) katexinst
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTSPEC).txt
+
+extpdf: $(PDFDIR)/$(EXTSPEC).pdf $(EXTSPECSRC)
+
+$(PDFDIR)/$(EXTSPEC).pdf: $(EXTSPECSRC)
+	$(QUIET)$(MKDIR) $(PDFDIR)
+	$(QUIET)$(MKDIR) $(PDFMATHDIR)
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(EXTSPEC).txt
+ifndef GS_EXISTS
+	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
+else
+	$(QUIET)$(CURDIR)/config/optimize-pdf $@
+	$(QUIET)rm $@
+	$(QUIET)mv $(PDFDIR)/$(EXTSPEC)-optimized.pdf $@
+endif
+
 # C++ (cxx) spec
 CXXSPEC = OpenCL_Cxx
 CXXSPECSRC = $(CXXSPEC).txt $(GENDEPENDS) \
