@@ -7718,8 +7718,8 @@ write, map and copy commands on memory objects (
 {clEnqueueCopyBufferToImage}, {clEnqueueCopyImageToBuffer}),
 {clEnqueueSVMMemcpy}, {clEnqueueSVMMemFill},
 {clEnqueueSVMMap}, {clEnqueueSVMUnmap}, {clEnqueueSVMFree}, {clEnqueueMarker},
-{clEnqueueMarkerWithWaitList}, {clEnqueueBarrier},
-{clEnqueueBarrierWithWaitList} (refer to
+{clEnqueueMarkerWithWaitList}, {clEnqueueWaitForEvents}, {clEnqueueBarrier},
+{clEnqueueBarrierWithWaitList},  (refer to
 <<markers-barriers-waiting-for-events,Markers, Barriers and Waiting for
 Events>>) or user events.
 
@@ -8302,6 +8302,44 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
     command-queue.
   * {CL_INVALID_VALUE} if _event_ is `NULL`.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clEnqueueWaitForEvents',desc='Enqueues a wait on a list of events to complete.',type='protos']
+--
+To enqueue a wait for a specific event or a list of events to complete before any future commands queued in a command-queue are executed, call the function
+
+include::{generated}/api/protos/clEnqueueWaitForEvents.txt[]
+include::{generated}/api/version-notes/clEnqueueWaitForEvents.asciidoc[]
+
+  * _command_queue_ is a valid host command-queue.
+  * _event_list_ and _num_events_ specify events that need to complete before
+    this particular command can be executed.
+
+// Note, this parameter is called event_list (like clWaitForEvents) rather than
+// event_wait_list(like clEnqueueMarkerWithWaitList etc.) because the function
+// predates wait lists (and CL_INVALID_EVENT_WAIT_LIST).
+
+The events specified in _event_list_ act as synchronization points.
+The context associated with events in _event_list_ and _command_queue_ must be
+the same.
+The memory associated with _event_list_ can be reused or freed after the
+function returns.
+
+// refError
+
+{clEnqueueWaitForEvents} returns {CL_SUCCESS} if the function is successfully
+executed.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
+    command-queue.
+  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ and events
+    in _event_list_ are not the same.
+  * {CL_INVALID_VALUE} if _num_events_ is 0 or _event_list_ is `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
