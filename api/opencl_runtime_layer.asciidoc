@@ -501,8 +501,8 @@ include::{generated}/api/version-notes/clCreateBuffer.asciidoc[]
     implementation to allocate memory for the memory object and copy the
     data from memory referenced by host_ptr.
     The implementation will copy the memory immediately and host_ptr is
-    available for reuse by the application when the {clCreateBuffer} or
-    {clCreateImage} operation returns.
+    available for reuse by the application when the {clCreateBuffer},
+    {clCreateImage}, {clCreateImage2D} or {clCreateImage3D} operation returns.
 
     {CL_MEM_COPY_HOST_PTR} and {CL_MEM_USE_HOST_PTR} are mutually exclusive.
 
@@ -1668,6 +1668,167 @@ returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
 --
 
+[open,refpage='clCreateImage2D',desc='Creates a 2D image.',type='protos']
+--
+A *2D image* object can be created using the following function
+
+include::{generated}/api/protos/clCreateImage2D.txt[]
+include::{generated}/api/version-notes/clCreateImage2D.asciidoc[]
+
+  * _context_ is a valid OpenCL context on which the image object is to be
+    created.
+  * _flags_ is a bit-field that is used to specify allocation and usage
+    information about the image memory object being created and is described in
+    the <<memory-flags-table, supported memory flag values>> table.
+    If the value specified for _flags_ is 0, the default is used which is
+    {CL_MEM_READ_WRITE}.
+  * _image_format_ is a pointer to a structure that describes format properties
+    of the image to be allocated.
+    Refer to the <<image-format-descriptor, Image Format Descriptor>> section
+    for a detailed description of the image format descriptor.
+  * _image_width_ and _image_height_ are the width and height of the image in
+    pixels.
+    These must be values greater than or equal to 1.
+  * _image_row_pitch_ is the  scan-line pitch in bytes.
+    This must be 0 if _host_ptr_ is `NULL` and can be either 0 or {geq}
+    _image_width_ {times} size of element in bytes if _host_ptr_ is not `NULL`.
+    If _host_ptr_ is not `NULL` and _image_row_pitch_ is 0, _image_row_pitch_
+    is calculated as _image_width_ {times} size of element in bytes.
+    If _image_row_pitch_ is not 0, it must be a multiple of the image element
+    size in bytes.
+  * _host_ptr_ is a pointer to the image data that may already be allocated by
+    the application.
+    It is only used to initialize the image, and can be freed after the call to
+    {clCreateImage2D}.
+    Refer to the {CL_MEM_OBJECT_IMAGE2D} entry in the
+    <<host-ptr-buffer-size-table, required _host_ptr_ buffer size table>> for a
+    description of how large the buffer that _host_ptr_ points to must be.
+    The image data specified by _host_ptr_ is stored as a linear sequence of
+    adjacent scanlines.
+    Each scanline is a linear sequence of image elements.
+    Image elements are stored according to their image format as described in
+    the <<image-format-descriptor, Image Format Descriptor>> section.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+// refError
+
+{clCreateImage2D} returns a valid non-zero image object created and the
+_errcode_ret_ is set to {CL_SUCCESS} if the image object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if values specified in _image_format_
+    are not valid or if _image_format_ is `NULL`.
+  * {CL_INVALID_IMAGE_SIZE} if _image_width_ or _image_height_ are 0 or if they
+    exceed the maximum values specified in {CL_DEVICE_IMAGE2D_MAX_WIDTH} or
+    {CL_DEVICE_IMAGE2D_MAX_HEIGHT} respectively for all devices in _context_ or
+    if values specified by _image_row_pitch_ do not follow rules described in the
+    argument description above.
+  * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
+    {CL_MEM_COPY_HOST_PTR} are set in _flags_ or if _host_ptr_ is not `NULL`
+    but {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} are not set in _flags_.
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if the _image_format_ is not supported.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
+    memory for image object.
+  * {CL_INVALID_OPERATION} if there are no devices in _context_ that support
+    images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in the
+    <<device-queries-table,Device Queries>> table is {CL_FALSE}).
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clCreateImage3D',desc='Creates a 3D image.',type='protos']
+--
+A *3D image* object can be created using the following function
+
+include::{generated}/api/protos/clCreateImage3D.txt[]
+include::{generated}/api/version-notes/clCreateImage3D.asciidoc[]
+
+  * _context_ is a valid OpenCL context on which the image object is to be
+    created.
+  * _flags_ is a bit-field that is used to specify allocation and usage
+    information about the image memory object being created and is described in
+    the <<memory-flags-table, supported memory flag values>> table.
+    If the value specified for _flags_ is 0, the default is used which is
+    {CL_MEM_READ_WRITE}.
+  * _image_format_ is a pointer to a structure that describes format properties
+    of the image to be allocated.
+    Refer to the <<image-format-descriptor, Image Format Descriptor>> section
+    for a detailed description of the image format descriptor.
+  * _image_width_ and _image_height_ are the width and height of the image in
+    pixels.
+    These must be values greater than or equal to 1.
+  * _image_depth_ is the depth of the image in pixels.  This must be a value
+    {gt} 1.
+  * _image_row_pitch_ is the  scan-line pitch in bytes.
+    This must be 0 if _host_ptr_ is `NULL` and can be either 0 or {geq}
+    _image_width_ {times} size of element in bytes if _host_ptr_ is not `NULL`.
+    If _host_ptr_ is not `NULL` and _image_row_pitch_ is 0, _image_row_pitch_
+    is calculated as _image_width_ {times} size of element in bytes.
+    If _image_row_pitch_ is not 0, it must be a multiple of the image element
+    size in bytes.
+  * _image_slice_pitch_ is the size in bytes of each 2D slice in the 3D image.
+     This be be 0 if _host_ptr_ is `NULL` and can be 0 or {geq}
+     _image_row_pitch_ {times} _image_height_ if _host_ptr_ is not `NULL`.
+     If _host_ptr_ is not `NULL` and _image_slice_pitch_ is 0,
+     _image_slice_pitch_ is calculated as _image_row_pitch_ {times}
+     _image_height_.
+     If _image_slice_pitch_ is not 0, it must be a multiple of the
+     _image_row_pitch_.
+  * _host_ptr_ is a pointer to the image data that may already be allocated by
+    the application.
+    It is only used to initialize the image, and can be freed after the call to
+    {clCreateImage3D}.
+    Refer to the {CL_MEM_OBJECT_IMAGE3D} entry in the
+    <<host-ptr-buffer-size-table, required _host_ptr_ buffer size table>> for a
+    description of how large the buffer that _host_ptr_ points to must be.
+    The image data specified by _host_ptr_ is stored as a linear sequence of
+    adjacent 2D slices.
+    Each scanline is a linear sequence of image elements.
+    Image elements are stored according to their image format as described in
+    the <<image-format-descriptor, Image Format Descriptor>> section.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+// refError
+
+{clCreateImage3D} returns a valid non-zero image object created and the
+_errcode_ret_ is set to {CL_SUCCESS} if the image object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if values specified in _image_format_
+    are not valid or if _image_format_ is `NULL`.
+  * {CL_INVALID_IMAGE_SIZE} if _image_width_ or _image_height_ are 0 or if
+    _image_depth_ {leq} 1 or if they exceed the maximum values specified in
+    {CL_DEVICE_IMAGE3D_MAX_WIDTH}, {CL_DEVICE_IMAGE3D_MAX_HEIGHT} or
+    {CL_DEVICE_IMAGE3D_MAX_DEPTH} respectively for all devices in _context_ or
+    if values specified by _image_row_pitch_ and _image_slice_pitch_ do not
+    follow rules described in the argument description above.
+  * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
+    {CL_MEM_COPY_HOST_PTR} are set in _flags_ or if _host_ptr_ is not `NULL`
+    but {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} are not set in _flags_.
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if the _image_format_ is not supported.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
+    memory for image object.
+  * {CL_INVALID_OPERATION} if there are no devices in _context_ that support
+    images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in the
+    <<device-queries-table,Device Queries>> table is {CL_FALSE}).
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
 
 [[image-format-descriptor]]
 ==== Image Format Descriptor
@@ -1825,7 +1986,8 @@ OpenCL implementations must maintain the minimum precision specified by the
 number of bits in `image_channel_data_type`.
 If the image format specified by `image_channel_order`, and
 `image_channel_data_type` cannot be supported by the OpenCL implementation,
-then the call to {clCreateImage} will return a `NULL` memory object.
+then the call to {clCreateImage}, {clCreateImage2D} or {clCreateImage3D} will
+return a `NULL` memory object.
 --
 
 
@@ -3041,9 +3203,10 @@ The result of a memory access outside this region is undefined.
 If the image object is created with {CL_MEM_USE_HOST_PTR} set in _mem_flags_,
 the following will be true:
 
-  * The _host_ptr_ specified in {clCreateImage} is guaranteed to contain the
-    latest bits in the region being mapped when the {clEnqueueMapImage}
-    command has completed.
+  * The _host_ptr_ specified in {clCreateImage}, {clCreateImage2D} or
+    {clCreateImage3D} is guaranteed to contain the
+    latest bits in the region being mapped when the {clEnqueueMapImage} command
+    has completed.
   * The pointer value returned by {clEnqueueMapImage} will be derived from
     the _host_ptr_ specified when the image object is created.
 
@@ -3063,7 +3226,7 @@ Object Queries>>.
 [open,refpage='clGetImageInfo',desc='Get information specific to an image object created with clCreateImage.',type='protos']
 --
 To get information specific to an image object created with {clCreateImage},
-call the function
+{clCreateImage2D}, or {clCreateImage3D} call the function
 
 include::{generated}/api/protos/clGetImageInfo.txt[]
 include::{generated}/api/version-notes/clGetImageInfo.asciidoc[]
@@ -3092,7 +3255,7 @@ include::{generated}/api/version-notes/clGetImageInfo.asciidoc[]
 | {CL_IMAGE_FORMAT_anchor}
   | cl_image_format
       | Return image format descriptor specified when _image_ is created
-        with {clCreateImage}.
+        with {clCreateImage}, {clCreateImage2D} or {clCreateImage3D}.
 | {CL_IMAGE_ELEMENT_SIZE_anchor}
   | size_t
       | Return size of each element of the image memory object given by
@@ -3319,8 +3482,8 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 
-{clCreateBuffer}, {clCreateSubBuffer}, {clCreateImage} and {clCreatePipe}
-perform an implicit retain.
+{clCreateBuffer}, {clCreateSubBuffer}, {clCreateImage}, {clCreateImage2D},
+{clCreateImage3D} and {clCreatePipe} perform an implicit retain.
 --
 
 [open,refpage='clReleaseMemObject',desc='Decrements the memory object reference count.',type='protos']
@@ -3744,7 +3907,7 @@ include::{generated}/api/version-notes/clGetMemObjectInfo.asciidoc[]
         {clCreateSubBuffer}.
 
         cl_image_desc.image_type argument value if _memobj_ is created with
-        {clCreateImage}.
+        {clCreateImage}, {clCreateImage2D} or {clCreateImage3D}.
 
         {CL_MEM_OBJECT_PIPE_anchor} if _memobj_ is created with {clCreatePipe}.
 | {CL_MEM_FLAGS_anchor}
@@ -3753,6 +3916,8 @@ include::{generated}/api/version-notes/clGetMemObjectInfo.asciidoc[]
         with {clCreateBuffer}, +
         {clCreateSubBuffer}, +
         {clCreateImage} or +
+        {clCreateImage2D} or +
+        {clCreateImage3D} or +
         {clCreatePipe}.
 
         If _memobj_ is a sub-buffer the memory access qualifiers inherited
@@ -3763,10 +3928,10 @@ include::{generated}/api/version-notes/clGetMemObjectInfo.asciidoc[]
         bytes.
 | {CL_MEM_HOST_PTR_anchor}
   | void *
-      | If _memobj_ is created with {clCreateBuffer} or {clCreateImage} and
-        {CL_MEM_USE_HOST_PTR} is specified in mem_flags, return the host_ptr
-        argument value specified when _memobj_ is created.
-        Otherwise a `NULL` value is returned.
+      | If _memobj_ is created with {clCreateBuffer}, {clCreateImage},
+        {clCreateImage2D} or {clCreateImage3D} and {CL_MEM_USE_HOST_PTR} is
+        specified in mem_flags, return the host_ptr argument value specified
+        when _memobj_ is created.  Otherwise a `NULL` value is returned.
 
         If _memobj_ is created with {clCreateSubBuffer}, return the host_ptr
         {plus} origin value specified when _memobj_ is created.
