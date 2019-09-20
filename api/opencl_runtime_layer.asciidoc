@@ -373,19 +373,49 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clSetCommandQueueProperty',desc='Enable or disable properties of a command-queue.',type='protos']
+--
+To enable or disable the properties of a command-queue, call the function
+
+include::{generated}/api/protos/clSetCommandQueueProperty.txt[]
+include::{generated}/api/version-notes/clSetCommandQueueProperty.asciidoc[]
+
+  * _command_queue_ specifies the command-queue being modified.
+  * _properties_ specifies the new list of properties for the command-queue.
+    This is a bit-field and the supported properties are described in the
+    <<legacy-queue-properties-table, Command-Queue Properties table>> for
+    {clCreateCommandQueue}.
+    Only command-queue properties specified in this table can be used,
+    otherwise the value specified in _properties_ is considered to be not
+    valid.
+  * _enable_ determines whether the values specified by _properties_ are
+    enabled (if _enable_ is {CL_TRUE}) or disabled (if _enable_ is {CL_FALSE})
+    for the command-queue.
+  * _old_properties_ returns the command-queue properties before they were
+    changed by {clSetCommandQueueProperty}.  If _old_properties_ is `NULL`, it
+    is ignored.
 
 [NOTE]
 ====
-It is possible that a device(s) becomes unavailable after a context and
-command-queues that use this device(s) have been created and commands have
-been queued to command-queues.
-In this case the behavior of OpenCL API calls that use this context (and
-command-queues) are considered to be implementation-defined.
-The user callback function, if specified, when the context is created can be
-used to record appropriate information in the _errinfo_, _private_info_
-arguments passed to the callback function when the device becomes
-unavailable.
+Changing the {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE} command-queue property
+will cause the OpenCL implementation to block until all previously queued
+commands in _command_queue_ have completed.  This can be an expensive operation
+and therefore changes to this property should only be done when absolutely
+necessary.
 ====
+
+// refError
+
+{clSetCommandQueueProperty} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid command-queue.
+  * {CL_INVALID_VALUE} if values specified in _properties_ are not valid.
+  * {CL_INVALID_QUEUE_PROPERTIES} if values specified in _properties_ are
+    valid but are not supported by the device.
 --
 
 
