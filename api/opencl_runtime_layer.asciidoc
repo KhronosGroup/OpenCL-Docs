@@ -7718,7 +7718,8 @@ write, map and copy commands on memory objects (
 {clEnqueueCopyBufferToImage}, {clEnqueueCopyImageToBuffer}),
 {clEnqueueSVMMemcpy}, {clEnqueueSVMMemFill},
 {clEnqueueSVMMap}, {clEnqueueSVMUnmap}, {clEnqueueSVMFree}, {clEnqueueMarker},
-{clEnqueueMarkerWithWaitList}, {clEnqueueBarrierWithWaitList} (refer to
+{clEnqueueMarkerWithWaitList}, {clEnqueueBarrier},
+{clEnqueueBarrierWithWaitList} (refer to
 <<markers-barriers-waiting-for-events,Markers, Barriers and Waiting for
 Events>>) or user events.
 
@@ -8370,6 +8371,39 @@ Otherwise, it returns one of the following errors:
     required by the OpenCL implementation on the host.
 --
 
+[open,refpage='clEnqueueBarrier',desc='A synchronization point that enqueues a barrier operation.',type='protos']
+--
+To enqueue a barrier command which waits for commands to complete, call the
+function
+
+include::{generated}/api/protos/clEnqueueBarrier.txt[]
+include::{generated}/api/version-notes/clEnqueueBarrier.asciidoc[]
+
+  * _command_queue_ is a valid host command-queue.
+
+The barrier command waits for all commands previously enqueued in
+_command_queue_ to complete before it completes.
+This command blocks command execution, that is, any following commands
+enqueued after it do not execute until it completes.
+// TODO clEnqueueBarrierWithWaitList doesn't say synchronization point, should
+// it, or should the next line be removed?  The main difference is that
+// clEnqueueBarrierWithWaitList returns an event, which is the synchronization
+// point.
+The barrier command is a synchronization point.
+
+// refError
+
+{clEnqueueBarrier} returns {CL_SUCCESS} if the function is successfully
+executed.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
+    command-queue.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
 
 == Out-of-order Execution of Kernels and Memory Object Commands
 
@@ -8410,8 +8444,8 @@ The wait for event A can be specified in the _event_wait_list_ argument to
 {clEnqueueNDRangeKernel} for kernel B.
 
 In addition, a marker ({clEnqueueMarker} or {clEnqueueMarkerWithWaitList}) or a
-barrier ({clEnqueueBarrierWithWaitList}) command can be enqueued to the
-command-queue.
+barrier ({clEnqueueBarrier} or {clEnqueueBarrierWithWaitList}) command can be
+enqueued to the command-queue.
 The marker command ensures that previously enqueued commands identified by
 the list of events to wait for (or all previous commands) have finished.
 A barrier command is similar to a marker command, but additionally
