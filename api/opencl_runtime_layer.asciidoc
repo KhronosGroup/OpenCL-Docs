@@ -7717,7 +7717,7 @@ write, map and copy commands on memory objects (
 {clEnqueueCopyBufferRect},
 {clEnqueueCopyBufferToImage}, {clEnqueueCopyImageToBuffer}),
 {clEnqueueSVMMemcpy}, {clEnqueueSVMMemFill},
-{clEnqueueSVMMap}, {clEnqueueSVMUnmap}, {clEnqueueSVMFree},
+{clEnqueueSVMMap}, {clEnqueueSVMUnmap}, {clEnqueueSVMFree}, {clEnqueueMarker},
 {clEnqueueMarkerWithWaitList}, {clEnqueueBarrierWithWaitList} (refer to
 <<markers-barriers-waiting-for-events,Markers, Barriers and Waiting for
 Events>>) or user events.
@@ -8268,6 +8268,45 @@ Otherwise, it returns one of the following errors:
     required by the OpenCL implementation on the host.
 --
 
+[open,refpage='clEnqueueMarker',desc='Enqueues a marker command which waits for all previously enqueued commands to complete.',type='protos']
+--
+To enqueue a marker command which waits for previous commands to complete, call
+the function
+
+include::{generated}/api/protos/clEnqueueMarker.txt[]
+include::{generated}/api/version-notes/clEnqueueMarker.asciidoc[]
+
+  * _command_queue_ is a valid host command-queue.
+  * _event_ returns an event object that identifies this particular command.
+    Event objects are unique and can be used to identify this marker command
+    later on.
+    _event_ can be `NULL` in which case it will not be possible for the
+    application to query the status of this command or queue a wait for this
+    command to complete.
+    If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
+    _event_ argument should not refer to an element of the _event_wait_list_
+    array.
+
+The marker command waits for all commands previously enqueued in _command_queue_ to complete before it completes.
+This command returns an _event_ which can be waited on, i.e. this event can be
+waited on to insure that all previously enqueued commands, queued before this
+command to _command_queue_, have completed.
+
+// refError
+
+{clEnqueueMarker} returns {CL_SUCCESS} if the function is successfully
+executed.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
+    command-queue.
+  * {CL_INVALID_VALUE} if _event_ is `NULL`.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
 [open,refpage='clEnqueueBarrierWithWaitList',desc='A synchronization point that enqueues a barrier operation.',type='protos']
 --
 To enqueue a barrier command which waits for events or commands to complete,
@@ -8370,8 +8409,8 @@ particular event (in this case event A) can be used.
 The wait for event A can be specified in the _event_wait_list_ argument to
 {clEnqueueNDRangeKernel} for kernel B.
 
-In addition, a marker ({clEnqueueMarkerWithWaitList}) or a barrier
-({clEnqueueBarrierWithWaitList}) command can be enqueued to the
+In addition, a marker ({clEnqueueMarker} or {clEnqueueMarkerWithWaitList}) or a
+barrier ({clEnqueueBarrierWithWaitList}) command can be enqueued to the
 command-queue.
 The marker command ensures that previously enqueued commands identified by
 the list of events to wait for (or all previous commands) have finished.
