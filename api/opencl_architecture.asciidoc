@@ -1027,12 +1027,33 @@ The various SVM mechanisms to access host memory from the work-items
 associated with a kernel instance are <<svm-summary-table, summarized
 above>>.
 
+=== Memory Model: Memory Consistency Model for OpenCL 1.x
+
+IMPORTANT: This memory consistency model is <<unified-spec, deprecated
+by>> version 2.0.
+
+OpenCL 1.x uses a relaxed consistency memory model; i.e. the state of memory
+visible to a work-item is not guaranteed to be consistent across the collection
+of work-items at all times.
+
+Within a work-item memory has load / store consistency.
+Local memory is consistent across work-items in a single work-group at a
+work-group barrier.
+Global memory is consistent across work-items in a single work-group at a
+work-group barrier, but there are no guarantees of memory consistency between
+different work-groups executing a kernel.
+
+Memory consistency for memory objects shared between enqueued commands is
+enforced at a synchronization point.
 
 [[memory-consistency-model]]
-=== Memory Model: Memory Consistency Model
+=== Memory Model: Memory Consistency Model for OpenCL 2.x
 
-The OpenCL memory model tells programmers what they can expect from an
-OpenCL implementation; which memory operations are guaranteed to happen in
+IMPORTANT: This memory consistency model is <<unified-spec, missing
+before>> version 2.0.
+
+The OpenCL 2.x memory model tells programmers what they can expect from an
+OpenCL 2.x implementation; which memory operations are guaranteed to happen in
 which order and which memory values each read operation will return.
 The memory model tells compiler writers which restrictions they must follow
 when implementing compiler optimizations; which variables they can cache in
@@ -1042,8 +1063,8 @@ The memory model also tells hardware designers about limitations on hardware
 optimizations; for example, when they must flush or invalidate hardware
 caches.
 
-The memory consistency model in OpenCL is based on the memory model from the
-ISO C11 programming language.
+The memory consistency model in OpenCL 2.x is based on the memory model from
+the ISO C11 programming language.
 To help make the presentation more precise and self-contained, we include
 modified paragraphs taken verbatim from the ISO C11 international standard.
 When a paragraph is taken or modified from the C11 standard, it is
@@ -1058,12 +1079,12 @@ Each access to a memory location sees the last assignment to that location
 in that interleaving.
 While sequential consistency is relatively straightforward for a programmer
 to reason about, implementing sequential consistency is expensive.
-Therefore, OpenCL implements a relaxed memory consistency model; i.e. it is
+Therefore, OpenCL 2.x implements a relaxed memory consistency model; i.e. it is
 possible to write programs where the loads from memory violate sequential
 consistency.
 Fortunately, if a program does not contain any races and if the program only
 uses atomic operations that utilize the sequentially consistent memory order
-(the default memory ordering for OpenCL), OpenCL programs appear to execute
+(the default memory ordering for OpenCL 2.x), OpenCL programs appear to execute
 with sequential consistency.
 
 Programmers can to some degree control how the memory model is relaxed by
@@ -1072,7 +1093,7 @@ The precise semantics of synchronization and the memory orders are formally
 defined in <<memory-ordering-rules, Memory Ordering Rules>>.
 Here, we give a high level description of how these memory orders apply to
 atomic operations on atomic objects shared between units of execution.
-OpenCL memory_order choices are based on those from the ISO C11 standard
+OpenCL 2.x memory_order choices are based on those from the ISO C11 standard
 memory model.
 They are specified in certain OpenCL functions through the following
 enumeration constants:
@@ -1158,7 +1179,7 @@ and scopes wider than *memory_scope_work_group* carry no additional meaning.
 
 In the following subsections (leading up to <<opencl-framework, OpenCL
 Framework>>), we will explain the synchronization constructs and detailed
-rules needed to use OpenCL's relaxed memory models.
+rules needed to use OpenCL's 2.x relaxed memory models.
 It is important to appreciate, however, that many programs do not benefit
 from relaxed memory models.
 Even expert programmers have a difficult time using atomics and fences to
@@ -1187,8 +1208,8 @@ detailed rules behind the relaxed memory models and go directly to
 
 === Memory Model: Overview of atomic and fence operations
 
-The OpenCL 2.0 specification defines a number of _synchronization
-operations_ that are used to define memory order constraints in a program.
+OpenCL 2.x has a number of _synchronization operations_ that are used to define
+memory order constraints in a program.
 They play a special role in controlling how memory operations in one unit of
 execution (such as work-items or, when using SVM a host thread) are made
 visible to another.
@@ -1203,7 +1224,7 @@ memory_scope parameters defined by the OpenCL memory consistency model.
 The atomic operations for OpenCL kernel languages are similar to the
 corresponding operations defined by the C11 standard.
 
-The OpenCL 2.0 atomic operations apply to variables of an atomic type (a
+The OpenCL 2.x atomic operations apply to variables of an atomic type (a
 subset of those in the C11 standard) including atomic versions of the int,
 uint, long, ulong, float, double, half, intptr_t, uintptr_t, size_t, and
 ptrdiff_t types.
@@ -1256,7 +1277,7 @@ image objects is not guaranteed: if a work-item reads from an image to which
 it has previously written without an intervening atomic_work_item_fence, it
 is not guaranteed that those previous writes are visible to the work-item.
 
-The synchronization operations in OpenCL can be parameterized by a
+The synchronization operations in OpenCL 2.x can be parameterized by a
 memory_scope.
 Memory scopes control the extent that an atomic operation or fence is
 visible with respect to the memory model.
@@ -1388,8 +1409,8 @@ A local memory action *A* local-happens-before a local memory action *B* if
   * For some local memory action *C*, *A* local-happens-before *C* and *C*
     local-happens-before *B*.
 
-An OpenCL implementation shall ensure that no program execution demonstrates
-a cycle in either the local-happens-before relation or the
+An OpenCL 2.x implementation shall ensure that no program execution
+demonstrates a cycle in either the local-happens-before relation or the
 global-happens-before relation.
 
 NOTE: The global- and local-happens-before relations are critical to
@@ -1472,7 +1493,7 @@ This requirement is known as write-read coherence.
 This and following sections describe how different program actions in kernel
 C code and the host program contribute to the local- and
 global-happens-before relations.
-This section discusses ordering rules for OpenCL 2.0 atomic operations.
+This section discusses ordering rules for OpenCL 2.x atomic operations.
 
 <<device-side-enqueue, Device-side enqueue>> defines the enumerated type
 memory_order.
@@ -1601,17 +1622,17 @@ Implementations should make atomic stores visible to atomic loads within a
 reasonable amount of time.
 <<iso-c11,[C11 standard, Section 7.17.3, paragraph 16.]>>
 
-As long as the following conditions are met, a host program sharing SVM
-memory with a kernel executing on one or more OpenCL devices may use atomic
-and synchronization operations to ensure that its assignments, and those of
-the kernel, are visible to each other:
+As long as the following conditions are met, a host program sharing SVM memory
+with a kernel executing on one or more OpenCL 2.x devices may use atomic and
+synchronization operations to ensure that its assignments, and those of the
+kernel, are visible to each other:
 
   . Either fine-grained buffer or fine-grained system SVM must be used to
     share memory.
     While coarse-grained buffer SVM allocations may support atomic
     operations, visibility on these allocations is not guaranteed except at
     map and unmap operations.
-  . The optional OpenCL 2.0 SVM atomic-controlled visibility specified by
+  . The optional OpenCL 2.x SVM atomic-controlled visibility specified by
     provision of the {CL_MEM_SVM_ATOMICS} flag must be supported by the device
     and the flag provided to the SVM buffer on allocation.
   . The host atomic and synchronization operations must be compatible with
@@ -1627,7 +1648,7 @@ all_svm_devices scope.
 [[memory-ordering-fence]]
 ==== Memory Ordering Rules: Fence Operations
 
-This section describes how the OpenCL 2.0 fence operations contribute to the
+This section describes how the OpenCL 2.x fence operations contribute to the
 local- and global-happens-before relations.
 
 Earlier, we introduced synchronization primitives called fences.
@@ -1810,7 +1831,7 @@ function instance.
 This section describes how the OpenCL API functions associated with
 command-queues contribute to happens-before relations.
 There are two types of command queues and associated API functions in OpenCL
-2.0; _host command-queues_ and _device command-queues_.
+2.x; _host command-queues_ and _device command-queues_.
 The interaction of these command queues with the memory model are for the
 most part equivalent.
 In a few cases, the rules only applies to the host command-queue.
@@ -1872,7 +1893,7 @@ following:
     command-queue, then the event (including the event implied between *C*
     and *C1* due to the in-order queue) signaling *C*'s completion
     global-synchronizes-with *C1*.
-    Note that in OpenCL 2.0, only a host command-queue can be configured as
+    Note that in OpenCL 2.x, only a host command-queue can be configured as
     an in-order queue.
   . If an API call enqueues a marker command *C* with an empty list of
     events upon which *C* should wait, then the events of all commands
@@ -1935,7 +1956,7 @@ In this situation:
     enqueued from the host to a single device is guaranteed under the memory
     ordering rules described earlier in this section.
 
-If fine-grain SVM is used but without support for the OpenCL 2.0 atomic
+If fine-grain SVM is used but without support for the OpenCL 2.x atomic
 operations, then the host and devices can concurrently read the same memory
 locations and can concurrently update non-overlapping memory regions, but
 attempts to update the same memory locations are undefined.
@@ -1950,7 +1971,7 @@ original program.
 In the remainder of this section, we discuss a few points regarding the
 ordering rules for commands with a host command queue.
 
-The OpenCL 1.2 standard describes a synchronization point as a
+NOTE: In an OpenCL 1.x implementation a synchronization point is a
 kernel-instance or host program location where the contents of memory
 visible to different work-items or command-queue commands are the same.
 It also says that waiting on an event and a command-queue barrier are
