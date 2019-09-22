@@ -37,7 +37,6 @@ def GetHeader():
     return """// Copyright 2017-2019 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
-
 """
 
 
@@ -46,9 +45,33 @@ def GetFooter():
     return """
 """
 
+def FullNote(name, added_in, deprecated_by):
+    # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
+    # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
+    if added_in == "1.0" and deprecated_by == None:
+        return "\n// Intentionally empty, %s has always been present." % name
+    if added_in != "1.0" and deprecated_by == None:
+        return "\nIMPORTANT: {%s} is <<unified-spec, missing before>> version %s." % (name, added_in)
+    if added_in == "1.0" and deprecated_by != None:
+        return "\nIMPORTANT: {%s} is <<unified-spec, deprecated by>> version %s." % (name, deprecated_by)
+    if added_in != "1.0" and deprecated_by != None:
+        return "\nIMPORTANT: {%s} is <<unified-spec, missing before>> version %s and <<unified-spec, deprecated by>> version %s." % (name, added_in, deprecated_by)
+
+def ShortNote(name, added_in, deprecated_by):
+    # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
+    # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
+    if added_in == "1.0" and deprecated_by == None:
+        return "// Intentionally empty, %s has always been present." % name
+    if added_in != "1.0" and deprecated_by == None:
+        return "<<unified-spec, Missing before>> version %s." % added_in
+    if added_in == "1.0" and deprecated_by != None:
+        return "<<unified-spec, Deprecated by>> version %s." % deprecated_by
+    if added_in != "1.0" and deprecated_by != None:
+        return "<<unified-spec, Missing before>> version %s and <<unified-spec, deprecated by>> version %s." % (added_in, deprecated_by)
+
 # Find feature groups that are parents of a feature/require/${entry_type}
 # hierarchy, and then find all the ${entry_type} within each hierarchy:
-def process_xml(spec, entry_type):
+def process_xml(spec, entry_type, note_printer):
     numberOfEntries = 0
     numberOfNewEntries = 0
     numberOfDeprecatedEntries = 0
@@ -76,31 +99,11 @@ def process_xml(spec, entry_type):
             versionFileName = os.path.join(args.directory, name + ".asciidoc")
             with open(versionFileName, 'w') as versionFile:
                 versionFile.write(GetHeader())
-
-                # Four patterns: (1) always present in OpenCL, (2) added after
-                # 1.0, (3) in 1.0 but now deprecated, and (4) added after 1.0 but
-                # now deprecated.
-                if added_in == "1.0" and deprecated_by == None:
-                    versionFile.write(
-                        "// Intentionally empty, %s has always been present." %
-                        name)
-                if added_in != "1.0" and deprecated_by == None:
-                    versionFile.write(
-                        "IMPORTANT: {%s} is <<unified-spec, missing before>> version %s."
-                        % (name, added_in))
-                    numberOfNewEntries += 1
-                if added_in == "1.0" and deprecated_by != None:
-                    versionFile.write(
-                        "IMPORTANT: {%s} is <<unified-spec, deprecated by>> version %s."
-                        % (name, deprecated_by))
-                    numberOfDeprecatedEntries += 1
-                if added_in != "1.0" and deprecated_by != None:
-                    versionFile.write(
-                        "IMPORTANT: {%s} is <<unified-spec, missing before>> version %s and <<unified-spec, deprecated by>> version %s."
-                        % (name, added_in, deprecated_by))
-                    numberOfNewEntries += 1
-                    numberOfDeprecatedEntries += 1
+                versionFile.write(note_printer(name, added_in, deprecated_by))
                 versionFile.write(GetFooter())
+
+                numberOfNewEntries += 0 if added_in == "1.0" else 1
+                numberOfDeprecatedEntries += 0 if deprecated_by == None else 1
 
     print('Found ' + str(numberOfEntries) + ' API ' + entry_type + 's, '
           + str(numberOfNewEntries) + " newer than 1.0, "
@@ -133,4 +136,5 @@ if __name__ == "__main__":
 
     # Generate the API functions dictionaries:
 
-    process_xml(spec, "command")
+    process_xml(spec, "command", FullNote)
+    process_xml(spec, "enum", ShortNote)
