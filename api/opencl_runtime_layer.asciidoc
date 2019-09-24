@@ -134,6 +134,67 @@ returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
 --
 
+[open,refpage='clCreateCommandQueue',desc='Create a host command-queue on a specific device.',type='protos']
+--
+To create a host command-queue on a specific device, call the function
+
+include::{generated}/api/protos/clCreateCommandQueue.txt[]
+include::{generated}/api/version-notes/clCreateCommandQueue.asciidoc[]
+
+  * _context_ must be a valid OpenCL context.
+  * _device_ must be a device or sub-device associated with _context_.
+    It can either be in the list of devices and sub-devices specified when
+    _context_ is created using {clCreateContext} or be a root device with the
+    same device type as specified when _context_ is created using
+    {clCreateContextFromType}.
+  * _properties_ specifies a list of properties for the command-queue.
+    This is a bit-field and the supported properties are described in the
+    <<legacy-queue-properties-table, table>> below.
+    Only command-queue properties specified in this table can be used,
+    otherwise the value specified in _properties_ is considered to be not
+    valid.
+    _properties_ can be 0 in which case the default values for supported
+    command-queue properties will be used.
+
+[[legacy-queue-properties-table]]
+.List of supported `cl_command_queue_property` values by <<clCreateCommandQueue>>
+[width="100%",cols="<50%,<50%",options="header"]
+|====
+| *Command-Queue Properties* | Description
+| {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE}
+  | Determines whether the commands queued in the command-queue are executed
+    in-order or out-of-order.
+    If set, the commands in the command-queue are executed out-of-order.
+    Otherwise, commands are executed in-order.
+
+| {CL_QUEUE_PROFILING_ENABLE}
+  | Enable or disable profiling of commands in the command-queue.
+    If set, the profiling of commands is enabled.
+    Otherwise profiling of commands is disabled.
+|====
+
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+// refError
+
+{clCreateCommandQueue} returns a valid non-zero command-queue and _errcode_ret_
+is set to {CL_SUCCESS} if the command-queue is created successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_DEVICE} if _device_ is not a valid device or is not associated
+    with _context_.
+  * {CL_INVALID_VALUE} if values specified in _properties_ are not valid.
+  * {CL_INVALID_QUEUE_PROPERTIES} if values specified in _properties_ are
+    valid but are not supported by the device.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
 [open,refpage='clSetDefaultDeviceCommandQueue',desc='Replaces the default command queue on the device.',type='protos']
 --
 To replace the default command queue on a device, call the function
@@ -178,7 +239,8 @@ include::{generated}/api/version-notes/clRetainCommandQueue.asciidoc[]
 
 The _command_queue_ reference count is incremented.
 
-{clCreateCommandQueueWithProperties} performs an implicit retain.
+{clCreateCommandQueueWithProperties} and {clCreateCommandQueue} perform an
+implicit retain.
 This is very helpful for 3^rd^ party libraries, which typically get a
 command-queue passed to them by the application.
 However, it is possible that the application may delete the command-queue
@@ -279,7 +341,8 @@ _param_value_ by {clGetCommandQueueInfo} is described in the
       | Return the currently specified properties for the command-queue.
         These properties are specified by the value associated with the
         {CL_QUEUE_PROPERTIES} passed in _properties_ argument in
-        {clCreateCommandQueueWithProperties}.
+        {clCreateCommandQueueWithProperties}, or the value of the _properties_
+        argument in {clCreateCommandQueue}.
 | {CL_QUEUE_SIZE_anchor}
   | cl_uint
       | Return the currently specified size for the device command-queue.
@@ -8146,8 +8209,8 @@ Otherwise, it returns one of the following errors:
 The OpenCL functions that are submitted to a command-queue are enqueued in
 the order the calls are made but can be configured to execute in-order or
 out-of-order.
-The _properties_ argument in {clCreateCommandQueueWithProperties} can be
-used to specify the execution order.
+The _properties_ argument in {clCreateCommandQueueWithProperties} or
+{clCreateCommandQueue} can be used to specify the execution order.
 
 If the {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE} property of a command-queue is
 not set, the commands enqueued to a command-queue execute in order.
@@ -8203,8 +8266,10 @@ before reads or writes to the memory object(s) occur.
 
 This section describes the profiling of OpenCL functions that are enqueued
 as commands to a command-queue. Profiling of OpenCL commands can be enabled
-by using a command-queue created with {CL_QUEUE_PROFILING_ENABLE}
-flag set in _properties_ argument to {clCreateCommandQueueWithProperties}.
+by using a command-queue created with the {CL_QUEUE_PROFILING_ENABLE}
+flag set in the {CL_QUEUE_PROPERTIES} bitfield in the _properties_ argument to
+{clCreateCommandQueueWithProperties}, or in the _properties_ argument to
+{clCreateCommandQueue}.
 When profiling is enabled, the event objects that are created from
 enqueuing a command store a timestamp for each of their state transitions.
 
