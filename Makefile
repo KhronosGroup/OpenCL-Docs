@@ -261,27 +261,27 @@ else
 endif
 
 # Language Extensions spec
-EXTSPEC = OpenCL_LangExt
-EXTSPECSRC = $(EXTSPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(EXTSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+CEXTDOC = OpenCL_LangExt
+CEXTDOCSRC = $(CEXTDOC).txt $(GENDEPENDS) \
+    $(shell grep ^include:: $(CEXTDOC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
 
-exthtml: $(HTMLDIR)/$(EXTSPEC).html $(EXTSPECSRC)
+cexthtml: $(HTMLDIR)/$(CEXTDOC).html $(CEXTDOCSRC)
 
-$(HTMLDIR)/$(EXTSPEC).html: $(EXTSPECSRC) katexinst
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTSPEC).txt
+$(HTMLDIR)/$(CEXTDOC).html: $(CEXTDOCSRC) katexinst
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CEXTDOC).txt
 
-extpdf: $(PDFDIR)/$(EXTSPEC).pdf $(EXTSPECSRC)
+cextpdf: $(PDFDIR)/$(CEXTDOC).pdf $(CEXTDOCSRC)
 
-$(PDFDIR)/$(EXTSPEC).pdf: $(EXTSPECSRC)
+$(PDFDIR)/$(CEXTDOC).pdf: $(CEXTDOCSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(EXTSPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CEXTDOC).txt
 ifndef GS_EXISTS
 	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
 else
 	$(QUIET)$(CURDIR)/config/optimize-pdf $@
 	$(QUIET)rm $@
-	$(QUIET)mv $(PDFDIR)/$(EXTSPEC)-optimized.pdf $@
+	$(QUIET)mv $(PDFDIR)/$(CEXTDOC)-optimized.pdf $@
 endif
 
 # C++ (cxx) spec
