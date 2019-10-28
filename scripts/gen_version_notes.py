@@ -79,7 +79,6 @@ def process_xml(spec, entry_type, note_printer):
     for feature in spec.findall('.//feature/require/%s/../..' % entry_type):
         for entry in feature.findall('.//%s' % entry_type):
             name = entry.get('name')
-            #print('found ' + entry_type + ': ' + name)
 
             numberOfEntries += 1
             added_in = feature.get('number')
