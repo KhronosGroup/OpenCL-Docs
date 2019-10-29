@@ -11,7 +11,6 @@ functions in a program and calls that allow you to enqueue commands to a
 command-queue such as executing a kernel, reading, or writing a memory
 object.
 
-
 == Command Queues
 
 OpenCL objects such as memory, program and kernel objects are created using
@@ -32,6 +31,8 @@ To create a host or device command-queue on a specific device, call the
 function
 
 include::{generated}/api/protos/clCreateCommandQueueWithProperties.txt[]
+include::{generated}/api/version-notes/clCreateCommandQueueWithProperties.asciidoc[]
+Also see extension *cl_khr_create_command_queue*.
 
   * _context_ must be a valid OpenCL context.
   * _device_ must be a device or sub-device associated with _context_.
@@ -57,6 +58,8 @@ include::{generated}/api/protos/clCreateCommandQueueWithProperties.txt[]
 |====
 | *Queue Properties* | Property Value | Description
 | {CL_QUEUE_PROPERTIES_anchor}
+
+include::{generated}/api/version-notes/CL_QUEUE_PROPERTIES.asciidoc[]
   | cl_bitfield
       | This is a bitfield and can be set to a combination of the following
         values:
@@ -66,23 +69,29 @@ include::{generated}/api/protos/clCreateCommandQueueWithProperties.txt[]
         out-of-order.
         If set, the commands in the command-queue are executed out-of-order.
         Otherwise, commands are executed in-order.
+include::{generated}/api/version-notes/CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE.asciidoc[]
 
         {CL_QUEUE_PROFILING_ENABLE_anchor} - Enable or disable profiling of commands
         in the command-queue.
         If set, the profiling of commands is enabled.
         Otherwise profiling of commands is disabled.
+include::{generated}/api/version-notes/CL_QUEUE_PROFILING_ENABLE.asciidoc[]
 
         {CL_QUEUE_ON_DEVICE_anchor} - Indicates that this is a device queue.
         If {CL_QUEUE_ON_DEVICE} is set,
         {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE}^1^ must also be set.
+include::{generated}/api/version-notes/CL_QUEUE_ON_DEVICE.asciidoc[]
 
         {CL_QUEUE_ON_DEVICE_DEFAULT_anchor}^2^ - indicates that this is the default
         device queue.
         This can only be used with {CL_QUEUE_ON_DEVICE}.
+include::{generated}/api/version-notes/CL_QUEUE_ON_DEVICE_DEFAULT.asciidoc[]
 
         If {CL_QUEUE_PROPERTIES} is not specified an in-order host command
         queue is created for the specified device
 | {CL_QUEUE_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_QUEUE_SIZE.asciidoc[]
   | cl_uint
       | Specifies the size of the device queue in bytes.
 
@@ -133,11 +142,73 @@ returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
 --
 
+[open,refpage='clCreateCommandQueue',desc='Create a host command-queue on a specific device.',type='protos']
+--
+To create a host command-queue on a specific device, call the function
+
+include::{generated}/api/protos/clCreateCommandQueue.txt[]
+include::{generated}/api/version-notes/clCreateCommandQueue.asciidoc[]
+
+  * _context_ must be a valid OpenCL context.
+  * _device_ must be a device or sub-device associated with _context_.
+    It can either be in the list of devices and sub-devices specified when
+    _context_ is created using {clCreateContext} or be a root device with the
+    same device type as specified when _context_ is created using
+    {clCreateContextFromType}.
+  * _properties_ specifies a list of properties for the command-queue.
+    This is a bit-field and the supported properties are described in the
+    <<legacy-queue-properties-table, table>> below.
+    Only command-queue properties specified in this table can be used,
+    otherwise the value specified in _properties_ is considered to be not
+    valid.
+    _properties_ can be 0 in which case the default values for supported
+    command-queue properties will be used.
+
+[[legacy-queue-properties-table]]
+.List of supported `cl_command_queue_property` values by <<clCreateCommandQueue>>
+[width="100%",cols="<50%,<50%",options="header"]
+|====
+| *Command-Queue Properties* | Description
+| {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE}
+  | Determines whether the commands queued in the command-queue are executed
+    in-order or out-of-order.
+    If set, the commands in the command-queue are executed out-of-order.
+    Otherwise, commands are executed in-order.
+
+| {CL_QUEUE_PROFILING_ENABLE}
+  | Enable or disable profiling of commands in the command-queue.
+    If set, the profiling of commands is enabled.
+    Otherwise profiling of commands is disabled.
+|====
+
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+// refError
+
+{clCreateCommandQueue} returns a valid non-zero command-queue and _errcode_ret_
+is set to {CL_SUCCESS} if the command-queue is created successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_DEVICE} if _device_ is not a valid device or is not associated
+    with _context_.
+  * {CL_INVALID_VALUE} if values specified in _properties_ are not valid.
+  * {CL_INVALID_QUEUE_PROPERTIES} if values specified in _properties_ are
+    valid but are not supported by the device.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
 [open,refpage='clSetDefaultDeviceCommandQueue',desc='Replaces the default command queue on the device.',type='protos']
 --
 To replace the default command queue on a device, call the function
 
 include::{generated}/api/protos/clSetDefaultDeviceCommandQueue.txt[]
+include::{generated}/api/version-notes/clSetDefaultDeviceCommandQueue.asciidoc[]
 
   * _context_ is the OpenCL context used to create _command_queue_.
   * _device_ is a valid OpenCL device associated with _context_.
@@ -170,12 +241,14 @@ Otherwise, it returns one of the following errors:
 To retain a command queue, call the function
 
 include::{generated}/api/protos/clRetainCommandQueue.txt[]
+include::{generated}/api/version-notes/clRetainCommandQueue.asciidoc[]
 
   * _command_queue_ specifies the command-queue to be retained.
 
 The _command_queue_ reference count is incremented.
 
-{clCreateCommandQueueWithProperties} performs an implicit retain.
+{clCreateCommandQueueWithProperties} and {clCreateCommandQueue} perform an
+implicit retain.
 This is very helpful for 3^rd^ party libraries, which typically get a
 command-queue passed to them by the application.
 However, it is possible that the application may delete the command-queue
@@ -203,6 +276,7 @@ Otherwise, it returns one of the following errors:
 To release a command queue, call the function
 
 include::{generated}/api/protos/clReleaseCommandQueue.txt[]
+include::{generated}/api/version-notes/clReleaseCommandQueue.asciidoc[]
 
   * _command_queue_ specifies the command-queue to be released.
 
@@ -236,6 +310,7 @@ Otherwise, it returns one of the following errors:
 To query information about a command-queue, call the function
 
 include::{generated}/api/protos/clGetCommandQueueInfo.txt[]
+include::{generated}/api/version-notes/clGetCommandQueueInfo.asciidoc[]
 
   * _command_queue_ specifies the command-queue being queried.
   * _param_name_ specifies the information to query.
@@ -261,25 +336,38 @@ _param_value_ by {clGetCommandQueueInfo} is described in the
 |====
 | *cl_command_queue_info* | Return Type | Information returned in param_value
 | {CL_QUEUE_CONTEXT_anchor}
+
+include::{generated}/api/version-notes/CL_QUEUE_CONTEXT.asciidoc[]
   | cl_context
       | Return the context specified when the command-queue is created.
 | {CL_QUEUE_DEVICE_anchor}
+
+include::{generated}/api/version-notes/CL_QUEUE_DEVICE.asciidoc[]
   | cl_device_id
       | Return the device specified when the command-queue is created.
 | {CL_QUEUE_REFERENCE_COUNT_anchor}^3^
+
+include::{generated}/api/version-notes/CL_QUEUE_REFERENCE_COUNT.asciidoc[]
   | cl_uint
       | Return the command-queue reference count.
 | {CL_QUEUE_PROPERTIES_anchor}
+
+include::{generated}/api/version-notes/CL_QUEUE_PROPERTIES.asciidoc[]
   | cl_command_queue_properties
       | Return the currently specified properties for the command-queue.
         These properties are specified by the value associated with the
         {CL_QUEUE_PROPERTIES} passed in _properties_ argument in
-        {clCreateCommandQueueWithProperties}.
+        {clCreateCommandQueueWithProperties}, or the value of the _properties_
+        argument in {clCreateCommandQueue}.
 | {CL_QUEUE_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_QUEUE_SIZE.asciidoc[]
   | cl_uint
       | Return the currently specified size for the device command-queue.
         This query is only supported for device command queues.
 | {CL_QUEUE_DEVICE_DEFAULT_anchor}
+
+include::{generated}/api/version-notes/CL_QUEUE_DEVICE_DEFAULT.asciidoc[]
   | cl_command_queue
       | Return the current default command queue for the underlying device.
 |====
@@ -305,19 +393,49 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clSetCommandQueueProperty',desc='Enable or disable properties of a command-queue.',type='protos']
+--
+To enable or disable the properties of a command-queue, call the function
+
+include::{generated}/api/protos/clSetCommandQueueProperty.txt[]
+include::{generated}/api/version-notes/clSetCommandQueueProperty.asciidoc[]
+
+  * _command_queue_ specifies the command-queue being modified.
+  * _properties_ specifies the new list of properties for the command-queue.
+    This is a bit-field and the supported properties are described in the
+    <<legacy-queue-properties-table, Command-Queue Properties table>> for
+    {clCreateCommandQueue}.
+    Only command-queue properties specified in this table can be used,
+    otherwise the value specified in _properties_ is considered to be not
+    valid.
+  * _enable_ determines whether the values specified by _properties_ are
+    enabled (if _enable_ is {CL_TRUE}) or disabled (if _enable_ is {CL_FALSE})
+    for the command-queue.
+  * _old_properties_ returns the command-queue properties before they were
+    changed by {clSetCommandQueueProperty}.  If _old_properties_ is `NULL`, it
+    is ignored.
 
 [NOTE]
 ====
-It is possible that a device(s) becomes unavailable after a context and
-command-queues that use this device(s) have been created and commands have
-been queued to command-queues.
-In this case the behavior of OpenCL API calls that use this context (and
-command-queues) are considered to be implementation-defined.
-The user callback function, if specified, when the context is created can be
-used to record appropriate information in the _errinfo_, _private_info_
-arguments passed to the callback function when the device becomes
-unavailable.
+Changing the {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE} command-queue property
+will cause the OpenCL implementation to block until all previously queued
+commands in _command_queue_ have completed.  This can be an expensive operation
+and therefore changes to this property should only be done when absolutely
+necessary.
 ====
+
+// refError
+
+{clSetCommandQueueProperty} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid command-queue.
+  * {CL_INVALID_VALUE} if values specified in _properties_ are not valid.
+  * {CL_INVALID_QUEUE_PROPERTIES} if values specified in _properties_ are
+    valid but are not supported by the device.
 --
 
 
@@ -335,6 +453,7 @@ float), vector data type, or a user-defined structure.
 A *buffer object* is created using the following function
 
 include::{generated}/api/protos/clCreateBuffer.txt[]
+include::{generated}/api/version-notes/clCreateBuffer.asciidoc[]
 
   * _context_ is a valid OpenCL context used to create the buffer object.
   * _flags_ is a bit-field that is used to specify allocation and usage
@@ -356,10 +475,14 @@ include::{generated}/api/protos/clCreateBuffer.txt[]
 |====
 | *cl_mem_flags* | Description
 | {CL_MEM_READ_WRITE_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_READ_WRITE.asciidoc[]
   | This flag specifies that the memory object will be read
     and written by a kernel.
     This is the default.
 | {CL_MEM_WRITE_ONLY_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_WRITE_ONLY.asciidoc[]
   | This flag specifies that the memory object will be
     written but not read by a kernel.
 
@@ -368,6 +491,8 @@ include::{generated}/api/protos/clCreateBuffer.txt[]
 
     {CL_MEM_READ_WRITE} and {CL_MEM_WRITE_ONLY} are mutually exclusive.
 | {CL_MEM_READ_ONLY_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_READ_ONLY.asciidoc[]
   | This flag specifies that the memory object is a
     readonly memory object when used inside a kernel.
 
@@ -377,6 +502,8 @@ include::{generated}/api/protos/clCreateBuffer.txt[]
     {CL_MEM_READ_WRITE} or {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_ONLY} are mutually
     exclusive.
 | {CL_MEM_USE_HOST_PTR_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_USE_HOST_PTR.asciidoc[]
   | This flag is valid only if host_ptr is not `NULL`.
     If specified, it indicates that the application wants the OpenCL
     implementation to use memory referenced by host_ptr as the storage bits
@@ -393,18 +520,22 @@ include::{generated}/api/protos/clCreateBuffer.txt[]
     created with the same host_ptr or from overlapping host or SVM regions
     is considered to be undefined.
 | {CL_MEM_ALLOC_HOST_PTR_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_ALLOC_HOST_PTR.asciidoc[]
   | This flag specifies that the application wants the OpenCL implementation
     to allocate memory from host accessible memory.
 
     {CL_MEM_ALLOC_HOST_PTR} and {CL_MEM_USE_HOST_PTR} are mutually exclusive.
 | {CL_MEM_COPY_HOST_PTR_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_COPY_HOST_PTR.asciidoc[]
   | This flag is valid only if host_ptr is not `NULL`.
     If specified, it indicates that the application wants the OpenCL
     implementation to allocate memory for the memory object and copy the
     data from memory referenced by host_ptr.
     The implementation will copy the memory immediately and host_ptr is
-    available for reuse by the application when the {clCreateBuffer} or
-    {clCreateImage} operation returns.
+    available for reuse by the application when the {clCreateBuffer},
+    {clCreateImage}, {clCreateImage2D} or {clCreateImage3D} operation returns.
 
     {CL_MEM_COPY_HOST_PTR} and {CL_MEM_USE_HOST_PTR} are mutually exclusive.
 
@@ -412,24 +543,32 @@ include::{generated}/api/protos/clCreateBuffer.txt[]
     initialize the contents of the cl_mem object allocated using
     host-accessible (e.g. PCIe) memory.
 | {CL_MEM_HOST_WRITE_ONLY_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_HOST_WRITE_ONLY.asciidoc[]
   | This flag specifies that the host will only write to the memory object
     (using OpenCL APIs that enqueue a write or a map for write).
     This can be used to optimize write access from the host (e.g. enable
     write-combined allocations for memory objects for devices that
     communicate with the host over a system bus such as PCIe).
 | {CL_MEM_HOST_READ_ONLY_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_HOST_READ_ONLY.asciidoc[]
   | This flag specifies that the host will only read
     the memory object (using OpenCL APIs that enqueue a read or a map for
     read).
 
     {CL_MEM_HOST_WRITE_ONLY} and {CL_MEM_HOST_READ_ONLY} are mutually exclusive.
 | {CL_MEM_HOST_NO_ACCESS_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_HOST_NO_ACCESS.asciidoc[]
   | This flag specifies that the host will not read or
     write the memory object.
 
     {CL_MEM_HOST_WRITE_ONLY} or {CL_MEM_HOST_READ_ONLY} and
     {CL_MEM_HOST_NO_ACCESS} are mutually exclusive.
 | {CL_MEM_KERNEL_READ_AND_WRITE_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_KERNEL_READ_AND_WRITE.asciidoc[]
   | This flag is only used by {clGetSupportedImageFormats} to query image
     formats that may be both read from and written to by the same kernel
     instance.
@@ -497,6 +636,7 @@ To create a new buffer object (referred to as a sub-buffer object) from an
 existing buffer object, call the function
 
 include::{generated}/api/protos/clCreateSubBuffer.txt[]
+include::{generated}/api/version-notes/clCreateSubBuffer.asciidoc[]
 
   * _buffer_ must be a valid buffer object and cannot be a sub-buffer object.
   * _flags_ is a bit-field that is used to specify allocation and usage
@@ -527,6 +667,8 @@ include::{generated}/api/protos/clCreateSubBuffer.txt[]
 |====
 | *cl_buffer_create_type* | Description
 | {CL_BUFFER_CREATE_TYPE_REGION_anchor}
+
+include::{generated}/api/version-notes/CL_BUFFER_CREATE_TYPE_REGION.asciidoc[]
   | Create a buffer object that represents a specific region in _buffer_.
 
     _buffer_create_info_ is a pointer to a *<<cl_buffer_region>>* structure
@@ -615,8 +757,10 @@ To read from a buffer object to host memory or to write to a buffer object from
 host memory call one of the functions
 
 include::{generated}/api/protos/clEnqueueReadBuffer.txt[]
+include::{generated}/api/version-notes/clEnqueueReadBuffer.asciidoc[]
 
 include::{generated}/api/protos/clEnqueueWriteBuffer.txt[]
+include::{generated}/api/version-notes/clEnqueueWriteBuffer.asciidoc[]
 
   * _command_queue_ is a valid host command-queue in which the read / write
     command will be queued.
@@ -702,9 +846,11 @@ Otherwise, they return one of the following errors:
     _offset_ specified when the sub-buffer object is created is not aligned
     to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated with
     _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the read and write
     operations are blocking and the execution status of any of the events in
     _event_wait_list_ is a negative integer value.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
     memory for data store associated with _buffer_.
   * {CL_INVALID_OPERATION} if {clEnqueueReadBuffer} is called on _buffer_
@@ -726,8 +872,10 @@ region from a buffer object to host memory or write a 2D or 3D rectangular
 region to a buffer object from host memory.
 
 include::{generated}/api/protos/clEnqueueReadBufferRect.txt[]
+include::{generated}/api/version-notes/clEnqueueReadBufferRect.asciidoc[]
 
 include::{generated}/api/protos/clEnqueueWriteBufferRect.txt[]
+include::{generated}/api/version-notes/clEnqueueWriteBufferRect.asciidoc[]
 
   * _command_queue_ refers is a valid host command-queue in which the read /
     write command will be queued.
@@ -856,9 +1004,11 @@ Otherwise, they return one of the following errors:
     _offset_ specified when the sub-buffer object is created is not aligned
     to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated with
     _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the read and write
     operations are blocking and the execution status of any of the events in
     _event_wait_list_ is a negative integer value.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
     memory for data store associated with _buffer_.
   * {CL_INVALID_OPERATION} if {clEnqueueReadBufferRect} is called on _buffer_
@@ -933,6 +1083,7 @@ To enqueue a command to copy a buffer object identified by _src_buffer_ to
 another buffer object identified by _dst_buffer_, call the function
 
 include::{generated}/api/protos/clEnqueueCopyBuffer.txt[]
+include::{generated}/api/version-notes/clEnqueueCopyBuffer.asciidoc[]
 
   * _command_queue_ refers to a host command-queue in which the copy command
     will be queued.
@@ -992,10 +1143,12 @@ Otherwise, it returns one of the following errors:
     and _offset_ specified when the sub-buffer object is created is not
     aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
     with _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if _dst_buffer_ is a sub-buffer object
     and _offset_ specified when the sub-buffer object is created is not
     aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
     with _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_MEM_COPY_OVERLAP} if _src_buffer_ and _dst_buffer_ are the same buffer
     or sub-buffer object and the source and destination regions overlap or
     if _src_buffer_ and _dst_buffer_ are different sub-buffers of the same
@@ -1018,6 +1171,7 @@ object identified by _src_buffer_ to a 2D or 3D region in the buffer object
 identified by _dst_buffer_, call the function
 
 include::{generated}/api/protos/clEnqueueCopyBufferRect.txt[]
+include::{generated}/api/version-notes/clEnqueueCopyBufferRect.asciidoc[]
 
   * _command_queue_ refers to the host command-queue in which the copy command
     will be queued.
@@ -1140,10 +1294,12 @@ Otherwise, it returns one of the following errors:
     and _offset_ specified when the sub-buffer object is created is not
     aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
     with _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if _dst_buffer_ is a sub-buffer object
     and _offset_ specified when the sub-buffer object is created is not
     aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
     with _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
     memory for data store associated with _src_buffer_ or _dst_buffer_.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
@@ -1161,6 +1317,7 @@ To enqueue a command to fill a buffer object with a pattern of a given
 pattern size, call the function
 
 include::{generated}/api/protos/clEnqueueFillBuffer.txt[]
+include::{generated}/api/version-notes/clEnqueueFillBuffer.asciidoc[]
 
   * _command_queue_ refers to the host command-queue in which the fill command
     will be queued.
@@ -1239,6 +1396,7 @@ Otherwise, it returns one of the following errors:
   * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if _buffer_ is a sub-buffer object and
     offset specified when the sub-buffer object is created is not aligned to
     {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated with _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
     memory for data store associated with _buffer_.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
@@ -1257,6 +1415,7 @@ into the host address space and returns a pointer to this mapped region,
 call the function
 
 include::{generated}/api/protos/clEnqueueMapBuffer.txt[]
+include::{generated}/api/version-notes/clEnqueueMapBuffer.asciidoc[]
 
   * _command_queue_ must be a valid host command-queue.
   * _blocking_map_ indicates if the map operation is _blocking_ or
@@ -1332,6 +1491,7 @@ values returned in _errcode_ret_:
     _offset_ specified when the sub-buffer object is created is not aligned
     to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for the device associated with
     _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_MAP_FAILURE} if there is a failure to map the requested region into
     the host address space.
     This error cannot occur for buffer objects created with
@@ -1339,6 +1499,7 @@ values returned in _errcode_ret_:
   * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the map operation is
     blocking and the execution status of any of the events in
     _event_wait_list_ is a negative integer value.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
     memory for data store associated with _buffer_.
   * {CL_INVALID_OPERATION} if _buffer_ has been created with
@@ -1376,6 +1537,8 @@ Objects>>.
 |====
 | *cl_map_flags* | Description
 | {CL_MAP_READ_anchor}
+
+include::{generated}/api/version-notes/CL_MAP_READ.asciidoc[]
   | This flag specifies that the region being mapped in the memory object is
     being mapped for reading.
 
@@ -1383,6 +1546,8 @@ Objects>>.
     guaranteed to contain the latest bits in the region being mapped when
     the {clEnqueueMapBuffer} ({clEnqueueMapImage}) command has completed.
 | {CL_MAP_WRITE_anchor}
+
+include::{generated}/api/version-notes/CL_MAP_WRITE.asciidoc[]
   | This flag specifies that the region being mapped in the memory object is
     being mapped for writing.
 
@@ -1390,6 +1555,8 @@ Objects>>.
     guaranteed to contain the latest bits in the region being mapped when
     the {clEnqueueMapBuffer} ({clEnqueueMapImage}) command has completed
 | {CL_MAP_WRITE_INVALIDATE_REGION_anchor}
+
+include::{generated}/api/version-notes/CL_MAP_WRITE_INVALIDATE_REGION.asciidoc[]
   | This flag specifies that the region being mapped in the memory object is
     being mapped for writing.
 
@@ -1424,6 +1591,7 @@ A *1D image*, *1D image buffer*, *1D image array*, *2D image*, *2D image
 array* and *3D image object* can be created using the following function
 
 include::{generated}/api/protos/clCreateImage.txt[]
+include::{generated}/api/version-notes/clCreateImage.asciidoc[]
 
   * _context_ is a valid OpenCL context on which the image object is to be
     created.
@@ -1474,16 +1642,28 @@ __mem_object__.
 |====
 | Image Type | Size of buffer that _host_ptr_ points to
 | {CL_MEM_OBJECT_IMAGE1D_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_OBJECT_IMAGE1D.asciidoc[]
   | {geq} image_row_pitch
 | {CL_MEM_OBJECT_IMAGE1D_BUFFER_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_OBJECT_IMAGE1D_BUFFER.asciidoc[]
   | {geq} image_row_pitch
 | {CL_MEM_OBJECT_IMAGE2D_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_OBJECT_IMAGE2D.asciidoc[]
   | {geq} image_row_pitch {times} image_height
 | {CL_MEM_OBJECT_IMAGE3D_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_OBJECT_IMAGE3D.asciidoc[]
   | {geq} image_slice_pitch {times} image_depth
 | {CL_MEM_OBJECT_IMAGE1D_ARRAY_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_OBJECT_IMAGE1D_ARRAY.asciidoc[]
   | {geq} image_slice_pitch {times} image_array_size
 | {CL_MEM_OBJECT_IMAGE2D_ARRAY_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_OBJECT_IMAGE2D_ARRAY.asciidoc[]
   | {geq} image_slice_pitch {times} image_array_size
 |====
 
@@ -1563,6 +1743,167 @@ returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
 --
 
+[open,refpage='clCreateImage2D',desc='Creates a 2D image.',type='protos']
+--
+A *2D image* object can be created using the following function
+
+include::{generated}/api/protos/clCreateImage2D.txt[]
+include::{generated}/api/version-notes/clCreateImage2D.asciidoc[]
+
+  * _context_ is a valid OpenCL context on which the image object is to be
+    created.
+  * _flags_ is a bit-field that is used to specify allocation and usage
+    information about the image memory object being created and is described in
+    the <<memory-flags-table, supported memory flag values>> table.
+    If the value specified for _flags_ is 0, the default is used which is
+    {CL_MEM_READ_WRITE}.
+  * _image_format_ is a pointer to a structure that describes format properties
+    of the image to be allocated.
+    Refer to the <<image-format-descriptor, Image Format Descriptor>> section
+    for a detailed description of the image format descriptor.
+  * _image_width_ and _image_height_ are the width and height of the image in
+    pixels.
+    These must be values greater than or equal to 1.
+  * _image_row_pitch_ is the  scan-line pitch in bytes.
+    This must be 0 if _host_ptr_ is `NULL` and can be either 0 or {geq}
+    _image_width_ {times} size of element in bytes if _host_ptr_ is not `NULL`.
+    If _host_ptr_ is not `NULL` and _image_row_pitch_ is 0, _image_row_pitch_
+    is calculated as _image_width_ {times} size of element in bytes.
+    If _image_row_pitch_ is not 0, it must be a multiple of the image element
+    size in bytes.
+  * _host_ptr_ is a pointer to the image data that may already be allocated by
+    the application.
+    It is only used to initialize the image, and can be freed after the call to
+    {clCreateImage2D}.
+    Refer to the {CL_MEM_OBJECT_IMAGE2D} entry in the
+    <<host-ptr-buffer-size-table, required _host_ptr_ buffer size table>> for a
+    description of how large the buffer that _host_ptr_ points to must be.
+    The image data specified by _host_ptr_ is stored as a linear sequence of
+    adjacent scanlines.
+    Each scanline is a linear sequence of image elements.
+    Image elements are stored according to their image format as described in
+    the <<image-format-descriptor, Image Format Descriptor>> section.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+// refError
+
+{clCreateImage2D} returns a valid non-zero image object created and the
+_errcode_ret_ is set to {CL_SUCCESS} if the image object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if values specified in _image_format_
+    are not valid or if _image_format_ is `NULL`.
+  * {CL_INVALID_IMAGE_SIZE} if _image_width_ or _image_height_ are 0 or if they
+    exceed the maximum values specified in {CL_DEVICE_IMAGE2D_MAX_WIDTH} or
+    {CL_DEVICE_IMAGE2D_MAX_HEIGHT} respectively for all devices in _context_ or
+    if values specified by _image_row_pitch_ do not follow rules described in the
+    argument description above.
+  * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
+    {CL_MEM_COPY_HOST_PTR} are set in _flags_ or if _host_ptr_ is not `NULL`
+    but {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} are not set in _flags_.
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if the _image_format_ is not supported.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
+    memory for image object.
+  * {CL_INVALID_OPERATION} if there are no devices in _context_ that support
+    images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in the
+    <<device-queries-table,Device Queries>> table is {CL_FALSE}).
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clCreateImage3D',desc='Creates a 3D image.',type='protos']
+--
+A *3D image* object can be created using the following function
+
+include::{generated}/api/protos/clCreateImage3D.txt[]
+include::{generated}/api/version-notes/clCreateImage3D.asciidoc[]
+
+  * _context_ is a valid OpenCL context on which the image object is to be
+    created.
+  * _flags_ is a bit-field that is used to specify allocation and usage
+    information about the image memory object being created and is described in
+    the <<memory-flags-table, supported memory flag values>> table.
+    If the value specified for _flags_ is 0, the default is used which is
+    {CL_MEM_READ_WRITE}.
+  * _image_format_ is a pointer to a structure that describes format properties
+    of the image to be allocated.
+    Refer to the <<image-format-descriptor, Image Format Descriptor>> section
+    for a detailed description of the image format descriptor.
+  * _image_width_ and _image_height_ are the width and height of the image in
+    pixels.
+    These must be values greater than or equal to 1.
+  * _image_depth_ is the depth of the image in pixels.  This must be a value
+    {gt} 1.
+  * _image_row_pitch_ is the  scan-line pitch in bytes.
+    This must be 0 if _host_ptr_ is `NULL` and can be either 0 or {geq}
+    _image_width_ {times} size of element in bytes if _host_ptr_ is not `NULL`.
+    If _host_ptr_ is not `NULL` and _image_row_pitch_ is 0, _image_row_pitch_
+    is calculated as _image_width_ {times} size of element in bytes.
+    If _image_row_pitch_ is not 0, it must be a multiple of the image element
+    size in bytes.
+  * _image_slice_pitch_ is the size in bytes of each 2D slice in the 3D image.
+     This be be 0 if _host_ptr_ is `NULL` and can be 0 or {geq}
+     _image_row_pitch_ {times} _image_height_ if _host_ptr_ is not `NULL`.
+     If _host_ptr_ is not `NULL` and _image_slice_pitch_ is 0,
+     _image_slice_pitch_ is calculated as _image_row_pitch_ {times}
+     _image_height_.
+     If _image_slice_pitch_ is not 0, it must be a multiple of the
+     _image_row_pitch_.
+  * _host_ptr_ is a pointer to the image data that may already be allocated by
+    the application.
+    It is only used to initialize the image, and can be freed after the call to
+    {clCreateImage3D}.
+    Refer to the {CL_MEM_OBJECT_IMAGE3D} entry in the
+    <<host-ptr-buffer-size-table, required _host_ptr_ buffer size table>> for a
+    description of how large the buffer that _host_ptr_ points to must be.
+    The image data specified by _host_ptr_ is stored as a linear sequence of
+    adjacent 2D slices.
+    Each scanline is a linear sequence of image elements.
+    Image elements are stored according to their image format as described in
+    the <<image-format-descriptor, Image Format Descriptor>> section.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+// refError
+
+{clCreateImage3D} returns a valid non-zero image object created and the
+_errcode_ret_ is set to {CL_SUCCESS} if the image object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if values specified in _image_format_
+    are not valid or if _image_format_ is `NULL`.
+  * {CL_INVALID_IMAGE_SIZE} if _image_width_ or _image_height_ are 0 or if
+    _image_depth_ {leq} 1 or if they exceed the maximum values specified in
+    {CL_DEVICE_IMAGE3D_MAX_WIDTH}, {CL_DEVICE_IMAGE3D_MAX_HEIGHT} or
+    {CL_DEVICE_IMAGE3D_MAX_DEPTH} respectively for all devices in _context_ or
+    if values specified by _image_row_pitch_ and _image_slice_pitch_ do not
+    follow rules described in the argument description above.
+  * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
+    {CL_MEM_COPY_HOST_PTR} are set in _flags_ or if _host_ptr_ is not `NULL`
+    but {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} are not set in _flags_.
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if the _image_format_ is not supported.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
+    memory for image object.
+  * {CL_INVALID_OPERATION} if there are no devices in _context_ that support
+    images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in the
+    <<device-queries-table,Device Queries>> table is {CL_FALSE}).
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
 
 [[image-format-descriptor]]
 ==== Image Format Descriptor
@@ -1590,35 +1931,68 @@ include::{generated}/api/structs/cl_image_format.txt[]
 |====
 | Image Channel Order | Description
 | {CL_R_anchor}, {CL_A_anchor},
+// The CL_R annotation here is used to convey the same information for both
+// entries in this table row.
+include::{generated}/api/version-notes/CL_R.asciidoc[]
   | Single channel image formats where the single channel represents a `RED` or `ALPHA` component.
 | {CL_DEPTH_anchor}
+
+include::{generated}/api/version-notes/CL_DEPTH.asciidoc[]
   | A single channel image format where the single channel represents a `DEPTH` component.
 | {CL_LUMINANCE_anchor}
+
+include::{generated}/api/version-notes/CL_LUMINANCE.asciidoc[]
   | A single channel image format where the single channel represents a `LUMINANCE` value.
     The `LUMINANCE` value is replicated into the `RED`, `GREEN`, and `BLUE` components.
 | {CL_INTENSITY_anchor},
+
+include::{generated}/api/version-notes/CL_INTENSITY.asciidoc[]
   | A single channel image format where the single channel represents an `INTENSITY` value.
     The `INTENSITY` value is replicated into the `RED`, `GREEN`, `BLUE`, and `ALPHA` components.
 | {CL_RG_anchor}, {CL_RA_anchor}
+
+// The CL_RG annotation here is used to convey the same information for both
+// entries in this table row.
+include::{generated}/api/version-notes/CL_RG.asciidoc[]
   | Two channel image formats.
     The first channel always represents a `RED` component.
     The second channel represents a `GREEN` component or an `ALPHA` component.
 | {CL_Rx_anchor}
+
+include::{generated}/api/version-notes/CL_Rx.asciidoc[]
   | A two channel image format, where the first channel represents a `RED` component and the second channel is ignored.
 | {CL_RGB_anchor}
+
+include::{generated}/api/version-notes/CL_RGB.asciidoc[]
   | A three channel image format, where the three channels represent `RED`, `GREEN`, and `BLUE` components.
 | {CL_RGx_anchor}
+
+include::{generated}/api/version-notes/CL_RGx.asciidoc[]
   | A three channel image format, where the first two channels represent `RED` and `GREEN` components and the third channel is ignored.
 | {CL_RGBA_anchor}, {CL_ARGB_anchor}, {CL_BGRA_anchor}, {CL_ABGR_anchor}
+
+// Manually write this annotation as CL_ABGR is the odd-one-out here (all the
+// other entries in this row were in OpenCL 1.0).
+  {CL_ABGR} is <<unified-spec, missing before>> version 2.0.
   | Four channel image formats, where the four channels represent `RED`, `GREEN`, `BLUE`, and `ALPHA` components.
 | {CL_RGBx_anchor}
+
+include::{generated}/api/version-notes/CL_RGBx.asciidoc[]
   | A four channel image format, where the first three channels represent `RED`, `GREEN`, and `BLUE` components and the fourth channel is ignored.
 | {CL_sRGB_anchor}
+
+include::{generated}/api/version-notes/CL_sRGB.asciidoc[]
   | A three channel image format, where the three channels represent `RED`, `GREEN`, and `BLUE` components in the sRGB color space.
 | {CL_sRGBA_anchor}, {CL_sBGRA_anchor}
+
+// The CL_sRGBA annotation here is used to convey the same information for both
+// entries in this table row.
+include::{generated}/api/version-notes/CL_sRGBA.asciidoc[]
   | Four channel image formats, where the first three channels represent `RED`, `GREEN`, and `BLUE` components in the sRGB color space.
     The fourth channel represents an `ALPHA` component.
 | {CL_sRGBx_anchor}
+
+include::{generated}/api/version-notes/CL_sRGBx.asciidoc[]
   | A four channel image format, where the three channels represent `RED`, `GREEN`, and `BLUE` components in the sRGB color space.
     The fourth channel is ignored.
 |====
@@ -1629,40 +2003,72 @@ include::{generated}/api/structs/cl_image_format.txt[]
 |====
 | Image Channel Data Type | Description
 | {CL_SNORM_INT8_anchor}
+
+include::{generated}/api/version-notes/CL_SNORM_INT8.asciidoc[]
   | Each channel component is a normalized signed 8-bit integer value
 | {CL_SNORM_INT16_anchor}
+
+include::{generated}/api/version-notes/CL_SNORM_INT16.asciidoc[]
   | Each channel component is a normalized signed 16-bit integer value
 | {CL_UNORM_INT8_anchor}
+
+include::{generated}/api/version-notes/CL_UNORM_INT8.asciidoc[]
   | Each channel component is a normalized unsigned 8-bit integer value
 | {CL_UNORM_INT16_anchor}
+
+include::{generated}/api/version-notes/CL_UNORM_INT16.asciidoc[]
   | Each channel component is a normalized unsigned 16-bit integer value
 | {CL_UNORM_SHORT_565_anchor}
+
+include::{generated}/api/version-notes/CL_UNORM_SHORT_565.asciidoc[]
   | Represents a normalized 5-6-5 3-channel RGB image.
     The channel order must be {CL_RGB} or {CL_RGBx}.
 | {CL_UNORM_SHORT_555_anchor}
+
+include::{generated}/api/version-notes/CL_UNORM_SHORT_555.asciidoc[]
   | Represents a normalized x-5-5-5 4-channel xRGB image.
     The channel order must be {CL_RGB} or {CL_RGBx}.
 | {CL_UNORM_INT_101010_anchor}
+
+include::{generated}/api/version-notes/CL_UNORM_INT_101010.asciidoc[]
   | Represents a normalized x-10-10-10 4-channel xRGB image.
     The channel order must be {CL_RGB} or {CL_RGBx}.
 | {CL_UNORM_INT_101010_2_anchor}
+
+include::{generated}/api/version-notes/CL_UNORM_INT_101010_2.asciidoc[]
   | Represents a normalized 10-10-10-2 four-channel RGBA image.
     The channel order must be {CL_RGBA}.
 | {CL_SIGNED_INT8_anchor}
+
+include::{generated}/api/version-notes/CL_SIGNED_INT8.asciidoc[]
   | Each channel component is an unnormalized signed 8-bit integer value
 | {CL_SIGNED_INT16_anchor}
+
+include::{generated}/api/version-notes/CL_SIGNED_INT16.asciidoc[]
   | Each channel component is an unnormalized signed 16-bit integer value
 | {CL_SIGNED_INT32_anchor}
+
+include::{generated}/api/version-notes/CL_SIGNED_INT32.asciidoc[]
   | Each channel component is an unnormalized signed 32-bit integer value
 | {CL_UNSIGNED_INT8_anchor}
+
+include::{generated}/api/version-notes/CL_UNSIGNED_INT8.asciidoc[]
   | Each channel component is an unnormalized unsigned 8-bit integer value
 | {CL_UNSIGNED_INT16_anchor}
+
+include::{generated}/api/version-notes/CL_UNSIGNED_INT16.asciidoc[]
   | Each channel component is an unnormalized unsigned 16-bit integer value
 | {CL_UNSIGNED_INT32_anchor}
+
+include::{generated}/api/version-notes/CL_UNSIGNED_INT32.asciidoc[]
   | Each channel component is an unnormalized unsigned 32-bit integer value
 | {CL_HALF_FLOAT_anchor}
+
+include::{generated}/api/version-notes/CL_HALF_FLOAT.asciidoc[]
   | Each channel component is a 16-bit half-float value
 | {CL_FLOAT_anchor}
+
+include::{generated}/api/version-notes/CL_FLOAT.asciidoc[]
   | Each channel component is a single precision floating-point value
 |====
 
@@ -1720,7 +2126,8 @@ OpenCL implementations must maintain the minimum precision specified by the
 number of bits in `image_channel_data_type`.
 If the image format specified by `image_channel_order`, and
 `image_channel_data_type` cannot be supported by the OpenCL implementation,
-then the call to {clCreateImage} will return a `NULL` memory object.
+then the call to {clCreateImage}, {clCreateImage2D} or {clCreateImage3D} will
+return a `NULL` memory object.
 --
 
 
@@ -1907,6 +2314,7 @@ To get the list of image formats supported by an OpenCL implementation for a
 specified context, image type, and allocation information, call the function
 
 include::{generated}/api/protos/clGetSupportedImageFormats.txt[]
+include::{generated}/api/version-notes/clGetSupportedImageFormats.asciidoc[]
 
   * _context_ is a valid OpenCL context on which the image object(s) will be
     created.
@@ -2129,8 +2537,10 @@ array object to host memory or write to an image or image array object from
 host memory.
 
 include::{generated}/api/protos/clEnqueueReadImage.txt[]
+include::{generated}/api/version-notes/clEnqueueReadImage.asciidoc[]
 
 include::{generated}/api/protos/clEnqueueWriteImage.txt[]
+include::{generated}/api/version-notes/clEnqueueWriteImage.asciidoc[]
 
   * _command_queue_ refers to the host command-queue in which the read / write
     command will be queued.
@@ -2267,6 +2677,7 @@ Otherwise, it returns one of the following errors:
   * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the read and write
     operations are blocking and the execution status of any of the events in
     _event_wait_list_ is a negative integer value.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -2313,6 +2724,7 @@ undefined behavior:
 To enqueue a command to copy image objects, call the function
 
 include::{generated}/api/protos/clEnqueueCopyImage.txt[]
+include::{generated}/api/version-notes/clEnqueueCopyImage.asciidoc[]
 
   * _src_image_ and _dst_image_ can be 1D, 2D, 3D image or a 1D, 2D image array
     objects.
@@ -2441,6 +2853,7 @@ To enqueue a command to fill an image object with a specified color, call
 the function
 
 include::{generated}/api/protos/clEnqueueFillImage.txt[]
+include::{generated}/api/version-notes/clEnqueueFillImage.asciidoc[]
 
   * _command_queue_ refers to the host command-queue in which the fill command
     will be queued.
@@ -2551,6 +2964,7 @@ To enqueue a command to copy an image object to a buffer object, call the
 function
 
 include::{generated}/api/protos/clEnqueueCopyImageToBuffer.txt[]
+include::{generated}/api/version-notes/clEnqueueCopyImageToBuffer.asciidoc[]
 
   * _command_queue_ must be a valid host command-queue.
     The OpenCL context associated with _command_queue_, _src_image_ and
@@ -2642,6 +3056,7 @@ Otherwise, it returns one of the following errors:
     and _offset_ specified when the sub-buffer object is created is not
     aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
     with _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_INVALID_IMAGE_SIZE} if image dimensions (image width, height,
     specified or compute row and/or slice pitch) for _src_image_ are not
     supported by device associated with _queue_.
@@ -2666,6 +3081,7 @@ To enqueue a command to copy a buffer object to an image object, call the
 function
 
 include::{generated}/api/protos/clEnqueueCopyBufferToImage.txt[]
+include::{generated}/api/version-notes/clEnqueueCopyBufferToImage.asciidoc[]
 
   * _command_queue_ must be a valid host command-queue.
     The OpenCL context associated with _command_queue_, _src_buffer_ and
@@ -2759,6 +3175,7 @@ Otherwise, it returns one of the following errors:
     and _offset_ specified when the sub-buffer object is created is not
     aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
     with _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_INVALID_IMAGE_SIZE} if image dimensions (image width, height,
     specified or compute row and/or slice pitch) for _dst_image_ are not
     supported by device associated with _queue_.
@@ -2786,6 +3203,7 @@ into the host address space and returns a pointer to this mapped region,
 call the function
 
 include::{generated}/api/protos/clEnqueueMapImage.txt[]
+include::{generated}/api/version-notes/clEnqueueMapImage.asciidoc[]
 
   * _command_queue_ must be a valid host command-queue.
   * _image_ is a valid image object.
@@ -2901,6 +3319,7 @@ values returned in _errcode_ret_:
   * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the map operation is
     blocking and the execution status of any of the events in
     _event_wait_list_ is a negative integer value.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
     memory for data store associated with _image_.
   * {CL_INVALID_OPERATION} if the device associated with _command_queue_ does
@@ -2928,9 +3347,10 @@ The result of a memory access outside this region is undefined.
 If the image object is created with {CL_MEM_USE_HOST_PTR} set in _mem_flags_,
 the following will be true:
 
-  * The _host_ptr_ specified in {clCreateImage} is guaranteed to contain the
-    latest bits in the region being mapped when the {clEnqueueMapImage}
-    command has completed.
+  * The _host_ptr_ specified in {clCreateImage}, {clCreateImage2D} or
+    {clCreateImage3D} is guaranteed to contain the
+    latest bits in the region being mapped when the {clEnqueueMapImage} command
+    has completed.
   * The pointer value returned by {clEnqueueMapImage} will be derived from
     the _host_ptr_ specified when the image object is created.
 
@@ -2950,9 +3370,10 @@ Object Queries>>.
 [open,refpage='clGetImageInfo',desc='Get information specific to an image object created with clCreateImage.',type='protos']
 --
 To get information specific to an image object created with {clCreateImage},
-call the function
+{clCreateImage2D}, or {clCreateImage3D} call the function
 
 include::{generated}/api/protos/clGetImageInfo.txt[]
+include::{generated}/api/version-notes/clGetImageInfo.asciidoc[]
 
   * _image_ specifies the image object being queried.
   * _param_name_ specifies the information to query.
@@ -2976,46 +3397,71 @@ include::{generated}/api/protos/clGetImageInfo.txt[]
 |====
 | *cl_image_info* | Return type | Info. returned in _param_value_
 | {CL_IMAGE_FORMAT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_FORMAT.asciidoc[]
   | cl_image_format
       | Return image format descriptor specified when _image_ is created
-        with {clCreateImage}.
+        with {clCreateImage}, {clCreateImage2D} or {clCreateImage3D}.
 | {CL_IMAGE_ELEMENT_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_ELEMENT_SIZE.asciidoc[]
   | size_t
       | Return size of each element of the image memory object given by
         _image_ in bytes.
         An element is made up of _n_ channels.
         The value of _n_ is given in _cl_image_format_ descriptor.
 | {CL_IMAGE_ROW_PITCH_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_ROW_PITCH.asciidoc[]
   | size_t
       | Return calculated row pitch in bytes of a row of elements of the
         image object given by _image_.
 | {CL_IMAGE_SLICE_PITCH_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_SLICE_PITCH.asciidoc[]
   | size_t
       | Return calculated slice pitch in bytes of a 2D slice for the 3D
         image object or size of each image in a 1D or 2D image array given
         by _image_.
         For a 1D image, 1D image buffer and 2D image object return 0.
 | {CL_IMAGE_WIDTH_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_WIDTH.asciidoc[]
   | size_t
       | Return width of the image in pixels.
 | {CL_IMAGE_HEIGHT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_HEIGHT.asciidoc[]
   | size_t
       | Return height of the image in pixels.
         For a 1D image, 1D image buffer and 1D image array object, height =
         0.
 | {CL_IMAGE_DEPTH_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_DEPTH.asciidoc[]
   | size_t
       | Return depth of the image in pixels.
         For a 1D image, 1D image buffer, 2D image or 1D and 2D image array
         object, depth = 0.
 | {CL_IMAGE_ARRAY_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_ARRAY_SIZE.asciidoc[]
   | size_t
       | Return number of images in the image array.
         If _image_ is not an image array, 0 is returned.
+| {CL_IMAGE_BUFFER_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_BUFFER.asciidoc[]
+  | cl_mem
+      | Return buffer object associated with _image_.
 | {CL_IMAGE_NUM_MIP_LEVELS_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_NUM_MIP_LEVELS.asciidoc[]
   | cl_uint
       | Return `num_mip_levels` associated with _image_.
 | {CL_IMAGE_NUM_SAMPLES_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_NUM_SAMPLES.asciidoc[]
   | cl_uint
       | Return `num_samples` associated with _image_.
 |====
@@ -3059,6 +3505,7 @@ A pipe object encapsulates the following information:
 To create a *pipe object*, call the function
 
 include::{generated}/api/protos/clCreatePipe.txt[]
+include::{generated}/api/version-notes/clCreatePipe.asciidoc[]
 
   * _context_ is a valid OpenCL context used to create the pipe object.
   * _flags_ is a bit-field that is used to specify allocation and usage
@@ -3123,6 +3570,7 @@ To get information specific to a pipe object created with {clCreatePipe},
 call the function
 
 include::{generated}/api/protos/clGetPipeInfo.txt[]
+include::{generated}/api/version-notes/clGetPipeInfo.asciidoc[]
 
   * _pipe_ specifies the pipe object being queried.
   * _param_name_ specifies the information to query.
@@ -3161,10 +3609,14 @@ Otherwise, it returns one of the following errors:
 |====
 | *cl_pipe_info* | Return type | Info. returned in _param_value_
 | {CL_PIPE_PACKET_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_PIPE_PACKET_SIZE.asciidoc[]
   | cl_uint
       | Return pipe packet size specified when _pipe_ is created with
         {clCreatePipe}.
 | {CL_PIPE_MAX_PACKETS_anchor}
+
+include::{generated}/api/version-notes/CL_PIPE_MAX_PACKETS.asciidoc[]
   | cl_uint
       | Return max. number of packets specified when _pipe_ is created with
         {clCreatePipe}.
@@ -3184,6 +3636,7 @@ Otherwise, it returns one of the following errors:
 To retain a memory object, call the function
 
 include::{generated}/api/protos/clRetainMemObject.txt[]
+include::{generated}/api/version-notes/clRetainMemObject.asciidoc[]
 
   * _memobj_ specifies the memory object to be retained.
 
@@ -3202,8 +3655,8 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 
-{clCreateBuffer}, {clCreateSubBuffer}, {clCreateImage} and {clCreatePipe}
-perform an implicit retain.
+{clCreateBuffer}, {clCreateSubBuffer}, {clCreateImage}, {clCreateImage2D},
+{clCreateImage3D} and {clCreatePipe} perform an implicit retain.
 --
 
 [open,refpage='clReleaseMemObject',desc='Decrements the memory object reference count.',type='protos']
@@ -3211,6 +3664,7 @@ perform an implicit retain.
 To release a memory object, call the function
 
 include::{generated}/api/protos/clReleaseMemObject.txt[]
+include::{generated}/api/version-notes/clReleaseMemObject.asciidoc[]
 
   * _memobj_ specifies the memory object to be released.
 
@@ -3242,6 +3696,7 @@ the object or by calling {clRetainMemObject} causes undefined behavior.
 To register a user callback function with a memory object, call the function
 
 include::{generated}/api/protos/clSetMemObjectDestructorCallback.txt[]
+include::{generated}/api/version-notes/clSetMemObjectDestructorCallback.asciidoc[]
 
   * _memobj_ is a valid memory object.
   * _pfn_notify_ is the callback function that can be registered by the
@@ -3334,6 +3789,7 @@ To enqueue a command to unmap a previously mapped region of a memory object,
 call the function
 
 include::{generated}/api/protos/clEnqueueUnmapMemObject.txt[]
+include::{generated}/api/version-notes/clEnqueueUnmapMemObject.asciidoc[]
 
   * _command_queue_ must be a valid host command-queue.
   * _memobj_ is a valid memory (buffer or image) object.
@@ -3476,6 +3932,7 @@ To enqueue a command to indicate which device a set of memory objects should
 be associated with, call the function
 
 include::{generated}/api/protos/clEnqueueMigrateMemObjects.txt[]
+include::{generated}/api/version-notes/clEnqueueMigrateMemObjects.asciidoc[]
 
   * _command_queue_ is a valid host command-queue.
     The specified set of memory objects in _mem_objects_ will be migrated to the
@@ -3516,9 +3973,13 @@ include::{generated}/api/protos/clEnqueueMigrateMemObjects.txt[]
 |====
 | *cl_mem_migration flags* | Description
 | {CL_MIGRATE_MEM_OBJECT_HOST_anchor}
+
+include::{generated}/api/version-notes/CL_MIGRATE_MEM_OBJECT_HOST.asciidoc[]
   | This flag indicates that the specified set of memory objects are to be
     migrated to the host, regardless of the target command-queue.
 | {CL_MIGRATE_MEM_OBJECT_CONTENT_UNDEFINED_anchor}
+
+include::{generated}/api/version-notes/CL_MIGRATE_MEM_OBJECT_CONTENT_UNDEFINED.asciidoc[]
   | This flag indicates that the contents of the set of memory objects are
     undefined after migration.
     The specified set of memory objects are migrated to the device
@@ -3592,6 +4053,7 @@ To get information that is common to all memory objects (buffer and image
 objects), call the function
 
 include::{generated}/api/protos/clGetMemObjectInfo.txt[]
+include::{generated}/api/version-notes/clGetMemObjectInfo.asciidoc[]
 
   * _memobj_ specifies the memory object being queried.
   * _param_name_ specifies the information to query.
@@ -3615,6 +4077,8 @@ include::{generated}/api/protos/clGetMemObjectInfo.txt[]
 |====
 | *cl_mem_info* | Return type | Info. returned in _param_value_
 | {CL_MEM_TYPE_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_TYPE.asciidoc[]
   | cl_mem_object_type
       | Returns one of the following values:
 
@@ -3622,29 +4086,37 @@ include::{generated}/api/protos/clGetMemObjectInfo.txt[]
         {clCreateSubBuffer}.
 
         cl_image_desc.image_type argument value if _memobj_ is created with
-        {clCreateImage}.
+        {clCreateImage}, {clCreateImage2D} or {clCreateImage3D}.
 
         {CL_MEM_OBJECT_PIPE_anchor} if _memobj_ is created with {clCreatePipe}.
 | {CL_MEM_FLAGS_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_FLAGS.asciidoc[]
   | cl_mem_flags
       | Return the flags argument value specified when _memobj_ is created
         with {clCreateBuffer}, +
         {clCreateSubBuffer}, +
         {clCreateImage} or +
+        {clCreateImage2D} or +
+        {clCreateImage3D} or +
         {clCreatePipe}.
 
         If _memobj_ is a sub-buffer the memory access qualifiers inherited
         from parent buffer is also returned.
 | {CL_MEM_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_SIZE.asciidoc[]
   | size_t
       | Return actual size of the data store associated with _memobj_ in
         bytes.
 | {CL_MEM_HOST_PTR_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_HOST_PTR.asciidoc[]
   | void *
-      | If _memobj_ is created with {clCreateBuffer} or {clCreateImage} and
-        {CL_MEM_USE_HOST_PTR} is specified in mem_flags, return the host_ptr
-        argument value specified when _memobj_ is created.
-        Otherwise a `NULL` value is returned.
+      | If _memobj_ is created with {clCreateBuffer}, {clCreateImage},
+        {clCreateImage2D} or {clCreateImage3D} and {CL_MEM_USE_HOST_PTR} is
+        specified in mem_flags, return the host_ptr argument value specified
+        when _memobj_ is created.  Otherwise a `NULL` value is returned.
 
         If _memobj_ is created with {clCreateSubBuffer}, return the host_ptr
         {plus} origin value specified when _memobj_ is created.
@@ -3653,18 +4125,26 @@ include::{generated}/api/protos/clGetMemObjectInfo.txt[]
         which _memobj_ is created.
         Otherwise a `NULL` value is returned.
 | {CL_MEM_MAP_COUNT_anchor}^11^
+
+include::{generated}/api/version-notes/CL_MEM_MAP_COUNT.asciidoc[]
   | cl_uint
       | Map count.
 | {CL_MEM_REFERENCE_COUNT_anchor}^12^
+
+include::{generated}/api/version-notes/CL_MEM_REFERENCE_COUNT.asciidoc[]
   | cl_uint
       | Return _memobj_ reference count.
 | {CL_MEM_CONTEXT_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_CONTEXT.asciidoc[]
   | cl_context
       | Return context specified when memory object is created.
         If _memobj_ is created using {clCreateSubBuffer}, the context
         associated with the memory object specified as the _buffer_ argument
         to {clCreateSubBuffer} is returned.
 | {CL_MEM_ASSOCIATED_MEMOBJECT_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_ASSOCIATED_MEMOBJECT.asciidoc[]
   | cl_mem
       | Return memory object from which _memobj_ is created.
         This returns the memory object specified as buffer argument to
@@ -3676,12 +4156,16 @@ include::{generated}/api/protos/clGetMemObjectInfo.txt[]
 
         Otherwise a `NULL` value is returned.
 | {CL_MEM_OFFSET_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_OFFSET.asciidoc[]
   | size_t
       | Return offset if _memobj_ is a sub-buffer object created using
         {clCreateSubBuffer}.
 
         This return 0 if _memobj_ is not a subbuffer object.
 | {CL_MEM_USES_SVM_POINTER_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_USES_SVM_POINTER.asciidoc[]
   | cl_bool
       | Return {CL_TRUE} if _memobj_ is a buffer object that was created with
         {CL_MEM_USE_HOST_PTR} or is a sub-buffer object of a buffer object
@@ -3822,6 +4306,7 @@ that can be shared by the host and all devices in an OpenCL context that
 support shared virtual memory, call the function
 
 include::{generated}/api/protos/clSVMAlloc.txt[]
+include::{generated}/api/version-notes/clSVMAlloc.asciidoc[]
 
   * _context_ is a valid OpenCL context used to create the SVM buffer.
   * _flags_ is a bit-field that is used to specify allocation and usage
@@ -3866,9 +4351,13 @@ include::{generated}/api/protos/clSVMAlloc.txt[]
     {CL_MEM_READ_WRITE} or {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_ONLY} are mutually
     exclusive.
 | {CL_MEM_SVM_FINE_GRAIN_BUFFER_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_SVM_FINE_GRAIN_BUFFER.asciidoc[]
   | This specifies that the application wants the OpenCL implementation to
     do a fine-grained allocation.
 | {CL_MEM_SVM_ATOMICS_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_SVM_ATOMICS.asciidoc[]
   | This flag is valid only if {CL_MEM_SVM_FINE_GRAIN_BUFFER} is specified in
     flags.
     It is used to indicate that SVM atomic operations can control visibility
@@ -3930,6 +4419,7 @@ To free a shared virtual memory buffer allocated using {clSVMAlloc}, call
 the function
 
 include::{generated}/api/protos/clSVMFree.txt[]
+include::{generated}/api/version-notes/clSVMFree.asciidoc[]
 
   * _context_ is a valid OpenCL context used to create the SVM buffer.
   * _svm_pointer_ must be the value returned by a call to {clSVMAlloc}.
@@ -3960,6 +4450,7 @@ To enqueue a command to free the shared virtual memory allocated using
 {clSVMAlloc} or a shared system memory pointer, call the function
 
 include::{generated}/api/protos/clEnqueueSVMFree.txt[]
+include::{generated}/api/version-notes/clEnqueueSVMFree.asciidoc[]
 
   * _command_queue_ is a valid host command-queue.
   * _svm_pointers_ and _num_svm_pointers_ specify shared virtual memory pointers
@@ -4035,6 +4526,7 @@ Otherwise, it returns one of the following errors:
 To enqueue a command to do a memcpy operation, call the function
 
 include::{generated}/api/protos/clEnqueueSVMMemcpy.txt[]
+include::{generated}/api/version-notes/clEnqueueSVMMemcpy.asciidoc[]
 
   * _command_queue_ refers to the host command-queue in which the read / write
     command will be queued.
@@ -4118,6 +4610,7 @@ To enqueue a command to fill a region in memory with a pattern of a given
 pattern size, call the function
 
 include::{generated}/api/protos/clEnqueueSVMMemFill.txt[]
+include::{generated}/api/version-notes/clEnqueueSVMMemFill.asciidoc[]
 
   * _command_queue_ refers to the host command-queue in which the fill command
     will be queued.
@@ -4200,6 +4693,7 @@ To enqueue a command that will allow the host to update a region of a SVM
 buffer, call the function
 
 include::{generated}/api/protos/clEnqueueSVMMap.txt[]
+include::{generated}/api/version-notes/clEnqueueSVMMap.asciidoc[]
 
   * _command_queue_ must be a valid host command-queue.
   * _blocking_map_ indicates if the map operation is _blocking_ or
@@ -4283,6 +4777,7 @@ region given by _svm_ptr_ and which was specified in a previous call to
 {clEnqueueSVMMap}, call the function
 
 include::{generated}/api/protos/clEnqueueSVMUnmap.txt[]
+include::{generated}/api/version-notes/clEnqueueSVMUnmap.asciidoc[]
 
   * _command_queue_ must be a valid host command-queue.
   * _svm_ptr_ is a pointer that was specified in a previous call to
@@ -4366,6 +4861,7 @@ To enqueue a command to indicate which device a set of ranges of SVM
 allocations should be associated with, call the function
 
 include::{generated}/api/protos/clEnqueueSVMMigrateMem.txt[]
+include::{generated}/api/version-notes/clEnqueueSVMMigrateMem.asciidoc[]
 
   * _command_queue_ is a valid host command queue.
     The specified set of allocation ranges will be migrated to the OpenCL device
@@ -4495,6 +4991,7 @@ functions.
 To create a sampler object, call the function
 
 include::{generated}/api/protos/clCreateSamplerWithProperties.txt[]
+include::{generated}/api/version-notes/clCreateSamplerWithProperties.asciidoc[]
 
   * _context_ must be a valid OpenCL context.
   * _sampler_properties_ specifies a list of sampler property names and their
@@ -4515,6 +5012,8 @@ include::{generated}/api/protos/clCreateSamplerWithProperties.txt[]
 |====
 | *cl_sampler_properties* enum | Property Value | Description
 | {CL_SAMPLER_NORMALIZED_COORDS_anchor}
+
+include::{generated}/api/version-notes/CL_SAMPLER_NORMALIZED_COORDS.asciidoc[]
   | cl_bool
       | A boolean value that specifies whether the image coordinates
         specified are normalized or not.
@@ -4522,6 +5021,8 @@ include::{generated}/api/protos/clCreateSamplerWithProperties.txt[]
         The default value (i.e. the value used if this property is not
         specified in sampler_properties) is {CL_TRUE}.
 | {CL_SAMPLER_ADDRESSING_MODE_anchor}
+
+include::{generated}/api/version-notes/CL_SAMPLER_ADDRESSING_MODE.asciidoc[]
   | cl_addressing_mode
       | Specifies how out-of-range image coordinates are handled when
         reading from an image.
@@ -4546,6 +5047,8 @@ include::{generated}/api/protos/clCreateSamplerWithProperties.txt[]
 
         The default is {CL_ADDRESS_CLAMP}.
 | {CL_SAMPLER_FILTER_MODE_anchor}
+
+include::{generated}/api/version-notes/CL_SAMPLER_FILTER_MODE.asciidoc[]
   | cl_filter_mode
       | Specifies the type of filter that is applied when reading an
         image.
@@ -4584,16 +5087,57 @@ returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
 --
 
+[open,refpage='clCreateSampler',desc='Creates a sampler object.',type='protos']
+--
+To create a sampler object, call the function
+
+include::{generated}/api/protos/clCreateSampler.txt[]
+include::{generated}/api/version-notes/clCreateSampler.asciidoc[]
+
+  * _context_ must be a valid OpenCL context.
+  * _normalized_coords_ has the same interpretation as
+    {CL_SAMPLER_NORMALIZED_COORDS} in the <<sampler-properties-table, sampler
+    creation properties table>>.
+  * _addressing_mode_ has the same interpretation as
+    {CL_SAMPLER_ADDRESSING_MODE} in the <<sampler-properties-table, sampler
+    creation properties table>>.
+  * _filter_mode_ has the same interpretation as
+    {CL_SAMPLER_FILTER_MODE} in the <<sampler-properties-table, sampler
+    creation properties table>>.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+// refError
+
+{clCreateSampler} returns a valid non-zero sampler object and _errcode_ret_ is
+set to {CL_SUCCESS} if the sampler object is created successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if _addressing_mode_, _filter_mode_, _normalized_coords_
+    or a combination of these arguements are not valid.
+  * {CL_INVALID_OPERATION} if images are not supported by any device
+    associated with _context_ (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in the
+    <<device-queries-table,Device Queries>> table is {CL_FALSE}).
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
 [open,refpage='clRetainSampler',desc='Increments the sampler reference count.',type='protos']
 --
 To retain a sampler object, call the function
 
 include::{generated}/api/protos/clRetainSampler.txt[]
+include::{generated}/api/version-notes/clRetainSampler.asciidoc[]
 
   * _sampler_ specifies the sampler to be released.
 
 The _sampler_ reference count is incremented.
-{clCreateSamplerWithProperties} performs an implicit retain.
+{clCreateSamplerWithProperties} and {clCreateSampler} perform an implicit
+retain.
 
 // refError
 
@@ -4613,6 +5157,7 @@ Otherwise, it returns one of the following errors:
 To release a sampler object, call the function
 
 include::{generated}/api/protos/clReleaseSampler.txt[]
+include::{generated}/api/version-notes/clReleaseSampler.asciidoc[]
 
   * _sampler_ specifies the sampler to be released.
 
@@ -4645,6 +5190,7 @@ the object or by calling {clRetainSampler} causes undefined behavior.
 To return information about a sampler object, call the function
 
 include::{generated}/api/protos/clGetSamplerInfo.txt[]
+include::{generated}/api/version-notes/clGetSamplerInfo.asciidoc[]
 
   * _sampler_ specifies the sampler being queried.
   * _param_name_ specifies the information to query.
@@ -4668,18 +5214,28 @@ include::{generated}/api/protos/clGetSamplerInfo.txt[]
 |====
 | *cl_sampler_info* | Return Type | Info. returned in _param_value_
 | {CL_SAMPLER_REFERENCE_COUNT_anchor}^13^
+
+include::{generated}/api/version-notes/CL_SAMPLER_REFERENCE_COUNT.asciidoc[]
   | cl_uint
       | Return the _sampler_ reference count.
 | {CL_SAMPLER_CONTEXT_anchor}
+
+include::{generated}/api/version-notes/CL_SAMPLER_CONTEXT.asciidoc[]
   | cl_context
       | Return the context specified when the sampler is created.
 | {CL_SAMPLER_NORMALIZED_COORDS_anchor}
+
+include::{generated}/api/version-notes/CL_SAMPLER_NORMALIZED_COORDS.asciidoc[]
   | cl_bool
       | Return the normalized coords value associated with _sampler_.
 | {CL_SAMPLER_ADDRESSING_MODE_anchor}
+
+include::{generated}/api/version-notes/CL_SAMPLER_ADDRESSING_MODE.asciidoc[]
   | cl_addressing_mode
       | Return the addressing mode value associated with _sampler_.
 | {CL_SAMPLER_FILTER_MODE_anchor}
+
+include::{generated}/api/version-notes/CL_SAMPLER_FILTER_MODE.asciidoc[]
   | cl_filter_mode
       | Return the filter mode value associated with _sampler_.
 |====
@@ -4734,6 +5290,7 @@ To creates a program object for a context and load source code into that
 object, call the function
 
 include::{generated}/api/protos/clCreateProgramWithSource.txt[]
+include::{generated}/api/version-notes/clCreateProgramWithSource.asciidoc[]
 
   * _context_ must be a valid OpenCL context.
   * _strings_ is an array of _count_ pointers to optionally null-terminated
@@ -4783,6 +5340,8 @@ To creates a program object for a context and load code in an intermediate
 language into that object, call the function
 
 include::{generated}/api/protos/clCreateProgramWithIL.txt[]
+include::{generated}/api/version-notes/clCreateProgramWithIL.asciidoc[]
+Also see extension *cl_khr_il_program*.
 
   * _context_ must be a valid OpenCL context.
   * _il_ is a pointer to a _length_-byte block of memory containing SPIR-V or an
@@ -4820,6 +5379,7 @@ To create a program object for a context and load binary bits into that
 object, call the function
 
 include::{generated}/api/protos/clCreateProgramWithBinary.txt[]
+include::{generated}/api/version-notes/clCreateProgramWithBinary.asciidoc[]
 
   * _context_ must be a valid OpenCL context.
   * _device_list_ is a pointer to a list of devices that are in _context_.
@@ -4905,6 +5465,7 @@ To create a program object for a context and loads the information related
 to the built-in kernels into that object, call the function
 
 include::{generated}/api/protos/clCreateProgramWithBuiltInKernels.txt[]
+include::{generated}/api/version-notes/clCreateProgramWithBuiltInKernels.asciidoc[]
 
   * _context_ must be a valid OpenCL context.
   * _num_devices_ is the number of devices listed in _device_list_.
@@ -4947,6 +5508,7 @@ returned in _errcode_ret_:
 To retain a program object, call the function
 
 include::{generated}/api/protos/clRetainProgram.txt[]
+include::{generated}/api/version-notes/clRetainProgram.asciidoc[]
 
   * _program_ is the program object to be retained.
 
@@ -4971,6 +5533,7 @@ Otherwise, it returns one of the following errors:
 To release a program object, call the function
 
 include::{generated}/api/protos/clReleaseProgram.txt[]
+include::{generated}/api/version-notes/clReleaseProgram.asciidoc[]
 
   * _program_ is the program object to be released.
 
@@ -5000,6 +5563,7 @@ To register a user callback function with a program object, call the
 function
 
 include::{generated}/api/protos/clSetProgramReleaseCallback.txt[]
+include::{generated}/api/version-notes/clSetProgramReleaseCallback.asciidoc[]
 
   * _program_ is a valid program object
   * _pfn_notify_ is the callback function that can be registered by the
@@ -5050,6 +5614,7 @@ Otherwise, it returns one of the following errors:
 To set the value of a specialization constant, call the function
 
 include::{generated}/api/protos/clSetProgramSpecializationConstant.txt[]
+include::{generated}/api/version-notes/clSetProgramSpecializationConstant.asciidoc[]
 
   * _program_ must be a valid OpenCL program created from an intermediate format
     module (e.g. SPIR-V).
@@ -5109,6 +5674,7 @@ Otherwise, it returns one of the following errors:
 To build (compile & link) a program executable, call the function
 
 include::{generated}/api/protos/clBuildProgram.txt[]
+include::{generated}/api/version-notes/clBuildProgram.asciidoc[]
 
   * _program_ is the program object.
   * _device_list_ is a pointer to a list of devices associated with _program_.
@@ -5229,6 +5795,7 @@ To compile a program's source for all the devices or a specific device(s) in
 the OpenCL context associated with the program, call the function
 
 include::{generated}/api/protos/clCompileProgram.txt[]
+include::{generated}/api/version-notes/clCompileProgram.asciidoc[]
 
   * _program_ is the program object that is the compilation target.
   * _device_list_ is a pointer to a list of devices associated with _program_.
@@ -5375,6 +5942,7 @@ or a specific device(s) in the OpenCL context and create a library or
 executable, call the function
 
 include::{generated}/api/protos/clLinkProgram.txt[]
+include::{generated}/api/version-notes/clLinkProgram.asciidoc[]
 
   * _context_ must be a valid OpenCL context.
   * _device_list_ is a pointer to a list of devices that are in _context_.
@@ -5807,6 +6375,7 @@ The following options can be specified when linking a program executable.
 To unload an OpenCL compiler for a platform, call the function
 
 include::{generated}/api/protos/clUnloadPlatformCompiler.txt[]
+include::{generated}/api/version-notes/clUnloadPlatformCompiler.asciidoc[]
 
   * _platform_ is the platform to unload.
 
@@ -5828,6 +6397,27 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_PLATFORM} if _platform_ is not a valid platform.
 --
 
+[open,refpage='clUnloadCompiler',desc='Allows the implementation to release the resources allocated by the OpenCL compiler.',type='protos']
+--
+Alternatively, if you are not using OpenCL via the ICD loader, you may unload the OpenCL compiler with the function
+
+include::{generated}/api/protos/clUnloadCompiler.txt[]
+include::{generated}/api/version-notes/clUnloadCompiler.asciidoc[]
+
+This function allows the implementation to release the resources allocated
+by the OpenCL compiler.
+This is a hint from the application and does not guarantee that the compiler
+will not be used in the future or that the compiler will actually be
+unloaded by the implementation.
+Calls to {clBuildProgram}, {clCompileProgram} or {clLinkProgram} after
+{clUnloadCompiler} will reload the compiler, if necessary, to build
+the appropriate program executable.
+
+// refError
+
+{clUnloadCompiler} will always return {CL_SUCCESS}.
+--
+
 
 === Program Object Queries
 
@@ -5836,6 +6426,7 @@ Otherwise, it returns one of the following errors:
 To return information about a program object, call the function
 
 include::{generated}/api/protos/clGetProgramInfo.txt[]
+include::{generated}/api/version-notes/clGetProgramInfo.asciidoc[]
 
   * _program_ specifies the program object being queried.
   * _param_name_ specifies the information to query.
@@ -5859,15 +6450,23 @@ include::{generated}/api/protos/clGetProgramInfo.txt[]
 |====
 | *cl_program_info* | Return Type | Info. returned in _param_value_
 | {CL_PROGRAM_REFERENCE_COUNT_anchor}^14^
+
+include::{generated}/api/version-notes/CL_PROGRAM_REFERENCE_COUNT.asciidoc[]
   | cl_uint
       | Return the _program_ reference count.
 | {CL_PROGRAM_CONTEXT_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_CONTEXT.asciidoc[]
   | cl_context
       | Return the context specified when the program object is created
 | {CL_PROGRAM_NUM_DEVICES_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_NUM_DEVICES.asciidoc[]
   | cl_uint
       | Return the number of devices associated with _program_.
 | {CL_PROGRAM_DEVICES_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_DEVICES.asciidoc[]
   | cl_device_id[]
       | Return the list of devices associated with the program object.
         This can be the devices associated with context on which the program
@@ -5875,6 +6474,8 @@ include::{generated}/api/protos/clGetProgramInfo.txt[]
         specified when a program object is created using
         {clCreateProgramWithBinary}.
 | {CL_PROGRAM_SOURCE_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_SOURCE.asciidoc[]
   | char[]
       | Return the program source code specified by
         {clCreateProgramWithSource}.
@@ -5892,6 +6493,9 @@ include::{generated}/api/protos/clGetProgramInfo.txt[]
         code including the null terminator is returned in
         _param_value_size_ret_.
 | {CL_PROGRAM_IL_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_IL.asciidoc[]
+Also see extension *cl_khr_il_program*.
   | char[]
       | Returns the program IL for programs created with
         {clCreateProgramWithIL}.
@@ -5901,6 +6505,8 @@ include::{generated}/api/protos/clGetProgramInfo.txt[]
         the memory pointed to by param_value will be unchanged and
         param_value_size_retwill be set to 0.
 | {CL_PROGRAM_BINARY_SIZES_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_BINARY_SIZES.asciidoc[]
   | size_t[]
       | Returns an array that contains the size in bytes of the program
         binary (could be an executable binary, compiled binary or library
@@ -5914,6 +6520,8 @@ include::{generated}/api/protos/clGetProgramInfo.txt[]
         the implementation may return zero in any entries of the returned
         array.
 | {CL_PROGRAM_BINARIES_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_BINARIES.asciidoc[]
   | unsigned char *[]
       | Return the program binaries (could be an executable binary, compiled
         binary or library binary) for all devices associated with program.
@@ -5945,6 +6553,8 @@ include::{generated}/api/protos/clGetProgramInfo.txt[]
         returned by {CL_PROGRAM_BINARIES} and array of devices returned by
         {CL_PROGRAM_DEVICES}.
 | {CL_PROGRAM_NUM_KERNELS_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_NUM_KERNELS.asciidoc[]
   | size_t
       | Returns the number of kernels declared in _program_ that can be
         created with {clCreateKernel}.
@@ -5952,6 +6562,8 @@ include::{generated}/api/protos/clGetProgramInfo.txt[]
         executable has been built for at least one device in the list of
         devices associated with _program_.
 | {CL_PROGRAM_KERNEL_NAMES_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_KERNEL_NAMES.asciidoc[]
   | char[]
       | Returns a semi-colon separated list of kernel names in _program_
         that can be created with {clCreateKernel}.
@@ -5959,11 +6571,15 @@ include::{generated}/api/protos/clGetProgramInfo.txt[]
         executable has been built for at least one device in the list of
         devices associated with _program_.
 | {CL_PROGRAM_SCOPE_GLOBAL_CTORS_PRESENT_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_SCOPE_GLOBAL_CTORS_PRESENT.asciidoc[]
   | cl_bool
       | This indicates that the _program_ object contains non-trivial
         constructor(s) that will be executed by runtime before any kernel
         from the program is executed.
 | {CL_PROGRAM_SCOPE_GLOBAL_DTORS_PRESENT_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_SCOPE_GLOBAL_DTORS_PRESENT.asciidoc[]
   | cl_bool
       | This indicates that the program object contains non-trivial
         destructor(s) that will be executed by runtime when _program_ is
@@ -6002,6 +6618,7 @@ To return build information for each device in the program object, call the
 function
 
 include::{generated}/api/protos/clGetProgramBuildInfo.txt[]
+include::{generated}/api/version-notes/clGetProgramBuildInfo.asciidoc[]
 
   * _program_ specifies the program object being queried.
   * _device_ specifies the device for which build information is being queried.
@@ -6027,6 +6644,8 @@ include::{generated}/api/protos/clGetProgramBuildInfo.txt[]
 |====
 | *cl_program_build_info* | Return Type | Info. returned in _param_value_
 | {CL_PROGRAM_BUILD_STATUS_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_BUILD_STATUS.asciidoc[]
   | cl_build_status
       | Returns the build, compile or link status, whichever was performed
         last on the specified _program_ object for _device_.
@@ -6050,6 +6669,8 @@ include::{generated}/api/protos/clGetProgramBuildInfo.txt[]
         was performed last on the specified _program_ object for _device_ - has
         not finished.
 | {CL_PROGRAM_BUILD_OPTIONS_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_BUILD_OPTIONS.asciidoc[]
   | char[]
       | Return the build, compile or link options specified by the options
         argument in {clBuildProgram}, {clCompileProgram} or {clLinkProgram},
@@ -6059,6 +6680,8 @@ include::{generated}/api/protos/clGetProgramBuildInfo.txt[]
         If build status of the specified _program_ for _device_ is
         {CL_BUILD_NONE}, an empty string is returned.
 | {CL_PROGRAM_BUILD_LOG_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_BUILD_LOG.asciidoc[]
   | char[]
       | Return the build, compile or link log for {clBuildProgram},
         {clCompileProgram} or {clLinkProgram}, whichever was performed last
@@ -6067,6 +6690,8 @@ include::{generated}/api/protos/clGetProgramBuildInfo.txt[]
         If build status of the specified _program_ for _device_ is
         {CL_BUILD_NONE}, an empty string is returned.
 | {CL_PROGRAM_BINARY_TYPE_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_BINARY_TYPE.asciidoc[]
   | cl_program_binary_type
       | Return the program binary type for device.
         This can be one of the following values:
@@ -6092,6 +6717,8 @@ include::{generated}/api/protos/clGetProgramBuildInfo.txt[]
         {clLinkProgram} without the `-create-library` link option, or when an
         executable binary was built using {clBuildProgram}.
 | {CL_PROGRAM_BUILD_GLOBAL_VARIABLE_TOTAL_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_BUILD_GLOBAL_VARIABLE_TOTAL_SIZE.asciidoc[]
   | size_t
       | The total amount of storage, in bytes, used by program variables in
         the global address space.
@@ -6147,6 +6774,7 @@ a program and the argument values to be used when executing this
 To create a kernel object, use the function
 
 include::{generated}/api/protos/clCreateKernel.txt[]
+include::{generated}/api/version-notes/clCreateKernel.asciidoc[]
 
   * _program_ is a program object with a successfully built executable.
   * _kernel_name_ is a function name in the program declared with the
@@ -6182,6 +6810,7 @@ To create kernel objects for all kernel functions in a program,
 call the function
 
 include::{generated}/api/protos/clCreateKernelsInProgram.txt[]
+include::{generated}/api/version-notes/clCreateKernelsInProgram.asciidoc[]
 
   * _program_ is a program object with a successfully built executable.
   * _num_kernels_ is the size of memory pointed to by _kernels_ specified as the
@@ -6238,6 +6867,7 @@ Otherwise, it returns one of the following errors:
 To retain a kernel object, call the function
 
 include::{generated}/api/protos/clRetainKernel.txt[]
+include::{generated}/api/version-notes/clRetainKernel.asciidoc[]
 
   * _kernel_ is the kernel object to be retained.
 
@@ -6263,6 +6893,7 @@ Otherwise, it returns one of the following errors:
 To release a kernel object, call the function
 
 include::{generated}/api/protos/clReleaseKernel.txt[]
+include::{generated}/api/version-notes/clReleaseKernel.asciidoc[]
 
   * _kernel_ is the kernel object to be released.
 
@@ -6298,6 +6929,7 @@ To set the argument value for a specific argument of a kernel, call the
 function
 
 include::{generated}/api/protos/clSetKernelArg.txt[]
+include::{generated}/api/version-notes/clSetKernelArg.asciidoc[]
 
   * _kernel_ is a valid kernel object.
   * _arg_index_ is the argument index.
@@ -6321,8 +6953,8 @@ include::{generated}/api/protos/clSetKernelArg.txt[]
     pointer can therefore be reused by the application after {clSetKernelArg}
     returns.
     The argument value specified is the value used by all API calls that enqueue
-    _kernel_ ({clEnqueueNDRangeKernel}) until the argument value is changed by a
-    call to {clSetKernelArg} for _kernel_.
+    _kernel_ ({clEnqueueNDRangeKernel} and {clEnqueueTask}) until the argument
+    value is changed by a call to {clSetKernelArg} for _kernel_.
 
 For example, consider the following kernel:
 
@@ -6422,6 +7054,7 @@ Otherwise, it returns one of the following errors:
     when the specified _arg_value_ is not a valid sampler object.
   * {CL_INVALID_DEVICE_QUEUE} for an argument declared to be of type _queue_t_
     when the specified _arg_value_ is not a valid device queue object.
+    This error code is <<unified-spec, missing before>> version 2.0.
   * {CL_INVALID_ARG_SIZE} if _arg_size_ does not match the size of the data
     type for an argument that is not a memory object or if the argument is a
     memory object and _arg_size_ != `sizeof(cl_mem)` or if _arg_size_ is
@@ -6435,6 +7068,7 @@ Otherwise, it returns one of the following errors:
     The optional attribute can be `cl::max_size` defined in OpenCL 2.2 {cpp}
     Kernel Language specification or `SpvDecorationMaxByteOffset` defined
     in SPIR-V 1.2 Specification.
+    This error code is <<unified-spec, missing before>> version 2.2.
   * {CL_INVALID_ARG_VALUE} if the argument is an image declared with the
     `read_only` qualifier and _arg_value_ refers to an image object created
     with _cl_mem_flags_ of {CL_MEM_WRITE_ONLY} or if the image argument is
@@ -6452,6 +7086,7 @@ To set a SVM pointer as the argument value for a specific argument of a
 kernel, call the function
 
 include::{generated}/api/protos/clSetKernelArgSVMPointer.txt[]
+include::{generated}/api/version-notes/clSetKernelArgSVMPointer.asciidoc[]
 
   * _kernel_ is a valid kernel object.
   * _arg_index_ is the argument index.
@@ -6461,8 +7096,8 @@ include::{generated}/api/protos/clSetKernelArgSVMPointer.txt[]
   * _arg_value_ is the SVM pointer that should be used as the argument value for
     argument specified by _arg_index_.
     The SVM pointer specified is the value used by all API calls that enqueue
-    _kernel_ ({clEnqueueNDRangeKernel}) until the argument value is changed by a
-    call to {clSetKernelArgSVMPointer} for _kernel_.
+    _kernel_ ({clEnqueueNDRangeKernel} and {clEnqueueTask}) until the argument
+    value is changed by a call to {clSetKernelArgSVMPointer} for _kernel_.
     The SVM pointer can only be used for arguments that are declared to be a
     pointer to `global` or `constant` memory.
     The SVM pointer value must be aligned according to the arguments type.
@@ -6492,6 +7127,7 @@ To pass additional information other than argument values to a kernel, call
 the function
 
 include::{generated}/api/protos/clSetKernelExecInfo.txt[]
+include::{generated}/api/version-notes/clSetKernelExecInfo.asciidoc[]
 
   * _kernel_ specifies the kernel object being queried.
   * _param_name_ specifies the information to be passed to kernel.
@@ -6509,6 +7145,8 @@ include::{generated}/api/protos/clSetKernelExecInfo.txt[]
 |====
 | *cl_kernel_exec_info* | Type | Description
 | {CL_KERNEL_EXEC_INFO_SVM_PTRS_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_SVM_PTRS.asciidoc[]
   | void *[]
       | SVM pointers must reference locations contained entirely within
         buffers that are passed to kernel as arguments, or that are passed
@@ -6519,6 +7157,8 @@ include::{generated}/api/protos/clSetKernelExecInfo.txt[]
         fine-grain buffer SVM allocations but not for finegrain system SVM
         allocations.
 | {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM.asciidoc[]
   | cl_bool
       | This flag indicates whether the kernel uses pointers that are fine
         grain system SVM allocations.
@@ -6587,7 +7227,7 @@ OpenCL implementation must assume that system pointers might be passed as
 kernel arguments and/or stored inside SVM allocations passed as kernel
 arguments.
 In this case, if the device to which the kernel is enqueued does not support
-system SVM pointers, {clEnqueueNDRangeKernel} will return a
+system SVM pointers, {clEnqueueNDRangeKernel} and {clEnqueueTask} will return a
 {CL_INVALID_OPERATION} error.
 If none of the devices in the context associated with kernel support
 fine-grain system SVM allocations, {clSetKernelExecInfo} will return a
@@ -6614,6 +7254,7 @@ Only one _param_value_ will be stored for each value of _param_name_.
 To clone a kernel object, call the function
 
 include::{generated}/api/protos/clCloneKernel.txt[]
+include::{generated}/api/version-notes/clCloneKernel.asciidoc[]
 
   * _source_kernel_ is a valid cl_kernel object that will be copied.
     _source_kernel_ will not be modified in any way by this function.
@@ -6671,6 +7312,7 @@ returned in _errcode_ret_:
 To return information about a kernel object, call the function
 
 include::{generated}/api/protos/clGetKernelInfo.txt[]
+include::{generated}/api/version-notes/clGetKernelInfo.asciidoc[]
 
   * _kernel_ specifies the kernel object being queried.
   * _param_name_ specifies the information to query.
@@ -6694,21 +7336,33 @@ include::{generated}/api/protos/clGetKernelInfo.txt[]
 |====
 | *cl_kernel_info* | Return Type | Info. returned in _param_value_
 | {CL_KERNEL_FUNCTION_NAME_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_FUNCTION_NAME.asciidoc[]
   | char[]
       | Return the kernel function name.
 | {CL_KERNEL_NUM_ARGS_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_NUM_ARGS.asciidoc[]
   | cl_uint
       | Return the number of arguments to kernel.
 | {CL_KERNEL_REFERENCE_COUNT_anchor}^16^
+
+include::{generated}/api/version-notes/CL_KERNEL_REFERENCE_COUNT.asciidoc[]
   | cl_uint
       | Return the _kernel_ reference count.
 | {CL_KERNEL_CONTEXT_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_CONTEXT.asciidoc[]
   | cl_context
       | Return the context associated with _kernel_.
 | {CL_KERNEL_PROGRAM_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_PROGRAM.asciidoc[]
   | cl_program
       | Return the program object associated with kernel.
 | {CL_KERNEL_ATTRIBUTES_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_ATTRIBUTES.asciidoc[]
   | char[]
       | Returns any attributes specified using the `+__attribute__+`
         OpenCL C qualifier (or using an OpenCL {cpp} qualifier syntax [[]] )
@@ -6756,6 +7410,7 @@ To return information about the kernel object that may be specific to a
 device, call the function
 
 include::{generated}/api/protos/clGetKernelWorkGroupInfo.txt[]
+include::{generated}/api/version-notes/clGetKernelWorkGroupInfo.asciidoc[]
 
   * _kernel_ specifies the kernel object being queried.
   * _device_ identifies a specific device in the list of devices associated with
@@ -6785,6 +7440,8 @@ include::{generated}/api/protos/clGetKernelWorkGroupInfo.txt[]
 |====
 | *cl_kernel_work_group_info* | Return Type | Info. returned in _param_value_
 | {CL_KERNEL_GLOBAL_WORK_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_GLOBAL_WORK_SIZE.asciidoc[]
   | size_t[3]
       | This provides a mechanism for the application to query the maximum
         global size that can be used to execute a kernel (i.e.
@@ -6796,6 +7453,8 @@ include::{generated}/api/protos/clGetKernelWorkGroupInfo.txt[]
         kernel, {clGetKernelWorkGroupInfo} returns the error
         {CL_INVALID_VALUE}.
 | {CL_KERNEL_WORK_GROUP_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_WORK_GROUP_SIZE.asciidoc[]
   | size_t
       | This provides a mechanism for the application to query the maximum
         workgroup size that can be used to execute the kernel on a specific
@@ -6810,12 +7469,16 @@ include::{generated}/api/protos/clGetKernelWorkGroupInfo.txt[]
         {CL_KERNEL_WORK_GROUP_SIZE} will be less than or equal to
         {CL_DEVICE_MAX_WORK_GROUP_SIZE} for a given kernel object.
 | {CL_KERNEL_COMPILE_WORK_GROUP_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_COMPILE_WORK_GROUP_SIZE.asciidoc[]
   | size_t[3]
       | Returns the work-group size specified in the kernel source or IL.
 
         If the work-group size is not specified in the kernel source or IL,
         (0, 0, 0) is returned.
 | {CL_KERNEL_LOCAL_MEM_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_LOCAL_MEM_SIZE.asciidoc[]
   | cl_ulong
       | Returns the amount of local memory in bytes being used by a kernel.
         This includes local memory that may be needed by an implementation
@@ -6828,6 +7491,8 @@ include::{generated}/api/protos/clGetKernelWorkGroupInfo.txt[]
         declared with the `+__local+` address qualifier, is not specified,
         its size is assumed to be 0.
 | {CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE.asciidoc[]
   | size_t
       | Returns the preferred multiple of work-group size for launch.
         This is a performance hint.
@@ -6837,6 +7502,8 @@ include::{generated}/api/protos/clGetKernelWorkGroupInfo.txt[]
         execution unless the work-group size specified is larger than the
         device maximum.
 | {CL_KERNEL_PRIVATE_MEM_SIZE_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_PRIVATE_MEM_SIZE.asciidoc[]
   | cl_ulong
       | Returns the minimum amount of private memory, in bytes, used by each
         work-item in the kernel.
@@ -6873,6 +7540,8 @@ Otherwise, it returns one of the following errors:
 To return information about a kernel object, call the function
 
 include::{generated}/api/protos/clGetKernelSubGroupInfo.txt[]
+include::{generated}/api/version-notes/clGetKernelSubGroupInfo.asciidoc[]
+Also see extension *cl_khr_subgroups*.
 
   * _kernel_ specifies the kernel object being queried.
   * _device_ identifies a specific device in the list of devices associated with
@@ -6908,6 +7577,9 @@ include::{generated}/api/protos/clGetKernelSubGroupInfo.txt[]
 |====
 | *cl_kernel_sub_group_info* | Input Type | Return Type | Info. returned in _param_value_
 | {CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE.asciidoc[]
+Also see extension *cl_khr_subgroups*.
   | size_t *
       | size_t
           | Returns the maximum sub-group size for this kernel.
@@ -6921,6 +7593,9 @@ include::{generated}/api/protos/clGetKernelSubGroupInfo.txt[]
             The number of dimensions in the ND-range will be inferred from
             the value specified for _input_value_size_.
 | {CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE.asciidoc[]
+Also see extension *cl_khr_subgroups*.
   | size_t *
       | size_t
           | Returns the number of sub-groups that will be present in each
@@ -6935,6 +7610,9 @@ include::{generated}/api/protos/clGetKernelSubGroupInfo.txt[]
             The number of dimensions in the ND-range will be inferred from
             the value specified for _input_value_size_.
 | {CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT.asciidoc[]
+Also see extension *cl_khr_subgroups*.
   | size_t
       | size_t[]
           | Returns the local size that will generate the requested number
@@ -6952,6 +7630,9 @@ include::{generated}/api/protos/clGetKernelSubGroupInfo.txt[]
             sub-groups, 0 will be returned in each element of the return
             array.
 | {CL_KERNEL_MAX_NUM_SUB_GROUPS_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_MAX_NUM_SUB_GROUPS.asciidoc[]
+Also see extension *cl_khr_subgroups*.
   | ignored
       | size_t
           | This provides a mechanism for the application to query the
@@ -6964,6 +7645,9 @@ include::{generated}/api/protos/clGetKernelSubGroupInfo.txt[]
             enqueue the kernel with to give a round number of sub-groups for
             an enqueue.
 | {CL_KERNEL_COMPILE_NUM_SUB_GROUPS_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_COMPILE_NUM_SUB_GROUPS.asciidoc[]
+Also see extension *cl_khr_subgroups*.
   | ignored
       | size_t
           | Returns the number of sub-groups specified in the kernel source
@@ -6998,6 +7682,7 @@ Otherwise, it returns one of the following errors:
 To return information about the arguments of a kernel, call the function
 
 include::{generated}/api/protos/clGetKernelArgInfo.txt[]
+include::{generated}/api/version-notes/clGetKernelArgInfo.asciidoc[]
 
   * _kernel_ specifies the kernel object being queried.
   * _arg_indx_ is the argument index.
@@ -7030,6 +7715,8 @@ in options argument to {clBuildProgram} or {clCompileProgram}.
 |====
 | *cl_kernel_arg_info* | Return Type | Info. returned in _param_value_
 | {CL_KERNEL_ARG_ADDRESS_QUALIFIER_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_ARG_ADDRESS_QUALIFIER.asciidoc[]
   | cl_kernel_arg_address_qualifier
       | Returns the address qualifier specified for the argument given by
         _arg_indx_.
@@ -7043,6 +7730,8 @@ in options argument to {clBuildProgram} or {clCompileProgram}.
         If no address qualifier is specified, the default address qualifier
         which is {CL_KERNEL_ARG_ADDRESS_PRIVATE} is returned.
 | {CL_KERNEL_ARG_ACCESS_QUALIFIER_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_ARG_ACCESS_QUALIFIER.asciidoc[]
   | cl_kernel_arg_access_qualifier
       | Returns the access qualifier specified for the argument given by
         _arg_indx_.
@@ -7058,6 +7747,8 @@ in options argument to {clBuildProgram} or {clCompileProgram}.
         If argument is an image type, the access qualifier specified or the
         default access qualifier is returned.
 | {CL_KERNEL_ARG_TYPE_NAME_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_ARG_TYPE_NAME.asciidoc[]
   | char[]
       | Returns the type name specified for the argument given by
         _arg_indx_.
@@ -7069,6 +7760,8 @@ in options argument to {clBuildProgram} or {clCompileProgram}.
         The argument type name returned does not include any type
         qualifiers.
 | {CL_KERNEL_ARG_TYPE_QUALIFIER_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_ARG_TYPE_QUALIFIER.asciidoc[]
   | cl_kernel_arg_type_qualifier
       | Returns a bitfield describing one or more type qualifiers specified
         for the argument given by _arg_indx_.
@@ -7083,6 +7776,8 @@ in options argument to {clBuildProgram} or {clCompileProgram}.
         {CL_KERNEL_ARG_TYPE_NONE} is returned for all parameters passed by
         value.
 | {CL_KERNEL_ARG_NAME_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_ARG_NAME.asciidoc[]
   | char[]
       | Returns the name specified for the argument given by _arg_indx_.
 |====
@@ -7132,6 +7827,7 @@ Otherwise, it returns one of the following errors:
 To enqueue a command to execute a kernel on a device, call the function
 
 include::{generated}/api/protos/clEnqueueNDRangeKernel.txt[]
+include::{generated}/api/version-notes/clEnqueueNDRangeKernel.asciidoc[]
 
   * _command_queue_ is a valid host command-queue.
     The kernel will be queued for execution on the device associated with
@@ -7306,6 +8002,7 @@ Otherwise, it returns one of the following errors:
     the value for an argument that is a buffer object and the _offset_
     specified when the sub-buffer object is created is not aligned to
     {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated with _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_INVALID_IMAGE_SIZE} if an image object is specified as an argument
     value and the image dimensions (image width, height, specified or
     compute row and/or slice pitch) are not supported by device associated
@@ -7343,12 +8040,112 @@ Otherwise, it returns one of the following errors:
     required by the OpenCL implementation on the host.
 --
 
+[open,refpage='clEnqueueTask',desc='Enqueues a command to execute a kernel, using a single work-item, on a device.',type='protos']
+--
+To enqueue a command to execute a kernel on a device, using a single work-item,
+call the function
+
+include::{generated}/api/protos/clEnqueueTask.txt[]
+include::{generated}/api/version-notes/clEnqueueTask.asciidoc[]
+
+  * _command_queue_ is a valid host command-queue.
+    The kernel will be queued for execution on the device associated with
+    _command_queue_.
+  * _kernel_ is a valid kernel object.
+    The OpenCL context associated with _kernel_ and _command-queue_ must be the
+    same.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
+    complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not wait
+    on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+    The context associated with events in _event_wait_list_ and _command_queue_
+    must be the same.
+    The memory associated with _event_wait_list_ can be reused or freed after
+    the function returns.
+  * _event_ returns an event object that identifies this particular
+    kernel-instance.
+    Event objects are unique and can be used to identify a particular
+    kernel-instance later on.
+    If _event_ is `NULL`, no event will be created for this kernel-instance and
+    therefore it will not be possible for the application to query or queue a
+    wait for this particular kernel-instance.
+    If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
+    _event_ argument should not refer to an element of the _event_wait_list_
+    array.
+
+{clEnqueueTask} is equivalent to calling {clEnqueueNDRangeKernel} with
+_work_dim_ set to 1, _global_work_offset_ set to `NULL`, _global_work_size[0]_
+set to 1, and _local_work_size[0]_ set to 1.
+
+// refError
+
+{clEnqueueTask} returns {CL_SUCCESS} if the kernel-instance was successfully
+queued.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_PROGRAM_EXECUTABLE} if there is no successfully built program
+    executable available for device associated with _command_queue_.
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
+    command-queue.
+  * {CL_INVALID_KERNEL} if _kernel_ is not a valid kernel object.
+  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ and
+    _kernel_ are not the same or if the context associated with
+    _command_queue_ and events in _event_wait_list_ are not the same.
+  * {CL_INVALID_KERNEL_ARGS} if the kernel argument values have not been
+    specified or if a kernel argument declared to be a pointer to a type
+    does not point to a named address space.
+  * {CL_INVALID_WORK_GROUP_SIZE} if a work-group size is specified for _kernel_
+    in the program source and it is not (1, 1, 1).
+// TODO I'm not sure if the next error makes sense for a 'task'.
+  * {CL_INVALID_WORK_GROUP_SIZE} if the required number of sub-groups is
+    specified for _kernel_ in the program source and is not consistent with a
+    work-group size of (1, 1, 1).
+  * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if a sub-buffer object is specified as
+    the value for an argument that is a buffer object and the _offset_
+    specified when the sub-buffer object is created is not aligned to
+    {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated with _queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
+  * {CL_INVALID_IMAGE_SIZE} if an image object is specified as an argument
+    value and the image dimensions (image width, height, specified or
+    compute row and/or slice pitch) are not supported by device associated
+    with _queue_.
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if an image object is specified as an
+    argument value and the image format (image channel order and data type)
+    is not supported by device associated with _queue_.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to queue the execution
+    instance of _kernel_ on the command-queue because of insufficient
+    resources needed to execute the kernel.  See how this error code is used
+    with {clEnqueueNDRangeKernel} for examples.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
+    memory for data store associated with image or buffer objects specified
+    as arguments to _kernel_.
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
+    are not valid events.
+  * {CL_INVALID_OPERATION} if SVM pointers are passed as arguments to a kernel
+    and the device does not support SVM or if system pointers are passed as
+    arguments to a kernel and/or stored inside SVM allocations passed as
+    kernel arguments and the device does not support fine grain system SVM
+    allocations.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
 [open,refpage='clEnqueueNativeKernel',desc='Enqueues a command to execute a native C/C++ function not compiled using the OpenCL compiler.',type='protos']
 --
 To enqueue a command to execute a native C/{cpp} function not compiled using
 the OpenCL compiler, call the function
 
 include::{generated}/api/protos/clEnqueueNativeKernel.txt[]
+include::{generated}/api/version-notes/clEnqueueNativeKernel.asciidoc[]
 
   * _command_queue_ is a valid host command-queue.
     A native user function can only be executed on a command-queue created on a
@@ -7444,8 +8241,8 @@ qualifier counts as one image.
 // Check: Is this list of event object APIs really necessary?
 
 Event objects can be used to refer to a kernel-instance command
-({clEnqueueNDRangeKernel}, {clEnqueueNativeKernel}), read, write, map and
-copy commands on memory objects (
+({clEnqueueNDRangeKernel}, {clEnqueueTask}, {clEnqueueNativeKernel}), read,
+write, map and copy commands on memory objects (
 {clEnqueueReadBuffer}, {clEnqueueWriteBuffer},
 {clEnqueueMapBuffer}, {clEnqueueUnmapMemObject},
 {clEnqueueReadBufferRect}, {clEnqueueWriteBufferRect},
@@ -7454,8 +8251,9 @@ copy commands on memory objects (
 {clEnqueueCopyBufferRect},
 {clEnqueueCopyBufferToImage}, {clEnqueueCopyImageToBuffer}),
 {clEnqueueSVMMemcpy}, {clEnqueueSVMMemFill},
-{clEnqueueSVMMap}, {clEnqueueSVMUnmap}, {clEnqueueSVMFree},
-{clEnqueueMarkerWithWaitList}, {clEnqueueBarrierWithWaitList} (refer to
+{clEnqueueSVMMap}, {clEnqueueSVMUnmap}, {clEnqueueSVMFree}, {clEnqueueMarker},
+{clEnqueueMarkerWithWaitList}, {clEnqueueWaitForEvents}, {clEnqueueBarrier},
+{clEnqueueBarrierWithWaitList},  (refer to
 <<markers-barriers-waiting-for-events,Markers, Barriers and Waiting for
 Events>>) or user events.
 
@@ -7506,6 +8304,7 @@ be used to report appropriate error information.
 To create a user event object, call the function
 
 include::{generated}/api/protos/clCreateUserEvent.txt[]
+include::{generated}/api/version-notes/clCreateUserEvent.asciidoc[]
 
   * _context_ must be a valid OpenCL context.
   * _errcode_ret_ will return an appropriate error code.
@@ -7536,6 +8335,7 @@ The execution status of the user event object created is set to
 To set the execution status of a user event object, call the function
 
 include::{generated}/api/protos/clSetUserEventStatus.txt[]
+include::{generated}/api/version-notes/clSetUserEventStatus.asciidoc[]
 
   * _event_ is a user event object created using {clCreateUserEvent}.
   * _execution_status_ specifies the new execution status to be set and can be
@@ -7599,6 +8399,7 @@ Otherwise, it returns one of the following errors:
 To wait for events to complete, call the function
 
 include::{generated}/api/protos/clWaitForEvents.txt[]
+include::{generated}/api/version-notes/clWaitForEvents.asciidoc[]
 
   * _num_events_ is the number of events in _event_list_.
   * _event_list_ is a pointer to a list of event object handles.
@@ -7622,6 +8423,7 @@ Otherwise, it returns one of the following errors:
     valid event objects.
   * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the execution status of
     any of the events in _event_list_ is a negative integer value.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -7633,6 +8435,7 @@ Otherwise, it returns one of the following errors:
 To return information about an event object, call the function
 
 include::{generated}/api/protos/clGetEventInfo.txt[]
+include::{generated}/api/version-notes/clGetEventInfo.asciidoc[]
 
   * _event_ specifies the event object being queried.
   * _param_name_ specifies the information to query.
@@ -7656,13 +8459,19 @@ include::{generated}/api/protos/clGetEventInfo.txt[]
 |====
 | *cl_event_info* | Return Type | Info. returned in _param_value_
 | {CL_EVENT_COMMAND_QUEUE_anchor}
+
+include::{generated}/api/version-notes/CL_EVENT_COMMAND_QUEUE.asciidoc[]
   | cl_command_queue
       | Return the command-queue associated with _event_.
         For user event objects, a `NULL` value is returned.
 | {CL_EVENT_CONTEXT_anchor}
+
+include::{generated}/api/version-notes/CL_EVENT_CONTEXT.asciidoc[]
   | cl_context
       | Return the context associated with _event_.
 | {CL_EVENT_COMMAND_TYPE_anchor}
+
+include::{generated}/api/version-notes/CL_EVENT_COMMAND_TYPE.asciidoc[]
   | cl_command_type
       | Return the command associated with event.
         Can be one of the following values:
@@ -7697,6 +8506,8 @@ include::{generated}/api/protos/clGetEventInfo.txt[]
         {CL_COMMAND_SVM_MAP_anchor} +
         {CL_COMMAND_SVM_UNMAP_anchor}
 | {CL_EVENT_COMMAND_EXECUTION_STATUS_anchor}^19^
+
+include::{generated}/api/version-notes/CL_EVENT_COMMAND_EXECUTION_STATUS.asciidoc[]
   | cl_int
       | Return the execution status of the command identified by event.
         Valid values are:
@@ -7717,6 +8528,8 @@ include::{generated}/api/protos/clGetEventInfo.txt[]
         returned from the platform or runtime API calls as return values or
         errcode_ret values.
 | {CL_EVENT_REFERENCE_COUNT_anchor}^20^
+
+include::{generated}/api/version-notes/CL_EVENT_REFERENCE_COUNT.asciidoc[]
   | cl_uint
       | Return the _event_ reference count.
 |====
@@ -7764,6 +8577,7 @@ To register a user callback function for a specific command execution
 status, call the function
 
 include::{generated}/api/protos/clSetEventCallback.txt[]
+include::{generated}/api/version-notes/clSetEventCallback.asciidoc[]
 
   * _event_ is a valid event object.
   * _command_exec_callback_type_ specifies the command execution status for
@@ -7865,6 +8679,7 @@ Otherwise, it returns one of the following errors:
 To retain an event object, call the function
 
 include::{generated}/api/protos/clRetainEvent.txt[]
+include::{generated}/api/version-notes/clRetainEvent.asciidoc[]
 
   * _event_ is the event object to be retained.
 
@@ -7888,6 +8703,7 @@ Otherwise, it returns one of the following errors:
 To release an event object, call the function
 
 include::{generated}/api/protos/clReleaseEvent.txt[]
+include::{generated}/api/version-notes/clReleaseEvent.asciidoc[]
 
   * _event_ is the event object to be released.
 
@@ -7942,6 +8758,7 @@ To enqueue a marker command which waits for events or commands to complete,
 call the function
 
 include::{generated}/api/protos/clEnqueueMarkerWithWaitList.txt[]
+include::{generated}/api/version-notes/clEnqueueMarkerWithWaitList.asciidoc[]
 
   * _command_queue_ is a valid host command-queue.
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
@@ -7997,12 +8814,90 @@ Otherwise, it returns one of the following errors:
     required by the OpenCL implementation on the host.
 --
 
+[open,refpage='clEnqueueMarker',desc='Enqueues a marker command which waits for all previously enqueued commands to complete.',type='protos']
+--
+To enqueue a marker command which waits for previous commands to complete, call
+the function
+
+include::{generated}/api/protos/clEnqueueMarker.txt[]
+include::{generated}/api/version-notes/clEnqueueMarker.asciidoc[]
+
+  * _command_queue_ is a valid host command-queue.
+  * _event_ returns an event object that identifies this particular command.
+    Event objects are unique and can be used to identify this marker command
+    later on.
+    _event_ can be `NULL` in which case it will not be possible for the
+    application to query the status of this command or queue a wait for this
+    command to complete.
+    If the _event_wait_list_ and the _event_ arguments are not `NULL`, the
+    _event_ argument should not refer to an element of the _event_wait_list_
+    array.
+
+The marker command waits for all commands previously enqueued in _command_queue_ to complete before it completes.
+This command returns an _event_ which can be waited on, i.e. this event can be
+waited on to insure that all previously enqueued commands, queued before this
+command to _command_queue_, have completed.
+
+// refError
+
+{clEnqueueMarker} returns {CL_SUCCESS} if the function is successfully
+executed.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
+    command-queue.
+  * {CL_INVALID_VALUE} if _event_ is `NULL`.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clEnqueueWaitForEvents',desc='Enqueues a wait on a list of events to complete.',type='protos']
+--
+To enqueue a wait for a specific event or a list of events to complete before any future commands queued in a command-queue are executed, call the function
+
+include::{generated}/api/protos/clEnqueueWaitForEvents.txt[]
+include::{generated}/api/version-notes/clEnqueueWaitForEvents.asciidoc[]
+
+  * _command_queue_ is a valid host command-queue.
+  * _event_list_ and _num_events_ specify events that need to complete before
+    this particular command can be executed.
+
+// Note, this parameter is called event_list (like clWaitForEvents) rather than
+// event_wait_list(like clEnqueueMarkerWithWaitList etc.) because the function
+// predates wait lists (and CL_INVALID_EVENT_WAIT_LIST).
+
+The events specified in _event_list_ act as synchronization points.
+The context associated with events in _event_list_ and _command_queue_ must be
+the same.
+The memory associated with _event_list_ can be reused or freed after the
+function returns.
+
+// refError
+
+{clEnqueueWaitForEvents} returns {CL_SUCCESS} if the function is successfully
+executed.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
+    command-queue.
+  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ and events
+    in _event_list_ are not the same.
+  * {CL_INVALID_VALUE} if _num_events_ is 0 or _event_list_ is `NULL`.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
 [open,refpage='clEnqueueBarrierWithWaitList',desc='A synchronization point that enqueues a barrier operation.',type='protos']
 --
 To enqueue a barrier command which waits for events or commands to complete,
 call the function
 
 include::{generated}/api/protos/clEnqueueBarrierWithWaitList.txt[]
+include::{generated}/api/version-notes/clEnqueueBarrierWithWaitList.asciidoc[]
 
   * _command_queue_ is a valid host command-queue.
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
@@ -8059,14 +8954,47 @@ Otherwise, it returns one of the following errors:
     required by the OpenCL implementation on the host.
 --
 
+[open,refpage='clEnqueueBarrier',desc='A synchronization point that enqueues a barrier operation.',type='protos']
+--
+To enqueue a barrier command which waits for commands to complete, call the
+function
+
+include::{generated}/api/protos/clEnqueueBarrier.txt[]
+include::{generated}/api/version-notes/clEnqueueBarrier.asciidoc[]
+
+  * _command_queue_ is a valid host command-queue.
+
+The barrier command waits for all commands previously enqueued in
+_command_queue_ to complete before it completes.
+This command blocks command execution, that is, any following commands
+enqueued after it do not execute until it completes.
+// TODO clEnqueueBarrierWithWaitList doesn't say synchronization point, should
+// it, or should the next line be removed?  The main difference is that
+// clEnqueueBarrierWithWaitList returns an event, which is the synchronization
+// point.
+The barrier command is a synchronization point.
+
+// refError
+
+{clEnqueueBarrier} returns {CL_SUCCESS} if the function is successfully
+executed.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
+    command-queue.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
 
 == Out-of-order Execution of Kernels and Memory Object Commands
 
 The OpenCL functions that are submitted to a command-queue are enqueued in
 the order the calls are made but can be configured to execute in-order or
 out-of-order.
-The _properties_ argument in {clCreateCommandQueueWithProperties} can be
-used to specify the execution order.
+The _properties_ argument in {clCreateCommandQueueWithProperties} or
+{clCreateCommandQueue} can be used to specify the execution order.
 
 If the {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE} property of a command-queue is
 not set, the commands enqueued to a command-queue execute in order.
@@ -8088,19 +9016,19 @@ This can be specified when the command-queue is created.
 In out-of-order execution mode there is no guarantee that the enqueued
 commands will finish execution in the order they were queued.
 As there is no guarantee that kernels will be executed in order, i.e. based
-on when the {clEnqueueNDRangeKernel} calls are made within a command-queue,
-it is therefore possible that an earlier {clEnqueueNDRangeKernel} call to
-execute kernel A identified by event A may execute and/or finish later than
-a {clEnqueueNDRangeKernel} call to execute kernel B which was called by the
-application at a later point in time.
+on when the {clEnqueueNDRangeKernel} or {clEnqueueTask} calls are made within a
+command-queue, it is therefore possible that an earlier
+{clEnqueueNDRangeKernel} call to execute kernel A identified by event A may
+execute and/or finish later than a {clEnqueueNDRangeKernel} call to execute
+kernel B which was called by the application at a later point in time.
 To guarantee a specific order of execution of kernels, a wait on a
 particular event (in this case event A) can be used.
 The wait for event A can be specified in the _event_wait_list_ argument to
 {clEnqueueNDRangeKernel} for kernel B.
 
-In addition, a marker ({clEnqueueMarkerWithWaitList}) or a barrier
-({clEnqueueBarrierWithWaitList}) command can be enqueued to the
-command-queue.
+In addition, a marker ({clEnqueueMarker} or {clEnqueueMarkerWithWaitList}) or a
+barrier ({clEnqueueBarrier} or {clEnqueueBarrierWithWaitList}) command can be
+enqueued to the command-queue.
 The marker command ensures that previously enqueued commands identified by
 the list of events to wait for (or all previous commands) have finished.
 A barrier command is similar to a marker command, but additionally
@@ -8108,13 +9036,14 @@ guarantees that no later-enqueued commands will execute until the waited-for
 commands have executed.
 
 Similarly, commands to read, write, copy or map memory objects that are
-enqueued after {clEnqueueNDRangeKernel} or {clEnqueueNativeKernel} commands
-are not guaranteed to wait for kernels scheduled for execution to have
-completed (if the {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE} property is set).
+enqueued after {clEnqueueNDRangeKernel}, {clEnqueueTask} or
+{clEnqueueNativeKernel} commands are not guaranteed to wait for kernels
+scheduled for execution to have completed (if the
+{CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE} property is set).
 To ensure correct ordering of commands, the event object returned by
-{clEnqueueNDRangeKernel} or {clEnqueueNativeKernel} can be used to enqueue a
-wait for event or a barrier command can be enqueued that must complete
-before reads or writes to the memory object(s) occur.
+{clEnqueueNDRangeKernel}, {clEnqueueTask} or {clEnqueueNativeKernel} can be
+used to enqueue a wait for event or a barrier command can be enqueued that must
+complete before reads or writes to the memory object(s) occur.
 
 
 [[profiling-operations]]
@@ -8122,8 +9051,10 @@ before reads or writes to the memory object(s) occur.
 
 This section describes the profiling of OpenCL functions that are enqueued
 as commands to a command-queue. Profiling of OpenCL commands can be enabled
-by using a command-queue created with {CL_QUEUE_PROFILING_ENABLE}
-flag set in _properties_ argument to {clCreateCommandQueueWithProperties}.
+by using a command-queue created with the {CL_QUEUE_PROFILING_ENABLE}
+flag set in the {CL_QUEUE_PROPERTIES} bitfield in the _properties_ argument to
+{clCreateCommandQueueWithProperties}, or in the _properties_ argument to
+{clCreateCommandQueue}.
 When profiling is enabled, the event objects that are created from
 enqueuing a command store a timestamp for each of their state transitions.
 
@@ -8133,6 +9064,7 @@ To return profiling information for a command associated with an event when
 profiling is enabled, call the function
 
 include::{generated}/api/protos/clGetEventProfilingInfo.txt[]
+include::{generated}/api/version-notes/clGetEventProfilingInfo.asciidoc[]
 
   * _event_ specifies the event object.
   * _param_name_ specifies the profiling data to query.
@@ -8156,27 +9088,37 @@ include::{generated}/api/protos/clGetEventProfilingInfo.txt[]
 |====
 | *cl_profiling_info* | Return Type | Info. returned in _param_value_
 | {CL_PROFILING_COMMAND_QUEUED_anchor}
+
+include::{generated}/api/version-notes/CL_PROFILING_COMMAND_QUEUED.asciidoc[]
   | cl_ulong
       | A 64-bit value that describes the current device time counter in
         nanoseconds when the command identified by event is enqueued in a
         command-queue by the host.
 | {CL_PROFILING_COMMAND_SUBMIT_anchor}
+
+include::{generated}/api/version-notes/CL_PROFILING_COMMAND_SUBMIT.asciidoc[]
   | cl_ulong
       | A 64-bit value that describes the current device time counter in
         nanoseconds when the command identified by event that has been
         enqueued is submitted by the host to the device associated with the
         command-queue.
 | {CL_PROFILING_COMMAND_START_anchor}
+
+include::{generated}/api/version-notes/CL_PROFILING_COMMAND_START.asciidoc[]
   | cl_ulong
       | A 64-bit value that describes the current device time counter in
         nanoseconds when the command identified by event starts execution on
         the device.
 | {CL_PROFILING_COMMAND_END_anchor}
+
+include::{generated}/api/version-notes/CL_PROFILING_COMMAND_END.asciidoc[]
   | cl_ulong
       | A 64-bit value that describes the current device time counter in
         nanoseconds when the command identified by event has finished
         execution on the device.
 | {CL_PROFILING_COMMAND_COMPLETE_anchor}
+
+include::{generated}/api/version-notes/CL_PROFILING_COMMAND_COMPLETE.asciidoc[]
   | cl_ulong
       | A 64-bit value that describes the current device time counter in
         nanoseconds when the command identified by event and any child
@@ -8222,6 +9164,7 @@ Otherwise, it returns one of the following errors:
 To flush commands to a device, call the function
 
 include::{generated}/api/protos/clFlush.txt[]
+include::{generated}/api/version-notes/clFlush.asciidoc[]
 
   * _command_queue_ is the command queue to flush.
 
@@ -8265,6 +9208,7 @@ Otherwise, it returns one of the following errors:
 To wait for completion of commands on a device, call the function
 
 include::{generated}/api/protos/clFinish.txt[]
+include::{generated}/api/version-notes/clFinish.asciidoc[]
 
   * _command_queue_ is the command queue to wait for.
 
