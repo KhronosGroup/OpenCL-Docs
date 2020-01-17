@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2016-2019 The Khronos Group Inc.
+# Copyright (c) 2016-2020 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ def printCopyrightSourceComments(fp):
 
     Writes an asciidoc comment block, which copyrights the source
     file."""
-    print('// Copyright (c) 2014-2019 Khronos Group. This work is licensed under a', file=fp)
+    print('// Copyright (c) 2014-2020 Khronos Group. This work is licensed under a', file=fp)
     print('// Creative Commons Attribution 4.0 International License; see', file=fp)
     print('// http://creativecommons.org/licenses/by/4.0/', file=fp)
     print('', file=fp)
