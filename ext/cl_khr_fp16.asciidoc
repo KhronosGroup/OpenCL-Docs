@@ -1491,20 +1491,30 @@ is the infinitely precise result.
 | \<= 2 ulp
 | \<= 2 ulp
 
+// 3 operations from the 2 multiplications and 1 subtraction per component
 | *cross*
-| absolute error tolerance of 'max * max * (3 * HLF_EPSILON)', where max is the maximum input operand value
+| absolute error tolerance of 'max * max * (3 * HLF_EPSILON)' per vector component, where _max_ is the maximum input operand magnitude
 | Implementation-defined
 
 | *degrees*
 | \<= 2 ulp
 | \<= 2 ulp
 
+// 0.5         ULP error in sqrt
+// 1.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// = 0.5 + (1.5 * n) + (0.5 * (n - 1))
+// = 0.5 + 1.5n + (0.5n - 0.5)
+// = 2n
 | *distance*
-| \<= 0.5 + (1.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
+| \<= 2n ulp, for gentype with vector width _n_
 | Implementation-defined
 
+// n + n-1  Number of operations from n multiples and (n-1) additions
+// 2n - 1
 | *dot*
-| absolute error tolerance of 'max * max * (2 * (n - 1)) * HLF_EPSILON', For vector width n and maximum input operand value 'max'
+| absolute error tolerance of 'max * max * (2n - 1) * HLF_EPSILON', for vector width _n_ and maximum input operand magnitude _max_ across all vector components
 | Implementation-defined
 
 | *erfc*
@@ -1579,8 +1589,16 @@ is the infinitely precise result.
 | Correctly rounded
 | Correctly rounded
 
+// 0.5         ULP error in sqrt
+// 0.5         effect on e of taking sqrt(x + e)
+// 0.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// = (0.5 + 0.5 * ((0.5 * n) + (0.5 * (n - 1))))
+// = 0.5 + 0.5 * (n - 0.5)
+// = 0.25 + 0.5n
 | *length*
-| \<= 0.5 + 0.5 * (0.5 * n + 0.5 * (n - 1)) ulp, for gentype with vector width n
+| \<= 0.25 + 0.5n ulp, for gentype with vector width _n_
 | Implementation-defined
 
 | *log*
@@ -1639,8 +1657,15 @@ is the infinitely precise result.
 | 0 ulp
 | 0 ulp
 
+// 1.5         error in rsqrt + error in multiply
+// 0.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// = 1.5 + (0.5 * n) + (0.5 * (n - 1))
+// = 1.5 + 0.5n + (0.5n - 0.5)
+// = 1.0 + n
 | *normalize*
-| \<= 1.5 + (0.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
+| \<= 1 + n ulp, for gentype with vector width _n_
 | Implementation-defined
 
 | *pow(x, y)*

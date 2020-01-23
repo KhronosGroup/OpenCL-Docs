@@ -5,7 +5,7 @@
 [[numerical_compliance]]
 == OpenCL Numerical Compliance
 
-This section describes features of the <<cpp14-spec, {cpp14}>> and 
+This section describes features of the <<cpp14-spec, {cpp14}>> and
 <<ieee-754-spec, IEEE-754>> standards that must be supported by all OpenCL
 compliant devices.
 
@@ -278,10 +278,11 @@ devices given as ULP values.
 | \<= 4 ulp
 | \<= 2 ulp
 
+// 3 operations from the 2 multiplications and 1 subtraction per component
 | *OpExtInst* *cross*
-| absolute error tolerance of 'max * max * (3 * HLF_EPSILON)', where max is the maximum input operand value
-| absolute error tolerance of 'max * max * (3 * FLT_EPSILON)', where max is the maximum input operand value
-| absolute error tolerance of 'max * max * (3 * FLT_EPSILON)', where max is the maximum input operand value
+| absolute error tolerance of 'max * max * (3 * HLF_EPSILON)' per vector component, where _max_ is the maximum input operand magnitude
+| absolute error tolerance of 'max * max * (3 * FLT_EPSILON)' per vector component, where _max_ is the maximum input operand magnitude
+| absolute error tolerance of 'max * max * (3 * FLT_EPSILON)' per vector component, where _max_ is the maximum input operand magnitude
 
 | *OpExtInst* *degrees*
 | \<= 2 ulp
@@ -289,14 +290,19 @@ devices given as ULP values.
 | \<= 2 ulp
 
 | *OpExtInst* *distance*
-| \<= 0.5 + (1.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
-| \<= 3 + (1.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
-| \<= 2 * (3 + 0.5 * (1.5 * n + 0.5 * (n - 1))) ulp, for gentype with vector width n
+// See ext/cl_khr_fp16.asciidoc for derivation
+| \<= 2n ulp, for gentype with vector width _n_
+// See OpenCL_C.txt derivation
+| \<= 2.5 + 2n ulp, for gentype with vector width _n_
+// See ext/cl_khr_fp64.asciidoc for derivation
+| \<= 5.5 + 2n ulp, for gentype with vector width _n_
 
+// n + n-1  Number of operations from n multiples and (n-1) additions
+// 2n - 1
 | *OpExtInst* *dot*
-| absolute error tolerance of 'max * max * (2 * (n - 1)) * HLF_EPSILON', For vector width n and maximum input operand value 'max'
-| absolute error tolerance of 'max * max * (2 * (n - 1)) * FLT_EPSILON', For vector width n and maximum input operand value 'max'
-| absolute error tolerance of 'max * max * (2 * (n - 1)) * FLT_EPSILON', For vector width n and maximum input operand value max
+| absolute error tolerance of 'max * max * (2n - 1) * HLF_EPSILON', for vector width _n_ and maximum input operand magnitude _max_ across all vector components
+| absolute error tolerance of 'max * max * (2n - 1) * FLT_EPSILON', for vector width _n_ and maximum input operand magnitude _max_ across all vector components
+| absolute error tolerance of 'max * max * (2n - 1) * FLT_EPSILON', for vector width _n_ and maximum input operand magnitude _max_ across all vector components
 
 | *OpExtInst* *erfc*
 | \<= 16 ulp
@@ -404,9 +410,12 @@ devices given as ULP values.
 | Correctly rounded
 
 | *OpExtInst* *length*
-| \<= 0.5 + 0.5 * (0.5 * n + 0.5 * (n - 1)) ulp, for gentype with vector width n
-| \<= 3 + 0.5 * (0.5 * n + 0.5 * (n - 1)) ulp, for gentype with vector width n
-| \<= 2 * (3 + 0.5 * (0.5 * n + 0.5 * (n - 1))) ulp, for gentype with vector width n
+// See ext/cl_khr_fp16.asciidoc for derivation
+| \<= 0.25 + 0.5n ulp, for gentype with vector width _n_
+// See OpenCL_C.txt derivation
+| \<= 2.75 + 0.5n ulp, for gentype with vector width _n_
+// See ext/cl_khr_fp64.asciidoc for derivation
+| \<= 5.5 + n ulp, for gentype with vector width _n_
 
 | *OpExtInst* *lgamma*
 | Implementation-defined
@@ -482,9 +491,12 @@ devices given as ULP values.
 | 0 ulp
 
 | *OpExtInst* *normalize*
-| \<= 1.5 + (0.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
-| \<= 2.5 + (0.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
-| \<= 2 * (2.5 + 0.5 * (0.5 * n + 0.5 * (n - 1))) ulp, for gentype with vector width n
+// See ext/cl_khr_fp16.asciidoc for derivation
+| \<= 1 + n ulp, for gentype with vector width _n_
+// See OpenCL_C.txt derivation
+| \<= 2 + n ulp, for gentype with vector width _n_
+// See ext/cl_khr_fp64.asciidoc for derivation
+| \<= 4.5 + n ulp, for gentype with vector width _n_
 
 | *OpExtInst* *pow*
 | \<= 16 ulp
@@ -671,19 +683,22 @@ devices given as ULP values.
 | \<= 8192 ulp
 |
 
+// See OpenCL_C.txt derivation
 | *OpExtInst* *fast_distance*
 |
-| \<= 8192 + (1.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
+| \<= 8191.5 + 2n ulp, for gentype with vector width _n_
 |
 
+// See OpenCL_C.txt derivation
 | *OpExtInst* *fast_length*
 |
-| \<= 8192 + (0.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
+| \<= 8191.5 + n ulp, for gentype with vector width _n_
 |
 
+// See OpenCL_C.txt derivation
 | *OpExtInst* *fast_normalize*
 |
-| \<= 8192.5 + (0.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
+| \<= 8192 + n ulp, for gentype with vector width _n_
 |
 
 | *OpExtInst* *native_cos*
