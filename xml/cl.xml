@@ -188,6 +188,12 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_uint</type>          <name>cl_profiling_info</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_sampler_properties</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_kernel_exec_info</name>;</type>
+        <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_unified_shared_memory_capabilities_intel</name>;</type>
+        <type category="define">typedef <type>cl_bitfield</type>      <name>cl_mem_properties_intel</name>;</type>
+        <type category="define">typedef <type>cl_bitfield</type>      <name>cl_mem_alloc_flags_intel</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_mem_info_intel</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_unified_shared_memory_type_intel</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_mem_advice_intel"/></name>;</type>
 
             <comment>Structure types</comment>
         <type category="struct" name="cl_dx9_surface_info_khr">
@@ -974,6 +980,17 @@ server's OpenCL/api-docs repository.
             <enum value="0x1"           name="CL_AVC_ME_INTERLACED_SCAN_BOTTOM_FIELD_INTEL"           />
     </enums>
 
+    <enums name="cl_device_unified_shared_memory_capabilities_intel" vendor="Intel" type="bitmask">
+        <enum bitpos="0"            name="CL_UNIFIED_SHARED_MEMORY_ACCESS_INTEL"/>
+        <enum bitpos="1"            name="CL_UNIFIED_SHARED_MEMORY_ATOMIC_ACCESS_INTEL"/>
+        <enum bitpos="2"            name="CL_UNIFIED_SHARED_MEMORY_CONCURRENT_ACCESS_INTEL"/>
+        <enum bitpos="3"            name="CL_UNIFIED_SHARED_MEMORY_CONCURRENT_ATOMIC_ACCESS_INTEL"/>
+    </enums>
+
+    <enums name="cl_mem_alloc_flags_intel" vendor="Intel" type="bitmask">
+        <enum bitpos="0"            name="CL_MEM_ALLOC_WRITE_COMBINED_INTEL"/>
+    </enums>
+
     <enums start="0x0900" end="0x09FF" name="cl_platform_info" vendor="Khronos">
         <enum value="0x0900"        name="CL_PLATFORM_PROFILE"/>
         <enum value="0x0901"        name="CL_PLATFORM_VERSION"/>
@@ -1621,7 +1638,21 @@ server's OpenCL/api-docs repository.
     </enums>
 
     <enums start="0x4190" end="0x419F" name="enums.4190" vendor="Intel">
-            <unused start="0x4190" end="0x419F"/>
+        <enum value="0x4190"        name="CL_DEVICE_HOST_MEM_CAPABILITIES_INTEL"/>
+        <enum value="0x4191"        name="CL_DEVICE_DEVICE_MEM_CAPABILITIES_INTEL"/>
+        <enum value="0x4192"        name="CL_DEVICE_SINGLE_DEVICE_SHARED_MEM_CAPABILITIES_INTEL"/>
+        <enum value="0x4193"        name="CL_DEVICE_CROSS_DEVICE_SHARED_MEM_CAPABILITIES_INTEL"/>
+        <enum value="0x4194"        name="CL_DEVICE_SHARED_SYSTEM_MEM_CAPABILITIES_INTEL"/>
+        <enum value="0x4195"        name="CL_MEM_ALLOC_FLAGS_INTEL"/>
+        <enum value="0x4196"        name="CL_MEM_TYPE_UNKNOWN_INTEL"/>
+        <enum value="0x4197"        name="CL_MEM_TYPE_HOST_INTEL"/>
+        <enum value="0x4198"        name="CL_MEM_TYPE_DEVICE_INTEL"/>
+        <enum value="0x4199"        name="CL_MEM_TYPE_SHARED_INTEL"/>
+        <enum value="0x419A"        name="CL_MEM_ALLOC_TYPE_INTEL"/>
+        <enum value="0x419B"        name="CL_MEM_ALLOC_BASE_PTR_INTEL"/>
+        <enum value="0x419C"        name="CL_MEM_ALLOC_SIZE_INTEL"/>
+        <enum value="0x419D"        name="CL_MEM_ALLOC_DEVICE_INTEL"/>
+            <unused start="0x419E" end="0x419F"/>
     </enums>
 
     <enums start="0x41A0" end="0x41DF" name="enums.41A0" vendor="Qualcomm">
@@ -1636,7 +1667,15 @@ server's OpenCL/api-docs repository.
     </enums>
 
     <enums start="0x4200" end="0x420F" name="enums.4200" vendor="Intel">
-            <unused start="0x4200" end="0x420F"/>
+        <enum value="0x4200"        name="CL_KERNEL_EXEC_INFO_INDIRECT_HOST_ACCESS_INTEL"/>
+        <enum value="0x4201"        name="CL_KERNEL_EXEC_INFO_INDIRECT_DEVICE_ACCESS_INTEL"/>
+        <enum value="0x4202"        name="CL_KERNEL_EXEC_INFO_INDIRECT_SHARED_ACCESS_INTEL"/>
+        <enum value="0x4203"        name="CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL"/>
+        <enum value="0x4204"        name="CL_COMMAND_MEMFILL_INTEL"/>
+        <enum value="0x4205"        name="CL_COMMAND_MEMCPY_INTEL"/>
+        <enum value="0x4206"        name="CL_COMMAND_MIGRATEMEM_INTEL"/>
+        <enum value="0x4207"        name="CL_COMMAND_MEMADVISE_INTEL"/>
+            <unused start="0x4208" end="0x420F"/>
     </enums>
 
     <enums start="0x4210" end="0x421F" name="enums.4210" vendor="Intel">
@@ -2217,6 +2256,104 @@ server's OpenCL/api-docs repository.
             <param><type>cl_uint</type>                    <name>num_events_in_wait_list</name></param>
             <param>const <type>cl_event</type>*            <name>event_wait_list</name></param>
             <param><type>cl_event</type>*                  <name>event</name></param>
+        </command>
+        <command>
+            <proto><type>void</type>*                           <name>clHostMemAllocINTEL</name></proto>
+            <param><type>cl_context</type>                      <name>context</name></param>
+            <param>const <type>cl_mem_properties_intel</type>*  <name>properties</name></param>
+            <param><type>size_t</type>                          <name>size</name></param>
+            <param><type>cl_uint</type>                         <name>alignment</name></param>
+            <param><type>cl_int</type>*                         <name>errcode_ret</name></param>
+        </command>
+        <command>
+            <proto><type>void</type>*                           <name>clDeviceMemAllocINTEL</name></proto>
+            <param><type>cl_context</type>                      <name>context</name></param>
+            <param><type>cl_device_id</type>                    <name>device</name></param>
+            <param>const <type>cl_mem_properties_intel</type>*  <name>properties</name></param>
+            <param><type>size_t</type>                          <name>size</name></param>
+            <param><type>cl_uint</type>                         <name>alignment</name></param>
+            <param><type>cl_int</type>*                         <name>errcode_ret</name></param>
+        </command>
+        <command>
+            <proto><type>void</type>*                           <name>clSharedMemAllocINTEL</name></proto>
+            <param><type>cl_context</type>                      <name>context</name></param>
+            <param><type>cl_device_id</type>                    <name>device</name></param>
+            <param>const <type>cl_mem_properties_intel</type>*  <name>properties</name></param>
+            <param><type>size_t</type>                          <name>size</name></param>
+            <param><type>cl_uint</type>                         <name>alignment</name></param>
+            <param><type>cl_int</type>*                         <name>errcode_ret</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                          <name>clMemFreeINTEL</name></proto>
+            <param><type>cl_context</type>                      <name>context</name></param>
+            <param><type>void</type>*                           <name>ptr</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                          <name>clGetMemAllocInfoINTEL</name></proto>
+            <param><type>cl_context</type>                      <name>context</name></param>
+            <param>const <type>void</type>*                     <name>ptr</name></param>
+            <param><type>cl_mem_info_intel</type>               <name>param_name</name></param>
+            <param><type>size_t</type>                          <name>param_value_size</name></param>
+            <param><type>void</type>*                           <name>param_value</name></param>
+            <param><type>size_t</type>*                         <name>param_value_size_ret</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                          <name>clSetKernelArgMemPointerINTEL</name></proto>
+            <param><type>cl_kernel</type>                       <name>kernel</name></param>
+            <param><type>cl_uint</type>                         <name>arg_index</name></param>
+            <param>const <type>void</type>*                     <name>arg_value</name></param>
+        </command>
+        <command comment="Deprecated">
+            <proto><type>cl_int</type>                          <name>clEnqueueMemsetINTEL</name></proto>
+            <param><type>cl_command_queue</type>                <name>command_queue</name></param>
+            <param><type>void</type>*                           <name>dst_ptr</name></param>
+            <param><type>cl_int</type>                          <name>value</name></param>
+            <param><type>size_t</type>                          <name>size</name></param>
+            <param><type>cl_uint</type>                         <name>num_events_in_wait_list</name></param>
+            <param>const <type>cl_event</type>*                 <name>event_wait_list</name></param>
+            <param><type>cl_event</type>*                       <name>event</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                          <name>clEnqueueMemFillINTEL</name></proto>
+            <param><type>cl_command_queue</type>                <name>command_queue</name></param>
+            <param><type>void</type>*                           <name>dst_ptr</name></param>
+            <param>const <type>void</type>*                     <name>pattern</name></param>
+            <param><type>size_t</type>                          <name>pattern_size</name></param>
+            <param><type>size_t</type>                          <name>size</name></param>
+            <param><type>cl_uint</type>                         <name>num_events_in_wait_list</name></param>
+            <param>const <type>cl_event</type>*                 <name>event_wait_list</name></param>
+            <param><type>cl_event</type>*                       <name>event</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                          <name>clEnqueueMemcpyINTEL</name></proto>
+            <param><type>cl_command_queue</type>                <name>command_queue</name></param>
+            <param><type>cl_bool</type>                         <name>blocking</name></param>
+            <param><type>void</type>*                           <name>dst_ptr</name></param>
+            <param>const <type>void</type>*                     <name>src_ptr</name></param>
+            <param><type>size_t</type>                          <name>size</name></param>
+            <param><type>cl_uint</type>                         <name>num_events_in_wait_list</name></param>
+            <param>const <type>cl_event</type>*                 <name>event_wait_list</name></param>
+            <param><type>cl_event</type>*                       <name>event</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                          <name>clEnqueueMigrateMemINTEL</name></proto>
+            <param><type>cl_command_queue</type>                <name>command_queue</name></param>
+            <param>const <type>void</type>*                     <name>ptr</name></param>
+            <param><type>size_t</type>                          <name>size</name></param>
+            <param><type>cl_mem_migration_flags</type>          <name>flags</name></param>
+            <param><type>cl_uint</type>                         <name>num_events_in_wait_list</name></param>
+            <param>const <type>cl_event</type>*                 <name>event_wait_list</name></param>
+            <param><type>cl_event</type>*                       <name>event</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                          <name>clEnqueueMemAdviseINTEL</name></proto>
+            <param><type>cl_command_queue</type>                <name>command_queue</name></param>
+            <param>const <type>void</type>*                     <name>ptr</name></param>
+            <param><type>size_t</type>                          <name>size</name></param>
+            <param><type>cl_mem_advice_intel</type>             <name>advice</name></param>
+            <param><type>cl_uint</type>                         <name>num_events_in_wait_list</name></param>
+            <param>const <type>cl_event</type>*                 <name>event_wait_list</name></param>
+            <param><type>cl_event</type>*                       <name>event</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_0">
             <proto><type>cl_int</type>                                  <name>clGetPlatformIDs</name></proto>
@@ -5188,6 +5325,72 @@ server's OpenCL/api-docs repository.
                 <command name="clGetGLTextureInfo"/>
                 <command name="clEnqueueAcquireGLObjects"/>
                 <command name="clEnqueueReleaseGLObjects"/>
+            </require>
+        </extension>
+        <extension name="cl_intel_unified_shared_memory" comment="in sync with rev M" supported="opencl">
+            <require>
+                <type name="cl_device_unified_shared_memory_capabilities_intel"/>
+                <type name="cl_mem_properties_intel"/>
+                <type name="cl_mem_alloc_flags_intel"/>
+                <type name="cl_mem_info_intel"/>
+                <type name="cl_unified_shared_memory_type_intel"/>
+                <type name="cl_mem_advice_intel"/>
+            </require>
+            <require comment="cl_device_info">
+                <enum name="CL_DEVICE_HOST_MEM_CAPABILITIES_INTEL"/>
+                <enum name="CL_DEVICE_DEVICE_MEM_CAPABILITIES_INTEL"/>
+                <enum name="CL_DEVICE_SINGLE_DEVICE_SHARED_MEM_CAPABILITIES_INTEL"/>
+                <enum name="CL_DEVICE_CROSS_DEVICE_SHARED_MEM_CAPABILITIES_INTEL"/>
+                <enum name="CL_DEVICE_SHARED_SYSTEM_MEM_CAPABILITIES_INTEL"/>
+            </require>
+            <require comment="cl_unified_shared_memory_capabilities_intel - bitfield">
+                <enum name="CL_UNIFIED_SHARED_MEMORY_ACCESS_INTEL"/>
+                <enum name="CL_UNIFIED_SHARED_MEMORY_ATOMIC_ACCESS_INTEL"/>
+                <enum name="CL_UNIFIED_SHARED_MEMORY_CONCURRENT_ACCESS_INTEL"/>
+                <enum name="CL_UNIFIED_SHARED_MEMORY_CONCURRENT_ATOMIC_ACCESS_INTEL"/>
+            </require>
+            <require comment="cl_mem_properties_intel">
+                <enum name="CL_MEM_ALLOC_FLAGS_INTEL"/>
+            </require>
+            <require comment="cl_mem_alloc_flags_intel - bitfield">
+                <enum name="CL_MEM_ALLOC_WRITE_COMBINED_INTEL"/>
+            </require>
+            <require comment="cl_mem_alloc_info_intel">
+                <enum name="CL_MEM_ALLOC_TYPE_INTEL"/>
+                <enum name="CL_MEM_ALLOC_BASE_PTR_INTEL"/>
+                <enum name="CL_MEM_ALLOC_SIZE_INTEL"/>
+                <enum name="CL_MEM_ALLOC_DEVICE_INTEL"/>
+            </require>
+            <require comment="cl_unified_shared_memory_type_intel">
+                <enum name="CL_MEM_TYPE_UNKNOWN_INTEL"/>
+                <enum name="CL_MEM_TYPE_HOST_INTEL"/>
+                <enum name="CL_MEM_TYPE_DEVICE_INTEL"/>
+                <enum name="CL_MEM_TYPE_SHARED_INTEL"/>
+            </require>
+            <require comment="cl_kernel_exec_info">
+                <enum name="CL_KERNEL_EXEC_INFO_INDIRECT_HOST_ACCESS_INTEL"/>
+                <enum name="CL_KERNEL_EXEC_INFO_INDIRECT_DEVICE_ACCESS_INTEL"/>
+                <enum name="CL_KERNEL_EXEC_INFO_INDIRECT_SHARED_ACCESS_INTEL"/>
+                <enum name="CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL"/>
+            </require>
+            <require comment="cl_command_type">
+                <enum name="CL_COMMAND_MEMFILL_INTEL"/>
+                <enum name="CL_COMMAND_MEMCPY_INTEL"/>
+                <enum name="CL_COMMAND_MIGRATEMEM_INTEL"/>
+                <enum name="CL_COMMAND_MEMADVISE_INTEL"/>
+            </require>
+            <require>
+                <command name="clHostMemAllocINTEL"/>
+                <command name="clDeviceMemAllocINTEL"/>
+                <command name="clSharedMemAllocINTEL"/>
+                <command name="clMemFreeINTEL"/>
+                <command name="clGetMemAllocInfoINTEL"/>
+                <command name="clSetKernelArgMemPointerINTEL"/>
+                <command name="clEnqueueMemsetINTEL"/>
+                <command name="clEnqueueMemFillINTEL"/>
+                <command name="clEnqueueMemcpyINTEL"/>
+                <command name="clEnqueueMigrateMemINTEL"/>
+                <command name="clEnqueueMemAdviseINTEL"/>
             </require>
         </extension>
     </extensions>
