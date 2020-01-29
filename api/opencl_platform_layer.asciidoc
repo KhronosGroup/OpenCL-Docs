@@ -318,7 +318,7 @@ include::{generated}/api/version-notes/CL_DEVICE_TYPE.asciidoc[]
         {CL_DEVICE_TYPE_CPU}, {CL_DEVICE_TYPE_GPU}, {CL_DEVICE_TYPE_ACCELERATOR},
         {CL_DEVICE_TYPE_DEFAULT}, a combination of the above types, or
         {CL_DEVICE_TYPE_CUSTOM}.
-| {CL_DEVICE_VENDOR_ID_anchor}
+| {CL_DEVICE_VENDOR_ID_anchor}^4^
 
 include::{generated}/api/version-notes/CL_DEVICE_VENDOR_ID.asciidoc[]
   | cl_uint
@@ -444,7 +444,7 @@ include::{generated}/api/version-notes/CL_DEVICE_IMAGE_SUPPORT.asciidoc[]
   | cl_bool
       | Is {CL_TRUE} if images are supported by the OpenCL device and {CL_FALSE}
         otherwise.
-| {CL_DEVICE_MAX_READ_IMAGE_ARGS_anchor}^4^
+| {CL_DEVICE_MAX_READ_IMAGE_ARGS_anchor}^5^
 
 include::{generated}/api/version-notes/CL_DEVICE_MAX_READ_IMAGE_ARGS.asciidoc[]
   | cl_uint
@@ -460,7 +460,7 @@ include::{generated}/api/version-notes/CL_DEVICE_MAX_WRITE_IMAGE_ARGS.asciidoc[]
         write_only qualifier.
         The minimum value is 64 if {CL_DEVICE_IMAGE_SUPPORT} is {CL_TRUE}, the
         value is 0 otherwise.
-| {CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS_anchor}^5^
+| {CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS_anchor}^6^
 
 include::{generated}/api/version-notes/CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS.asciidoc[]
   | cl_uint
@@ -612,7 +612,7 @@ include::{generated}/api/version-notes/CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE.asciid
       | The minimum value is the size (in bytes) of the largest OpenCL data
         type supported by the device (`long16` in FULL profile, `long16` or
         `int16` in EMBEDDED profile).
-| {CL_DEVICE_SINGLE_FP_CONFIG_anchor}^6^
+| {CL_DEVICE_SINGLE_FP_CONFIG_anchor}^7^
 
 include::{generated}/api/version-notes/CL_DEVICE_SINGLE_FP_CONFIG.asciidoc[]
   | cl_device_fp_config
@@ -647,7 +647,7 @@ include::{generated}/api/version-notes/CL_DEVICE_SINGLE_FP_CONFIG.asciidoc[]
         For the embedded profile, see the
         <<embedded-profile-single-fp-config-requirements, dedicated table>>.
 
-| {CL_DEVICE_DOUBLE_FP_CONFIG_anchor}^7^
+| {CL_DEVICE_DOUBLE_FP_CONFIG_anchor}^8^
 
 include::{generated}/api/version-notes/CL_DEVICE_DOUBLE_FP_CONFIG.asciidoc[]
 Also see extension *cl_khr_fp64*.
@@ -926,7 +926,7 @@ include::{generated}/api/version-notes/CL_DRIVER_VERSION.asciidoc[]
   | char[]
       | OpenCL software driver version string.
         Follows a vendor-specific format.
-| {CL_DEVICE_PROFILE_anchor}^8^
+| {CL_DEVICE_PROFILE_anchor}^9^
 
 include::{generated}/api/version-notes/CL_DEVICE_PROFILE.asciidoc[]
   | char[]
@@ -1181,6 +1181,21 @@ include::{generated}/api/version-notes/CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_P
 |====
 
 4::
+    OpenCL adopters must report a valid vendor ID for their implementation.
+    If there is no valid PCI vendor ID defined for the physical device,
+    implementations must obtain a Khronos vendor ID. To reserve a Khronos vendor
+    ID, propose a merge request against cl.xml in the master branch of the
+    OpenCL-Docs project. The merge must define a new enumerant by adding an
+    `<enum>` tag to the `cl_khronos_vendor_id` `<enums>` tag. The `<value>`
+    attribute must be a unique, unused value greater than the largest PCI vendor
+    ID (0x10000), representable by a `cl_uint`, and is the reserved vendor ID.
+    The `<name>` attribute must identify the vendor/adopter, and be of the form
+    `CL_KHRONOS_VENDOR_ID_<vendor>`. The vendor ID will be reserved only once
+    this merge request has been accepted. Please do not try to reserve vendor
+    IDs unless you are making a good faith effort to develop a conformant
+    OpenCL implementation and require one for that purpose.
+
+5::
     A kernel that uses an image argument with the write_only or read_write
     image qualifier may result in additional read_only images resources being
     created internally by an implementation.
@@ -1189,16 +1204,10 @@ include::{generated}/api/version-notes/CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_P
     Enqueuing a kernel that requires more images than the implementation can
     support will result in a {CL_OUT_OF_RESOURCES} error being returned.
 
-5::
+6::
     NOTE: {CL_DEVICE_MAX_WRITE_IMAGE_ARGS} is only there for backward
     compatibility.
     {CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS} should be used instead.
-
-6::
-    The optional rounding modes should be included as a device capability
-    only if it is supported natively.
-    All explicit conversion functions with specific rounding modes must
-    still operate correctly.
 
 7::
     The optional rounding modes should be included as a device capability
@@ -1207,6 +1216,12 @@ include::{generated}/api/version-notes/CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_P
     still operate correctly.
 
 8::
+    The optional rounding modes should be included as a device capability
+    only if it is supported natively.
+    All explicit conversion functions with specific rounding modes must
+    still operate correctly.
+
+9::
     The platform profile returns the profile that is implemented by the
     OpenCL framework.
     If the platform profile returned is FULL_PROFILE, the OpenCL framework
