@@ -5,7 +5,7 @@
 [[cl_khr_fp64]]
 == Double Precision Floating-Point
 
-This section describes the *cl_khr_fp64* extension. 
+This section describes the *cl_khr_fp64* extension.
 This extension became an optional core feature in OpenCL 1.2.
 
 [[cl_khr_fp64-additions-to-chapter-6]]
@@ -64,7 +64,7 @@ to take a `double` scalar data type and a `doublen` vector data type.
 
 The `as_typen()` function for re-interpreting types as described in _section
 6.2.4.2_ is extended to allow conversion-free casts between `longn`,
-`ulongn` and `doublen` scalar and vector data types. 
+`ulongn` and `doublen` scalar and vector data types.
 
 [[cl_khr_fp64-math-functions]]
 ==== Math Functions
@@ -1071,17 +1071,33 @@ is the infinitely precise result.
 | *cospi*
 | \<= 4 ulp
 
+// 3 operations from the 2 multiplications and 1 subtraction per component
 | *cross*
-| absolute error tolerance of 'max * max * (3 * FLT_EPSILON)', where max is the maximum input operand value
+| absolute error tolerance of 'max * max * (3 * FLT_EPSILON)' per vector component, where _max_ is the maximum input operand magnitude
 
 | *degrees*
 | \<= 2 ulp
 
+// 3           ULP error in sqrt
+// 0.5         effect on e of taking sqrt(x + e)
+// 1.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// 2           accounts for error in reference code
+//
+// = 2 * (3 + 0.5 * ((1.5 * n) + (0.5 * (n - 1))))
+// = 2 * (3 + 0.5 * (1.5n + (0.5n - 0.5)))
+// = 2 * (3 + 0.5 * (2n - 0.5))
+// = 2 * (3 + n - 0.25)
+// = 2 * (2.75 + n)
+// = 5.5 + 2n
 | *distance*
-| \<= 2 * (3 + 0.5 * (1.5 * n + 0.5 * (n - 1))) ulp, for gentype with vector width n
+| \<= 5.5 + 2n ulp, for gentype with vector width _n_
 
+// n + n-1  Number of operations from n multiples and (n-1) additions
+// 2n - 1
 | *dot*
-| absolute error tolerance of 'max * max * (2 * (n - 1)) * FLT_EPSILON', For vector width n and maximum input operand value 'max'
+| absolute error tolerance of 'max * max * (2n - 1) * FLT_EPSILON', for vector width _n_ and maximum input operand magnitude _max_ across all vector components
 
 | *erfc*
 | \<= 16 ulp
@@ -1137,8 +1153,19 @@ is the infinitely precise result.
 | *ldexp*
 | Correctly rounded
 
+// 3           ULP error in sqrt
+// 0.5         effect on e of taking sqrt(x + e)
+// 0.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// 2           accounts for error in reference code
+//
+// = 2 * (3 + 0.5 * ((0.5 * n) + (0.5 * (n - 1))))
+// = 2 * (3 + 0.5 * (n - 0.5))
+// = 2 * (2.75 + 0.5n)
+// = 5.5 + n
 | *length*
-| \<= 2 * (3 + 0.5 * (0.5 * n + 0.5 * (n - 1))) ulp, for gentype with vector width n
+| \<= 5.5 + n ulp, for gentype with vector width _n_
 
 | *log*
 | \<= 3 ulp
@@ -1182,8 +1209,21 @@ is the infinitely precise result.
 | *nextafter*
 | 0 ulp
 
+// 2.5         error in rsqrt + error in multiply
+// 0.5         effect on e of taking sqrt(x + e)
+// 0.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// 2           accounts for error in reference code
+//
+// = 2 * (2.5 + 0.5 * ((0.5 * n) + (0.5 * (n - 1))))
+// = 2 * (2.5 + 0.5 * (0.5n + (0.5n - 0.5)))
+// = 2 * (2.5 + 0.5 * (n - 0.5))
+// = 2 * (2.5 + 0.5n - 0.25)
+// = 2 * (2.25 + 0.5n)
+// = 4.5 + n
 | *normalize*
-| \<= 2 * (2.5 + 0.5 * (0.5 * n + 0.5 * (n - 1))) ulp, for gentype with vector width n
+| \<= 4.5 + n ulp, for gentype with vector width _n_
 
 | *pow(x, y)*
 | \<= 16 ulp

@@ -9509,10 +9509,20 @@ currently undefined.
 | *cos*                 | {leq} 4 ulp
 | *cosh*                | {leq} 4 ulp
 | *cospi*               | {leq} 4 ulp
-| *cross*               | absolute error tolerance of 'max * max * (3 * FLT_EPSILON)', where max is the maximum input operand value
+// 3 operations from the 2 multiplications and 1 subtraction per component
+| *cross*               | absolute error tolerance of 'max * max * (3 * FLT_EPSILON)' per vector component, where _max_ is the maximum input operand magnitude
 | *degrees*             | {leq} 2 ulp
-| *distance*            | {leq} 3 + (1.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
-| *dot*                 | absolute error tolerance of 'max * max * (2 * (n - 1)) * FLT_EPSILON', For vector width n and maximum input operand value 'max'
+// 3           ULP error in sqrt
+// 1.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// = 3 + (1.5 * n) + (0.5 * (n - 1))
+// = 3 + 1.5n + (0.5n - 0.5)
+// = 2.5 + 2n
+| *distance*            | {leq} 2.5 + 2n ulp, for gentype with vector width _n_
+// n + n-1  Number of operations from n multiples and (n-1) additions
+// 2n - 1
+| *dot*                 | absolute error tolerance of 'max * max * (2n - 1) * FLT_EPSILON', for vector width _n_ and maximum input operand magnitude _max_ across all vector components
 | *erfc*                | {leq} 16 ulp
 | *erf*                 | {leq} 16 ulp
 | *exp*                 | {leq} 3 ulp
@@ -9530,7 +9540,15 @@ currently undefined.
 | *frexp*               | 0 ulp
 | *hypot*               | {leq} 4 ulp
 | *ilogb*               | 0 ulp
-| *length*              | {leq} 3 + 0.5 * ((0.5 * n) + (0.5 * (n - 1))) ulp, for gentype with vector width n
+// 3           ULP error in sqrt
+// 0.5         effect on e of taking sqrt(x + e)
+// 0.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// = (3 + 0.5 * ((0.5 * n) + (0.5 * (n - 1))))
+// = 3 + 0.5 * (n - 0.5)
+// = 2.75 + 0.5n
+| *length*              | {leq} 2.75 + 0.5n ulp, for gentype with vector width _n_
 | *ldexp*               | Correctly rounded
 | *log*                 | {leq} 3 ulp
 | *log2*                | {leq} 3 ulp
@@ -9548,7 +9566,14 @@ currently undefined.
 | *modf*                | 0 ulp
 | *nan*                 | 0 ulp
 | *nextafter*           | 0 ulp
-| *normalize*           | {leq} 2.5 + (0.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
+// 2.5         error in rsqrt + error in multiply
+// 0.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// = 2.5 + (0.5 * n) + (0.5 * (n - 1))
+// = 2.5 + 0.5n + (0.5n - 0.5)
+// = 2.0 + n
+| *normalize*           | {leq} 2 + n ulp, for gentype with vector width _n_
 | *pow*(_x_, _y_)       | {leq} 16 ulp
 | *pown*(_x_, _y_)      | {leq} 16 ulp
 | *powr*(_x_, _y_)      | {leq} 16 ulp
@@ -9588,9 +9613,33 @@ currently undefined.
 | *half_sqrt*           | {leq} 8192 ulp
 | *half_tan*            | {leq} 8192 ulp
 | |
-| *fast_distance*       | {leq} 8192 + (1.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
-| *fast_length*         | {leq} 8192 + (0.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
-| *fast_normalize*      | {leq} 8192.5 + (0.5 * n) + (0.5 * (n - 1)) ulp, for gentype with vector width n
+
+// 8192        ULP error in half_sqrt
+// 1.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// = 8192 + (1.5 * n) + (0.5 * (n - 1))
+// = 8192 + 1.5n + (0.5n - 0.5)
+// = 8191.5 + 2n
+| *fast_distance*       | {leq} 8191.5 + 2n ulp, for gentype with vector width _n_
+
+// 8192        ULP error in half_sqrt
+// 0.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// = 8192 + (0.5 * n) + (0.5 * (n - 1))
+// = 8192 + 0.5n + (0.5n - 0.5)
+// = 8191.5 + n
+| *fast_length*         | {leq} 8191.5 + n ulp, for gentype with vector width _n_
+
+// 8192.5      error in half_rsqrt + error in multiply
+// 0.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// = 8192.5 + (0.5 * n) + (0.5 * (n - 1))
+// = 8192.5 + 0.5n + (0.5n - 0.5)
+// = 8192 + n
+| *fast_normalize*      | {leq} 8192 + n ulp, for gentype with vector width _n_
 | |
 | *native_cos*          | Implementation-defined
 | *native_divide*       | Implementation-defined
@@ -9621,11 +9670,11 @@ is the infinitely precise result.
 [cols=",",]
 |====
 | *Function*        | *Min Accuracy - ULP values*^70^
-| _x_ + _y_             | Correctly rounded
-| _x_ - _y_             | Correctly rounded
-| _x_ * _y_             | Correctly rounded
+| _x_ + _y_         | Correctly rounded
+| _x_ - _y_         | Correctly rounded
+| _x_ * _y_         | Correctly rounded
 | *1.0 / _x_*       | {leq} 3 ulp
-| _x_ / _y_             | {leq} 3 ulp
+| _x_ / _y_         | {leq} 3 ulp
 | |
 | *acos*            | {leq} 4 ulp
 | *acospi*          | {leq} 5 ulp
@@ -9683,9 +9732,9 @@ is the infinitely precise result.
 | *nan*             | 0 ulp
 | *normalize*       | Implementation-defined
 | *nextafter*       | 0 ulp
-| *pow*(_x_, _y_)       | {leq} 16 ulp
-| *pown*(_x_, _y_)      | {leq} 16 ulp
-| *powr*(_x_, _y_)      | {leq} 16 ulp
+| *pow*(_x_, _y_)   | {leq} 16 ulp
+| *pown*(_x_, _y_)  | {leq} 16 ulp
+| *powr*(_x_, _y_)  | {leq} 16 ulp
 | *radians*         | {leq} 2 ulp
 | *remainder*       | 0 ulp
 | *remquo*          | 0 ulp
@@ -9936,10 +9985,26 @@ is the infinitely precise result.
 | *cos*             | {leq} 4 ulp
 | *cosh*            | {leq} 4 ulp
 | *cospi*           | {leq} 4 ulp
-| *cross*           | absolute error tolerance of 'max * max * (3 * FLT_EPSILON)', where max is the maximum input operand value
+// 3 operations from the 2 multiplications and 1 subtraction per component
+| *cross*           | absolute error tolerance of 'max * max * (3 * FLT_EPSILON)' per vector component, where _max_ is the maximum input operand magnitude
 | *degrees*         | {leq} 2 ulp
-| *distance*        | {leq} 2 * (3 + 0.5 * ((1.5 * n) + (0.5 * (n - 1)))) For vector width n
-| *dot*             | absolute error tolerance of 'max * max * (2 * (n - 1)) * FLT_EPSILON', For vector width n and maximum input operand value 'max'
+// 3           ULP error in sqrt
+// 0.5         effect on e of taking sqrt(x + e)
+// 1.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// 2           accounts for error in reference code
+//
+// = 2 * (3 + 0.5 * ((1.5 * n) + (0.5 * (n - 1))))
+// = 2 * (3 + 0.5 * (1.5n + (0.5n - 0.5)))
+// = 2 * (3 + 0.5 * (2n - 0.5))
+// = 2 * (3 + n - 0.25)
+// = 2 * (2.75 + n)
+// = 5.5 + 2n
+| *distance*        | {leq} 5.5 + 2n ulp, for gentype with vector width _n_
+// n + n-1  Number of operations from n multiples and (n-1) additions
+// 2n - 1
+| *dot*             | absolute error tolerance of 'max * max * (2n - 1) * FLT_EPSILON', for vector width _n_ and maximum input operand magnitude _max_ across all vector components
 | *erfc*            | {leq} 16 ulp
 | *erf*             | {leq} 16 ulp
 | *exp*             | {leq} 3 ulp
@@ -9957,7 +10022,18 @@ is the infinitely precise result.
 | *frexp*           | 0 ulp
 | *hypot*           | {leq} 4 ulp
 | *ilogb*           | 0 ulp
-| *length*          | {leq} 2 * (3 + 0.5 * ((0.5 * n) + (0.5 * (n - 1)))) For vector width n
+// 3           ULP error in sqrt
+// 0.5         effect on e of taking sqrt(x + e)
+// 0.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// 2           accounts for error in reference code
+//
+// = 2 * (3 + 0.5 * ((0.5 * n) + (0.5 * (n - 1))))
+// = 2 * (3 + 0.5 * (n - 0.5))
+// = 2 * (2.75 + 0.5n)
+// = 5.5 + n
+| *length*          | {leq} 5.5 + n ulp, for gentype with vector width _n_
 | *ldexp*           | Correctly rounded
 | *log*             | {leq} 3 ulp
 | *log2*            | {leq} 3 ulp
@@ -9973,7 +10049,20 @@ is the infinitely precise result.
 | *modf*            | 0 ulp
 | *nan*             | 0 ulp
 | *nextafter*       | 0 ulp
-| *normalize*       | {leq} 2 * (2.5 + 0.5 * ((0.5 * n) + (0.5 * (n - 1)))) For vector width n
+// 2.5         error in rsqrt + error in multiply
+// 0.5         effect on e of taking sqrt(x + e)
+// 0.5 * n     cumulative error for multiplications
+// 0.5 * (n-1) cumulative error for additions
+//
+// 2           accounts for error in reference code
+//
+// = 2 * (2.5 + 0.5 * ((0.5 * n) + (0.5 * (n - 1))))
+// = 2 * (2.5 + 0.5 * (0.5n + (0.5n - 0.5)))
+// = 2 * (2.5 + 0.5 * (n - 0.5))
+// = 2 * (2.5 + 0.5n - 0.25)
+// = 2 * (2.25 + 0.5n)
+// = 4.5 + n
+| *normalize*       | {leq} 4.5 + n ulp, for gentype with vector width _n_
 | *pow*(_x_, _y_)   | {leq} 16 ulp
 | *pown*(_x_, _y_)  | {leq} 16 ulp
 | *powr*(_x_, _y_)  | {leq} 16 ulp
