@@ -1,8 +1,8 @@
 # This extension script is taken from the Asciidoctor extensions lab [1], under
 # the MIT license [2].
 #
-# [1] https://github.com/asciidoctor/asciidoctor-extensions-lab/blob/18bdf628f46d9c98920c20413d8d99bf5ea622a8/lib/sectnumoffset-treeprocessor.rb
-# [2] https://github.com/asciidoctor/asciidoctor-extensions-lab/blob/18bdf628f46d9c98920c20413d8d99bf5ea622a8/LICENSE.adoc
+# [1] https://github.com/asciidoctor/asciidoctor-extensions-lab/blob/b848e53b5a23134348ac40741a3d777fcb22c684/lib/sectnumoffset-treeprocessor.rb
+# [2] https://github.com/asciidoctor/asciidoctor-extensions-lab/blob/b848e53b5a23134348ac40741a3d777fcb22c684/LICENSE.adoc
 
 require 'asciidoctor/extensions' unless RUBY_ENGINE == 'opal'
 
@@ -15,14 +15,19 @@ Extensions.register do
   #
   # Run using:
   #
-  # asciidoctor -r ./lib/sectnumoffset-treeprocessor.rb -a sectnums -a sectnumoffset=1 lib/sectnumoffset-treeprocessor/sample.adoc
+  #  asciidoctor -r ./lib/sectnumoffset-treeprocessor.rb -a sectnums -a sectnumoffset=1 lib/sectnumoffset-treeprocessor/sample.adoc
+  #
   treeprocessor do
     process do |document|
-      if (document.attr? 'sectnums') && (sectnumoffset = (document.attr 'sectnumoffset', 0).to_i) > 0
-        ((document.find_by context: :section) || []).each do |sect|
-          # FIXME use filter block once Asciidoctor >= 1.5.3 is available
-          next unless sect.level == 1
-          sect.number += sectnumoffset
+      if (document.attr? 'sectnums') && (sectnumoffset = (document.attr 'sectnumoffset', 0).to_i) != 0
+        if sectnumoffset > 0
+          document.find_by(context: :section) {|sect| sect.level == 1 }.each do |sect|
+            sectnumoffset.times { sect.numeral = sect.numeral.next } rescue (sect.number += sectnumoffset)
+          end
+        else
+          document.find_by(context: :section) {|sect| sect.level == 1 }.each do |sect|
+            sectnumoffset.abs.times { sect.numeral = sect.numeral.to_i.pred.to_s } rescue (sect.number += sectnumoffset)
+          end
         end
       end
       nil
