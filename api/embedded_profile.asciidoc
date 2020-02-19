@@ -5,29 +5,19 @@
 [[opencl-embedded-profile]]
 = OpenCL Embedded Profile
 
-The OpenCL 2.2 specification describes the feature requirements for desktop
+The OpenCL specification describes the feature requirements for desktop
 platforms.
-This section describes the OpenCL 2.2 embedded profile that allows us to
-target a subset of the OpenCL 2.2 specification for handheld and embedded
+This section describes the OpenCL embedded profile that allows us to
+target a subset of the OpenCL specification for handheld and embedded
 platforms.
-The optional extensions defined in the OpenCL 2.2 Extension Specification
+The optional extensions defined in the OpenCL Extension Specification
 apply to both profiles.
 
-The OpenCL 2.2 embedded profile has the following restrictions:
+The OpenCL embedded profile has the following restrictions until version 2.0 (i.e. the optionality described below was <<unified-spec, deprecated by>> version 2.0):
 
-  . 64 bit integers i.e. long, ulong including the appropriate vector data
-    types and operations on 64-bit integers are optional.
-    The *cles_khr_int64*^1^ extension string will be reported if the
-    embedded profile implementation supports 64-bit integers.
+  . Support for 3D images is optional.
+
 +
---
-1::
-    Note that the performance of 64-bit integer arithmetic can vary
-    significantly between embedded devices.
---
-  . [line-through]#Support for 3D images is optional.#
-+
-[role="line-through"]
 --
 If {CL_DEVICE_IMAGE3D_MAX_WIDTH}, {CL_DEVICE_IMAGE3D_MAX_HEIGHT} and
 {CL_DEVICE_IMAGE3D_MAX_DEPTH} are zero, the call to {clCreateImage} in the
@@ -42,19 +32,35 @@ embedded profile implementation.
 {clCreateImage} will work as defined by the OpenCL specification.
 The `image3d_t` data type can be used in a kernel(s).
 --
-  . [line-through]#Support for 2D image array writes is optional.
+  . Support for 2D image array writes is optional.
     If the *cles_khr_2d_image_array_writes* extension is supported by the
-    embedded profile, writes to 2D image arrays are supported.#
-  . [line-through]#Image and image arrays created with an
+    embedded profile, writes to 2D image arrays are supported.
+  . Image and image arrays created with an
     `image_channel_data_type` value of {CL_FLOAT} or {CL_HALF_FLOAT} can only be
     used with samplers that use a filter mode of {CL_FILTER_NEAREST}.
-    The values returned by *read_imagef* and *read_imageh*^2^ for 2D and 3D
+    The values returned by *read_imagef* and *read_imageh*^1^ for 2D and 3D
     images if `image_channel_data_type` value is {CL_FLOAT} or {CL_HALF_FLOAT}
-    and sampler with filter_mode = {CL_FILTER_LINEAR} are undefined.#
+    and sampler with filter_mode = {CL_FILTER_LINEAR} are undefined.
++
+--
+1::
+    If *cl_khr_fp16* extension is supported.
+--
+
+Furthermore, the OpenCL embedded profile has the following restrictions for all
+versions:
+
+  . 64 bit integers i.e. long, ulong including the appropriate vector data
+    types and operations on 64-bit integers are optional.
+    The *cles_khr_int64*^2^ extension string will be reported if the
+    embedded profile implementation supports 64-bit integers.
+    If double precision is supported i.e. {CL_DEVICE_DOUBLE_FP_CONFIG} is not
+    zero, then *cles_khr_int64* must also be supported.
 +
 --
 2::
-    If *cl_khr_fp16* extension is supported.
+    Note that the performance of 64-bit integer arithmetic can vary
+    significantly between embedded devices.
 --
   . The mandated minimum single precision floating-point capability given by
     {CL_DEVICE_SINGLE_FP_CONFIG} is {CL_FP_ROUND_TO_ZERO} or
@@ -144,16 +150,6 @@ For {CL_UNORM_INT_101010_2}
   * 1023 must convert to 1.0f (for RGB)
   * 3 must convert to 1.0f (for A)
 --
-
-The following optional extensions defined in the OpenCL 2.2 Extension
-Specification are available to the embedded profile:
-
-  * *cl_khr_int64_base_atomics*
-  * *cl_khr_int64_extended_atomics*
-  * *cl_khr_fp16*
-  * *cles_khr_int64*.
-    If double precision is supported i.e. {CL_DEVICE_DOUBLE_FP_CONFIG} is not
-    zero, then cles_khr_int64 must also be supported.
 
 {CL_PLATFORM_PROFILE} defined in the <<platform-queries-table, OpenCL Platform
 Queries>> table will return the string EMBEDDED_PROFILE if the OpenCL
