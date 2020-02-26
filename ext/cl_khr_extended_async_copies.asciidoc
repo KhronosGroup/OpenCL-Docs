@@ -1,0 +1,153 @@
+// Copyright 2017-2020 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[cl_khr_extended_async_copies]]
+== Extended Async Copies (Provisional)
+
+This section describes the *cl_khr_extended_async_copies* provisional extension.
+This extension augments existing built-in async copy functions in OpenCL C
+    language with four new functions to cover more patterns:
+    1. for async copy between 2D source and 2D destination.
+    2. for async copy between 3D source and 3D destination.
+
+[[cl_khr_extended_async_copies-additions-to-chapter-6-of-the-opencl-specification]]
+=== Additions to Chapter 6 of the OpenCL C Specification
+
+The following new built-in functions are added to the _Async Copies from Global to
+Local Memory, Local to Global Memory, and Prefetch_ described in _section 6.12.10_
+and _section 6.13.10_ of the OpenCL 1.2 and OpenCL 2.0 "C" specification documents accordingaly.
+
+[cols="5a,4",options="header",]
+|=======================================================================
+|*Function* |*Description*
+|[source,c]
+----
+event_t async_work_group_copy_2D2D(
+                 __local gentype *dst,
+          const __global gentype *src,
+        size_t  num_elements_per_line,
+                    size_t  num_lines,
+                   size_t  src_stride,
+                   size_t  dst_stride,
+                       event_t  event)
+
+event_t async_work_group_copy_2D2D(
+                __global gentype *dst,
+           const __local gentype *src,
+        size_t  num_elements_per_line,
+                    size_t  num_lines,
+                   size_t  src_stride,
+                   size_t  dst_stride,
+                       event_t  event)
+----
+| Perform an async copy of _num_lines_ lines from _src_ to _dst_.  Each line
+      contains _num_elements_per_line_ gentype elements.  After each line of
+      transfer, _src_ address is incremented by
+      (_src_stride_ + _num_elements_per_line_) gentype elements,
+      _dst_ address is incremented by
+      (_dst_stride_ + _num_elements_per_line_) gentype elements
+      for the next line of transfer.
+
+    For these functions, the stride describes the number of elements between
+    the *end* of the current line and the *beginning* of the next line, i.e.,
+    without overlap.
+    Note that async_work_group_strided_copy() is a special case of
+    async_work_group_copy_2D2D – namely, one which copies a single column to a
+    single line or vice versa:
+      async_work_group_strided_copy(dst, src, num_gentypes, src_stride) ==
+    async_work_group_copy_2D2D(dst, src, 1, num_gentypes, src_stride-1, 1) or
+    async_work_group_copy_2D2D(dst, src, 1, num_gentypes, 1, dst_stride-1)
+    if src is global or dst is global, respectively.
+
+      gentype is defined the same as the one in the
+      *Async Copies from Global to Local Memory, Local to Global Memory,
+            and Prefetch* section, in OpenCL 1.2 and OpenCL 2.0 C Specifications.
+
+      The async copy is performed by all work-items in a work-group and this
+      built-in function must therefore be encountered by all work-items in a
+      work-group executing the kernel with the same argument values;
+      otherwise the results are undefined.
+
+      Returns an event object that can be used by wait_group_events to wait
+      for the async copy to finish.  The event argument can also be used to
+      associate the _async_work_group_copy_2D2D_ with a previous async copy
+      allowing an event to be shared by multiple async copies;
+      otherwise event should be zero.
+
+      If event argument is non-zero, the event object supplied in event
+      argument will be returned.
+
+      This function does not perform any implicit synchronization of source
+      data such as using a barrier before performing the copy.
+
+      The behavior of _async_work_group_copy_2D2D_ is undefined if the
+      _num_elements_per_line_ or _src_stride_ or _dst_stride_ values cause
+      the _src_ or _dst_ addresses to exceed the upper bounds of the address
+      space during the copy.
+
+|[source,c]
+----
+event_t async_work_group_copy_3D3D(
+                   __local gentype *dst,
+            const __global gentype *src,
+          size_t  num_elements_per_line,
+                      size_t  num_lines,
+                size_t  src_line_stride,
+                size_t  dst_line_stride,
+                     size_t  num_planes,
+               size_t  src_plane_stride,
+               size_t  dst_plane_stride,
+                         event_t  event)
+
+event_t async_work_group_copy_3D3D(
+                  __global gentype *dst,
+             const __local gentype *src,
+          size_t  num_elements_per_line,
+                      size_t  num_lines,
+                size_t  src_line_stride,
+                size_t  dst_line_stride,
+                     size_t  num_planes,
+               size_t  src_plane_stride,
+               size_t  dst_plane_stride,
+                         event_t  event)
+----
+| Perform an async copy of _num_planes_ X _num_lines_ lines from _src_ to
+      _dst_ arranged in _num_planes_ planes.  Each plane contains _num_lines_
+      lines.  Each line contains _num_elements_per_line_ gentype elements.
+      After each line of transfer, _src_ address is incremented by
+      (_src_line_stride_ + _num_elements_per_line_) gentype elements, _dst_
+      address is incremented by (_dst_line_stride_ + _num_elements_per_line_)
+      gentype elements for the next line of transfer.  For the last line of a
+      plane, an additional _src_plane_stride_ gentype elements is added to
+      _src_ address, and an additional _dst_plane_stride_ gentype elements is
+      added to _dst_ address.
+
+      gentype is defined the same as the one in the
+      *Async Copies from Global to Local Memory, Local to Global Memory,
+            and Prefetch* section, in OpenCL 1.2 and OpenCL 2.0 C Specifications.
+
+      The async copy is performed by all work-items in a work-group and this
+      built-in function must therefore be encountered by all work-items in a
+      work-group executing the kernel with the same argument values;
+      otherwise the results are undefined.
+
+      Returns an event object that can be used by wait_group_events to wait
+      for the async copy to finish.  The event argument can also be used to
+      associate the _async_work_group_copy_3D3D_ with a previous async copy
+      allowing an event to be shared by multiple async copies;
+      otherwise event should be zero.
+
+      If event argument is non-zero, the event object supplied in event
+      argument will be returned.
+
+      This function does not perform any implicit synchronization of source
+      data such as using a barrier before performing the copy.
+
+      The behavior of _async_work_group_copy_3D3D_ is undefined if any of
+      _num_elements_per_line_, _src_line_stride_, _dst_line_stride_,
+      _src_plane_stride_ or _dst_plane_stride_ values cause the _src_ or _dst_
+      addresses to exceed the upper bounds of the address space during the copy.
+|=======================================================================
+
+NOTE: This is a preview of an OpenCL provisional extension specification that has been Ratified under the Khronos Intellectual Property Framework. It is being made publicly available prior to being uploaded to the Khronos registry to enable review and feedback from the community. If you have feedback please create an issue on https://github.com/KhronosGroup/OpenCL-Docs/

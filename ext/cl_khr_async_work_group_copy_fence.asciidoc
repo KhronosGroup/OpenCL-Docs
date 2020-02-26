@@ -1,0 +1,48 @@
+// Copyright 2017-2020 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[cl_khr_async_work_group_copy_fence]]
+== Async Work Group Copy Fence (Provisional)
+
+This section describes the *cl_khr_async_work_group_copy_fence* provisional extension.
+The extension adds a new built-in function in OpenCL C supporting
+fence semantics allowing ordering of async-copy's.
+
+[[cl_khr_async_work_group_copy_fence-additions-to-chapter-6-of-the-opencl-specification]]
+=== Additions to Chapter 6 of the OpenCL C Specification
+
+The following new built-in function is added to the _Async Copies from Global to
+Local Memory, Local to Global Memory, and Prefetch_ described in _section 6.12.10_
+and _section 6.13.10_ of the OpenCL 1.2 and OpenCL 2.0 "C" specification documents accordingaly.
+
+[cols="5a,4",options="header",]
+|=======================================================================
+|*Function* |*Description*
+|[source,c]
+----
+void async_work_group_copy_fence(cl_mem_fence_flags flags)
+----
+| Orders async copies produced by the work-items of a work-group executing
+a kernel. Async copies preceding the async_work_group_copy_fence must
+complete their access to the designated memory/memories,
+including both reads-from and writes-to it, before async copies
+following the fence are allowed to start accessing these memories.
+In other words, every async copy preceding the async_work_group_copy_fence
+must happen-before every async copy following the fence, with respect to
+the designated memory/memories.
+
+The _flags_ argument specifies the memory address space and can be set to a
+combination of the following literal values:
+
+    CLK_LOCAL_MEM_FENCE
+    CLK_GLOBAL_MEM_FENCE
+
+The async fence is performed by all work-items in a work-group and this
+built-in function must therefore be encountered by all work-items in a
+work-group executing the kernel with the same argument values;
+otherwise the results are undefined. This rule applies to ND-ranges
+implemented with uniform and non-uniform work-groups.
+|=======================================================================
+
+NOTE: This is a preview of an OpenCL provisional extension specification that has been Ratified under the Khronos Intellectual Property Framework. It is being made publicly available prior to being uploaded to the Khronos registry to enable review and feedback from the community. If you have feedback please create an issue on https://github.com/KhronosGroup/OpenCL-Docs/
