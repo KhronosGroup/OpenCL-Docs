@@ -1,0 +1,129 @@
+// Copyright 2019-2020 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+=== Difference to OpenCL C
+
+{cpp} for OpenCL aims to achieve backwards compatibility with OpenCL C
+for the majority of features. However, it is a different
+language that is derived from {cpp} and therefore it inherits
+its fundamental design principles. Hence {cpp} for OpenCL
+deviates from OpenCL C in the same areas where {cpp} deviates
+from C.
+
+This section describes the main differences between {cpp} for
+OpenCL and OpenCL C.
+
+==== Implicit Conversions
+
+{cpp} is much stricter about conversions between types,
+especially those that are performed implicitly by the compiler.
+For example it is not possible to convert a `const` object
+to non-`const` implicitly. For details please refer to {cpp}17
+(`ISO/IEC 14882:2017`) `[conv]`.
+
+[source,c]
+----------
+void foo(){
+  const int *ptrconst;
+  int *ptr = ptrconst; // invalid initialization discards const qualifier
+}
+----------
+
+The same applies to narrowing conversions in
+initialization lists ({cpp}17 `[dcl.init.list]`). 
+
+[source,c]
+----------
+struct mytype {
+ int i;
+};
+void foo(uint par){
+  mytype var = {
+    .i = par // narrowing from uint to int is disallowed
+  };
+}
+----------
+
+Some compilers allow silencing this error using a flag
+(e.g. in Clang `-Wno-error=c++11-narrowing` can be used).
+
+Among other common conversions that will not be compiled in C++
+mode there are pointer to integer or integer to pointer
+type conversions.
+
+[source,c]
+----------
+void foo(){
+  int *ptr;
+  int i = ptr; // incompatible pointer to integer conversion
+}
+----------
+
+==== Null Literal
+
+In C and OpenCL C the null literal is defined using other
+language features as it is not represented explicitly i.e.
+commonly it is defined as
+
+[source,c]
+----------
+#define NULL (void*)0
+----------
+
+In {cpp} there is an explicit builtin literal `nullptr`
+that should be used instead ({cpp}17 `[lex.nullptr]`).
+
+{cpp} for OpenCL does not define `NULL` and therefore any
+source code using it must be modified to use `nullptr`
+instead. However as a workaround to avoid large modifications
+`NULL` can also be defined/aliased to `nullptr` in custom
+headers or using command line flag `-D`. It is not recommended
+to reuse the C definition of `NULL` in {cpp} for OpenCL as it may
+cause compilation failures in cases that work for C.
+
+[source,c]
+----------
+void foo(){
+ int *ptr = NULL; // invalid initialization of int* with void*
+}
+----------
+
+==== Use of restrict
+
+{cpp}17 does not support `restrict` and therefore {cpp} for OpenCL
+can not support it either. Some compilers might provide extensions
+with some functionality of `restrict` in {cpp}, e.g. `__restrict`
+in Clang.
+
+This feature only affects optimizations and the source
+code can be modified by removing it. As a workaround to avoid manual
+modifications macro substitutions can be used to either remove the
+keyword during the preprocessing by defining `restrict` as an empty
+macro or mapping it to another similar compiler features, e.g.
+`__restrict` in Clang. This can be done in headers or using `-D`
+compilation flag.
+
+==== Limitations of goto statements
+
+{cpp} is more restrictive with respect to entering the scope of
+variables than C. It is not possible to jump forward over a variable
+declaration statement apart from some exceptions detailed in {cpp}17
+`[stmt.dcl]`.
+
+[source,c]
+----------
+if (cond)
+  goto label;
+int n = foo();
+label:  // invalid: jumping forward over declaration of n
+   // ...
+----------
+
+==== Use of Clang Blocks
+
+Clang Blocks that are defined by the Objective-C language are not supported
+and their use can be replaced by lambdas ({cpp}17 `[expr.prim.lambda]`).
+
+This means that builtin functions using blocks, such as `enqueue_kernel`,
+are not supported in {cpp} for OpenCL.
