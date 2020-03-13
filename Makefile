@@ -89,11 +89,7 @@ ADOCHTMLEXTS = -r $(CURDIR)/config/katex_replace.rb
 ADOCHTMLOPTS = $(ADOCHTMLEXTS) -a katexpath=$(KATEXDIR) \
 	       -a stylesheet=khronos.css -a stylesdir=$(CURDIR)/config
 
-# The monkey patch for asciidoctor-pdf fixes issue #259
-# (https://github.com/asciidoctor/asciidoctor-pdf/issues/259).
-# I've submitted a pull request to fix it, once it goes into a gem release, we'll remove this.
-ADOCPDFEXTS  = -r asciidoctor-pdf -r asciidoctor-mathematical \
-	       -r $(CURDIR)/config/asciidoctor-pdf-monkeypatch.rb --trace
+ADOCPDFEXTS  = -r asciidoctor-pdf -r asciidoctor-mathematical --trace
 ADOCPDFOPTS  = $(ADOCPDFEXTS) -a mathematical-format=svg \
 	       -a imagesoutdir=$(PDFMATHDIR)
 
