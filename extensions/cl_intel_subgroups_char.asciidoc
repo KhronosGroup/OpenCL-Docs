@@ -1,0 +1,603 @@
+= cl_intel_subgroups_char
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C,
+// for syntax highlighting purposes.
+:language: c
+
+== Name Strings
+
+`cl_intel_subgroups_char`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel +
+Fangwen Fu, Intel +
+Sabareesh Ganapathy, Intel +
+Junjie Gu, Intel +
+Konrad Trifunovic, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2020 Intel Corporation.  All rights reserved.
+
+== Status
+
+Final Draft
+
+== Version
+
+Built On: {docdate} +
+Revision: 1
+
+== Dependencies
+
+OpenCL 1.2 and support for `cl_intel_subgroups` is required.
+This extension is written against the OpenCL API Specification Version 2.2 (revision v2.2-7), against the OpenCL C Language Specification Version 2.0 (revision v2.2-7), and against version 4 of the `cl_intel_subgroups` specification.
+
+This extension requires OpenCL support for SPIR-V, either via OpenCL 2.1 or via the `cl_khr_il_program` extension.
+
+This extension interacts with the `cl_intel_spirv_subgroups` extension.
+
+== Overview
+
+The goal of this extension is to allow programmers to improve the performance of applications operating on 8-bit data types by extending the subgroup functions described in the `cl_intel_subgroups` extension to support 8-bit integer data types (`chars` and `uchars`).
+Specifically, the extension:
+
+* Extends the subgroup broadcast function to allow 8-bit integer values to be broadcast from one work item to all other work items in the subgroup.
+
+* Extends the subgroup scan and reduction functions to operate on 8-bit integer data types.
+
+* Extends the Intel subgroup shuffle functions to allow arbitrarily exchanging 8-bit integer values among work items in the subgroup.
+
+* Extends the Intel subgroup block read and write functions to allow reading and writing 8-bit integer data from images and buffers.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+None.
+
+== New OpenCL C Functions
+
+Add `char` and `uchar` to the list of supported data types for the subgroup broadcast, scan, and reduction functions: ::
++
+--
+[source]
+----
+char    intel_sub_group_broadcast( char x, uint sub_group_local_id )
+uchar   intel_sub_group_broadcast( uchar x, uint sub_group_local_id )
+
+char    intel_sub_group_reduce_add( char x )
+uchar   intel_sub_group_reduce_add( uchar x )
+char    intel_sub_group_reduce_min( char x )
+uchar   intel_sub_group_reduce_min( uchar x )
+char    intel_sub_group_reduce_max( char x )
+uchar   intel_sub_group_reduce_max( uchar x )
+
+char    intel_sub_group_scan_exclusive_add( char x )
+uchar   intel_sub_group_scan_exclusive_add( uchar x )
+char    intel_sub_group_scan_exclusive_min( char x )
+uchar   intel_sub_group_scan_exclusive_min( uchar x )
+char    intel_sub_group_scan_exclusive_max( char x )
+uchar   intel_sub_group_scan_exclusive_max( uchar x )
+
+char    intel_sub_group_scan_inclusive_add( char x )
+uchar   intel_sub_group_scan_inclusive_add( uchar x )
+char    intel_sub_group_scan_inclusive_min( char x )
+uchar   intel_sub_group_scan_inclusive_min( uchar x )
+char    intel_sub_group_scan_inclusive_max( char x )
+uchar   intel_sub_group_scan_inclusive_max( uchar x )
+----
+--
+
+Add `char`, `char2`, `char4`, `char8`, `char16`, `uchar`, `uchar2`, `uchar4`, `uchar8`, and `uchar16` to the list of `gentype` data types supported by the `sub_group_shuffle`, `sub_group_shuffle_down`, `sub_group_shuffle_up`, and `sub_group_shuffle_xor` functions: ::
++
+--
+[source]
+----
+gentype intel_sub_group_shuffle( gentype data, uint c )
+gentype intel_sub_group_shuffle_down(
+                gentype current, gentype next, uint delta )
+gentype intel_sub_group_shuffle_up(
+                gentype previous, gentype current, uint delta )
+gentype intel_sub_group_shuffle_xor( gentype data, uint value )
+----
+--
+
+Add `uchar` variants of the subgroup block read and write functions: ::
++
+--
+[source]
+----
+uchar   intel_sub_group_block_read_uc( const __global uchar* p )
+uchar2  intel_sub_group_block_read_uc2( const __global uchar* p )
+uchar4  intel_sub_group_block_read_uc4( const __global uchar* p )
+uchar8  intel_sub_group_block_read_uc8( const __global uchar* p )
+uchar16 intel_sub_group_block_read_uc16( const __global uchar* p )
+uchar   intel_sub_group_block_read_uc( image2d_t image, int2 byte_coord )
+uchar2  intel_sub_group_block_read_uc2( image2d_t image, int2 byte_coord )
+uchar4  intel_sub_group_block_read_uc4( image2d_t image, int2 byte_coord )
+uchar8  intel_sub_group_block_read_uc8( image2d_t image, int2 byte_coord )
+uchar16 intel_sub_group_block_read_uc16( image1d_t image, int2 byte_coord )
+
+void  intel_sub_group_block_write_uc( __global uchar* p, uchar data )
+void  intel_sub_group_block_write_uc2( __global uchar* p, uchar2 data )
+void  intel_sub_group_block_write_uc4( __global uchar* p, uchar4 data )
+void  intel_sub_group_block_write_uc8( __global uchar* p, uchar8 data )
+void  intel_sub_group_block_write_uc16( __global uchar* p, uchar16 data )
+void  intel_sub_group_block_write_uc( image2d_t image, int2 byte_coord, uchar data )
+void  intel_sub_group_block_write_uc2( image2d_t image, int2 byte_coord, uchar2 data )
+void  intel_sub_group_block_write_uc4( image2d_t image, int2 byte_coord, uchar4 data )
+void  intel_sub_group_block_write_uc8( image2d_t image, int2 byte_coord, uchar8 data )
+void  intel_sub_group_block_write_uc16( image2d_t image, int2 byte_coord, uchar16 data )
+----
+--
+
+For naming consistency, also add suffixed aliases of the `uint` subgroup block read and write functions described in the `cl_intel_subgroups` extension: ::
++
+--
+[source]
+----
+uint  intel_sub_group_block_read_ui( const __global uint* p )
+uint2 intel_sub_group_block_read_ui2( const __global uint* p )
+uint4 intel_sub_group_block_read_ui4( const __global uint* p )
+uint8 intel_sub_group_block_read_ui8( const __global uint* p )
+uint  intel_sub_group_block_read_ui( image2d_t image, int2 byte_coord )
+uint2 intel_sub_group_block_read_ui2( image2d_t image, int2 byte_coord )
+uint4 intel_sub_group_block_read_ui4( image2d_t image, int2 byte_coord )
+uint8 intel_sub_group_block_read_ui8( image2d_t image, int2 byte_coord )
+
+void  intel_sub_group_block_write_ui( __global uint* p, uint data )
+void  intel_sub_group_block_write_ui2( __global uint* p, uint2 data )
+void  intel_sub_group_block_write_ui4( __global uint* p, uint4 data )
+void  intel_sub_group_block_write_ui8( __global uint* p, uint8 data )
+void  intel_sub_group_block_write_ui( image2d_t image, int2 byte_coord, uint data )
+void  intel_sub_group_block_write_ui2( image2d_t image, int2 byte_coord, uint2 data )
+void  intel_sub_group_block_write_ui4( image2d_t image, int2 byte_coord, uint4 data )
+void  intel_sub_group_block_write_ui8( image2d_t image, int2 byte_coord, uint8 data )
+----
+--
+
+== Modifications to the OpenCL C Specification
+
+=== Additions to Section 6.13.15 - "Work Group Functions"
+
+Add `char` and `uchar` to the list of supported data types for the subgroup broadcast, scan, and reduction functions: ::
++
+--
+[cols="2a,1",options="header"]
+|====
+| *Function*
+| *Description*
+
+|[source,c]
+----
+gentype sub_group_broadcast(
+          gentype x,
+          uint sub_group_local_id )
+
+char    intel_sub_group_broadcast( 
+          char x,
+          uint sub_group_local_id )
+uchar   intel_sub_group_broadcast(
+          uchar x,
+          uint sub_group_local_id )
+----
+
+| Broadcasts the value of _x_ for work item identified by _sub_group_local_id_ (value returned by  *get_sub_group_local_id*) to all work items in the subgroup.
+_sub_group_local_id_ must be the same value for all work items in the subgroup.
+
+|[source,c]
+----
+gentype sub_group_reduce_add( gentype x )
+gentype sub_group_reduce_min( gentype x )
+gentype sub_group_reduce_max( gentype x )
+
+char    intel_sub_group_reduce_add( char x )
+uchar   intel_sub_group_reduce_add( uchar x )
+char    intel_sub_group_reduce_min( char x )
+uchar   intel_sub_group_reduce_min( uchar x )
+char    intel_sub_group_reduce_max( char x )
+uchar   intel_sub_group_reduce_max( uchar x )
+----
+
+| Returns the result of the specified reduction operation for all values of _x_ specified by work items in a subgroup.
+
+|[source,c]
+----
+gentype sub_group_scan_exclusive_add( gentype x )
+gentype sub_group_scan_exclusive_min( gentype x )
+gentype sub_group_scan_exclusive_max( gentype x )
+
+char    intel_sub_group_scan_exclusive_add( char x )
+uchar   intel_sub_group_scan_exclusive_add( uchar x )
+char    intel_sub_group_scan_exclusive_min( char x )
+uchar   intel_sub_group_scan_exclusive_min( uchar x )
+char    intel_sub_group_scan_exclusive_max( char x )
+uchar   intel_sub_group_scan_exclusive_max( uchar x )
+----
+
+| Performs the specified exclusive scan operation of all values _x_ specified by work items in a subgroup.
+The scan results are returned for each work item.
+
+The scan order is defined by increasing subgroup local ID within the subgroup.
+
+|[source,c]
+----
+gentype sub_group_scan_inclusive_add( gentype x)
+gentype sub_group_scan_inclusive_min( gentype x)
+gentype sub_group_scan_inclusive_max( gentype x)
+
+char    intel_sub_group_scan_inclusive_add( char x )
+uchar   intel_sub_group_scan_inclusive_add( uchar x )
+char    intel_sub_group_scan_inclusive_min( char x )
+uchar   intel_sub_group_scan_inclusive_min( uchar x )
+char    intel_sub_group_scan_inclusive_max( char x )
+uchar   intel_sub_group_scan_inclusive_max( uchar x )
+----
+
+| Performs the specified inclusive scan operation of all values _x_ specified by work items in a subgroup.
+The scan results are returned for each work item.
+
+The scan order is defined by increasing subgroup local ID within the subgroup.
+
+|====
+--
+
+=== Additions to Section 6.13.X - "Sub Group Shuffle Functions"
+
+This section was added by the `cl_intel_subgroups` extension.
+
+Add `char`, `char2`, `char4`, `char8`, `char16`, `uchar`, `uchar2`, `uchar4`, `uchar8`, and `uchar16` to the list of data types supported by the `sub_group_shuffle`, `sub_group_shuffle_down`, `sub_group_shuffle_up`, and `sub_group_shuffle_xor` functions: ::
++
+--
+The OpenCL C programming language implements the following built-in functions to allow data to be exchanged among work items in a subgroup.
+These built-in functions need not be encountered by all work items in a subgroup executing the kernel, however, data may only be shuffled among work items encountering the subgroup shuffle function.
+Shuffling data from a work item that does not encounter the subgroup shuffle function will produce undefined results.
+For these functions, `gentype` is `float`, `float2`, `float4`, `float8`, `float16`, `char`, `char2`, `char4`, `char8`, `char16`, `uchar`, `uchar2`, `uchar4`, `uchar8`, `uchar16`, `int`, `int2`, `int4`, `int8`, `int16`, `uint`, `uint2`, `uint4`, `uint8`, `uint16`, `long`, or `ulong`.
+
+If `cl_khr_fp16` is supported, `gentype` also includes `half`.
+
+If `cl_khr_fp64` or doubles are supported, `gentype` also includes `double`.
+--
+
+=== Modifications to Section 6.13.X "Sub Group Read and Write Functions"
+
+This section was added by the `cl_intel_subgroups` extension.
+
+Add suffixed aliases of the previously un-suffixed 32-bit block read and write functions. There is no change to the description or behavior of these functions: ::
++
+--
+[cols="5a,4",options="header"]
+|==================================
+|*Function*
+|*Description*
+
+|[source,c]
+----
+uint  intel_sub_group_block_read(
+        const __global uint* p )
+uint2 intel_sub_group_block_read2(
+        const __global uint* p )
+uint4 intel_sub_group_block_read4(
+        const __global uint* p )
+uint8 intel_sub_group_block_read8(
+        const __global uint* p )
+
+uint  intel_sub_group_block_read_ui(
+        const __global uint* p )
+uint2 intel_sub_group_block_read_ui2(
+        const __global uint* p )
+uint4 intel_sub_group_block_read_ui4(
+        const __global uint* p )
+uint8 intel_sub_group_block_read_ui8(
+        const __global uint* p )
+----
+
+| Reads 1, 2, 4, or 8 uints of data for each work item in the subgroup from the specified pointer as a block operation...
+
+|[source,c]
+----
+uint  intel_sub_group_block_read(
+        image2d_t image,
+        int2 byte_coord )
+uint2 intel_sub_group_block_read2(
+        image2d_t image,
+        int2 byte_coord )
+uint4 intel_sub_group_block_read4(
+        image2d_t image,
+        int2 byte_coord )
+uint8 intel_sub_group_block_read8(
+        image2d_t image,
+        int2 byte_coord )
+
+uint  intel_sub_group_block_read_ui(
+        image2d_t image,
+        int2 byte_coord )
+uint2 intel_sub_group_block_read_ui2(
+        image2d_t image,
+        int2 byte_coord )
+uint4 intel_sub_group_block_read_ui4(
+        image2d_t image,
+        int2 byte_coord )
+uint8 intel_sub_group_block_read_ui8(
+        image2d_t image,
+        int2 byte_coord )
+----
+
+| Reads 1, 2, 4, or 8 uints of data for each work item in the subgroup from the specified image at the specified coordinate as a block operation...
+
+|[source,c]
+----
+void  intel_sub_group_block_write(
+        __global uint* p, uint data )
+void  intel_sub_group_block_write2(
+        __global uint* p, uint2 data )
+void  intel_sub_group_block_write4(
+        __global uint* p, uint4 data )
+void  intel_sub_group_block_write8(
+        __global uint* p, uint8 data )
+
+void  intel_sub_group_block_write_ui(
+        __global uint* p, uint data )
+void  intel_sub_group_block_write_ui2(
+        __global uint* p, uint2 data )
+void  intel_sub_group_block_write_ui4(
+        __global uint* p, uint4 data )
+void  intel_sub_group_block_write_ui8(
+        __global uint* p, uint8 data )
+----
+
+| Writes 1, 2, 4, or 8 uints of data for each work item in the subgroup to the specified pointer as a block operation...
+
+|[source,c]
+----
+void  intel_sub_group_block_write(
+        image2d_t image,
+        int2 byte_coord, uint data )
+void  intel_sub_group_block_write2(
+        image2d_t image,
+        int2 byte_coord, uint2 data )
+void  intel_sub_group_block_write4(
+        image2d_t image,
+        int2 byte_coord, uint4 data )
+void  intel_sub_group_block_write8(
+        image2d_t image,
+        int2 byte_coord, uint8 data )
+
+void  intel_sub_group_block_write_ui(
+        image2d_t image,
+        int2 byte_coord, uint data )
+void  intel_sub_group_block_write_ui2(
+        image2d_t image,
+        int2 byte_coord, uint2 data )
+void  intel_sub_group_block_write_ui4(
+        image2d_t image,
+        int2 byte_coord, uint4 data )
+void  intel_sub_group_block_write_ui8(
+        image2d_t image,
+        int2 byte_coord, uint8 data )
+----
+
+| Writes 1, 2, 4, or 8 uints of data for each work item in the subgroup to the specified image at the specified coordinate as a block operation...
+
+|==================================
+--
+
+Also, add `uchar` variants of the block read and write functions.  In the descriptions of these functions, the "note below describing out-of-bounds behavior" is in the `cl_intel_subgroups` extension specification: ::
++
+--
+[cols="5a,4",options="header"]
+|==================================
+|*Function*
+|*Description*
+
+|[source,c]
+----
+uchar   intel_sub_group_block_read_uc(
+          const __global uchar* p )
+uchar2  intel_sub_group_block_read_uc2(
+          const __global uchar* p )
+uchar4  intel_sub_group_block_read_uc4(
+          const __global uchar* p )
+uchar8  intel_sub_group_block_read_uc8(
+          const __global uchar* p )
+uchar16 intel_sub_group_block_read_uc16(
+          const __global uchar* p )
+----
+
+| Reads 1, 2, 4, 8, or 16 uchars of data for each work item in the subgroup from the specified pointer as a block operation.
+The data is read strided, so the first value read is:
+
+`p[ sub_group_local_id ]`
+
+and the second value read is:
+
+`p[ sub_group_local_id + max_sub_group_size ]`
+
+etc.
+
+_p_ must be aligned to a 32-bit (4-byte) boundary.
+
+There is no defined out-of-range behavior for these functions.
+
+|[source,c]
+----
+uchar   intel_sub_group_block_read_uc(
+          image2d_t image,
+          int2 byte_coord )
+uchar2  intel_sub_group_block_read_uc2(
+          image2d_t image,
+          int2 byte_coord )
+uchar4  intel_sub_group_block_read_uc4(
+          image2d_t image,
+          int2 byte_coord )
+uchar8  intel_sub_group_block_read_uc8(
+          image2d_t image,
+          int2 byte_coord )
+uchar16 intel_sub_group_block_read_uc16(
+          image2d_t image,
+          int2 byte_coord )
+----
+
+| Reads 1, 2, 4, 8, or 16 uchars of data for each work item in the subgroup from the specified _image_ at the specified coordinate as a block operation.
+Note that the coordinate is a byte coordinate, not an image element coordinate.
+Also note that the image data is read without format conversion, so each work item may read multiple image elements
+(for images with element size smaller than 8-bits).
+
+The data is read row-by-row, so the first value read is from the row specified in the y-component of the provided _byte_coord_, the second value is read from the y-component of the provided _byte_coord_ plus one, etc.
+
+Please see the note below describing out-of-bounds behavior for these functions.
+
+|[source,c]
+----
+void  intel_sub_group_block_write_uc(
+        __global uchar* p, uchar data )
+void  intel_sub_group_block_write_uc2(
+        __global uchar* p, uchar2 data )
+void  intel_sub_group_block_write_uc4(
+        __global uchar* p, uchar4 data )
+void  intel_sub_group_block_write_uc8(
+        __global uchar* p, uchar8 data )
+void  intel_sub_group_block_write_uc16(
+        __global uchar* p, uchar16 data )
+----
+
+| Writes 1, 2, 4, 8, or 16 uchars of data for each work item in the subgroup to the specified pointer as a block operation.
+The data is written strided, so the first value is written to:
+
+`p[ sub_group_local_id ]`
+
+and the second value is written to:
+
+`p[ sub_group_local_id + max_sub_group_size ]`
+
+etc.
+
+_p_ must be aligned to a 128-bit (16-byte) boundary.
+
+There is no defined out-of-range behavior for these functions.
+
+|[source,c]
+----
+void  intel_sub_group_block_write_uc(
+        image2d_t image,
+        int2 byte_coord, uchar data )
+void  intel_sub_group_block_write_uc2(
+        image2d_t image,
+        int2 byte_coord, uchar2 data )
+void  intel_sub_group_block_write_uc4(
+        image2d_t image,
+        int2 byte_coord, uchar4 data )
+void  intel_sub_group_block_write_uc8(
+        image2d_t image,
+        int2 byte_coord, uchar8 data )
+void  intel_sub_group_block_write_uc16(
+        image2d_t image,
+        int2 byte_coord, uchar16 data )
+----
+
+| Writes 1, 2, 4, 8, or 16 uchars of data for each work item in the subgroup to the specified _image_ at the specified coordinate as a block operation.
+Note that the coordinate is a byte coordinate, not an image element coordinate.
+Unlike the image block read function, which may read from any arbitrary byte offset, the x-component of the byte coordinate for the image block write functions must be a multiple of four;
+in other words, the write must begin at 32-bit boundary.
+There is no restriction on the y-component of the coordinate.
+Also, note that the image _data_ is written without format conversion, so each work item may write multiple image elements (for images with element size smaller than 8-bits).
+
+The data is written row-by-row, so the first value written is from the row specified by the y-component of the provided _byte_coord_, the second value is written from the y-component of the provided _byte_coord_ plus one, etc.
+
+Please see the note below describing out-of-bounds behavior for these functions.
+
+|==================================
+--
+
+== Modifications to the OpenCL SPIR-V Environment Specification
+
+The section numbers below refer to sections added by the `cl_intel_spirv_subgroups` extension.
+
+Note that the restrictions described in Section 7.1.X.3 - _Notes and Restrictions_ in the `cl_intel_spirv_subgroups` extension are unchanged and continue to apply for this extension.
+
+=== Add to Section 7.1.X - `cl_intel_spirv_subgroups`
+
+Add to the end of this section: ::
++
+--
+If the OpenCL environment supports the extension `cl_intel_subgroups_char`, then additional types are valid for the following *Groups* instructions with _Scope_ for _Execution_ equal to *Subgroup*:
+
+* *OpGroupBroadcast*
+* *OpGroupIAdd*
+* *OpGroupSMin*, *OpGroupUMin*
+* *OpGroupSMax*, *OpGroupUMax*
+
+For these instructions, valid types for _Value_ are:
+
+* Scalars of *OpTypeInt* with a _Width_ of 8 bits and _Signedness_ of 0 (equivalent to `char` and `uchar`)
+--
+
+=== Add to Section 7.1.X.1 - Shuffle Instruction
+
+Add to the end of this section: ::
++
+--
+Additionally, if the OpenCL environment supports the extension `cl_intel_subgroups_char`:
+
+* Scalars and *OpTypeVectors* with 2, 3, 4, 8, or 16 _Component Count_ components of the following _Component Type_ types:
+** *OpTypeInt* with a _Width_ of 8 bits and _Signedness_ of 0 (equivalent to `char` and `uchar`)
+--
+
+=== Add to Section 7.1.X.2 - Block IO Instructions
+
+Add to the description of supported types in this section: ::
++
+--
+Additionally, if the OpenCL environment supports the extension `cl_intel_subgroups_char`:
+
+* Scalars and *OpTypeVectors* with 2, 4, 8, or 16 _Component Count_ components of the following _Component Type_ types:
+** *OpTypeInt* with a _Width_ of 8 bits and _Signedness_ of 0 (equivalent to `char` and `uchar`)
+--
+
+== Issues
+
+None.
+
+//. Issue?
+//+
+//--
+//`STATUS`: Description.
+//--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1|2020-03-13|Ben Ashbaugh|*First public revision.*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

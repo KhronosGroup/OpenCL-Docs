@@ -1,0 +1,406 @@
+= cl_intel_subgroups_long
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C,
+// for syntax highlighting purposes.
+:language: c
+
+== Name Strings
+
+`cl_intel_subgroups_long`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel +
+Konrad Trifunovic, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2020 Intel Corporation.  All rights reserved.
+
+== Status
+
+Final Draft
+
+== Version
+
+Built On: {docdate} +
+Revision: 1
+
+== Dependencies
+
+OpenCL 1.2 and support for `cl_intel_subgroups` is required.
+This extension is written against the OpenCL API Specification Version 2.2 (revision v2.2-7), against the OpenCL C Language Specification Version 2.0 (revision v2.2-7), and against version 4 of the `cl_intel_subgroups` specification.
+
+This extension requires OpenCL support for SPIR-V, either via OpenCL 2.1 or via the `cl_khr_il_program` extension.
+
+This extension interacts with the `cl_intel_spirv_subgroups` extension.
+
+== Overview
+
+The goal of this extension is to allow programmers to improve the performance of applications operating on 64-bit data types by extending the subgroup functions described in the `cl_intel_subgroups` extension to support 64-bit integer data types (`longs` and `ulongs`).
+Specifically, the extension:
+
+* Extends the Intel subgroup block read and write functions to allow reading and writing 64-bit integer data from images and buffers.
+
+Note that `cl_intel_subgroups` and `cl_khr_subgroups` already support broadcasts, scans, and reductions for 64-bit integer types, and that `cl_intel_subgroups` already supports shuffles for 64-bit integer types.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+None.
+
+== New OpenCL C Functions
+
+Add `ulong` variants of the subgroup block read and write functions: ::
++
+--
+[source]
+----
+ulong   intel_sub_group_block_read_ul( const __global ulong* p )
+ulong2  intel_sub_group_block_read_ul2( const __global ulong* p )
+ulong4  intel_sub_group_block_read_ul4( const __global ulong* p )
+ulong8  intel_sub_group_block_read_ul8( const __global ulong* p )
+ulong   intel_sub_group_block_read_ul( image2d_t image, int2 byte_coord )
+ulong2  intel_sub_group_block_read_ul2( image2d_t image, int2 byte_coord )
+ulong4  intel_sub_group_block_read_ul4( image2d_t image, int2 byte_coord )
+ulong8  intel_sub_group_block_read_ul8( image2d_t image, int2 byte_coord )
+
+void  intel_sub_group_block_write_ul( __global ulong* p, ulong data )
+void  intel_sub_group_block_write_ul2( __global ulong* p, ulong2 data )
+void  intel_sub_group_block_write_ul4( __global ulong* p, ulong4 data )
+void  intel_sub_group_block_write_ul8( __global ulong* p, ulong8 data )
+void  intel_sub_group_block_write_ul( image2d_t image, int2 byte_coord, ulong data )
+void  intel_sub_group_block_write_ul2( image2d_t image, int2 byte_coord, ulong2 data )
+void  intel_sub_group_block_write_ul4( image2d_t image, int2 byte_coord, ulong4 data )
+void  intel_sub_group_block_write_ul8( image2d_t image, int2 byte_coord, ulong8 data )
+----
+--
+
+For naming consistency, also add suffixed aliases of the `uint` subgroup block read and write functions described in the `cl_intel_subgroups` extension: ::
++
+--
+[source]
+----
+uint  intel_sub_group_block_read_ui( const __global uint* p )
+uint2 intel_sub_group_block_read_ui2( const __global uint* p )
+uint4 intel_sub_group_block_read_ui4( const __global uint* p )
+uint8 intel_sub_group_block_read_ui8( const __global uint* p )
+uint  intel_sub_group_block_read_ui( image2d_t image, int2 byte_coord )
+uint2 intel_sub_group_block_read_ui2( image2d_t image, int2 byte_coord )
+uint4 intel_sub_group_block_read_ui4( image2d_t image, int2 byte_coord )
+uint8 intel_sub_group_block_read_ui8( image2d_t image, int2 byte_coord )
+
+void  intel_sub_group_block_write_ui( __global uint* p, uint data )
+void  intel_sub_group_block_write_ui2( __global uint* p, uint2 data )
+void  intel_sub_group_block_write_ui4( __global uint* p, uint4 data )
+void  intel_sub_group_block_write_ui8( __global uint* p, uint8 data )
+void  intel_sub_group_block_write_ui( image2d_t image, int2 byte_coord, uint data )
+void  intel_sub_group_block_write_ui2( image2d_t image, int2 byte_coord, uint2 data )
+void  intel_sub_group_block_write_ui4( image2d_t image, int2 byte_coord, uint4 data )
+void  intel_sub_group_block_write_ui8( image2d_t image, int2 byte_coord, uint8 data )
+----
+--
+
+== Modifications to the OpenCL C Specification
+
+=== Modifications to Section 6.13.X "Sub Group Read and Write Functions"
+
+This section was added by the `cl_intel_subgroups` extension.
+
+Add suffixed aliases of the previously un-suffixed 32-bit block read and write functions. There is no change to the description or behavior of these functions: ::
++
+--
+[cols="5a,4",options="header"]
+|==================================
+|*Function*
+|*Description*
+
+|[source,c]
+----
+uint  intel_sub_group_block_read(
+        const __global uint* p )
+uint2 intel_sub_group_block_read2(
+        const __global uint* p )
+uint4 intel_sub_group_block_read4(
+        const __global uint* p )
+uint8 intel_sub_group_block_read8(
+        const __global uint* p )
+
+uint  intel_sub_group_block_read_ui(
+        const __global uint* p )
+uint2 intel_sub_group_block_read_ui2(
+        const __global uint* p )
+uint4 intel_sub_group_block_read_ui4(
+        const __global uint* p )
+uint8 intel_sub_group_block_read_ui8(
+        const __global uint* p )
+----
+
+| Reads 1, 2, 4, or 8 uints of data for each work item in the subgroup from the specified pointer as a block operation...
+
+|[source,c]
+----
+uint  intel_sub_group_block_read(
+        image2d_t image,
+        int2 byte_coord )
+uint2 intel_sub_group_block_read2(
+        image2d_t image,
+        int2 byte_coord )
+uint4 intel_sub_group_block_read4(
+        image2d_t image,
+        int2 byte_coord )
+uint8 intel_sub_group_block_read8(
+        image2d_t image,
+        int2 byte_coord )
+
+uint  intel_sub_group_block_read_ui(
+        image2d_t image,
+        int2 byte_coord )
+uint2 intel_sub_group_block_read_ui2(
+        image2d_t image,
+        int2 byte_coord )
+uint4 intel_sub_group_block_read_ui4(
+        image2d_t image,
+        int2 byte_coord )
+uint8 intel_sub_group_block_read_ui8(
+        image2d_t image,
+        int2 byte_coord )
+----
+
+| Reads 1, 2, 4, or 8 uints of data for each work item in the subgroup from the specified image at the specified coordinate as a block operation...
+
+|[source,c]
+----
+void  intel_sub_group_block_write(
+        __global uint* p, uint data )
+void  intel_sub_group_block_write2(
+        __global uint* p, uint2 data )
+void  intel_sub_group_block_write4(
+        __global uint* p, uint4 data )
+void  intel_sub_group_block_write8(
+        __global uint* p, uint8 data )
+
+void  intel_sub_group_block_write_ui(
+        __global uint* p, uint data )
+void  intel_sub_group_block_write_ui2(
+        __global uint* p, uint2 data )
+void  intel_sub_group_block_write_ui4(
+        __global uint* p, uint4 data )
+void  intel_sub_group_block_write_ui8(
+        __global uint* p, uint8 data )
+----
+
+| Writes 1, 2, 4, or 8 uints of data for each work item in the subgroup to the specified pointer as a block operation...
+
+|[source,c]
+----
+void  intel_sub_group_block_write(
+        image2d_t image,
+        int2 byte_coord, uint data )
+void  intel_sub_group_block_write2(
+        image2d_t image,
+        int2 byte_coord, uint2 data )
+void  intel_sub_group_block_write4(
+        image2d_t image,
+        int2 byte_coord, uint4 data )
+void  intel_sub_group_block_write8(
+        image2d_t image,
+        int2 byte_coord, uint8 data )
+
+void  intel_sub_group_block_write_ui(
+        image2d_t image,
+        int2 byte_coord, uint data )
+void  intel_sub_group_block_write_ui2(
+        image2d_t image,
+        int2 byte_coord, uint2 data )
+void  intel_sub_group_block_write_ui4(
+        image2d_t image,
+        int2 byte_coord, uint4 data )
+void  intel_sub_group_block_write_ui8(
+        image2d_t image,
+        int2 byte_coord, uint8 data )
+----
+
+| Writes 1, 2, 4, or 8 uints of data for each work item in the subgroup to the specified image at the specified coordinate as a block operation...
+
+|==================================
+--
+
+Also, add `ulong` variants of the block read and write functions.  In the descriptions of these functions, the "note below describing out-of-bounds behavior" is in the `cl_intel_subgroups` extension specification: ::
++
+--
+[cols="5a,4",options="header"]
+|==================================
+|*Function*
+|*Description*
+
+|[source,c]
+----
+ulong   intel_sub_group_block_read_ul(
+          const __global ulong* p )
+ulong2  intel_sub_group_block_read_ul2(
+          const __global ulong* p )
+ulong4  intel_sub_group_block_read_ul4(
+          const __global ulong* p )
+ulong8  intel_sub_group_block_read_ul8(
+          const __global ulong* p )
+----
+
+| Reads 1, 2, 4, or 8 ulongs of data for each work item in the subgroup from the specified pointer as a block operation.
+The data is read strided, so the first value read is:
+
+`p[ sub_group_local_id ]`
+
+and the second value read is:
+
+`p[ sub_group_local_id + max_sub_group_size ]`
+
+etc.
+
+There is no defined out-of-range behavior for these functions.
+
+|[source,c]
+----
+ulong   intel_sub_group_block_read_ul(
+          image2d_t image,
+          int2 byte_coord )
+ulong2  intel_sub_group_block_read_ul2(
+          image2d_t image,
+          int2 byte_coord )
+ulong4  intel_sub_group_block_read_ul4(
+          image2d_t image,
+          int2 byte_coord )
+ulong8  intel_sub_group_block_read_ul8(
+          image2d_t image,
+          int2 byte_coord )
+----
+
+| Reads 1, 2, 4, or 8 ulongs of data for each work item in the subgroup from the specified _image_ at the specified coordinate as a block operation.
+Note that the coordinate is a byte coordinate, not an image element coordinate.
+Also note that the image data is read without format conversion, so each work item may read multiple image elements
+(for images with element size smaller than 64-bits).
+
+The data is read row-by-row, so the first value read is from the row specified in the y-component of the provided _byte_coord_, the second value is read from the y-component of the provided _byte_coord_ plus one, etc.
+
+Please see the note below describing out-of-bounds behavior for these functions.
+
+|[source,c]
+----
+void  intel_sub_group_block_write_ul(
+        __global ulong* p, ulong data )
+void  intel_sub_group_block_write_ul2(
+        __global ulong* p, ulong2 data )
+void  intel_sub_group_block_write_ul4(
+        __global ulong* p, ulong4 data )
+void  intel_sub_group_block_write_ul8(
+        __global ulong* p, ulong8 data )
+----
+
+| Writes 1, 2, 4, 8, or 16 ulongs of data for each work item in the subgroup to the specified pointer as a block operation.
+The data is written strided, so the first value is written to:
+
+`p[ sub_group_local_id ]`
+
+and the second value is written to:
+
+`p[ sub_group_local_id + max_sub_group_size ]`
+
+etc.
+
+_p_ must be aligned to a 128-bit (16-byte) boundary.
+
+There is no defined out-of-range behavior for these functions.
+
+|[source,c]
+----
+void  intel_sub_group_block_write_ul(
+        image2d_t image,
+        int2 byte_coord, ulong data )
+void  intel_sub_group_block_write_ul2(
+        image2d_t image,
+        int2 byte_coord, ulong2 data )
+void  intel_sub_group_block_write_ul4(
+        image2d_t image,
+        int2 byte_coord, ulong4 data )
+void  intel_sub_group_block_write_ul8(
+        image2d_t image,
+        int2 byte_coord, ulong8 data )
+----
+
+| Writes 1, 2, 4, or 8 ulongs of data for each work item in the subgroup to the specified _image_ at the specified coordinate as a block operation.
+Note that the coordinate is a byte coordinate, not an image element coordinate.
+Unlike the image block read function, which may read from any arbitrary byte offset, the x-component of the byte coordinate for the image block write functions must be a multiple of four;
+in other words, the write must begin at 32-bit boundary.
+There is no restriction on the y-component of the coordinate.
+Also, note that the image _data_ is written without format conversion, so each work item may write multiple image elements (for images with element size smaller than 64-bits).
+
+The data is written row-by-row, so the first value written is from the row specified by the y-component of the provided _byte_coord_, the second value is written from the y-component of the provided _byte_coord_ plus one, etc.
+
+Please see the note below describing out-of-bounds behavior for these functions.
+
+|==================================
+--
+
+== Modifications to the OpenCL SPIR-V Environment Specification
+
+The section numbers below refer to sections added by the `cl_intel_spirv_subgroups` extension.
+
+Note that the restrictions described in Section 7.1.X.3 - _Notes and Restrictions_ in the `cl_intel_spirv_subgroups` extension are unchanged and continue to apply for this extension.
+
+=== Add to Section 7.1.X.2 - Block IO Instructions
+
+Add to the description of supported types in this section: ::
++
+--
+Additionally, if the OpenCL environment supports the extension `cl_intel_subgroups_long`:
+
+* Scalars and *OpTypeVectors* with 2, 4, or 8 _Component Count_ components of the following _Component Type_ types:
+** *OpTypeInt* with a _Width_ of 64 bits and _Signedness_ of 0 (equivalent to `long` and `ulong`)
+--
+
+== Issues
+
+None.
+
+//. Issue?
+//+
+//--
+//`STATUS`: Description.
+//--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1|2020-03-13|Ben Ashbaugh|*First public revision.*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************
