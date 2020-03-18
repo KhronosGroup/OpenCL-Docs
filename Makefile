@@ -126,6 +126,8 @@ extensions: extensionshtml extensionspdf
 
 cxx: cxxhtml cxxpdf
 
+cxx4opencl: cxx4openclhtml cxx4openclpdf
+
 c: chtml cpdf
 
 icdinst: icdinsthtml icdinstpdf
