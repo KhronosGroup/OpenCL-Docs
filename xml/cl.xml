@@ -174,6 +174,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_uint</type>          <name>cl_mem_object_type</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_mem_info</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_mem_migration_flags</name>;</type>
+        <type category="define">typedef <type>cl_bitfield</type>      <name>cl_mem_properties</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_image_info</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_buffer_create_type</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_addressing_mode</name>;</type>
@@ -207,6 +208,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_uint</type>          <name>cl_mem_advice_intel</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_atomic_capabilities</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_khronos_vendor_id</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_version</name>;</type>
 
             <comment>Structure types</comment>
         <type category="struct" name="cl_dx9_surface_info_khr">
@@ -258,6 +260,10 @@ server's OpenCL/api-docs repository.
         <type category="struct" name="cl_buffer_region">
             <member><type>size_t</type>              <name>origin</name></member>
             <member><type>size_t</type>              <name>size</name></member>
+        </type>
+        <type category="struct" name="cl_name_version">
+            <member><type>cl_version</type>          <name>version</name></member>
+            <member><type>char[CL_NAME_VERSION_MAX_NAME_SIZE]</type><name>name</name></member>
         </type>
     </types>
 
@@ -358,6 +364,12 @@ server's OpenCL/api-docs repository.
                    #define CL_NAN           nanf( "" )
                 #endif
             </comment>
+    </enums>
+    <enums name="Constants.Versioning" vendor="Khronos" comment="Miscellaneous API constants, in cl.h">
+        <enum value="10"                                 name="CL_VERSION_MAJOR_BITS"/>
+        <enum value="10"                                 name="CL_VERSION_MINOR_BITS"/>
+        <enum value="12"                                 name="CL_VERSION_PATCH_BITS"/>
+        <enum value="64"                                 name="CL_NAME_VERSION_MAX_NAME_SIZE"/>
     </enums>
 
     <enums start="0" end="-999" name="ErrorCodes.0" vendor="Khronos" comment="Error codes start at 0 and decrease">
@@ -1041,7 +1053,9 @@ server's OpenCL/api-docs repository.
         <enum value="0x0903"        name="CL_PLATFORM_VENDOR"/>
         <enum value="0x0904"        name="CL_PLATFORM_EXTENSIONS"/>
         <enum value="0x0905"        name="CL_PLATFORM_HOST_TIMER_RESOLUTION"/>
-            <unused start="0x0906" end="0x091F" comment="Reserved to Khronos"/>
+        <enum value="0x0906"        name="CL_PLATFORM_NUMERIC_VERSION"/>
+        <enum value="0x0907"        name="CL_PLATFORM_EXTENSIONS_WITH_VERSION"/>
+            <unused start="0x0908" end="0x091F" comment="Reserved to Khronos"/>
         <enum value="0x0920"        name="CL_PLATFORM_ICD_SUFFIX_KHR"/>
             <unused start="0x0921" end="0x09FF" comment="Vendor extensions"/>
     </enums>
@@ -1143,11 +1157,16 @@ server's OpenCL/api-docs repository.
         <enum value="0x105B"        name="CL_DEVICE_IL_VERSION_KHR"/>
         <enum value="0x105C"        name="CL_DEVICE_MAX_NUM_SUB_GROUPS"/>
         <enum value="0x105D"        name="CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS"/>
+        <enum value="0x105E"        name="CL_DEVICE_NUMERIC_VERSION"/>
+            <unused start="0x105F" end="0x105F" comment="was CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR"/>
+        <enum value="0x1060"        name="CL_DEVICE_EXTENSIONS_WITH_VERSION"/>
+        <enum value="0x1061"        name="CL_DEVICE_ILS_WITH_VERSION"/>
+        <enum value="0x1062"        name="CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION"/>
         <enum value="0x1063"        name="CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES"/>
         <enum value="0x1064"        name="CL_DEVICE_ATOMIC_FENCE_CAPABILITIES"/>
         <enum value="0x1065"        name="CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT"/>
-        <enum value="0x1066"        name="CL_DEVICE_OPENCL_C_VERSIONS"/>
-        <enum value="0x1067"        name="CL_DEVICE_MAX_WRITE_IMAGE3D_ARGS"/>
+        <enum value="0x1066"        name="CL_DEVICE_OPENCL_C_ALL_VERSIONS"/>
+            <unused start="0x1067" end="0x1067" comment="was CL_DEVICE_MAX_WRITE_IMAGE3D_ARGS"/>
         <enum value="0x1068"        name="CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT"/>
         <enum value="0x1069"        name="CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT"/>
             <unused start="0x106A" end="0x106E" comment="Reserved for upcoming KHR extension"/>
@@ -1173,7 +1192,8 @@ server's OpenCL/api-docs repository.
         <enum value="0x1095"        name="CL_QUEUE_DEVICE_DEFAULT"/>
         <enum value="0x1096"        name="CL_QUEUE_PRIORITY_KHR"/>
         <enum value="0x1097"        name="CL_QUEUE_THROTTLE_KHR"/>
-            <unused start="0x1098" end="0x109F" comment="Reserved for cl_command_queue_info"/>
+        <enum value="0x1098"        name="CL_QUEUE_PROPERTIES_ARRAY"/>
+            <unused start="0x1099" end="0x109F" comment="Reserved for cl_command_queue_info"/>
             <unused start="0x10A0" end="0x10AF" comment="Reserved for core API tokens"/>
         <enum value="0x10B0"        name="CL_R"/>
         <enum value="0x10B1"        name="CL_A"/>
@@ -1233,7 +1253,8 @@ server's OpenCL/api-docs repository.
         <enum value="0x1107"        name="CL_MEM_ASSOCIATED_MEMOBJECT"/>
         <enum value="0x1108"        name="CL_MEM_OFFSET"/>
         <enum value="0x1109"        name="CL_MEM_USES_SVM_POINTER"/>
-            <unused start="0x110A" end="0x110F" comment="Reserved for cl_mem_info"/>
+        <enum value="0x110A"        name="CL_MEM_PROPERTIES"/>
+            <unused start="0x110B" end="0x110F" comment="Reserved for cl_mem_info"/>
         <enum value="0x1110"        name="CL_IMAGE_FORMAT"/>
         <enum value="0x1111"        name="CL_IMAGE_ELEMENT_SIZE"/>
         <enum value="0x1112"        name="CL_IMAGE_ROW_PITCH"/>
@@ -1248,7 +1269,8 @@ server's OpenCL/api-docs repository.
             <unused start="0x111B" end="0x111F" comment="Reserved for cl_image_info"/>
         <enum value="0x1120"        name="CL_PIPE_PACKET_SIZE"/>
         <enum value="0x1121"        name="CL_PIPE_MAX_PACKETS"/>
-            <unused start="0x1122" end="0x112F" comment="Reserved for cl_pipe_info"/>
+        <enum value="0x1122"        name="CL_PIPE_PROPERTIES"/>
+            <unused start="0x1123" end="0x112F" comment="Reserved for cl_pipe_info"/>
         <enum value="0x1130"        name="CL_ADDRESS_NONE"/>
         <enum value="0x1131"        name="CL_ADDRESS_CLAMP_TO_EDGE"/>
         <enum value="0x1132"        name="CL_ADDRESS_CLAMP"/>
@@ -1266,7 +1288,8 @@ server's OpenCL/api-docs repository.
         <enum value="0x1155"        name="CL_SAMPLER_MIP_FILTER_MODE"/>
         <enum value="0x1156"        name="CL_SAMPLER_LOD_MIN"/>
         <enum value="0x1157"        name="CL_SAMPLER_LOD_MAX"/>
-            <unused start="0x1158" end="0x115F" comment="Reserved for cl_sampler_info"/>
+        <enum value="0x1158"        name="CL_SAMPLER_PROPERTIES"/>
+            <unused start="0x1159" end="0x115F" comment="Reserved for cl_sampler_info"/>
         <enum value="0x1160"        name="CL_PROGRAM_REFERENCE_COUNT"/>
         <enum value="0x1161"        name="CL_PROGRAM_CONTEXT"/>
         <enum value="0x1162"        name="CL_PROGRAM_NUM_DEVICES"/>
@@ -2539,6 +2562,15 @@ server's OpenCL/api-docs repository.
             <param><type>void</type>*                                   <name>host_ptr</name></param>
             <param><type>cl_int</type>*                                 <name>errcode_ret</name></param>
         </command>
+        <command suffix="CL_API_SUFFIX__EXPERIMENTAL">
+            <proto><type>cl_mem</type>                                  <name>clCreateBufferWithProperties</name></proto>
+            <param><type>cl_context</type>                              <name>context</name></param>
+            <param>const <type>cl_mem_properties</type>*                <name>properties</name></param>
+            <param><type>cl_mem_flags</type>                            <name>flags</name></param>
+            <param><type>size_t</type>                                  <name>size</name></param>
+            <param><type>void</type>*                                   <name>host_ptr</name></param>
+            <param><type>cl_int</type>*                                 <name>errcode_ret</name></param>
+        </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_1">
             <proto><type>cl_mem</type>                                  <name>clCreateSubBuffer</name></proto>
             <param><type>cl_mem</type>                                  <name>buffer</name></param>
@@ -2550,6 +2582,16 @@ server's OpenCL/api-docs repository.
         <command suffix="CL_API_SUFFIX__VERSION_1_2">
             <proto><type>cl_mem</type>                                  <name>clCreateImage</name></proto>
             <param><type>cl_context</type>                              <name>context</name></param>
+            <param><type>cl_mem_flags</type>                            <name>flags</name></param>
+            <param>const <type>cl_image_format</type>*                  <name>image_format</name></param>
+            <param>const <type>cl_image_desc</type>*                    <name>image_desc</name></param>
+            <param><type>void</type>*                                   <name>host_ptr</name></param>
+            <param><type>cl_int</type>*                                 <name>errcode_ret</name></param>
+        </command>
+        <command suffix="CL_API_SUFFIX__EXPERIMENTAL">
+            <proto><type>cl_mem</type>                                  <name>clCreateImageWithProperties</name></proto>
+            <param><type>cl_context</type>                              <name>context</name></param>
+            <param>const <type>cl_mem_properties</type>*                <name>properties</name></param>
             <param><type>cl_mem_flags</type>                            <name>flags</name></param>
             <param>const <type>cl_image_format</type>*                  <name>image_format</name></param>
             <param>const <type>cl_image_desc</type>*                    <name>image_desc</name></param>
@@ -4273,6 +4315,9 @@ server's OpenCL/api-docs repository.
         <require>
             <type name="cl_device_atomic_capabilities"/>
             <type name="cl_khronos_vendor_id"/>
+            <type name="cl_mem_properties"/>
+            <type name="cl_version"/>
+            <type name="cl_name_version"/>
         </require>
         <require comment="cl_device_atomic_capabilities - bitfield">
             <enum name="CL_DEVICE_ATOMIC_ORDER_RELAXED"/>
@@ -4283,20 +4328,49 @@ server's OpenCL/api-docs repository.
             <enum name="CL_DEVICE_ATOMIC_SCOPE_DEVICE"/>
             <enum name="CL_DEVICE_ATOMIC_SCOPE_ALL_SVM_DEVICES"/>
         </require>
+        <require comment="cl_platform_info">
+            <enum name="CL_PLATFORM_NUMERIC_VERSION"/>
+            <enum name="CL_PLATFORM_EXTENSIONS_WITH_VERSION"/>
+        </require>
         <require comment="cl_device_info">
             <enum name="CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES"/>
             <enum name="CL_DEVICE_ATOMIC_FENCE_CAPABILITIES"/>
             <enum name="CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT"/>
-            <enum name="CL_DEVICE_OPENCL_C_VERSIONS"/>
-            <enum name="CL_DEVICE_MAX_WRITE_IMAGE3D_ARGS"/>
+            <enum name="CL_DEVICE_OPENCL_C_ALL_VERSIONS"/>
             <enum name="CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT"/>
             <enum name="CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT"/>
             <enum name="CL_DEVICE_OPENCL_C_FEATURES"/>
             <enum name="CL_DEVICE_DEVICE_ENQUEUE_SUPPORT"/>
             <enum name="CL_DEVICE_PIPE_SUPPORT"/>
+            <enum name="CL_DEVICE_NUMERIC_VERSION"/>
+            <enum name="CL_DEVICE_EXTENSIONS_WITH_VERSION"/>
+            <enum name="CL_DEVICE_ILS_WITH_VERSION"/>
+            <enum name="CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION"/>
+        </require>
+        <require comment="cl_pipe_info">
+            <enum name="CL_PIPE_PROPERTIES"/>
+        </require>
+        <require comment="cl_sampler_info">
+            <enum name="CL_SAMPLER_PROPERTIES"/>
+        </require>
+        <require comment="cl_command_queue_info">
+            <enum name="CL_QUEUE_PROPERTIES_ARRAY"/>
+        </require>
+        <require comment="cl_mem_info">
+            <enum name="CL_MEM_PROPERTIES"/>
         </require>
         <require comment="cl_command_type">
             <enum name="CL_COMMAND_SVM_MIGRATE_MEM"/>
+        </require>
+        <require comment="Misc API enums">
+            <enum name="CL_VERSION_MAJOR_BITS"/>
+            <enum name="CL_VERSION_MINOR_BITS"/>
+            <enum name="CL_VERSION_PATCH_BITS"/>
+            <enum name="CL_NAME_VERSION_MAX_NAME_SIZE"/>
+        </require>
+        <require comment="Memory Object APIs">
+            <command name="clCreateBufferWithProperties"/>
+            <command name="clCreateImageWithProperties"/>
         </require>
     </feature>
 
