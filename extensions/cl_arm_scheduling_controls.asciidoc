@@ -29,7 +29,7 @@ Shipping
 == Version
 
 Built On: {docdate} +
-Version: 0.1.0
+Version: 0.2.0
 
 == Dependencies
 
@@ -53,6 +53,7 @@ CL_DEVICE_SCHEDULING_CONTROLS_CAPABILITIES_ARM           0x41E4
 CL_DEVICE_SCHEDULING_KERNEL_BATCHING_ARM                (1 << 0)
 CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_ARM           (1 << 1)
 CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_MODIFIER_ARM  (1 << 2)
+CL_DEVICE_SCHEDULING_DEFERRED_FLUSH_ARM                 (1 << 3)
 ----
 
 Accepted value for the _param_name_ parameter to *clSetKernelExecInfo*:
@@ -68,6 +69,7 @@ Accepted value for the _properties_ parameter to *clCreateCommandQueueWithProper
 [source,c]
 ----
 CL_QUEUE_KERNEL_BATCHING_ARM 0x41E7
+CL_QUEUE_DEFERRED_FLUSH_ARM  0x41EC
 ----
 
 == Modifications to the OpenCL API Specification
@@ -98,6 +100,8 @@ CL_QUEUE_KERNEL_BATCHING_ARM 0x41E7
  +
 - `CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_MODIFIER_ARM` is set when the
   device supports `CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM`.
+- `CL_DEVICE_SCHEDULING_DEFERRED_FLUSH_ARM` is set when the device supports
+  `CL_QUEUE_DEFERRED_FLUSH_ARM`.
 
 |====
 
@@ -124,6 +128,12 @@ CL_QUEUE_KERNEL_BATCHING_ARM 0x41E7
   device. `CL_TRUE` means kernels will be batched, `CL_FALSE` that they will not.
   Defaults to `CL_TRUE`.
 
+| `CL_QUEUE_DEFERRED_FLUSH_ARM`
+| `cl_bool`
+| Whether flush operations are performed in the thread triggering the flush or
+  deferred for execution in another thread managed by the OpenCL runtime.
+  `CL_TRUE` means flush operations are deferred. Defaults to `CL_TRUE`. +
+  Missing before version 0.2.
 |====
 
 --
@@ -196,6 +206,7 @@ None.
 [options="header"]
 |====
 | Version | Date       | Author       | Changes
+| 0.2.0   | 2020-09-14 | Kévin Petit  | Add support for deferred queue flush control
 | 0.1.0   | 2020-08-28 | Kévin Petit  | Initial version
 |====
 
