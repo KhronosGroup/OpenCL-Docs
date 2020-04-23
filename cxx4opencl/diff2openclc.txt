@@ -4,17 +4,21 @@
 
 === Difference to OpenCL C
 
-{cpp} for OpenCL aims to achieve backwards compatibility with OpenCL C
-for the majority of features. However, it is a different
-language that is derived from {cpp} and therefore it inherits
-its fundamental design principles. Hence {cpp} for OpenCL
-deviates from OpenCL C in the same areas where {cpp} deviates
-from C.
+{cpp} for OpenCL provides backwards compatibility with OpenCL C
+for the majority of features. However, there are a number of
+exceptions that are described in this section. Some of them come
+from the nature of C++ but others are due to improved behaviour
+of a kernel language.
 
-This section describes the main differences between {cpp} for
-OpenCL and OpenCL C.
+==== C++ related differences
 
-==== Implicit Conversions
+{cpp} for OpenCL is a different language derived from {cpp} and
+therefore it inherits its fundamental design principles. Hence
+{cpp} for OpenCL deviates from OpenCL C in the same areas where
+{cpp} deviates from C. The main reasons for that is to provide
+more helpful language to the developers or compilation tools.
+
+====== Implicit Conversions
 
 {cpp} is much stricter about conversions between types,
 especially those that are performed implicitly by the compiler.
@@ -60,7 +64,7 @@ void foo(){
 }
 ----------
 
-==== Null Literal
+===== Null Literal
 
 In C and OpenCL C the null literal is defined using other
 language features as it is not represented explicitly i.e.
@@ -89,7 +93,7 @@ void foo(){
 }
 ----------
 
-==== Use of restrict
+===== Use of restrict
 
 {cpp}17 does not support `restrict` and therefore {cpp} for OpenCL
 can not support it either. Some compilers might provide extensions
@@ -104,7 +108,7 @@ macro or mapping it to another similar compiler features, e.g.
 `__restrict` in Clang. This can be done in headers or using `-D`
 compilation flag.
 
-==== Limitations of goto statements
+===== Limitations of goto statements
 
 {cpp} is more restrictive with respect to entering the scope of
 variables than C. It is not possible to jump forward over a variable
@@ -120,10 +124,46 @@ label:  // invalid: jumping forward over declaration of n
    // ...
 ----------
 
-==== Use of Clang Blocks
+==== OpenCL specific difference
+
+This section described where {cpp} for OpenCL differs from OpenCL C
+in OpenCL specific behavior.
+
+===== Variadic macros
+
+{cpp} for OpenCL eliminates restriction on variadic macro from
+section 6.9.e of OpenCL C. Variadic macros can be used regularly
+as per {cpp}17 [cpp.replace].
+
+===== Predefined macros
+
+Predefined version macro `__OPENCL_C_VERSION__` and `NULL` described
+in OpenCL C 2.0 section 6.10 are not supported.
+
+There is a macro `__OPENCL_CPP_VERSION__` available that is set to
+value `100`. For convenience there is also `__CL_CPP_VERSION_1_0__`
+that is defined to the same value `100` and can be used instead of a
+literal.
+
+===== Atomic operations
+
+{cpp} for OpenCL relaxes restriction from OpenCL C 2.0 section 6.13.11 to
+atomic types by allowing to modify variables of such types using builtin
+operators, and not only using builtin function.
+
+The behavior of operators on atomic types follows the logic from {cpp}17
+sections [atomics.types.int][atomics.types.pointer][atomics.types.float].
+
+[source,c]
+----------
+atomic_int acnt;
+acnt++; // equivalent to atomic_fetch_add_explicit(&acnt, 1);
+----------
+
+===== Use of Clang Blocks
 
 Clang Blocks that are defined by the Objective-C language are not supported
 and their use can be replaced by lambdas ({cpp}17 `[expr.prim.lambda]`).
 
-This means that builtin functions using blocks, such as `enqueue_kernel`,
+This also implies that builtin functions using blocks, such as `enqueue_kernel`,
 are not supported in {cpp} for OpenCL.
