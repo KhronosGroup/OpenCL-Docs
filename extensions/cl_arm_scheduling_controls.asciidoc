@@ -1,0 +1,201 @@
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_arm_scheduling_controls
+
+== Name Strings
+
+`cl_arm_scheduling_controls`
+
+== Contact
+
+Kevin Petit (kevin.petit 'at' arm.com)
+
+== Contributors
+
+Kevin Petit, Arm Ltd.
+
+== Notice
+
+Copyright (c) 2020 Arm Ltd.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Version: 0.1.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification v3.0.3.
+
+This extension requires OpenCL 2.0.
+
+== Overview
+
+This extension gives applications explicit control over some aspects of work
+scheduling. It can be used for performance tuning or debugging.
+
+== New API Enums
+
+Accepted value for the _param_name_ parameter to *clGetDeviceInfo*:
+
+[source,c]
+----
+CL_DEVICE_SCHEDULING_CONTROLS_CAPABILITIES_ARM           0x41E4
+
+CL_DEVICE_SCHEDULING_KERNEL_BATCHING_ARM                (1 << 0)
+CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_ARM           (1 << 1)
+CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_MODIFIER_ARM  (1 << 2)
+----
+
+Accepted value for the _param_name_ parameter to *clSetKernelExecInfo*:
+
+[source,c]
+----
+CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM           0x41E5
+CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM  0x41E6
+----
+
+Accepted value for the _properties_ parameter to *clCreateCommandQueueWithProperties*:
+
+[source,c]
+----
+CL_QUEUE_KERNEL_BATCHING_ARM 0x41E7
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 4.2, *Querying Devices*) ::
++
+--
+
+(Add the following to Table 5, _Device Queries_) ::
++
+--
+
+[cols="1,1,4",options="header"]
+|====
+| cl_device_info
+| Return Type
+| Description
+
+| `CL_DEVICE_SCHEDULING_CONTROLS_CAPABILITIES_ARM`
+| `cl_bitfield`
+| Returns a bitfield of the scheduling controls this device supports:
+ +
+- `CL_DEVICE_SCHEDULING_KERNEL_BATCHING_ARM` is set when the device supports
+  `CL_QUEUE_KERNEL_BATCHING_ARM`.
+ +
+- `CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_ARM` is set when the device
+  supports `CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM`.
+ +
+- `CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_MODIFIER_ARM` is set when the
+  device supports `CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM`.
+
+|====
+
+--
+--
+
+(Modify Section 5.1, *Command Queues*) ::
++
+--
+
+(Add the following to Table 9, _List of supported queue creation properties_) ::
++
+--
+
+[cols="1,1,4",options="header"]
+|====
+| Queue Properties
+| Type
+| Description
+
+| `CL_QUEUE_KERNEL_BATCHING_ARM`
+| `cl_bool`
+| Whether kernels enqueued to this queue should be batched for submission to the
+  device. `CL_TRUE` means kernels will be batched, `CL_FALSE` that they will not.
+  Defaults to `CL_TRUE`.
+
+|====
+
+--
+--
+
+(Modify Section 5.9, *Kernel Objects*) ::
++
+--
+
+(Add the following to Table 31, _List of param_values accepted by *clSetKernelExecInfo*_) ::
++
+--
+
+[cols="1,1,4",options="header"]
+|====
+| cl_kernel_exec_info
+| Type
+| Description
+
+| `CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM`
+| `cl_uint`
+| Set the size of batches of work groups distributed to compute units.
+  The value is a number of work groups. If set to 0, then the runtime
+  will pick a suitable value automatically. Defaults to 0. If the value is
+  greater than the number of work groups necessary to execute a given NDRange,
+  the actual batch size will be capped at the number of work groups in the
+  NDRange. When a value is not directly usable due to device-specific
+  constraints, it will be rounded up to the next usable value.
+
+| `CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM`
+| `cl_int`
+| Modify the size of batches of work groups distributed to compute units.
+
+On devices that support `CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM`, the value is
+a number of work groups added to the batch size calculated by the runtime (when
+`CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM` set to 0) or set by the application
+(when `CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM` set to a value greater than 0).
+
+On devices that do not support `CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM`, the
+value is a number in the range [-31,+31]. When set to 0, the runtime-selected
+batch size is used unmodified. When set to a non-zero value, each increment of
+one unit in either direction around zero will either divide (negative value)
+or multiply (positive value) the batch size by 2. If the requested modification
+is not possible due to hardware constraints, the greatest possible modification
+will be used.
+
+|====
+
+--
+--
+
+== Interactions with Other Extensions
+
+Some features in this extension interact with `cl_arm_thread_limit_hint`.
+
+If `CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM` or
+`CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM` is set to a non-default
+value at the time a kernel is enqueued, then any thread limit hint specified
+in the kernel source using the `arm_thread_limit_hint` attribute will be
+ignored.
+
+== Issues
+
+None.
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 0.1.0   | 2020-08-28 | Kévin Petit  | Initial version
+|====
+
