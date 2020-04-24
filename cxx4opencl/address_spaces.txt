@@ -28,13 +28,13 @@ convert between address spaces and no other conversions are allowed to occur.
 Note that conversions between `__constant` and any other other address space
 are disallowed.
 
-[source,c]
+[source,cpp]
 ----------
 int * genptr;
 __private float * ptrfloat = reinterpret_cast<__private float*>(genptr); //illegal.
-__private int * ptr = addrspace_cast<__private int*>(genptr); // legal
 __private float * ptrfloat = addrspace_cast<__private float*>(genptr); //illegal.
-float * genptrfloat = reinterpret_cast<float*>(ptr);
+__private int * ptr = addrspace_cast<__private int*>(genptr); // legal.
+float * genptrfloat = reinterpret_cast<float*>(ptr); // legal.
 __constant int * constptr = addrspace_cast<__constant int*>(genptr); // illegal.
 ----------
 
@@ -43,7 +43,7 @@ __constant int * constptr = addrspace_cast<__constant int*>(genptr); // illegal.
 
 Reference types can be qualified with an address space.
 
-[source,c]
+[source,cpp]
 ----------
 __private int & ref = ...; // references int in __private address space.
 ----------
@@ -91,7 +91,7 @@ Address spaces are not deduced for:
   * non-pointer/non-reference alias declarations.
   * decltype expressions.
 
-[source,c]
+[source,cpp]
 ----------
 template <typename T>
 void foo() {
@@ -115,14 +115,14 @@ void bar()
 }
 ----------
 
-[source,c]
+[source,cpp]
 ----------
 struct c1 {};
 using alias_c1 = c1; // 'alias_c1' is 'c1'.
 using alias_c1_ptr = c1 *; // 'alias_c1_ptr' is a generic address space pointer to 'c1'.
 ----------
 
-[source,c]
+[source,cpp]
 ----------
 __kernel void foo()
 {
@@ -137,7 +137,7 @@ reference or pointer type, the address space of a pointee is taken from the type
 of the initialization expression. The logic follows `const`/`volatile`
 qualifiers.
 
-[source,c]
+[source,cpp]
 ----------
 __kernel void foo()
 {
@@ -171,7 +171,7 @@ space if multiple candidates are provided. If there is no conversion
 to an address space among candidates, compilation will fail with a
 diagnostic.
 
-[source,c]
+[source,cpp]
 ----------
 struct C {
   void foo() __local;
@@ -196,7 +196,7 @@ expressions after the attributes. Similarly to method qualifiers
 they will alter the default address space of lambda call operator
 that has generic address space by default. 
 
-[source,c]
+[source,cpp]
 ----------
 __kernel void test_qual() {
   auto priv1 = []() __private {};
@@ -220,7 +220,7 @@ All implicit special members (default, copy or move constructor, copy or
 move assignment, destructor) will be generated with the generic address
 space.
 
-[source,c]
+[source,cpp]
 ----------
 class C {
   // Has the following implicitly defined member functions
@@ -245,7 +245,7 @@ _Deduction_>>). The address space of a template parameter is deduced
 during type deduction if it is not explicitly provided in the
 instantiation.
 
-[source,c]
+[source,cpp]
 ----------
  1 template<typename T>
  2 void foo(T* i){
@@ -264,7 +264,7 @@ template definition and instantiation. If multiple different address
 spaces are specified in a template definition and instantiation,
 compilation of such a program will fail with a diagnostic.
 
-[source,c]
+[source,cpp]
 ----------
 template <typename T>
 void foo() {
@@ -280,7 +280,7 @@ void bar() {
 Once a template has been instantiated, regular restrictions for
 address spaces will apply.
 
-[source,c]
+[source,cpp]
 ----------
 template<typename T>
 void foo(){
@@ -299,7 +299,7 @@ All temporaries are materialized in `__private` address space. If a reference
 with another address space is bound to them, a conversion will be generated
 in case it is valid, otherwise compilation will fail with a diagnostic.
 
-[source,c]
+[source,cpp]
 ----------
 int bar(const unsigned int &i);
 
@@ -325,9 +325,9 @@ all kernels are enqueued.
 
 Objects in `__local` address space can not have initializers in
 declarations and therefore a constructor can not be called. All objects
-created in the local address space have undefined state at the beginning.
-Developers are free to defined a special member function that can
-initialize local address space objects after their declaration. Any
+created in the local address space have undefined state at the point of
+their declaration. Developers are free to defined a special member function
+that can initialize local address space objects after their declaration. Any
 default values provided for the initialization of members in a class
 declaration are ignored when creating the local address space objects.
 Classes that are instantiated with local address space objects can not
