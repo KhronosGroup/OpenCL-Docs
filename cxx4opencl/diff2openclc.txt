@@ -7,15 +7,16 @@
 {cpp} for OpenCL provides backwards compatibility with OpenCL C
 for the majority of features. However, there are a number of
 exceptions that are described in this section. Some of them come
-from the nature of C++ but others are due to improved behaviour
-of a kernel language.
+from the nature of C++ but others are due to improvements in OpenCL
+features. Most of such improvements do not invalidate old code,
+but simply provide extra functionality.
 
 ==== C++ related differences
 
 {cpp} for OpenCL is a different language derived from {cpp} and
-therefore it inherits its fundamental design principles. Hence
+therefore it inherits {cpp}'s fundamental design principles. Hence
 {cpp} for OpenCL deviates from OpenCL C in the same areas where
-{cpp} deviates from C. The main reasons for that is to provide
+{cpp} deviates from C. The main reasons for that is to provide a
 more helpful language to the developers or compilation tools.
 
 ====== Implicit Conversions
@@ -23,8 +24,7 @@ more helpful language to the developers or compilation tools.
 {cpp} is much stricter about conversions between types,
 especially those that are performed implicitly by the compiler.
 For example it is not possible to convert a `const` object
-to non-`const` implicitly. For details please refer to {cpp}17
-(`ISO/IEC 14882:2017`) `[conv]`.
+to non-`const` implicitly. For details please refer to {cpp}17 `[conv]`.
 
 [source,c]
 ----------
@@ -126,33 +126,34 @@ label:  // invalid: jumping forward over declaration of n
 
 ==== OpenCL specific difference
 
-This section described where {cpp} for OpenCL differs from OpenCL C
+This section describes where {cpp} for OpenCL differs from OpenCL C
 in OpenCL specific behavior.
 
 ===== Variadic macros
 
-{cpp} for OpenCL eliminates restriction on variadic macro from
-section 6.9.e of OpenCL C. Variadic macros can be used regularly
-as per {cpp}17 [cpp.replace].
+{cpp} for OpenCL eliminates restriction on variadic macros from `OpenCL C v2.0 s6.9.e`.
+Variadic macros can be used normally as per {cpp}17 `[cpp.replace]`.
 
 ===== Predefined macros
 
-Predefined version macro `__OPENCL_C_VERSION__` and `NULL` described
-in OpenCL C 2.0 section 6.10 are not supported.
+Predefined version macro `__OPENCL_C_VERSION__` and macro `NULL`,
+described in `OpenCL C v2.0 s6.10`, are not supported.
 
-There is a macro `__OPENCL_CPP_VERSION__` available that is set to
-value `100`. For convenience there is also `__CL_CPP_VERSION_1_0__`
-that is defined to the same value `100` and can be used instead of a
-literal.
+The following new predefined macros are added in {cpp} for OpenCL:
+
+ * `__OPENCL_CPP_VERSION__` set to value `100`.
+ * `__CL_CPP_VERSION_1_0__` also set to `100` and can be used for
+   convenience instead of a literal.
 
 ===== Atomic operations
 
-{cpp} for OpenCL relaxes restriction from OpenCL C 2.0 section 6.13.11 to
-atomic types by allowing to modify variables of such types using builtin
-operators, and not only using builtin function.
+{cpp} for OpenCL relaxes restriction from `OpenCL C v2.0 s6.13.11` to
+atomic types allowing them to be used by builtin operators, and not
+only by builtin functions.
 
 The behavior of operators on atomic types follows the logic from {cpp}17
-sections [atomics.types.int][atomics.types.pointer][atomics.types.float].
+sections `[atomics.types.int]` `[atomics.types.pointer]`
+`[atomics.types.float]`.
 
 [source,c]
 ----------
@@ -165,5 +166,5 @@ acnt++; // equivalent to atomic_fetch_add_explicit(&acnt, 1);
 Clang Blocks that are defined by the Objective-C language are not supported
 and their use can be replaced by lambdas ({cpp}17 `[expr.prim.lambda]`).
 
-This also implies that builtin functions using blocks, such as `enqueue_kernel`,
+The above implies that builtin functions using blocks, such as `enqueue_kernel`,
 are not supported in {cpp} for OpenCL.
