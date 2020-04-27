@@ -5879,60 +5879,47 @@ in a work-group.
   void *work_group_barrier*( +
   cl_mem_fence_flags _flags_, +
   memory_scope _scope_^40^)
-    | All work-items in a work-group executing the kernel on a processor
-      must execute this function before any are allowed to continue
-      execution beyond the *work_group_barrier*.
-      This function must be encountered by all work-items in a work-group
-      executing the kernel.
-      These rules apply to ND-ranges implemented with uniform and
-      non-uniform work-groups.
+| For these functions, if any work-item in a work-group encounters a
+  barrier, the barrier must be encountered by all work-items in the
+  work-group before any are allowed to continue execution beyond the
+  barrier.
 
-      If *work_group_barrier* is inside a conditional statement, then all
-      work-items must enter the conditional if any work-item enters the
-      conditional statement and executes the *work_group_barrier*.
+  If the barrier is inside a conditional statement, then all
+  work-items in the work-group must enter the conditional if any work-item in the work-group enters the
+  conditional statement and executes the barrier.
 
-      If *work_group_barrier* is inside a loop, all work-items must execute
-      the *work_group_barrier* for each iteration of the loop before any are
-      allowed to continue execution beyond the *work_group_barrier*.
+  If the barrier is inside a loop, then all work-items in the work-group must execute
+  the barrier on each iteration of the loop if any work-item executes the barrier on that iteration.
 
-      The *work_group_barrier* function also supports a variant that
-      specifies the memory scope.
-      For the *work_group_barrier* variant that does not take a memory
-      scope, the _scope_ is `memory_scope_work_group`.
+  The *barrier* and *work_group_barrier* functions can specify which
+  memory operations become visible to the appropriate memory scope
+  identified by _scope_.
+  The _flags_ argument specifies the memory address spaces.
+  This is a bitfield and can be set to 0 or a combination of the
+  following values OR'ed together.
+  When these flags are OR'ed together the barrier acts as a
+  combined barrier for all address spaces specified by the flags
+  ordering memory accesses both within and across the specified address
+  spaces.
+  For *barrier* and the *work_group_barrier* variant that does not take a
+  memory scope, the _scope_ is `memory_scope_work_group`.
 
-      The _scope_ argument specifies whether the memory accesses of
-      work-items in the work-group to memory address space(s) identified by
-      _flags_ become visible to all work-items in the work-group, the device
-      or all SVM devices.
+  `CLK_LOCAL_MEM_FENCE` - ensure
+  that all `local` memory accesses become visible to all work-items in the
+  work-group.
+  Note that the value of _scope_ is ignored as the memory scope is
+  always `memory_scope_work_group`.
 
-      The *work_group_barrier* function can also be used to specify which
-      memory operations, i.e. to `global` memory, `local` memory or images
-      become visible to the appropriate memory scope identified by _scope_.
-      The _flags_ argument specifies the memory address spaces.
-      This is a bitfield and can be set to 0 or a combination of the
-      following values ORed together.
-      When these flags are OR'ed together the *work_group_barrier* acts as a
-      combined barrier for all address spaces specified by the flags
-      ordering memory accesses both within and across the specified address
-      spaces.
+  `CLK_GLOBAL_MEM_FENCE` - ensure that
+  all `global` memory accesses become visible to the appropriate memory scope
+  as given by _scope_.
 
-      `CLK_LOCAL_MEM_FENCE` - The *work_group_barrier* function will ensure
-      that all local memory accesses become visible to all work-items in the
-      work-group.
-      Note that the value of _scope_ is ignored as the memory scope is
-      always `memory_scope_work_group`.
+  `CLK_IMAGE_MEM_FENCE` - ensure that all image memory accesses
+  become visible to the appropriate scope given by _scope_.
+  The value of _scope_ must be `memory_scope_work_group`.
 
-      `CLK_GLOBAL_MEM_FENCE` - The *work_group_barrier* function ensure that
-      all `global` memory accesses become visible to the appropriate scope
-      as given by _scope_.
-
-      `CLK_IMAGE_MEM_FENCE` - The *work_group_barrier* function will ensure
-      that all image memory accesses become visible to the appropriate scope
-      as given by _scope_.
-      The value of _scope_ must be `memory_scope_work_group`.
-
-      The values of _flags_ and _scope_ must be the same for all work-items
-      in the work-group.
+  The values of _flags_ and _scope_ must be the same for all work-items
+  in the work-group.
 |====
 
 [40] Refer to the description and restrictions for <<memory-scope,`memory_scope`>>.
@@ -5956,30 +5943,31 @@ in a subgroup.
   cl_mem_fence_flags _flags_, +
   memory_scope _scope_)
 
-| All work-items in a subgroup executing the kernel on a processor must
-  execute this function before any are allowed to continue execution beyond
-  the *sub_group_barrier*.
-  This function must be encountered by all work items in a subgroup
-  executing the kernel.
-  These rules apply to ND-ranges implemented with uniform and non-uniform
-  work groups.
+| For these functions, if any work-item in a subgroup encounters a
+  *sub_group_barrier*, the barrier must be encountered by all work-items in the
+  subgroup before any are allowed to continue execution beyond the barrier.
 
   If *sub_group_barrier* is inside a conditional statement, then all
   work-items within the subgroup must enter the conditional if any work-item in
   the subgroup enters the conditional statement and executes the
   *sub_group_barrier*.
 
-  If *sub_group_barrier* is inside a loop, all work-items within the subgroup
-  must execute the *sub_group_barrier* for each iteration of the loop before
-  any are allowed to continue execution beyond the *sub_group_barrier*.
+  If the *sub_group_barrier* is inside a loop, then all work-items in the subgroup
+  must execute the barrier on each iteration of the loop if any work-item executes the barrier on that iteration.
 
-  The *sub_group_barrier* function also queues a memory fence (reads and
-  writes) to ensure correct ordering of memory operations to local or global
-  memory.
-
-  The _flags_ argument specifies the memory address space and can be set to a
-  combination of the following values:
-
+  The *sub_group_barrier* function can specify which
+  memory operations become visible to the appropriate memory scope
+  identified by _scope_.
+  The _flags_ argument specifies the memory address spaces.
+  This is a bitfield and can be set to 0 or a combination of the
+  following values OR'ed together.
+  When these flags are OR'ed together the barrier acts as a
+  combined barrier for all address spaces specified by the flags
+  ordering memory accesses both within and across the specified address
+  spaces.
+  For the *sub_group_barrier* variant that does not take a
+  memory scope, the _scope_ is `memory_scope_sub_group`.
+  
   `CLK_LOCAL_MEM_FENCE` - The *sub_group_barrier* function will either flush
   any variables stored in local memory or queue a memory fence to ensure
   correct ordering of memory operations to local memory.
