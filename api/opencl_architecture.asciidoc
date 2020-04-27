@@ -65,10 +65,10 @@ implemented with OpenCL.
 [[platform-model-image]]
 image::images/platform_model.png[align="center", title="Platform Model ... one host plus one or more compute devices each with one or more compute units composed of one or more processing elements."]
 
-Programmers provide programs in the form of SPIR-V source binaries, OpenCL C
-source strings or implementation-defined binary objects.
-The OpenCL platform provides a compiler to translate program input of either
-form into executable program objects.
+Programmers may provide programs in the form of OpenCL C source strings,
+the SPIR-V intermediate language, or as implementation-defined binary objects.
+An OpenCL platform provides a compiler to translate programs of these
+forms into executable program objects.
 The device code compiler may be _online_ or _offline_.
 An _online_ _compiler_ is available during host program execution using
 standard APIs.
@@ -120,11 +120,11 @@ The context defines the environment within which kernels execute.
 It includes the following resources:
 
   * *Devices*: One or more devices exposed by the OpenCL platform.
-  * *Kernel Objects*:The OpenCL functions with their associated argument
+  * *Kernel Objects*: The OpenCL functions with their associated argument
     values that run on OpenCL devices.
-  * *Program Objects*:The program source and executable that implement the
+  * *Program Objects*: The program source and executable that implement the
     kernels.
-  * *Memory Objects*:Variables visible to the host and the OpenCL devices.
+  * *Memory Objects*: Variables visible to the host and the OpenCL devices.
     Instances of kernels operate on these objects as they execute.
 
 The host program uses the OpenCL API to create and manage the context.
@@ -416,10 +416,10 @@ To understand the details of OpenCL's execution model, we need to consider
 how a kernel object moves from the kernel-enqueue command, into a
 command-queue, executes on a device, and completes.
 
-A kernel-object is defined from a function within the program object and a
+A kernel object is defined as a function within the program object and a
 collection of arguments connecting the kernel to a set of argument values.
-The host program enqueues a kernel-object to the command queue along with
-the NDRange, and the work-group decomposition.
+The host program enqueues a kernel object to the command queue along with
+the NDRange and the work-group decomposition.
 These define a _kernel-instance_.
 In addition, an optional set of events may be defined when the kernel is
 enqueued.
@@ -672,17 +672,12 @@ Ordering Rules>>.
 
 The OpenCL execution model supports three types of kernels:
 
-  * *OpenCL kernels* are managed by the OpenCL API as kernel-objects
-    associated with kernel functions within program-objects.
-    OpenCL kernels are provided via a kernel language.
-    All OpenCL implementations must support OpenCL kernels supplied in the
-    standard SPIR-V intermediate language with the appropriate environment
-    specification, and the OpenCL C programming language defined in earlier
-    versions of the OpenCL specification.
-    Implementations must also support OpenCL kernels in SPIR-V intermediate
-    language.
-    SPIR-V binaries nay be generated from an OpenCL kernel language or by a
-    third party compiler from an alternative input.
+  * *OpenCL kernels* are managed by the OpenCL API as kernel objects
+    associated with kernel functions within program objects.
+    OpenCL program objects are created and built using OpenCL APIs.
+    The OpenCL API includes functions to query the kernel languages and
+    and intermediate languages that may be used to create OpenCL program
+    objects for a device.
   * *Native kernels* are accessed through a host function pointer.
     Native kernels are queued for execution along with OpenCL kernels on a
     device and share memory objects with OpenCL kernels.
@@ -690,8 +685,8 @@ The OpenCL execution model supports three types of kernels:
     application code or exported from a library.
     The ability to execute native kernels is optional within OpenCL and the
     semantics of native kernels are implementation-defined.
-    The OpenCL API includes functions to query capabilities of a device(s)
-    and determine if this capability is supported.
+    The OpenCL API includes functions to query capabilities of a device
+    to determine if this capability is supported.
   * *Built-in kernels* are tied to particular device and are not built at
     runtime from source code in a program object.
     The common use of built in kernels is to expose fixed-function hardware
@@ -1033,7 +1028,8 @@ There are three types of SVM in OpenCL
 | | Granularity of sharing | Memory Allocation | Mechanisms to enforce Consistency | Explicit updates between host and device
 | Non-SVM buffers
   | OpenCL Memory objects(buffer)
-      | {clCreateBuffer}
+      | {clCreateBuffer} +
+        {clCreateBufferWithProperties}
           | Host synchronization points on the same or between devices.
               | yes, through Map and Unmap commands.
 | Coarse-Grained buffer SVM
@@ -1752,11 +1748,10 @@ sets of conditions are met.
 
 The OpenCL kernel execution model includes collective operations across the
 work-items within a single work-group.
-These are called work-group functions.
-Besides the work-group barrier function, they include the scan, reduction
-and pipe work-group functions described in the SPIR-V IL specifications.
-We will first discuss the work-group barrier.
-The other work-group functions are discussed afterwards.
+These are called work-group functions, and include functions such as
+barriers, scans, reductions, and broadcasts.
+We will first discuss the work-group barrier function.
+Other work-group functions are discussed afterwards.
 
 The barrier function provides a mechanism for a kernel to synchronize the
 work-items within a single work-group: informally, each work-item of the
@@ -1789,9 +1784,8 @@ chapter as well as the following:
     entry fence local-synchronizes-with the exit fence of all other
     work-items in the same work-group.
 
-The other work-group functions include such functions as `work_group_all()`
-and `work_group_broadcast()` and are described in the kernel language and IL
-specifications.
+Other work-group functions include such functions as scans, reductions,
+and broadcasts, and are described in the kernel language and IL specifications.
 The use of these work-group functions implies sequenced-before relationships
 between statements within the execution of a single work-item in order to
 satisfy data dependencies.
@@ -1811,10 +1805,8 @@ Also see extension *cl_khr_subgroups*.
 The OpenCL kernel execution model includes collective operations across the
 work-items within a single sub-group.
 These are called sub-group functions.
-Besides the sub-group-barrier function, they include the scan, reduction and
-pipe sub-group functions described in the SPIR-V IL specification.
 We will first discuss the sub-group barrier.
-The other sub-group functions are discussed afterwards.
+Other sub-group functions are discussed afterwards.
 
 The barrier function provides a mechanism for a kernel to synchronize the
 work-items within a single sub-group: informally, each work-item of the
@@ -1847,9 +1839,8 @@ chapter as well as the following:
     entry fence local-synchronizes-with the exit fence of all other
     work-items in the same sub-group.
 
-The other sub-group functions include such functions as sub_group_all() and
-sub_group_broadcast() and are described in OpenCL kernel languages
-specifications.
+Other sub-group functions include such functions as scans, reductions,
+and broadcasts, and are described in the kernel languages and IL specifications.
 The use of these sub-group functions implies sequenced-before relationships
 between statements within the execution of a single work-item in order to
 satisfy data dependencies.
@@ -2043,10 +2034,11 @@ The framework contains the following components:
     contexts once they have been created.
   * *OpenCL Compiler*: The OpenCL compiler creates program executables that
     contain OpenCL kernels.
-    SPIR-V intermediate language, OpenCL C, OpenCL {cpp}, and OpenCL C
-    language versions from earlier OpenCL specifications are supported by
-    the compiler.
-    Other input languages may be supported by some implementations.
+    The OpenCL compiler may build program executables from OpenCL C source
+    strings, the SPIR-V intermediate language, or device-specific program
+    binary objects, depending on the capabilities of a device.
+    Other kernel languages or intermediate languages may be supported by
+    some implementations.
 
 
 === Mixed Version Support
@@ -2080,29 +2072,118 @@ The language version for a device represents the OpenCL programming language
 features a developer can assume are supported on a given device.
 The version reported is the highest version of the language supported.
 
+=== Backwards Compatibility
+
 Backwards compatibility is an important goal for the OpenCL standard.
 Backwards compatibility is expected such that a device will consume earlier
-versions of the SPIR-V and OpenCL C programming languages with the following
+versions of the OpenCL C programming languages and the SPIR-V intermediate language with the following
 minimum requirements:
 
-  . An OpenCL 1.x device must support at least one 1.x version of the OpenCL
-    C programming language.
-  . An OpenCL 2.0 device must support all the requirements of an OpenCL 1.x
-    device in addition to the OpenCL C 2.0 programming language.
-    If multiple language versions are supported, the compiler defaults to
-    using the highest OpenCL 1.x language version supported for the device
-    (typically OpenCL 1.2).
-    To utilize the OpenCL 2.0 Kernel programming language, a programmer must
-    specifically set the appropriate compiler flag (-cl-std=CL2.0).
-    The language version must not be higher than the platform version, but
-    may exceed the <<opencl-c-version, device version>>.
-  . An OpenCL 2.1 device must support all the requirements of an OpenCL 2.0
-    device in addition to the SPIR-V intermediate language at version 1.0 or
-    above.
-    Intermediate language versioning is encoded as part of the binary object
-    and no flags are required to be passed to the compiler.
-  . An OpenCL 2.2 device must support all the requirements of an OpenCL 2.0
-    device in addition to the SPIR-V intermediate language at version 1.2 or
-    above.
-    Intermediate language versioning is encoded as a part of the binary
-    object and no flags are required to be passed to the compiler.
+* An OpenCL 1.x device must support at least one 1.x version of the OpenCL C programming language.
+* An OpenCL 2.0 device must support all the requirements of an OpenCL 1.2 device in addition to the OpenCL C 2.0 programming language.
+  If multiple language versions are supported, the compiler defaults to using the OpenCL C 1.2 language version.
+  To utilize the OpenCL 2.0 Kernel programming language, a programmer must specifically pass the appropriate compiler build option (`-cl-std=CL2.0`).
+  The language version must not be higher than the platform version, but may exceed the <<opencl-c-version, device version>>.
+* An OpenCL 2.1 device must support all the requirements of an OpenCL 2.0 device in addition to the SPIR-V intermediate language at version 1.0 or above.
+  Intermediate language versioning is encoded as part of the binary object and no flags are required to be passed to the compiler.
+* An OpenCL 2.2 device must support all the requirements of an OpenCL 2.0 device in addition to the SPIR-V intermediate language at version 1.2 or above.
+  Intermediate language versioning is encoded as a part of the binary object and no flags are required to be passed to the compiler.
+* OpenCL 3.0 is designed to enable any OpenCL implementation supporting OpenCL 1.2 or newer to easily support and transition to OpenCL 3.0, by making many features in OpenCL 2.0, 2.1, or 2.2 optional.
+This means that OpenCL 3.0 is backwards compatible with OpenCL 1.2, but is not necessarily backwards compatible with OpenCL 2.0, 2.1, or 2.2.
++
+An OpenCL 3.0 platform must implement all OpenCL 3.0 APIs, but some APIs may return an error code unconditionally when a feature is not supported by any devices in the platform.
+Whenever a feature is optional, it will be paired with a query to determine whether the feature is supported.
+The queries will enable correctly written applications to selectively use all optional features without generating any OpenCL errors, if desired.
++
+OpenCL 3.0 also adds a new version of the OpenCL C programming language, which makes many features in OpenCL C 2.0 optional.
+The new version of OpenCL C is backwards compatible with OpenCL C 1.2, but is not backwards compatible with OpenCL C 2.0.
+The new version of OpenCL C must be explicitly requested via the `-cl-std=` build option, otherwise a program will continue to be compiled using the highest OpenCL C 1.x language version supported for the device.
++
+Whenever an OpenCL C feature is optional in the new version of the OpenCL C programming language, it will be paired with a feature macro, such as `__opencl_c_feature_name`, and a corresponding API query.
+If a feature macro is defined then the feature is supported by the OpenCL C compiler, otherwise the optional feature is not supported.
+
+=== Versioning
+
+The OpenCL specification is regularly updated with bug fixes and clarifications.
+Occasionally new functionality is added to the core and extensions. In order to
+indicate to developers how and when these changes are made to the specification,
+and to provide a way to identify each set of changes, the OpenCL API, C language,
+intermediate languages and extensions maintain a version number. Built-in kernels
+are also versioned.
+
+==== Versions
+
+A version number comprises three logical fields:
+
+* The _major_ version indicates a significant change. Backwards compatibility may
+  break across major versions.
+* The _minor_ version indicates the addition of new functionality with backwards
+  compatibility.
+* The _patch_ version indicates bug fixes, clarifications and general improvements.
+
+Version numbers are represented using the `cl_version` type that is an alias for
+a 32-bit integer. The fields are packed as follows:
+
+* The _major_ version is a 10-bit integer packed into bits 31-22.
+* The _minor_ version is a 10-bit integer packed into bits 21-12.
+* The _patch_ version is a 12-bit integer packed into bits 11-0.
+
+This enables versions to be ordered using standard C/C++ operators.
+
+A number of convenience macros are provided by the OpenCL Headers to make
+working with version numbers easier.
+
+`CL_VERSION_MAJOR` extracts the _major_ version from a packed `cl_version`. +
+`CL_VERSION_MINOR` extracts the _minor_ version from a packed `cl_version`. +
+`CL_VERSION_PATCH` extracts the _patch_ version from a packed `cl_version`. +
+`CL_MAKE_VERSION` returns a packed `cl_version` from a _major_, _minor_ and
+_patch_ version.
+
+These are defined as follows:
+
+[source,c]
+----
+typedef cl_uint cl_version;
+
+#define CL_VERSION_MAJOR_BITS (10)
+#define CL_VERSION_MINOR_BITS (10)
+#define CL_VERSION_PATCH_BITS (12)
+
+#define CL_VERSION_MAJOR_MASK ((1 << CL_VERSION_MAJOR_BITS) - 1)
+#define CL_VERSION_MINOR_MASK ((1 << CL_VERSION_MINOR_BITS) - 1)
+#define CL_VERSION_PATCH_MASK ((1 << CL_VERSION_PATCH_BITS) - 1)
+
+#define CL_VERSION_MAJOR(version) \
+        ((version) >> (CL_VERSION_MINOR_BITS + CL_VERSION_PATCH_BITS))
+
+#define CL_VERSION_MINOR(version) \
+        (((version) >> CL_VERSION_PATCH_BITS) & CL_VERSION_MINOR_MASK)
+
+#define CL_VERSION_PATCH(version) ((version) & CL_VERSION_PATCH_MASK)
+
+#define CL_MAKE_VERSION(major, minor, patch) \
+    ((((major) & CL_VERSION_MAJOR_MASK) << (CL_VERSION_MINOR_BITS + CL_VERSION_PATCH_BITS)) | \
+     (((minor) & CL_VERSION_MINOR_MASK) << CL_VERSION_PATCH_BITS) | \
+     ((patch) & CL_VERSION_PATCH_MASK))
+----
+
+==== Version name pairing
+
+It is sometimes necessary to associate a version to an entity it applies to
+(e.g. extension or built-in kernel). This is done using a dedicated
+`cl_name_version` structure, defined as follows:
+
+[source,c]
+----
+
+#define CL_NAME_VERSION_MAX_NAME_SIZE 64
+
+typedef struct _cl_name_version {
+    cl_version version;
+    char name[CL_NAME_VERSION_MAX_NAME_SIZE];
+} cl_name_version;
+----
+
+The `name` field is an array of `CL_NAME_VERSION_MAX_NAME_SIZE` bytes used as
+storage for a NUL-terminated string whose maximum length is therefore
+`CL_NAME_VERSION_MAX_NAME_SIZE - 1`.

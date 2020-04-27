@@ -228,6 +228,7 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
   * {CL_INVALID_DEVICE} if _device_ is not a valid device or is not associated
     with _context_.
+  * {CL_INVALID_OPERATION} if _device_ does not support On-Device Queues.
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid command-queue
     for _device_.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
@@ -359,6 +360,26 @@ include::{generated}/api/version-notes/CL_QUEUE_PROPERTIES.asciidoc[]
         {CL_QUEUE_PROPERTIES} passed in _properties_ argument in
         {clCreateCommandQueueWithProperties}, or the value of the _properties_
         argument in {clCreateCommandQueue}.
+
+| {CL_QUEUE_PROPERTIES_ARRAY_anchor}
+
+include::{generated}/api/version-notes/CL_QUEUE_PROPERTIES_ARRAY.asciidoc[]
+  | cl_queue_properties[]
+      | Return the properties argument specified in
+        {clCreateCommandQueueWithProperties}.
+
+        If the _properties_ argument specified in
+        {clCreateCommandQueueWithProperties} used to create _command_queue_ was
+        not `NULL`, the implementation must return the values specified in the
+        properties argument.
+
+        If _command_queue_ was created using {clCreateCommandQueue}, or if the
+        _properties_ argument specified in clCreateCommandQueueWithProperties}
+        was `NULL`, the implementation may return either a
+        _param_value_size_ret_ of 0 (i.e. there is are no properties to be
+        returned), or the implementation may return a property value of 0
+        (where 0 is used to terminate the properties list).
+
 | {CL_QUEUE_SIZE_anchor}
 
 include::{generated}/api/version-notes/CL_QUEUE_SIZE.asciidoc[]
@@ -448,26 +469,85 @@ float), vector data type, or a user-defined structure.
 
 ===  Creating Buffer Objects
 
-[open,refpage='clCreateBuffer',desc='Creates a buffer object.',type='protos']
+[open,refpage='clCreateBuffer',desc='Creates a buffer object.',type='protos',alias='clCreateBufferWithProperties']
 --
-A *buffer object* is created using the following function
+A *buffer object* may be created using the function
 
 include::{generated}/api/protos/clCreateBuffer.txt[]
 include::{generated}/api/version-notes/clCreateBuffer.asciidoc[]
 
+A *buffer object* may also be created with additional properties using the function
+
+include::{generated}/api/protos/clCreateBufferWithProperties.txt[]
+include::{generated}/api/version-notes/clCreateBufferWithProperties.asciidoc[]
+
   * _context_ is a valid OpenCL context used to create the buffer object.
+  * _properties_ is an optional list of properties for the buffer object and their corresponding values.
+    The list is terminated with the special property `0`.
+    If no properties are required, _properties_ may be `NULL`.
+    OpenCL 3.0 does not define any optional properties for buffers.
   * _flags_ is a bit-field that is used to specify allocation and usage
-    information such as the memory arena that should be used to allocate the
-    buffer object and how it will be used.
-    The <<memory-flags-table,Memory Flags>> table describes the possible values
-    for _flags_.
-    If the value specified for _flags_ is 0, the default is used which is
-    {CL_MEM_READ_WRITE}.
+    information about the image memory object being created and is described in
+    the <<memory-flags-table, supported memory flag values>> table.
   * _size_ is the size in bytes of the buffer memory object to be allocated.
   * _host_ptr_ is a pointer to the buffer data that may already be allocated
     by the application.
-    The size of the buffer that _host_ptr_ points to must be {geq} _size_
+    The size of the buffer that _host_ptr_ points to must be greater than or equal to _size_
     bytes.
+  * _errcode_ret_ may return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+The alignment requirements for data stored in buffer objects are described
+in <<alignment-app-data-types>>.
+
+If {clCreateBuffer} or {clCreateBufferWithProperties} is called with
+{CL_MEM_USE_HOST_PTR} set in its _flags_ argument, the contents of the
+memory pointed to by _host_ptr_ at the time of the {clCreateBuffer} call
+define the initial contents of the buffer object.
+
+If {clCreateBuffer} or {clCreateBufferWithProperties} is called with a
+pointer returned by {clSVMAlloc} as its _host_ptr_ argument, and
+{CL_MEM_USE_HOST_PTR} is set in its _flags_ argument, {clCreateBuffer} or
+{clCreateBufferWithProperties} will succeed and return a valid non-zero
+buffer object as long as the _size_ argument is no larger than the
+_size_ argument passed in the original {clSVMAlloc} call.
+The new buffer object returned has the shared memory as the underlying
+storage.
+Locations in the buffers underlying shared memory can be operated on using
+atomic operations to the devices level of support as defined in the memory
+model.
+
+// refError
+
+{clCreateBuffer} and {clCreateBufferWithProperties} returns a valid non-zero
+buffer object and _errcode_ret_ is set to {CL_SUCCESS} if the buffer object
+is created successfully.
+Otherwise, they return a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_PROPERTY} if a property name in _properties_ is not a
+    supported property name, if the value specified for a supported property
+    name is not valid, or if the same property name is specified more than
+    once.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid as defined
+    in the <<memory-flags-table,Memory Flags>> table.
+  * {CL_INVALID_BUFFER_SIZE} if _size_ is 0^4^.
+  * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
+    {CL_MEM_COPY_HOST_PTR} are set in _flags_ or if _host_ptr_ is not `NULL`
+    but {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} are not set in _flags_.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
+    memory for buffer object.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+
+4::
+    Implementations may return {CL_INVALID_BUFFER_SIZE} if size is greater
+    than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} value specified in the
+    <<device-queries-table,Device Queries>> table for all devices in
+    context.
 
 [[memory-flags-table]]
 .List of supported memory flag values
@@ -510,9 +590,11 @@ include::{generated}/api/version-notes/CL_MEM_USE_HOST_PTR.asciidoc[]
     for the memory object.
 
     The contents of the memory pointed to by host_ptr at the time of the
-    {clCreateBuffer} call define the initial contents of the buffer object.
+    {clCreateBuffer}, {clCreateBufferWithProperties}, {clCreateImage},
+    {clCreateImageWithProperties}, {clCreateImage2D}, or {clCreateImage3D}
+    call define the initial contents of the memory object.
 
-    OpenCL implementations are allowed to cache the buffer contents pointed
+    OpenCL implementations are allowed to cache the contents pointed
     to by host_ptr in device memory.
     This cached copy can be used when kernels are executed on a device.
 
@@ -535,7 +617,8 @@ include::{generated}/api/version-notes/CL_MEM_COPY_HOST_PTR.asciidoc[]
     data from memory referenced by host_ptr.
     The implementation will copy the memory immediately and host_ptr is
     available for reuse by the application when the {clCreateBuffer},
-    {clCreateImage}, {clCreateImage2D} or {clCreateImage3D} operation returns.
+    {clCreateBufferWithProperties}, {clCreateImage}, {clCreateImageWithProperties},
+    {clCreateImage2D}, or {clCreateImage3D} operation returns.
 
     {CL_MEM_COPY_HOST_PTR} and {CL_MEM_USE_HOST_PTR} are mutually exclusive.
 
@@ -575,59 +658,6 @@ include::{generated}/api/version-notes/CL_MEM_KERNEL_READ_AND_WRITE.asciidoc[]
     To create a memory object that may be read from and written to use
     {CL_MEM_READ_WRITE}.
 |====
-
-The user is responsible for ensuring that data passed into and out of OpenCL
-images are natively aligned relative to the start of the buffer as per
-kernel language or IL requirements.
-OpenCL buffers created with {CL_MEM_USE_HOST_PTR} need to provide an
-appropriately aligned host memory pointer that is aligned to the data types
-used to access these buffers in a kernel(s).
-
-_errcode_ret_ will return an appropriate error code.
-If _errcode_ret_ is `NULL`, no error code is returned.
-
-If {clCreateBuffer} is called with {CL_MEM_USE_HOST_PTR} set in its _flags_
-argument, the contents of the memory pointed to by _host_ptr_ at the time
-of the {clCreateBuffer} call define the initial contents of the
-buffer object.
-
-If {clCreateBuffer} is called with a pointer returned by {clSVMAlloc} as its
-_host_ptr_ argument, and {CL_MEM_USE_HOST_PTR} is set in its _flags_ argument,
-{clCreateBuffer} will succeed and return a valid non-zero buffer object as
-long as the _size_ argument to {clCreateBuffer} is no larger than the _size_
-argument passed in the original {clSVMAlloc} call.
-The new buffer object returned has the shared memory as the underlying
-storage.
-Locations in the buffers underlying shared memory can be operated on using
-atomic operations to the devices level of support as defined in the memory
-model.
-
-// refError
-
-{clCreateBuffer} returns a valid non-zero buffer object and _errcode_ret_ is
-set to {CL_SUCCESS} if the buffer object is created successfully.
-Otherwise, it returns a `NULL` value with one of the following error values
-returned in _errcode_ret_:
-
-  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
-  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid as defined
-    in the <<memory-flags-table,Memory Flags>> table.
-  * {CL_INVALID_BUFFER_SIZE} if _size_ is 0^4^.
-  * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
-    {CL_MEM_COPY_HOST_PTR} are set in _flags_ or if _host_ptr_ is not `NULL`
-    but {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} are not set in _flags_.
-  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
-    memory for buffer object.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
-
-4::
-    Implementations may return {CL_INVALID_BUFFER_SIZE} if size is greater
-    than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} value specified in the
-    <<device-queries-table,Device Queries>> table for all devices in
-    context.
 --
 
 [open,refpage='clCreateSubBuffer',desc='Creates a new buffer object (referred to as a sub-buffer object) from an existing buffer object.',type='protos',xrefs='cl_buffer_region']
@@ -1523,9 +1553,9 @@ The result of a memory access outside this region is undefined.
 If the buffer object is created with {CL_MEM_USE_HOST_PTR} set in _mem_flags_,
 the following will be true:
 
-  * The _host_ptr_ specified in {clCreateBuffer} to contain the latest bits
-    in the region being mapped when the {clEnqueueMapBuffer} command has
-    completed.
+  * The _host_ptr_ specified in {clCreateBuffer} or {clCreateBufferWithProperties}
+    will contain the latest bits in the region being mapped when the
+    {clEnqueueMapBuffer} command has completed.
   * The pointer value returned by {clEnqueueMapBuffer} will be derived from
     the _host_ptr_ specified when the buffer object is created.
 
@@ -1587,16 +1617,23 @@ The minimum number of elements in a memory object is one.
 
 === Creating Image Objects
 
-[open,refpage='clCreateImage',desc='Creates a 1D image, 1D image buffer, 1D image array, 2D image, 2D image array or 3D image object.',type='protos']
+[open,refpage='clCreateImage',desc='Creates a 1D image, 1D image buffer, 1D image array, 2D image, 2D image array or 3D image object.',type='protos',alias='clCreateImageWithProperties']
 --
-A *1D image*, *1D image buffer*, *1D image array*, *2D image*, *2D image
-array* and *3D image object* can be created using the following function
+An *image object* may be created using the function
 
 include::{generated}/api/protos/clCreateImage.txt[]
 include::{generated}/api/version-notes/clCreateImage.asciidoc[]
 
-  * _context_ is a valid OpenCL context on which the image object is to be
-    created.
+An *image object* may also be created with additional properties using the function
+
+include::{generated}/api/protos/clCreateImageWithProperties.txt[]
+include::{generated}/api/version-notes/clCreateImageWithProperties.asciidoc[]
+
+  * _context_ is a valid OpenCL context used to create the image object.
+  * _properties_ is an optional list of properties for the image object and their corresponding values.
+    The list is terminated with the special property `0`.
+    If no properties are required, _properties_ may be `NULL`.
+    OpenCL 3.0 does not define any optional properties for images.
   * _flags_ is a bit-field that is used to specify allocation and usage
     information about the image memory object being created and is described in
     the <<memory-flags-table, supported memory flag values>> table.
@@ -1615,9 +1652,14 @@ include::{generated}/api/version-notes/clCreateImage.asciidoc[]
   * _host_ptr_ is a pointer to the image data that may already be allocated by
     the application.
     It is only used to initialize the image, and can be freed after the call to
-    {clCreateImage}.
+    {clCreateImage} or {clCreateImageWithProperties}.
     Refer to the <<host-ptr-buffer-size-table, table below>> for a description
     of how large the buffer that _host_ptr_ points to must be.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+The alignment requirements for data stored in image objects are described
+in <<alignment-app-data-types>>.
 
 For all image types except {CL_MEM_OBJECT_IMAGE1D_BUFFER}, if the value
 specified for _flags_ is 0, the default is used which is {CL_MEM_READ_WRITE}.
@@ -1637,6 +1679,82 @@ If the {CL_MEM_HOST_WRITE_ONLY}, {CL_MEM_HOST_READ_ONLY} or
 {CL_MEM_HOST_NO_ACCESS} values are not specified in _flags_, they are
 inherited from the corresponding memory access qualifiers associated with
 __mem_object__.
+
+For a 3D image or 2D image array, the image data specified by _host_ptr_ is
+stored as a linear sequence of adjacent 2D image slices or 2D images
+respectively.
+Each 2D image is a linear sequence of adjacent scanlines.
+Each scanline is a linear sequence of image elements.
+
+For a 2D image, the image data specified by _host_ptr_ is stored as a linear
+sequence of adjacent scanlines.
+Each scanline is a linear sequence of image elements.
+
+For a 1D image array, the image data specified by _host_ptr_ is stored as a
+linear sequence of adjacent 1D images.
+Each 1D image is stored as a single scanline which is a linear sequence of
+adjacent elements.
+
+For 1D image or 1D image buffer, the image data specified by _host_ptr_ is
+stored as a single scanline which is a linear sequence of adjacent elements.
+
+Image elements are stored according to their image format as described in the
+<<image-format-descriptor, Image Format Descriptor>> section.
+
+// refError
+
+{clCreateImage} and {clCreateImageWithProperties} returns a valid non-zero
+image object and _errcode_ret_ is set to {CL_SUCCESS} if the image object
+is created successfully.
+Otherwise, they return a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_PROPERTY} if a property name in _properties_ is not a
+    supported property name, if the value specified for a supported property
+    name is not valid, or if the same property name is specified more than
+    once.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if values specified in _image_format_
+    are not valid or if _image_format_ is `NULL`.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if a 2D image is created from a
+    buffer and the row pitch and base address alignment does not follow the
+    rules described for creating a 2D image from a buffer.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if a 2D image is created from a 2D
+    image object and the rules described above are not followed.
+  * {CL_INVALID_IMAGE_DESCRIPTOR} if values specified in _image_desc_ are not
+    valid or if _image_desc_ is `NULL`.
+  * {CL_INVALID_IMAGE_SIZE} if image dimensions specified in _image_desc_
+    exceed the maximum image dimensions described in the
+    <<device-queries-table,Device Queries>> table for all devices
+    in _context_.
+  * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
+    {CL_MEM_COPY_HOST_PTR} are set in _flags_ or if _host_ptr_ is not `NULL`
+    but {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} are not set in _flags_.
+  * {CL_INVALID_VALUE} if an image is being created from another memory object
+    (buffer or image) under one of the following circumstances: 1)
+    __mem_object__ was created with {CL_MEM_WRITE_ONLY} and _flags_ specifies
+    {CL_MEM_READ_WRITE} or {CL_MEM_READ_ONLY}, 2) __mem_object__ was created with
+    {CL_MEM_READ_ONLY} and _flags_ specifies {CL_MEM_READ_WRITE} or
+    {CL_MEM_WRITE_ONLY}, 3) _flags_ specifies {CL_MEM_USE_HOST_PTR} or
+    {CL_MEM_ALLOC_HOST_PTR} or {CL_MEM_COPY_HOST_PTR}.
+  * {CL_INVALID_VALUE} if an image is being created from another memory object
+    (buffer or image) and __mem_object__ was created with
+    {CL_MEM_HOST_WRITE_ONLY} and _flags_ specifies {CL_MEM_HOST_READ_ONLY}, or
+    if __mem_object__ was created with {CL_MEM_HOST_READ_ONLY} and _flags_
+    specifies {CL_MEM_HOST_WRITE_ONLY}, or if __mem_object__ was created with
+    {CL_MEM_HOST_NO_ACCESS} and_flags_ specifies {CL_MEM_HOST_READ_ONLY} or
+    {CL_MEM_HOST_WRITE_ONLY}.
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if the _image_format_ is not supported.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
+    memory for image object.
+  * {CL_INVALID_OPERATION} if there are no devices in _context_ that support
+    images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in the
+    <<device-queries-table,Device Queries>> table is {CL_FALSE}).
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 
 [[host-ptr-buffer-size-table]]
 .Required _host_ptr_ buffer sizes for images
@@ -1669,80 +1787,6 @@ include::{generated}/api/version-notes/CL_MEM_OBJECT_IMAGE2D_ARRAY.asciidoc[]
   | {geq} image_slice_pitch {times} image_array_size
 |====
 
-For a 3D image or 2D image array, the image data specified by _host_ptr_ is
-stored as a linear sequence of adjacent 2D image slices or 2D images
-respectively.
-Each 2D image is a linear sequence of adjacent scanlines.
-Each scanline is a linear sequence of image elements.
-
-For a 2D image, the image data specified by _host_ptr_ is stored as a linear
-sequence of adjacent scanlines.
-Each scanline is a linear sequence of image elements.
-
-For a 1D image array, the image data specified by _host_ptr_ is stored as a
-linear sequence of adjacent 1D images.
-Each 1D image is stored as a single scanline which is a linear sequence of
-adjacent elements.
-
-For 1D image or 1D image buffer, the image data specified by _host_ptr_ is
-stored as a single scanline which is a linear sequence of adjacent elements.
-
-Image elements are stored according to their image format as described in the
-<<image-format-descriptor, Image Format Descriptor>> section.
-
-  * _errcode_ret_ will return an appropriate error code.
-    If _errcode_ret_ is `NULL`, no error code is returned.
-
-// refError
-
-{clCreateImage} returns a valid non-zero image object created and the
-_errcode_ret_ is set to {CL_SUCCESS} if the image object is created
-successfully.
-Otherwise, it returns a `NULL` value with one of the following error values
-returned in _errcode_ret_:
-
-  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
-  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
-  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if values specified in _image_format_
-    are not valid or if _image_format_ is `NULL`.
-  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if a 2D image is created from a
-    buffer and the row pitch and base address alignment does not follow the
-    rules described for creating a 2D image from a buffer.
-  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if a 2D image is created from a 2D
-    image object and the rules described above are not followed.
-  * {CL_INVALID_IMAGE_DESCRIPTOR} if values specified in _image_desc_ are not
-    valid or if _image_desc_ is `NULL`.
-  * {CL_INVALID_IMAGE_SIZE} if image dimensions specified in _image_desc_
-    exceed the maximum image dimensions described in the
-    <<device-queries-table,Device Queries>> table for all devices
-    in _context_.
-  * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
-    {CL_MEM_COPY_HOST_PTR} are set in _flags_ or if _host_ptr_ is not `NULL`
-    but {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} are not set in _flags_.
-  * {CL_INVALID_VALUE} if an image is being created from another memory object
-    (buffer or image) under one of the following circumstances: 1)
-    __mem_object__ was created with {CL_MEM_WRITE_ONLY} and _flags_ specifies
-    {CL_MEM_READ_WRITE} or {CL_MEM_READ_ONLY}, 2) __mem_object__ was created with
-    {CL_MEM_READ_ONLY} and _flags_ specifies {CL_MEM_READ_WRITE} or
-    {CL_MEM_WRITE_ONLY}, 3) _flags_ specifies {CL_MEM_USE_HOST_PTR} or
-    {CL_MEM_ALLOC_HOST_PTR} or {CL_MEM_COPY_HOST_PTR}.
-  * {CL_INVALID_VALUE} if an image is being created from another memory object
-    (buffer or image) and __mem_object__ object was created with
-    {CL_MEM_HOST_WRITE_ONLY} and _flags_ specifies {CL_MEM_HOST_READ_ONLY}, or
-    if __mem_object__ was created with {CL_MEM_HOST_READ_ONLY} and _flags_
-    specifies {CL_MEM_HOST_WRITE_ONLY}, or if __mem_object__ was created with
-    {CL_MEM_HOST_NO_ACCESS} and_flags_ specifies {CL_MEM_HOST_READ_ONLY} or
-    {CL_MEM_HOST_WRITE_ONLY}.
-  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if the _image_format_ is not supported.
-  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
-    memory for image object.
-  * {CL_INVALID_OPERATION} if there are no devices in _context_ that support
-    images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in the
-    <<device-queries-table,Device Queries>> table is {CL_FALSE}).
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
 --
 
 [open,refpage='clCreateImage2D',desc='Creates a 2D image.',type='protos']
@@ -2128,8 +2172,8 @@ OpenCL implementations must maintain the minimum precision specified by the
 number of bits in `image_channel_data_type`.
 If the image format specified by `image_channel_order`, and
 `image_channel_data_type` cannot be supported by the OpenCL implementation,
-then the call to {clCreateImage}, {clCreateImage2D} or {clCreateImage3D} will
-return a `NULL` memory object.
+then the call to {clCreateImage}, {clCreateImageWithProperties},
+{clCreateImage2D}, or {clCreateImage3D} will return a `NULL` memory object.
 --
 
 
@@ -2235,10 +2279,11 @@ Image elements are stored according to their image format as described in
 <<image-format-descriptor, Image Format Descriptor>>.
 
 If the buffer object specified by `mem_object` was created with
-{CL_MEM_USE_HOST_PTR}, the _host_ptr_ specified to {clCreateBuffer} must be
-aligned to the maximum of the {CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT} value
-for all devices in the context associated with the buffer specified by
-`mem_object` that support images.
+{CL_MEM_USE_HOST_PTR}, the _host_ptr_ specified to {clCreateBuffer} or
+{clCreateBufferWithProperties} must be aligned to the maximum of the
+{CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT} value for all devices in the
+context associated with the buffer specified by `mem_object` that
+support images.
 
 Creating a 2D image object from another 2D image object allows users to
 create a new image object that shares the image data store with `mem_object`
@@ -2386,16 +2431,17 @@ must be greater than or equal to the minimum values specified in the
 
 [open,refpage='supportedImageFormats',desc='Minimum List of Supported Image Formats',type='freeform',anchor='minimum-list-of-supported-image-formats']
 --
-For 1D, 1D image from buffer, 2D, 3D image objects, 1D and 2D image array
-objects, the mandated minimum list of image formats that can be read from
-and written to by different kernel instances when correctly ordered by event
-dependencies and that must be supported by all devices that support images
-is described in the <<min-supported-cross-kernel-table,Supported Formats -
-Kernel Read Or Write>> table.
+The tables below describe the required minimum lists of supported image
+formats.
+To query all image formats supported by an implementation, call the function {clGetSupportedImageFormats}.
 
-[[min-supported-cross-kernel-table]]
-.Minimum list of required image formats: kernel read or write
-[width="100%",cols="1,1,2",options="header"]
+For full profile devices supporting OpenCL 2.0, 2.1, or 2.2, the minimum
+list of supported image formats for either reading or writing in a kernel
+is:
+
+[[min-supported-image-formats-2.0]]
+.Minimum list of supported image formats for reading or writing (OpenCL 2.0, 2.1, or 2.2)
+[width="100%",cols="<34%,<33%,<33%",options="header"]
 |====
 | num_channels | channel_order | channel_data_type
 | 1
@@ -2448,28 +2494,62 @@ Kernel Read Or Write>> table.
   | {CL_BGRA}
       | {CL_UNORM_INT8}
 | 4
-  | {CL_sRGBA}
-      | {CL_UNORM_INT8}^10^
+  | {CL_sRGBA}^10^
+      | {CL_UNORM_INT8}
 |====
 
 9::
-    {CL_DEPTH} channel order is supported only for 2D image and 2D image array
-    objects.
+    Support for the {CL_DEPTH} image channel order is required only for 2D
+    images and 2D image arrays.
 
 10::
-    Read sRGB channel order support is optional for 1D image buffers.
-    Write sRGB channel order support is optional for all image types.
+    Support for reading from the {CL_sRGBA} image channel order is optional
+    for 1D image buffers.
+    Support for writing to the {CL_sRGBA} image channel order is optional
+    for all image types.
 
-For 1D, 1D image from buffer, 2D, 3D image objects, 1D and 2D image array
-objects, the mandated minimum list of image formats that can be read from
-and written to by the same kernel instance and that must be supported by all
-devices that support images is described in the
-<<min-supported-same-kernel-table,Supported Formats - Kernel Read And
-Write>> table.
+For full profile devices supporting other OpenCL versions, such as OpenCL 1.2
+or OpenCL 3.0, the minimum list of supported image formats for either reading
+or writing in a kernel is:
 
-[[min-supported-same-kernel-table]]
-.Minimum list of required image formats: kernel read and write
-[width="100%",cols="1,1,2",options="header"]
+// Note, differences are:
+// * No {CL_R} images.
+// * No {CL_DEPTH} images.
+// * No {CL_RG} images.
+// * No {CL_sRGBA} images.
+// * For {CL_RGBA} images, no {CL_SNORM_INT8} or {CL_SNORM_INT16} image channel
+//   data types.
+
+[[min-supported-image-formats]]
+.Minimum list of required image formats for reading or writing
+[width="100%",cols="<34%,<33%,<33%",options="header"]
+|====
+| num_channels | channel_order | channel_data_type
+| 4
+  | {CL_RGBA}
+      | {CL_UNORM_INT8} +
+        {CL_UNORM_INT16} +
+        {CL_SIGNED_INT8} +
+        {CL_SIGNED_INT16} +
+        {CL_SIGNED_INT32} +
+        {CL_UNSIGNED_INT8} +
+        {CL_UNSIGNED_INT16} +
+        {CL_UNSIGNED_INT32} +
+        {CL_HALF_FLOAT} +
+        {CL_FLOAT}
+| 4
+  | {CL_BGRA}
+      | {CL_UNORM_INT8}
+|====
+
+For full profile devices that support reading from and writing to the same
+image object from the same kernel instance (see {CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS}),
+the minimum list of supported image formats for reading and writing in
+the same kernel instance is:
+
+[[min-supported-image-formats-read-write]]
+.Minimum list of required image formats for reading and writing
+[width="100%",cols="<34%,<33%,<33%",options="header"]
 |====
 | num_channels | channel_order | channel_data_type
 | 1
@@ -2589,7 +2669,7 @@ include::{generated}/api/version-notes/clEnqueueWriteImage.asciidoc[]
   * _ptr_ is the pointer to a buffer in host memory where image data is to be
     read from or to be written to.
     The alignment requirements for ptr are specified in
-    <<alignment-app-data-types, Alignment of Application Data Types>>.
+    <<alignment-app-data-types>>.
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
     complete before this particular command can be executed.
     If _event_wait_list_ is `NULL`, then this particular command does not wait
@@ -3351,8 +3431,8 @@ The result of a memory access outside this region is undefined.
 If the image object is created with {CL_MEM_USE_HOST_PTR} set in _mem_flags_,
 the following will be true:
 
-  * The _host_ptr_ specified in {clCreateImage}, {clCreateImage2D} or
-    {clCreateImage3D} is guaranteed to contain the
+  * The _host_ptr_ specified in {clCreateImage}, {clCreateImageWithProperties},
+    {clCreateImage2D}, or {clCreateImage3D} is guaranteed to contain the
     latest bits in the region being mapped when the {clEnqueueMapImage} command
     has completed.
   * The pointer value returned by {clEnqueueMapImage} will be derived from
@@ -3374,7 +3454,8 @@ Object Queries>>.
 [open,refpage='clGetImageInfo',desc='Get information specific to an image object created with clCreateImage.',type='protos']
 --
 To get information specific to an image object created with {clCreateImage},
-{clCreateImage2D}, or {clCreateImage3D} call the function
+{clCreateImageWithProperties}, {clCreateImage2D}, or {clCreateImage3D} call
+the function
 
 include::{generated}/api/protos/clGetImageInfo.txt[]
 include::{generated}/api/version-notes/clGetImageInfo.asciidoc[]
@@ -3404,8 +3485,9 @@ include::{generated}/api/version-notes/clGetImageInfo.asciidoc[]
 
 include::{generated}/api/version-notes/CL_IMAGE_FORMAT.asciidoc[]
   | cl_image_format
-      | Return image format descriptor specified when _image_ is created
-        with {clCreateImage}, {clCreateImage2D} or {clCreateImage3D}.
+      | Return the image format descriptor specified when _image_ is created
+        with {clCreateImage}, {clCreateImageWithProperties},
+        {clCreateImage2D} or {clCreateImage3D}.
 | {CL_IMAGE_ELEMENT_SIZE_anchor}
 
 include::{generated}/api/version-notes/CL_IMAGE_ELEMENT_SIZE.asciidoc[]
@@ -3543,6 +3625,7 @@ Otherwise, it returns a `NULL` value with one of the following error values
 returned in _errcode_ret_:
 
   * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_OPERATION} if no devices in _context_ support Pipes.
   * {CL_INVALID_VALUE} if values specified in _flags_ are not as defined
     above.
   * {CL_INVALID_VALUE} if _properties_ is not `NULL`.
@@ -3626,6 +3709,22 @@ include::{generated}/api/version-notes/CL_PIPE_MAX_PACKETS.asciidoc[]
   | cl_uint
       | Return max. number of packets specified when _pipe_ is created with
         {clCreatePipe}.
+
+| {CL_PIPE_PROPERTIES_anchor}
+
+include::{generated}/api/version-notes/CL_PIPE_PROPERTIES.asciidoc[]
+  | cl_pipe_properties[]
+      | Return the properties argument specified in {clCreatePipe}.
+
+        If the _properties_ argument specified in {clCreatePipe} used to
+        create _pipe_ was not `NULL`, the implementation must return the values
+        specified in the properties argument.
+
+        If the _properties_ argument specified in {clCreatePipe} used to
+        create _pipe_ was `NULL`, the implementation may return either a
+        _param_value_size_ret_ of 0 (i.e. there are no properties to be
+        returned), or the implementation may return a pipe property value
+        of 0 (where 0 is used to terminate the properties list).
 |====
 --
 
@@ -3661,7 +3760,8 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 
-{clCreateBuffer}, {clCreateSubBuffer}, {clCreateImage}, {clCreateImage2D},
+{clCreateBuffer}, {clCreateBufferWithProperties}, {clCreateSubBuffer},
+{clCreateImage}, {clCreateImageWithProperties}, {clCreateImage2D},
 {clCreateImage3D} and {clCreatePipe} perform an implicit retain.
 --
 
@@ -4090,11 +4190,12 @@ include::{generated}/api/version-notes/CL_MEM_TYPE.asciidoc[]
   | cl_mem_object_type
       | Returns one of the following values:
 
-        {CL_MEM_OBJECT_BUFFER_anchor} if _memobj_ is created with {clCreateBuffer} or
-        {clCreateSubBuffer}.
+        {CL_MEM_OBJECT_BUFFER_anchor} if _memobj_ is created with {clCreateBuffer},
+        {clCreateBufferWithProperties}, or {clCreateSubBuffer}.
 
         cl_image_desc.image_type argument value if _memobj_ is created with
-        {clCreateImage}, {clCreateImage2D} or {clCreateImage3D}.
+        {clCreateImage}, {clCreateImageWithProperties}, {clCreateImage2D}, or
+        {clCreateImage3D}.
 
         {CL_MEM_OBJECT_PIPE_anchor} if _memobj_ is created with {clCreatePipe}.
 | {CL_MEM_FLAGS_anchor}
@@ -4103,10 +4204,12 @@ include::{generated}/api/version-notes/CL_MEM_FLAGS.asciidoc[]
   | cl_mem_flags
       | Return the flags argument value specified when _memobj_ is created
         with {clCreateBuffer}, +
+        {clCreateBufferWithProperties}, +
         {clCreateSubBuffer}, +
-        {clCreateImage} or +
-        {clCreateImage2D} or +
-        {clCreateImage3D} or +
+        {clCreateImage}, +
+        {clCreateImageWithProperties}, +
+        {clCreateImage2D}, +
+        {clCreateImage3D}, or +
         {clCreatePipe}.
 
         If _memobj_ is a sub-buffer the memory access qualifiers inherited
@@ -4121,17 +4224,19 @@ include::{generated}/api/version-notes/CL_MEM_SIZE.asciidoc[]
 
 include::{generated}/api/version-notes/CL_MEM_HOST_PTR.asciidoc[]
   | void *
-      | If _memobj_ is created with {clCreateBuffer}, {clCreateImage},
-        {clCreateImage2D} or {clCreateImage3D} and {CL_MEM_USE_HOST_PTR} is
-        specified in mem_flags, return the host_ptr argument value specified
-        when _memobj_ is created.  Otherwise a `NULL` value is returned.
+      | If _memobj_ is created with {clCreateBuffer}, {clCreateBufferWithProperties},
+        {clCreateImage}, {clCreateImageWithProperties}, {clCreateImage2D}, or
+        {clCreateImage3D}, and {CL_MEM_USE_HOST_PTR} is specified in mem_flags,
+        return the host_ptr argument value specified when _memobj_ is created.
 
-        If _memobj_ is created with {clCreateSubBuffer}, return the host_ptr
-        {plus} origin value specified when _memobj_ is created.
-        host_ptr is the argument value specified to {clCreateBuffer} and
-        {CL_MEM_USE_HOST_PTR} is specified in mem_flags for memory object from
-        which _memobj_ is created.
-        Otherwise a `NULL` value is returned.
+        Otherwise, if _memobj_ is created with {clCreateSubBuffer}, and
+        _memobj_ is created from a buffer that was created with
+        {CL_MEM_USE_HOST_PTR} specified in mem_flags, return the host_ptr
+        passed to {clCreateBuffer} or {clCreateBufferWithProperties}, plus
+        the origin value specified in buffer_create_info when _memobj_ is
+        created.
+
+        Otherwise, return `NULL`.
 | {CL_MEM_MAP_COUNT_anchor}^11^
 
 include::{generated}/api/version-notes/CL_MEM_MAP_COUNT.asciidoc[]
@@ -4180,6 +4285,26 @@ include::{generated}/api/version-notes/CL_MEM_USES_SVM_POINTER.asciidoc[]
         that was created with {CL_MEM_USE_HOST_PTR} and the _host_ptr_
         specified when the buffer object was created is a SVM pointer;
         otherwise returns {CL_FALSE}.
+| {CL_MEM_PROPERTIES_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_PROPERTIES.asciidoc[]
+  | cl_mem_properties[]
+      | Return the properties argument specified in
+        {clCreateBufferWithProperties} or {clCreateImageWithProperties}.
+
+        If the _properties_ argument specified in
+        {clCreateBufferWithProperties} or {clCreateImageWithProperties}
+        used to create _memobj_ was not `NULL`, the implementation must
+        return the values specified in the properties argument.
+
+        If _memobj_ was created using {clCreateBuffer}, {clCreateImage},
+        {clCreateImage2D}, or {clCreateImage3D}, or if the _properties_
+        argument specified in {clCreateBufferWithProperties} or
+	{clCreateImageWithProperties} was `NULL`, the implementation may
+        return either a _param_value_size_ret_ of 0 (i.e. there are no
+        properties to be returned), or the implementation may return a
+        property value of 0 (where 0 is used to terminate the properties
+        list).
 |====
 
 11::
@@ -4231,8 +4356,6 @@ Many platforms such as those with integrated CPU-GPU processors and ones
 using the SVM-related PCI-SIG IOMMU services can do better, and can support
 sharing at a granularity smaller than a buffer.
 We call this fine-grained sharing.
-OpenCL 2.0 or newer requires that the host and all OpenCL 2.0 or newer devices
-support coarse-grained sharing at a minimum.
 
   * Coarse-grained sharing: Coarse-grain sharing may be used for memory and
     virtual pointer sharing between multiple devices as well as between the
@@ -4391,6 +4514,7 @@ the OpenCL implementation is unable to implement SVM because of that mixed
 endianness, {clSVMAlloc} will fail and return `NULL`.
 
 Although SVM is generally not supported for image objects, {clCreateImage}
+and {clCreateImageWithProperties}
 may create an image from a buffer (a 1D image from a buffer or a 2D image
 from buffer) if the buffer specified in its image description parameter is a
 SVM buffer.
@@ -4406,7 +4530,7 @@ SVM buffer is successfully allocated.
 Otherwise, like *malloc*, it returns a `NULL` pointer value.
 {clSVMAlloc} will fail if
 
-  * _context_ is not a valid context.
+  * _context_ is not a valid context, or no devices in _context_ support SVM.
   * _flags_ does not contain {CL_MEM_SVM_FINE_GRAIN_BUFFER} but does contain
     {CL_MEM_SVM_ATOMICS}.
   * Values specified in _flags_ do not follow rules described for supported
@@ -4431,6 +4555,7 @@ include::{generated}/api/protos/clSVMFree.txt[]
 include::{generated}/api/version-notes/clSVMFree.asciidoc[]
 
   * _context_ is a valid OpenCL context used to create the SVM buffer.
+    If no devices in _context_ support SVM, no action occurs.
   * _svm_pointer_ must be the value returned by a call to {clSVMAlloc}.
     If a `NULL` pointer is passed in _svm_pointer_, no action occurs.
 
@@ -4444,9 +4569,9 @@ the events associated with enqueued commands and when the last enqueued
 command has finished freeing _svm_pointer_.
 
 The behavior of using _svm_pointer_ after it has been freed is undefined.
-In addition, if a buffer object is created using {clCreateBuffer} with
-_svm_pointer_, the buffer object must first be released before the
-_svm_pointer_ is freed.
+In addition, if a buffer object is created using {clCreateBuffer} or
+{clCreateBufferWithProperties} with _svm_pointer_, the buffer object must
+first be released before the _svm_pointer_ is freed.
 
 The {clEnqueueSVMFree} API can also be used to enqueue a callback to free
 the shared virtual memory buffer allocated using {clSVMAlloc} or a shared
@@ -4517,6 +4642,7 @@ Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
     command-queue.
+  * {CL_INVALID_OPERATION} if the device associated with _command queue_ does not support SVM.
   * {CL_INVALID_VALUE} if _num_svm_pointers_ is 0 and _svm_pointers_ is
     non-`NULL`, _or_ if _svm_pointers_ is `NULL` and _num_svm_pointers_ is
     not 0.
@@ -4595,6 +4721,7 @@ Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
     command-queue.
+  * {CL_INVALID_OPERATION} if the device associated with _command queue_ does not support SVM.
   * {CL_INVALID_CONTEXT} if the context associated with _command_queue_ and
     events in _event_wait_list_ are not the same.
   * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
@@ -4679,6 +4806,7 @@ Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
     command-queue.
+  * {CL_INVALID_OPERATION} if the device associated with _command queue_ does not support SVM.
   * {CL_INVALID_CONTEXT} if the context associated with _command_queue_ and
     events in _event_wait_list_ are not the same.
   * {CL_INVALID_VALUE} if _svm_ptr_ is `NULL`.
@@ -4761,6 +4889,7 @@ Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
     command-queue.
+  * {CL_INVALID_OPERATION} if the device associated with _command queue_ does not support SVM.
   * {CL_INVALID_CONTEXT} if context associated with _command_queue_ and events
     in _event_wait_list_ are not the same.
   * {CL_INVALID_VALUE} if _svm_ptr_ is `NULL`.
@@ -4829,6 +4958,7 @@ Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
     command-queue.
+  * {CL_INVALID_OPERATION} if the device associated with _command queue_ does not support SVM.
   * {CL_INVALID_CONTEXT} if context associated with _command_queue_ and events
     in _event_wait_list_ are not the same.
   * {CL_INVALID_VALUE} if _svm_ptr_ is `NULL`.
@@ -4930,6 +5060,7 @@ Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
     command-queue.
+  * {CL_INVALID_OPERATION} if the device associated with _command queue_ does not support SVM.
   * {CL_INVALID_CONTEXT} if context associated with _command_queue_ and events
     in _event_wait_list_ are not the same.
   * {CL_INVALID_VALUE} if _num_svm_pointers_ is zero or _svm_pointers_ is
@@ -4961,10 +5092,10 @@ In addition, sub-buffers can also be used to ensure that each device gets a
 consistent view of a SVM buffers memory when it is shared by multiple
 devices.
 For example, assume that two devices share a SVM pointer.
-The host can create a cl_mem buffer object using {clCreateBuffer} with
-{CL_MEM_USE_HOST_PTR} and _host_ptr_ set to the SVM pointer and then create
-two disjoint sub-buffers with starting virtual addresses _sb1_ptr_ and
-_sb2_ptr_.
+The host can create a cl_mem buffer object using {clCreateBuffer} or
+{clCreateBufferWithProperties} with {CL_MEM_USE_HOST_PTR} and _host_ptr_ set
+to the SVM pointer and then create two disjoint sub-buffers with starting
+virtual addresses _sb1_ptr_ and _sb2_ptr_.
 These pointers (_sb1_ptr_ and _sb2_ptr_) can be passed to kernels executing
 on the two devices.
 {clEnqueueMapBuffer} and {clEnqueueUnmapMemObject} and the existing
@@ -5247,6 +5378,24 @@ include::{generated}/api/version-notes/CL_SAMPLER_ADDRESSING_MODE.asciidoc[]
 include::{generated}/api/version-notes/CL_SAMPLER_FILTER_MODE.asciidoc[]
   | cl_filter_mode
       | Return the filter mode value associated with _sampler_.
+
+| {CL_SAMPLER_PROPERTIES_anchor}
+
+include::{generated}/api/version-notes/CL_SAMPLER_PROPERTIES.asciidoc[]
+  | cl_sampler_properties[]
+      | Return the properties argument specified in
+        {clCreateSamplerWithProperties}.
+
+        If the _properties_ argument specified in {clCreateSamplerWithProperties}
+        used to create _sampler_ was not `NULL`, the implementation must return
+        the values specified in the properties argument.
+
+        If _sampler_ was created using {clCreateSampler}, or if the _properties_
+        argument specified in {clCreateSamplerWithProperties} was `NULL`, the
+        implementation may return either a _param_value_size_ret_ of 0 (i.e.
+        there are no properties to be returned), or the implementation may
+        return a property value of 0 (where 0 is used to terminate the
+        properties list).
 |====
 
 13::
@@ -5345,7 +5494,7 @@ returned in _errcode_ret_:
 
 [open,refpage='clCreateProgramWithIL',desc='Creates a program object for a context, and loads the IL into the program object.',type='protos']
 --
-To creates a program object for a context and load code in an intermediate
+To create a program object for a context and load code in an intermediate
 language into that object, call the function
 
 include::{generated}/api/protos/clCreateProgramWithIL.txt[]
@@ -5358,8 +5507,8 @@ Also see extension *cl_khr_il_program*.
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
-The IL pointed to by _il_ and with length in bytes _length_ will be loaded
-into the program object.
+The intermediate language pointed to by _il_ and with length in bytes _length_
+will be loaded into the program object.
 The devices associated with the program object are the devices associated
 with _context_.
 
@@ -5608,6 +5757,8 @@ successfully.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_PROGRAM} if _program_ is not a valid program object.
+  * {CL_INVALID_OPERATION} if no devices in the context associated with
+    _program_ support destructors for program scope global variables.
   * {CL_INVALID_VALUE} if _pfn_notify_ is `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
@@ -5628,8 +5779,8 @@ To set the value of a specialization constant, call the function
 include::{generated}/api/protos/clSetProgramSpecializationConstant.txt[]
 include::{generated}/api/version-notes/clSetProgramSpecializationConstant.asciidoc[]
 
-  * _program_ must be a valid OpenCL program created from an intermediate format
-    module (e.g. SPIR-V).
+  * _program_ must be a valid OpenCL program created from an intermediate
+    language (e.g. SPIR-V).
   * _spec_id_ identifies the specialization constant whose value will be
     set.
   * _spec_size_ specifies the size in bytes of the data pointed to by
@@ -5666,7 +5817,7 @@ executed successfully.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_PROGRAM} if _program_ is not a valid program object created
-    from a module in an intermediate format (e.g. SPIR-V).
+    from an intermediate language (e.g. SPIR-V).
   * {CL_INVALID_SPEC_ID} if _spec_id_ is not a valid specialization constant
     ID
   * {CL_INVALID_VALUE} if _spec_size_ does not match the size of the
@@ -6179,7 +6330,7 @@ It does not apply to reading from or writing to image objects.
     in the program source are correctly rounded.
     If this build option is not specified, the minimum numerical accuracy of
     single precision floating-point divide and sqrt are as defined in the
-    SPIR-V OpenCL environment specification.
+    OpenCL C or OpenCL SPIR-V Environment specifications.
 +
 --
 This build option can only be specified if the
@@ -6224,9 +6375,11 @@ rules/specifications for math functions.
 `-cl-mad-enable` ::
     Allow `a * b + c` to be replaced by a *mad* instruction.
     The *mad* instruction may compute `a * b + c` with reduced accuracy
-    in the embedded profile.  See the SPIR-V OpenCL environment specification for
-    accuracy details.  On some hardware the *mad* instruction may provide better
-    performance than the expanded computation.
+    in the embedded profile.
+    See the OpenCL C or OpenCL SPIR-V Environment specification for accuracy
+    details.
+    On some hardware the *mad* instruction may provide better performance
+    than the expanded computation.
 
 `-cl-no-signed-zeros` ::
     Allow optimizations for floating-point arithmetic that ignore the
@@ -6240,10 +6393,10 @@ rules/specifications for math functions.
     Allow optimizations for floating-point arithmetic that (a) assume that
     arguments and results are valid, (b) may violate the IEEE 754 standard,
     (c) assume relaxed OpenCL numerical compliance requirements as defined
-    in the unsafe math optimization section of the SPIR-V OpenCL environment
-    specification, and (d) may violate edge case behavior in the SPIR-V OpenCL
-    environment specification. This option includes the `-cl-no-signed-zeros`
-    and `-cl-mad-enable` options.
+    in the unsafe math optimization section of the OpenCL C or OpenCL SPIR-V
+    Environment specifications, and (d) may violate edge case behavior in the
+    OpenCL C or OpenCL SPIR-V Environment specifications.
+    This option includes the `-cl-no-signed-zeros` and `-cl-mad-enable` options.
 
 `-cl-finite-math-only` ::
     Allow optimizations for floating-point arithmetic that assume that
@@ -6251,8 +6404,6 @@ rules/specifications for math functions.
     This option may violate the OpenCL numerical compliance requirements for
     single precision and double precision floating-point, as well as edge
     case behavior.
-    The original and modified values are defined in the SPIR-V OpenCL
-    environment specification
 
 `-cl-fast-relaxed-math` ::
     Sets the optimization options `-cl-finite-math-only` and
@@ -6310,31 +6461,42 @@ These options are ignored for programs created with IL.
     Valid values are:
 +
 --
-  * CL1.1 Support all OpenCL C programs that use the OpenCL C language
+  * CL1.1 Support OpenCL C language
     features defined in _section 6_ of the OpenCL 1.1 specification.
-  * CL1.2 Support all OpenCL C programs that use the OpenCL C language
+  * CL1.2 Support OpenCL C language
     features defined in _section 6_ of the OpenCL 1.2 specification.
-  * CL2.0 Support all OpenCL C programs that use the OpenCL C language
+  * CL2.0 Support OpenCL C language
     features defined in _section 6_ of the OpenCL C 2.0 specification.
+  * CL3.0 Support OpenCL C language
+    features defined in _section 6_ of the OpenCL C 3.0 specification.
 --
 
 Calls to {clBuildProgram} or {clCompileProgram} with the `-cl-std=CL1.1`
 option *will fail* to compile the program for any devices with
-{CL_DEVICE_OPENCL_C_VERSION} = OpenCL C 1.0.
+{CL_DEVICE_OPENCL_C_VERSION} equal to OpenCL C 1.0 and when
+{CL_DEVICE_OPENCL_C_ALL_VERSIONS} does not include OpenCL C 1.1.
 
 Calls to {clBuildProgram} or {clCompileProgram} with the `-cl-std=CL1.2`
 option *will fail* to compile the program for any devices with
-{CL_DEVICE_OPENCL_C_VERSION} = OpenCL C 1.0 or OpenCL C 1.1.
+{CL_DEVICE_OPENCL_C_VERSION} equal to OpenCL C 1.1 or earlier
+and when {CL_DEVICE_OPENCL_C_ALL_VERSIONS} does not include OpenCL C 1.2.
 
 Calls to {clBuildProgram} or {clCompileProgram} with the `-cl-std=CL2.0`
 option *will fail* to compile the program for any devices with
-{CL_DEVICE_OPENCL_C_VERSION} = OpenCL C 1.0, OpenCL C 1.1, or OpenCL C 1.2.
+{CL_DEVICE_OPENCL_C_VERSION} equal to OpenCL C 1.2 or earlier
+and when {CL_DEVICE_OPENCL_C_ALL_VERSIONS} does not include OpenCL C 2.0.
+
+Calls to {clBuildProgram} or {clCompileProgram} with the `-cl-std=CL3.0`
+option *will fail* to compile the program for any devices with
+{CL_DEVICE_OPENCL_C_VERSION} equal to OpenCL C 2.0 or earlier
+and when {CL_DEVICE_OPENCL_C_ALL_VERSIONS} does not include OpenCL C 3.0.
 
 If the `-cl-std` build option is not specified, the highest OpenCL C 1.x
 language version supported by each device is used when compiling the program
 for each device.
-Applications are required to specify the `-cl-std=CL2.0` build option if they want to
-compile or build their programs with OpenCL C 2.0.
+Applications are required to specify the `-cl-std=CL2.0` build option to
+compile or build programs with OpenCL C 2.0 and the `-cl-std=CL3.0`
+build option to compile or build programs with OpenCL C 3.0.
 
 
 ==== Options for Querying Kernel Argument Information
@@ -6532,7 +6694,7 @@ include::{generated}/api/version-notes/CL_PROGRAM_SOURCE.asciidoc[]
         The concatenation strips any nulls in the original source strings.
 
         If _program_ is created using {clCreateProgramWithBinary},
-        {clCreateProgramWithIL} or {clCreateProgramWithBuiltinKernels}, a
+        {clCreateProgramWithIL} or {clCreateProgramWithBuiltInKernels}, a
         null string or the appropriate program source code is returned
         depending on whether or not the program source code is stored in the
         binary.
@@ -6549,7 +6711,7 @@ Also see extension *cl_khr_il_program*.
         {clCreateProgramWithIL}.
 
         If _program_ is created with {clCreateProgramWithSource},
-        {clCreateProgramWithBinary} or {clCreateProgramWithBuiltinKernels}
+        {clCreateProgramWithBinary} or {clCreateProgramWithBuiltInKernels}
         the memory pointed to by param_value will be unchanged and
         param_value_size_retwill be set to 0.
 | {CL_PROGRAM_BINARY_SIZES_anchor}
@@ -6564,7 +6726,7 @@ include::{generated}/api/version-notes/CL_PROGRAM_BINARY_SIZES.asciidoc[]
         If a binary is not available for a device(s), a size of zero is
         returned.
 
-        If _program_ is created using {clCreateProgramWithBuiltinKernels},
+        If _program_ is created using {clCreateProgramWithBuiltInKernels},
         the implementation may return zero in any entries of the returned
         array.
 | {CL_PROGRAM_BINARIES_anchor}
@@ -7158,6 +7320,7 @@ successfully.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_KERNEL} if _kernel_ is not a valid kernel object.
+  * {CL_INVALID_OPERATION} if no devices in the context associated with _kernel_ support SVM.
   * {CL_INVALID_ARG_INDEX} if _arg_index_ is not a valid argument index.
   * {CL_INVALID_ARG_VALUE} if _arg_value_ specified is not a valid value.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
@@ -7218,10 +7381,11 @@ successfully.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
+  * {CL_INVALID_OPERATION} if no devices in the context associated with _kernel_ support SVM.
   * {CL_INVALID_VALUE} if _param_name_ is not valid, if _param_value_ is
     `NULL` or if the size specified by _param_value_size_ is not valid.
-  * {CL_INVALID_OPERATION} if _param_name_ =
-    {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} and _param_value_ = {CL_TRUE}
+  * {CL_INVALID_OPERATION} if _param_name_ is
+    {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} and _param_value_ is {CL_TRUE}
     but no devices in context associated with _kernel_ support fine-grain
     system SVM allocations.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
@@ -7710,6 +7874,7 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_DEVICE} if _device_ is not in the list of devices associated
     with _kernel_ or if _device_ is `NULL` but there is more than one device
     associated with _kernel_.
+  * {CL_INVALID_OPERATION} if _device_ does not support Subgroups.
   * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
     specified by _param_value_size_ is < size of return type as described in
     the <<kernel-subgroup-info-table,Kernel Object Subgroup Queries>> table
@@ -7941,21 +8106,17 @@ include::{generated}/api/version-notes/clEnqueueNDRangeKernel.asciidoc[]
     _event_ argument should not refer to an element of the _event_wait_list_
     array.
 
-Enabling non-uniform work-groups requires the _kernel_'s program to be
-compiled without the `-cl-uniform-work-group-size` flag.
-If the program was created with {clCreateProgramWithSource}, non-uniform
-work-groups are enabled only if the program was compiled with the
-`-cl-std=CL2.0` flag and without the `-cl-uniform-work-group-size` flag.
-If the program was created using {clLinkProgram} and any of the linked
-programs were compiled in a way that only supports uniform work-group sizes,
-the linked program only supports uniform work group sizes.
-If _local_work_size_ is specified and the OpenCL _kernel_ is compiled
-without non-uniform work-groups enabled, the values specified in
-_global_work_size_[0], ..., _global_work_size_[_work_dim_ - 1] must be
-evenly divisible by the corresponding values specified in
-_local_work_size_[0], ..., _local_work_size_[_work_dim_ - 1].
+An ND-range kernel command may require uniform work-groups or may support non-uniform work-groups.
+To support non-uniform work-groups:
 
-If non-uniform work-groups are enabled for the kernel, any single dimension
+. The device associated with _command_queue_ must support non-uniform work-groups.
+. The program object associated with _kernel_ must support non-uniform work-groups.
+Specifically, this means:
+.. If the program was created with {clCreateProgramWithSource}, the program must be compiled or built using the `-cl-std=CL2.0` or `-cl-std=CL3.0` build option and without the `-cl-uniform-work-group-size` build option.
+.. If the program was created with {clCreateProgramWithIL} or {clCreateProgramWithBinaries}, the program must be compiled or built without the `-cl-uniform-work-group-size` build options.
+.. If the program was created using {clLinkProgram}, all input programs must support non-uniform work-groups.
+
+If non-uniform work-groups are supported, any single dimension
 for which the global size is not divisible by the local size will be
 partitioned into two regions.
 One region will have work-groups that have the same number of work items as
@@ -7969,16 +8130,11 @@ Work-group sizes could be non-uniform in multiple dimensions, potentially
 producing work-groups of up to 4 different sizes in a 2D range and 8
 different sizes in a 3D range.
 
-If _local_work_size_ is `NULL` and the kernel is compiled without support
-for non-uniform work-groups, the OpenCL runtime will implement the ND-range
-with uniform work-group sizes.
-If _local_work_size_ is `NULL` and non-uniform-work-groups are enabled, the
-OpenCL runtime is free to implement the ND-range using uniform or
-non-uniform work-group sizes, regardless of the divisibility of the global
-work size.
-If the ND-range is implemented using non-uniform work-group sizes, the
-work-group sizes, global IDs and group IDs will follow the same pattern as
-described in above paragraph.
+If non-uniform work groups are supported and _local_work_size_ is `NULL`, the OpenCL runtime may choose a uniform or non-uniform work-group size.
+
+Otherwise, when non-uniform work-groups are not supported, the size of each work-group must be uniform.
+If _local_work_size_ is specified, the values specified in _global_work_size_[0], ..., _global_work_size_[_work_dim_ - 1] must be evenly divisible by the corresponding values specified in _local_work_size_[0], ..., _local_work_size_[_work_dim_ - 1].
+If _local_work_size_ is `NULL`, the OpenCL runtime must choose a uniform work-group size.
 
 The work-group size to be used for _kernel_ can also be specified in the
 program source or intermediate language.
@@ -8040,11 +8196,10 @@ Otherwise, it returns one of the following errors:
     _local_work_size_[0] {times} ... _local_work_size_[_work_dim_ - 1] is
     greater than the value specified by {CL_KERNEL_WORK_GROUP_SIZE} in the
     <<kernel-workgroup-info-table,Kernel Object Device Queries>> table.
-  * {CL_INVALID_WORK_GROUP_SIZE} if the program was compiled with
-    cl-uniform-work-group-size and the number of work-items specified by
-    _global_work_size_ is not evenly divisible by size of work-group given
-    by _local_work_size_ or by the required work-group size specified in the
-    kernel source.
+  * {CL_INVALID_WORK_GROUP_SIZE} if the work-group size must be uniform and
+    the _local_work_size_ is not `NULL`, is not equal to the required
+    work-group size specified in the kernel source, or the
+    _global_work_size_ is not evenly divisible by the _local_work_size_.
   * {CL_INVALID_WORK_ITEM_SIZE} if the number of work-items specified in any
     of _local_work_size_[0], ... _local_work_size_[_work_dim_ - 1] is
     greater than the corresponding values specified by
@@ -8210,7 +8365,8 @@ include::{generated}/api/version-notes/clEnqueueNativeKernel.asciidoc[]
   * _num_mem_objects_ is the number of buffer objects that are passed in _args_.
   * _mem_list_ is a list of valid buffer objects, if _num_mem_objects_ > 0.
     The buffer object values specified in _mem_list_ are memory object handles
-    (cl_mem values) returned by {clCreateBuffer} or `NULL`.
+    (`cl_mem` values) returned by {clCreateBuffer} or {clCreateBufferWithProperties},
+    or `NULL`.
   * _args_mem_loc_ is a pointer to appropriate locations that _args_ points to
     where memory object handles (cl_mem values) are stored.
     Before the user function is executed, the memory object handles are replaced
@@ -8525,10 +8681,12 @@ include::{generated}/api/version-notes/CL_EVENT_CONTEXT.asciidoc[]
 
 include::{generated}/api/version-notes/CL_EVENT_COMMAND_TYPE.asciidoc[]
   | cl_command_type
-      | Return the command associated with event.
+      | Return the command type associated with _event_.
         Can be one of the following values:
 
+// OpenCL 1.0
         {CL_COMMAND_NDRANGE_KERNEL_anchor} +
+        {CL_COMMAND_TASK_anchor} +
         {CL_COMMAND_NATIVE_KERNEL_anchor} +
         {CL_COMMAND_READ_BUFFER_anchor} +
         {CL_COMMAND_WRITE_BUFFER_anchor} +
@@ -8543,20 +8701,42 @@ include::{generated}/api/version-notes/CL_EVENT_COMMAND_TYPE.asciidoc[]
         {CL_COMMAND_UNMAP_MEM_OBJECT_anchor} +
         {CL_COMMAND_MARKER_anchor} +
         {CL_COMMAND_ACQUIRE_GL_OBJECTS_anchor} +
-        {CL_COMMAND_RELEASE_GL_OBJECTS_anchor} +
+        {CL_COMMAND_RELEASE_GL_OBJECTS_anchor}
+
+// OpenCL 1.1
+        These event command types are
+        <<unified-spec, missing before>> version 1.1:
+
         {CL_COMMAND_READ_BUFFER_RECT_anchor} +
         {CL_COMMAND_WRITE_BUFFER_RECT_anchor} +
         {CL_COMMAND_COPY_BUFFER_RECT_anchor} +
-        {CL_COMMAND_USER_anchor} +
+        {CL_COMMAND_USER_anchor}
+
+// OpenCL 1.2
+        These event command types are
+        <<unified-spec, missing before>> version 1.2:
+
         {CL_COMMAND_BARRIER_anchor} +
         {CL_COMMAND_MIGRATE_MEM_OBJECTS_anchor} +
         {CL_COMMAND_FILL_BUFFER_anchor} +
-        {CL_COMMAND_FILL_IMAGE_anchor} +
+        {CL_COMMAND_FILL_IMAGE_anchor}
+
+// OpenCL 2.0
+        These event command types are
+        <<unified-spec, missing before>> version 2.0:
+
         {CL_COMMAND_SVM_FREE_anchor} +
         {CL_COMMAND_SVM_MEMCPY_anchor} +
         {CL_COMMAND_SVM_MEMFILL_anchor} +
         {CL_COMMAND_SVM_MAP_anchor} +
         {CL_COMMAND_SVM_UNMAP_anchor}
+
+// OpenCL 3.0 - should have been in OpenCL 2.1, but missed:
+        These event command types are
+        <<unified-spec, missing before>> version 3.0:
+
+        {CL_COMMAND_SVM_MIGRATE_MEM_anchor}
+
 | {CL_EVENT_COMMAND_EXECUTION_STATUS_anchor}^19^
 
 include::{generated}/api/version-notes/CL_EVENT_COMMAND_EXECUTION_STATUS.asciidoc[]
