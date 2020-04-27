@@ -20,68 +20,52 @@ logic.
 
 ==== Casts
 
-C-style casts follow `OpenCL C v2.0 rules (s6.5.5)`. All cast operators
-permit conversion to generic address space implicitly. However converting
-from generic to named address spaces can only be done using
-`addrspace_cast`. Note that conversions between `__constant` and any other
-other address space are disallowed.
+C-style casts follow rules of `OpenCL C v2.0 s6.5.5`. Conversions to generic
+address space can be made by any {cpp} cast operator (as an implicit
+conversion); converting from generic to named address space can only be done
+using the dedicated `addrspace_cast` operator. Operator `addrspace_cast` can only
+convert between address spaces and no other conversions are allowed to occur.
+Note that conversions between `__constant` and any other other address space
+are disallowed.
 
-TODO: Example with `addrspace_cast`.
-
-[[addrspace-deduction]]
-==== Deduction
-
-Address spaces are not deduced for:
-
-  * non-pointer/non-reference template parameters or any dependent types
-    except for template specializations.
-  * non-pointer/non-reference class members except for static data members
-    that are deduced to `__global` address space.
-  * non-pointer/non-reference alias declarations.
-  * decltype expressions.
-
-[source,c]
+[source,cpp]
 ----------
-template <typename T>
-void foo() {
-  T m; // address space of m will be known at template instantiation time.
-  T * ptr; // ptr points to generic address space object.
-  T & ref = ...; // ref references an object in generic address space.
-};
-
-template <int N>
-struct S {
-  int i; // i has no address space.
-  static int ii; // ii is in global address space.
-  int * ptr; // ptr points to generic address space int.
-  int & ref = ...; // ref references int in generic address space.
-};
-
-template <int N>
-void bar()
-{
-  S<N> s; // s is in __private address space.
-}
+int * genptr;
+__private float * ptrfloat = reinterpret_cast<__private float*>(genptr); // illegal.
+__private float * ptrfloat = addrspace_cast<__private float*>(genptr); // illegal.
+__private int * ptr = addrspace_cast<__private int*>(genptr); // legal.
+float * genptrfloat = reinterpret_cast<float*>(ptr); // legal.
+__constant int * constptr = addrspace_cast<__constant int*>(genptr); // illegal.
 ----------
 
-TODO: Example for type alias and decltype!
-
+[[references]]
 ==== References
 
 Reference types can be qualified with an address space.
 
-[source,c]
+[source,cpp]
 ----------
 __private int & ref = ...; // references int in __private address space.
 ----------
 
-By default references will refer to generic address space objects, except
+By default references refer to generic address space objects, except
 for dependent types that are not template specializations (see
 <<addrspace-deduction, _Deduction_>>). Address space compatibility checks
 are performed when references are bound to values. The logic follows the
 rules from address space pointer conversion (`OpenCL v2.0 s6.5.5`).
 
-==== Default address space
+
+[[addrspace-deduction]]
+==== Deduction & Default address space
+
+This section details what happens if address spaces for types are not
+provided in the source code explicitly. Most of the logic for address space
+deduction (i.e. default address space) follows rules from `OpenCL 2.0 s6.5`.
+
+References inherit rules from pointers and therefore refer to generic
+address space objects by default (see <<references, _References_>>).
+
+Class static data members are deduced to `__global` address space.
 
 All non-static member functions take an implicit object parameter `this`
 that is a pointer type. By default the `this` pointer parameter is in the
@@ -98,6 +82,83 @@ it is legal). For example, a method can be implemented to exploit memory
 access coalescing for segments with memory bank. This not only applies
 to regular member functions but to constructors and destructors too.
 
+Address spaces are not deduced for:
+
+  * non-pointer/non-reference template parameters or any dependent types
+    except for template specializations.
+  * non-pointer/non-reference class members except for static data members
+    that are deduced to `__global` address space.
+  * non-pointer/non-reference alias declarations.
+  * decltype expressions.
+
+[source,cpp]
+----------
+template <typename T>
+void foo() {
+  T m; // address space of 'm' will be known at template instantiation time.
+  T * ptr; // 'ptr' points to generic address space object.
+  T & ref = ...; // 'ref' references an object in generic address space.
+};
+
+template <int N>
+struct S {
+  int i; // 'i' has no address space.
+  static int ii; // 'ii' is in global address space.
+  int * ptr; // 'ptr' points to int in generic address space.
+  int & ref = ...; // 'ref' references int in generic address space.
+};
+
+template <int N>
+void bar()
+{
+  S<N> s; // 's' is in __private address space.
+}
+----------
+
+[source,cpp]
+----------
+struct c1 {};
+using alias_c1 = c1; // 'alias_c1' is 'c1'.
+using alias_c1_ptr = c1 *; // 'alias_c1_ptr' is a generic address space pointer to 'c1'.
+----------
+
+[source,cpp]
+----------
+__kernel void foo()
+{
+  __local int i;
+  decltype(i)* ii; // type of 'ii' is '__local int *__private'.
+}
+----------
+
+For the placeholder type specifier `auto` an address space of the outer type is
+deduced as if it would be any other regular type. However if `auto` is used in a
+reference or pointer type, the address space of a pointee is taken from the type
+of the initialization expression. The logic follows rules for `const` and
+`volatile` qualifiers.
+
+[source,cpp]
+----------
+__kernel void foo()
+{
+  __local int i;
+  constexpr int c = 1;
+  
+  __constant auto cai = c; // type of 'cai' is '__constant int' (no deduction).
+  
+  auto aii = cai; // type of 'aii' is '__private int' (regular deduction).
+
+  auto *ptr = &i; // type of 'ptr' is '__local int * __private'
+                  // (addr space of a pointer is deduced regularly,
+                  // addr space of its pointee is taken from 'i').
+
+  auto *&refptr = ptr; // type of 'refptr' is '__local int * & __private'
+                       // (addr space of a reference and type of referencing object
+                       // is deduced regularly,
+                       // addr space of a pointee is taken from the pointee of 'ptr').
+}
+----------
+
 [[addrspace-member-function-qualifiers]]
 ==== Member function qualifier
 
@@ -110,7 +171,7 @@ space if multiple candidates are provided. If there is no conversion
 to an address space among candidates, compilation will fail with a
 diagnostic.
 
-[source,c]
+[source,cpp]
 ----------
 struct C {
   void foo() __local;
@@ -128,13 +189,38 @@ __kernel void bar() {
 }
 ----------
 
+==== Lambda function
+
+The address space qualifier can be optionally added for lambda
+expressions after the attributes. Similar to method qualifiers,
+they will alter the default address space of lambda call operator
+that has generic address space by default. 
+
+[source,cpp]
+----------
+__kernel void test_qual() {
+  auto priv1 = []() __private {};
+  priv1();
+  auto priv2 = []() __global {};
+  priv2(); // error: lambda object and its expression have mismatching address space.
+  __constant auto const3 = []() __constant{};
+  const3();
+
+  [&] () __global {} (); // error: lambda temporary is in __private address space.
+
+  [&] () mutable __private {} ();
+  [&] () __private mutable {} (); // error: mutable specifier should precede address space.
+}
+----------
+
+
 ==== Implicit special members
 
 All implicit special members (default, copy or move constructor, copy or
 move assignment, destructor) will be generated with the generic address
 space.
 
-[source,c]
+[source,cpp]
 ----------
 class C {
   // Has the following implicitly defined member functions
@@ -159,7 +245,7 @@ _Deduction_>>). The address space of a template parameter is deduced
 during type deduction if it is not explicitly provided in the
 instantiation.
 
-[source,c]
+[source,cpp]
 ----------
  1 template<typename T>
  2 void foo(T* i){
@@ -178,7 +264,7 @@ template definition and instantiation. If multiple different address
 spaces are specified in a template definition and instantiation,
 compilation of such a program will fail with a diagnostic.
 
-[source,c]
+[source,cpp]
 ----------
 template <typename T>
 void foo() {
@@ -194,7 +280,7 @@ void bar() {
 Once a template has been instantiated, regular restrictions for
 address spaces will apply.
 
-[source,c]
+[source,cpp]
 ----------
 template<typename T>
 void foo(){
@@ -209,11 +295,11 @@ void bar(){
 
 ==== Temporary materialization
 
-All temporaries are materialized in the __private address space. If a reference
+All temporaries are materialized in `__private` address space. If a reference
 with another address space is bound to them, a conversion will be generated
 in case it is valid, otherwise compilation will fail with a diagnostic.
 
-[source,c]
+[source,cpp]
 ----------
 int bar(const unsigned int &i);
 
@@ -229,6 +315,32 @@ __global const int& f(__global float &ref) {
 }
 ----------
 
-==== Initialization of local and constant address space objects
+==== Construction, initialization and destruction
 
-TODO
+Construction, initialization and destruction of objects in `__private`
+and `__global` address space follow the general principles of {cpp}. For
+program scope objects, the implementation (i.e. compiler) defines an ABI
+format for initialization and destruction of global objects before/after
+all kernels are enqueued.
+
+Objects in `__local` address space can not have initializers in
+declarations and therefore a constructor can not be called. All objects
+created in the local address space have undefined state at the point of
+their declaration. Developers are free to define a special member function
+that can initialize local address space objects after their declaration. Any
+default values provided for the initialization of members in a class
+declaration are ignored when creating the local address space objects.
+Classes that are instantiated with local address space objects can not
+have references as their members. The same restriction applies recursively
+to the members and base classes. Destructors of local address space objects
+are not invoked automatically. They can be called manually if required.
+
+User defined constructors are not allowed to construct objects in `__constant`
+address space. Such objects can be initialized using literals and
+initialization lists if they do not require any user defined conversions.
+
+Objects in `__constant` address space can be initialized using:
+
+ * Literal expressions;
+ * Uniform initialization syntax `{}`;
+ * Using implicit constructors.
