@@ -12,8 +12,8 @@ The _Execution Model_ declared in *OpEntryPoint* must be *Kernel*.
 
 The _Addressing Model_ declared in *OpMemoryModel* must be either:
 
-  * *Physical32* (for OpenCL devices reporting `32` for `CL_DEVICE_ADDRESS_BITS`)
-  * *Physical64* (for OpenCL devices reporting `64` for `CL_DEVICE_ADDRESS_BITS`)
+  * *Physical32* (for OpenCL devices reporting `32` for {CL_DEVICE_ADDRESS_BITS})
+  * *Physical64* (for OpenCL devices reporting `64` for {CL_DEVICE_ADDRESS_BITS})
   
 The _Memory Model_ declared in *OpMemoryModel* must be *OpenCL*.
 
@@ -58,30 +58,107 @@ _Scope_ for _Execution_ must be:
 
   * *Workgroup*
 
+For the *Group and Subgroup Instructions*, _Scope_ for _Execution_ must
+be one of:
+
+  * *Workgroup*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting Work Group Collective Functions (where
+       {CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT} is {CL_TRUE}).
+  * *Subgroup*
+    ** For OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices supporting
+       Subgroups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`)
+
 For all other instructions, _Scope_ for _Execution_ must be one of:
 
   * *Workgroup*
-  * *Subgroup* (OpenCL 2.1 and Newer)
+  * *Subgroup*
+    ** For OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices supporting
+       Subgroups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`)
 
 In an OpenCL 1.2 environment,
 for the *Barrier Instructions* *OpControlBarrier* and *OpMemoryBarrier*, the
 _Scope_ for _Memory_ must be *Workgroup*, and the memory-order constraint in
 _Memory Semantics_ must be *SequentiallyConsistent*.
+Otherwise, _Scope_ for _Memory_ must be one of:
+
+  * *CrossDevice*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_SCOPE_ALL_DEVICES} in
+       {CL_DEVICE_ATOMIC_FENCE_CAPABILITIES}.
+  * *Device*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_SCOPE_DEVICE} in
+       {CL_DEVICE_ATOMIC_FENCE_CAPABILITIES}.
+  * *Workgroup*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_SCOPE_WORK_GROUP} in
+       {CL_DEVICE_ATOMIC_FENCE_CAPABILITIES}.
+  * *Subgroup*
+    ** For OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices supporting
+       Subgroups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`).
+  * *Invocation*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_SCOPE_WORK_ITEM} in
+       {CL_DEVICE_ATOMIC_FENCE_CAPABILITIES}.
+
+And, the memory-order constraint in _Memory Semantics_ must be one of:
+
+  * *None (Relaxed)*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_ORDER_RELAXED} in
+       {CL_DEVICE_ATOMIC_FENCE_CAPABILITIES}.
+  * *Acquire*, *Release*, or *AcquireRelease*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_ORDER_ACQ_REL} in
+       {CL_DEVICE_ATOMIC_FENCE_CAPABILITIES}.
+  * *SequentiallyConsistent*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_ORDER_SEQ_CST} in
+       {CL_DEVICE_ATOMIC_FENCE_CAPABILITIES}.
 
 In an OpenCL 1.2 environment,
 for the *Atomic Instructions*, the _Scope_ for _Memory_ must be *Device*,
 and the memory-order constraint in _Memory Semantics_ must be *Relaxed*.
-
 Otherwise, _Scope_ for _Memory_ must be one of:
 
   * *CrossDevice*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_SCOPE_ALL_DEVICES} in
+       {CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES}.
   * *Device*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_SCOPE_DEVICE} in
+       {CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES}.
   * *Workgroup*
-  * *Invocation*
-  * *Subgroup* (OpenCL 2.1 and Newer)
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_SCOPE_WORK_GROUP} in
+       {CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES}.
+  * *Subgroup*
+    ** For OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices supporting
+       Subgroups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`).
+// From the OpenCL C spec:
+// memory_scope_work_item can only be used with atomic_work_item_fence
+// with flags set to CLK_IMAGE_MEM_FENCE.
+//  * *Invocation*
 
-In OpenCL 2.0 and newer environments,
-the _Pointer_ operand to all *Atomic Instructions* may be a pointer to
-the *Generic* _Storage Class_, however behavior is still undefined if
-the *Generic* pointer represents a pointer to the *Function*
-_Storage Class_.
+And, the memory-order constraint in _Memory Semantics_ must be one of:
+
+  * *None (Relaxed)*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_ORDER_RELAXED} in
+       {CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES}.
+  * *Acquire*, *Release*, or *AcquireRelease*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_ORDER_ACQ_REL} in
+       {CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES}.
+  * *SequentiallyConsistent*
+    ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
+       supporting {CL_DEVICE_ATOMIC_ORDER_SEQ_CST} in
+       {CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES}.
+
+For OpenCL environments that support and declare the *GenericPointer*
+capability, the _Pointer_ operand to all *Atomic Instructions* may be
+a pointer to the *Generic* _Storage Class_, however behavior is still
+undefined if the *Generic* pointer represents a pointer to the
+*Function* _Storage Class_.

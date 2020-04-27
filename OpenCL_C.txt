@@ -2,7 +2,7 @@
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
-= The OpenCL^(TM)^ C 2.0 Specification
+= The OpenCL^(TM)^ C 3.0 Specification (Provisional)
 :R: pass:q,r[^(R)^]
 Khronos{R} OpenCL Working Group
 :data-uri:
@@ -49,28 +49,90 @@ include::copyrights.txt[]
 = The OpenCL C Programming Language
 
 [NOTE]
-.Note
-====
+--
 This document starts at chapter 6 to keep the section numbers historically
 consistent with previous versions of the OpenCL and OpenCL C Programming
 Language specifications.
-====
+--
 
-This section describes the OpenCL C programming language used to create
-kernels that are executed on OpenCL device(s).
-The OpenCL C programming language (also referred to as OpenCL C) is based on
-the <<C99-spec,ISO/IEC 9899:1999 C language>> Specification (a.k.a. "`C99
-Specification`" or just "`C99`") with specific extensions and restrictions.
-Please refer to that Specification for a detailed description of the
-language grammar.
-This document describes modifications and restrictions to C99 supported in
-OpenCL C.
+This section describes the OpenCL C 3.0 programming language.
+The OpenCL C programming language may be used to write kernels that execute
+on an OpenCL device.
 
+The OpenCL C programming language (also referred to as OpenCL C) is based
+on the <<C99-spec,ISO/IEC 9899:1999 Programming languages - C>> specification
+(also referred to as the C99 specification, or just C99), with extensions
+and restrictions to support parallel kernels.
 In addition, some features of OpenCL C are based on the <<C11-spec,ISO/IEC
-9899:2011 C language>> Specification (a.k.a. "`C11 Specification`" or just
-"`C11`".
-Such features are described by reference to that Specification.
+9899:2011 Information technology - Programming languages - C>> specification
+(also referred to as the C11 specification, or just C11).
 
+This document describes the modifications and restrictions to C99 and C11
+in OpenCL C.
+Please refer to the C99 specification for a detailed description of the
+language grammar.
+
+The OpenCL C 3.0 programming language includes both required features and
+optional features.
+When an OpenCL C 3.0 optional feature is supported in the language, support
+will be indicated using a __feature test macro__.
+
+The following table describes OpenCL C 3.0 feature macros and their meaning:
+
+[cols="1,3",options="header",]
+|====
+| *Feature Macro*
+| *Brief Description*
+
+| `+__opencl_c_3d_image_writes+`
+| The OpenCL C compiler supports built-in functions for writing to 3D image objects.
+
+| `+__opencl_c_atomic_order_acq_rel+`
+| The OpenCL C compiler supports enumerations and built-in functions for atomic operations with acquire and release memory consistency orders.
+
+| `+__opencl_c_atomic_order_seq_cst+`
+| The OpenCL C compiler supports enumerations and built-in functions for atomic operations and fences with sequentially consistent memory consistency order.
+
+| `+__opencl_c_atomic_scope_device+`
+| The OpenCL C compiler supports enumerations and built-in functions for atomic operations and fences with device memory scope.
+
+| `+__opencl_c_atomic_scope_all_devices+`
+| The OpenCL C compiler supports enumerations and built-in functions for atomic operations and fences with all with memory scope across all devices that can share SVM memory with each other and the host process.
+
+| `+__opencl_c_device_enqueue+`
+| The OpenCL C compiler supports built-in functions to enqueue additional work from the device.
+
+OpenCL C compilers that define the feature macro `+__opencl_c_device_enqueue+` must also define the feature macro `+__opencl_c_generic_address_space+`.
+
+| `+__opencl_c_generic_address_space+`
+| The OpenCL C compiler supports the unnamed generic address space.
+
+| `+__opencl_c_pipes+`
+| The OpenCL C compiler supports the pipe modifier and built-in functions to read and write from a pipe.
+
+OpenCL C compilers that define the feature macro `+__opencl_c_pipes+` must also define the feature macro `+__opencl_c_generic_address_space+`.
+
+| `+__opencl_c_program_scope_global_variables+`
+| The OpenCL C compiler supports program scope variables in the global address space.
+
+| `+__opencl_c_read_write_images+`
+| The OpenCL C compiler supports reading from and writing to the same image object in a kernel.
+
+| `+__opencl_c_subgroups+`
+| The OpenCL C compiler supports built-in functions operating on sub-groupings of work-items.
+
+| `+__opencl_c_work_group_collective_functions+`
+| The OpenCL C compiler supports built-in functions that perform collective operations across a work-group.
+
+|====
+
+[NOTE]
+--
+The OpenCL 3.0 C programming language described in this specification is provisional.
+It has been Ratified under the Khronos Intellectual Property Framework and is being made publicly available to enable review and feedback from the community.
+
+If you have feedback please create an issue on https://github.com/KhronosGroup/OpenCL-Docs/
+--
 
 [[supported-data-types]]
 == Supported Data Types
@@ -363,15 +425,27 @@ OpenCL.
     | A device command queue.
       This queue can only be used to enqueue commands from kernels executing
       on the device.
+
+      Requires support for OpenCL C 2.0 or the `__opencl_c_device_enqueue`
+      feature macro.
 | `ndrange_t`
     | The N-dimensional range over which a kernel executes.
+
+      Requires support for OpenCL C 2.0 or the `__opencl_c_device_enqueue`
+      feature macro.
 | `clk_event_t`
     | A device side event that identifies a command enqueue to
       a device command queue.
+
+      Requires support for OpenCL C 2.0 or the `__opencl_c_device_enqueue`
+      feature macro.
 | `reserve_id_t`
     | A reservation ID.
       This opaque type is used to identify the reservation for
       <<pipe-functions,reading and writing a pipe>>.
+
+      Requires support for OpenCL C 2.0 or the `__opencl_c_pipes`
+      feature macro.
 | `event_t`
     | An event.
       This can be used to identify <<async-copies,async copies>> from
@@ -413,8 +487,21 @@ available to the application:
 [cols=",",]
 |====
 | *Type in OpenCL C* | *API type for application*
+| `image2d_t`        | `cl_mem`
+| `image3d_t`        | `cl_mem`
+| `image2d_array_t`  | `cl_mem`
+| `image1d_t`        | `cl_mem`
+| `image1d_buffer_t` | `cl_mem`
+| `image1d_array_t`  | `cl_mem`
+| `image2d_depth_t`  | `cl_mem`
+| `image2d_array_depth_t` | `cl_mem`
+| `sampler_t`        | `cl_sampler`
 | `queue_t`          | `cl_command_queue`
-| `clk_event_t`      | `cl_event`
+| `ndrange_t`        | N/A
+| `clk_event_t`      | N/A
+| `reserve_id_t`     | N/A
+| `event_t`          | N/A
+| `cl_mem_fence_flags`  | N/A
 |====
 --
 
@@ -562,7 +649,6 @@ replicated across all lanes of the vector.
 Examples:
 
 [source,c]
-[subs="verbatim,quotes"]
 ----------
 float4 f = (float4)(1.0f, 2.0f, 3.0f, 4.0f);
 uint4 u = (uint4)(1); //  u will be (1, 1, 1, 1).
@@ -575,27 +661,32 @@ float4 f = (float4)(1.0f, 2.0f); //  error
 [[vector-components]]
 === Vector Components
 
-The components of vector data types with 1 ... 4 components can be addressed
-as `<vector_data_type>.xyzw`.
-Vector data types of type `char2`, `uchar2`, `short2`, `ushort2`, `int2`,
-`uint2`, `long2`, `ulong2`, and `float2` can access `.xy` elements.
-Vector data types of type `char3`, `uchar3`, `short3`, `ushort3`, `int3`,
-`uint3`, `long3`, `ulong3`, and `float3` can access `.xyz` elements.
-Vector data types of type `char4`, `uchar4`, `short4`, `ushort4`, `int4`,
-`uint4`, `long4`, `ulong4`, and `float4` can access `.xyzw` elements.
+The components of vector data types can be addressed as
+`<vector_data_type>.xyzw`.
+Vector data types with two or more components, such as `char2`, can access `.xy` elements.
+Vector data types with three or more components, such as `uint3`, can access `.xyz` elements.
+Vector data types with four or more components, such as `ulong4` or `float8`, can access `.xyzw` elements.
+
+In OpenCL C 3.0, the components of vector data types can also be addressed as
+`<vector_data_type>.rgba`.
+Vector data types with two or more components can access `.rg` elements.
+Vector data types with three or more components can access `.rgb` elements.
+Vector data types with four or more components can access `.rgba` elements.
 
 Accessing components beyond those declared for the vector type is an error
 so, for example:
 
 [source,c]
 ----------
-float2 pos;
-pos.x = 1.0f; // is legal
-pos.z = 1.0f; // is illegal
+float2 coord;
+coord.x = 1.0f; // is legal
+coord.r = 1.0f; // is legal in OpenCL C 3.0
+coord.z = 1.0f; // is illegal, since coord only has two components
 
 float3 pos;
 pos.z = 1.0f; // is legal
-pos.w = 1.0f; // is illegal
+pos.b = 1.0f; // is legal in OpenCL C 3.0
+pos.w = 1.0f; // is illegal, since pos only has three components
 ----------
 
 The component selection syntax allows multiple components to be selected by
@@ -1733,7 +1824,7 @@ result is 4.
 When applied to an operand that has type `long`, `ulong` or `double`, the
 result is 8.
 When applied to an operand that is a vector type, the result^20^ is number of
-components * size of each scalar component.
+components times the size of each scalar component.
 When applied to an operand that has array type, the result is the total
 number of bytes in the array.
 When applied to an operand that has structure or union type, the result is
@@ -1743,16 +1834,17 @@ The `sizeof` operator shall not be applied to an expression that has
 function type or an incomplete type, to the parenthesized name of such a
 type, or to an expression that designates a bit-field struct member^21^.
 
-[20] Except for 3-component vectors whose size is defined as 4 * size of each
-scalar component.
+[20] Except for 3-component vectors whose size is defined as 4 times the size
+of each scalar component.
 
 [21] Bit-field struct members are <<restrictions-bitfield, not supported in
 OpenCL C>>.
 
 The behavior of applying the `sizeof` operator to the `bool`, `image2d_t`,
-`image3d_t`, `image2d_array_t`, `image2d_depth_t`, `image2d_array_depth_t`,
-`image1d_t`, `image1d_buffer_t` or `image1d_array_t`, `sampler_t`,
-`clk_event_t`, `queue_t` and `event_t` types is implementation-defined.
+`image3d_t`, `image2d_array_t`, `image1d_t`, `image1d_buffer_t`,
+`image1d_array_t`, `image2d_depth_t`, `image2d_array_depth_t`,
+`sampler_t`, `queue_t, `ndrange_t`, `clk_event_t`, `reserve_id_t`, and
+`event_t` types is implementation-defined.
 --
 
 
@@ -1947,11 +2039,15 @@ space names with the `+__+` prefix.
 The address space name for arguments to a function in a program, or local
 variables of a function is `+__private+`.
 All function arguments shall be in the `+__private+` address space.
-The address space for a variable at program scope, a `static` or `extern`
-variable inside a function can either be `+__global+` or `+__constant+`, but
-defaults to `+__global+` if not specified.
-The address space for all other variables defaults to `+__private+` if not
-specified.
+
+Additionally, all function return values shall be in the `+__private+` address space.
+
+For OpenCL C 2.0 or with the `__opencl_c_program_scope_global_variables`
+feature macro, the address space for a variable at program scope or a `static`
+or `extern` variable inside a function may be either `+__constant+` or `+__global+`,
+and the address space defaults to `+__global+` if not specified.
+Otherwise, the address space for a variable at program scope or a `static` or `extern`
+variable inside a function must explicitly be `+__constant+`.
 
 Examples:
 
@@ -1969,21 +2065,28 @@ void foo (...)
 }
 ----------
 
-OpenCL 2.0 adds support for an unnamed generic address space.
-Pointers that are declared without pointing to a named address space point
+For OpenCL C 2.0, or with the `__opencl_c_generic_address_space` feature
+macro, there is an additional unnamed generic address space.
+The unnamed generic address space overlaps the named `+__global+`,
+`+__local+`, and `+__private+` address spaces.
+The unnamed generic address space does not overlap the named `+__constant+`
+address space; the named `+__constant+` address space is not in the generic
+address space.
+
+If the generic address space is supported,
+pointers that are declared without pointing to a named address space point
 to the generic address space.
-Pointer function arguments and return values which do not declare an address
-space are defined to point to the generic address space.
+Otherwise, when the generic address space is not supported, pointers that
+are declared without pointing to a named address space point to the
+`+__private+` address space.
 
 Kernel function arguments declared to be a pointer or an array of a type
 must point to one of the named address spaces `+__global+`, `+__local+` or
 `+__constant+`.
 
-The named address spaces are a subset of the generic address space except
-for the `constant` address space.
-
-A pointer to address space A can only be assigned to a pointer to the same
-address space A or a pointer to the generic address space.
+A pointer to address space A can be assigned to a pointer to the same
+address space A or be implicitly converted and assigned to a pointer
+to the generic address space.
 Casting a pointer to address space A to a pointer to address space B is
 illegal if A and B are named address spaces and A is not the same as B.
 
@@ -1991,11 +2094,14 @@ Examples:
 
 [source,c]
 ----------
-private int f() { ... }          // should generate an error
+// OK.
+int f() { ... }
 
-local int *f() { ... }           // allowed
+// Error. Address space qualifier cannot be used with non-pointer return type.
+private int f() { ... }
 
-local int * private f() { ... }; // should generate an error.
+// OK. Address space qualifier can be used with pointer return type.
+local int *f() { ... }
 ----------
 
 The `+__global+`, `+__constant+`, `+__local+`, `+__private+`, `global`,
@@ -2047,11 +2153,13 @@ As image objects are always allocated from the `global` address space, the
 The elements of an image object cannot be directly accessed.
 Built-in functions to read from and write to an image object are provided.
 
-Variables defined at program scope and `static` variables inside a function
+For OpenCL C 2.0, or with the `__opencl_c_program_scope_global_variables`
+feature macro,
+variables defined at program scope and `static` variables inside a function
 can also be declared in the `global` address space.
 They can be defined with any valid OpenCL C data type except for those in
 <<table-other-builtin-types>>.
-In particular, such program scope variables may be of any user-defined type,
+Such program scope variables may be of any user-defined type,
 or a pointer to a user-defined type.
 In the presence of shared virtual memory, these pointers or pointer members
 should work as expected as long as they are shared virtual memory pointers
@@ -2069,41 +2177,39 @@ Examples:
 
 [source,c]
 ----------
-global int foo;         // OK.
-int foo;                // OK. Declared in the global address space
-global uchar buf[512];  // OK.
-global int baz = 12;    // OK. Initialization is allowed
-static global int bat;  // OK. Internal linkage
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_program_scope_global_variables feature macro.
 
-static int foo;         // OK. Declared in the global address space
+global int foo;         // OK.
+int foo;                // OK. Declared in the global address space.
+global uchar buf[512];  // OK.
+global int baz = 12;    // OK. Initialization is allowed.
+static global int bat;  // OK. Internal linkage.
+
+static int foo;         // OK. Declared in the global address space.
 static global int foo;  // OK.
 
-int *foo;               // OK. foo is allocated in global address space.
-                        // foo points to a location in generic address space.
+int *foo;               // OK. foo is allocated in the global address space.
+                        // foo points to a location in the private or
+                        // generic address space.
 
 void func(...)
 {
-    int *foo;           // OK. foo is allocated in private address space.
-                        // foo points to a location in generic address space.
+    int *foo;           // OK. foo is allocated in the private address space.
+                        // foo points to a location in the private or
+                        // generic address space.
     ...
 }
 
 global int * global ptr;          // OK.
 int * global ptr;                 // OK.
-constant int *global ptr=&baz;    // error since baz is in global address
+constant int *global ptr=&baz;    // Error, baz is in the global address
                                   // space.
 global int * constant ptr = &baz; // OK
 
-// Pointers work. Also, initialization to a constant known at
-// program load time
-global int *global baz_ptr = &baz;
+global image2d_t im;    // Error. Invalid type for program scope variables.
 
-global image2d_t im; // Error. Invalid type for program scope
-                     // variables
-
-global event_t ev;   // Error. Invalid type for program scope variables
-
-global int *bad_ptr; // Error. No implicit address space
+global event_t ev;      // Error. Invalid type for program scope variables.
 ----------
 
 The `const` qualifier can also be used with the `+__global+` qualifier to
@@ -2222,16 +2328,17 @@ address space counts as a separate constant argument.
 Variables inside a kernel function not declared with an address space
 qualifier, all variables inside non-kernel functions, and all function
 arguments are in the `+__private+` or `private` address space.
-[line-through]*Variables declared as pointers are considered to point to the
-`+__private+` address space if an address space qualifier is not specified*.
 --
 
 
 [[the-generic-address-space]]
-=== The generic address space
+=== The Generic Address Space
 
 [open,refpage='genericAddressSpace',desc='The Generic Address Space',type='freeform',spec='clang',anchor='the-generic-address-space',xrefs='addressSpaceQualifiers constant global local private']
 --
+
+NOTE: The functionality described in this section requires support for
+OpenCL C 2.0 or the `__opencl_c_generic_address_space` feature macro.
 
 The following rules apply when using pointers that point to the generic
 address space:
@@ -2656,16 +2763,20 @@ spaces.
 --
 
 Image objects specified as arguments to a kernel can be declared to be
-read-only, write-only or read-write.
-[line-through]#A kernel cannot read from and write to the same image
-object#.
-The `+__read_only+` (or read_only) and `+__write_only+` (or `write_only`)
-qualifiers must be used with image object arguments to declare if the image
-object is being read or written by a kernel or function.
-The `+__read_write+` (or `read_write`) qualifier must be used with image
-object arguments of kernels and of user-defined functions to declare if the
-image object is being both read and written by the kernel.
-If no qualifier is provided, `read_only` is assumed.
+read-only or write-only.
+
+For OpenCL C 2.0, or with the `__opencl_c_read_write_images` feature macro,
+image objects specified as arguments to a kernel can additionally be
+declared to be read-write.
+
+The `+__read_only+` (or `read_only`) access qualifier specifies that the
+image object is only being read by a kernel or function.
+The `+__write_only+` (or `write_only`) access qualifier specifies that the
+image object is only being written to by a kernel or function.
+The `+__read_write+` (or `read_write`) access qualifier specifies that the
+image object may be both read from or written to by a kernel or function.
+
+The default access qualifier is `read_only`, if no access qualifier is declared.
 
 In the following example
 
@@ -2898,7 +3009,7 @@ kernel void my_func(image2d_t img, global float *a)
 [NOTE]
 ====
 Items struckthrough are restrictions in a previous version of OpenCL C that
-are no longer present in OpenCL C 2.0.
+are no longer present in OpenCL C 3.0.
 ====
 
 [loweralpha]
@@ -2927,10 +3038,6 @@ field, an array of images, a pointer to an image, or the return type of a
 function.
 An image type cannot be used with the `+__global+`, `+__private+`,
 `+__local+` and `+__constant+` address space qualifiers.
-[line-through]#The `image3d_t` type cannot be used with the `+__write_only+`
-access qualifier unless the *cl_khr_3d_image_writes* extension is enabled.
-An image type cannot be used with the `+__read_write+` access qualifier which
-is reserved for future use.#
 +
 The sampler type (`sampler_t`) can only be used as the type of a function
 argument or a variable declared in the program scope or the outermost scope
@@ -2947,11 +3054,13 @@ address space qualifiers.
     supported.
   . [[restrictions-variable-length]] Variable length arrays and structures
     with flexible (or unsized) arrays are not supported.
-  . Variadic macros and functions with the exception of printf and
-    enqueue_kernel are not supported.
+  . Variadic functions are not supported, with the exception of `printf` and
+    `enqueue_kernel`.
+// Relaxed in OpenCL C 3.0.
+  . [line-through]#Variadic macros are not supported.#
   . If a list of parameters in a function declaration is empty, the function
     takes no arguments. This is due to the above restriction on variadic
-    prototypes.
+    functions.
   . Unless defined in the OpenCL specification, the library functions,
     macros, types, and constants defined in the C99 standard headers
     `assert.h`, `ctype.h`, `complex.h`, `errno.h`, `fenv.h`, `float.h`,
@@ -2976,35 +3085,36 @@ address space qualifiers.
     performed.
   . Whether or not irreducible control flow is illegal is implementation
     defined.
-  . [line-through]#Built-in types that are less than 32-bits in size, i.e.
-    `char`, `uchar`, `char2`, `uchar2`, `short`, `ushort`, and `half`, have
-    the following restriction:#
-+
-    * [line-through]#Writes to a pointer (or arrays) of type `char`,
-      `uchar`, `char2`, `uchar2`, `short`, `ushort`, and `half` or to
-      elements of a struct that are of type `char`, `uchar`, `char2`,
-      `uchar2`, `short` and `ushort` are not supported.
-      Refer to _section 9.9_ for additional information.#
-+
-[line-through]#The kernel example below shows what memory operations are not
-supported on built-in types less than 32-bits in size.#
-+
-[source,c,role="line-through"]
-----------
-kernel void
-do_proc (__global char *pA, short b,
-         __global short *pB)
-{
-    char x[100];
-    __private char *px = x;
-    int id = (int)get_global_id(0);
-    short f;
-
-    f = pB[id] + b; // is allowed
-    px[1] = pA[1]; // error. px cannot be written.
-    pB[id] = b; // error. pB cannot be written
-}
-----------
+// Relaxed in OpenCL C 1.1, or the cl_khr_byte_addressable_store extension.
+//  . [line-through]#Built-in types that are less than 32-bits in size, i.e.
+//    `char`, `uchar`, `char2`, `uchar2`, `short`, `ushort`, and `half`, have
+//    the following restriction:#
+//+
+//    * [line-through]#Writes to a pointer (or arrays) of type `char`,
+//      `uchar`, `char2`, `uchar2`, `short`, `ushort`, and `half` or to
+//      elements of a struct that are of type `char`, `uchar`, `char2`,
+//      `uchar2`, `short` and `ushort` are not supported.
+//      Refer to _section 9.9_ for additional information.#
+//+
+//[line-through]#The kernel example below shows what memory operations are not
+//supported on built-in types less than 32-bits in size.#
+//+
+//[source,c,role="line-through"]
+//----------
+//kernel void
+//do_proc (__global char *pA, short b,
+//         __global short *pB)
+//{
+//    char x[100];
+//    __private char *px = x;
+//    int id = (int)get_global_id(0);
+//    short f;
+//
+//    f = pB[id] + b; // is allowed
+//    px[1] = pA[1]; // error. px cannot be written.
+//    pB[id] = b; // error. pB cannot be written
+//}
+//----------
   . The type qualifiers `const`, `restrict` and `volatile` as defined by the
     C99 specification are supported.
     These qualifiers cannot be used with `image2d_t`, `image3d_t`,
@@ -3021,9 +3131,6 @@ do_proc (__global char *pA, short b,
     as arguments to kernel functions that get enqueued from the host.
     The `clk_event_t` and `reserve_id_t` types cannot be declared in program
     scope.
-  . The values returned by applying the `sizeof` operator to the `queue_t`,
-    `clk_event_t`, `ndrange_t` and `reserve_id_t` types is
-    implementation-defined.
   . Kernels enqueued by the host must continue to have their arguments that
     are a pointer to a type declared to point to a named address space.
   . A function in an OpenCL program cannot be called `main`.
@@ -3082,7 +3189,7 @@ The following predefined macro names are available.
     Substitutes an integer reflecting the version number of the OpenCL
     supported by the OpenCL device.
     The version of OpenCL described in this document will have
-    `+__OPENCL_VERSION__+` substitute the integer 200.
+    `+__OPENCL_VERSION__+` substitute the integer 300.
 
 `CL_VERSION_1_0` ::
     Substitutes the integer 100 reflecting the OpenCL 1.0 version.
@@ -3096,16 +3203,19 @@ The following predefined macro names are available.
 `CL_VERSION_2_0` ::
     Substitutes the integer 200 reflecting the OpenCL 2.0 version.
 
+`CL_VERSION_3_0` ::
+    Substitutes the integer 300 reflecting the OpenCL 3.0 version.
+
 `+__OPENCL_C_VERSION__+` ::
     Substitutes an integer reflecting the OpenCL C version specified by the
-    `-cl-std` build option (see <<opencl-spec,section 5.8.4.5 of the OpenCL
+    `-cl-std` build option the (see <<opencl-spec,OpenCL
     Specification>>) to *clBuildProgram* or *clCompileProgram*.
     If the `-cl-std` build option is not specified, the highest OpenCL C 1.x
     language version supported by each device is used as the version of
     OpenCL C when compiling the program for each device.
     The version of OpenCL C described in this document will have
-    `+__OPENCL_C_VERSION__+` substitute the integer 200 if `-cl-std=CL2.0`
-    is specified.
+    `+__OPENCL_C_VERSION__+` substitute the integer 300 if `-cl-std=CL3.0`
+    is specified, and the integer 200 if `-cl-std=CL2.0` is specified.
 
 `+__ENDIAN_LITTLE__+` ::
     Used to determine if the OpenCL device is a little endian architecture
@@ -3114,13 +3224,13 @@ The following predefined macro names are available.
     Also refer to the value of the <<opencl-device-queries,
     `CL_DEVICE_ENDIAN_LITTLE` device query>>.
 
-`+__kernel_exec(X, type__n__)+` (and `kernel_exec(X, type__n__)`)
-    is defined as
+`+__kernel_exec(X, typen)+` (and `kernel_exec(X, typen)`) ::
+    is defined as:
 
 [source,c]
 ----------
 __kernel __attribute__((work_group_size_hint(X, 1, 1))) \
-    __attribute__((vec_type_hint(type__n__)))
+    __attribute__((vec_type_hint(typen)))
 ----------
 
 `+__IMAGE_SUPPORT__+` ::
@@ -3623,7 +3733,11 @@ information provided is in some sense correct.
 
 [open,refpage='blocks',desc='Blocks',type='freeform',spec='clang',anchor='blocks']
 --
-OpenCL C 2.0 adds support for the clang block syntax^26^.
+NOTE: The functionality described in this section requires support for
+OpenCL C 2.0 or the `__opencl_c_device_enqueue` feature macro.
+
+This section describes the clang block syntax^26^.
+
 Like function types, the Block type is a pair consisting of a result value
 type and a list of parameter types very similar to a function type.
 Blocks are intended to be used much like functions with the key distinction
@@ -3986,7 +4100,7 @@ size specified to *clEnqueueNDRangeKernel*, and the global and local
 identifier of each work-item when this kernel is being executed on a device.
 
 [[table-work-item-functions]]
-.Work-Item Functions Table
+.Built-in Work-Item Functions
 [cols=",",]
 |====
 | *Function* | *Description*
@@ -4098,6 +4212,63 @@ identifier of each work-item when this kernel is being executed on a device.
 
 [28] I.e. the _global_work_size_ values specified to *clEnqueueNDRangeKernel*
 are not evenly divisible by the _local_work_size_ values for each dimension.
+
+NOTE: The functionality described in the following table requires support for the `__opencl_c_subgroups` feature macro.
+
+The following table describes the list of built-in work-item functions that
+can be used to query the size of a subgroup, number of subgroups per work group,
+and identifier of the subgroup within a work-group and work-item within a
+subgroup when this kernel is being executed on a device.
+
+.Built-in Work-Item Functions for Subgroups
+[cols="a,",options="header",]
+|====
+| *Function*
+| *Description*
+
+| uint *get_sub_group_size*()
+| Returns the number of work items in the subgroup.
+  This value is no more than the maximum subgroup size and is
+  implementation-defined based on a combination of the compiled kernel and
+  the dispatch dimensions.
+  This will be a constant value for the lifetime of the subgroup.
+
+| uint *get_max_sub_group_size*()
+| Returns the maximum size of a subgroup within the dispatch.
+  This value will be invariant for a given set of dispatch dimensions and a
+  kernel object compiled for a given device.
+
+| uint *get_num_sub_groups*()
+| Returns the number of subgroups that the current work group is divided
+  into.
+
+  This number will be constant for the duration of a work group's execution.
+  If the kernel is executed with a non-uniform work group size
+  (i.e. the global_work_size values specified to *clEnqueueNDRangeKernel*
+  are not evenly divisible by the local_work_size values for any dimension,
+  calls to this built-in from some work groups may return different values
+  than calls to this built-in from other work groups.
+
+| uint *get_enqueued_num_sub_groups*()
+| Returns the same value as that returned by *get_num_sub_groups* if the
+  kernel is executed with a uniform work group size.
+
+  If the kernel is executed with a non-uniform work group size, returns the
+  number of subgroups in each of the work groups that make up the uniform
+  region of the global range.
+
+| uint *get_sub_group_id*()
+| *get_sub_group_id* returns the subgroup ID which is a number from 0 ..
+  *get_num_sub_groups*() - 1.
+
+  For *clEnqueueTask*, this returns 0.
+
+| uint *get_sub_group_local_id*()
+| Returns the unique work item ID within the current subgroup.
+  The mapping from *get_local_id*(__dimindx__) to *get_sub_group_local_id*
+  will be invariant for the lifetime of the work group.
+
+|====
 --
 
 
@@ -4136,7 +4307,7 @@ For any specific use of a function, the actual type has to be the same for
 all arguments and the return type, unless otherwise specified.
 
 [[table-builtin-math]]
-.Scalar and Vector Argument Built-in Math Function Table
+.Built-in Scalar and Vector Argument Math Functions
 [cols=",",]
 |====
 | *Function* |*Description*
@@ -4216,19 +4387,50 @@ all arguments and the return type, unless otherwise specified.
 | gentype *fmod*(gentype _x_, gentype _y_)
     | Modulus.
       Returns _x_ - _y_ * *trunc*(_x_/_y_).
-| gentype *fract*(gentype _x_, gentype _*iptr_)^30^
+| gentype *fract*(gentype _x_, {global} gentype _*iptr_)^30^ +
+  gentype *fract*(gentype _x_, {local} gentype _*iptr_) +
+  gentype *fract*(gentype _x_, {private} gentype _*iptr_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  gentype *fract*(gentype _x_, gentype _*iptr_)
     | Returns *fmin*(_x_ - *floor*(_x_), `0x1.fffffep-1f`).
       *floor*(x) is returned in _iptr_.
-| float__n__ **frexp**(float__n__ _x_, int__n__ *exp) +
+| float__n__ **frexp**(float__n__ _x_, {global} int__n__ *exp) +
+  float **frexp**(float _x_, {global} int *exp) +
+
+  float__n__ **frexp**(float__n__ _x_, {local} int__n__ *exp) +
+  float **frexp**(float _x_, {local} int *exp) +
+
+  float__n__ **frexp**(float__n__ _x_, {private} int__n__ *exp) +
+  float **frexp**(float _x_, {private} int *exp) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  float__n__ **frexp**(float__n__ _x_, int__n__ *exp) +
   float **frexp**(float _x_, int *exp)
     | Extract mantissa and exponent from _x_.
       For each component the mantissa returned is a `float` with magnitude
       in the interval [1/2, 1) or 0.
       Each component of _x_ equals mantissa returned * 2__^exp^__.
-| double__n__ **frexp**(double__n__ _x_, int__n__ *exp) +
+| double__n__ **frexp**(double__n__ _x_, {global} int__n__ *exp) +
+  double **frexp**(double _x_, {global} int *exp) +
+
+  double__n__ **frexp**(double__n__ _x_, {local} int__n__ *exp) +
+  double **frexp**(double _x_, {local} int *exp) +
+
+  double__n__ **frexp**(double__n__ _x_, {private} int__n__ *exp) +
+  double **frexp**(double _x_, {private} int *exp) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  double__n__ **frexp**(double__n__ _x_, int__n__ *exp) +
   double **frexp**(double _x_, int *exp)
     | Extract mantissa and exponent from _x_.
-      For each component the mantissa returned is a `float` with magnitude
+      For each component the mantissa returned is a `double` with magnitude
       in the interval [1/2, 1) or 0.
       Each component of _x_ equals mantissa returned * 2__^exp^__.
 | gentype *hypot*(gentype _x_, gentype _y_)
@@ -4247,6 +4449,25 @@ all arguments and the return type, unless otherwise specified.
   double *ldexp*(double _x_, int _k_)
     | Multiply _x_ by 2 to the power _k_.
 | gentype *lgamma*(gentype _x_) +
+
+  float__n__ **lgamma_r**(float__n__ _x_, {global} int__n__ *_signp_) +
+  float **lgamma_r**(float _x_, {global} int *_signp_) +
+  double__n__ **lgamma_r**(double__n__ _x_, {global} int__n__ *_signp_) +
+  double **lgamma_r**(double _x_, {global} int *_signp_) +
+
+  float__n__ **lgamma_r**(float__n__ _x_, {local} int__n__ *_signp_) +
+  float **lgamma_r**(float _x_, {local} int *_signp_) +
+  double__n__ **lgamma_r**(double__n__ _x_, {local} int__n__ *_signp_) +
+  double **lgamma_r**(double _x_, {local} int *_signp_) +
+
+  float__n__ **lgamma_r**(float__n__ _x_, {private} int__n__ *_signp_) +
+  float **lgamma_r**(float _x_, {private} int *_signp_) +
+  double__n__ **lgamma_r**(double__n__ _x_, {private} int__n__ *_signp_) +
+  double **lgamma_r**(double _x_, {private} int *_signp_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
   float__n__ **lgamma_r**(float__n__ _x_, int__n__ *_signp_) +
   float **lgamma_r**(float _x_, int *_signp_) +
   double__n__ **lgamma_r**(double__n__ _x_, int__n__ *_signp_) +
@@ -4279,7 +4500,14 @@ all arguments and the return type, unless otherwise specified.
 | gentype *minmag*(gentype _x_, gentype _y_)
     | Returns _x_ if \|_x_\| < \|_y_\|, _y_ if \|_y_\| < \|_x_\|, otherwise
       *fmin*(_x_, _y_).
-| gentype *modf*(gentype _x_, gentype *_iptr_)
+| gentype *modf*(gentype _x_, {global} gentype _*iptr_) +
+  gentype *modf*(gentype _x_, {local} gentype _*iptr_) +
+  gentype *modf*(gentype _x_, {private} gentype _*iptr_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  gentype *modf*(gentype _x_, gentype _*iptr_)
     | Decompose a floating-point number.
       The *modf* function breaks the argument _x_ into integral and
       fractional parts, each of which has the same sign as the argument.
@@ -4310,8 +4538,20 @@ all arguments and the return type, unless otherwise specified.
       If there are two integers closest to _x_/_y_, _n_ shall be the even
       one.
       If _r_ is zero, it is given the same sign as _x_.
-| float__n__ **remquo**(float__n__ _x_, float__n__ _y_, int__n__ *_quo_) +
-  float **remquo**(float _x_, float _y_, int *_quo_)
+| float__n__ **remquo**(float__n__ _x_, float__n__ _y_, {global} int__n__ _*quo_) +
+  float **remquo**(float _x_, float _y_, {global} int _*quo_) +
+
+  float__n__ **remquo**(float__n__ _x_, float__n__ _y_, {local} int__n__ _*quo_) +
+  float **remquo**(float _x_, float _y_, {local} int _*quo_) +
+
+  float__n__ **remquo**(float__n__ _x_, float__n__ _y_, {private} int__n__ _*quo_) +
+  float **remquo**(float _x_, float _y_, {private} int _*quo_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  float__n__ **remquo**(float__n__ _x_, float__n__ _y_, int__n__ _*quo_) +
+  float **remquo**(float _x_, float _y_, int _*quo_)
     | The *remquo* function computes the value r such that _r_ = _x_ -
       _k_*_y_, where _k_ is the integer nearest the exact value of _x_/_y_.
       If there are two integers closest to _x_/_y_, _k_ shall be the even
@@ -4321,8 +4561,20 @@ all arguments and the return type, unless otherwise specified.
       *remquo* also calculates the lower seven bits of the integral quotient
       _x_/_y_, and gives that value the same sign as _x_/_y_.
       It stores this signed value in the object pointed to by _quo_.
-| double__n__ **remquo**(double__n__ _x_, double__n__ _y_, int__n__ *_quo_) +
-  double **remquo**(double _x_, double _y_, int *_quo_)
+| double__n__ **remquo**(double__n__ _x_, double__n__ _y_, {global} int__n__ _*quo_) +
+  double **remquo**(double _x_, double _y_, {global} int _*quo_) +
+
+  double__n__ **remquo**(double__n__ _x_, double__n__ _y_, {local} int__n__ _*quo_) +
+  double **remquo**(double _x_, double _y_, {local} int _*quo_) +
+
+  double__n__ **remquo**(double__n__ _x_, double__n__ _y_, {private} int__n__ _*quo_) +
+  double **remquo**(double _x_, double _y_, {private} int _*quo_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  double__n__ **remquo**(double__n__ _x_, double__n__ _y_, int__n__ _*quo_) +
+  double **remquo**(double _x_, double _y_, int _*quo_)
     | The *remquo* function computes the value r such that _r_ = _x_ -
       _k_*_y_, where _k_ is the integer nearest the exact value of _x_/_y_.
       If there are two integers closest to _x_/_y_, _k_ shall be the even
@@ -4348,7 +4600,14 @@ all arguments and the return type, unless otherwise specified.
     | Compute inverse square root.
 | gentype *sin*(gentype _x_)
     | Compute sine, where _x_ is an angle in radians.
-| gentype *sincos*(gentype _x_, gentype *_cosval_)
+| gentype *sincos*(gentype _x_, {global} gentype _*cosval_) +
+  gentype *sincos*(gentype _x_, {local} gentype _*cosval_) +
+  gentype *sincos*(gentype _x_, {private} gentype _*cosval_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  gentype *sincos*(gentype _x_, gentype _*cosval_)
     | Compute sine and cosine of x.
       The computed sine is the return value and computed cosine is returned
       in _cosval_, where _x_ is an angle in radians.
@@ -4404,7 +4663,7 @@ following table can take `float`, `float2`, `float3`, `float4`, `float8` or
 `float16` as the type for the arguments.
 
 [[table-builtin-half-native-math]]
-.Scalar and Vector Argument Built-in _half_ and _native_ Math Functions
+.Built-in Scalar and Vector _half_ and _native_ Math Functions
 [cols=",",]
 |====
 | *Function* | *Description*
@@ -4741,7 +5000,7 @@ For any specific use of a function, the actual type has to be the same for
 all arguments and the return type unless otherwise specified.
 
 [[table-builtin-functions]]
-.Scalar and Vector Integer Argument Built-in Functions
+.Built-in Scalar and Vector Integer Argument Functions
 [cols=",",]
 |====
 | *Function* | *Description*
@@ -4826,7 +5085,7 @@ take `int`, `int2`, `int3`, `int4`, `int8`, `int16`, `uint`, `uint2`,
 `uint3`, `uint4`, `uint8` or `uint16` as the type for the arguments.
 
 [[table-builtin-fast-integer]]
-.Fast Integer Built-in Functions
+.Built-in 24-bit Integer Functions
 [cols=",",]
 |====
 | *Function* | *Description*
@@ -4928,7 +5187,7 @@ The built-in common functions are implemented using the round to nearest
 even rounding mode.
 
 [[table-builtin-common]]
-.Scalar and Vector Argument Built-in Common Function Table
+.Built-in Scalar and Vector Argument Common Functions
 [cols=",",]
 |====
 | *Function* | *Description*
@@ -5012,7 +5271,7 @@ The built-in geometric functions are implemented using the round to nearest
 even rounding mode.
 
 [[table-builtin-geometric]]
-.Scalar and Vector Argument Built-in Geometric Function Table
+.Built-in Scalar and Vector Argument Geometric Functions
 [cols=",",]
 |====
 | *Function* | *Description*
@@ -5046,23 +5305,23 @@ even rounding mode.
 | float__n__ *fast_normalize*(float__n__ _p_)
    a| Returns a vector in the same direction as _p_ but with a length of 1.
       *fast_normalize* is computed as:
-+
+
 _p_ * *half_rsqrt*(__p.x__^2^ + __p.y__^2^ + ...)
-+
+
 The result shall be within 8192 ulps error from the infinitely precise
 result of
-+
+
 [source,c]
-[subs="verbatim,quotes,macros"]
 ----------
 if (all(p == 0.0f))
-    result = p;
+  result = p;
 else
-    result = p / sqrt(p.x^2 + p.y^2 + ...);
+  result = p /
+    sqrt(p.x*p.x + p.y*p.y + ...);
 ----------
-+
+
 with the following exceptions:
-+
+
 . If the sum of squares is greater than `FLT_MAX` then the value of the
   floating-point values in the result vector are undefined.
 . If the sum of squares is less than `FLT_MIN` then the implementation
@@ -5101,7 +5360,7 @@ i.e. *uchar*, *uchar__n__*, *ushort*, *ushort__n__*, `uint`, `uint__n__`,
 _n_ is 2, 3, 4, 8, or 16.
 
 [35] If an implementation extends this specification to support IEEE-754
-flags or exceptions, then all builtin functions defined in the following
+flags or exceptions, then all built-in functions defined in the following
 table shall proceed without raising the _invalid_ floating-point exception
 when one or more of the operands are NaNs.
 
@@ -5122,7 +5381,7 @@ the argument type is a scalar and returns -1 if one or both arguments are
 not a number (NaN) and the argument type is a vector.
 
 [[table-builtin-relational]]
-.Scalar and Vector Relational Functions
+.Built-in Scalar and Vector Relational Functions
 [cols=",",]
 |====
 | *Function* | *Description*
@@ -5255,16 +5514,22 @@ The suffix _n_ is also used in the function names (i.e. *vload__n__*,
 *vstore__n__* etc.), where _n_ = 2, 3, 4, 8 or 16.
 
 [37] The `half__n__` type is only defined by the *cl_khr_fp16* extension
-described in <<opencl-extension-spec,section 9.4 of the OpenCL 2.0 Extension
-Specification>>.
+described in the <<opencl-extension-spec,OpenCL Extension Specification>>.
 
 [[table-vector-loadstore]]
-.Vector Data Load and Store Functions^38^
-[cols=",",]
+.Built-in Vector Data Load and Store Functions^38^
+[cols="7,3",]
 |====
 | *Function* | *Description*
-| gentype__n__ **vload__n__**(size_t _offset_, const gentype *_p_) +
-  gentype__n__ **vload__n__**(size_t _offset_, const {constant} gentype *_p_)
+| gentype__n__ **vload__n__**(size_t _offset_, const {global} gentype *_p_) +
+  gentype__n__ **vload__n__**(size_t _offset_, const {local} gentype *_p_) +
+  gentype__n__ **vload__n__**(size_t _offset_, const {constant} gentype *_p_) +
+  gentype__n__ **vload__n__**(size_t _offset_, const {private} gentype *_p_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  gentype__n__ **vload__n__**(size_t _offset_, const gentype *_p_)
     | Return `sizeof(gentype__n__)` bytes of data, where the first `(__n__ *
       sizeof(gentype))` bytes are read from the address
       computed as `(_p_ {plus} (_offset_ * _n_))`.
@@ -5272,30 +5537,72 @@ Specification>>.
       `uchar`; 16-bit aligned if `gentype` is `short` or `ushort`; 32-bit
       aligned if `gentype` is `int`, `uint`, or `float`; and 64-bit aligned
       if `gentype` is `long` or `ulong`.
-| void **vstore__n__**(gentype__n__ _data_, size_t _offset_, gentype *_p_)
+| void **vstore__n__**(gentype__n__ _data_, size_t _offset_, {global} gentype *_p_) +
+  void **vstore__n__**(gentype__n__ _data_, size_t _offset_, {local} gentype *_p_) +
+  void **vstore__n__**(gentype__n__ _data_, size_t _offset_, {private} gentype *_p_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  void **vstore__n__**(gentype__n__ _data_, size_t _offset_, gentype *_p_)
     | Write `_n_ * sizeof(gentype)` bytes given by _data_ to the address
       computed as `(_p_ {plus} (_offset_ * _n_))`.
       The computed address must be 8-bit aligned if `gentype` is `char` or
       `uchar`; 16-bit aligned if `gentype` is `short` or `ushort`; 32-bit
       aligned if `gentype` is `int`, `uint`, or `float`; and 64-bit aligned
       if `gentype` is `long` or `ulong`.
-| float **vload_half**(size_t _offset_, const half *_p_) +
-  float **vload_half**(size_t _offset_, const {constant} half *_p_)
+| float **vload_half**(size_t _offset_, const {global} half *_p_) +
+  float **vload_half**(size_t _offset_, const {local} half *_p_) +
+  float **vload_half**(size_t _offset_, const {constant} half *_p_) +
+  float **vload_half**(size_t _offset_, const {private} half *_p_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  float **vload_half**(size_t _offset_, const half *_p_)
     | Read `sizeof(half)` bytes of data from the address computed as `(_p_
       {plus} _offset_)`.
       The data read is interpreted as a `half` value.
       The `half` value is converted to a `float` value and the `float` value
       is returned.
       The computed read address must be 16-bit aligned.
-| float__n__ **vload_half__n__**(size_t _offset_, const half *_p_) +
-  float__n__ **vload_half__n__**(size_t _offset_, const {constant} half *_p_)
+| float__n__ **vload_half__n__**(size_t _offset_, const {global} half *_p_) +
+  float__n__ **vload_half__n__**(size_t _offset_, const {local} half *_p_) +
+  float__n__ **vload_half__n__**(size_t _offset_, const {constant} half *_p_) +
+  float__n__ **vload_half__n__**(size_t _offset_, const {private} half *_p_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  float__n__ **vload_half__n__**(size_t _offset_, const half *_p_)
     | Read `(_n_ * sizeof(half))` bytes of data from the address computed as
       `(_p_ {plus} (_offset * n_))`.
       The data read is interpreted as a `half__n__` value.
       The `half__n__` value read is converted to a `float__n__` value and
       the `float__n__` value is returned.
       The computed read address must be 16-bit aligned.
-| void **vstore_half**(float _data_, size_t _offset_, half *_p_) +
+| void **vstore_half**(float _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half{rte}**(float _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half{rtz}**(float _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half{rtp}**(float _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half{rtn}**(float _data_, size_t _offset_, {global} half *_p_) +
+
+  void **vstore_half**(float _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half{rte}**(float _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half{rtz}**(float _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half{rtp}**(float _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half{rtn}**(float _data_, size_t _offset_, {local} half *_p_) +
+
+  void **vstore_half**(float _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half{rte}**(float _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half{rtz}**(float _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half{rtp}**(float _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half{rtn}**(float _data_, size_t _offset_, {private} half *_p_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  void **vstore_half**(float _data_, size_t _offset_, half *_p_) +
   void **vstore_half{rte}**(float _data_, size_t _offset_, half *_p_) +
   void **vstore_half{rtz}**(float _data_, size_t _offset_, half *_p_) +
   void **vstore_half{rtp}**(float _data_, size_t _offset_, half *_p_) +
@@ -5308,7 +5615,28 @@ Specification>>.
 
       *vstore_half* uses the default rounding mode.
       The default rounding mode is round to nearest even.
-| void **vstore_half__n__**(float__n__ _data_, size_t _offset_, half *_p_) +
+| void **vstore_half__n__**(float__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half__n__{rte}**(float__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half__n__{rtz}**(float__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half__n__{rtp}**(float__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half__n__{rtn}**(float__n__ _data_, size_t _offset_, {global} half *_p_) +
+
+  void **vstore_half__n__**(float__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half__n__{rte}**(float__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half__n__{rtz}**(float__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half__n__{rtp}**(float__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half__n__{rtn}**(float__n__ _data_, size_t _offset_, {local} half *_p_) +
+
+  void **vstore_half__n__**(float__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half__n__{rte}**(float__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half__n__{rtz}**(float__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half__n__{rtp}**(float__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half__n__{rtn}**(float__n__ _data_, size_t _offset_, {private} half *_p_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  void **vstore_half__n__**(float__n__ _data_, size_t _offset_, half *_p_) +
   void **vstore_half__n__{rte}**(float__n__ _data_, size_t _offset_, half *_p_) +
   void **vstore_half__n__{rtz}**(float__n__ _data_, size_t _offset_, half *_p_) +
   void **vstore_half__n__{rtp}**(float__n__ _data_, size_t _offset_, half *_p_) +
@@ -5322,7 +5650,28 @@ Specification>>.
 
       *vstore_half__n__* uses the default rounding mode.
       The default rounding mode is round to nearest even.
-| void **vstore_half**(double _data_, size_t _offset_, half *_p_) +
+| void **vstore_half**(double _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half{rte}**(double _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half{rtz}**(double _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half{rtp}**(double _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half{rtn}**(double _data_, size_t _offset_, {global} half *_p_) +
+
+  void **vstore_half**(double _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half{rte}**(double _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half{rtz}**(double _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half{rtp}**(double _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half{rtn}**(double _data_, size_t _offset_, {local} half *_p_) +
+
+  void **vstore_half**(double _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half{rte}**(double _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half{rtz}**(double _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half{rtp}**(double _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half{rtn}**(double _data_, size_t _offset_, {private} half *_p_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  void **vstore_half**(double _data_, size_t _offset_, half *_p_) +
   void **vstore_half{rte}**(double _data_, size_t _offset_, half *_p_) +
   void **vstore_half{rtz}**(double _data_, size_t _offset_, half *_p_) +
   void **vstore_half{rtp}**(double _data_, size_t _offset_, half *_p_) +
@@ -5335,7 +5684,28 @@ Specification>>.
 
       *vstore_half* uses the default rounding mode.
       The default rounding mode is round to nearest even.
-| void **vstore_half__n__**(double__n__ _data_, size_t _offset_, half *_p_) +
+| void **vstore_half__n__**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half__n__{rte}**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half__n__{rtz}**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half__n__{rtp}**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstore_half__n__{rtn}**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
+
+  void **vstore_half__n__**(double__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half__n__{rte}**(double__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half__n__{rtz}**(double__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half__n__{rtp}**(double__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstore_half__n__{rtn}**(double__n__ _data_, size_t _offset_, {local} half *_p_) +
+
+  void **vstore_half__n__**(double__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half__n__{rte}**(double__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half__n__{rtz}**(double__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half__n__{rtp}**(double__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstore_half__n__{rtn}**(double__n__ _data_, size_t _offset_, {private} half *_p_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  void **vstore_half__n__**(double__n__ _data_, size_t _offset_, half *_p_) +
   void **vstore_half__n__{rte}**(double__n__ _data_, size_t _offset_, half *_p_) +
   void **vstore_half__n__{rtz}**(double__n__ _data_, size_t _offset_, half *_p_) +
   void **vstore_half__n__{rtp}**(double__n__ _data_, size_t _offset_, half *_p_) +
@@ -5349,8 +5719,15 @@ Specification>>.
       *vstore_half__n__* uses the default rounding mode.
       The default rounding mode is round to nearest even.
 | |
-| float__n__ **vloada_half__n__**(size_t _offset_, const half *_p_) +
-  float__n__ **vloada_half__n__**(size_t _offset_, const {constant} half *_p_)
+| float__n__ **vloada_half__n__**(size_t _offset_, const {global} half *_p_) +
+  float__n__ **vloada_half__n__**(size_t _offset_, const {local} half *_p_) +
+  float__n__ **vloada_half__n__**(size_t _offset_, const {constant} half *_p_) +
+  float__n__ **vloada_half__n__**(size_t _offset_, const {private} half *_p_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  float__n__ **vloada_half__n__**(size_t _offset_, const half *_p_)
     | For n = 2, 4, 8 and 16, read `sizeof(half__n__)` bytes of data from
       the address computed as (_p_ + (_offset_ * _n_)).
       The data read is interpreted as a `half__n__` value.
@@ -5362,7 +5739,28 @@ Specification>>.
       `(_p_ {plus} (_offset * 4_))` and returns a `float3`.
       The computed address must be aligned to `sizeof(half)` * 4 bytes.
 
-| void **vstorea_half__n__**(float__n__ _data_, size_t _offset_, half *_p_) +
+| void **vstorea_half__n__**(float__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstorea_half__n__{rte}**(float__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstorea_half__n__{rtz}**(float__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstorea_half__n__{rtp}**(float__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstorea_half__n__{rtn}**(float__n__ _data_, size_t _offset_, {global} half *_p_) +
+
+  void **vstorea_half__n__**(float__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstorea_half__n__{rte}**(float__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstorea_half__n__{rtz}**(float__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstorea_half__n__{rtp}**(float__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstorea_half__n__{rtn}**(float__n__ _data_, size_t _offset_, {local} half *_p_) +
+
+  void **vstorea_half__n__**(float__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstorea_half__n__{rte}**(float__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstorea_half__n__{rtz}**(float__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstorea_half__n__{rtp}**(float__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstorea_half__n__{rtn}**(float__n__ _data_, size_t _offset_, {private} half *_p_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  void **vstorea_half__n__**(float__n__ _data_, size_t _offset_, half *_p_) +
   void **vstorea_half__n__{rte}**(float__n__ _data_, size_t _offset_, half *_p_) +
   void **vstorea_half__n__{rtz}**(float__n__ _data_, size_t _offset_, half *_p_) +
   void **vstorea_half__n__{rtp}**(float__n__ _data_, size_t _offset_, half *_p_) +
@@ -5380,7 +5778,28 @@ Specification>>.
 
       *vstorea_half__n__* uses the default rounding mode.
       The default rounding mode is round to nearest even.
-| void **vstorea_half__n__**(double__n__ _data_, size_t _offset_, half *_p_) +
+| void **vstorea_half__n__**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstorea_half__n__{rte}**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstorea_half__n__{rtz}**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstorea_half__n__{rtp}**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
+  void **vstorea_half__n__{rtn}**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
+
+  void **vstorea_half__n__**(double__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstorea_half__n__{rte}**(double__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstorea_half__n__{rtz}**(double__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstorea_half__n__{rtp}**(double__n__ _data_, size_t _offset_, {local} half *_p_) +
+  void **vstorea_half__n__{rtn}**(double__n__ _data_, size_t _offset_, {local} half *_p_) +
+
+  void **vstorea_half__n__**(double__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstorea_half__n__{rte}**(double__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstorea_half__n__{rtz}**(double__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstorea_half__n__{rtp}**(double__n__ _data_, size_t _offset_, {private} half *_p_) +
+  void **vstorea_half__n__{rtn}**(double__n__ _data_, size_t _offset_, {private} half *_p_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  void **vstorea_half__n__**(double__n__ _data_, size_t _offset_, half *_p_) +
   void **vstorea_half__n__{rte}**(double__n__ _data_, size_t _offset_, half *_p_) +
   void **vstorea_half__n__{rtz}**(double__n__ _data_, size_t _offset_, half *_p_) +
   void **vstorea_half__n__{rtp}**(double__n__ _data_, size_t _offset_, half *_p_) +
@@ -5434,8 +5853,8 @@ arguments which point to the generic address space are also supported.
 
 [open,refpage='syncFunctions',desc='Synchronization Functions',type='freeform',spec='clang',anchor='synchronization-functions',alias='barrier work_group_barrier']
 --
-The OpenCL C programming language implements the following synchronization
-functions.
+The following table desribes built-in functions to synchronize the work-items
+in a work-group.
 
 // Editors note: The table column widths are chosen so the description
 // of these functions fits onto a single page.  This avoids an error
@@ -5444,14 +5863,19 @@ functions.
 // table widths can be re-adjusted.
 
 [[table-builtin-synchronization]]
-.Built-in Synchronization Functions
+.Built-in Work-Group Synchronization Functions
 [cols="3,7",]
 |====
 | *Function* | *Description*
 
-| void *work_group_barrier*^39^( +
+| void *barrier*( +
   cl_mem_fence_flags _flags_) +
-  {blank}
+
+  Added as an alias for *barrier* in OpenCL C 2.0 and newer: +
+
+  void *work_group_barrier*( +
+  cl_mem_fence_flags _flags_) +
+
   void *work_group_barrier*( +
   cl_mem_fence_flags _flags_, +
   memory_scope _scope_^40^)
@@ -5511,11 +5935,70 @@ functions.
       in the work-group.
 |====
 
-[39] The built-in function *barrier* has been renamed *work_group_barrier*.
-For backward compatibility, *barrier* is also supported.
-
-[40] Refer to the <<atomic-functions, description of `memory_scope`>>.
+[40] Refer to the description and restrictions for <<memory-scope,`memory_scope`>>.
 --
+
+NOTE: The functionality described in the following table requires support for the `__opencl_c_subgroups` feature macro.
+
+The following table desribes built-in functions to synchronize the work-items
+in a subgroup.
+
+.Built-in Subgroup Synchronization Functions
+[cols="3,7",options="header",]
+|====
+| *Function*
+| *Description*
+
+| void **sub_group_barrier**( +
+  cl_mem_fence_flags _flags_) +
+
+  void **sub_group_barrier**( +
+  cl_mem_fence_flags _flags_, +
+  memory_scope _scope_)
+
+| All work-items in a subgroup executing the kernel on a processor must
+  execute this function before any are allowed to continue execution beyond
+  the *sub_group_barrier*.
+  This function must be encountered by all work items in a subgroup
+  executing the kernel.
+  These rules apply to ND-ranges implemented with uniform and non-uniform
+  work groups.
+
+  If *sub_group_barrier* is inside a conditional statement, then all
+  work-items within the subgroup must enter the conditional if any work-item in
+  the subgroup enters the conditional statement and executes the
+  *sub_group_barrier*.
+
+  If *sub_group_barrier* is inside a loop, all work-items within the subgroup
+  must execute the *sub_group_barrier* for each iteration of the loop before
+  any are allowed to continue execution beyond the *sub_group_barrier*.
+
+  The *sub_group_barrier* function also queues a memory fence (reads and
+  writes) to ensure correct ordering of memory operations to local or global
+  memory.
+
+  The _flags_ argument specifies the memory address space and can be set to a
+  combination of the following values:
+
+  `CLK_LOCAL_MEM_FENCE` - The *sub_group_barrier* function will either flush
+  any variables stored in local memory or queue a memory fence to ensure
+  correct ordering of memory operations to local memory.
+
+  `CLK_GLOBAL_MEM_FENCE` - The *sub_group_barrier* function will queue a
+  memory fence to ensure correct ordering of memory operations to global
+  memory.
+  This can be useful when work items, for example, write to buffer objects
+  and then want to read the updated data from these buffer objects.
+
+  `CLK_IMAGE_MEM_FENCE` - The *sub_group_barrier* function will queue a memory
+  fence to ensure correct ordering of memory operations to image objects.
+  This can be useful when work items, for example, write to image objects
+  and then want to read the updated data from these image objects.
+
+  The value of _scope_ must match requirements of the
+  <<atomic-restrictions,atomic restrictions section>>.
+
+|====
 
 
 [[address-space-qualifier-functions]]
@@ -5524,8 +6007,12 @@ For backward compatibility, *barrier* is also supported.
 [open,refpage='addressSpaceQualifierFuncs',desc='Address Space Qualifier Functions',type='freeform',spec='clang',anchor='address-space-qualifier-functions',xrefs='qualifiers',alias='get_fence to_global to_local to_private']
 --
 
-The OpenCL C programming language implements the following address space
-qualifier functions.
+NOTE: The functionality described in this section requires support for
+OpenCL C 2.0 or the `__opencl_c_generic_address_space` feature macro.
+
+This section describes built-in functions to safely convert from pointers
+to the generic address space to pointers to named address spaces, and to
+query the appropriate fence flags for a pointer to the generic address space.
 We use the generic type name `gentype` to indicate any of the built-in data
 types supported by OpenCL C or a user defined type.
 
@@ -5711,8 +6198,8 @@ ordering constraints;
 
   :: `atomic_flag`
 
-which is a 32-bit integer type representing a lock-free, primitive atomic
-flag; and several atomic analogs of integer types.
+which is a 32-bit integer type representing a primitive atomic flag; and
+several atomic analogs of integer types.
 
 In the following operation definitions:
 
@@ -5841,13 +6328,28 @@ The enumerated type `memory_order` specifies the detailed regular
 (non-atomic) memory synchronization operations as defined in
 <<C11-spec,section 5.1.2.4 of the C11 Specification>>, and may provide for
 operation ordering.
-Its enumeration constants are as follows:
+The following table lists the enumeration constants:
 
-  :: `memory_order_relaxed`
-  :: `memory_order_acquire`
-  :: `memory_order_release`
-  :: `memory_order_acq_rel`
-  :: `memory_order_seq_cst`
+[[table-memory-orders]]
+//.Memory Order Enumeration Constants
+[cols=",",]
+|====
+| *Memory Order* | *Additional Notes*
+| `memory_order_relaxed`
+    |
+| `memory_order_acquire`
+    | Always present but some uses require support for OpenCL C 2.0 or the
+      `+__opencl_c_atomic_order_acq_rel+` feature macro.
+| `memory_order_release`
+    | Always present but some uses require support for OpenCL C 2.0 or the
+      `+__opencl_c_atomic_order_acq_rel+` feature macro.
+| `memory_order_acq_rel`
+    | Always present but some uses require support for OpenCL C 2.0 or the
+      `+__opencl_c_atomic_order_acq_rel+` feature macro.
+| `memory_order_seq_cst`
+    | Requires support for OpenCL C 2.0, or the
+      `+__opencl_c_atomic_order_seq_cst+` feature macro.
+|====
 
 The `memory_order` can be used when performing atomic operations to `global`
 or `local` memory.
@@ -5861,24 +6363,42 @@ or `local` memory.
 --
 
 The enumerated type `memory_scope` specifies whether the memory ordering
-constraints given by `memory_order` apply to work-items in a work-group or
-work-items of a kernel(s) executing on the device or across devices (in the
-case of shared virtual memory).
-Its enumeration constants are as follows:
+constraints given by `memory_order` apply to work-items in a subgroup,
+work-items in a work-group, or work-items from one or more kernels executing
+on the device or across devices (in the case of shared virtual memory).
+The following table lists the enumeration constants:
 
-  :: `memory_scope_work_item`^44^
-  :: `memory_scope_work_group`
-  :: `memory_scope_device`
-  :: `memory_scope_all_svm_devices`
+[[table-memory-scopes]]
+//.Memory Scope Enumeration Constants
+[cols=",",]
+|====
+| *Memory Scope* | *Additional Notes*
+| `memory_scope_work_item`
+    | `memory_scope_work_item` can only be used with `atomic_work_item_fence`
+      with flags set to `CLK_IMAGE_MEM_FENCE`.
+| `memory_scope_sub_group`
+    | Requires support for the `+__opencl_c_subgroups+` feature
+      macro.
+| `memory_scope_work_group`
+    |
+| `memory_scope_device`
+    | Requires support for OpenCL C 2.0 or the
+      `__opencl_c_atomic_scope_device` feature macro.
+| `memory_scope_all_svm_devices`
+    | Requires support for OpenCL C 2.0 or the
+      `__opencl_c_atomic_scope_all_devices` feature macro.
+| `memory_scope_all_devices`
+    | An alias for `memory_scope_all_svm_devices`.
+      Requires support for the `__opencl_c_atomic_scope_all_devices` feature
+      macro.
+|====
 
-[44] This value for `memory_scope` can only be used with
-`atomic_work_item_fence` with flags set to `CLK_IMAGE_MEM_FENCE`.
-
-The memory scope should only be used when performing atomic operations to
-global memory.
-Atomic operations to `local` memory only guarantee memory ordering in the
-work-group not across work-groups and therefore ignore the `memory_scope`
-value.
+// This is no longer correct given `memory_scope_sub_group`.
+//The memory scope should only be used when performing atomic operations to
+//global memory.
+//Atomic operations to `local` memory only guarantee memory ordering in the
+//work-group not across work-groups and therefore ignore the `memory_scope`
+//value.
 --
 
 
@@ -5894,6 +6414,12 @@ The following fence operations are supported.
 void atomic_work_item_fence(cl_mem_fence_flags flags,
                             memory_order order,
                             memory_scope scope)
+
+// Older syntax memory fences are equivalent to atomic_work_item_fence with the
+// same flags parameter, memory_scope_work_group scope, and ordering follows:
+void mem_fence(cl_mem_fence_flags flags)        // memory_order_acq_rel
+void read_mem_fence(cl_mem_fence_flags flags)   // memory_order_acquire
+void write_mem_fence(cl_mem_fence_flags flags)  // memory_order_release
 ----------
 
 `flags` must be set to `CLK_GLOBAL_MEM_FENCE`, `CLK_LOCAL_MEM_FENCE`,
@@ -5922,6 +6448,9 @@ For images declared with the `read_write` qualifier, the
 `atomic_work_item_fence` must be called to make sure that writes to the
 image by a work-item become visible to that work-item on subsequent reads to
 that image by that work-item.
+
+NOTE: The use of memory order and scope enumerations must respect the
+<<atomic-restrictions,restrictions section below>>.
 --
 
 
@@ -5983,6 +6512,8 @@ This section specifies each general kind.
 --
 [source,c]
 ----------
+// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// and __opencl_c_atomic_scope_device feature macros.
 void atomic_store(volatile A *object, C desired)
 
 void atomic_store_explicit(volatile A *object,
@@ -6000,6 +6531,12 @@ The _order_ argument shall not be `memory_order_acquire`, nor
 Atomically replace the value pointed to by _object_ with the value of
 _desired_.
 Memory is affected according to the value of _order_.
+
+NOTE: The non-explicit `atomic_store` function requires OpenCL C 2.0, or both
+the `+__opencl_c_atomic_order_seq_cst+` and
+`+__opencl_c_atomic_scope_device+` feature macros.
+For the explicit variants, memory order and scope enumerations must respect the
+<<atomic-restrictions,restrictions section below>>.
 --
 
 
@@ -6010,6 +6547,8 @@ Memory is affected according to the value of _order_.
 --
 [source,c]
 ----------
+// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// and __opencl_c_atomic_scope_device feature macros.
 C atomic_load(volatile A *object)
 
 C atomic_load_explicit(volatile A *object,
@@ -6024,6 +6563,12 @@ The _order_ argument shall not be `memory_order_release` nor
 `memory_order_acq_rel`.
 Memory is affected according to the value of _order_.
 Atomically returns the value pointed to by _object_.
+
+NOTE: The non-explicit `atomic_load` function requires OpenCL C 2.0, or both
+the `+__opencl_c_atomic_order_seq_cst+` and
+`+__opencl_c_atomic_scope_device+` feature macros.
+For the explicit variants, memory order and scope enumerations must respect the
+<<atomic-restrictions,restrictions section below>>.
 --
 
 
@@ -6034,6 +6579,8 @@ Atomically returns the value pointed to by _object_.
 --
 [source,c]
 ----------
+// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// and __opencl_c_atomic_scope_device feature macros.
 C atomic_exchange(volatile A *object, C desired)
 
 C atomic_exchange_explicit(volatile A *object,
@@ -6052,6 +6599,12 @@ These operations are read-modify-write operations (as defined by
 <<C11-spec,section 5.1.2.4 of the C11 Specification>>).
 Atomically returns the value pointed to by object immediately before the
 effects.
+
+NOTE: The non-explicit `atomic_exchange` function requires OpenCL C 2.0, or
+both the `+__opencl_c_atomic_order_seq_cst+` and
+`+__opencl_c_atomic_scope_device+` feature macros.
+For the explicit variants, memory order and scope enumerations must respect the
+<<atomic-restrictions,restrictions section below>>.
 --
 
 
@@ -6062,6 +6615,8 @@ effects.
 --
 [source,c]
 ----------
+// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// and __opencl_c_atomic_scope_device feature macros.
 bool atomic_compare_exchange_strong(
     volatile A *object,
     C *expected, C desired)
@@ -6081,6 +6636,8 @@ bool atomic_compare_exchange_strong_explicit(
     memory_order failure,
     memory_scope scope)
 
+// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// and __opencl_c_atomic_scope_device feature macros.
 bool atomic_compare_exchange_weak(
     volatile A *object,
     C *expected, C desired)
@@ -6137,6 +6694,13 @@ memory contents that were originally there.
 a broader class of machines, e.g. load-locked store-conditional machines.
 
 These generic functions return the result of the comparison.
+
+NOTE: The non-explicit `atomic_compare_exchange_strong` and
+`atomic_compare_exchange_weak` functions requires OpenCL C 2.0, or both the
+`+__opencl_c_atomic_order_seq_cst+` and `+__opencl_c_atomic_scope_device+`
+feature macros.
+For the explicit variants, memory order and scope enumerations must respect the
+<<atomic-restrictions,restrictions section below>>.
 --
 
 
@@ -6174,6 +6738,8 @@ For *atomic_fetch* and modify functions with *key* = `or`, `xor`, `and`,
 [source,c]
 [subs="verbatim,quotes,macros"]
 ----------
+// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// and __opencl_c_atomic_scope_device feature macros.
 C atomic_fetch_key(volatile A *object, M operand)
 
 C atomic_fetch_key_explicit(volatile A *object,
@@ -6199,6 +6765,12 @@ For address types, the result may be an undefined address, but the
 operations otherwise have no undefined behavior.
 Returns atomically the value pointed to by `object` immediately before the
 effects.
+
+NOTE: The non-explicit `atomic_fetch_key` functions require OpenCL C 2.0, or
+both the `+__opencl_c_atomic_order_seq_cst+` and
+`+__opencl_c_atomic_scope_device+` feature macros.
+For the explicit variants, memory order and scope enumerations must respect the
+<<atomic-restrictions,restrictions section below>>.
 --
 
 
@@ -6209,7 +6781,9 @@ effects.
 --
 The `atomic_flag` type provides the classic test-and-set functionality.
 It has two states, _set_ (value is non-zero) and _clear_ (value is 0).
-Operations on an object of type `atomic_flag` shall be lock free.
+
+In OpenCL C 2.0 Operations on an object of type `atomic_flag` shall be
+lock-free, in OpenCL C 3.0 they may be lock-free.
 
 The macro `ATOMIC_FLAG_INIT` may be used to initialize an `atomic_flag` to the
 _clear_ state.
@@ -6223,7 +6797,7 @@ Example:
 
 [source,c]
 ----------
-global atomic_flag guard = `ATOMIC_FLAG_INIT`;
+global atomic_flag guard = ATOMIC_FLAG_INIT;
 ----------
 --
 
@@ -6235,6 +6809,8 @@ global atomic_flag guard = `ATOMIC_FLAG_INIT`;
 --
 [source,c]
 ----------
+// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// and __opencl_c_atomic_scope_device feature macros.
 bool atomic_flag_test_and_set(
     volatile atomic_flag *object)
 
@@ -6253,6 +6829,12 @@ Memory is affected according to the value of `order`.
 These operations are atomic read-modify-write operations (as defined by
 <<C11-spec,section 5.1.2.4 of the C11 Specification>>).
 Returns atomically the value of the `object` immediately before the effects.
+
+NOTE: The non-explicit `atomic_flag_test_and_set` function requires OpenCL C
+2.0, or both the `+__opencl_c_atomic_order_seq_cst+` and
+`+__opencl_c_atomic_scope_device+` feature macros.
+For the explicit variants, memory order and scope enumerations must respect the
+<<atomic-restrictions,restrictions section below>>.
 --
 
 
@@ -6263,6 +6845,8 @@ Returns atomically the value of the `object` immediately before the effects.
 --
 [source,c]
 ----------
+// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// and __opencl_c_atomic_scope_device feature macros.
 void atomic_flag_clear(volatile atomic_flag *object)
 
 void atomic_flag_clear_explicit(
@@ -6279,8 +6863,192 @@ The `order` argument shall not be `memory_order_acquire` nor
 `memory_order_acq_rel`.
 Atomically sets the value pointed to by object to false.
 Memory is affected according to the value of order.
+
+NOTE: The non-explicit `atomic_flag_clear` function requires OpenCL C 2.0, or
+both the `+__opencl_c_atomic_order_seq_cst+` and
+`+__opencl_c_atomic_scope_device+` feature macros.
+For the explicit variants, memory order and scope enumerations must respect the
+<<atomic-restrictions,restrictions section below>>.
 --
 
+[[atomic-legacy]]
+==== OpenCL C 1.x Legacy Atomics
+
+IMPORTANT: The atomic functions described in this sub-section are deprecated by
+OpenCL C version 2.0.
+
+OpenCL C 1.x had support for relaxed atomic operations via built-in functions
+that could operate on any memory address in `__global` or `__local` spaces.
+Unlike C11 style atomics these did not require using dedicated atomic types,
+and instead operated on 32-bit signed integers, 32-bit unsigned integers, and
+only in the case of **atomic_xchg** additionally single precision floating-point.
+These were equivalent to atomic operations with `memory_order_relaxed`
+consistency, and `memory_scope_work_group` scope.
+
+// Copied from table 6.19 in OpenCL 1.2 spec
+[[table-legacy-atomic-functions]]
+.Legacy Atomic Functions
+[cols=",",]
+|====
+| *Function* | *Description*
+| int **atomic_add**(volatile {global} int *_p_, int _val_) +
+  int **atom_add**(volatile {global} int *_p_, int _val_) +
+
+  unsigned int **atomic_add**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_add**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+
+  int **atomic_add**(volatile {local} int *_p_, int _val_) +
+  int **atom_add**(volatile {local} int *_p_, int _val_) +
+
+  unsigned int **atomic_add**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_add**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+    | Read the 32-bit value (referred to as _old_) stored at location pointed by
+      _p_. Compute (_old_ + _val_) and store result at location pointed by _p_.
+      The function returns _old_.
+| int **atomic_sub**(volatile {global} int *_p_, int _val_) +
+  int **atom_sub**(volatile {global} int *_p_, int _val_) +
+
+  unsigned int **atomic_sub**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_sub**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+
+  int **atomic_sub**(volatile {local} int *_p_, int _val_) +
+  int **atom_sub**(volatile {local} int *_p_, int _val_) +
+
+  unsigned int **atomic_sub**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_sub**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+    | Read the 32-bit value (referred to as _old_) stored at location pointed by
+      _p_. Compute (_old_ - _val_) and store result at location pointed by _p_.
+      The function returns _old_.
+| int **atomic_xchg**(volatile {global} int *_p_, int _val_) +
+  int **atom_xchg**(volatile {global} int *_p_, int _val_) +
+
+  unsigned int **atomic_xchg**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_xchg**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+
+  float **atomic_xchg**(volatile {global} float *_p_, float _val_) +
+
+  int **atomic_xchg**(volatile {local} int *_p_, int _val_) +
+  int **atom_xchg**(volatile {local} int *_p_, int _val_) +
+
+  unsigned int **atomic_xchg**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_xchg**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+
+  float **atomic_xchg**(volatile {local} float *_p_, float _val_) +
+    | Swaps the _old_ value stored at location _p_ with new value given by
+      _val_. Returns _old_ value.
+| int **atomic_inc**(volatile {global} int *_p_) +
+  int **atom_inc**(volatile {global} int *_p_) +
+
+  unsigned int **atomic_inc**(volatile {global} unsigned int *_p_) +
+  unsigned int **atom_inc**(volatile {global} unsigned int *_p_) +
+
+  int **atomic_inc**(volatile {local} int *_p_) +
+  int **atom_inc**(volatile {local} int *_p_) +
+
+  unsigned int **atomic_inc**(volatile {local} unsigned int *_p_) +
+  unsigned int **atom_inc**(volatile {local} unsigned int *_p_) +
+    | Read the 32-bit value (referred to as _old_) stored at location pointed by
+      _p_. Compute (_old_ + 1) and store result at location pointed by _p_. The
+     function returns _old_.
+| int **atomic_dec**(volatile {global} int *_p_) +
+  int **atom_dec**(volatile {global} int *_p_) +
+
+  unsigned int **atomic_dec**(volatile {global} unsigned int *_p_) +
+  unsigned int **atom_dec**({global} unsigned int *_p_) +
+
+  int **atomic_dec**(volatile {local} int *_p_) +
+  int **atom_dec**(volatile {local} int *_p_) +
+
+  unsigned int **atomic_dec**(volatile {local} unsigned int *_p_) +
+  unsigned int **atom_dec**(volatile {local} unsigned int *_p_) +
+    | Read the 32-bit value (referred to as _old_) stored at location pointed by
+      _p_. Compute (_old_ - 1) and store result at location pointed by _p_. The
+      function returns _old_.
+| int **atomic_cmpxchg**(volatile {global} int *_p_, int _cmp_, int _val_) +
+  int **atom_cmpxchg**(volatile {global} int *_p_, int _cmp_, int _val_) +
+
+  unsigned int **atomic_cmpxchg**(volatile {global} unsigned int *_p_, unsigned int _cmp_, unsigned int _val_) +
+  unsigned int **atom_cmpxchg**(volatile {global} unsigned int *_p_, unsigned int _cmp_, unsigned int _val_) +
+
+  int **atomic_cmpxchg**(volatile {local} int *_p_, int _cmp_, int _val_) +
+  int **atom_cmpxchg**(volatile {local} int *_p_, int _cmp_, int _val_) +
+
+  unsigned int **atomic_cmpxchg**(volatile {local} unsigned int *_p_, unsigned int _cmp_, unsigned int _val_) +
+  unsigned int **atom_cmpxchg**(volatile {local} unsigned int *_p_, unsigned int _cmp_, unsigned int _val_) +
+    | Read the 32-bit value (referred to as _old_) stored at location pointed by
+      _p_. Compute (_old_ == _cmp_) ? _val_ : _old_ and store result at location
+      pointed by _p_. The function returns _old_.
+| int **atomic_min**(volatile {global} int *_p_, int _val_) +
+  int **atom_min**(volatile {global} int *_p_, int _val_) +
+
+  unsigned int **atomic_min**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_min**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+
+  int **atomic_min**(volatile {local} int *_p_, int _val_) +
+  int **atom_min**(volatile {local} int *_p_, int _val_) +
+
+  unsigned int **atomic_min**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_min**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+    | Read the 32-bit value (referred to as _old_) stored at location pointed by
+      _p_. Compute **min**(_old_, _val_) and store minimum value at location
+      pointed by _p_. The function returns _old_.
+| int **atomic_max**(volatile {global} int *_p_, int _val_) +
+  int **atom_max**(volatile {global} int *_p_, int _val_) +
+
+  unsigned int **atomic_max**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_max**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+
+  int **atomic_max**(volatile {local} int *_p_, int _val_) +
+  int **atom_max**(volatile {local} int *_p_, int _val_) +
+
+  unsigned int **atomic_max**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_max**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+    | Read the 32-bit value (referred to as _old_) stored at location pointed by
+      _p_. Compute **max**(_old_, _val_) and store maximum value at location
+      pointed by _p_. The function returns _old_.
+| int **atomic_and**(volatile {global} int *_p_, int _val_) +
+  int **atom_and**(volatile {global} int *_p_, int _val_) +
+
+  unsigned int **atomic_and**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_and**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+
+  int **atomic_and**(volatile {local} int *_p_, int _val_) +
+  int **atom_and**(volatile {local} int *_p_, int _val_) +
+
+  unsigned int **atomic_and**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_and**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+    | Read the 32-bit value (referred to as _old_) stored at location pointed by
+      _p_. Compute (_old_ & _val_) and store result at location pointed by _p_.
+      The function returns _old_.
+| int **atomic_or**(volatile {global} int *_p_, int _val_) +
+| int **atom_or**(volatile {global} int *_p_, int _val_) +
+
+  unsigned int **atomic_or**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_or**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+
+  int **atomic_or**(volatile {local} int *_p_, int _val_) +
+  int **atom_or**(volatile {local} int *_p_, int _val_) +
+
+  unsigned int **atomic_or**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_or**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+    | Read the 32-bit value (referred to as _old_) stored at location pointed by
+      _p_. Compute (_old_ \| _val_) and store result at location pointed by
+      _p_. The function returns _old_.
+| int **atomic_xor**(volatile {global} int *_p_, int _val_) +
+| int **atom_xor**(volatile {global} int *_p_, int _val_) +
+
+  unsigned int **atomic_xor**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_xor**(volatile {global} unsigned int *_p_, unsigned int _val_) +
+
+  int **atomic_xor**(volatile {local} int *_p_, int _val_) +
+  int **atom_xor**(volatile {local} int *_p_, int _val_) +
+
+  unsigned int **atomic_xor**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+  unsigned int **atom_xor**(volatile {local} unsigned int *_p_, unsigned int _val_) +
+    | Read the 32-bit value (referred to as _old_) stored at location pointed by
+      _p_. Compute (_old_ ^ _val_) and store result at location pointed by _p_.
+      The function returns _old_.
+|====
 
 [[atomic-restrictions]]
 ==== Restrictions
@@ -6295,13 +7063,31 @@ Memory is affected according to the value of order.
   * The `atomic_bool`, `atomic_char`, `atomic_uchar`, `atomic_short`,
     `atomic_ushort`, `atomic_intmax_t` and `atomic_uintmax_t` types are not
     supported by OpenCL C.
-  * OpenCL C requires that the built-in atomic functions on atomic types are
-    lock-free.
-  * The _Atomic_ type specifier and _Atomic_ type qualifier are not supported
+  * OpenCL C 2.0 requires that the built-in atomic functions on atomic types
+    are lock-free.
+    In OpenCL C 3.0 built-in atomic functions on atomic types may be lock-free.
+  * The `+_Atomic+` type specifier and `+_Atomic+` type qualifier are not supported
     by OpenCL C.
   * The behavior of atomic operations where pointer arguments to the atomic
     functions refers to an atomic type in the `private` address space is
     undefined.
+  * Using `memory_order_acquire` with any built-in atomic function except
+    `atomic_work_item_fence` requires OpenCL C 2.0 or the
+    `+__opencl_c_atomic_order_acq_rel+` feature macro.
+  * Using `memory_order_release` with any built-in atomic function except
+    `atomic_work_item_fence` requires OpenCL C 2.0 or the
+    `+__opencl_c_atomic_order_acq_rel+` feature macro.
+  * Using `memory_order_acq_rel` with any built-in atomic function except
+    `atomic_work_item_fence` requires OpenCL C 2.0 or the
+    `+__opencl_c_atomic_order_acq_rel+` feature macro.
+  * Using `memory_order_seq_cst` with any built-in atomic function requires
+    OpenCL C 2.0 or the `+__opencl_c_atomic_order_seq_cst+` feature macro.
+  * Using `memory_scope_sub_group` with any built-in atomic function requires
+    the `+__opencl_c_subgroups+` feature macro.
+  * Using `memory_scope_device` requires OpenCL C 2.0 or the
+    `+__opencl_c_atomic_scope_device+` feature macro.
+  * Using `memory_scope_all_svm_devices` or `memory_scope_all_devices` requires
+    OpenCL C 2.0 or the `+__opencl_c_atomic_scope_all_devices+` feature macro.
 --
 
 
@@ -6327,7 +7113,7 @@ integer data types.
 
 [[table-misc-vector]]
 .Built-in Miscellaneous Vector Functions
-[cols=",",]
+[cols="1,2",]
 |====
 | *Function* | *Description*
 | int *vec_step*(gentype__n__ _a_) +
@@ -8073,6 +8859,9 @@ For write functions this may be `write_only` or `read_write`.
       the description above or with (_x_, _y_, _z_) coordinate values that
       are not in the range [0, image width-1], [0, image height-1], and [0,
       image depth-1], respectively, is undefined.
+
+      Requires support for OpenCL C 2.0, the `__opencl_c_3d_image_writes`
+      feature macro, or the `cl_khr_3d_image_writes` extension.
 |====
 --
 
@@ -8284,13 +9073,16 @@ support will result in a `CL_OUT_OF_RESOURCES` error being returned.
 
 
 [[work-group-functions]]
-=== Work-group Functions
+=== Work-group Collective Functions
 
-[open,refpage='workGroupFunctions',desc='Work-group Functions',type='freeform',spec='clang',anchor='work-group-functions',xrefs='',alias='work_group_all work_group_any work_group_broadcast work_group_reduce work_group_scan_exclusive work_group_scan_inclusive']
+[open,refpage='workGroupFunctions',desc='Work-group Collective Functions',type='freeform',spec='clang',anchor='work-group-functions',xrefs='',alias='work_group_all work_group_any work_group_broadcast work_group_reduce work_group_scan_exclusive work_group_scan_inclusive']
 --
 
-The OpenCL C programming language implements the following built-in
-functions that operate on a work-group level.
+NOTE: The functionality described in this section requires support for
+OpenCL C 2.0 or the `__opencl_c_work_group_collective_functions` feature macro.
+
+This section decribes built-in functions that perform collective options
+across a work-group.
 These built-in functions must be encountered by all work-items in a
 work-group executing the kernel.
 We use the generic type name `gentype` to indicate the built-in data types
@@ -8302,7 +9094,7 @@ type for the arguments.
 [60] Only if double precision is supported.
 
 [[table-builtin-work-group]]
-.Built-in Work-group Functions
+.Built-in Work-group Collective Functions
 [cols=",",]
 |====
 | *Function* | *Description*
@@ -8398,6 +9190,9 @@ given work-group.
 
 [[pipe-functions]]
 === Pipe Functions
+
+NOTE: The functionality described in this section requires support for
+OpenCL C 2.0 or the `__opencl_c_pipes` feature macro.
 
 A pipe is identified by specifying the `pipe` keyword with a type.
 The data type specifies the size of each packet in the pipe.
@@ -8677,9 +9472,11 @@ The following behavior is undefined:
 
 [open,refpage='enqueue_kernel',desc='Enqueuing Kernels',type='freeform',spec='clang',anchor='enqueuing-kernels',xrefs='enqueue_marker']
 --
+NOTE: The functionality described in this section requires support for
+OpenCL C 2.0 or the `__opencl_c_device_enqueue` feature macro.
 
-OpenCL 2.0 allows a kernel to independently enqueue to the same device,
-without host interaction.
+This section describes built-in functions that allow a kernel to
+enqueue additional work to the same device, without host interaction.
 A kernel may enqueue code represented by Block syntax, and control execution
 order with event dependencies including user events and markers.
 There are several advantages to using the Block syntax: it is more compact;
@@ -9354,6 +10151,171 @@ foo(queue_t q, ...)
 |====
 --
 
+[[subgroup-functions]]
+=== Subgroup Functions
+
+[open,refpage='subgroupFunctions',desc='Subgroup Functions',type='freeform',spec='clang',anchor='subgroup-functions',xrefs='',alias='sub_group_all sub_group_any sub_group_broadcast sub_group_reduce sub_group_scan_exclusive sub_group_scan_inclusive sub_group_reserve_read_pipe sub_gorup_reserve_write_pipe sub_group_commit_read_pipe sub_group_commit_write_pipe get_kernel_sub_group_count_for_ndrange get_kernel_max_sub_group_size_for_ndrange']
+--
+
+NOTE: The functionality described in this section requires support for the `__opencl_c_subgroups` feature macro.
+
+The table below describes OpenCL C programming language built-in functions that operate on a subgroup level.
+These built-in functions must be encountered by all work items in the subgroup executing the kernel.
+For the functions below, the generic type name `gentype` may be the one of the supported built-in scalar data types `int`, `uint`, `long`, `ulong`, `float`, `double` (if double precision is supported), or `half` (if half precision is supported).
+
+.Built-in Subgroup Collective Functions
+[cols=",",options="header",]
+|====
+| *Function*
+| *Description*
+
+| int *sub_group_all* (int _predicate_)
+| Evaluates _predicate_ for all work items in the subgroup and returns a
+  non-zero value if _predicate_ evaluates to non-zero for all work items in
+  the subgroup.
+
+| int *sub_group_any* (int _predicate_)
+| Evaluates _predicate_ for all work items in the subgroup and returns a
+  non-zero value if _predicate_ evaluates to non-zero for any work items in
+  the subgroup.
+
+| gentype *sub_group_broadcast* ( +
+  gentype _x_, uint _sub_group_local_id_)
+| Broadcast the value of _x_ for work item identified by
+  _sub_group_local_id_ (value returned by *get_sub_group_local_id*) to all
+  work items in the subgroup.
+
+  _sub_group_local_id_ must be the same value for all work items in the
+  subgroup.
+
+| gentype *sub_group_reduce_<op>* ( +
+  gentype _x_)
+| Return result of reduction operation specified by *<op>* for all values of
+  _x_ specified by work items in a subgroup.
+
+| gentype *sub_group_scan_exclusive_<op>* ( +
+  gentype _x_)
+| Do an exclusive scan operation specified by *<op>* of all values specified
+  by work items in a subgroup.
+  The scan results are returned for each work item.
+
+  The scan order is defined by increasing subgroup local ID within the
+  subgroup.
+
+| gentype *sub_group_scan_inclusive_<op>* ( +
+  gentype _x_)
+| Do an inclusive scan operation specified by *<op>* of all values specified
+  by work items in a subgroup.
+  The scan results are returned for each work item.
+
+  The scan order is defined by increasing subgroup local ID within the
+  subgroup.
+
+|====
+
+The *<op>* in *sub_group_reduce_<op>*, *sub_group_scan_inclusive_<op>* and *sub_group_scan_exclusive_<op>* defines the operator and can be *add*, *min* or *max*.
+
+The exclusive scan operation takes a binary operator *op* with an identity I and _n_ (where _n_ is the size of the sub-group) elements [a~0~, a~1~, ... a~n-1~] and returns [I, a~0~, (a~0~ *op* a~1~), ... (a~0~ *op* a~1~ *op* ... *op* a~n-2~)].
+
+The inclusive scan operation takes a binary operator *op* with an identity I and _n_ (where _n_ is the size of the sub-group) elements [a~0~, a~1~, ... a~n-1~] and returns [a~0~, (a~0~ *op* a~1~), ... (a~0~ *op* a~1~ *op* ... *op* a~n-1~)].
+
+If *op* = *add*, the identity I is 0.
+If *op* = *min*, the identity I is `INT_MAX`, `UINT_MAX`, `LONG_MAX`, `ULONG_MAX`, for `int`, `uint`, `long`, `ulong` types and is `+INF` for
+floating-point types.
+Similarly if *op* = max, the identity I is `INT_MIN`, 0, `LONG_MIN`, 0 and `-INF`.
+
+[NOTE]
+====
+The order of floating-point operations is not guaranteed for the *sub_group_reduce_<op>*, *sub_group_scan_inclusive_<op>* and *sub_group_scan_exclusive_<op>* built-in functions that operate on `half`, `float` and `double` data types.
+The order of these floating-point operations is also non-deterministic for a given sub-group.
+====
+
+NOTE: The functionality described in the following table requires support for the `__opencl_c_subgroups` and `__opencl_c_pipes` feature macros.
+
+The following table describes built-in pipe functions that operate at a
+subgroup level.
+These built-in functions must be encountered by all work items in a subgroup
+executing the kernel with the same argument values, otherwise the behavior
+is undefined.
+We use the generic type name `gentype` to indicate the built-in OpenCL C
+scalar or vector integer or floating-point data types or any user defined
+type built from these scalar and vector data types can be used as the type
+for the arguments to the pipe functions listed in _table 6.29_.
+
+.Built-in Subgroup Pipe Functions
+[cols=",",options="header",]
+|====
+| *Function*
+| *Description*
+
+| reserve_id_t *sub_group_reserve_read_pipe* ( +
+  read_only pipe gentype _pipe_, +
+  uint _num_packets_)
+
+  reserve_id_t *sub_group_reserve_write_pipe* ( +
+  write_only pipe gentype _pipe_, +
+  uint _num_packets_)
+| Reserve _num_packets_ entries for reading from or writing to _pipe_.
+  Returns a valid non-zero reservation ID if the reservation is successful
+  and 0 otherwise.
+
+  The reserved pipe entries are referred to by indices that go from 0 ...
+  _num_packets_ - 1.
+
+| void *sub_group_commit_read_pipe* ( +
+  read_only pipe gentype _pipe_, +
+  reserve_id_t _reserve_id_)
+
+  void *sub_group_commit_write_pipe* ( +
+  write_only pipe gentype _pipe_, +
+  reserve_id_t _reserve_id_)
+| Indicates that all reads and writes to _num_packets_ associated with
+  reservation _reserve_id_ are completed.
+
+|====
+
+Note: Reservations made by a subgroup are ordered in the pipe as they are
+ordered in the program.
+Reservations made by different subgroups that belong to the same work group
+can be ordered using subgroup synchronization.
+The order of subgroup based reservations that belong to different work
+groups is implementation defined.
+
+NOTE: The functionality described in the following table requires support for the `__opencl_c_subgroups` feature macro and either OpenCL C 2.0 or the `__opencl_c_device_enqueue` feature macro.
+
+The following table describes built-in functions to query subgroup
+information for a block to be enqueued.
+
+.Built-in Subgroup Kernel Query Functions
+[cols="5,4",options="header",]
+|====
+| *Built-in Function*
+| *Description*
+
+| uint *get_kernel_sub_group_count_for_ndrange* ( +
+  const ndrange_t _ndrange_, +
+  void (^block)(void));
+
+  uint *get_kernel_sub_group_count_for_ndrange* ( +
+  const ndrange_t _ndrange_, +
+  void (^block)(local void *, ...));
+| Returns the number of subgroups in each work group of the dispatch (except
+  for the last in cases where the global size does not divide cleanly into
+  work groups) given the combination of the passed ndrange and block.
+
+  _block_ specifies the block to be enqueued.
+
+| uint *get_kernel_max_sub_group_size_for_ndrange* ( +
+  const ndrange_t _ndrange_, +
+  void (^block)(void)); +
+
+  uint *get_kernel_max_sub_group_size_for_ndrange* ( +
+  const ndrange_t _ndrange_, +
+  void (^block)(local void *, ...));
+| Returns the maximum subgroup size for a block.
+
+|====
+--
 
 [[opencl-numerical-compliance]]
 = OpenCL Numerical Compliance
@@ -11045,7 +12007,7 @@ one of the integers 0, 1, ... h~t~ - 1.
 [[references]]
 = Normative References
 
-  . [[C99-spec]] "`ISO/IEC 9899:1999 - Programming Languages - C`", with
+  . [[C99-spec]] "`ISO/IEC 9899:1999 - Programming languages - C`", with
     technical corrigenda TC1 and TC2,
     https://www.iso.org/standard/29237.html .
     References are to sections of this specific version, referred to as the
@@ -11054,7 +12016,7 @@ one of the integers 0, 1, ... h~t~ - 1.
     languages - C`", https://www.iso.org/standard/57853.html .
     References are to sections of this specific version, referred to as the
     "`C11 Specification`", although other versions exist.
-  . [[opencl-spec]] "`The OpenCL Specification, Version 2.0`",
+  . [[opencl-spec]] "`The OpenCL Specification, Version 3.0, Unified`",
     https://www.khronos.org/registry/OpenCL/ .
     References are to sections and tables of this specific version, although
     other versions exists.
@@ -11068,12 +12030,12 @@ one of the integers 0, 1, ... h~t~ - 1.
     are defined in the "`List of supported Image Channel Order Values`"
     table (5.6) of that Specification.
   . [[opencl-channel-data-type,image channel data type]] "`Image Channel
-    Data Type" is defined in the <<opencl-spec,OpenCL Specification>> in the
+    Data Type`" is defined in the <<opencl-spec,OpenCL Specification>> in the
     "`Image Format Descriptor`" section (5.3.1.1), and the individual
     channel data types are defined in the "`List of supported Image Channel
     Data Types" table (5.7) of that Specification.
   . [[opencl-extension-spec]] "`The OpenCL Extension Specification, Version
-    2.0`", https://www.khronos.org/registry/OpenCL/ .
+    3.0, Unified`", https://www.khronos.org/registry/OpenCL/ .
     References are to sections and tables of this specific version, although
     other versions exists.
   . [[sRGB-spec]] "`IEC 61966-2-1:1999 Multimedia systems and equipment -
@@ -11081,6 +12043,9 @@ one of the integers 0, 1, ... h~t~ - 1.
     Default RGB colour space - sRGB`",
     https://webstore.iec.ch/publication/6169 .
 
-<<<
-
-include::api/acknowledgements.asciidoc[]
+// This is generatig asciidoctor errors:
+//  OpenCL_C.txt: Failed to load AsciiDoc document - undefined method `+' for nil:NilClass
+// Disabling acknowledgements for now.  We have them in the API spec already.
+//<<<
+//:numbered!:
+//include::api/acknowledgements.asciidoc[]

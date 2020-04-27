@@ -20,17 +20,17 @@ The OpenCL embedded profile has the following restrictions until version 2.0 (i.
 +
 --
 If {CL_DEVICE_IMAGE3D_MAX_WIDTH}, {CL_DEVICE_IMAGE3D_MAX_HEIGHT} and
-{CL_DEVICE_IMAGE3D_MAX_DEPTH} are zero, the call to {clCreateImage} in the
-embedded profile will fail to create the 3D image.
-The _errcode_ret_ argument in {clCreateImage} returns {CL_INVALID_OPERATION}.
+{CL_DEVICE_IMAGE3D_MAX_DEPTH} are zero, calls to {clCreateImage} or
+{clCreateImageWithProperties} will fail to create the 3D image, and
+the _errcode_ret_ argument will return {CL_INVALID_OPERATION}.
 Declaring arguments of type `image3d_t` in a kernel will result in a
 compilation error.
 
 If {CL_DEVICE_IMAGE3D_MAX_WIDTH}, {CL_DEVICE_IMAGE3D_MAX_HEIGHT} and
-{CL_DEVICE_IMAGE3D_MAX_DEPTH} > 0, 3D images are supported by the OpenCL
-embedded profile implementation.
-{clCreateImage} will work as defined by the OpenCL specification.
-The `image3d_t` data type can be used in a kernel(s).
+{CL_DEVICE_IMAGE3D_MAX_DEPTH} are greater than zero 0, calls to
+{clCreateImage} and {clCreateImageWithProperties} will behave as
+described for full profile implementations, and the `image3d_t`
+data type can be used in a kernel.
 --
   . Support for 2D image array writes is optional.
     If the *cles_khr_2d_image_array_writes* extension is supported by the
@@ -71,8 +71,8 @@ versions:
   . The single precision floating-point operations (addition, subtraction
     and multiplication) shall be correctly rounded.
     Zero results may always be positive 0.0.
-    The accuracy of division and sqrt are given in the SPIR-V OpenCL
-    environment specification.
+    The accuracy of division and sqrt are given in the OpenCL C and OpenCL
+    SPIR-V Environment specifications.
 +
 --
 If {CL_FP_INF_NAN} is not set in {CL_DEVICE_SINGLE_FP_CONFIG}, and one of the
@@ -83,13 +83,13 @@ Likewise, single precision comparison operators (+<+, +>+, +<=+, +>=+, +==+,
 +!=+) return implementation-defined values when one or more operands is a
 NaN.
 
-In all cases, conversions (see the SPIR-V OpenCL environment specification)
-shall be correctly rounded as described for the FULL_PROFILE, including
-those that consume or produce an INF or NaN.
+In all cases, conversions (see the OpenCL C and OpenCL SPIR-V Environment
+specifications) shall be correctly rounded as described for the FULL_PROFILE,
+including those that consume or produce an INF or NaN.
 The built-in math functions shall behave as described for the FULL_PROFILE,
-including edge case behavior but with slightly different accuracy rules.
-Edge case behavior and accuracy rules are described in the SPIR-V OpenCL
-environment specification.
+including edge case behavior, but with slightly different accuracy rules.
+Edge case behavior and accuracy rules are described in the OpenCL C
+and OpenCL SPIR-V Environment specifications.
 
 [NOTE]
 .Note
@@ -312,15 +312,14 @@ Device Queries>> table is {CL_TRUE}, the values assigned to
 must be greater than or equal to the minimum values specified in the
 <<embedded-device-queries-table, OpenCL Embedded Device Queries>> table.
 
-For 1D, 1D image from buffer, 2D, 3D image objects, 1D and 2D image array
-objects, when supported, the mandated minimum list of image formats that can
-be read from and written to by different kernel instances when correctly ordered
-by event dependencies and that must be supported by all devices that support
-images is described in the <<embedded-required-image-read-or-write-formats-table>> table.
+If {CL_DEVICE_IMAGE_SUPPORT} specified in the <<device-queries-table, OpenCL
+Device Queries>> table is {CL_TRUE}, the minimum list of supported
+image formats for either reading or writing in a kernel for embedded
+profile devices is:
 
-[[embedded-required-image-read-or-write-formats-table]]
-.Minimum list of required image formats (embedded profile): kernel read or write
-[width="100%",cols="1,1,2",options="header"]
+[[min-supported-image-formats-embedded-profile]]
+.Minimum list of supported image formats for reading or writing (embedded profile)
+[width="100%",cols="<34%,<33%,<33%",options="header"]
 |====
 | num_channels | channel_order | channel_data_type
 | 4
@@ -337,3 +336,6 @@ images is described in the <<embedded-required-image-read-or-write-formats-table
         {CL_FLOAT}
 |====
 
+For embedded profiles devices that support reading from and writing to the same
+image object from the same kernel instance (see {CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS})
+there is no required minimum list of supported image formats.
