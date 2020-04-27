@@ -300,7 +300,7 @@ with another address space is bound to them, a conversion will be generated
 in case it is valid, otherwise compilation will fail with a diagnostic.
 
 [source,cpp]
-----------
+---------
 int bar(const unsigned int &i);
 
 void foo() {
@@ -344,3 +344,28 @@ Objects in `__constant` address space can be initialized using:
  * Literal expressions;
  * Uniform initialization syntax `{}`;
  * Using implicit constructors.
+
+==== Nested pointers
+
+C++ for OpenCL doesn't allow implicit address space conversions in nested
+pointers even with compatible address spaces. The following rules will apply
+when converting between address spaces in nested pointers:
+
+ * Implicit conversions of address spaces in nested pointers are disallowed.
+ * Any address space conversion in nested pointers with safe casts (e.g.
+   `const_cast`, `static_cast`, `addrspace_cast`) is disallowed.
+ * Any address space conversion in nested pointers can be done using low level
+   C-style or `reinterpret_cast`. No compatibility check is performed for
+   address spaces in nested pointers.
+
+[source,cpp]
+---------
+local int * * locgenptr;
+constant int * * cnstgenptr;
+int * * gengenptr;
+gengenptr = const_cast<int**>(locgenptr); // illegal.
+gengenptr = static_cast<int**>(cnstgenptr); // illegal.
+gengenptr = reinterpret_cast<int**>(locgenptr); // legal.
+gengenptr = reinterpret_cast<int**>(cnstgenptr); // legal.
+---------
+
