@@ -8,15 +8,15 @@
 {cpp} for OpenCL inherits address space behavior from `OpenCL C v2.0 s6.5`.
 
 This section only documents behavior related to {cpp} features. For example
-conversion rules are extended from the qualification conversion but the
-compatibility is determined using notation of sets and overlapping of address
-spaces from Embedded C (`ISO/IEC JTC1 SC22 WG14 N1021 s3.1.3`). For OpenCL
-it means that implicit conversions are allowed from a named address space
-(except for `__constant`) to generic (`OpenCL C v2.0 6.5.5`). The reverse
-conversion is only allowed explicitly. The `__constant` address space does
-not overlap with any other and therefore no valid conversion between
-`__constant` and any other address space exists. Most of the rules follow this
-logic.
+conversion rules are extended from the qualification conversion {cpp}17
+[conv.qual] but the compatibility is determined using notation of sets and
+overlapping of address spaces from Embedded C
+(`ISO/IEC JTC1 SC22 WG14 N1021 s3.1.3`). For OpenCL it means that implicit
+conversions are allowed from a named address space (except for `+__constant+`)
+to generic (`OpenCL C v2.0 6.5.5`). The reverse conversion is only allowed
+explicitly. The `+__constant+` address space does not overlap with any other
+and therefore no valid conversion between `+__constant+` and any other address
+space exists. Most of the rules follow this logic.
 
 ==== Casts
 
@@ -65,17 +65,17 @@ deduction (i.e. default address space) follows rules from `OpenCL 2.0 s6.5`.
 References inherit rules from pointers and therefore refer to generic
 address space objects by default (see <<references, _References_>>).
 
-Class static data members are deduced to `__global` address space.
+Class static data members are deduced to `+__global+` address space.
 
 All non-static member functions take an implicit object parameter `this`
 that is a pointer type. By default the `this` pointer parameter is in the
 generic address space. All concrete objects passed as an argument to the
 implicit `this` parameter will be converted to the generic address
 space first if such conversion is valid. Therefore programs using objects
-in the `__constant` address space will not be compiled unless the address
+in the `+__constant+` address space will not be compiled unless the address
 space is explicitly specified using address space qualifiers on member
 functions (see <<addrspace-member-function-qualifiers,
-_Member function qualifier_>>) as the conversion between `__constant` 
+_Member function qualifier_>>) as the conversion between `+__constant+` 
 and generic is disallowed. Member function qualifiers can also be used
 in case conversion to the generic address space is undesirable (even if
 it is legal). For example, a method can be implemented to exploit memory
@@ -84,10 +84,10 @@ to regular member functions but to constructors and destructors too.
 
 Address spaces are not deduced for:
 
-  * non-pointer/non-reference template parameters or any dependent types
-    except for template specializations.
+  * non-pointer/non-reference template parameters except for template
+    specializations or non-type type based template parameters.
   * non-pointer/non-reference class members except for static data members
-    that are deduced to `__global` address space.
+    that are deduced to `+__global+` address space.
   * non-pointer/non-reference alias declarations.
   * decltype expressions.
 
@@ -180,12 +180,12 @@ struct C {
 
 __kernel void bar() {
   __local C c1;
-  C c2;
+  __private C c2;
   __constant C c3;
-  c1.foo(); // will resolve to the first foo.
-  c2.foo(); // will resolve to the second foo.
+  c1.foo(); // will resolve to the first 'foo'.
+  c2.foo(); // will resolve to the second 'foo'.
   c3.foo(); // error due to mismatching address spaces - can't convert to
-            // __local or generic.
+            // '__local' or generic addr spaces.
 }
 ----------
 
@@ -198,7 +198,7 @@ that has generic address space by default.
 
 [source,cpp]
 ----------
-__kernel void test_qual() {
+__kernel void foo() {
   auto priv1 = []() __private {};
   priv1();
   auto priv2 = []() __global {};
@@ -216,25 +216,37 @@ __kernel void test_qual() {
 
 ==== Implicit special members
 
-All implicit special members (default, copy or move constructor, copy or
-move assignment, destructor) will be generated with the generic address
-space.
+The prototype for implicit special members (default, copy or move constructor,
+copy or move assignment, destructor) has the generic address space for an implicit
+object pointer and reference parameters (see also
+<<addrspace-member-function-qualifiers, _Member function qualifier_>>).
 
 [source,cpp]
 ----------
 class C {
-  // Has the following implicitly defined member functions
-  // void C() /*__generic*/;
-  // void C(const /*__generic*/ C &) /*__generic*/;
-  // void C(/*__generic*/ C &&) /*__generic*/;
-  // operator= '/*__generic*/ C &(/*__generic*/ C &&)';
-  // operator= '/*__generic*/ C &(const /*__generic*/ C &) /*__generic*/;
-}
+  // Has the following implicitly defined member functions.
+
+  // void C(); /* implicit 'this' parameter is a pointer to*/
+               /* object in generic address space. */
+
+  // void C(const C & par); /* 'this'/'par' is a pointer/reference to */
+                            /*  object in generic address space. */
+
+  // void C(C && par); /* 'this'/'par' is a pointer/r-val reference to */
+                       /* object in generic address space. */
+
+  // operator= C &(const C & par); /* 'this'/'par'/return value is */
+                                   /* a pointer/reference/reference to */
+                                   /* object in generic address space. */
+
+  // operator= C &(C && par)'; /* 'this'/'par'/return value is */
+                               /* a pointer/r-val reference/reference to */
+                               /* object in generic address space. */
 ----------
 
 ==== Builtin operators
 
-All builtin operators are available in the specific address spaces, thus
+All builtin operators are available in the specific named address spaces, thus
 no conversion to generic address space is performed.
 
 ==== Templates
@@ -247,16 +259,16 @@ instantiation.
 
 [source,cpp]
 ----------
- 1 template<typename T>
- 2 void foo(T* i){
- 3   T var;
- 4 }
- 5
- 6 __global int g;
- 7 void bar(){
- 8   foo(&g); // error: template instantiation failed as function scope variable
- 9            // appears to be declared in __global address space (see line 3).
-10 }
+template<typename T>
+void foo(T* i){
+  T var;
+ }
+
+ __global int g;
+void bar(){
+  foo(&g); // error: template instantiation failed as function scope variable 'var'
+           // appears to be declared in __global address space (see line 3).
+}
 ----------
 
 It is not legal to specify multiple different address spaces between
@@ -273,7 +285,7 @@ void foo() {
 
 void bar() {
   foo<__global int>(); // error: conflicting address space qualifiers are provided
-                       // __global and __private.
+                       // for 'var', '__global' and '__private'.
 }
 ----------
 
@@ -288,8 +300,8 @@ void foo(){
 }
 
 void bar(){
-  foo<__global int>(); // error: function scope variable cannot be declared in
-                       // __global address space.
+  foo<__global int>(); // error: function scope variable 'var' cannot be declared
+                       // in '__global' address space.
 }
 ----------
 
@@ -317,8 +329,8 @@ __global const int& f(__global float &ref) {
 
 ==== Construction, initialization and destruction
 
-Construction, initialization and destruction of objects in `__private`
-and `__global` address space follow the general principles of {cpp}. For
+Construction, initialization and destruction of objects in `+__private+`
+and `+__global+` address space follow the general principles of {cpp}. For
 program scope objects, the implementation (i.e. compiler) defines an ABI
 format for initialization and destruction of global objects before/after
 all kernels are enqueued.
