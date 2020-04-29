@@ -356,3 +356,28 @@ Objects in `__constant` address space can be initialized using:
  * Literal expressions;
  * Uniform initialization syntax `{}`;
  * Using implicit constructors.
+
+==== Nested pointers
+
+{cpp} for OpenCL does not allow implicit address space conversions in nested
+pointers even with compatible address spaces. The following rules apply
+when converting between address spaces in nested pointers:
+
+ * Implicit conversions of address spaces in nested pointers are disallowed.
+ * Any address space conversion in nested pointers with safe casts (e.g.
+   `const_cast`, `static_cast`, `addrspace_cast`) is disallowed.
+ * Any address space conversion in nested pointers can be done using low level
+   C-style or `reinterpret_cast`. No compatibility check is performed for
+   address spaces in nested pointers.
+
+[source,cpp]
+----------
+local int * * locgenptr;
+constant int * * cnstgenptr;
+int * * gengenptr;
+gengenptr = const_cast<int**>(locgenptr); // illegal.
+gengenptr = static_cast<int**>(cnstgenptr); // illegal.
+gengenptr = addrspace_cast<int**>(cnstgenptr); // illegal.
+gengenptr = reinterpret_cast<int**>(locgenptr); // legal.
+gengenptr = reinterpret_cast<int**>(cnstgenptr); // legal.
+----------
