@@ -61,7 +61,7 @@ else
 # If your current commit is not a tag then a commit hash will be appended.
 # If you have locally modified files then -dirty will be appended.
 # Could use `git log -1 --format="%cd"` to get branch commit date
-SPECREVISION = $(shell echo `git describe --tags --dirty --always`)
+SPECREVISION = $(shell echo `git describe --tags --dirty`)
 # This used to be a dependency in the spec html/pdf targets,
 # but that's likely to lead to merge conflicts. Just regenerate
 # when pushing a new spec for review to the sandbox.
