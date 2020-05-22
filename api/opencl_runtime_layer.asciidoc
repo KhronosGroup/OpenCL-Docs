@@ -8868,35 +8868,20 @@ function on a callback stack associated with _event_.
 The order in which the registered user callback functions are called is
 undefined.
 
-All callbacks registered for an event object must be called.
-All enqueued callbacks shall be called before the event object is destroyed.
-Callbacks must return promptly.
-The behavior of calling expensive system routines, OpenCL API calls to
-create contexts or command-queues, or blocking OpenCL operations from the
-following list below, in a callback is undefined.
+All callbacks registered for an event object must be called before the event
+object is destroyed.
+Callbacks should return promptly.
 
-  * {clFinish},
-  * {clWaitForEvents},
-  * blocking calls to {clEnqueueReadBuffer}, {clEnqueueReadBufferRect},
-  * {clEnqueueWriteBuffer}, {clEnqueueWriteBufferRect},
-  * blocking calls to {clEnqueueReadImage} and {clEnqueueWriteImage},
-  * blocking calls to {clEnqueueMapBuffer} and {clEnqueueMapImage},
-  * blocking calls to {clBuildProgram}, {clCompileProgram} or
-    {clLinkProgram},
-  * blocking calls to {clEnqueueSVMMemcpy} or {clEnqueueSVMMap}
+Behavior is undefined when calling expensive system routines, OpenCL APIs to
+create contexts or command-queues, or blocking OpenCL APIs in an event callback.
+Rather than calling a blocking OpenCL API in an event callback, applications
+may call a non-blocking OpenCL API, then register a completion callback
+for the non-blocking OpenCL API with the remainder of the work.
 
-If an application needs to wait for completion of a routine from the above
-list in a callback, please use the non-blocking form of the function, and
-assign a completion callback to it to do the remainder of your work.
-Note that when a callback (or other code) enqueues commands to a
-command-queue, the commands are not required to begin execution until the
-queue is flushed.
-In standard usage, blocking enqueue calls serve this role by implicitly
-flushing the queue.
-Since blocking calls are not permitted in callbacks, those callbacks that
-enqueue commands on a command queue should either call {clFlush} on the
-queue before returning or arrange for {clFlush} to be called later on
-another thread.
+Because commands in a command-queue are not required to begin execution
+until the command-queue is flushed, callbacks that enqueue commands on a
+command-queue should either call {clFlush} on the queue before returning,
+or arrange for the command-queue to be flushed later.
 
 // refError
 
