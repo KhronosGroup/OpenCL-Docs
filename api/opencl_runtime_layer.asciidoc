@@ -701,7 +701,7 @@ include::{generated}/api/version-notes/clCreateSubBuffer.asciidoc[]
 include::{generated}/api/version-notes/CL_BUFFER_CREATE_TYPE_REGION.asciidoc[]
   | Create a buffer object that represents a specific region in _buffer_.
 
-    _buffer_create_info_ is a pointer to a *<<cl_buffer_region>>* structure
+    _buffer_create_info_ is a pointer to a `<<cl_buffer_region>>` structure
     specifying a region of the buffer.
 
     If _buffer_ is created with {CL_MEM_USE_HOST_PTR}, the _host_ptr_
@@ -748,7 +748,7 @@ Otherwise, it returns one of the following errors in _errcode_ret_:
     structure passed in _buffer_create_info_ is 0.
   * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if there are no devices in _context_
     associated with _buffer_ for which the _origin_ field of the
-    *<<cl_buffer_region>>* structure passed in _buffer_create_info_ is
+    `<<cl_buffer_region>>` structure passed in _buffer_create_info_ is
     aligned to the {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value.
 
 [NOTE]
@@ -764,7 +764,7 @@ from multiple overlapping sub-buffer objects is defined.
 
 [open,refpage='cl_buffer_region',desc='',type='structs',xrefs='clCreateSubBuffer']
 --
-The *cl_buffer_region* structure specifies a region of a buffer object:
+The `<<cl_buffer_region>>` structure specifies a region of a buffer object:
 
 include::{generated}/api/structs/cl_buffer_region.txt[]
 
@@ -1885,8 +1885,8 @@ include::{generated}/api/version-notes/clCreateImage3D.asciidoc[]
   * _image_width_ and _image_height_ are the width and height of the image in
     pixels.
     These must be values greater than or equal to 1.
-  * _image_depth_ is the depth of the image in pixels.  This must be a value
-    {gt} 1.
+  * _image_depth_ is the depth of the image in pixels.  For {clCreateImage3D},
+    this must be a value {gt} 1.
   * _image_row_pitch_ is the  scan-line pitch in bytes.
     This must be 0 if _host_ptr_ is `NULL` and can be either 0 or {geq}
     _image_width_ {times} size of element in bytes if _host_ptr_ is not `NULL`.
@@ -1930,9 +1930,9 @@ returned in _errcode_ret_:
   * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if values specified in _image_format_
     are not valid or if _image_format_ is `NULL`.
   * {CL_INVALID_IMAGE_SIZE} if _image_width_ or _image_height_ are 0 or if
-    _image_depth_ {leq} 1 or if they exceed the maximum values specified in
+    _image_depth_ {leq} 1, or if they exceed the maximum values specified in
     {CL_DEVICE_IMAGE3D_MAX_WIDTH}, {CL_DEVICE_IMAGE3D_MAX_HEIGHT} or
-    {CL_DEVICE_IMAGE3D_MAX_DEPTH} respectively for all devices in _context_ or
+    {CL_DEVICE_IMAGE3D_MAX_DEPTH} respectively for all devices in _context_, or
     if values specified by _image_row_pitch_ and _image_slice_pitch_ do not
     follow rules described in the argument description above.
   * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
@@ -2182,8 +2182,9 @@ then the call to {clCreateImage}, {clCreateImageWithProperties},
 
 [open,refpage='cl_image_desc',desc='The image descriptor structure describes the type and dimensions of the image or image array and is defined as:',type='structs',xrefs='clCreateImage']
 --
-The *cl_image_desc* image descriptor structure describes the type and
-dimensions of an image or image array, and is defined as:
+The `<<cl_image_desc>>` image descriptor structure describes the image type
+and dimensions of an image or image array when creating an image using
+{clCreateImage} or {clCreateImageWithProperties}, and is defined as:
 
 include::{generated}/api/structs/cl_image_desc.txt[]
 
@@ -2194,11 +2195,11 @@ include::{generated}/api/structs/cl_image_desc.txt[]
   * `image_width` is the width of the image in pixels.
     For a 2D image and image array, the image width must be a value {geq} 1 and
     {leq} {CL_DEVICE_IMAGE2D_MAX_WIDTH}.
-    For a 3D image, the image width must be a value {geq}1 and {leq}
+    For a 3D image, the image width must be a value {geq} 1 and {leq}
     {CL_DEVICE_IMAGE3D_MAX_WIDTH}.
-    For a 1D image buffer, the image width must be a value {geq}1 and {leq}
+    For a 1D image buffer, the image width must be a value {geq} 1 and {leq}
     {CL_DEVICE_IMAGE_MAX_BUFFER_SIZE}.
-    For a 1D image and 1D image array, the image width must be a value {geq}1
+    For a 1D image and 1D image array, the image width must be a value {geq} 1
     and {leq} {CL_DEVICE_IMAGE2D_MAX_WIDTH}.
   * `image_height` is the height of the image in pixels.
     This is only used if the image is a 2D or 3D image, or a 2D image array.
@@ -2285,28 +2286,26 @@ If the buffer object specified by `mem_object` was created with
 context associated with the buffer specified by `mem_object` that
 support images.
 
-Creating a 2D image object from another 2D image object allows users to
-create a new image object that shares the image data store with `mem_object`
-but views the pixels in the image with a different channel order.
-The restrictions are:
+Creating a 2D image object from another 2D image object creates a new
+2D image object that shares the image data store with `mem_object` but views
+the pixels in the image with a different image channel order.
+Restrictions are:
 
-  * all the values specified in `image_desc` except for `mem_object` must match
-    the image descriptor information associated with `mem_object`.
+  * All of the values specified in _image_desc_ must match the image descriptor
+    information associated with `mem_object`, except for `mem_object`.
 
-  * The `image_desc` used for creation of `mem_object` may not be
-    equivalent to image descriptor information associated with `mem_object`.
-    To ensure the values in _`image_desc_ will match one can query
-    `mem_object` for associated information using {clGetImageInfo} function
-    described in <<image-object-queries, Image Object Queries>>.
+  * The image channel data type specified in _image_format_ must match the
+    image channel data type associated with `mem_object`.
 
-  * the channel data type specified in `image_format` must match the channel
-    data type associated with `mem_object`.
-    The channel order values^8^ supported are:
+  * The image channel order specified in _image_format_ must be compatible
+    with the image channel order associated with `mem_object`.
+    Compatible image channel orders ^8^ are:
 +
 --
 [width="100%",cols="<50%,<50%",options="header"]
 |====
-| `image_channel_order` specified in `image_format` | image channel order of `mem_object`
+| Image Channel Order in _image_format_:
+  | Image Channel Order associated with `mem_object`:
 | {CL_sBGRA}
   | {CL_BGRA}
 | {CL_BGRA}
@@ -2327,11 +2326,9 @@ The restrictions are:
   | {CL_R}
 |====
 --
-  * the channel order specified must have the same number of channels as the
-    channel order of `mem_object`.
 
 8::
-    This allows developers to create a sRGB view of the image from a linear
+    This allows creation of a sRGB view of the image from a linear
     RGB view or vice-versa i.e. the pixels stored in the image can be
     accessed as linear RGB or sRGB values.
 
@@ -4193,9 +4190,12 @@ include::{generated}/api/version-notes/CL_MEM_TYPE.asciidoc[]
         {CL_MEM_OBJECT_BUFFER_anchor} if _memobj_ is created with {clCreateBuffer},
         {clCreateBufferWithProperties}, or {clCreateSubBuffer}.
 
-        cl_image_desc.image_type argument value if _memobj_ is created with
-        {clCreateImage}, {clCreateImageWithProperties}, {clCreateImage2D}, or
-        {clCreateImage3D}.
+        {CL_MEM_OBJECT_IMAGE2D} if _memobj_ is created with {clCreateImage2D}.
+
+        {CL_MEM_OBJECT_IMAGE3D} if _memobj_ is created with {clCreateImage3D}.
+
+        The value of __image_desc__->__image_type__ if _memobj_ is created with
+        {clCreateImage} or {clCreateImageWithProperties}.
 
         {CL_MEM_OBJECT_PIPE_anchor} if _memobj_ is created with {clCreatePipe}.
 | {CL_MEM_FLAGS_anchor}
@@ -4236,7 +4236,7 @@ include::{generated}/api/version-notes/CL_MEM_HOST_PTR.asciidoc[]
         the origin value specified in buffer_create_info when _memobj_ is
         created.
 
-        Otherwise, return `NULL`.
+        Otherwise, returns `NULL`.
 | {CL_MEM_MAP_COUNT_anchor}^11^
 
 include::{generated}/api/version-notes/CL_MEM_MAP_COUNT.asciidoc[]
@@ -4260,14 +4260,16 @@ include::{generated}/api/version-notes/CL_MEM_CONTEXT.asciidoc[]
 include::{generated}/api/version-notes/CL_MEM_ASSOCIATED_MEMOBJECT.asciidoc[]
   | cl_mem
       | Return memory object from which _memobj_ is created.
+
         This returns the memory object specified as buffer argument to
         {clCreateSubBuffer} if _memobj_ is a subbuffer object created using
         {clCreateSubBuffer}.
 
-        This returns the mem_object specified in cl_image_desc if _memobj_
-        is an image object.
+        This returns __image_desc__->__mem_object__ if _memobj_
+        is an image object created using {clCreateImage} or
+        {clCreateImageWithProperties}.
 
-        Otherwise a `NULL` value is returned.
+        Otherwise, returns `NULL`.
 | {CL_MEM_OFFSET_anchor}
 
 include::{generated}/api/version-notes/CL_MEM_OFFSET.asciidoc[]
