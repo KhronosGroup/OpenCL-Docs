@@ -63,13 +63,13 @@ if __name__ == "__main__":
 
     spec = parse_xml(specpath)
 
-    # Generate the API functions dictionaries:
-
     linkFile = open(linkFileName, 'w')
     nolinkFile = open(nolinkFileName, 'w')
     linkFile.write( GetHeader() )
     nolinkFile.write( GetHeader() )
-    
+
+    # Generate the API functions dictionaries:
+
     numberOfFuncs = 0
 
     # Add core API functions with and without links:
@@ -171,12 +171,46 @@ if __name__ == "__main__":
 
                 numberOfEnums = numberOfEnums + 1
 
+    print('Found ' + str(numberOfEnums) + ' API enumerations.')
+
+    # Generate the API types dictionaries, only for structs (for now):
+
+    numberOfTypes = 0
+
+    for types in spec.findall('types'):
+        for type in types.findall('type'):
+            category = type.get('category')
+            if category == 'struct':
+                name = type.get('name')
+                print('found type: ' +name)
+
+                # Create a variant of the name that precedes underscores with
+                # "zero width" spaces.  This causes some long names to be
+                # broken at more intuitive places.
+                sName = name.replace("_", "_&#8203;")
+
+                # Example without link:
+                #
+                # // clEnqueueNDRangeKernel
+                # :clEnqueueNDRangeKernel_label: pass:q[*clEnqueueNDRangeKernel*]
+                # :clEnqueueNDRangeKernel: <<clEnqueueNDRangeKernel,{clEnqueueNDRangeKernel_label}>>
+                linkFile.write('// ' + name + '\n')
+                linkFile.write(':' + name + '_label: pass:q[*' + sName + '*]\n')
+                linkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
+                linkFile.write('\n')
+
+                nolinkFile.write('// ' + name + '\n')
+                nolinkFile.write(':' + name + ': pass:q[`' + sName + '`]\n')
+                nolinkFile.write('\n')
+
+                numberOfTypes = numberOfTypes + 1
+
+    print('Found ' + str(numberOfTypes) + ' API struct types.')
+
     linkFile.write( GetFooter() )
     linkFile.close()
     nolinkFile.write( GetFooter() )
     nolinkFile.close()
-
-    print('Found ' + str(numberOfEnums) + ' API enumerations.')
 
     print('Successfully generated file: ' + linkFileName)
     print('Successfully generated file: ' + nolinkFileName)
