@@ -204,7 +204,7 @@ include::{generated}/api/version-notes/clGetDeviceIDs.asciidoc[]
     The _device_type_ can be used to query specific OpenCL devices or all OpenCL
     devices available.
     The valid values for _device_type_ are specified in the
-    <<device-categories-table, Device Categories>> table.
+    <<device-types-table, Device Types>> table.
   * _num_entries_ is the number of cl_device_id entries that can be added to
     _devices_.
     If _devices_ is not `NULL`, the _num_entries_ must be greater than zero.
@@ -223,7 +223,7 @@ include::{generated}/api/version-notes/clGetDeviceIDs.asciidoc[]
     {clGetDeviceIDs} may return all or a subset of the actual physical
     devices present in the platform and that match _device_type_.
 
-[[device-categories-table]]
+[[device-types-table]]
 .List of supported device_types by <<clGetDeviceIDs>>
 [width="100%",cols="<50%,<50%",options="header"]
 |====
@@ -231,37 +231,56 @@ include::{generated}/api/version-notes/clGetDeviceIDs.asciidoc[]
 | {CL_DEVICE_TYPE_CPU_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_CPU.asciidoc[]
-  | An OpenCL device that is the host processor.
-    The host processor runs the OpenCL implementations and is a single or
-    multi-core CPU.
+  | An OpenCL device similar to a traditional CPU (Central Processing Unit).
+    The host processor that executes OpenCL host code may also be considered
+    a CPU OpenCL device.
+
 | {CL_DEVICE_TYPE_GPU_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_GPU.asciidoc[]
-  | An OpenCL device that is a GPU.
-    By this we mean that the device can also be used to accelerate a 3D API
-    such as OpenGL or DirectX.
+  | An OpenCL device similar to a GPU (Graphics Processing Unit).
+    Many systems include a dedicated processor for graphics or rendering
+    that may be considered a GPU OpenCL device.
+
 | {CL_DEVICE_TYPE_ACCELERATOR_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_ACCELERATOR.asciidoc[]
-  | Dedicated OpenCL accelerators (for example the IBM CELL Blade).
-    These devices communicate with the host processor using a peripheral
-    interconnect such as PCIe.
+  | Dedicated devices that may accelerate OpenCL programs, such as FPGAs
+    (Field Programmable Gate Arrays), DSPs (Digital Signal Processors), or
+    AI (Artificial Intelligence) processors.
+
 | {CL_DEVICE_TYPE_CUSTOM_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_CUSTOM.asciidoc[]
-  | Dedicated accelerators that do not support programs written in an OpenCL
-    kernel language,
+  | Specialized devices that implement some of the OpenCL runtime APIs but
+    do not support all required OpenCL functionality.
+
 | {CL_DEVICE_TYPE_DEFAULT_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_DEFAULT.asciidoc[]
-  | The default OpenCL device in the system.
-    The default device cannot be a {CL_DEVICE_TYPE_CUSTOM} device.
+  | The default OpenCL device in the platform.
+    The default OpenCL device must not be a {CL_DEVICE_TYPE_CUSTOM} device.
+
 | {CL_DEVICE_TYPE_ALL_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_ALL.asciidoc[]
-  | All OpenCL devices available in the system except
-    {CL_DEVICE_TYPE_CUSTOM} devices..
+  | All OpenCL devices available in the platform, except for
+    {CL_DEVICE_TYPE_CUSTOM} devices.
+
 |====
+
+The device type is purely informational and has no semantic meaning.
+
+Some devices may be more than one type.
+For example, a {CL_DEVICE_TYPE_CPU} device may also be a
+{CL_DEVICE_TYPE_GPU} device, or a {CL_DEVICE_TYPE_ACCELERATOR} device
+may also be some other, more descriptive device type.
+{CL_DEVICE_TYPE_CUSTOM} devices must not be combined with any other
+device types.
+
+One device in the platform should be a {CL_DEVICE_TYPE_DEFAULT} device.
+The default device should also be a more specific device type, such
+as {CL_DEVICE_TYPE_CPU} or {CL_DEVICE_TYPE_GPU}.
 
 // refError
 
@@ -334,12 +353,11 @@ device except for the following queries:
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE.asciidoc[]
   | cl_device_type
-      | The OpenCL device type.
-        Currently supported values are:
+      | The type or types of the OpenCL device.
 
-        {CL_DEVICE_TYPE_CPU}, {CL_DEVICE_TYPE_GPU}, {CL_DEVICE_TYPE_ACCELERATOR},
-        {CL_DEVICE_TYPE_DEFAULT}, a combination of the above types, or
-        {CL_DEVICE_TYPE_CUSTOM}.
+        Please see the <<device-types-table, Device Types>> table
+        for supported device types and device type combinations.
+
 | {CL_DEVICE_VENDOR_ID_anchor}^4^
 
 include::{generated}/api/version-notes/CL_DEVICE_VENDOR_ID.asciidoc[]
@@ -1988,7 +2006,7 @@ include::{generated}/api/version-notes/clCreateContextFromType.asciidoc[]
     _properties_ can also be `NULL` in which case the platform that is selected
     is implementation-defined.
   * _device_type_ is a bit-field that identifies the type of device and is
-    described in the <<device-categories-table, Device Categories>> table.
+    described in the <<device-types-table, Device Types>> table.
   * _pfn_notify_ and _user_data_ are described in {clCreateContext}.
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
