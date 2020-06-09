@@ -1788,3 +1788,126 @@ precision floating-point values and performing the operation in single
 precision floating-point.
 In this case, the implementation will use the_ `half` _scalar or vector data
 type as a storage only format_.
+
+[[cl_khr_fp16-additions-to-chapter-8-of-the-opencl-2.0-specification]]
+=== Additions to Chapter 8 of the OpenCL 2.0 C Specification
+
+Add new sub-sections to _section 8.3.1. Conversion rules for normalized integer channel data types_:
+
+[[cl_khr_fp16-converting-normalized-integer-channel-data-types-to-floating-point-values]]
+==== Converting normalized integer channel data types to half precision floating-point values
+
+For images created with image channel data type of `CL_UNORM_INT8` and
+`CL_UNORM_INT16`, *read_imagef* will convert the channel values from an
+8-bit or 16-bit unsigned integer to normalized half precision
+floating-point values in the range [`0.0h`, `1.0h`].
+
+For images created with image channel data type of `CL_SNORM_INT8` and
+`CL_SNORM_INT16`, *read_imagef* will convert the channel values from an
+8-bit or 16-bit signed integer to normalized half precision floating-point
+values in the range [`-1.0h`, `1.0h`].
+
+These conversions are performed as follows:
+
+`CL_UNORM_INT8` (8-bit unsigned integer) {rightarrow} `half`
+
+  :: normalized `half` value = `round_to_half(c / 255)`
+
+`CL_UNORM_INT_101010` (10-bit unsigned integer) {rightarrow} `half`
+
+  :: normalized `half` value = `round_to_half(c / 1023)`
+
+`CL_UNORM_INT16` (16-bit unsigned integer) {rightarrow} `half`
+
+  :: normalized `half` value = `round_to_half(c / 65535)`
+
+`CL_SNORM_INT8` (8-bit signed integer) {rightarrow} `half`
+
+  :: normalized `half` value = `max(-1.0f, round_to_half(c / 127))`
+
+`CL_SNORM_INT16` (16-bit signed integer) {rightarrow} `half`
+
+  :: normalized `half` value = `max(-1.0f, round_to_half(c / 32767))`
+
+The accuracy of the above conversions must be \<= 1.5 ulp except for the
+following cases.
+
+For `CL_UNORM_INT8`
+
+  :: 0 must convert to `0.0h` and
+  :: 255 must convert to `1.0h`
+
+For `CL_UNORM_INT_101010`
+
+  :: 0 must convert to `0.0h` and
+  :: 1023 must convert to `1.0h`
+
+For `CL_UNORM_INT16`
+
+  :: 0 must convert to `0.0h` and
+  :: 65535 must convert to `1.0h`
+
+For `CL_SNORM_INT8`
+
+  :: -128 and -127 must convert to `-1.0j`,
+  :: 0 must convert to `0.0h` and
+  :: 127 must convert to `1.0h`
+
+For `CL_SNORM_INT16`
+
+  :: -32768 and -32767 must convert to `-1.0h`,
+  :: 0 must convert to `0.0h` and
+  :: 32767 must convert to `1.0h`
+
+
+[[cl_khr_fp16-converting-floating-point-values-to-normalized-integer-channel-data-types]]
+==== Converting half precision floating-point values to normalized integer channel data types
+
+For images created with image channel data type of `CL_UNORM_INT8` and
+`CL_UNORM_INT16`, *write_imagef* will convert the floating-point color value
+to an 8-bit or 16-bit unsigned integer.
+
+For images created with image channel data type of `CL_SNORM_INT8` and
+`CL_SNORM_INT16`, *write_imagef* will convert the floating-point color value
+to an 8-bit or 16-bit signed integer.
+
+The preferred conversion uses the round to nearest even (`_rte`) rounding
+mode, but OpenCL implementations may choose to approximate the rounding mode
+used in the conversions described below.
+When approximate rounding is used instead of the preferred rounding,
+the result of the conversion must satisfy the bound given below.
+
+`half` {rightarrow} `CL_UNORM_INT8` (8-bit unsigned integer)
+
+  :: Let f~exact~ = *max*(`0`, *min*(`f * 255`, `255`))
+  :: Let f~preferred~ = *convert_uchar_sat_rte*(`f * 255.0f`)
+  :: Let f~approx~ = *convert_uchar_sat_<impl-rounding-mode>*(`f * 255.0f`)
+  :: *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+
+`half` {rightarrow} `CL_UNORM_INT_101010` (10-bit unsigned integer)
+
+  :: Let f~exact~ = *max*(`0`, *min*(`f * 1023`, `1023`))
+  :: Let f~preferred~ = *min*(*convert_ushort_sat_rte*(`f * 1023.0f`), `1023`)
+  :: Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(`f * 1023.0f`)
+  :: *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+
+`half` {rightarrow} `CL_UNORM_INT16` (16-bit unsigned integer)
+
+  :: Let f~exact~ = *max*(`0`, *min*(`f * 65535`, `65535`))
+  :: Let f~preferred~ = *convert_ushort_sat_rte*(`f * 65535.0f`)
+  :: Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(`f * 65535.0f`)
+  :: *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+
+`half` {rightarrow} `CL_SNORM_INT8` (8-bit signed integer)
+
+  :: Let f~exact~ = *max*(`-128`, *min*(`f * 127`, `127`))
+  :: Let f~preferred~ = *convert_char_sat_rte*(`f * 127.0f`)
+  :: Let f~approx~ = *convert_char_sat_<impl_rounding_mode>*(`f * 127.0f`)
+  :: *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+
+`half` {rightarrow} `CL_SNORM_INT16` (16-bit signed integer)
+
+  :: Let f~exact~ = *max*(`-32768`, *min*(`f * 32767`, `32767`))
+  :: Let f~preferred~ = *convert_short_sat_rte*(`f * 32767.0f`)
+  :: Let f~approx~ = *convert_short_sat_<impl-rounding-mode>*(`f * 32767.0f`)
+  :: *fabs*(f~exact~ - f~approx~) must be \<= 0.6
