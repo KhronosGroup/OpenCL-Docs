@@ -1,0 +1,148 @@
+cl_intel_create_buffer_with_properties
+======================================
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
+
+== Name Strings
+
++cl_intel_create_buffer_with_properties+
+
+== Contact
+
+Kris Kang, Intel (kris 'dot' kang 'at' intel 'dot' com)
+
+== Contributors
+
+Kris Kang, Intel +
+Michael Kinsner, Intel +
+Peter Yiannacouras, Intel +
+Ben Ashbaugh, Intel
+
+== Notice
+
+Copyright (c) 2020 Intel Corporation. All rights reserved.
+
+== Status
+
+Final Draft
+
+== Version
+
+[width="40%",cols="25,25"]
+|========================================
+| Last Modified | 2020-05-29
+| Revision      | 1
+|========================================
+
+== Dependencies
+
+This extension is written against the OpenCL Specification Version 1.0, Revision 48.
+
+This extension requires OpenCL 1.0 or later.
+
+== Overview
+
+This extension allows OpenCL 1.x and 2.x devices to support the clCreateBufferWithProperties API that was added in OpenCL 3.0. This allows older OpenCL implementations to support other optional extensions or features that use the clCreateBufferWithProperties API to specify additional buffer properties, without recreating the API that is already part of OpenCL 3.0.
+
+== New API Functions
+
+[source]
+----
+cl_mem CL_API_CALL clCreateBufferWithPropertiesINTEL(
+    cl_context context,
+    const cl_mem_properties_intel* properties,
+    cl_mem_flags flags,
+    size_t size,
+    void* host_ptr,
+    cl_int* errcode_ret);
+----
+
+== New API Types
+
+[source]
+----
+typedef cl_bitfield  cl_mem_properties_intel;
+----
+
+== Modifications to the OpenCL API Specification
+
+(Add to Section 5.2.1, Creating Buffer Objects) ::
++
+--
+A *buffer object* may also be created with additional properties using the function
+----
+cl_mem clCreateBufferWithPropertiesINTEL(
+    cl_context context,
+    const cl_mem_properties_intel* properties,
+    cl_mem_flags flags,
+    size_t size,
+    void* host_ptr,
+    cl_int* errcode_ret);
+----
+
+  * _context_ is a valid OpenCL context used to create the buffer object.
+  * _properties_ is an optional list of properties for the buffer object and their corresponding values.
+    Each property name is immediately followed by the corresponding desired value.
+    The list is terminated with the special property `0`.
+    If no properties are required, properties may be `NULL`.
+    This extension does not define any optional properties for buffers.
+  * _flags_ is a bit-field that is used to specify allocation and usage
+    information such as the memory arena that should be used to allocate the
+    buffer object and how it will be used. _Table 5.3_ describes the possible values for _flags_.
+  * _size_ is the size in bytes of the buffer memory object to be allocated.
+  * _host_ptr_ is a pointer to the buffer data that may already be allocated by the application.
+    The size of the buffer that _host_ptr_ points to must be greater than or equal to _size_ bytes.
+  * _errcode_ret_ may return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+*clCreateBufferWithPropertiesINTEL* returns a valid non-zero buffer object and _errcode_ret_ is
+set to `CL_SUCCESS` if the buffer object is created successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * `CL_INVALID_CONTEXT` if _context_ is not a valid context.
+  * `CL_INVALID_VALUE` if a property name in _properties_ is not a
+    supported property name, if the value specified for a supported property
+    name is not valid, or if the same property name is specified more than
+    once.
+  * `CL_INVALID_VALUE` if values specified in _flags_ are not valid as defined
+    in _table 5.3_.
+  * `CL_INVALID_BUFFER_SIZE` if _size_ is 0.
+  * `CL_INVALID_HOST_PTR` if _host_ptr_ is `NULL` and `CL_MEM_USE_HOST_PTR` or
+    `CL_MEM_COPY_HOST_PTR` are set in _flags_ or if _host_ptr_ is not `NULL`
+    but `CL_MEM_COPY_HOST_PTR` or `CL_MEM_USE_HOST_PTR` are not set in _flags_.
+  * `CL_MEM_OBJECT_ALLOCATION_FAILURE` if there is a failure to allocate
+    memory for buffer object.
+  * `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+
+--
+
+== Issues
+
+None.
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1|2020-05-29|Kris Kang|*Initial public release*
+|========================================
+
