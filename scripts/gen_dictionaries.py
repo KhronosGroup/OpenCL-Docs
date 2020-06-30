@@ -182,7 +182,7 @@ if __name__ == "__main__":
             category = type.get('category')
             if category == 'struct':
                 name = type.get('name')
-                print('found type: ' +name)
+                #print('found type: ' +name)
 
                 # Create a variant of the name that precedes underscores with
                 # "zero width" spaces.  This causes some long names to be
