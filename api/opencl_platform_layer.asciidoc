@@ -2205,3 +2205,52 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 --
+
+[open,refpage='clSetContextDestructorCallback',desc='Registers a destructor callback function with a context.',type='protos']
+--
+To register a callback function with a context that is called when
+the context is destroyed, call the function
+
+include::{generated}/api/protos/clSetContextDestructorCallback.txt[]
+include::{generated}/api/version-notes/clSetContextDestructorCallback.asciidoc[]
+
+  * _context_ specifies the OpenCL context to register the callback to.
+  * _pfn_notify_ is the callback function to register.
+    This callback function may be called asynchronously by the OpenCL
+    implementation.
+    It is the application's responsibility to ensure that the callback function
+    is thread-safe.
+    The parameters to this callback function are:
+  ** _context_ is the OpenCL context being deleted.
+     When the callback function is called by the implementation, this context
+     is no longer valid.
+     _context_ is only provided for reference purposes.
+  ** _user_data_ is a pointer to user-supplied data.
+  * _user_data_ will be passed as the _user_data_ argument when _pfn_notify_ is
+    called.
+    _user_data_ can be `NULL`.
+
+Each call to {clSetContextDestructorCallback} registers the specified
+callback function on a destructor callback stack associated with _context_.
+The registered callback functions are called in the reverse order in
+which they were registered.
+If a context callback function was specified when _context_ was created,
+it will not be called after any context destructor callback is called.
+Therefore, the context destructor callback provides a mechanism for an
+application to safely re-use or free any _user_data_ specified for the
+context callback function when _context_ was created.
+
+// refError
+
+{clSetContextDestructorCallback} returns {CL_SUCCESS} if the function is
+executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if _pfn_notify_ is `NULL`.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+

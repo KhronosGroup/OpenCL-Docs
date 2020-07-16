@@ -3792,40 +3792,39 @@ Using this function to release a reference that was not obtained by creating
 the object or by calling {clRetainMemObject} causes undefined behavior.
 --
 
-[open,refpage='clSetMemObjectDestructorCallback',desc='Registers a user callback function with a memory object.',type='protos']
+[open,refpage='clSetMemObjectDestructorCallback',desc='Registers a destructor callback function with a memory object.',type='protos']
 --
-To register a user callback function with a memory object, call the function
+To register a callback function with a memory object that is called when
+the memory object is destroyed, call the function
 
 include::{generated}/api/protos/clSetMemObjectDestructorCallback.txt[]
 include::{generated}/api/version-notes/clSetMemObjectDestructorCallback.asciidoc[]
 
-  * _memobj_ is a valid memory object.
-  * _pfn_notify_ is the callback function that can be registered by the
-    application.
+  * _memobj_ specifies the memory object to register the callback to.
+  * _pfn_notify_ is the callback function to register.
     This callback function may be called asynchronously by the OpenCL
     implementation.
-    It is the applications responsibility to ensure that the callback function
+    It is the application's responsibility to ensure that the callback function
     is thread-safe.
     The parameters to this callback function are:
   ** _memobj_ is the memory object being deleted.
-     When the user callback is called by the implementation, this memory
+     When the callback function is called by the implementation, this memory
      object is not longer valid.
      _memobj_ is only provided for reference purposes.
-  ** _user_data_ is a pointer to user supplied data.
+  ** _user_data_ is a pointer to user-supplied data.
   * _user_data_ will be passed as the _user_data_ argument when _pfn_notify_ is
     called.
     _user_data_ can be `NULL`.
 
-Each call to {clSetMemObjectDestructorCallback} registers the specified user
-callback function on a callback stack associated with _memobj_.
-The registered user callback functions are called in the reverse order in
+Each call to {clSetMemObjectDestructorCallback} registers the specified
+callback function on a destructor callback stack associated with _memobj_.
+The registered callback functions are called in the reverse order in
 which they were registered.
-The user callback functions are called and then the memory objects resources
-are freed and the memory object is deleted.
-This provides a mechanism for the application (and libraries) using _memobj_
-to be notified when the memory referenced by _host_ptr_, specified when the
-memory object is created and used as the storage bits for the memory object,
-can be reused or freed.
+The registered callback functions are called and then the memory object's
+resources are freed and the memory object is deleted.
+Therefore, the memory object destructor callback provides a mechanism for
+an application to safely re-use or free a _host_ptr_ that was specified when
+_memobj_ was created and used as the storage bits for the memory object.
 
 // refError
 
@@ -5715,40 +5714,39 @@ Using this function to release a reference that was not obtained by creating
 the object or by calling {clRetainProgram} causes undefined behavior.
 --
 
-[open,refpage='clSetProgramReleaseCallback',desc='',type='protos']
+[open,refpage='clSetProgramReleaseCallback',desc='Registers a destructor callback function with a program object.',type='protos']
 --
-To register a user callback function with a program object, call the
-function
+To register a callback function with a program object that is called when
+the program object is destroyed, call the function
 
 include::{generated}/api/protos/clSetProgramReleaseCallback.txt[]
 include::{generated}/api/version-notes/clSetProgramReleaseCallback.asciidoc[]
 
-  * _program_ is a valid program object
-  * _pfn_notify_ is the callback function that can be registered by the
-    application.
+  * _program_ specifies the memory object to register the callback to.
+  * _pfn_notify_ is the callback function to register.
     This callback function may be called asynchronously by the OpenCL
     implementation.
-    It is the applications responsibility to ensure that the callback function
+    It is the application's responsibility to ensure that the callback function
     is thread safe.
     The parameters to this callback function are:
-  ** _prog_ is the program object whose destructors are being called.
-     When the user callback is called by the implementation, this program object
-     is not longer valid.
-     prog is only provided for reference purposes.
+  ** _program_ is the program being deleted.
+     When the callback function is called by the implementation, this program
+     object is not longer valid.
+     _program_ is only provided for reference purposes.
   ** _user_data_ is a pointer to user supplied data.
-     _user_data_ will be passed as the _user_data_ argument when _pfn_notify_ is
-     called.
-     user data can be `NULL`.
+  * _user_data_ will be passed as the _user_data_ argument when _pfn_notify_ is
+    called.
+    user data can be `NULL`.
 
-Each call to {clSetProgramReleaseCallback} registers the specified user
-callback function on a callback stack associated with program.
-The registered user callback functions are called in the reverse order in
+Each call to {clSetProgramReleaseCallback} registers the specified
+callback function on a callback stack associated with _program_.
+The registered callback functions are called in the reverse order in
 which they were registered.
-The user callback functions are called after destructors (if any) for
-program scope global variables (if any) are called and before the program is
-released.
-This provides a mechanism for the application (and libraries) to be notified
-when destructors are complete.
+The registered callback functions are called after destructors (if any) for
+program scope global variables (if any) are called and before the program
+object is deleted.
+This provides a mechanism for an application to be notified when destructors
+for program scope global variables are complete.
 
 // refError
 
