@@ -87,6 +87,7 @@ The following table describes OpenCL C 3.0 feature macros and their meaning:
 | `+__opencl_c_3d_image_writes+`
 | The OpenCL C compiler supports built-in functions for writing to 3D image objects.
 
+OpenCL C compilers that define the feature macro `+__opencl_c_3d_image_writes+` must also define the feature macro `+__opencl_c_images+`.
 | `+__opencl_c_atomic_order_acq_rel+`
 | The OpenCL C compiler supports enumerations and built-in functions for atomic operations with acquire and release memory consistency orders.
 
@@ -107,6 +108,16 @@ OpenCL C compilers that define the feature macro `+__opencl_c_device_enqueue+` m
 | `+__opencl_c_generic_address_space+`
 | The OpenCL C compiler supports the unnamed generic address space.
 
+| `+__opencl_c_fp64+`
+| The OpenCL C compiler supports types and built-in functions with 64-bit floating point types.
+
+| `+__opencl_c_images+`
+| The OpenCL C compiler supports types and built-in functions for images.
+
+| `+__opencl_c_int64+`
+| The OpenCL C compiler supports types and built-in functions with 64-bit integers.
+
+OpenCL C compilers for FULL profile devices or devices with 64-bit pointers must always define the `+__opencl_c_int64+` feature macro.
 | `+__opencl_c_pipes+`
 | The OpenCL C compiler supports the pipe modifier and built-in functions to read and write from a pipe.
 
@@ -118,6 +129,7 @@ OpenCL C compilers that define the feature macro `+__opencl_c_pipes+` must also 
 | `+__opencl_c_read_write_images+`
 | The OpenCL C compiler supports reading from and writing to the same image object in a kernel.
 
+OpenCL C compilers that define the feature macro `+__opencl_c_read_write_images+` must also define the feature macro `+__opencl_c_images+`.
 | `+__opencl_c_subgroups+`
 | The OpenCL C compiler supports built-in functions operating on sub-groupings of work-items.
 
@@ -169,9 +181,9 @@ The following table describes the list of built-in scalar data types.
     | A signed two's complement 32-bit integer.
 | `unsigned int`, `uint`
     | An unsigned 32-bit integer.
-| `long`
+| `long`^2x^
     | A signed two's complement 64-bit integer.
-| `unsigned long`, `ulong`
+| `unsigned long`, `ulong`^2x^
     | An unsigned 64-bit integer.
 | `float`
     | A 32-bit floating-point.
@@ -207,9 +219,20 @@ The following table describes the list of built-in scalar data types.
 [1] When any scalar value is converted to `bool`, the result is 0 if the
 value compares equal to 0; otherwise, the result is 1.
 
+// TODO: Renumber the footnotes from here onwards.
+[2x] The `long`, `unsigned long` and `ulong` scalar types are optional types
+for EMBEDDED profile devices that are supported if the value of the
+<<opencl-device-queries, `CL_​DEVICE_​EXTENSIONS` device query>> contains
+`+cles_khr_int64+`
+An OpenCL C 3.0 compiler must also define the `+__opencl_c_int64+` feature
+macro unconditionally for FULL profile devices, or for EMBEDDED profile
+devices that support these types.
+
 [2] The `double` scalar type is an optional type that is supported if the
 value of the <<opencl-device-queries, `CL_DEVICE_DOUBLE_FP_CONFIG` device
 query>> is not zero.
+If this is the case then an OpenCL C 3.0 compiler must also define the
+`+__opencl_c_fp64+` feature macro.
 
 [3] These are 32-bit types if the value of the <<opencl-device-queries,
 `CL_DEVICE_ADDRESS_BITS` device query>> is 32-bits, and 64-bit types if the
@@ -352,9 +375,9 @@ The following table describes the list of built-in vector data types.
     | A vector of _n_ 32-bit signed two's complement integer values.
 | `uint__n__`
     | A vector of _n_ 32-bit unsigned integer values.
-| `long__n__`
+| `long__n__`^5x^
     | A vector of _n_ 64-bit signed two's complement integer values.
-| `ulong__n__`
+| `ulong__n__`^5x^
     | A vector of _n_ 64-bit unsigned integer values.
 | `float__n__`
     | A vector of _n_ 32-bit floating-point values.
@@ -362,9 +385,20 @@ The following table describes the list of built-in vector data types.
     | A vector of _n_ 64-bit floating-point values.
 |====
 
+// TODO include this footnote in the renumbering.
+[5x] The `long` and `ulong` vector types are optional types for
+EMBEDDED profile devices that are supported if the value of the
+<<opencl-device-queries, `CL_​DEVICE_​EXTENSIONS` device query>> contains
+`+cles_khr_int64+`
+An OpenCL C 3.0 compiler must also define the `+__opencl_c_int64+` feature
+macro unconditionally for FULL profile devices, or for EMBEDDED profile
+devices that support these types.
+
 [5] The `double` vector type is an optional type that is supported if the
 value of the <<opencl-device-queries, `CL_DEVICE_DOUBLE_FP_CONFIG` device
 query>> is not zero.
+If this is the case then an OpenCL C 3.0 compiler must also define the
+`+__opencl_c_fp64+` feature macro.
 
 The built-in vector data types are also declared as appropriate types in the
 OpenCL API (and header files) that can be used by an application.
@@ -472,6 +506,8 @@ The `image2d_t`, `image3d_t`, `image2d_array_t`, `image1d_t`,
 `image2d_array_depth_t` and `sampler_t` types are only defined if the device
 supports images, i.e. the value of the <<opencl-device-queries,
 `CL_DEVICE_IMAGE_SUPPORT` device query>>) is `CL_TRUE`.
+If this is the case then an OpenCL C 3.0 compiler must also define the
+`+__opencl_c_images+` feature macro.
 ====
 
 The C99 derived types (arrays, structs, unions, functions, and pointers),
@@ -3243,7 +3279,8 @@ __kernel __attribute__((work_group_size_hint(X, 1, 1))) \
     This is an integer constant of 1 if images are supported and is
     undefined otherwise.
     Also refer to the value of the <<opencl-device-queries,
-    `CL_DEVICE_IMAGE_SUPPORT` device query>>.
+    `CL_DEVICE_IMAGE_SUPPORT` device query>> and the `+__opencl_c_images+`
+    feature macro.
 
 `+__FAST_RELAXED_MATH__+` ::
     Used to determine if the `-cl-fast-relaxed-math` optimization option is
@@ -4379,12 +4416,16 @@ all arguments and the return type, unless otherwise specified.
       Edge case behavior is per the IEEE 754-2008 standard.
 | gentype *fmax*(gentype _x_, gentype _y_) +
   gentypef *fmax*(gentypef _x_, float _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   gentyped *fmax*(gentyped _x_, double _y_)
     | Returns _y_ if _x_ < _y_, otherwise it returns _x_.
       If one argument is a NaN, *fmax*() returns the other argument.
       If both arguments are NaNs, *fmax*() returns a NaN.
 | gentype *fmin*^29^(gentype _x_, gentype _y_) +
   gentypef *fmin*(gentypef _x_, float _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   gentyped *fmin*(gentyped _x_, double _y_)
     | Returns _y_ if _y_ < _x_, otherwise it returns _x_.
       If one argument is a NaN, *fmin*() returns the other argument.
@@ -4438,6 +4479,8 @@ all arguments and the return type, unless otherwise specified.
       For each component the mantissa returned is a `double` with magnitude
       in the interval [1/2, 1) or 0.
       Each component of _x_ equals mantissa returned * 2__^exp^__.
+
+      Requires support for doubles, e.g. with the `+__opencl_c_fp64+` feature macro. +
 | gentype *hypot*(gentype _x_, gentype _y_)
     | Compute the value of the square root of __x__^2^+ __y__^2^ without
       undue overflow or underflow.
@@ -4449,6 +4492,8 @@ all arguments and the return type, unless otherwise specified.
 | float__n__ *ldexp*(float__n__ _x_, int__n__ _k_) +
   float__n__ *ldexp*(float__n__ _x_, int _k_) +
   float *ldexp*(float _x_, int _k_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   double__n__ *ldexp*(double__n__ _x_, int__n__ _k_) +
   double__n__ *ldexp*(double__n__ _x_, int _k_) +
   double *ldexp*(double _x_, int _k_)
@@ -4457,24 +4502,35 @@ all arguments and the return type, unless otherwise specified.
 
   float__n__ **lgamma_r**(float__n__ _x_, {global} int__n__ *_signp_) +
   float **lgamma_r**(float _x_, {global} int *_signp_) +
-  double__n__ **lgamma_r**(double__n__ _x_, {global} int__n__ *_signp_) +
-  double **lgamma_r**(double _x_, {global} int *_signp_) +
 
   float__n__ **lgamma_r**(float__n__ _x_, {local} int__n__ *_signp_) +
   float **lgamma_r**(float _x_, {local} int *_signp_) +
-  double__n__ **lgamma_r**(double__n__ _x_, {local} int__n__ *_signp_) +
-  double **lgamma_r**(double _x_, {local} int *_signp_) +
 
   float__n__ **lgamma_r**(float__n__ _x_, {private} int__n__ *_signp_) +
   float **lgamma_r**(float _x_, {private} int *_signp_) +
+
+  For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
+  feature macro: +
+
+  float__n__ **lgamma_r**(float__n__ _x_, int__n__ *_signp_) +
+  float **lgamma_r**(float _x_, int *_signp_)
+    | Log gamma function.
+      Returns the natural logarithm of the absolute value of the gamma
+      function.
+      The sign of the gamma function is returned in the _signp_ argument of
+      *lgamma_r*.
+| double__n__ **lgamma_r**(double__n__ _x_, {global} int__n__ *_signp_) +
+  double **lgamma_r**(double _x_, {global} int *_signp_) +
+
+  double__n__ **lgamma_r**(double__n__ _x_, {local} int__n__ *_signp_) +
+  double **lgamma_r**(double _x_, {local} int *_signp_) +
+
   double__n__ **lgamma_r**(double__n__ _x_, {private} int__n__ *_signp_) +
   double **lgamma_r**(double _x_, {private} int *_signp_) +
 
   For OpenCL C 2.0 or with the `+__opencl_c_generic_address_space+`
   feature macro: +
 
-  float__n__ **lgamma_r**(float__n__ _x_, int__n__ *_signp_) +
-  float **lgamma_r**(float _x_, int *_signp_) +
   double__n__ **lgamma_r**(double__n__ _x_, int__n__ *_signp_) +
   double **lgamma_r**(double _x_, int *_signp_)
     | Log gamma function.
@@ -4482,6 +4538,8 @@ all arguments and the return type, unless otherwise specified.
       function.
       The sign of the gamma function is returned in the _signp_ argument of
       *lgamma_r*.
+
+      Requires support for doubles, e.g. with the `+__opencl_c_fp64+` feature macro. +
 | gentype *log*(gentype)
     | Compute natural logarithm.
 | gentype *log2*(gentype)
@@ -4519,6 +4577,9 @@ all arguments and the return type, unless otherwise specified.
       It stores the integral part in the object pointed to by _iptr_.
 | float__n__ *nan*(uint__n__ _nancode_) +
   float *nan*(uint _nancode_) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   double__n__ *nan*(ulong__n__ _nancode_) +
   double *nan*(ulong _nancode_)
     | Returns a quiet NaN.
@@ -4532,6 +4593,8 @@ all arguments and the return type, unless otherwise specified.
     | Compute _x_ to the power _y_.
 | float__n__ *pown*(float__n__ _x_, int__n__ _y_) +
   float *pown*(float _x_, int _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   double__n__ *pown*(double__n__ _x_, int__n__ _y_) +
   double *pown*(double _x_, int _y_)
     | Compute _x_ to the power _y_, where _y_ is an integer.
@@ -4589,12 +4652,16 @@ all arguments and the return type, unless otherwise specified.
       *remquo* also calculates the lower seven bits of the integral quotient
       _x_/_y_, and gives that value the same sign as _x_/_y_.
       It stores this signed value in the object pointed to by _quo_.
+
+      Requires support for doubles, e.g. with the `+__opencl_c_fp64+` feature macro. +
 | gentype *rint*(gentype)
     | Round to integral value (using round to nearest even rounding mode) in
       floating-point format.
       Refer to section 7.1 for description of rounding modes.
 | float__n__ *rootn*(float__n__ _x_, int__n__ _y_) +
   float *rootn*(float _x_, int _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   double__n__ *rootn*(double__n__ _x_, int__n__ _y_) +
   double__n__ *rootn*(double _x_, int _y_)
     | Compute _x_ to the power 1/_y_.
@@ -4790,8 +4857,9 @@ single precision floating-point number.
     | A constant expression of type `float` representing a quiet NaN.
 |====
 
-If double precision is supported by the device, the following symbolic
-constants will also be available:
+If double precision is supported by the device, e.g. for OpenCL C 3.0 the
+`+__opencl_c_fp64+` feature macro is present, the following symbolic constants
+will also be available:
 
 [cols=",",]
 |====
@@ -4904,7 +4972,8 @@ They are of type `float` and are accurate within the precision of the
 | `M_SQRT1_2_F`   | Value of 1 / {sqrt}2
 |====
 
-If double precision is supported by the device, the following macros and
+If double precision is supported by the device, e.g. for OpenCL C 3.0 the
+`+__opencl_c_fp64+` feature macro is present, then the following macros and
 constants are also available:
 
 The `FP_FAST_FMA` macro indicates whether the *fma*() family of functions
@@ -5073,6 +5142,9 @@ all arguments and the return type unless otherwise specified.
   ulong__n__ *upsample*(uint__n__ _hi_, uint__n__ _lo_)
     | _result_[i] = ((long)_hi_[i] << 32) \| _lo_[i] +
       _result_[i] = ((ulong)_hi_[i] << 32) \| _lo_[i]
+
+      Requires support for longs, e.g. with the `+__opencl_c_int64+` feature
+      macro. +
 | gentype *popcount*(gentype _x_)
     | Returns the number of non-zero bits in _x_.
 |====
@@ -5198,6 +5270,8 @@ even rounding mode.
 | *Function* | *Description*
 | gentype *clamp*(gentype _x_, gentype _minval_, gentype _maxval_) +
   gentypef *clamp*(gentypef _x_, float _minval_, float _maxval_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   gentyped *clamp*(gentyped _x_, double _minval_, double _maxval_)
     | Returns *fmin*(*fmax*(_x_, _minval_), _maxval_).
       Results are undefined if _minval_ > _maxval_.
@@ -5205,16 +5279,22 @@ even rounding mode.
     | Converts _radians_ to degrees, i.e. (180 / {pi}) * _radians_.
 | gentype *max*(gentype _x_, gentype _y_) +
   gentypef *max*(gentypef _x_, float _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   gentyped *max*(gentyped _x_, double _y_)
     | Returns _y_ if _x_ < _y_, otherwise it returns _x_.
       If _x_ or _y_ are infinite or NaN, the return values are undefined.
 | gentype *min*(gentype _x_, gentype _y_) +
   gentypef *min*(gentypef _x_, float _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   gentyped *min*(gentyped _x_, double _y_)
     | Returns _y_ if _y_ < _x_, otherwise it returns _x_.
       If _x_ or _y_ are infinite or NaN, the return values are undefined.
 | gentype *mix*(gentype _x_, gentype _y_, gentype _a_) +
   gentypef *mix*(gentypef _x_, gentypef _y_, float _a_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   gentyped *mix*(gentyped _x_, gentyped _y_, double _a_)
     | Returns the linear blend of _x_ & _y_ implemented as:
 
@@ -5227,10 +5307,14 @@ even rounding mode.
     | Converts _degrees_ to radians, i.e. ({pi} / 180) * _degrees_.
 | gentype *step*(gentype _edge_, gentype _x_) +
   gentypef *step*(float _edge_, gentypef _x_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   gentyped *step*(double _edge_, gentyped _x_)
     | Returns 0.0 if _x_ < _edge_, otherwise it returns 1.0.
 | gentype *smoothstep*(gentype _edge0_, gentype _edge1_, gentype _x_) +
   gentypef *smoothstep*(float _edge0_, float _edge1_, gentypef _x_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   gentyped *smoothstep*(double _edge0_, double _edge1_, gentyped _x_)
    a| Returns 0.0 if _x_ \<= _edge0_ and 1.0 if _x_ >= _edge1_ and performs
       smooth Hermite interpolation between 0 and 1 when _edge0_ < _x_ <
@@ -5282,22 +5366,32 @@ even rounding mode.
 | *Function* | *Description*
 | float4 *cross*(float4 _p0_, float4 _p1_) +
   float3 *cross*(float3 _p0_, float3 _p1_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   double4 *cross*(double4 _p0_, double4 _p1_) +
   double3 *cross*(double3 _p0_, double3 _p1_)
     | Returns the cross product of _p0.xyz_ and _p1.xyz_.
       The _w_ component of `float4` result returned will be 0.0.
 | float *dot*(float__n__ _p0_, float__n__ _p1_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   double *dot*(double__n__ _p0_, double__n__ _p1_)
      | Compute dot product.
 | float *distance*(float__n__ _p0_, float__n__ _p1_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   double *distance*(double__n__ _p0_, double__n__ _p1_)
     | Returns the distance between _p0_ and _p1_.
       This is calculated as *length*(_p0_ - _p1_).
 | float *length*(float__n__ _p_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   double *length*(double__n__ _p_)
     | Return the length of vector _p_, i.e., {sqrt} __p.x__^2^ + _p.y_ ^2^
       {plus} ...
 | float__n__ *normalize*(float__n__ _p_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   double__n__ *normalize*(double__n__ _p_)
     | Returns a vector in the same direction as _p_ but with a length of 1.
 | |
@@ -5392,77 +5486,147 @@ not a number (NaN) and the argument type is a vector.
 | *Function* | *Description*
 | int *isequal*(float _x_, float _y_) +
   int__n__ *isequal*(float__n__ _x_, float__n__ _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *isequal*(double _x_, double _y_) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *isequal*(double__n__ _x_, double__n__ _y_)
     | Returns the component-wise compare of _x_ == _y_.
 | int *isnotequal*(float _x_, float _y_) +
   int__n__ *isnotequal*(float__n__ _x_, float__n__ _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *isnotequal*(double _x_, double _y_) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *isnotequal*(double__n__ _x_, double__n__ _y_)
     | Returns the component-wise compare of _x_ != _y_.
 | int *isgreater*(float _x_, float _y_) +
   int__n__ *isgreater*(float__n__ _x_, float__n__ _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *isgreater*(double _x_, double _y_) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *isgreater*(double__n__ _x_, double__n__ _y_)
     | Returns the component-wise compare of _x_ > _y_.
 | int *isgreaterequal*(float _x_, float _y_) +
   int__n__ *isgreaterequal*(float__n__ _x_, float__n__ _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *isgreaterequal*(double _x_, double _y_) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *isgreaterequal*(double__n__ _x_, double__n__ _y_)
     | Returns the component-wise compare of _x_ >= _y_.
 | int *isless*(float _x_, float _y_) +
   int__n__ *isless*(float__n__ _x_, float__n__ _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *isless*(double _x_, double _y_) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *isless*(double__n__ _x_, double__n__ _y_)
     | Returns the component-wise compare of _x_ < _y_.
 | int *islessequal*(float _x_, float _y_) +
   int__n__ *islessequal*(float__n__ _x_, float__n__ _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *islessequal*(double _x_, double _y_) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *islessequal*(double__n__ _x_, double__n__ _y_)
     | Returns the component-wise compare of _x_ \<= _y_.
 | int *islessgreater*(float _x_, float _y_) +
   int__n__ *islessgreater*(float__n__ _x_, float__n__ _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *islessgreater*(double _x_, double _y_) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *islessgreater*(double__n__ _x_, double__n__ _y_)
     | Returns the component-wise compare of (_x_ < _y_) \|\| (_x_ > _y_) .
 | |
 | int *isfinite*(float) +
   int__n__ *isfinite*(float__n__) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *isfinite*(double) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *isfinite*(double__n__)
     | Test for finite value.
 | int *isinf*(float) +
   int__n__ *isinf*(float__n__) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *isinf*(double) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *isinf*(double__n__)
     | Test for infinity value (positive or negative).
 | int *isnan*(float) +
   int__n__ *isnan*(float__n__) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *isnan*(double) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *isnan*(double__n__)
     | Test for a NaN.
 | int *isnormal*(float) +
   int__n__ *isnormal*(float__n__) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *isnormal*(double) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *isnormal*(double__n__)
 | Test for a normal value.
 | int *isordered*(float _x_, float _y_) +
   int__n__ *isordered*(float__n__ _x_, float__n__ _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *isordered*(double _x_, double _y_) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *isordered*(double__n__ _x_, double__n__ _y_)
     | Test if arguments are ordered.
      *isordered*() takes arguments _x_ and _y_, and returns the result
      *isequal*(_x_, _x_) && *isequal*(_y_, _y_).
 | int *isunordered*(float _x_, float _y_) +
   int__n__ *isunordered*(float__n__ _x_, float__n__ _y_) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *isunordered*(double _x_, double _y_) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *isunordered*(double__n__ _x_, double__n__ _y_)
     | Test if arguments are unordered.
      *isunordered*() takes arguments _x_ and _y_, returning non-zero if _x_
      or _y_ is NaN, and zero otherwise.
 | int *signbit*(float) +
   int__n__ *signbit*(float__n__) +
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
   int *signbit*(double) +
+
+  If doubles and longs are supported, e.g. with the `+__opencl_c_fp64+` and
+  `+__opencl_c_int64+` feature macros: +
   long__n__ *signbit*(double__n__)
     | Test for sign bit.
      The scalar version of the function returns a 1 if the sign bit in the
@@ -5693,6 +5857,8 @@ described in the <<opencl-extension-spec,OpenCL Extension Specification>>.
 
       *vstore_half* uses the default rounding mode.
       The default rounding mode is round to nearest even.
+
+      Requires support for doubles, e.g. with the `+__opencl_c_fp64+` feature macro.
 | void **vstore_half__n__**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
   void **vstore_half__n__{rte}**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
   void **vstore_half__n__{rtz}**(double__n__ _data_, size_t _offset_, {global} half *_p_) +
@@ -5727,6 +5893,8 @@ described in the <<opencl-extension-spec,OpenCL Extension Specification>>.
 
       *vstore_half__n__* uses the default rounding mode.
       The default rounding mode is round to nearest even.
+
+      Requires support for doubles, e.g. with the `+__opencl_c_fp64+` feature macro.
 | |
 | float__n__ **vloada_half__n__**(size_t _offset_, const {global} half *_p_) +
   float__n__ **vloada_half__n__**(size_t _offset_, const {local} half *_p_) +
@@ -5826,6 +5994,8 @@ described in the <<opencl-extension-spec,OpenCL Extension Specification>>.
 
       *vstorea_half__n__* uses the default rounding mode.
       The default rounding mode is round to nearest even.
+
+      Requires support for doubles, e.g. with the `+__opencl_c_fp64+` feature macro.
 |====
 
 [38] *vload3* and *vload_half3* read (_x_,_y_,_z_) components from address
@@ -6486,11 +6656,15 @@ The list of supported atomic type names are:
 [45] The atomic_long and atomic_ulong types are supported if the
 *cl_khr_int64_base_atomics* and *cl_khr_int64_extended_atomics* extensions
 are supported and have been enabled.
+If this is the case then an OpenCL C 3.0 compiler must also define the
+`+__opencl_c_int64+` feature macro.
 
 [46] The `atomic_double` type is only supported if double precision is
 supported and the *cl_khr_int64_base_atomics* and
 *cl_khr_int64_extended_atomics* extensions are supported and have been
 enabled.
+If this is the case then an OpenCL C 3.0 compiler must also define the
+`+__opencl_c_fp64+` feature macro.
 
 [47] If the device address space is 64-bits, the data types
 `atomic_intptr_t`, `atomic_uintptr_t`, `atomic_size_t` and
@@ -7533,11 +7707,15 @@ integer data types.
   int *vec_step*(half3 _a_) +
   int *vec_step*(int3 _a_) +
   int *vec_step*(uint3 _a_) +
+  int *vec_step*(float3 _a_) +
+  int *vec_step*(_type_) +
+
+  If longs are supported, e.g. with the `+__opencl_c_int64+` feature macro: +
   int *vec_step*(long3 _a_) +
   int *vec_step*(ulong3 _a_) +
-  int *vec_step*(float3 _a_) +
-  int *vec_step*(double3 _a_) +
-  int *vec_step*(_type_)
+
+  If doubles are supported, e.g. with the `+__opencl_c_fp64+` feature macro: +
+  int *vec_step*(double3 _a_)
     | The *vec_step* built-in function takes a built-in scalar or vector
       data type argument and returns an integer value representing the
       number of elements in the scalar or vector.
@@ -7924,7 +8102,8 @@ the decimal-point character so that subsequent digits align to nibble
 ====
 The conversion specifiers *e,E,g,G,a,A* convert a `float` or `half` argument
 that is a scalar type to a `double` only if the `double` data type is
-supported.
+supported, e.g. for OpenCL C 3.0 the `+__opencl_c_fp64+`` feature macro is
+present.
 If the `double` data type is not supported, the argument will be a `float`
 instead of a `double` and the `half` type will be converted to a `float`.
 ====
@@ -8060,6 +8239,11 @@ The built-in functions defined in this section can only be used with image
 memory objects.
 An image memory object can be accessed by specific function calls that read
 from and/or write to specific locations in the image.
+
+Support for the image built-in functions is optional.
+If a device supports images then the value of the <<opencl-device-queries,
+`CL_DEVICE_IMAGE_SUPPORT` device query>>) is `CL_TRUE` and the OpenCL C 3.0
+compiler must define the `+__opencl_c_images+` feature macro.
 
 Image memory objects that are being read by a kernel should be declared with
 the `read_only` qualifier.
@@ -9502,7 +9686,8 @@ type for the arguments.
 
 [59] Only if the *cl_khr_fp16* extension is supported and has been enabled.
 
-[60] Only if double precision is supported.
+[60] Only if double precision is supported, e.g. for OpenCL C 3.0 the
+`+__opencl_c_fp64+` feature macro is present.
 
 [[table-builtin-work-group]]
 .Built-in Work-group Collective Functions
@@ -9678,7 +9863,8 @@ for the arguments to the pipe functions listed in the following table.
 [61] The `half` scalar and vector types can only be used if the *cl_khr_fp16*
 extension is supported and has been enabled.
 The `double` scalar and vector types can only be used if `double` precision
-is supported.
+is supported, e.g. for OpenCL C 3.0 the `+__opencl_c_fp64+` feature macro
+is present.
 
 [[table-builtin-pipe]]
 .Built-in Pipe Functions
@@ -9752,7 +9938,8 @@ for the arguments to the pipe functions listed in the following table.
 [62] The `half` scalar and vector types can only be used if the *cl_khr_fp16*
 extension is supported and has been enabled.
 The `double` scalar and vector types can only be used if `double` precision
-is supported.
+is supported, e.g. for OpenCL C 3.0 the `+__opencl_c_fp64+` feature macro is
+present.
 
 [[table-builtin-pipe-work-group]]
 .Built-in Pipe Work-group Functions
@@ -9827,7 +10014,8 @@ for the arguments to the pipe functions listed in the following table.
 [63] The `half` scalar and vector types can only be used if the *cl_khr_fp16*
 extension is supported and has been enabled.
 The `double` scalar and vector types can only be used if `double` precision
-is supported.
+is supported, e.g. for OpenCL C 3.0 the `+__opencl_c_fp64+` feature macro is
+present.
 
 _aQual_ in the following table refers to one of the access qualifiers.
 For pipe query functions this may be `read_only` or `write_only`.
