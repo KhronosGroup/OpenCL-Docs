@@ -6303,6 +6303,11 @@ pointed to by obj to the value value.
 
 [source,c]
 ----------
+// Requires OpenCL C 3.0 or newer.
+void atomic_init(volatile __global A *obj, C value)
+void atomic_init(volatile __local A *obj, C value)
+
+// Requires OpenCL C 2.0 or the __opencl_c_generic_address_space feature macro.
 void atomic_init(volatile A *obj, C value)
 ----------
 
@@ -6315,6 +6320,10 @@ if (get_local_id(0) == 0)
     atomic_init(&guide, 42);
 work_group_barrier(CLK_LOCAL_MEM_FENCE);
 ----------
+
+NOTE: The function variant that uses the generic address space, i.e. no
+explicit address space is listed, requires OpenCL C 2.0 or the
+`+__opencl_c_generic_address_space+` feature macro.
 --
 
 
@@ -6513,14 +6522,41 @@ This section specifies each general kind.
 --
 [source,c]
 ----------
-// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device feature macros.
+void atomic_store(volatile __global A *object, C desired)
+void atomic_store(volatile __local A *object, C desired)
+
+// Requires OpenCL C 2.0, or all of the __opencl_c_generic_address_space,
+// __opencl_c_atomic_order_seq_cst and __opencl_c_atomic_scope_device feature
+// macros.
 void atomic_store(volatile A *object, C desired)
 
+// Requires OpenCL C 3.0 and the __opencl_c_atomic_scope_device feature macro.
+void atomic_store_explicit(volatile __global A *object,
+                           C desired,
+                           memory_order order)
+void atomic_store_explicit(volatile __local A *object,
+                           C desired,
+                           memory_order order)
+
+// Requires OpenCL C 2.0 or both the __opencl_c_generic_address_space and
+// __opencl_c_atomic_scope_device feature macros.
 void atomic_store_explicit(volatile A *object,
                            C desired,
                            memory_order order)
 
+// Requires OpenCL C 3.0 or newer.
+void atomic_store_explicit(volatile __global A *object,
+                           C desired,
+                           memory_order order,
+                           memory_scope scope)
+void atomic_store_explicit(volatile __local A *object,
+                           C desired,
+                           memory_order order,
+                           memory_scope scope)
+
+// Requires OpenCL C 2.0 or the __opencl_c_generic_address_space feature macro.
 void atomic_store_explicit(volatile A *object,
                            C desired,
                            memory_order order,
@@ -6538,6 +6574,10 @@ the `+__opencl_c_atomic_order_seq_cst+` and
 `+__opencl_c_atomic_scope_device+` feature macros.
 For the explicit variants, memory order and scope enumerations must respect the
 <<atomic-restrictions,restrictions section below>>.
+
+NOTE: The function variants that use the generic address space, i.e. no
+explicit address space is listed, require OpenCL C 2.0 or the
+`+__opencl_c_generic_address_space+` feature macro.
 --
 
 
@@ -6548,13 +6588,36 @@ For the explicit variants, memory order and scope enumerations must respect the
 --
 [source,c]
 ----------
-// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device feature macros.
+C atomic_load(volatile __global A *object)
+C atomic_load(volatile __local A *object)
+
+// Requires OpenCL C 2.0, or all of the __opencl_c_generic_address_space,
+// __opencl_c_atomic_order_seq_cst and __opencl_c_atomic_scope_device feature
+// macros.
 C atomic_load(volatile A *object)
 
+// Requires OpenCL C 3.0 or newer and the __opencl_c_atomic_scope_device feature macro.
+C atomic_load_explicit(volatile __global A *object,
+                       memory_order order)
+C atomic_load_explicit(volatile __local A *object,
+                       memory_order order)
+
+// Requires OpenCL C 2.0 or both the __opencl_c_generic_address_space and
+// __opencl_c_atomic_scope_device feature macros.
 C atomic_load_explicit(volatile A *object,
                        memory_order order)
 
+// Requires OpenCL C 3.0 or newer.
+C atomic_load_explicit(volatile __global A *object,
+                       memory_order order,
+                       memory_scope scope)
+C atomic_load_explicit(volatile __local A *object,
+                       memory_order order,
+                       memory_scope scope)
+
+// Requires OpenCL C 2.0 or the __opencl_c_generic_address_space feature macro.
 C atomic_load_explicit(volatile A *object,
                        memory_order order,
                        memory_scope scope)
@@ -6570,6 +6633,10 @@ the `+__opencl_c_atomic_order_seq_cst+` and
 `+__opencl_c_atomic_scope_device+` feature macros.
 For the explicit variants, memory order and scope enumerations must respect the
 <<atomic-restrictions,restrictions section below>>.
+
+NOTE: The function variants that use the generic address space, i.e. no
+explicit address space is listed, require OpenCL C 2.0 or the
+`+__opencl_c_generic_address_space+` feature macro.
 --
 
 
@@ -6580,14 +6647,41 @@ For the explicit variants, memory order and scope enumerations must respect the
 --
 [source,c]
 ----------
-// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device feature macros.
+C atomic_exchange(volatile __global A *object, C desired)
+C atomic_exchange(volatile __local A *object, C desired)
+
+// Requires OpenCL C 2.0, or all of the __opencl_c_generic_address_space,
+// __opencl_c_atomic_order_seq_cst and __opencl_c_atomic_scope_device feature
+// macros.
 C atomic_exchange(volatile A *object, C desired)
 
+// Requires OpenCL C 3.0 or newer and the __opencl_c_atomic_scope_device feature macro.
+C atomic_exchange_explicit(volatile __global A *object,
+                           C desired,
+                           memory_order order)
+C atomic_exchange_explicit(volatile __local A *object,
+                           C desired,
+                           memory_order order)
+
+// Requires OpenCL C 2.0 or both the __opencl_c_generic_address_space and
+// __opencl_c_atomic_scope_device feature macros.
 C atomic_exchange_explicit(volatile A *object,
                            C desired,
                            memory_order order)
 
+// Requires OpenCL C 3.0 or newer.
+C atomic_exchange_explicit(volatile __global A *object,
+                           C desired,
+                           memory_order order,
+                           memory_scope scope)
+C atomic_exchange_explicit(volatile __local A *object,
+                           C desired,
+                           memory_order order,
+                           memory_scope scope)
+
+// Requires OpenCL C 2.0 or the __opencl_c_generic_address_space feature macro.
 C atomic_exchange_explicit(volatile A *object,
                            C desired,
                            memory_order order,
@@ -6606,6 +6700,10 @@ both the `+__opencl_c_atomic_order_seq_cst+` and
 `+__opencl_c_atomic_scope_device+` feature macros.
 For the explicit variants, memory order and scope enumerations must respect the
 <<atomic-restrictions,restrictions section below>>.
+
+NOTE: The function variants that use the generic address space, i.e. no
+explicit address space is listed, require OpenCL C 2.0 or the
+`+__opencl_c_generic_address_space+` feature macro.
 --
 
 
@@ -6616,12 +6714,73 @@ For the explicit variants, memory order and scope enumerations must respect the
 --
 [source,c]
 ----------
-// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device feature macros.
+bool atomic_compare_exchange_strong(
+    volatile __global A *object,
+    __global C *expected, C desired)
+bool atomic_compare_exchange_strong(
+    volatile __global A *object,
+    __local C *expected, C desired)
+bool atomic_compare_exchange_strong(
+    volatile __global A *object,
+    __private C *expected, C desired)
+bool atomic_compare_exchange_strong(
+    volatile __local A *object,
+    __global C *expected, C desired)
+bool atomic_compare_exchange_strong(
+    volatile __local A *object,
+    __local C *expected, C desired)
+bool atomic_compare_exchange_strong(
+    volatile __local A *object,
+    __private C *expected, C desired)
+
+// Requires OpenCL C 2.0, or all of the __opencl_c_generic_address_space,
+// __opencl_c_atomic_order_seq_cst and __opencl_c_atomic_scope_device feature
+// macros.
 bool atomic_compare_exchange_strong(
     volatile A *object,
     C *expected, C desired)
 
+// Requires OpenCL C 3.0 or newer.
+bool atomic_compare_exchange_strong_explicit(
+    volatile __global A *object,
+    __global C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+bool atomic_compare_exchange_strong_explicit(
+    volatile __global A *object,
+    __local C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+bool atomic_compare_exchange_strong_explicit(
+    volatile __global A *object,
+    __private C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+bool atomic_compare_exchange_strong_explicit(
+    volatile __local A *object,
+    __global C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+bool atomic_compare_exchange_strong_explicit(
+    volatile __local A *object,
+    __local C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+bool atomic_compare_exchange_strong_explicit(
+    volatile __local A *object,
+    __private C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+
+// Requires OpenCL C 2.0 or the __opencl_c_generic_address_space feature macro.
 bool atomic_compare_exchange_strong_explicit(
     volatile A *object,
     C *expected,
@@ -6629,6 +6788,51 @@ bool atomic_compare_exchange_strong_explicit(
     memory_order success,
     memory_order failure)
 
+// Requires OpenCL C 3.0 or newer.
+bool atomic_compare_exchange_strong_explicit(
+    volatile __global A *object,
+    __global C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+bool atomic_compare_exchange_strong_explicit(
+    volatile __global A *object,
+    __local C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+bool atomic_compare_exchange_strong_explicit(
+    volatile __global A *object,
+    __private C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+bool atomic_compare_exchange_strong_explicit(
+    volatile __local A *object,
+    __global C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+bool atomic_compare_exchange_strong_explicit(
+    volatile __local A *object,
+    __local C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+bool atomic_compare_exchange_strong_explicit(
+    volatile __local A *object,
+    __private C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+
+// Requires OpenCL C 2.0 or the __opencl_c_generic_address_space feature macro.
 bool atomic_compare_exchange_strong_explicit(
     volatile A *object,
     C *expected,
@@ -6637,12 +6841,73 @@ bool atomic_compare_exchange_strong_explicit(
     memory_order failure,
     memory_scope scope)
 
-// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device feature macros.
+bool atomic_compare_exchange_weak(
+    volatile __global A *object,
+    __global C *expected, C desired)
+bool atomic_compare_exchange_weak(
+    volatile __global A *object,
+    __local C *expected, C desired)
+bool atomic_compare_exchange_weak(
+    volatile __global A *object,
+    __private C *expected, C desired)
+bool atomic_compare_exchange_weak(
+    volatile __local A *object,
+    __global C *expected, C desired)
+bool atomic_compare_exchange_weak(
+    volatile __local A *object,
+    __local C *expected, C desired)
+bool atomic_compare_exchange_weak(
+    volatile __local A *object,
+    __private C *expected, C desired)
+
+// Requires OpenCL C 2.0, or all of the __opencl_c_generic_address_space,
+// __opencl_c_atomic_order_seq_cst and __opencl_c_atomic_scope_device feature
+// macros.
 bool atomic_compare_exchange_weak(
     volatile A *object,
     C *expected, C desired)
 
+// Requires OpenCL C 3.0 or newer.
+bool atomic_compare_exchange_weak_explicit(
+    volatile __global A *object,
+    __global C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+bool atomic_compare_exchange_weak_explicit(
+    volatile __global A *object,
+    __local C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+bool atomic_compare_exchange_weak_explicit(
+    volatile __global A *object,
+    __private C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+bool atomic_compare_exchange_weak_explicit(
+    volatile __local A *object,
+    __global C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+bool atomic_compare_exchange_weak_explicit(
+    volatile __local A *object,
+    __local C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+bool atomic_compare_exchange_weak_explicit(
+    volatile __local A *object,
+    __private C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure)
+
+// Requires OpenCL C 2.0 or the __opencl_c_generic_address_space feature macro.
 bool atomic_compare_exchange_weak_explicit(
     volatile A *object,
     C *expected,
@@ -6650,6 +6915,51 @@ bool atomic_compare_exchange_weak_explicit(
     memory_order success,
     memory_order failure)
 
+// Requires OpenCL C 3.0 or newer.
+bool atomic_compare_exchange_weak_explicit(
+    volatile __global A *object,
+    __global C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+bool atomic_compare_exchange_weak_explicit(
+    volatile __global A *object,
+    __local C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+bool atomic_compare_exchange_weak_explicit(
+    volatile __global A *object,
+    __private C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+bool atomic_compare_exchange_weak_explicit(
+    volatile __local A *object,
+    __global C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+bool atomic_compare_exchange_weak_explicit(
+    volatile __local A *object,
+    __local C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+bool atomic_compare_exchange_weak_explicit(
+    volatile __local A *object,
+    __private C *expected,
+    C desired,
+    memory_order success,
+    memory_order failure,
+    memory_scope scope)
+
+// Requires OpenCL C 2.0 or the __opencl_c_generic_address_space feature macro.
 bool atomic_compare_exchange_weak_explicit(
     volatile A *object,
     C *expected,
@@ -6702,6 +7012,10 @@ NOTE: The non-explicit `atomic_compare_exchange_strong` and
 feature macros.
 For the explicit variants, memory order and scope enumerations must respect the
 <<atomic-restrictions,restrictions section below>>.
+
+NOTE: The function variants that use the generic address space, i.e. no
+explicit address space is listed, require OpenCL C 2.0 or the
+`+__opencl_c_generic_address_space+` feature macro.
 --
 
 
@@ -6738,14 +7052,41 @@ For *atomic_fetch* and modify functions with *key* = `or`, `xor`, `and`,
 
 [source,c]
 ----------
-// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device feature macros.
+C atomic_fetch_key(volatile __global A *object, M operand)
+C atomic_fetch_key(volatile __local A *object, M operand)
+
+// Requires OpenCL C 2.0, or all of the __opencl_c_generic_address_space,
+// __opencl_c_atomic_order_seq_cst and __opencl_c_atomic_scope_device feature
+// macros.
 C atomic_fetch_key(volatile A *object, M operand)
 
+// Requires OpenCL C 3.0 or newer and the __opencl_c_atomic_scope_device feature macro.
+C atomic_fetch_key_explicit(volatile __global A *object,
+                            M operand,
+                            memory_order order)
+C atomic_fetch_key_explicit(volatile __local A *object,
+                            M operand,
+                            memory_order order)
+
+// Requires OpenCL C 2.0 or both the __opencl_c_generic_address_space and
+// __opencl_c_atomic_scope_device feature macros.
 C atomic_fetch_key_explicit(volatile A *object,
                             M operand,
                             memory_order order)
 
+// Requires OpenCL C 3.0 or newer.
+C atomic_fetch_key_explicit(volatile __global A *object,
+                            M operand,
+                            memory_order order,
+                            memory_scope scope)
+C atomic_fetch_key_explicit(volatile __local A *object,
+                            M operand,
+                            memory_order order,
+                            memory_scope scope)
+
+// Requires OpenCL C 2.0 or the __opencl_c_generic_address_space feature macro.
 C atomic_fetch_key_explicit(volatile A *object,
                             M operand,
                             memory_order order,
@@ -6771,6 +7112,10 @@ both the `+__opencl_c_atomic_order_seq_cst+` and
 `+__opencl_c_atomic_scope_device+` feature macros.
 For the explicit variants, memory order and scope enumerations must respect the
 <<atomic-restrictions,restrictions section below>>.
+
+NOTE: The function variants that use the generic address space, i.e. no
+explicit address space is listed, require OpenCL C 2.0 or the
+`+__opencl_c_generic_address_space+` feature macro.
 --
 
 
@@ -6809,15 +7154,44 @@ global atomic_flag guard = ATOMIC_FLAG_INIT;
 --
 [source,c]
 ----------
-// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device feature macros.
+bool atomic_flag_test_and_set(
+    volatile __global atomic_flag *object)
+bool atomic_flag_test_and_set(
+    volatile __local atomic_flag *object)
+
+// Requires OpenCL C 2.0, or all of the __opencl_c_generic_address_space,
+// __opencl_c_atomic_order_seq_cst and __opencl_c_atomic_scope_device feature
+// macros.
 bool atomic_flag_test_and_set(
     volatile atomic_flag *object)
 
+// Requires OpenCL C 3.0 or newer and the __opencl_c_atomic_scope_device feature macro.
+bool atomic_flag_test_and_set_explicit(
+    volatile __global atomic_flag *object,
+    memory_order order)
+bool atomic_flag_test_and_set_explicit(
+    volatile __local atomic_flag *object,
+    memory_order order)
+
+// Requires OpenCL C 2.0 or both the __opencl_c_generic_address_space and
+// __opencl_c_atomic_scope_device feature macros.
 bool atomic_flag_test_and_set_explicit(
     volatile atomic_flag *object,
     memory_order order)
 
+// Requires OpenCL C 3.0 or newer.
+bool atomic_flag_test_and_set_explicit(
+    volatile __global atomic_flag *object,
+    memory_order order,
+    memory_scope scope)
+bool atomic_flag_test_and_set_explicit(
+    volatile __global atomic_flag *object,
+    memory_order order,
+    memory_scope scope)
+
+// Requires OpenCL C 2.0 or the __opencl_c_generic_address_space feature macro.
 bool atomic_flag_test_and_set_explicit(
     volatile atomic_flag *object,
     memory_order order,
@@ -6835,6 +7209,10 @@ NOTE: The non-explicit `atomic_flag_test_and_set` function requires OpenCL C
 `+__opencl_c_atomic_scope_device+` feature macros.
 For the explicit variants, memory order and scope enumerations must respect the
 <<atomic-restrictions,restrictions section below>>.
+
+NOTE: The function variants that use the generic address space, i.e. no
+explicit address space is listed, require OpenCL C 2.0 or the
+`+__opencl_c_generic_address_space+` feature macro.
 --
 
 
@@ -6845,14 +7223,41 @@ For the explicit variants, memory order and scope enumerations must respect the
 --
 [source,c]
 ----------
-// Requires OpenCL C 2.0, or both the __opencl_c_atomic_order_seq_cst
+// Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device feature macros.
+void atomic_flag_clear(volatile __global atomic_flag *object)
+void atomic_flag_clear(volatile __local atomic_flag *object)
+
+// Requires OpenCL C 2.0, or all of the __opencl_c_generic_address_space,
+// __opencl_c_atomic_order_seq_cst and __opencl_c_atomic_scope_device feature
+// macros.
 void atomic_flag_clear(volatile atomic_flag *object)
 
+// Requires OpenCL C 3.0 or newer and the __opencl_c_atomic_scope_device feature macro.
+void atomic_flag_clear_explicit(
+    volatile __global atomic_flag *object,
+    memory_order order)
+void atomic_flag_clear_explicit(
+    volatile __local atomic_flag *object,
+    memory_order order)
+
+// Requires OpenCL C 2.0 or both the __opencl_c_generic_address_space and
+// __opencl_c_atomic_scope_device feature macros.
 void atomic_flag_clear_explicit(
     volatile atomic_flag *object,
     memory_order order)
 
+// Requires OpenCL C 3.0 or newer.
+void atomic_flag_clear_explicit(
+    volatile __global atomic_flag *object,
+    memory_order order,
+    memory_scope scope)
+void atomic_flag_clear_explicit(
+    volatile __local atomic_flag *object,
+    memory_order order,
+    memory_scope scope)
+
+// Requires OpenCL C 2.0 or the __opencl_c_generic_address_space feature macro.
 void atomic_flag_clear_explicit(
     volatile atomic_flag *object,
     memory_order order,
@@ -6869,6 +7274,10 @@ both the `+__opencl_c_atomic_order_seq_cst+` and
 `+__opencl_c_atomic_scope_device+` feature macros.
 For the explicit variants, memory order and scope enumerations must respect the
 <<atomic-restrictions,restrictions section below>>.
+
+NOTE: The function variants that use the generic address space, i.e. no
+explicit address space is listed, require OpenCL C 2.0 or the
+`+__opencl_c_generic_address_space+` feature macro.
 --
 
 [[atomic-legacy]]
