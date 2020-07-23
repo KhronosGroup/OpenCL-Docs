@@ -73,7 +73,8 @@ ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
 	       -a revdate="$(SPECDATE)" \
 	       -a revremark="$(SPECREMARK)" \
 	       -a stem=latexmath \
-	       -a generated=$(GENERATED)
+	       -a generated=$(GENERATED) \
+	       -a sectnumlevels=5
 
 ADOCEXTS     = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb -r $(CURDIR)/config/spec-macros.rb
 ADOCOPTS     = -d book $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
@@ -87,7 +88,8 @@ ADOCMANOPTS  = -d manpage $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
 KATEXDIR     = ../katex
 ADOCHTMLEXTS = -r $(CURDIR)/config/katex_replace.rb
 ADOCHTMLOPTS = $(ADOCHTMLEXTS) -a katexpath=$(KATEXDIR) \
-	       -a stylesheet=khronos.css -a stylesdir=$(CURDIR)/config
+	       -a stylesheet=khronos.css -a stylesdir=$(CURDIR)/config \
+	       -a sectanchors
 
 ADOCPDFEXTS  = -r asciidoctor-pdf -r asciidoctor-mathematical --trace
 ADOCPDFOPTS  = $(ADOCPDFEXTS) -a mathematical-format=svg \
