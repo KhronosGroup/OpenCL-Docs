@@ -145,12 +145,12 @@ if __name__ == "__main__":
                 #:CL_MEM_READ_ONLY: <<CL_MEM_READ_ONLY,{CL_MEM_READ_ONLY_label}>>
                 #:CL_MEM_READ_ONLY_anchor: [[CL_MEM_READ_ONLY]]{CL_MEM_READ_ONLY}
                 linkFile.write('// ' + name + '\n')
-                linkFile.write('ifdef::basebackend-html[]\n')
+                linkFile.write('ifdef::backend-html5[]\n')
                 linkFile.write(':' + name + '_label: pass:q[`' + htmlName + '`]\n')
-                linkFile.write('endif::basebackend-html[]\n')
-                linkFile.write('ifdef::backend-pdf[]\n')
+                linkFile.write('endif::[]\n')
+                linkFile.write('ifndef::backend-html5[]\n')
                 linkFile.write(':' + name + '_label: pass:q[`' + otherName + '`]\n')
-                linkFile.write('endif::backend-pdf[]\n')
+                linkFile.write('endif::[]\n')
                 linkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
                 linkFile.write(':' + name + '_anchor: [[' + name + ']]{' + name + '}\n')
                 linkFile.write('\n')
@@ -161,12 +161,12 @@ if __name__ == "__main__":
                 #:CL_MEM_READ_ONLY: pass:q[`CL_MEM_READ_ONLY`]
                 #:CL_MEM_READ_ONLY_anchor: {CL_MEM_READ_ONLY}
                 nolinkFile.write('// ' + name + '\n')
-                nolinkFile.write('ifdef::basebackend-html[]\n')
+                nolinkFile.write('ifdef::backend-html5[]\n')
                 nolinkFile.write(':' + name + ': pass:q[`' + htmlName + '`]\n')
-                nolinkFile.write('endif::basebackend-html[]\n')
-                nolinkFile.write('ifdef::backend-pdf[]\n')
+                nolinkFile.write('endif::[]\n')
+                nolinkFile.write('ifndef::backend-html5[]\n')
                 nolinkFile.write(':' + name + ': pass:q[`' + otherName + '`]\n')
-                nolinkFile.write('endif::backend-pdf[]\n')
+                nolinkFile.write('endif::[]\n')
                 nolinkFile.write(':' + name + '_anchor: {' + name + '}\n')
                 nolinkFile.write('\n')
 
