@@ -78,18 +78,13 @@ if __name__ == "__main__":
             name = api.get('name')
             #print('found api: ' + name)
 
-            # Create a variant of the name that precedes underscores with
-            # "zero width" spaces.  This causes some long names to be
-            # broken at more intuitive places.
-            sName = name.replace("_", "_&#8203;")
-
             # Example with link:
             #
             # // clEnqueueNDRangeKernel
             # :clEnqueueNDRangeKernel_label: pass:q[*clEnqueueNDRangeKernel*]
             # :clEnqueueNDRangeKernel: <<clEnqueueNDRangeKernel,{clEnqueueNDRangeKernel_label}>>
             linkFile.write('// ' + name + '\n')
-            linkFile.write(':' + name + '_label: pass:q[*' + sName + '*]\n')
+            linkFile.write(':' + name + '_label: pass:q[*' + name + '*]\n')
             linkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
             linkFile.write('\n')
 
@@ -98,7 +93,7 @@ if __name__ == "__main__":
             # // clEnqueueNDRangeKernel
             # :clEnqueueNDRangeKernel: pass:q[*clEnqueueNDRangeKernel*]
             nolinkFile.write('// ' + name + '\n')
-            nolinkFile.write(':' + name + ': pass:q[*' + sName + '*]\n')
+            nolinkFile.write(':' + name + ': pass:q[*' + name + '*]\n')
             nolinkFile.write('\n')
 
             numberOfFuncs = numberOfFuncs + 1
@@ -109,21 +104,16 @@ if __name__ == "__main__":
             name = api.get('name')
             #print('found extension api: ' +name)
 
-            # Create a variant of the name that precedes underscores with
-            # "zero width" spaces.  This causes some long names to be
-            # broken at more intuitive places.
-            sName = name.replace("_", "_&#8203;")
-
             # Example without link:
             #
             # // clGetGLObjectInfo
             # :clGetGLObjectInfo: pass:q[*clGetGLObjectInfo*]
             linkFile.write('// ' + name + '\n')
-            linkFile.write(':' + name + ': pass:q[*' + sName + '*]\n')
+            linkFile.write(':' + name + ': pass:q[*' + name + '*]\n')
             linkFile.write('\n')
 
             nolinkFile.write('// ' + name + '\n')
-            nolinkFile.write(':' + name + ': pass:q[*' + sName + '*]\n')
+            nolinkFile.write(':' + name + ': pass:q[*' + name + '*]\n')
             nolinkFile.write('\n')
 
             numberOfFuncs = numberOfFuncs + 1
@@ -145,7 +135,8 @@ if __name__ == "__main__":
                 # Create a variant of the name that precedes underscores with
                 # "zero width" spaces.  This causes some long names to be
                 # broken at more intuitive places.
-                sName = name.replace("_", "_&#8203;")
+                htmlName = name.replace("_", "_<wbr>")
+                otherName = name.replace("_", "_&#8203;")
 
                 # Example with link:
                 #
@@ -154,7 +145,12 @@ if __name__ == "__main__":
                 #:CL_MEM_READ_ONLY: <<CL_MEM_READ_ONLY,{CL_MEM_READ_ONLY_label}>>
                 #:CL_MEM_READ_ONLY_anchor: [[CL_MEM_READ_ONLY]]{CL_MEM_READ_ONLY}
                 linkFile.write('// ' + name + '\n')
-                linkFile.write(':' + name + '_label: pass:q[`' + sName + '`]\n')
+                linkFile.write('ifdef::basebackend-html[]\n')
+                linkFile.write(':' + name + '_label: pass:q[`' + htmlName + '`]\n')
+                linkFile.write('endif::basebackend-html[]\n')
+                linkFile.write('ifdef::backend-pdf[]\n')
+                linkFile.write(':' + name + '_label: pass:q[`' + otherName + '`]\n')
+                linkFile.write('endif::backend-pdf[]\n')
                 linkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
                 linkFile.write(':' + name + '_anchor: [[' + name + ']]{' + name + '}\n')
                 linkFile.write('\n')
@@ -165,7 +161,12 @@ if __name__ == "__main__":
                 #:CL_MEM_READ_ONLY: pass:q[`CL_MEM_READ_ONLY`]
                 #:CL_MEM_READ_ONLY_anchor: {CL_MEM_READ_ONLY}
                 nolinkFile.write('// ' + name + '\n')
-                nolinkFile.write(':' + name + ': pass:q[`' + sName + '`]\n')
+                nolinkFile.write('ifdef::basebackend-html[]\n')
+                nolinkFile.write(':' + name + ': pass:q[`' + htmlName + '`]\n')
+                nolinkFile.write('endif::basebackend-html[]\n')
+                nolinkFile.write('ifdef::backend-pdf[]\n')
+                nolinkFile.write(':' + name + ': pass:q[`' + otherName + '`]\n')
+                nolinkFile.write('endif::backend-pdf[]\n')
                 nolinkFile.write(':' + name + '_anchor: {' + name + '}\n')
                 nolinkFile.write('\n')
 
@@ -184,23 +185,18 @@ if __name__ == "__main__":
                 name = type.get('name')
                 #print('found type: ' +name)
 
-                # Create a variant of the name that precedes underscores with
-                # "zero width" spaces.  This causes some long names to be
-                # broken at more intuitive places.
-                sName = name.replace("_", "_&#8203;")
-
                 # Example without link:
                 #
                 # // clEnqueueNDRangeKernel
                 # :clEnqueueNDRangeKernel_label: pass:q[*clEnqueueNDRangeKernel*]
                 # :clEnqueueNDRangeKernel: <<clEnqueueNDRangeKernel,{clEnqueueNDRangeKernel_label}>>
                 linkFile.write('// ' + name + '\n')
-                linkFile.write(':' + name + '_label: pass:q[*' + sName + '*]\n')
+                linkFile.write(':' + name + '_label: pass:q[*' + name + '*]\n')
                 linkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
                 linkFile.write('\n')
 
                 nolinkFile.write('// ' + name + '\n')
-                nolinkFile.write(':' + name + ': pass:q[`' + sName + '`]\n')
+                nolinkFile.write(':' + name + ': pass:q[`' + name + '`]\n')
                 nolinkFile.write('\n')
 
                 numberOfTypes = numberOfTypes + 1
