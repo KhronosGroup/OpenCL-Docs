@@ -64,12 +64,16 @@ if __name__ == "__main__":
             #   / = proto include
             fileunlinkedapi = sorted(list(set(re.findall(r"[^{\w<'/](cl[A-Z]\w+)\b[^'](?!.')", sourcetext))))
             fileunlinkedenums = sorted(list(set(re.findall("r[^{\w<](CL_\w+)", sourcetext))))
+            fileunlinkedtypes = sorted(list(set(re.findall("r[^{\w<](cl_\w+)", sourcetext))))
 
             if len(fileunlinkedapi) != 0:
                 print("unlinked APIs in " + filename + ":\n\t" + '\n\t'.join(fileunlinkedapi))
 
             if len(fileunlinkedenums) != 0:
                 print("unlinked enums in " + filename + ":\n\t" + '\n\t'.join(fileunlinkedenums))
+
+            if len(fileunlinkedtypes) != 0:
+                print("unlinked types in " + filename + ":\n\t" + '\n\t'.join(fileunlinkedtypes))
 
     linkswithoutanchors = sorted(list(links - anchors))
     anchorswithoutlinks = sorted(list(anchors - links))

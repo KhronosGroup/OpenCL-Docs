@@ -137,8 +137,8 @@ if __name__ == "__main__":
                 # Create a variant of the name that precedes underscores with
                 # "zero width" spaces.  This causes some long names to be
                 # broken at more intuitive places.
-                htmlName = name.replace("_", "_<wbr>")
-                otherName = name.replace("_", "_&#8203;")
+                htmlName = name[:3] + name[3:].replace("_", "_<wbr>")
+                otherName = name[:3] + name[3:].replace("_", "_&#8203;")
 
                 # Example with link:
                 #
@@ -182,28 +182,73 @@ if __name__ == "__main__":
 
     for types in spec.findall('types'):
         for type in types.findall('type'):
+            addLink = False
+            name = ""
             category = type.get('category')
-            if category == 'struct':
+            if category == 'basetype':
                 name = type.get('name')
-                #print('found type: ' +name)
+            elif category == 'struct':
+                addLink = True
+                name = type.get('name')
+            elif category == 'define':
+                name = type.find('name').text
+            else:
+                continue
 
-                # Example without link:
-                #
-                # // clEnqueueNDRangeKernel
-                # :clEnqueueNDRangeKernel_label: pass:q[*clEnqueueNDRangeKernel*]
-                # :clEnqueueNDRangeKernel: <<clEnqueueNDRangeKernel,{clEnqueueNDRangeKernel_label}>>
-                linkFile.write('// ' + name + '\n')
-                linkFile.write(':' + name + '_label: pass:q[*' + name + '*]\n')
-                linkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
-                linkFile.write('\n')
+            #print('found type: ' +name)
 
-                nolinkFile.write('// ' + name + '\n')
-                nolinkFile.write(':' + name + ': pass:q[`' + name + '`]\n')
-                nolinkFile.write('\n')
+            # Create a variant of the name that precedes underscores with
+            # "zero width" spaces.  This causes some long names to be
+            # broken at more intuitive places.
+            if name.endswith('_t'):
+                htmlName = name
+                otherName = name
+            else:
+                htmlName = name[:3] + name[3:].replace("_", "_<wbr>")
+                otherName = name[:3] + name[3:].replace("_", "_&#8203;")
 
-                numberOfTypes = numberOfTypes + 1
+            # Some types can have spaces in the name (such as unsigned char),
+            # but Asciidoctor attributes cannot.  So, replace spaces with
+            # underscores for the attribute name.
+            attribName = name.replace(" ", "_")
 
-    print('Found ' + str(numberOfTypes) + ' API struct types.')
+            # Example with link:
+            #
+            # // cl_image_desc
+            # :cl_image_desc_label: pass:q[`cl_image_desc`]
+            # :cl_image_desc: <<cl_image_desc,{cl_image_desc_label}>>
+            linkFile.write('// ' + name + '\n')
+            if addLink:
+                linkFile.write('ifdef::backend-html5[]\n')
+                linkFile.write(':' + attribName + '_label: pass:q[`' + htmlName + '`]\n')
+                linkFile.write('endif::[]\n')
+                linkFile.write('ifndef::backend-html5[]\n')
+                linkFile.write(':' + attribName + '_label: pass:q[`' + otherName + '`]\n')
+                linkFile.write('endif::[]\n')
+                linkFile.write(':' + attribName + ': <<' + name + ',{' + attribName + '_label}>>\n')
+            else:
+                linkFile.write('ifdef::backend-html5[]\n')
+                linkFile.write(':' + attribName + ': pass:q[`' + htmlName + '`]\n')
+                linkFile.write('endif::[]\n')
+                linkFile.write('ifndef::backend-html5[]\n')
+                linkFile.write(':' + attribName + ': pass:q[`' + otherName + '`]\n')
+                linkFile.write('endif::[]\n')
+            linkFile.write('\n')
+
+            # // cl_image_desc
+            # :cl_image_desc: pass:q[`cl_image_desc`]
+            nolinkFile.write('// ' + name + '\n')
+            nolinkFile.write('ifdef::backend-html5[]\n')
+            nolinkFile.write(':' + attribName + ': pass:q[`' + htmlName + '`]\n')
+            nolinkFile.write('endif::[]\n')
+            nolinkFile.write('ifndef::backend-html5[]\n')
+            nolinkFile.write(':' + attribName + ': pass:q[`' + otherName + '`]\n')
+            nolinkFile.write('endif::[]\n')
+            nolinkFile.write('\n')
+
+            numberOfTypes = numberOfTypes + 1
+
+    print('Found ' + str(numberOfTypes) + ' API types.')
 
     linkFile.write( GetFooter() )
     linkFile.close()
