@@ -51,6 +51,8 @@ Also see extension *cl_khr_create_command_queue*.
     default value will be used.
     _properties_ can be `NULL` in which case the default values for supported
     command-queue properties will be used.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
 
 [[queue-properties-table]]
 .List of supported queue creation properties by <<clCreateCommandQueueWithProperties>>
@@ -79,11 +81,14 @@ include::{generated}/api/version-notes/CL_QUEUE_PROFILING_ENABLE.asciidoc[]
 
         {CL_QUEUE_ON_DEVICE_anchor} - Indicates that this is a device queue.
         If {CL_QUEUE_ON_DEVICE} is set,
-        {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE}^1^ must also be set.
+        {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE}
+        footnote:[{fn-out-of-order-device-queue}]
+        must also be set.
 include::{generated}/api/version-notes/CL_QUEUE_ON_DEVICE.asciidoc[]
 
-        {CL_QUEUE_ON_DEVICE_DEFAULT_anchor}^2^ - indicates that this is the default
-        device queue.
+        {CL_QUEUE_ON_DEVICE_DEFAULT_anchor}
+        footnote:[{fn-default-device-queue}] -
+        indicates that this is the default device queue.
         This can only be used with {CL_QUEUE_ON_DEVICE}.
 include::{generated}/api/version-notes/CL_QUEUE_ON_DEVICE_DEFAULT.asciidoc[]
 
@@ -105,22 +110,6 @@ include::{generated}/api/version-notes/CL_QUEUE_SIZE.asciidoc[]
         If {CL_QUEUE_SIZE} is not specified, the device queue is created with
         {CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE} as the size of the queue.
 |====
-
-1::
-    Only out-of-order device queues are supported.
-
-2::
-    The application must create the default device queue if any kernels
-    containing calls to get_default_queue are enqueued.
-    There can only be one default device queue for each device within a
-    context.
-    {clCreateCommandQueueWithProperties} with {CL_QUEUE_PROPERTIES} set to
-    {CL_QUEUE_ON_DEVICE} or {CL_QUEUE_ON_DEVICE_DEFAULT} will return the default
-    device queue that has already been created and increment its retain
-    count by 1.
-
-  * _errcode_ret_ will return an appropriate error code.
-    If _errcode_ret_ is `NULL`, no error code is returned.
 
 // refError
 
@@ -346,7 +335,7 @@ include::{generated}/api/version-notes/CL_QUEUE_CONTEXT.asciidoc[]
 include::{generated}/api/version-notes/CL_QUEUE_DEVICE.asciidoc[]
   | {cl_device_id}
       | Return the device specified when the command-queue is created.
-| {CL_QUEUE_REFERENCE_COUNT_anchor}^3^
+| {CL_QUEUE_REFERENCE_COUNT_anchor} footnote:[{fn-reference-count-usage}]
 
 include::{generated}/api/version-notes/CL_QUEUE_REFERENCE_COUNT.asciidoc[]
   | {cl_uint}
@@ -393,11 +382,6 @@ include::{generated}/api/version-notes/CL_QUEUE_DEVICE_DEFAULT.asciidoc[]
   | {cl_command_queue}
       | Return the current default command queue for the underlying device.
 |====
-
-3::
-    The reference count returned should be considered immediately stale.
-    It is unsuitable for general use in applications.
-    This feature is provided for identifying memory leaks.
 
 // refError
 
@@ -534,7 +518,8 @@ returned in _errcode_ret_:
     once.
   * {CL_INVALID_VALUE} if values specified in _flags_ are not valid as defined
     in the <<memory-flags-table,Memory Flags>> table.
-  * {CL_INVALID_BUFFER_SIZE} if _size_ is 0^4^.
+  * {CL_INVALID_BUFFER_SIZE} if _size_ is 0 or if _size_ is greater than
+    {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for all devices in _context_.
   * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
     {CL_MEM_COPY_HOST_PTR} are set in _flags_ or if _host_ptr_ is not `NULL`
     but {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} are not set in _flags_.
@@ -544,12 +529,6 @@ returned in _errcode_ret_:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
-
-4::
-    Implementations may return {CL_INVALID_BUFFER_SIZE} if size is greater
-    than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} value specified in the
-    <<device-queries-table,Device Queries>> table for all devices in
-    context.
 
 [[memory-flags-table]]
 .List of supported memory flag values
@@ -2194,13 +2173,11 @@ include::{generated}/api/structs/cl_image_desc.txt[]
   * `image_depth` is the depth of the image in pixels.
     This is only used if the image is a 3D image and must be a value {geq} 1 and
     {leq} {CL_DEVICE_IMAGE3D_MAX_DEPTH}.
-  * `image_array_size`^5^ is the number of images in the image array.
+  * `image_array_size` footnote:[{fn-image-array-performance}] is the number of
+    images in the image array.
     This is only used if the image is a 1D or 2D image array.
     The values for `image_array_size`, if specified, must be a value {geq} 1 and
     {leq} {CL_DEVICE_IMAGE_MAX_ARRAY_SIZE}.
-5::
-    Note that reading and writing 2D image arrays from a kernel with
-    `image_array_size`=1 may be lower performance than 2D images.
   * `image_row_pitch` is the scan-line pitch in bytes.
     This must be 0 if _host_ptr_ is `NULL` and can be either 0 or {geq}
     `image_width` {times} size of element in bytes if _host_ptr_ is not `NULL`.
@@ -2226,22 +2203,15 @@ include::{generated}/api/structs/cl_image_desc.txt[]
   * `num_mip_levels` and `num_samples` must be 0.
   * `mem_object` may refer to a valid buffer or image memory object.
     `mem_object` can be a buffer memory object if `image_type` is
-    {CL_MEM_OBJECT_IMAGE1D_BUFFER} or {CL_MEM_OBJECT_IMAGE2D}^6^.
+    {CL_MEM_OBJECT_IMAGE1D_BUFFER} or
+    {CL_MEM_OBJECT_IMAGE2D} footnote:[{fn-image-from-buffer}].
     `mem_object` can be an image object if `image_type` is
-    {CL_MEM_OBJECT_IMAGE2D}^7^.
+    {CL_MEM_OBJECT_IMAGE2D} footnote:[{fn-image-from-image}].
     Otherwise it must be `NULL`.
     The image pixels are taken from the memory objects data store.
     When the contents of the specified memory objects data store are modified,
     those changes are reflected in the contents of the image object and
     vice-versa at corresponding synchronization points.
-
-6::
-    To create a 2D image from a buffer object that share the data store
-    between the image and buffer object.
-
-7::
-    To create an image object from another image object that share the data
-    store between these image objects.
 
 For a 1D image buffer created from a buffer object, the `image_width` {times}
 size of element in bytes must be {leq} size of the buffer object.
@@ -2283,7 +2253,8 @@ Restrictions are:
 
   * The image channel order specified in _image_format_ must be compatible
     with the image channel order associated with `mem_object`.
-    Compatible image channel orders ^8^ are:
+    Compatible image channel orders
+    footnote:[{fn-compatible-image-channel-orders}] are:
 +
 --
 [width="100%",cols="<50%,<50%",options="header"]
@@ -2310,11 +2281,6 @@ Restrictions are:
   | {CL_R}
 |====
 --
-
-8::
-    This allows creation of a sRGB view of the image from a linear
-    RGB view or vice-versa i.e. the pixels stored in the image can be
-    accessed as linear RGB or sRGB values.
 
 [NOTE]
 ====
@@ -2440,7 +2406,7 @@ is:
         {CL_HALF_FLOAT} +
         {CL_FLOAT}
 | 1
-  | {CL_DEPTH}^9^
+  | {CL_DEPTH} footnote:[{fn-depth-image-requirements}]
       | {CL_UNORM_INT16} +
         {CL_FLOAT}
 | 2
@@ -2475,19 +2441,9 @@ is:
   | {CL_BGRA}
       | {CL_UNORM_INT8}
 | 4
-  | {CL_sRGBA}^10^
+  | {CL_sRGBA} footnote:[{fn-srgb-image-requirements}]
       | {CL_UNORM_INT8}
 |====
-
-9::
-    Support for the {CL_DEPTH} image channel order is required only for 2D
-    images and 2D image arrays.
-
-10::
-    Support for reading from the {CL_sRGBA} image channel order is optional
-    for 1D image buffers.
-    Support for writing to the {CL_sRGBA} image channel order is optional
-    for all image types.
 
 For full profile devices supporting other OpenCL versions, such as OpenCL 1.2
 or OpenCL 3.0, the minimum list of supported image formats for either reading
@@ -4197,12 +4153,12 @@ include::{generated}/api/version-notes/CL_MEM_HOST_PTR.asciidoc[]
         created.
 
         Otherwise, returns `NULL`.
-| {CL_MEM_MAP_COUNT_anchor}^11^
+| {CL_MEM_MAP_COUNT_anchor} footnote:[{fn-map-count-usage}]
 
 include::{generated}/api/version-notes/CL_MEM_MAP_COUNT.asciidoc[]
   | {cl_uint}
       | Map count.
-| {CL_MEM_REFERENCE_COUNT_anchor}^12^
+| {CL_MEM_REFERENCE_COUNT_anchor} footnote:[{fn-reference-count-usage}]
 
 include::{generated}/api/version-notes/CL_MEM_REFERENCE_COUNT.asciidoc[]
   | {cl_uint}
@@ -4268,16 +4224,6 @@ include::{generated}/api/version-notes/CL_MEM_PROPERTIES.asciidoc[]
         must return _param_value_size_ret_ equal to 0, indicating that
         there are no properties to be returned.
 |====
-
-11::
-    The map count returned should be considered immediately stale.
-    It is unsuitable for general use in applications.
-    This feature is provided for debugging.
-
-12::
-    The reference count returned should be considered immediately stale.
-    It is unsuitable for general use in applications.
-    This feature is provided for identifying memory leaks.
 
 // refError
 
@@ -5301,7 +5247,7 @@ include::{generated}/api/version-notes/clGetSamplerInfo.asciidoc[]
 [width="100%",cols="<34%,<33%,<33%",options="header"]
 |====
 | Sampler Info | Return Type | Info. returned in _param_value_
-| {CL_SAMPLER_REFERENCE_COUNT_anchor}^13^
+| {CL_SAMPLER_REFERENCE_COUNT_anchor} footnote:[{fn-reference-count-usage}]
 
 include::{generated}/api/version-notes/CL_SAMPLER_REFERENCE_COUNT.asciidoc[]
   | {cl_uint}
@@ -5344,11 +5290,6 @@ include::{generated}/api/version-notes/CL_SAMPLER_PROPERTIES.asciidoc[]
         implementation must return _param_value_size_ret_ equal to 0,
         indicating that there are no properties to be returned.
 |====
-
-13::
-    The reference count returned should be considered immediately stale.
-    It is unsuitable for general use in applications.
-    This feature is provided for identifying memory leaks.
 
 // refError
 
@@ -6622,7 +6563,7 @@ include::{generated}/api/version-notes/clGetProgramInfo.asciidoc[]
 [width="100%",cols="<34%,<33%,<33%",options="header"]
 |====
 | Program Info | Return Type | Info. returned in _param_value_
-| {CL_PROGRAM_REFERENCE_COUNT_anchor}^14^
+| {CL_PROGRAM_REFERENCE_COUNT_anchor} footnote:[{fn-reference-count-usage}]
 
 include::{generated}/api/version-notes/CL_PROGRAM_REFERENCE_COUNT.asciidoc[]
   | {cl_uint}
@@ -6770,11 +6711,6 @@ include::{generated}/api/version-notes/CL_PROGRAM_SCOPE_GLOBAL_DTORS_PRESENT.asc
         Support for constructors and destructors for program scope global
         variables is required only for OpenCL 2.2 devices.
 |====
-
-14::
-    The reference count returned should be considered immediately stale.
-    It is unsuitable for general use in applications.
-    This feature is provided for identifying memory leaks.
 
 // refError
 
@@ -7531,7 +7467,7 @@ include::{generated}/api/version-notes/CL_KERNEL_FUNCTION_NAME.asciidoc[]
 include::{generated}/api/version-notes/CL_KERNEL_NUM_ARGS.asciidoc[]
   | {cl_uint}
       | Return the number of arguments to kernel.
-| {CL_KERNEL_REFERENCE_COUNT_anchor}^16^
+| {CL_KERNEL_REFERENCE_COUNT_anchor} footnote:[{fn-reference-count-usage}]
 
 include::{generated}/api/version-notes/CL_KERNEL_REFERENCE_COUNT.asciidoc[]
   | {cl_uint}
@@ -7567,11 +7503,6 @@ include::{generated}/api/version-notes/CL_KERNEL_ATTRIBUTES.asciidoc[]
         {clCreateProgramWithSource} API call the string returned from this
         query will be empty.
 |====
-
-16::
-    The reference count returned should be considered immediately stale.
-    It is unsuitable for general use in applications.
-    This feature is provided for identifying memory leaks.
 
 // refError
 
@@ -7954,9 +7885,11 @@ include::{generated}/api/version-notes/CL_KERNEL_ARG_TYPE_QUALIFIER.asciidoc[]
         for the argument given by _arg_index_.
         The returned values can be:
         
-        {CL_KERNEL_ARG_TYPE_CONST_anchor}^17^ +
+        {CL_KERNEL_ARG_TYPE_CONST_anchor}
+        footnote:[{fn-kernel-arg-type-qualifier}]
+        footnote:[{fn-kernel-arg-type-const-addr-space}] +
         {CL_KERNEL_ARG_TYPE_RESTRICT_anchor} +
-        {CL_KERNEL_ARG_TYPE_VOLATILE_anchor}^18^ +
+        {CL_KERNEL_ARG_TYPE_VOLATILE_anchor} +
         {CL_KERNEL_ARG_TYPE_PIPE_anchor}, or +
         {CL_KERNEL_ARG_TYPE_NONE_anchor}
 
@@ -7968,29 +7901,6 @@ include::{generated}/api/version-notes/CL_KERNEL_ARG_NAME.asciidoc[]
   | {char}[]
       | Returns the name specified for the argument given by _arg_index_.
 |====
-
-17::
-    {CL_KERNEL_ARG_TYPE_CONST} is returned for
-    {CL_KERNEL_ARG_TYPE_QUALIFIER} if the argument is declared with the
-    `constant` address space qualifier.
-
-18::
-    {CL_KERNEL_ARG_TYPE_VOLATILE} is returned for
-    {CL_KERNEL_ARG_TYPE_QUALIFIER} if the argument is a pointer and the
-    referenced type is declared with the volatile qualifier.
-    For example, a kernel argument declared as `global int volatile *x`
-    returns {CL_KERNEL_ARG_TYPE_VOLATILE} but a kernel argument declared
-    as `global int * volatile x` does not.
-    Similarly, {CL_KERNEL_ARG_TYPE_CONST} is returned if the argument is a
-    pointer and the referenced type is declared with the restrict or
-    const qualifier.
-    For example, a kernel argument declared as `global int const *x`
-    returns {CL_KERNEL_ARG_TYPE_CONST} but a kernel argument declared as
-    `global int * const x` does not.
-    {CL_KERNEL_ARG_TYPE_RESTRICT} will be returned if the pointer type is
-    marked `restrict`.
-    For example, `global int * restrict x` returns
-    {CL_KERNEL_ARG_TYPE_RESTRICT}.
 
 {clGetKernelArgInfo} returns CL SUCCESS if the function is executed
 successfully.
@@ -8655,7 +8565,7 @@ include::{generated}/api/version-notes/CL_EVENT_COMMAND_TYPE.asciidoc[]
       | Return the command type associated with _event_ as described in the
         <<event-command-type-table,Event Command Types>> table.
 
-| {CL_EVENT_COMMAND_EXECUTION_STATUS_anchor}^19^
+| {CL_EVENT_COMMAND_EXECUTION_STATUS_anchor} footnote:[{fn-event-status-order}]
 
 include::{generated}/api/version-notes/CL_EVENT_COMMAND_EXECUTION_STATUS.asciidoc[]
   | {cl_int}
@@ -8677,24 +8587,12 @@ include::{generated}/api/version-notes/CL_EVENT_COMMAND_EXECUTION_STATUS.asciido
         These error codes come from the same set of error codes that are
         returned from the platform or runtime API calls as return values or
         errcode_ret values.
-| {CL_EVENT_REFERENCE_COUNT_anchor}^20^
+| {CL_EVENT_REFERENCE_COUNT_anchor} footnote:[{fn-reference-count-usage}]
 
 include::{generated}/api/version-notes/CL_EVENT_REFERENCE_COUNT.asciidoc[]
   | {cl_uint}
       | Return the _event_ reference count.
 |====
-
-19::
-    The error code values are negative, and event state values are positive.
-    The event state values are ordered from the largest value {CL_QUEUED}
-    for the first or initial state to the smallest value ({CL_COMPLETE} or
-    negative integer value) for the last or complete state.
-    The value of {CL_COMPLETE} and {CL_SUCCESS} are the same.
-
-20::
-    The reference count returned should be considered immediately stale.
-    It is unsuitable for general use in applications.
-    This feature is provided for identifying memory leaks.
 
 [[event-command-type-table]]
 .List of supported event command types
@@ -8893,7 +8791,8 @@ include::{generated}/api/version-notes/clSetEventCallback.asciidoc[]
   * _command_exec_callback_type_ specifies the command execution status for
     which the callback is registered.
     The command execution callback values for which a callback can be registered
-    are: {CL_SUBMITTED}, {CL_RUNNING}, or {CL_COMPLETE}^21^.
+    are: {CL_SUBMITTED}, {CL_RUNNING}, or
+    {CL_COMPLETE} footnote:[{fn-event-callback-complete}].
     There is no guarantee that the callback functions registered for various
     execution status values for an event will be called in the exact order that
     the execution status of a command changes.
@@ -8922,11 +8821,6 @@ include::{generated}/api/version-notes/clSetEventCallback.asciidoc[]
   * _user_data_ will be passed as the _user_data_ argument when _pfn_notify_ is
     called.
     _user_data_ can be `NULL`.
-
-21::
-    The callback function registered for a _command_exec_callback_type_ value
-    of {CL_COMPLETE} will be called when the command has completed
-    successfully or is abnormally terminated.
 
 The registered callback function will be called when the execution status of
 command associated with _event_ changes to an execution status equal to or

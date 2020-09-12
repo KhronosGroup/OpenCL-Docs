@@ -1,0 +1,156 @@
+// Copyright 2017-2020 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+// Please keep footnotes in alphabetical order!
+
+// Note: Follows the suggested syntax from:
+// https://github.com/asciidoctor/asciidoctor-pdf/issues/1397
+
+:fn-compatible-image-channel-orders: pass:n[ \
+This allows creation of a sRGB view of the image from a linear RGB view or vice-versa, i.e. the pixels stored in the image can be accessed as linear RGB or sRGB values. \
+]
+
+:fn-create-context-all-or-subset: pass:n[ \
+{clCreateContextfromType} may may create a context for all or a subset of the actual physical devices present in the platform that match _device_type_. \
+]
+
+:fn-default-device-queue: pass:n[ \
+The application must create a default device queue if any kernels containing calls to `get_default_queue` are enqueued. \
+There can only be one default device queue for each device within a context. \
+If a default device queue has already been created, calling {clCreateCommandQueueWithProperties} with {CL_QUEUE_PROPERTIES} set to {CL_QUEUE_ON_DEVICE} and {CL_QUEUE_ON_DEVICE_DEFAULT} will return the default device queue that has already been created and increment its reference count by 1. \
+]
+
+:fn-depth-image-requirements: pass:n[ \
+Support for the {CL_DEPTH} image channel order is required only for 2D images and 2D image arrays. \
+]
+
+:fn-duplicate-devices: pass:n[ \
+Duplicate devices specified in _devices_ are ignored. \
+]
+
+:fn-endianness: pass:n[ \
+Note that we are talking about the programming model here. \
+In reality, little endian systems might choose to simply address their bytes from "the right" or reverse the "order" of the bits in the byte. \
+Either of these choices would mean that no big swap would need to occur in hardware. \
+]
+
+:fn-error-precedence: pass:n[ \
+The OpenCL specification does not describe the order of precedence for error codes returned by API calls. \
+]
+
+:fn-event-callback-complete: pass:n[ \
+The callback function registered for a _command_exec_callback_type_ value of {CL_COMPLETE} will be called when the command has completed successfully or is abnormally terminated. \
+]
+
+:fn-event-status-order: pass:n[ \
+The error code values are negative, and event state values are positive. \
+The event state values are ordered from the largest value {CL_QUEUED} for the first or initial state to the smallest value ({CL_COMPLETE} or negative integer value) for the last or complete state. \
+The value of {CL_COMPLETE} and {CL_SUCCESS} are the same. \
+]
+
+:fn-get-device-ids-all-or-subset: pass:n[ \
+{clGetDeviceIDs} may return all or a subset of the actual physical devices present in the platform and that match _device_type_. \
+]
+
+:fn-image-array-performance: pass:n[ \
+Note that reading and writing 2D image arrays from a kernel with `image_array_size` equal to one may perform worse than 2D images. \
+]
+
+:fn-image-from-buffer: pass:n[ \
+To create a 2D image from a buffer object that share the data store between the image and buffer object. \
+]
+
+:fn-image-from-image: pass:n[ \
+To create an image object from another image object that share the data store between these image objects. \
+]
+
+:fn-image-mem-fence: pass:n[ \
+This value for memory_scope can only be used with atomic_work_item_fence with flags set to CLK_IMAGE_MEM_FENCE. \
+]
+
+:fn-int64-performance: pass:n[ \
+Note that the performance of 64-bit integer arithmetic can vary significantly between embedded devices. \
+]
+
+:fn-kernel-arg-type-const-addr-space: pass:n[ \
+{CL_KERNEL_ARG_TYPE_CONST} is returned for {CL_KERNEL_ARG_TYPE_QUALIFIER} if the argument is declared with the `constant` address space qualifier. \
+]
+
+:fn-kernel-arg-type-qualifier: pass:n[ \
+{CL_KERNEL_ARG_TYPE_CONST} is returned if the argument is a pointer and the referenced type is declared with the const qualifier. \
+For example, a kernel argument declared as `global int const *x` returns {CL_KERNEL_ARG_TYPE_CONST} but a kernel argument declared as `global int * const x` does not. + \
+Similarly, {CL_KERNEL_ARG_TYPE_RESTRICT} will be returned if the pointer type is marked `restrict`. \
+For example, `global int * restrict x` returns {CL_KERNEL_ARG_TYPE_RESTRICT}. + \
+{CL_KERNEL_ARG_TYPE_VOLATILE} is returned for {CL_KERNEL_ARG_TYPE_QUALIFIER} if the argument is a pointer and the referenced type is declared with the volatile qualifier. \
+For example, a kernel argument declared as `global int volatile *x` returns {CL_KERNEL_ARG_TYPE_VOLATILE} but a kernel argument declared as `global int * volatile x` does not. \
+]
+
+:fn-map-count-usage: pass:n[ \
+The map count returned should be considered immediately stale. \
+It is unsuitable for general use in applications. \
+This feature is provided for debugging. \
+]
+
+:fn-max-read-image-args: pass:n[ \
+A kernel that uses an image argument with the write_only or read_write image qualifier may result in additional read_only images resources being created internally by an implementation. \
+The internally created read_only image resources will count against the max supported read image arguments given by {CL_DEVICE_MAX_READ_IMAGE_ARGS}. \
+Enqueuing a kernel that requires more images than the implementation can support will result in a {CL_OUT_OF_RESOURCES} error being returned. \
+]
+
+:fn-native-rounding-modes: pass:n[ \
+The optional rounding modes should be included as a device capability only if it is supported natively. \
+All explicit conversion functions with specific rounding modes must still operate correctly. \
+]
+
+:fn-null-terminated-string: pass:n[ \
+A null terminated string is returned by OpenCL query function calls if the return type of the information being queried is a {char}[\]. \
+]
+
+:fn-out-of-order-device-queue: pass:n[ \
+Only out-of-order device queues are supported. \
+]
+
+:fn-platform-profile: pass:n[ \
+The platform profile returns the profile that is implemented by the OpenCL framework. \
+If the platform profile returned is FULL_PROFILE, the OpenCL framework will support devices that are FULL_PROFILE and may also support devices that are EMBEDDED_PROFILE. \
+The compiler must be available for all devices i.e. {CL_DEVICE_COMPILER_AVAILABLE} is {CL_TRUE}. \
+If the platform profile returned is EMBEDDED_PROFILE, then devices that are only EMBEDDED_PROFILE are supported. \
+]
+
+:fn-race-condition: pass:n[ \
+There is an inherent race condition in the design of OpenCL that occurs between setting a kernel argument and using the kernel with {clEnqueueNDRangeKernel}. \
+Another host thread might change the kernel arguments between when a host thread sets the kernel arguments and then enqueues the kernel, causing the wrong kernel arguments to be enqueued. \
+Rather than attempt to share {cl_kernel} objects among multiple host threads, applications are strongly encouraged to make additional {cl_kernel} objects for kernel functions for each host thread. \
+]
+
+:fn-readimageh: pass:n[ \
+And *read_imageh*, if the *cl_khr_fp16* extension is supported. \
+]
+
+:fn-reference-count-usage: pass:n[ \
+The reference count returned should be considered immediately stale. \
+It is unsuitable for general use in applications. \
+This feature is provided for identifying memory leaks. \
+]
+
+:fn-srgb-image-requirements: pass:n[ \
+Support for reading from the {CL_sRGBA} image channel order is optional for 1D image buffers. \
+Support for writing to the {CL_sRGBA} image channel order is optional for all image types. \
+]
+
+:fn-thread-safe: pass:n[ \
+Please refer to the OpenCL glossary for the OpenCL definition of thread-safe. \
+This definition may be different from usage of the term in other contexts. \
+]
+
+:fn-vendor-id: pass:n[ \
+OpenCL adopters must report a valid vendor ID for their implementation. \
+If there is no valid PCI vendor ID defined for the physical device, implementations must obtain a Khronos vendor ID. \
+This is a unique identifier greater than the largest PCI vendor ID (`0x10000`) and is representable by a {cl_uint}. \
+Khronos vendor IDs are synchronized across APIs by utilizing Vulkan's vk.xml as the central Khronos vendor ID registry. \
+An ID must be reserved here prior to use in OpenCL, regardless of whether a vendor implements Vulkan. \
+Only once the ID has been allotted may it be exposed to OpenCL by proposing a merge request against cl.xml, in the master branch of the OpenCL-Docs project. \
+The merge must define a new enumerant by adding an `<enum>` tag to the {cl_khronos_vendor_id} `<enums>` tag, with the `<value>` attribute set as the acquired Khronos vendor ID. \
+The `<name>` attribute must identify the vendor/adopter, and be of the form `CL_KHRONOS_VENDOR_ID_<vendor>`. \
+]
