@@ -176,7 +176,7 @@ if __name__ == "__main__":
 
     print('Found ' + str(numberOfEnums) + ' API enumerations.')
 
-    # Generate the API types dictionaries, only for structs (for now):
+    # Generate the API types dictionaries:
 
     numberOfTypes = 0
 
@@ -212,11 +212,15 @@ if __name__ == "__main__":
             # underscores for the attribute name.
             attribName = name.replace(" ", "_")
 
+            # Append the type suffix for disambiguation, since asciidoctor
+            # attributes are not case-sensitive (currently).
+            attribName = attribName + "_TYPE"
+
             # Example with link:
             #
             # // cl_image_desc
-            # :cl_image_desc_label: pass:q[`cl_image_desc`]
-            # :cl_image_desc: <<cl_image_desc,{cl_image_desc_label}>>
+            # :cl_image_desc_TYPE_label: pass:q[`cl_image_desc`]
+            # :cl_image_desc_TYPE: <<cl_image_desc,{cl_image_desc_TYPE_label}>>
             linkFile.write('// ' + name + '\n')
             if addLink:
                 linkFile.write('ifdef::backend-html5[]\n')
@@ -236,7 +240,7 @@ if __name__ == "__main__":
             linkFile.write('\n')
 
             # // cl_image_desc
-            # :cl_image_desc: pass:q[`cl_image_desc`]
+            # :cl_image_desc_TYPE: pass:q[`cl_image_desc`]
             nolinkFile.write('// ' + name + '\n')
             nolinkFile.write('ifdef::backend-html5[]\n')
             nolinkFile.write(':' + attribName + ': pass:q[`' + htmlName + '`]\n')
