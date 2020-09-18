@@ -1,0 +1,144 @@
+= cl_intel_mem_force_host_memory
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
+
+== Name Strings
+
+`cl_intel_mem_force_host_memory`
+
+== Contact
+
+Michał Mrozek, Intel (michal 'dot' mrozek 'at' intel 'dot' com)
+
+== Contributors
+
+Michał Mrozek, Intel +
+Ben Ashbaugh, Intel +
+Filip Hazubski, Intel
+
+== Notice
+
+Copyright (c) 2020 Intel Corporation. All rights reserved.
+
+== Status
+
+Final Draft
+
+== Version
+
+[width="40%",cols="25,25"]
+|========================================
+| Last Modified | 2020-09-17
+| Version       | 1.0.0
+|========================================
+
+== Dependencies
+
+This extension is written against the OpenCL Specification Version 3.0.1-Provisional.
+
+This extension requires OpenCL 1.2 or later.
+
+This extension interacts with the `cl_intel_unified_shared_memory` extension.
+
+== Overview
+
+This extension allows an application to override driver heuristics to force allocation of a buffer memory object in _host memory_.
+_Host memory_ is described in the `cl_intel_unified_shared_memory` extension.
+
+Allocating a buffer memory object in host memory trades off wide accessibility and transfer benefits for higher per-access costs.
+Buffer memory objects in host memory may also be subject to additional usage restrictions.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+Flag of type _cl_mem_flags_, used when creating a buffer object to force allocation of a buffer memory object in host memory:
+
+[source]
+----
+#define CL_MEM_FORCE_HOST_MEMORY_INTEL (1 << 20)
+----
+
+== New API Types
+
+None.
+
+== Modifications to the OpenCL API Specification
+
+(Add to Table 12 - List of supported memory flag values) ::
++
+--
+[caption="Table 12."]
+.List of supported memory flag values
+[cols="1,4",options="header",width = "90%"]
+|====
+| Memory Flags
+| Description
+
+| `CL_MEM_FORCE_HOST_MEMORY_INTEL`
+| This flag specifies that the memory object must be placed in _host memory_.
+
+Memory objects in host memory may be subject to additional usage restrictions.
+These restrictions may be queried using the `CL_DEVICE_HOST_​MEM_CAPABILITIES_INTEL` query added by the `cl_intel_unified_shared_memory` extension.
+
+When using this flag together with `CL_MEM_USE_HOST_PTR`, the _host_ptr_ and _size_ parameters must be aligned to the `CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE` value.
+|====
+--
+
+(Add to the list of error codes for *clCreateBuffer* and *clCreateBufferWithProperties*) ::
++
+--
+* `CL_INVALID_HOST_PTR` if _flags_ includes `CL_MEM_USE_HOST_PTR` and `CL_MEM_FORCE_HOST_MEMORY_INTEL` and _host_ptr_ is not aligned to the largest `CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE` value for all devices in _context_.
+* `CL_INVALID_BUFFER_SIZE` if _flags_ includes `CL_MEM_USE_HOST_PTR` and `CL_MEM_FORCE_HOST_MEMORY_INTEL` and _size_ is not a multiple of the largest `CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE` value for all devices in _context_.
+--
+
+(Add to the list of error codes for *clCreateSubBuffer*) ::
++
+--
+* `CL_INVALID_VALUE` if _flags_ specifies `CL_MEM_FORCE_HOST_MEMORY_INTEL`.
+--
+
+== Interactions with Other Extensions
+
+This extension interacts with `cl_intel_unified_shared_memory`.
+
+Memory objects that are allocated in host memory using `CL_MEM_FORCE_HOST_MEMORY_INTEL` may be subject to additional usage restrictions.
+These restrictions may be queried using the `CL_DEVICE_HOST_​MEM_CAPABILITIES_INTEL` query added by the `cl_intel_unified_shared_memory` extension.
+
+== Issues
+
+None.
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Version|Date|Author|Changes
+|1.0.0|2020-09-17|Ben Ashbaugh|First public revision
+|========================================
+
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************
