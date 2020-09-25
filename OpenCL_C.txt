@@ -3005,12 +3005,6 @@ kernel void my_func(image2d_t img, global float *a)
 [open,refpage='restrictions',desc='Restrictions',type='freeform',spec='clang',anchor='restrictions']
 --
 
-[NOTE]
-====
-Items struckthrough are restrictions in a previous version of OpenCL C that
-are no longer present in OpenCL C 3.0.
-====
-
 [loweralpha]
   . The use of pointers is somewhat restricted.
     The following rules apply:
@@ -3021,10 +3015,11 @@ are no longer present in OpenCL C 3.0.
       assigned to a pointer declared with the `+__constant+` qualifier
       respectively.
     * Pointers to functions are not allowed.
-    * [line-through]#Arguments to kernel functions in a program cannot be
+    * Arguments to kernel functions in a program cannot be
       declared as a pointer to a pointer(s).
       Variables inside a function or arguments to non-kernel functions in a
-      program can be declared as a pointer to a pointer(s).#
+      program can be declared as a pointer to a pointer(s).
+      This restriction only applies to OpenCL C 1.2 or below.
   . An image type (`image2d_t`, `image3d_t`, `image2d_array_t`, `image1d_t`,
     `image1d_buffer_t` or `image1d_array_t`) can only be used as the type of
     a function argument.
@@ -3055,8 +3050,8 @@ address space qualifiers.
     with flexible (or unsized) arrays are not supported.
   . Variadic functions are not supported, with the exception of `printf` and
     `enqueue_kernel`.
-// Relaxed in OpenCL C 3.0.
-  . [line-through]#Variadic macros are not supported.#
+  . Variadic macros are not supported.
+    This restriction only applies to OpenCL C 2.0 or below.
   . If a list of parameters in a function declaration is empty, the function
     takes no arguments. This is due to the above restriction on variadic
     functions.
@@ -3068,7 +3063,8 @@ address space qualifiers.
     `wchar.h` and `wctype.h` are not available and cannot be included by a
     program.
   . The `auto` and `register` storage-class specifiers are not supported.
-  . [line-through]#Predefined identifiers are not supported.#
+  . Predefined identifiers are not supported.
+    This restriction only applies to OpenCL C 1.1 or below.
   . Recursion is not supported.
   . The return type of a kernel function must be `void`.
   . Arguments to kernel functions in a program cannot be declared with the
@@ -3084,36 +3080,37 @@ address space qualifiers.
     floating-point arithmetic can be performed.
   . Whether or not irreducible control flow is illegal is implementation
     defined.
-// Relaxed in OpenCL C 1.1, or the cl_khr_byte_addressable_store extension.
-//  . [line-through]#Built-in types that are less than 32-bits in size, i.e.
-//    `char`, `uchar`, `char2`, `uchar2`, `short`, `ushort`, and `half`, have
-//    the following restriction:#
-//+
-//    * [line-through]#Writes to a pointer (or arrays) of type `char`,
-//      `uchar`, `char2`, `uchar2`, `short`, `ushort`, and `half` or to
-//      elements of a struct that are of type `char`, `uchar`, `char2`,
-//      `uchar2`, `short` and `ushort` are not supported.
-//      Refer to _section 9.9_ for additional information.#
-//+
-//[line-through]#The kernel example below shows what memory operations are not
-//supported on built-in types less than 32-bits in size.#
-//+
-//[source,c,role="line-through"]
-//----------
-//kernel void
-//do_proc (__global char *pA, short b,
-//         __global short *pB)
-//{
-//    char x[100];
-//    __private char *px = x;
-//    int id = (int)get_global_id(0);
-//    short f;
-//
-//    f = pB[id] + b; // is allowed
-//    px[1] = pA[1]; // error. px cannot be written.
-//    pB[id] = b; // error. pB cannot be written
-//}
-//----------
+  . The following restriction only applies to OpenCL C 1.0, also see the
+    *cl_khr_byte_addressable_store* extension.
+    Built-in types that are less than 32-bits in size, i.e.
+    `char`, `uchar`, `char2`, `uchar2`, `short`, `ushort`, and `half`, have
+    the following restriction:
++
+    * Writes to a pointer (or arrays) of type `char`,
+      `uchar`, `char2`, `uchar2`, `short`, `ushort`, and `half` or to
+      elements of a struct that are of type `char`, `uchar`, `char2`,
+      `uchar2`, `short` and `ushort` are not supported.
+      Refer to _section 9.9_ for additional information.
++
+The kernel example below shows what memory operations are not supported on
+built-in types less than 32-bits in size.
++
+[source,c]
+----------
+kernel void
+do_proc (__global char *pA, short b,
+         __global short *pB)
+{
+    char x[100];
+    __private char *px = x;
+    int id = (int)get_global_id(0);
+    short f;
+
+    f = pB[id] + b; // is allowed
+    px[1] = pA[1]; // error. px cannot be written.
+    pB[id] = b; // error. pB cannot be written
+}
+----------
   . The type qualifiers `const`, `restrict` and `volatile` as defined by the
     C99 specification are supported.
     These qualifiers cannot be used with `image2d_t`, `image3d_t`,
@@ -3216,6 +3213,12 @@ The following predefined macro names are available.
     language version supported by each device is used as the version of
     OpenCL C when compiling the program for each device.
     <<unified-spec, Requires>> support for OpenCL C 1.2 or newer.
+
+`+__ROUNDING_MODE__+` ::
+    Used to determine the current rounding mode and is set to rte.
+    Only affects the rounding mode of conversions to a float type.
+    <<unified-spec, Deprecated by>> OpenCL C 1.1, along with the
+    *cl_khr_select_fprounding_mode* extension.
 
 `+__ENDIAN_LITTLE__+` ::
     Used to determine if the OpenCL device is a little endian architecture
@@ -5990,6 +5993,67 @@ in a subgroup.
   <<atomic-restrictions,atomic restrictions section>>.
 
 |====
+
+
+[[legacy-mem-fence-functions]]
+=== Legacy Explicit Memory Fence Functions
+
+[open,refpage='legacyFenceFunctions',desc='Legacy Explicit Memory Fence Functions',type='freeform',spec='clang',anchor='legacy-mem-fence-functions',alias='mem_fence read_mem_fence write_mem_fence']
+--
+IMPORTANT: The memory fence functions described in this sub-section are
+<<unified-spec, deprecated by>> OpenCL C 2.0.
+
+The OpenCL C programming language implements the following explicit memory fence functions to provide ordering between memory operations of a work-item.
+
+[[table-builtin-explicit-memory-fences]]
+.Built-in Explicit Memory Fence Functions
+[cols="3,7",]
+|====
+| *Function* | *Description*
+
+| void *mem_fence*( +
+  cl_mem_fence_flags _flags_) +
+
+| Orders loads and stores of a work-item executing a kernel.  This means that
+  loads and stores preceding the *mem_fence* will be committed to memory
+  before any loads and stores following the *mem_fence*.
+
+  The _flags_ argument specifies the memory address space and can be set to a
+  combination of the following literal values:
+
+  `CLK_LOCAL_MEM_FENCE` +
+  `CLK_GLOBAL_MEM_FENCE`
+
+  The value of _flags_ must be the same for all work-items in the work-group.
+
+| void *read_mem_fence*( +
+  cl_mem_fence_flags _flags_) +
+
+| Read memory barrier that orders only loads.
+
+  The _flags_ argument specifies the memory address space and can be set to a
+  combination of the following literal values:
+
+  `CLK_LOCAL_MEM_FENCE` +
+  `CLK_GLOBAL_MEM_FENCE`
+
+  The value of _flags_ must be the same for all work-items in the work-group.
+
+| void *write_mem_fence*( +
+  cl_mem_fence_flags _flags_) +
+
+| Write memory barrier that orders only stores.
+
+  The _flags_ argument specifies the memory address space and can be set to a
+  combination of the following literal values:
+
+  `CLK_LOCAL_MEM_FENCE` +
+  `CLK_GLOBAL_MEM_FENCE`
+
+  The value of _flags_ must be the same for all work-items in the work-group.
+
+|====
+--
 
 
 [[address-space-qualifier-functions]]
