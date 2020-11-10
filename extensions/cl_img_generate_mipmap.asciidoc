@@ -1,0 +1,153 @@
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_img_generate_mipmap
+
+== Name Strings
+
+`cl_img_generate_mipmap`
+
+== Contact
+
+Imagination Technologies Developer Forum: +
+https://forums.imgtec.com/
+
+Jeremy Kemp, Imagination Technologies (Jeremy.Kemp 'at' imgtec.com)
+
+== Contributors
+
+Kim Svensson, Imagination Technologies. +
+Timothy Smith, Imagination Technologies. +
+Robert Quill, Imagination Technologies. +
+Jeremy Kemp, Imagination Technologies.
+
+== Notice
+
+Copyright (c) 2020 Imagination Technologies Ltd. All Rights Reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+Requires the `cl_khr_mipmap_image` extension.
+
+This extension is written against the wording of the OpenCL 3.0 Specification.
+
+== Overview
+
+This extension adds the functionality to generate mipmap images from a source image and thus avoid having to generate and import mipmapped images from the host or through the `cl_khr_gl_sharing` extension.
+
+== New API Types
+
+[source,c]
+----
+typedef cl_uint cl_mipmap_filter_mode_img;
+----
+
+== New API Enums
+
+Values accepted with  `cl_mipmap_filter_mode_img`:
+
+[source,c]
+----
+CL_MIPMAP_FILTER_ANY_IMG 0x0
+CL_MIPMAP_FILTER_BOX_IMG 0x1
+----
+
+New command types `cl_command_type`:
+
+[source,c]
+----
+CL_COMMAND_GENERATE_MIPMAP_IMG 0x40D6
+----
+
+== New API Functions
+
+[source]
+----
+cl_int CL_API_CALL clEnqueueGenerateMipmapIMG(
+    cl_command_queue command_queue,
+    cl_mem src_image,
+    cl_mem dst_image,
+    cl_mipmap_filter_mode_img mipmap_filter_mode,
+    const size_t *array_region,
+    const size_t *mip_region,
+    cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list,
+    cl_event *event);
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 5.3, *Image Objects*) ::
++
+(Add a new Section 5.3.8, _Generating Mipmap Levels_) :::
++
+--
+The function
+
+[source]
+----
+cl_int CL_API_CALL clEnqueueGenerateMipmapIMG(
+    cl_command_queue command_queue,
+    cl_mem src_image,
+    cl_mem dst_image,
+    cl_mipmap_filter_mode_img mipmap_filter_mode,
+    const size_t *array_region,
+    const size_t *mip_region,
+    cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list,
+    cl_event *event);
+----
+is used to generate mipmap levels from a source image to a destination image. This allows for seamless mipmap level generation without involving the host to generate them, as that would involve reading back the image, generate its mipmap levels and then upload it to the device again. This reduces bandwidth cost of generating mipmap levels as no host copy is needed and may improve the speed of generating mipmap levels. The source image and destination image can be the same image in order to reduce programming and memory overhead. As with the extension for mipmaps, the size of the image must be a power of 2.
+
+_command_queue_ is a valid command-queue.
+
+_src_image, dst_image_ refer to a valid 1D, 2D, 3D image or a 1D image array, 2D image array objects. Where the _src_image_ refer to the image where the mipmaps will be sourced from and _dst_image_ is the image where the mipmaps will be generated to. The width, height, depth and image_array_size where applicable, must be the same for the _src_image_ and _dst_image_. The image types of _src_image_ and _dst_image_ must be the same, therefore _dst_image_ cannot be a 2D image if the _src_image_ is of the type 2D image array. The image_channel_order and image_channel_data_type must be the same for both images. The _src_image_ and _dst_image_ can be the same image object to avoid unnecessary memory allocations.
+
+_mipmap_filter_mode_ refer to the filter mode to generate the mipmap levels with. `CL_MIPMAP_FILTER_ANY_IMG` allows the device to use any filter mode it deems necessary, whilst `CL_MIPMAP_FILTER_BOX_IMG` uses a box filter to sample down the image.
+
+_array_region_ Defines the (n,m) image range in a 1D and 2D image array to generate. If the _src_image_ and _dst_image_ is of the types 1D, 2D and 3D image, _array_region_ must be `NULL`.
+
+_mip_region_ Defines the (n,m) region of mipmap levels to generate in _dst_image_. Where (n) defines the start of the region and (m) the end of region. If _mip_region_ is `NULL`, all mipmap layers in _dst_image_ will be generated. The (n) starting region must range from 0 to equal to the (m) end region whilst the (m) end region must range from 1 to one less than the maximum number of mipmap layers in _dst_image_, as mipmap layer indexing starts at 0. Setting _mip_region[0]_ to 0 means that the mipmap layer 0 of _src_image_ will be copied to mipmap layer 0 of _dst_image_. If _src_image_ and _dst_image_ is the same image and _mip_region[0]_ = 0, no copy of layer 0 will occur and only generation of mipmaps would be executed.
+
+_event_wait_list_ and _num_events_in_wait_list_ specify events that need to complete before this particular command can be executed. If _event_wait_list_ is `NULL`, then this particular command does not wait on any event to complete. If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0. If _event_wait_list_ is not `NULL`, the list of events pointed to by _event_wait_list_ must be valid and _num_events_in_wait_list_ must be greater than 0. The events specified in _event_wait_list_ act as synchronization points.
+
+_event_ returns an event object that identifies this particular command and can be used to query or queue a wait for this particular command to complete. _event_ can be `NULL` in which case it will not be possible for the application to query the status of this command or queue a wait for this command to complete.
+
+*clEnqueueGenerateMipmapIMG* returns `CL_SUCCESS` if the function is executed successfully, otherwise it returns one of the following errors:
+
+* `CL_INVALID_COMMAND_QUEUE` if _command_queue_ is not a valid host command-queue.
+* `CL_INVALID_MEM_OBJECT` if _src_image_ or _dst_image_ are not a valid image object.
+* `CL_INVALID_MEM_OBJECT` if _src_image_ and _dst_image_ have different image type.
+* `CL_INVALID_IMAGE_FORMAT_DESCRIPTOR` if _src_image_ and _dst_image_ have different image_channel_order or image_channel_data_type.
+* `CL_INVALID_IMAGE_SIZE` if _src_image_ and _dst_image_ have different image size in mipmap layer 0, if the images are of image array type and have different image array size.
+* `CL_INVALID_CONTEXT` if the context associated with _command_queue_, _src_image_ and _dst_image_ are not the same or if the context associated with _command_queue_ and events in event_wait_list are not the same.
+* `CL_INVALID_MIP_LEVEL` if _mip_region[0]_ is greater than _mip_region[1]_, or if _mip_region[0]_ is less than 0, or if _mip_region[1]_ is less than 1, or if _mip_region[1]_ is greater than the number of mipmap levels in _dst_image_.
+* `CL_INVALID_VALUE` if the images are not of the type image array and _array_region_ is not `NULL`, or the images are of type image array and _array_region_ is `NULL`.
+* `CL_INVALID_VALUE` if the images are of type image array and _array_region_ refer to a range outside of the available range in _dst_image_ and _src_image_, or if _array_region[0]_ is greater than _array_region[1]_.
+* `CL_INVALID_EVENT_WAIT_LIST` if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_ are not valid events.
+* `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
+* `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host.
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 1.0.0   | 2020-11-10 | Jeremy Kemp  | Refreshed to AsciiDoc. Updated Contributors. Updated copyright notice. Updated the OpenCL spec which this extension spec is written against. Updated dependencies.
+| 0.1.0   | 2017-06-26 | Robert Quill  | Initial revision.
+|====
