@@ -1,0 +1,109 @@
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_img_yuv_image
+
+== Name Strings
+
+`cl_img_yuv_image`
+
+== Contact
+
+Imagination Technologies Developer Forum: +
+https://forums.imgtec.com/
+
+Jeremy Kemp, Imagination Technologies (Jeremy.Kemp 'at' imgtec.com)
+
+== Contributors
+
+James Laverack, Imagination Technologies. +
+Robert Quill, Imagination Technologies. +
+Jeremy Kemp, Imagination Technologies.
+
+== Notice
+
+Copyright (c) 2020 Imagination Technologies Ltd. All Rights Reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+Requires OpenCL version 1.2 or later.
+
+This extension is written against the wording of the OpenCL 3.0 Specification.
+
+== Overview
+
+This extension provides new image formats to read YUV images, such as those provided by cameras on mobile devices.
+
+== New API Enums
+
+New values accepted for the `image_channel_order` member in `cl_image_format`:
+
+[source,c]
+----
+CL_NV21_IMG 0x40D0
+CL_YV12_IMG 0x40D1
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 5.3, *Image Objects*) ::
++
+--
+
+(Add the following to return conditions to Section 5.3.1, _Creating Image Objects_) ::
+* `CL_INVALID_IMAGE_SIZE` if the _image_channel_order_ is `CL_NV21_IMG` or `CL_YV12_IMG` and image dimensions specified in _image_desc_ are not supported for all devices in _context_.
+* `CL_INVALID_VALUE` if the _image_channel_order_ is `CL_NV21_IMG` or `CL_YV12_IMG` and the _image_desc_ is not `CL_MEM_OBJECT_IMAGE2D`.
+
+(Add the following to Table 16, _Image Format Descriptor_) ::
+[cols="1,4",options="header"]
+|====
+| Image Channel Order
+| Description
+
+| `CL_NV21_IMG, CL_YV12_IMG`
+| This format can only be used if _image_channel_data_type_ is `CL_UNORM_INT8`.
+|====
+
+(Add the following to return conditions to Section 5.3.3, _Reading, Writing and Copying Image Objects_) ::
+* `CL_INVALID_VALUE` if _image_channel_order_ is `CL_NV21_IMG` or `CL_YV12_IMG` and the region is not the full size of the image and/or the origin is not (0, 0).
+
+(Add the following to return conditions to Section 5.3.4, _Filling Image Objects_) ::
+* `CL_IMAGE_FORMAT_NOT_SUPPORTED` if _image_channel_order_ is `CL_NV21_IMG` or `CL_YV12_IMG`.
+
+(Add the following to return conditions to Section 5.3.6, _Mapping Image Objects_) ::
+* `CL_INVALID_VALUE` if _image_channel_order_ is `CL_NV21_IMG` or `CL_YV12_IMG` and the region is not the full size of the image and/or the origin is not (0, 0).
+--
+
+== Modifications to the OpenCL C Specification
+(Modify Section 8.2, _Addressing and Filter Modes_) ::
+(Replace the following paragraph) :::
+If the sampler is specified as using unnormalized coordinates (floating-point or integer coordinates), filter mode set to `CLK_FILTER_NEAREST` and addressing mode set to one of the following modes - `CLK_ADDRESS_NONE`, `CLK_ADDRESS_CLAMP_TO_EDGE` or `CLK_ADDRESS_CLAMP`, the location of the image element in the image given by (_i,j,k_) will be computed without any loss of precision.
++
+with
++
+If the sampler is specified as using unnormalized coordinates (floating-point or integer coordinates), filter mode set to `CLK_FILTER_NEAREST` and addressing mode set to one of the following modes - `CLK_ADDRESS_NONE`, `CLK_ADDRESS_CLAMP_TO_EDGE` or `CLK_ADDRESS_CLAMP`, and _image_channel_order_ is not `CL_NV21_IMG` or `CL_YV12_IMG`, the location of the image element in the image given by (_i,j,k_) will be computed without any loss of precision.
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 1.0.0   | 2020-11-10 | Jeremy Kemp  | Refreshed to AsciiDoc. Updated Contributors. Updated copyright notice. Updated the OpenCL spec which this extension spec is written against.
+| 0.3.0   | 2018-05-23 | GitHub User H1Gdev  | Remove duplicate 'for' in cl_img_yuv_image.txt.
+| 0.2.0   | 2017-10-17 | James Laverack & Robert Quill  | Replace CL_NV21 and CL_YV12 with CL_NV21_IMG and CL_YV12_IMG respectively.
+| 0.1.0   | 2014-05-02 | James Laverack  | Initial revision.
+|====
