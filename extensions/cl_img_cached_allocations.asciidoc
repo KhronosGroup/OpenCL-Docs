@@ -1,0 +1,114 @@
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_img_cached_allocations
+
+== Name Strings
+
+`cl_img_cached_allocations`
+
+== Contact
+
+Imagination Technologies Developer Forum: +
+https://forums.imgtec.com/
+
+Jeremy Kemp, Imagination Technologies (Jeremy.Kemp 'at' imgtec.com)
+
+== Contributors
+
+Robert Quill, Imagination Technologies. +
+Jeremy Kemp, Imagination Technologies.
+
+== Notice
+
+Copyright (c) 2020 Imagination Technologies Ltd. All Rights Reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+Requires OpenCL version 1.2 or later.
+
+This extension is written against the wording of the OpenCL 3.0
+Specification.
+
+== Overview
+
+This extension extends the functionality provided by
+*clCreateBuffer* and *clCreateImage* to allow the OpenCL
+implementation to allocate memory on the device which
+is also cached on the host CPU.
+
+== New API Enums
+
+Accepted value for the _flags_ parameter to *clCreateBuffer* and *clCreateImage*:
+
+[source,c]
+----
+CL_MEM_USE_UNCACHED_CPU_MEMORY_IMG (1 << 26)
+CL_MEM_USE_CACHED_CPU_MEMORY_IMG   (1 << 27)
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 5.2, *Buffer Objects*) ::
++
+--
+
+(Add the following to Table 5, _List of supported memory flag values_) ::
++
+--
+
+[cols="1,4",options="header"]
+|====
+| Memory Flags
+| Description
+
+| `CL_MEM_USE_UNCACHED_CPU_MEMORY_IMG`
+| If this flag is specified it means that the application wants the OpenCL implementation to allocate memory on the device so that it is not cached when accessed on the host.
+
+| `CL_MEM_USE_CACHED_CPU_MEMORY_IMG`
+| If this flag is specified it means that the application wants the OpenCL implementation to allocate memory on the device so that it is cached when accessed on the host.
+
+|====
+
+--
+--
+
+== Issues
+
+. This extension may or may not improve performance; it depends on the
+specific use-case. It is most likely to improve performance in cases
+where the buffer or image is mapped using clEnqueueMapBuffer/Image
+and some processing is then performed on the host-side. Whether the
+allocation flag improves performance depends on whether the overhead
+of cache flushes is greater than the performance gain from cached
+memory accessing when doing the host-side processing. It's recommended
+to apply the flag on case-by-case basis to see if it improves your
+use-case.
++
+--
+*INFORMATION*
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 1.0.0   | 2020-11-09 | Jeremy Kemp  | Refreshed to AsciiDoc. Updated Contributors. Updated copyright notice. Updated the OpenCL spec which this extension spec is written against.
+| 0.2.0   | 2014-10-09 | Robert Quill  | Update overview section to say that the extension also supports images. Add more detail to the overview section.
+| 0.1.0   | 2014-10-07 | Robert Quill  | Initial revision.
+|====
