@@ -1,0 +1,272 @@
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_img_use_gralloc_ptr
+
+== Name Strings
+
+`cl_img_use_gralloc_ptr`
+
+== Contact
+
+Imagination Technologies Developer Forum: +
+https://forums.imgtec.com/
+
+Jeremy Kemp, Imagination Technologies (Jeremy.Kemp 'at' imgtec.com)
+
+== Contributors
+
+Robert Quill, Imagination Technologies. +
+Paul Fradgley, Imagination Technologies. +
+Jeremy Kemp, Imagination Technologies.
+
+== Notice
+
+Copyright (c) 2020 Imagination Technologies Ltd. All Rights Reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+Requires OpenCL version 1.2 or later. Android OS is required.
+
+This extension is written against the wording of the OpenCL 3.0
+Specification.
+
+== Overview
+
+This extension extends the functionality provided by *clCreateBuffer* and *clCreateImage*.
+It allows applications to pass an Android memory allocation to these functions and thus avoid having to copy data back and forth between the host and the device.
+
+== New API Enums
+
+New command types `cl_command_type`:
+
+[source,c]
+----
+CL_COMMAND_ACQUIRE_GRALLOC_OBJECTS_IMG 0x40D2
+CL_COMMAND_RELEASE_GRALLOC_OBJECTS_IMG 0x40D3
+----
+
+New error codes:
+
+[source,c]
+----
+CL_GRALLOC_RESOURCE_NOT_ACQUIRED_IMG 0x40D4
+CL_INVALID_GRALLOC_OBJECT_IMG        0x40D5
+----
+
+Accepted value for the _flags_ parameter to *clCreateBuffer* and *clCreateImage*:
+
+[source,c]
+----
+CL_MEM_USE_GRALLOC_PTR_IMG (1 << 28)
+----
+
+== New API Functions
+
+[source]
+----
+cl_int CL_API_CALL clEnqueueAcquireGrallocObjectsIMG(
+    cl_command_queue command_queue,
+    cl_uint num_objects,
+    const cl_mem *mem_objects,
+    cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list,
+    cl_event *event);
+
+cl_int CL_API_CALL clEnqueueReleaseGrallocObjectsIMG(
+    cl_command_queue command_queue,
+    cl_uint num_objects,
+    const cl_mem *mem_objects,
+    cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list,
+    cl_event *event);
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 5.2, *Buffer Objects*) ::
++
+--
+
+(Add the following to Table 5, _List of supported memory flag values_) ::
++
+[cols="1,4",options="header"]
+|====
+| Memory Flags
+| Description
+
+| `CL_MEM_USE_GRALLOC_PTR_IMG`
+| This flag is only valid of _host_ptr_ is not `NULL`. The value given in _host_ptr_ is an Android memory allocation.
+
+If this flag is specified to *clCreateBuffer*, then _host_ptr_ must be an Android `buffer_handle_t`. It means that the application wants the OpenCL implementation to use memory referenced by the `buffer_handle_t` as the storage bits for the memory object.
+
+If this flag is specified to *clCreateImage*, then _host_ptr_ must be an Android `ANativeWindowBuffer`. It means that the application wants the OpenCL implementation to use memory referenced by the `ANativeWindowBuffer` as the storage bits for the memory object.
+
+_size_ must be 0 if this flag is set when given to *clCreateBuffer*. The size of the buffer is determined from the size of the Android allocation.
+
+|====
+
+(Add the following to Section 5.2.1, _Creating Buffer Objects_) ::
+(Add the following error conditions to the list after this section) :::
+
+`CL_INVALID_BUFER_SIZE` if _size_ is non-zero and _flags_ contains `CL_MEM_USE_GRALLOC_PTR_IMG`.
+
+(Replace the following paragraph) :::
+
+`CL_INVALID_HOST_PTR` if _host_ptr_ is `NULL` and `CL_MEM_USE_HOST_PTR` or `CL_MEM_COPY_HOST_PTR` are set in _flags_ or if _host_ptr_ is not `NULL` but `CL_MEM_COPY_HOST_PTR` or `CL_MEM_USE_HOST_PTR` are not set in _flags_.
++
+with
++
+`CL_INVALID_HOST_PTR` if _host_ptr_ is `NULL` and `CL_MEM_USE_HOST_PTR`, `CL_MEM_COPY_HOST_PTR` or `CL_MEM_USE_GRALLOC_PTR_IMG` are set in _flags_ or if _host_ptr_ is not `NULL` but `CL_MEM_COPY_HOST_PTR`, `CL_MEM_USE_HOST_PTR` or `CL_MEM_USE_GRALLOC_PTR_IMG` are not set in _flags_.
+--
+
+(Modify Section 5.3, *Image Objects*) ::
++
+--
+(Add the following to Section 5.3.1, _Creating Image Objects_) ::
+(Replace the following paragraph) :::
+
+`CL_INVALID_IMAGE_DESCRIPTOR` if values specified in _image_desc_ are not valid or if _image_desc_ is `NULL`.
++
+with
++
+`CL_INVALID_IMAGE_DESCRIPTOR` if _image_desc_ is `NULL` and _flags_ does not contain `CL_MEM_USE_GRALLOC_PTR_IMG`, or if _image_desc_ is not `NULL` and _flags_ contains `CL_MEM_USE_GRALLOC_PTR_IMG`, or if values specified in _image_desc_ are not valid.
+
+(Replace the following paragraph) :::
+
+`CL_INVALID_HOST_PTR` if _host_ptr_ is `NULL` and `CL_MEM_USE_HOST_PTR` or `CL_MEM_COPY_HOST_PTR` are set in _flags_ or if _host_ptr_ is not `NULL` but `CL_MEM_COPY_HOST_PTR` or `CL_MEM_USE_HOST_PTR` are not set in _flags_.
++
+with
++
+`CL_INVALID_HOST_PTR` if _host_ptr_ is `NULL` and `CL_MEM_USE_HOST_PTR`, `CL_MEM_COPY_HOST_PTR` or `CL_MEM_USE_GRALLOC_PTR_IMG` are set in _flags_ or if _host_ptr_ is not `NULL` but `CL_MEM_COPY_HOST_PTR`, `CL_MEM_USE_HOST_PTR` or `CL_MEM_USE_GRALLOC_PTR_IMG` are not set in _flags_.
+--
+
+(Add a new Section 5.16, _Sharing OpenCL and Gralloc Objects_) ::
++
+(Add a new Section 5.16.1, _Synchronizing OpenCL and Android Access to Shared Gralloc Objects_) :::
+In order to ensure data integrity, the application is responsible for synchronizing access to shared CL/gralloc objects by their respective APIs. Failure to provide such synchronization may result in race conditions and other undefined behaviour including non-portability between implementations.
++
+Prior to calling *clEnqueueAcquireGrallocObjectsIMG*, the application must ensure that any pending operations which access the objects specified in _mem_objects_ have completed. This may be accomplished in a portable way by ceasing all client operations on the resource. Implementations may offer more efficient synchronization methods, such as synchronisation primitives or fence operations.
++
+Similarly, after calling *clEnqueueReleaseGrallocObjectsIMG*, the application is responsible for ensuring that any pending OpenCL operations which access the objects specified in _mem_objects_ have completed prior to executing subsequent commands in other APIs which reference these objects. This may be accomplished in a portable way by calling *clWaitForEvents* with the event object returned by *clEnqueueReleaseGrallocObjects*, or by calling *clFinish*. As above, some implementations may offer more efficient methods.
++
+Attempting to access the data store of a gralloc allocation after it has been acquired by OpenCL and before it has been released will result in undefined behaviour. Similarly, attempting to access a shared gralloc object from OpenCL before it has been acquired by the OpenCL command queue or after it has been released, will result in undefined behaviour.
+
+(Add a new Section 5.16.2, _Sharing Memory Objects Created From Gralloc Resources With OpenCL Contexts_) :::
++
+--
+The function
+
+[source]
+----
+cl_int CL_API_CALL clEnqueueAcquireGrallocObjectsIMG(
+    cl_command_queue command_queue,
+    cl_uint num_objects,
+    const cl_mem *mem_objects,
+    cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list,
+    cl_event *event);
+----
+is used to acquire OpenCL memory objects that have been created from gralloc resources. The gralloc objects are acquired by the OpenCL context associated with _command_queue_ and can therefore be used by all command-queues associated with the OpenCL context.
+
+OpenCL memory objects created from gralloc resources must be acquired before they can be used by any OpenCL commands queued to a command-queue. If an OpenCL memory object created from a gralloc resource is used while it is not currently acquired by OpenCL, the call attempting to use that OpenCL memory object will return `CL_GRALLOC_RESOURCE_NOT_ACQUIRED_IMG`.
+
+This function has no affect on memory objects in _mem_objects_ that have already been acquired, ignoring them silently. The function returns CL_SUCCESS even if all of the memory objects are ignored in this way.
+
+_command_queue_ is a valid command-queue.
+
+_num_objects_ is the number of memory objects to be acquired in _mem_objects_.
+
+_mem_objects_ is a pointer to a list of OpenCL memory objects that were created from gralloc resources, within the context associate with _command_queue_.
+
+_event_wait_list_ and _num_events_in_wait_list_ specify events that need to complete before this particular command can be executed. If _event_wait_list_ is `NULL`, then this particular command does not wait on any event to complete. If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0. If _event_wait_list_ is not `NULL`, the list of events pointed to by _event_wait_list_ must be valid and _num_events_in_wait_list_ must be greater than 0. The events specified in _event_wait_list_ act as synchronization points.
+
+_event_ returns an event object that identifies this particular command and can be used to query or queue a wait for this particular command to complete. _event_ can be NULL in which case it will not be possible for the application to query the status of this command or queue a wait for this command to complete.
+
+*clEnqueueAcquireGrallocObjectsIMG* returns `CL_SUCCESS` if the function is executed successfully. If _num_objects_ is 0 and _mem_objects_ is `NULL` then the function does nothing and returns `CL_SUCCESS`. Otherwise it returns one of the following errors:
+
+* `CL_INVALID_VALUE` if _num_objects_ is zero and _mem_objects_ is not a `NULL` value or if _num_objects_ 0 and _mem_objects_ is `NULL`.
+* `CL_INVALID_MEM_OBJECT` if memory objects in _mem_objects_ are not valid OpenCL memory objects in the context associated with _command_queue_.
+* `CL_INVALID_GRALLOC_OBJECT_IMG` if memory objects in _mem_objects_ have not been created from gralloc resources.
+* `CL_INVALID_COMMAND_QUEUE` if _command_queue_ is not a valid command-queue.
+* `CL_INVALID_EVENT_WAIT_LIST` if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ 0, or _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_ are not valid events.
+* `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
+* `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host.
+* `CL_INVALID_OPERATION` if the queue on which the command is enqueued is associated with a device which does not support `cl_img_use_gralloc_ptr`.
+
+The function
+[source]
+----
+cl_int CL_API_CALL clEnqueueReleaseGrallocObjectsIMG(
+    cl_command_queue command_queue,
+    cl_uint num_objects,
+    const cl_mem *mem_objects,
+    cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list,
+    cl_event *event);
+----
+is used to release OpenCL memory objects that have been created from gralloc resources. The gralloc objects are released by the OpenCL context associated with _command_queue_.
+
+OpenCL memory objects created from gralloc resources which have been acquired by OpenCL must be released by OpenCL before they may be accessed by Android client APIs. Accessing a gralloc resource while its corresponding OpenCL memory object is acquired is in error and will result in undefined behaviour, including but not limited to possible OpenCL errors, data corruption, and program termination.
+
+_command_queue_ is a valid command-queue.
+
+_mem_objects_ is a pointer to a list of OpenCL memory objects that were created from gralloc resources, within the context associated with _command_queue_.
+
+_event_wait_list_ and _num_events_in_wait_list_ specify events that need to complete before this particular command can be executed. If _event_wait_list_ is `NULL`, then this particular command does not wait on any event to complete. If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0. If _event_wait_list_ is not `NULL`, the list of events pointed to by _event_wait_list_ must be valid and _num_events_in_wait_list_ must be greater than 0.
+
+_event_ returns an event object that identifies this particular command and can be used to query or queue a wait for this particular command to complete. _event_ can be NULL in which case it will not be possible for the application to query the status of this command or queue a wait for this command to complete.
+
+*clEnqueueReleaseGrallocObjectsIMG* returns `CL_SUCCESS` if the function is executed successfully. If _num_objects_ is 0 and _mem_objects_ is `NULL` the function does nothing and returns `CL_SUCCESS`. Otherwise it returns one of the following errors:
+
+* `CL_INVALID_VALUE` if _num_objects_ is zero and _mem_objects_ is not a `NULL` value or if _num_objects_ 0 and _mem_objects_ is `NULL`.
+* `CL_INVALID_MEM_OBJECT` if memory objects in _mem_objects_ are not valid OpenCL memory objects in the context associated with _command_queue_.
+* `CL_INVALID_GRALLOC_OBJECT_IMG` if memory objects in _mem_objects_ have not been created from gralloc resources.
+* `CL_INVALID_COMMAND_QUEUE` if _command_queue_ is not a valid command-queue.
+* `CL_GRALLOC_RESOURCE_NOT_ACQUIRED_IMG` if memory objects in _mem_objects_ have not previously acquired with *clEnqueueAcquireGrallocObjectsIMG*, or have been released using *clEnqueueReleaseGrallocObjectsIMG* since the last time that they were acquired.
+* `CL_INVALID_EVENT_WAIT_LIST` if _event_wait_list_ is NULL and _num_events_in_wait_list_ 0, or _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_ are not valid events.
+* `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
+* `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host.
+--
+
+== Issues
+
+. This extension does not support reference counting of the images, so the onus is on the application to behave sensibly and not release the underlying `cl_mem` object while the gralloc object is still being used.
++
+--
+*INFORMATION*
+--
+. In order to ensure data integrity, the application is responsible for synchronizing access to shared CL/gralloc objects by their respective APIs. Failure to provide such synchronization may result in race conditions and other undefined behaviour. This may be accomplished by calling *clWaitForEvents* with the event objects returned by any OpenCL commands which use the shared image object or by calling *clFinish*.
++
+--
+*INFORMATION*
+--
+. Currently restricted to buffer objects.
++
+--
+*RESOLVED*
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 1.0.0   | 2020-11-10 | Jeremy Kemp  | Refreshed to AsciiDoc. Updated Contributors. Updated copyright notice. Updated the OpenCL spec which this extension spec is written against. Spelling fixes.
+| 0.2.0   | 2017-10-17 | Paul Fradgley  | Added support for images.
+| 0.1.0   | 2014-08-08 | Robert Quill  | Initial revision.
+|====
