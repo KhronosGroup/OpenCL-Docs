@@ -69,16 +69,19 @@ SPECREMARK = from git branch: $(shell echo `git symbolic-ref --short HEAD`) \
 	     commit: $(shell echo `git log -1 --format="%H"`)
 endif
 
-ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
-	       -a revdate="$(SPECDATE)" \
-	       -a revremark="$(SPECREMARK)" \
-	       -a stem=latexmath \
-	       -a generated=$(GENERATED) \
-	       -a sectnumlevels=5
+ATTRIBOPTS_NO_VERSION   = -a revdate="$(SPECDATE)" \
+	                  -a revremark="$(SPECREMARK)" \
+	                  -a stem=latexmath \
+	                  -a generated=$(GENERATED) \
+	                  -a sectnumlevels=5
 
-ADOCEXTS     = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb -r $(CURDIR)/config/spec-macros.rb
-ADOCOPTS     = -d book $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
-ADOCMANOPTS  = -d manpage $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
+ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
+               $(ATTRIBOPTS_NO_VERSION)
+
+ADOCEXTS              = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb -r $(CURDIR)/config/spec-macros.rb
+ADOCOPTS_NO_VERSION   = -d book $(ATTRIBOPTS_NO_VERSION) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
+ADOCOPTS              = -d book $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
+ADOCMANOPTS           = -d manpage $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
 
 # ADOCHTMLOPTS relies on the relative runtime path from the output HTML
 # file to the katex scripts being set with KATEXDIR. This is overridden
@@ -341,14 +344,14 @@ CXX4OPENCLDOCSRC = $(CXX4OPENCLDOC).txt $(GENDEPENDS) \
 cxx4openclhtml: $(HTMLDIR)/$(CXX4OPENCLDOC).html $(CXX4OPENCLDOCSRC)
 
 $(HTMLDIR)/$(CXX4OPENCLDOC).html: $(CXX4OPENCLDOCSRC) katexinst
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CXX4OPENCLDOC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS_NO_VERSION) $(ADOCHTMLOPTS) -o $@ $(CXX4OPENCLDOC).txt
 
 cxx4openclpdf: $(PDFDIR)/$(CXX4OPENCLDOC).pdf $(CXX4OPENCLDOCSRC)
 
 $(PDFDIR)/$(CXX4OPENCLDOC).pdf: $(CXX4OPENCLDOCSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CXX4OPENCLDOC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS_NO_VERSION) $(ADOCPDFOPTS) -o $@ $(CXX4OPENCLDOC).txt
 ifndef GS_EXISTS
 	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
 else
