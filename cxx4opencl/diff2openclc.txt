@@ -67,34 +67,36 @@ void foo(){
 ----------
 
 [[null_literal]]
-===== Null literal
+===== Null pointer constant
 
-In C and OpenCL C the null literal is defined using other
+In C and OpenCL C the null pointer constant is defined using other
 language features as it is not represented explicitly i.e.
 commonly it is defined as
 
 [source,c]
 ----------
-#define NULL (void*)0
+#define NULL ((void*)0)
 ----------
 
-In {cpp} there is an explicit builtin literal `nullptr`
-that should be used instead ({cpp}17 `[lex.nullptr]`).
+In {cpp}17 there is an explicit builtin pointer literal `nullptr` that should
+be used instead ({cpp}17 `[lex.nullptr]`).
 
-{cpp} for OpenCL does not define `NULL` and therefore any
-source code using it must be modified to use `nullptr`
-instead. However as a workaround to avoid large modifications
-`NULL` can also be defined/aliased to `nullptr` in custom
-headers or using command line flag `-D`. It is not recommended
-to reuse the C definition of `NULL` in {cpp} for OpenCL as it may
-cause compilation failures in cases that work for C.
+`NULL` macro definition in {cpp} for OpenCL follows {cpp}17
+`[support.types.nullptr]` where it is an implementation defined macro and it
+is not guaranteed to be the same as in OpenCL C. Reusing the definition of
+`NULL` from OpenCL C does not guarantee that any code with NULL is legal in
+{cpp} for OpenCL even if it is legal in OpenCL C.
 
 [source,c]
 ----------
+#define NULL ((void*)0)
 void foo(){
  int *ptr = NULL; // invalid initialization of int* with void*
 }
 ----------
+
+To improve code portability and compatibility, implementations are
+encouraged to define `NULL` as an alias to pointer literal `nullptr`.
 
 ===== Use of restrict
 
@@ -140,9 +142,8 @@ Variadic macros can be used normally as per {cpp}17 `[cpp.replace]`.
 
 ===== Predefined macros
 
-The predefined macros `+__OPENCL_C_VERSION__+` and `NULL` (see also
-<<null_literal, _Null literal_>>), described in `OpenCL C v2.0 s6.10`,
-are not supported.
+The macro `+__OPENCL_C_VERSION__+` described in `OpenCL C v2.0 s6.10`,
+is not defined.
 
 The following new predefined macros are added in {cpp} for OpenCL:
 
