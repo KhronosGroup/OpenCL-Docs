@@ -332,9 +332,15 @@ __global const int& f(__global float &ref) {
 
 Construction, initialization and destruction of objects in `+__private+`
 and `+__global+` address space follow the general principles of {cpp}. For
-program scope objects, the implementation (i.e. compiler) defines an ABI
-format for initialization and destruction of global objects before/after
-all kernels are enqueued.
+program scope objects or static objects in the function scope with non-trivial
+constructors and destructors, the implementation defines an ABI format for
+runtime initialization and destruction of global objects before/after all
+kernels are enqueued.
+
+Non-trivial destructors for global objects are not required to be supported
+by all implementations. The macro `__opencl_cpp_global_destructor`,
+which is defined if and only if such destructors are supported by the implementation,
+can be used to check whether this functionality is available when compiling kernel code.
 
 Objects in `__local` address space can not have initializers in
 declarations and therefore a constructor can not be called. All objects
