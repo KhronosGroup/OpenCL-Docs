@@ -354,6 +354,20 @@ is required for classes with data members that are references because their valu
 can not be overwritten trivially. Destructors of local address space objects
 are not invoked automatically. They can be called manually.
 
+[source,cpp]
+------------
+class C {
+  int m;
+};
+
+kernel void foo() {
+  __local C locobj{}; // error: local address space objects can't be initialized
+  __local C locobj; // uninitialised object
+  locobj = {}; // calling copy assignment operator is allowed
+  locobj.~C(); // local address space object destructors are not invoked automatically.
+}
+------------
+
 User defined constructors are not allowed to construct objects in `__constant`
 address space. Such objects can be initialized using literals and
 initialization lists if they do not require any user defined conversions.
@@ -363,6 +377,24 @@ Objects in `__constant` address space can be initialized using:
  * Literal expressions;
  * Uniform initialization syntax `{}`;
  * Using implicit constructors.
+
+[source,cpp]
+------------
+struct C1 {
+  int m;
+};
+
+struct C2 {
+  int m;
+  C2(int init) __constant {};
+};
+
+kernel void k() {
+  __constant C1 cobj1 = {1};
+  __constant C1 cobj2 = C1();
+  __constant C2 cobj3 = {1}; // error: user defined constructor can't be used
+}
+------------
 
 ==== Nested pointers
 
