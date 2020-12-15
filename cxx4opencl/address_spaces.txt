@@ -9,9 +9,9 @@
 
 This section only documents behavior related to {cpp} features. For example
 conversion rules are extended from the qualification conversion {cpp}17
-[conv.qual] but the compatibility is determined using notation of sets and
-overlapping of address spaces from Embedded C
-(`ISO/IEC JTC1 SC22 WG14 N1021 s3.1.3`). For OpenCL it means that implicit
+`[conv.qual]` but the compatibility is determined using notation of sets and
+overlapping of address spaces from `section 5.1.3` of <<embedded-c-spec,
+The Embedded C Specification>>. For OpenCL it means that implicit
 conversions are allowed from a named address space (except for `+__constant+`)
 to generic (`OpenCL C v2.0 6.5.5`). The reverse conversion is only allowed
 explicitly. The `+__constant+` address space does not overlap with any other
@@ -20,13 +20,13 @@ space exists. Most of the rules follow this logic.
 
 ==== Casts
 
-C-style casts follow rules of `OpenCL C v2.0 s6.5.5`. Conversions to generic
-address space can be made by any {cpp} cast operator (as an implicit
-conversion); converting from generic to named address space can only be done
-using the dedicated `addrspace_cast` operator. Operator `addrspace_cast` can only
-convert between address spaces and no other conversions are allowed to occur.
-Note that conversions between `__constant` and any other other address space
-are disallowed.
+C-style casts follow rules of `OpenCL C v2.0 s6.5.5`. Conversions of
+pointers and references to the generic address space can be done by any {cpp} cast
+operator (as an implicit conversion); converting from generic to named address
+space can only be done using the dedicated `addrspace_cast` operator. The
+`addrspace_cast` operator can only convert between address spaces for pointers and references
+and no other conversions are allowed to occur. Note that conversions between
+`__constant` and any other other address space are disallowed.
 
 [source,cpp]
 ----------
@@ -60,7 +60,7 @@ rules from address space pointer conversion (`OpenCL v2.0 s6.5.5`).
 
 This section details what happens if address spaces for types are not
 provided in the source code explicitly. Most of the logic for address space
-deduction (i.e. default address space) follows rules from `OpenCL 2.0 s6.5`.
+deduction (i.e. default address space) follows rules from `OpenCL v2.0 s6.5`.
 
 References inherit rules from pointers and therefore refer to generic
 address space objects by default (see <<references, _References_>>).
@@ -88,7 +88,7 @@ Address spaces are not deduced for:
     specializations or non-type type based template parameters.
   * non-pointer/non-reference class members except for static data members
     that are deduced to `+__global+` address space.
-  * non-pointer/non-reference alias declarations.
+  * non-pointer/non-reference type alias declarations.
   * decltype expressions.
 
 [source,cpp]
@@ -152,7 +152,7 @@ __kernel void foo()
                   // (addr space of a pointer is deduced regularly,
                   // addr space of its pointee is taken from 'i').
 
-  auto *&refptr = ptr; // type of 'refptr' is '__local int * & __private'
+  auto *&refptr = ptr; // type of 'refptr' is '__local int * generic & __private'
                        // (addr space of a reference and type of referencing object
                        // is deduced regularly,
                        // addr space of a pointee is taken from the pointee of 'ptr').
@@ -332,9 +332,15 @@ __global const int& f(__global float &ref) {
 
 Construction, initialization and destruction of objects in `+__private+`
 and `+__global+` address space follow the general principles of {cpp}. For
-program scope objects, the implementation (i.e. compiler) defines an ABI
-format for initialization and destruction of global objects before/after
-all kernels are enqueued.
+program scope objects or static objects in the function scope with non-trivial
+constructors and destructors, the implementation defines an ABI format for
+runtime initialization and destruction of global objects before/after all
+kernels are enqueued.
+
+Non-trivial destructors for global objects are not required to be supported
+by all implementations. The macro `__opencl_cpp_global_destructor`,
+which is defined if and only if such destructors are supported by the implementation,
+can be used to check whether this functionality is available when compiling kernel code.
 
 Objects in `__local` address space can not have initializers in
 declarations and therefore a constructor can not be called. All objects
@@ -342,11 +348,25 @@ created in the local address space have undefined state at the point of
 their declaration. Developers are free to define a special member function
 that can initialize local address space objects after their declaration. Any
 default values provided for the initialization of members in a class
-declaration are ignored when creating the local address space objects.
-Classes that are instantiated with local address space objects can not
-have references as their members. The same restriction applies recursively
-to the members and base classes. Destructors of local address space objects
-are not invoked automatically. They can be called manually if required.
+declaration are ignored when creating the local address space objects. Since
+the initialization is performed after the variable declaration, special handling
+is required for classes with data members that are references because their values
+can not be overwritten trivially. Destructors of local address space objects
+are not invoked automatically. They can be called manually.
+
+[source,cpp]
+------------
+class C {
+  int m;
+};
+
+kernel void foo() {
+  __local C locobj{}; // error: local address space objects can't be initialized
+  __local C locobj; // uninitialised object
+  locobj = {}; // calling copy assignment operator is allowed
+  locobj.~C(); // local address space object destructors are not invoked automatically.
+}
+------------
 
 User defined constructors are not allowed to construct objects in `__constant`
 address space. Such objects can be initialized using literals and
@@ -357,6 +377,24 @@ Objects in `__constant` address space can be initialized using:
  * Literal expressions;
  * Uniform initialization syntax `{}`;
  * Using implicit constructors.
+
+[source,cpp]
+------------
+struct C1 {
+  int m;
+};
+
+struct C2 {
+  int m;
+  C2(int init) __constant {};
+};
+
+kernel void k() {
+  __constant C1 cobj1 = {1};
+  __constant C1 cobj2 = C1();
+  __constant C2 cobj3 = {1}; // error: user defined constructor can't be used
+}
+------------
 
 ==== Nested pointers
 

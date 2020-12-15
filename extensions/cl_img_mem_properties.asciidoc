@@ -1,0 +1,102 @@
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_img_mem_properties
+
+== Name Strings
+
+`cl_img_mem_properties`
+
+== Contact
+
+Imagination Technologies Developer Forum: +
+https://forums.imgtec.com/
+
+Jeremy Kemp, Imagination Technologies (Jeremy.Kemp 'at' imgtec.com)
+
+== Contributors
+
+Jeremy Kemp, Imagination Technologies. +
+Anitha Raj,  Imagination Technologies.
+
+== Notice
+
+Copyright (c) 2020 Imagination Technologies Ltd. All Rights Reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+This extension requires OpenCL 3.0 or later.
+
+== Overview
+
+This extension provides additional _properties_ that can be passed to *clCreateBufferWithProperties*.
+
+== New API Types
+
+[source,c]
+----
+typedef cl_bitfield cl_mem_alloc_flags_img;
+----
+
+== New API Enums
+Accepted propertie(s) for the _properties_ parameter to *clCreateBufferWithProperties*:
+
+[source,c]
+----
+#define CL_MEM_ALLOC_FLAGS_IMG 0x40D7
+----
+
+Accepted values for `cl_mem_alloc_flags_img`:
+
+[source,c]
+----
+#define CL_MEM_ALLOC_RELAX_REQUIREMENTS_IMG (1 << 0)
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 5.2.1, *Creating Buffer Objects*) ::
++
+--
+Add Table: List of supported _properties_ when passed to *clCreateBufferWithProperties* ::
++
+[cols="1,1,4",options="header",width = "90%"]
+|====
+| Property
+| Property Value
+| Description
+
+| `CL_MEM_ALLOC_FLAGS_IMG`
+| `cl_mem_alloc_flags_img`
+| `CL_MEM_ALLOC_RELAX_REQUIREMENTS_IMG` - On platforms with limited amounts of global memory available it may be desirable to request an allocation larger than the maximum amount reported by the implementation via `CL_DEVICE_MAX_MEM_ALLOC_SIZE` if there is sufficient knowledge about the entire system.
+This property allows an application to request buffer objects that are larger than `CL_DEVICE_MAX_MEM_ALLOC_SIZE`.
+|====
+(Replace the following error value) ::
++
+* `CL_INVALID_BUFFER_SIZE` if _size_ is 0 or if _size_ is greater than `CL_DEVICE_MAX_MEM_ALLOC_SIZE` for all devices in _context_.
++
+with
++
+* `CL_INVALID_BUFFER_SIZE` if _size_ is 0.
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 1.0.0   | 2020-08-18 | Jeremy Kemp | Initial revision.
+|====

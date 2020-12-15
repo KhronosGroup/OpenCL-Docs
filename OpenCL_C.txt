@@ -223,6 +223,15 @@ macro may expand to a different value in the future, but if this occurs the
 value of the feature macro must compare greater than the prior value of the
 feature macro.
 
+As specified in <<C99-spec,section 7.1.3 of the C99 Specification>> double
+underscore identifiers are reserved and therefore implementations
+for earlier OpenCL C versions are allowed to define feature test macros
+but they are not required to do so. This means that applications which
+target earlier OpenCL C versions should not rely on the presence of
+feature test macros because there is no guarantee that feature test macros
+will be defined and that if defined they will indicate the presence of the 
+corresponding optional functionality.
+
 [[extensions]]
 === Extensions
 
@@ -717,7 +726,7 @@ Vector literals can be used to create vectors from a list of scalars,
 vectors or a mixture thereof.
 A vector literal can be used either as a vector initializer or as a primary
 expression.
-A vector literal cannot be used as an l-value.
+Whether a vector literal can be used as an l-value is implementation-defined.
 
 A vector literal is written as a parenthesized vector type followed by a
 parenthesized comma delimited list of parameters.
@@ -1048,7 +1057,7 @@ The scalar type is then widened to the vector.
 Implicit conversions between built-in vector data types are disallowed.
 
 Implicit conversions for pointer types follow the rules described in the
-<C99-spec,C99 Specification>>.
+<<C99-spec,C99 Specification>>.
 
 
 [[explicit-casts]]
@@ -1058,8 +1067,6 @@ Standard typecasts for built-in scalar data types defined in
 <<table-builtin-scalar-types>> will perform appropriate conversion (except
 `void` and `half` footnote:[{fn-cl_khr_fp16}]).
 In the example below:
-
-[9] Unless the *cl_khr_fp16* extension is supported and has been enabled.
 
 [source,c]
 ----------
@@ -1868,7 +1875,7 @@ footnote:[{fn-bitfield-struct-restriction}].
 The behavior of applying the `sizeof` operator to the `bool`, `image2d_t`,
 `image3d_t`, `image2d_array_t`, `image1d_t`, `image1d_buffer_t`,
 `image1d_array_t`, `image2d_depth_t`, `image2d_array_depth_t`,
-`sampler_t`, `queue_t, `ndrange_t`, `clk_event_t`, `reserve_id_t`, and
+`sampler_t`, `queue_t`, `ndrange_t`, `clk_event_t`, `reserve_id_t`, and
 `event_t` types is implementation-defined.
 --
 
@@ -2039,32 +2046,21 @@ types.
 [open,refpage='addressSpaceQualifiers',desc='Address Space Qualifiers',type='freeform',spec='clang',anchor='address-space-qualifiers',xrefs='constant genericAddressSpace global local private']
 --
 
-OpenCL implements the following disjoint named address spaces: `+__global+`,
-`+__local+`, `+__constant+` and `+__private+`.
+OpenCL has hierarchical memory architecture represented by address spaces
+defined in <<embedded-c-spec, section 5 of Embedded C Specification>>. It
+extends C syntax to allow an address space name as a valid type qualifier
+(<<embedded-c-spec, section 5.1.2 of Embedded C>>).
+OpenCL implements the following disjoint named address spaces with the spelling:
+`+__global+`, `+__local+`, `+__constant+` and `+__private+`.
 The address space qualifier may be used in variable declarations to specify
-the region of memory that is used to allocate the object.
-The C syntax for type qualifiers is extended in OpenCL to include an address
-space name as a valid type qualifier.
-If the type of an object is qualified by an address space name, the object
-is allocated in the specified address space name.
+the region where objects are to be allocated. If the type of an
+object is qualified by an address space name, the object is allocated in the
+specified address space. Similarly in pointers a type pointed to can be qualified
+by an address space signaling the address space the object pointed to is located.
 
-The address space names without the `+__+` prefix, i.e. `global`, `local`,
-`constant` and `private`, may be substituted for the corresponding address
-space names with the `+__+` prefix.
-
-The address space name for arguments to a function in a program, or local
-variables of a function is `+__private+`.
-All function arguments shall be in the `+__private+` address space.
-
-Additionally, all function return values shall be in the `+__private+` address space.
-
-For OpenCL C 2.0, or OpenCL 3.0 or newer with the
-`+__opencl_c_program_scope_global_variables+` feature, the address space for a
-variable at program scope or a `static` or `extern` variable inside a function
-may be either `+__constant+` or `+__global+`,
-and the address space defaults to `+__global+` if not specified.
-Otherwise, the address space for a variable at program scope or a `static` or `extern`
-variable inside a function must explicitly be `+__constant+`.
+The address space name spelling without the `+__+` prefix, i.e. `global`,
+`local`, `constant` and `private`, are valid and may be substituted for the
+corresponding address space names with the `+__+` prefix.
 
 Examples:
 
@@ -2072,39 +2068,24 @@ Examples:
 ----------
 // declares a pointer p in the global address space that
 // points to an object in the global address space
-global int *p;
+__global int *__global p;
 
 void foo (...)
 {
     // declares an array of 4 floats in the private address space
-    float x[4];
+    __private float x[4];
     ...
 }
 ----------
 
-For OpenCL C 2.0, or with the `+__opencl_c_generic_address_space+` feature,
-there is an additional unnamed generic address space. The unnamed generic
-address space overlaps the named `+__global+`, `+__local+`, and `+__private+
-address spaces. The unnamed generic address space does not overlap the named
-`+__constant+` address space; the named `+__constant+` address space is not in
-the generic address space.
+For OpenCL C 2.0, or OpenCL C 3.0 with the `+__opencl_c_generic_address_space+`
+feature macro, there is an additional unnamed generic address space.
 
-If the generic address space is supported,
-pointers that are declared without pointing to a named address space point
-to the generic address space.
-Otherwise, when the generic address space is not supported, pointers that
-are declared without pointing to a named address space point to the
-`+__private+` address space.
-
-Kernel function arguments declared to be a pointer or an array of a type
-must point to one of the named address spaces `+__global+`, `+__local+` or
-`+__constant+`.
-
-A pointer to address space A can be assigned to a pointer to the same
-address space A or be implicitly converted and assigned to a pointer
-to the generic address space.
-Casting a pointer to address space A to a pointer to address space B is
-illegal if A and B are named address spaces and A is not the same as B.
+Most of the restrictions from <<embedded-c-spec, section 5.1.2 and section 5.3
+of the Embedded C Specification>> apply in OpenCL C i.e. address spaces can not
+be used with a return type, a function parameter, or a function type; multiple
+address space qualifiers are not allowed. However, in OpenCL C it is allowed to
+qualify local variables with an address space qualifier.
 
 Examples:
 
@@ -2118,7 +2099,16 @@ private int f() { ... }
 
 // OK. Address space qualifier can be used with pointer return type.
 local int *f() { ... }
+
+// Error. Multiple address spaces specified per type.
+private local int i;
+
+// Ok. The first address space qualifies an object pointer to and the second
+// qualifies the pointer.
+private int *local ptr;
+
 ----------
+
 
 The `+__global+`, `+__constant+`, `+__local+`, `+__private+`, `global`,
 `constant`, `local`, and `private` names are reserved for use as address
@@ -2131,8 +2121,8 @@ The size of pointers to different address spaces may differ.
 It is not correct to assume that, for example, `+sizeof(__global int *)+`
 always equals `+sizeof(__local int *)+`.
 ====
---
 
+--
 
 [[global-or-global]]
 === `+__global+` (or `global`)
@@ -2150,7 +2140,7 @@ This allows the kernel to read and/or write any location in the buffer.
 The actual size of the array memory object is determined when the memory
 object is allocated via appropriate API calls in the host code.
 
-Some examples are:
+Examples:
 
 [source,c]
 ----------
@@ -2169,67 +2159,12 @@ As image objects are always allocated from the `global` address space, the
 The elements of an image object cannot be directly accessed.
 Built-in functions to read from and write to an image object are provided.
 
-For OpenCL C 2.0, or with the `+__opencl_c_program_scope_global_variables+`
-feature,
-variables defined at program scope and `static` variables inside a function
-can also be declared in the `global` address space.
-They can be defined with any valid OpenCL C data type except for those in
-<<table-other-builtin-types>>.
-Such program scope variables may be of any user-defined type,
-or a pointer to a user-defined type.
-In the presence of shared virtual memory, these pointers or pointer members
-should work as expected as long as they are shared virtual memory pointers
-and the referenced storage has been mapped appropriately.
-These variables in the `global` address space have the same lifetime as the
-program, and their values persist between calls to any of the kernels in the
-program.
-These variables are not shared across devices.
-They have distinct storage.
-
-Program scope and `static` variables in the `global` address space are zero
-initialized by default. A constant expression may be given as an initializer.
-
-Examples:
-
-[source,c]
-----------
-// Note: these examples assume OpenCL C 2.0, or OpenCL C 3.0 or newer and the
-// __opencl_c_program_scope_global_variables feature.
-
-global int foo;         // OK.
-int foo;                // OK. Declared in the global address space.
-global uchar buf[512];  // OK.
-global int baz = 12;    // OK. Initialization is allowed.
-static global int bat;  // OK. Internal linkage.
-
-static int foo;         // OK. Declared in the global address space.
-static global int foo;  // OK.
-
-int *foo;               // OK. foo is allocated in the global address space.
-                        // foo points to a location in the private or
-                        // generic address space.
-
-void func(...)
-{
-    int *foo;           // OK. foo is allocated in the private address space.
-                        // foo points to a location in the private or
-                        // generic address space.
-    ...
-}
-
-global int * global ptr;          // OK.
-int * global ptr;                 // OK.
-constant int *global ptr=&baz;    // Error, baz is in the global address
-                                  // space.
-global int * constant ptr = &baz; // OK
-
-global image2d_t im;    // Error. Invalid type for program scope variables.
-
-global event_t ev;      // Error. Invalid type for program scope variables.
-----------
-
-The `const` qualifier can also be used with the `+__global+` qualifier to
-specify a read-only buffer memory object.
+Variables at program scope or `static`/`extern` variables inside functions
+can be declared in global address space if
+`__opencl_c_program_scope_global_variables` feature is supported. These
+variables in the `global` address space have the same lifetime as the program,
+and their values persist between calls to any of the kernels in the program.
+These variables are not shared across devices. They have distinct storage.
 --
 
 
@@ -2242,13 +2177,8 @@ specify a read-only buffer memory object.
 The `+__local+` or `local` address space name is used to describe variables
 that need to be allocated in local memory and are shared by all work-items
 of a work-group.
-Pointers to the `+__local+` address space are allowed as arguments to
-functions (including kernel functions).
-Variables declared in the `+__local+` address space inside a kernel function
-must occur at kernel function scope.
 
-Some examples of variables allocated in the `+__local+` address space inside
-a kernel function are:
+Examples:
 
 [source,c]
 ----------
@@ -2259,6 +2189,132 @@ kernel void my_func(...)
 
     local float b[10]; // An array of 10 floats
                        // allocated in local address space.
+}
+----------
+[NOTE]
+====
+Variables allocated in the `+__local+` address space inside a kernel
+function are allocated for each work-group executing the kernel and exist
+only for the lifetime of the work-group executing the kernel.
+====
+
+--
+
+[[constant-or-constant]]
+=== `+__constant+` (or `constant`)
+
+[open,refpage='constant',desc='constant Address Space Qualifiers',type='freeform',spec='clang',anchor='constant-or-constant',xrefs='addressSpaceQualifiers genericAddressSpace global local private']
+--
+
+The `+__constant+` or `constant` address space name is used to describe
+variables accessible globally (declared in program scope or inside functions
+with `static`/`extern` storage class specifier) as read-only variables.
+These read-only variables can be accessed by all work-items of different
+kernels during their execution.
+
+[NOTE]
+====
+Each argument to a kernel that is a pointer to the `+__constant+` address
+space is counted separately towards the maximum number of such arguments,
+defined as the value of the <<opencl-device-queries,
+`CL_DEVICE_MAX_CONSTANT_ARGS` device query>>.
+====
+
+Writing to such a variable results in a compile-time error.
+
+Example:
+
+[source,c]
+----------
+constant int a = 3; // int in constant address space initialized with a constant value.
+kernel void k1(global int *buf)
+{
+  buf[a] = ...; // allowed. All work items access element with index 3;
+}
+kernel void k2(global int *buf)
+{
+  *buf = a; // allowed. All work items stored value 3;
+  a = 42; // error. a is in constant memory.
+}
+----------
+
+
+Implementations are not required to aggregate these declarations into the
+fewest number of constant arguments. This behavior is implementation defined.
+
+Thus portable code must conservatively assume that each variable declared
+inside a function or in program scope allocated in the `+__constant+`
+address space counts as a separate constant argument.
+
+--
+
+[[private-or-private]]
+=== `+__private+` (or `private`)
+
+[open,refpage='private',desc='private Address Space Qualifiers',type='freeform',spec='clang',anchor='private-or-private',xrefs='addressSpaceQualifiers constant genericAddressSpace global local']
+--
+Private address space is a memory segment that can only be accessed by one work
+item. Variables that are not shareable among work items are allocated in private
+and it is the default address space for most of variables in particular variables
+with automatic storage duration.
+
+Example:
+
+[source,c]
+----------
+kernel void foo(...)
+{
+ private int i;
+ 
+}
+----------
+--
+
+[[the-generic-address-space]]
+=== The Generic Address Space
+
+[open,refpage='genericAddressSpace',desc='The Generic Address Space',type='freeform',spec='clang',anchor='the-generic-address-space',xrefs='addressSpaceQualifiers constant global local private']
+--
+
+Generic address space requires support for OpenCL C 2.0 or OpenCL C 3.0 with
+the `+__opencl_c_generic_address_space+` feature. It can be used with pointer
+types and it represents a placeholder for any of the named address spaces
+- `global`, `local` or `private`. It signals that a pointer points to an object
+in one of these concrete named address spaces. The exact address space
+resolution can occur dynamically during the kernel execution.
+
+[source,c]
+----------
+kernel void foo(int a)
+{
+ private int b;
+ local int c;
+ int* p =  a ? &b : &c; // p points to an object in local or private address space.
+ 
+}
+----------
+
+--
+
+=== Usage for declaration scopes and variable types
+--
+This section describes use of address space qualifiers with respect to
+declaration scopes or variable types.
+
+Local variables inside functions can be qualified by private address space
+qualifier.
+
+Variables declared in the outermost compound statement inside the body of the
+kernel function can be qualified by local or constant address spaces.
+
+Examples:
+
+[source,c]
+----------
+kernel void my_func(...)
+{
+    private float a; // allowed.
+    local float b; // allowed.
 
     if (...)
     {
@@ -2269,96 +2325,286 @@ kernel void my_func(...)
 }
 ----------
 
-Variables allocated in the `+__local+` address space inside a kernel
-function cannot be initialized.
+Program scope variables or variables with `extern`/`static` storage class
+specifier:
+
+  * Must be qualified by `__constant` in OpenCL C prior to 2.0 or OpenCL C 3.0
+    without `+__opencl_c_program_scope_global_variables+` feature.
+  * Can be qualified by either `__constant` or `__global` for OpenCL C 2.0 or
+    OpenCL C 3.0 with `+__opencl_c_program_scope_global_variables+` feature.
+
+Examples:
 
 [source,c]
 ----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_program_scope_global_variables feature macro.
+constant int foo;       // OK.
+global int baz;         // OK.
+global uchar buf[512];  // OK.
+
+static global int bat;  // OK. Internal linkage.
+
+extern constant int foo;  // OK.
+
+
+void func(...)
+{
+    
+  constant static int foo = 1; // OK.
+  global extern int foo;       // OK.
+}
+
+global int * global ptr;          // OK.
+constant int *global ptr=&baz;    // Error, baz is in the global address
+                                  // space.
+global int * constant ptr = &baz; // OK.
+----------
+
+
+Kernel function arguments declared to be a pointer or an array of a type
+must point to one of the named address spaces `+__global+`, `+__local+` or
+`+__constant+`.
+
+Examples:
+
+[source,c]
+----------
+kernel void my_kernel(global int *ptr) // OK
+{
+  ...
+}
+kernel void my_kernel(int *ptr) // Error, ptr must point to either global, local or constant int
+{
+  ...
+}
+----------
+
+--
+
+=== Initialization
+--
+Program scope and `static` variables in the `global` address space are zero
+initialized by default. A constant expression may be given as an initializer.
+
+Variables allocated in the `+__local+` address space inside a kernel function
+cannot be initialized.
+
+Variables allocated in the +__constant+ address space are required to be initialized
+and the values used to initialize these variables must be a compile time constant.
+
+Private address space objects are not initialized by default, any initializer is
+allowed to be given.
+
+Examples:
+
+[source,c]
+----------
+global int a = 12;      // Initialization is allowed.
+global int b;           // Zero initialized.
+constant int c = 12;    // Initializer is a compile time constant.
+constant int d;         // Error. No initializer provided.
 kernel void my_func(...)
 {
-    local float a = 1; // not allowed
+    local float e = 1;  // Error. Initializer is not allowed.
 
-    local float b;
-    b = 1;             // allowed
+    local float f;
+    f = 1;              // Allowed
+    private int g;      // Uninitialized.
+    constant int h = g; // Error. Initializer is not a constant expression.
+}
+----------
+
+--
+
+[[addr-spaces-inference]]
+=== Inference
+
+--
+
+Address space qualifiers are not required in many cases. If they are not
+specified explicitly the default address space will be inferred depending
+on the declaration scope and the object type.
+
+There is no syntax to provide address space in the source for some situation,
+therefore only default address space is applicable.
+
+For OpenCL C 2.0 or with the `+__opencl_c_program_scope_global_variables+`
+feature, the address space for a variable at program scope or a `static`
+or `extern` variable inside a function are inferred to `+__global+`.
+
+If the generic address space is supported i.e. for OpenCL C 2.0 or OpenCL C 3.0
+with `__opencl_c_generic_address+space` feature, pointers that are declared
+without pointing to a named address space point to the generic address space.
+
+All string literal storage shall be in the `+__constant+` address space.
+
+For all other cases that are not listed above the address space is inferred to
+private. This includes:
+
+  * All function arguments as well as return values are in private address
+    space.
+
+  * Pointers that are declared without pointing to a named address space point
+    to the `+__private+` address space if generic address space is not
+    supported.
+
+  * Variables inside a function not declared with an address space qualifier
+    are inferred to private address space.
+
+Examples:
+ 
+[source,c]
+----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_program_scope_global_variables feature macro.
+
+int foo;                // Declared in the global address space.
+
+static int foo;         // Declared in the global address space.
+
+int *ptr;               // ptr is allocated in the global address space.
+                        // ptr points to a location in (1) the generic address
+                        // space for OpenCL C 2.0 or OpenCL C 3.0 with
+                        // __opencl_c_generic_address_space feature or
+                        // in (2) the private address space otherwise.
+
+int * global ptr;       // ptr points to an location in (1) the generic address
+                        // space for OpenCL C 2.0 or OpenCL C 3.0 with
+                        // __opencl_c_generic_address_space feature or
+                        // in (2) the private address space otherwise.
+
+constant int *ptr =
+               "Hello"; // string literal is in constant address space.
+
+void func(int param)    // param is allocated in the private address space.
+{
+    int foo;            // foo is allocated in the private address space.
+    static int foo;     // foo is allocated in the global address space.
+    int *ptr;           // ptr is allocated in the private address space.
+                        // ptr points to a location in (1) the generic address
+                        // space for OpenCL C 2.0 or OpenCL C 3.0 with
+                        // __opencl_c_generic_address_space feature or
+                        // in (2) the private address space otherwise.
+    ...
 }
 ----------
 
 [NOTE]
 ====
-Variables allocated in the `+__local+` address space inside a kernel
-function are allocated for each work-group executing the kernel and exist
-only for the lifetime of the work-group executing the kernel.
+Qualifiers must be explicitly specified for:
+
+  * Program scope variables or variables inside functions with
+    `static`/`extern` type specifier for OpenCL C prior to version 2.0 or
+    OpenCL C 3.0 without `+__opencl_c_program_scope_global_variables+` feature, 
+
+  * In pointers used as arguments to the kernel function (address space pointed
+    to must be speficied explicitly).
 ====
+
+[[table-addr-spaces-summary]]
+.Address space behavior
+[%header,cols=4*]
+|====
+| *Address Space*
+| *Scope/Type*
+| *Initialization*
+| *Inference*
+
+| `+__global+`
+a|  * Program scope variable,
+
+   * `static`/`extern` local variable for OpenCL C 2.0 or
+      OpenCL C 3.0 with `+__opencl_c_program_scope_global_variables+` feature,
+
+   * everywhere in pointers.
+a|  * Optional constant initializers,
+
+   * 0-initialized by default.
+a|  * Program scope variable,
+
+   * `static`/`extern` local variable for OpenCL C 2.0 or
+      OpenCL C 3.0 with `+__opencl_c_program_scope_global_variables+` feature.
+
+| `+__private+`
+a|  * Local scope variables,
+
+   * function arguments and return types,
+
+   * everywhere in pointers.
+a|  * Optional initializers,
+
+   * no default initialization.
+a|  * Local scope variables,
+
+   * function arguments and return types,
+
+   * for pointers in which address space they point to is not given explicitly
+     (for OpenCL prior to version 2.0 or OpenCL C 3.0 without
+     `+__opencl_c_generic_address_space+`  feature.
+
+| `+__constant+`
+a|  * Program scope variables,
+
+   * kernel scope variables,
+
+   * everywhere for string literal,
+
+   * everywhere in pointers.
+| Mandatory initialization with compile time constant.
+| For all string literals.
+
+| `+__local+`
+a|  * Kernel scope variables,
+
+   * everywhere in pointers.
+| No initializers.
+| None.
+
+| Generic (for OpenCL C 2.0 or OpenCL C 3.0 with `+__opencl_c_generic_address_space+` feature)
+| All pointers in which address space they point to is not given explicitly.
+| Not applicable.
+| All pointers in which address space they point to is not given explicitly.
+|====
+
 --
 
+[[addr-spaces-conversions]]
+=== Address space conversions
 
-[[constant-or-constant]]
-=== `+__constant+` (or `constant`)
-
-[open,refpage='constant',desc='constant Address Space Qualifiers',type='freeform',spec='clang',anchor='constant-or-constant',xrefs='addressSpaceQualifiers genericAddressSpace global local private']
 --
 
-The `+__constant+` or `constant` address space name is used to describe
-variables allocated in `global` memory and which are accessed inside a
-kernel(s) as read-only variables.
-These read-only variables can be accessed by all (global) work-items of the
-kernel during its execution.
-Pointers to the `+__constant+` address space are allowed as arguments to
-functions (including kernel functions) and for variables declared inside
-functions.
+OpenCL implements the address space nesting model for pointers from
+<<embedded-c-spec, Embedded C, section 5.1.3>> as follows:
 
-All string literal storage shall be in the `+__constant+` address space.
+  * In OpenCL the named address spaces `+__global+`, `+__local+`,
+    `+__constant+` and `+__private+` are disjoint.
+  * The named address spaces `+__global+`, `+__local+`, and `+__private+`
+    are subsets of the unnamed generic address spaces.
+  * The unnamed generic address space does not overlap the named `+__constant+`
+    address space; the named `+__constant+` address space is not in the generic
+    address space.
 
 [NOTE]
 ====
-Each argument to a kernel that is a pointer to the `+__constant+` address
-space is counted separately towards the maximum number of such arguments,
-defined as the value of the <<opencl-device-queries,
-`CL_DEVICE_MAX_CONSTANT_ARGS` device query>>.
+OpenCL definition of the generic address space is different to the definition in
+<<embedded-c-spec, Embedded C, section 5>>. In OpenCL no objects can be
+allocated in this address space. It can only be used with pointer types, where a
+pointer pointing to a location in the generic address space can be used for
+objects allocated in any of the following concrete named address spaces:
+`private`, `local`, or `global`. 
 ====
 
-Variables in the program scope can be declared in the `+__constant+` address
-space.
-Variables in the outermost scope of kernel functions can be declared in the
-`+__constant+` address space.
-These variables are required to be initialized and the values used to
-initialize these variables must be a compile time constant.
-Writing to such a variable results in a compile-time error.
+Following  <<embedded-c-spec, Embedded C section 5.3>>, it is only allowed to
+convert pointers implicitly i.e. in assignments, function parameters, operations,
+if the original pointer points to an object qualified by an address space
+enclosed into the address space pointed by the destination pointer.
 
-Implementations are not required to aggregate these declarations into the
-fewest number of constant arguments.
-This behavior is implementation defined.
+In contrast to Embedded C, explicitly converting i.e. casting between pointers to
+non-overlapping address spaces is illegal in OpenCL.
 
-Thus portable code must conservatively assume that each variable declared
-inside a function or in program scope allocated in the `+__constant+`
-address space counts as a separate constant argument.
---
-
-
-[[private-or-private]]
-=== `+__private+` (or `private`)
-
-[open,refpage='private',desc='private Address Space Qualifiers',type='freeform',spec='clang',anchor='private-or-private',xrefs='addressSpaceQualifiers constant genericAddressSpace global local']
---
-
-Variables inside a kernel function not declared with an address space
-qualifier, all variables inside non-kernel functions, and all function
-arguments are in the `+__private+` or `private` address space.
---
-
-
-[[the-generic-address-space]]
-=== The Generic Address Space
-
-[open,refpage='genericAddressSpace',desc='The Generic Address Space',type='freeform',spec='clang',anchor='the-generic-address-space',xrefs='addressSpaceQualifiers constant global local private']
---
-
-NOTE: The functionality described in this section <<unified-spec, requires>>
-support for OpenCL C 2.0, or OpenCL C 3.0 or newer and the
-`+__opencl_c_generic_address_space+` feature.
-
-The following rules apply when using pointers that point to the generic
-address space:
+Considering the above, the following applies to conversions of pointers pointing
+to different address spaces:
 
   * A pointer that points to the `global`, `local` or `private` address
     space can be implicitly converted to a pointer to the unnamed generic
@@ -2369,14 +2615,17 @@ address space:
   * A pointer that points to the `constant` address space cannot be cast or
     implicitly converted to the generic address space.
 
-A few examples follow.
+Examples:
 
 This is the canonical example.
 In this example, function `foo` is declared with an argument that is a
-pointer with no address space qualifier.
+pointer with unnamed generic address space address space qualifier.
 
 [source,c]
 ----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
+
 void foo(int *a)
 {
     *a = *a + 2;
@@ -2403,6 +2652,9 @@ depending on the result of a conditional expression.
 
 [source,c]
 ----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
+
 kernel void bar(global int *g, local int *l)
 {
     int *var;
@@ -2425,6 +2677,9 @@ point to an object in the `constant` address space.
 
 [source,c]
 ----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
+
 int *ptr;
 global int g;
 ptr = &g; // legal
@@ -2451,6 +2706,9 @@ space to a pointer to a named address space without a cast.
 
 [source,c]
 ----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
+
 global int *gp;
 local int *lp;
 private int *pp;
@@ -2469,95 +2727,107 @@ lp = p; // compile-time error
 pp = p; // compile-time error
 cp = p; // compile-time error
 ----------
---
 
+Example below illustrates the implicit conversion between named address spaces.
 
-// Formerly "Changes to ISO/IEC 9899:1999"
+[source,c]
+----------
+global int *gp;
+local int *lp;
+private int *pp;
+constant int *cp;
 
-[[changes-to-C99]]
-=== Changes to C99
+// it is illegal to convert pointers pointing to different
+// named address spaces.
 
-This section details the modifications to the <<C99-spec, C99
-Specification>> needed to incorporate the functionality of named address
-space and the generic address space:
+gp = lp; // compile-time error
+gp = pp; // compile-time error
+gp = cp; // compile-time error
 
-*Clause 6.2.5 - Types, replace paragraph 26 with the following paragraphs*:
+lp = gp; // compile-time error
+lp = pp; // compile-time error
+lp = cp; // compile-time error
 
-If type `T` is qualified by the address space qualifier for address space
-`A`, then " `T` is in `A` ".
-If type `T` is in address space `A`, a pointer to `T` is also a " pointer
-into `A` " and the referenced address space of the pointer is `A`.
+pp = lp; // compile-time error
+pp = gp; // compile-time error
+pp = cp; // compile-time error
 
-A pointer to `void` in any address space shall have the same representation
-and alignment requirements as a pointer to a character type in the same
-address space.
-Similarly, pointers to differently access-qualified versions of compatible
-types shall have the same representation and alignment requirements.
-All pointers to structure types in the same address space shall have the
-same representation and alignment requirements as each other.
-All pointers to union types in the same address space shall have the same
-representation and alignment requirements as each other.
+cp = lp; // compile-time error
+cp = pp; // compile-time error
+cp = gp; // compile-time error
+----------
 
-*Clause 6.3.2.3 - Pointers, replace the first two paragraphs with the
-following paragraphs*:
+Example below demonstrates explicit conversions for pointers pointing to
+different address spaces.
 
-If a pointer into one address space is converted to a pointer into another
-address space, then unless the original pointer is a null pointer or the
-location referred to by the original pointer is within the second address
-space, the behavior is undefined.
-(For the original pointer to refer to a location within the second address
-space, the two address spaces must overlap).
+[source,c]
+----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
 
-A pointer to `void` in any address space may be converted to or from a
-pointer to any incomplete or object type.
-A pointer to any incomplete or object type in some address space may be
-converted to a pointer to `void` in an enclosing address space and back
-again; the result shall compare equal to the original pointer.
+global int *gp;
+local int *lp;
+private int *pp;
+constant int *cp;
 
-For any qualifier _q_, a pointer to a non-_q_-qualified type may be
-converted to a pointer to the _q_-qualified version of the type (but with
-the same address-space qualifier or the generic address space); the values
-stored in the original and converted pointers shall compare equal.
+int *p;
+gp = (global int *)lp; // illegal to cast between named address spaces
+p = (int *)lp; // legal to cast from global to generic
+gp = (global int*)p; // legal to cast from generic to global
+----------
 
-*Clause 6.3.2.3 - Pointers, replace the last sentence of paragraph 4 with*:
+In nested pointers implicit conversions between address spaces are disallowed.
+Explicitly casting between different address spaces in nested pointers is
+allowed but the use of such pointers can lead to incorrect behavior i.e.
+accessing invalid memory locations.
 
-Conversion of a null pointer to another pointer type yields a null pointer
-of that type.
-Any two null pointers whose referenced address spaces overlap shall compare
-equal.
+[source,c]
+----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
 
-*Clause 6.5.2.2 - Function calls, change the second bullet of paragraph 6
-to*:
+kernel void mykernel(...)
+{
+local int *local * ll;
+global int *local * gl;
+int *local * nl;
 
-both types are pointers to qualified or unqualified versions of a character
-type or `void` in the same address space or one type is a pointer in a named
-address space and the other is a pointer in the generic address space.
+ll = gl; // illegal to convert address spaces implicitly
+         // in nested pointers.
+ll = nl; // illegal to convert address spaces implicitly
+         // in nested pointers.
+ll = (local int* local*)gl; // legal to convert explicitly,
+                            // but uses of 'll' can result in
+                            // in ill-formed program.
+ll = (local int* local*)nl; // legal to convert explicitly,
+                            // but uses of 'll' can result in
+                            // in ill-formed program.
+}
+----------
 
-*Clause 6.5.6 - Additive operators, add another constraint paragraph*:
+Various clarifications and examples illustrating how changes to ISO/IEC
+9899:1999 detailed in <<embedded-c-spec, Embedded C, section 5.3>> apply
+to OpenCL C with the generic address space.
 
-For subtraction, if the two operands are pointers into different address
-spaces, the address spaces must overlap.
+*Clause 6.2.5 - Types*: 
 
-*Clause 6.5.8 - Relational operators, add another constraint paragraph*:
+If address space qualifier on type T is omitted refer to
+<<addr-spaces-inference>>. 
 
-If the two operands are pointers into different address spaces, the address
-spaces must overlap.
+*Clause 6.3.2.3 - Pointers*
 
-*Clause 6.5.8 - Relational operators, add a new paragraph between existing
-paragraphs 3 and 4*:
+Conversions between disjoint address spaces are disallowed in OpenCL
+(<<addr-spaces-conversions>>).
 
-If the two operands are pointers into different address spaces, one of the
-address spaces encloses the other.
-The pointer into the enclosed address space is first converted to a pointer
-to the same reference type except with any address-space qualifier removed
-and any address-space qualifier of the other pointer's reference type added.
-(After this conversion, both pointers are pointers into the same address
-space).
+*Clause 6.5.8 - Relational operators*:
 
 Examples:
 
 [source,c]
 ----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
+
 kernel void test1()
 {
     global int arr[5] = { 0, 1, 2, 3, 4 };
@@ -2578,35 +2848,16 @@ kernel void test1()
 }
 ----------
 
-*Clause 6.5.9 - Equality operators, add another constraint paragraph*:
 
-If the two operands are pointers into different address spaces, the address
-spaces must overlap.
-
-*Clause 6.5.9 - Equality operators, replace paragraph 5 with*:
-
-Otherwise, at least one operand is a pointer.
-If one operand is a pointer and the other is a null pointer constant, the
-null pointer constant is converted to the type of the pointer.
-If both operands are pointers, each of the following conversions is
-performed as applicable:
-
-  * If the two operands are pointers into different address spaces, one of
-    the address spaces encloses the other.
-    The pointer into the enclosed address space is first converted to a
-    pointer to the same reference type except with any address-space
-    qualifier removed and any address-space qualifier of the other pointer's
-    reference type added.
-    (After this conversion, both pointers are pointers into the same address
-    space).
-  * Then, if one operand is a pointer to an object or incomplete type and
-    the other is a pointer to a qualified or unqualified version of `void`,
-    the former is converted to the type of the latter.
+*Clause 6.5.9 - Equality operators*:
 
 Examples:
 
 [source,c]
 ----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
+
 int *ptr = NULL;
 local int lval = SOME_VAL;
 local int *lptr = &lval;
@@ -2635,6 +2886,9 @@ Consider the following example:
 
 [source,c]
 ----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
+
 bool callee(int *p1, int *p2)
 {
     if (p1 == p2)
@@ -2661,6 +2915,9 @@ Examples:
 
 [source,c]
 ----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
+
 int *ptr = NULL;
 local int *lptr = NULL;
 global int *gptr = NULL;
@@ -2694,21 +2951,15 @@ if (l == NULL) // legal
 }
 ----------
 
-*Clause 6.5.9 - Equality operators, replace first sentence of paragraph 6
-with*:
-
-Two pointers compare equal if and only if both are null pointers with
-overlapping address spaces.
-
-*Clause 6.5.15 - Conditional operator, add another constraint paragraph*:
-
-If the second and third operands are pointers into different address spaces,
-the address spaces must overlap.
+*Clause 6.5.15 - Conditional operator*:
 
 Examples:
 
 [source,c]
 ----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
+
 kernel void test1()
 {
     global int arr[5] = { 0, 1, 2, 3, 4 };
@@ -2727,23 +2978,15 @@ kernel void test1()
 }
 ----------
 
-*Clause 6.5.16.1 - Simple assignment, change the third and fourth bullets of
-paragraph 1 to*:
-
-  - both operands are pointers to qualified or unqualified versions of
-    compatible types, the referenced address space of the left encloses the
-    referenced address space of the right, and the type pointed to by the
-    left has all the qualifiers of the type pointed to by the right.
-  - one operand is a pointer to an object or incomplete type and the other
-    is a pointer to a qualified or unqualified version of `void`, the
-    referenced address space of the left encloses the referenced address
-    space of the right, and the type pointed to by the left has all the
-    qualifiers of the type pointed to by the right.
+*Clause 6.5.16.1 - Simple assignment*:
 
 Examples:
 
 [source,c]
 ----------
+// Note: these examples assume OpenCL C 2.0 or the
+// __opencl_c_generic_address_space feature support.
+
 kernel void f()
 {
 int *ptr;
@@ -2761,16 +3004,11 @@ ptr = gptr;  // legal: implicit cast from global to generic,
 }
 ----------
 
-*Clause 6.7.2.1 - Structure and union specifiers, add a new constraint
-paragraph*:
+*Clause 6.7.3 - Type qualifiers*
 
-Within a structure or union specifier, the type of a member shall not be
-qualified by an address space qualifier.
-
-*Clause 6.7.3 - Type qualifiers, add three new constraint paragraphs*:
-
-No type shall be qualified by qualifiers for two or more different address
-spaces.
+The type of an object with automatic storage duration are in private address
+space and therefore can be qualified with `private`/`__private`.
+--
 
 
 [[access-qualifiers]]
@@ -3075,10 +3313,6 @@ address space qualifiers.
     built-in scalar types `bool`, `size_t`, `ptrdiff_t`, `intptr_t`, and
     `uintptr_t` or a struct and/or union that contain fields declared to be
     one of these built-in scalar types.
-    The size in bytes of these types are implementation-defined and in
-    addition can also be different for the OpenCL device and the host
-    processor making it difficult to allocate buffer objects to be passed as
-    arguments to a kernel declared as pointer to these types.
   . `half` is not supported as `half` can be used as a storage format
     footnote:[{fn-cl_khr_fp16}] only and is not a data type on which
     floating-point arithmetic can be performed.
@@ -3135,6 +3369,17 @@ do_proc (__global char *pA, short b,
     are a pointer to a type declared to point to a named address space.
   . A function in an OpenCL program cannot be called `main`.
   . Implicit function declaration is not supported.
+  . Program scope variables can be defined with any valid OpenCL C data type
+    except for those in <<table-other-builtin-types>>. Such program scope
+    variables may be of any user-defined type, or a pointer to a user-defined
+    type.
+
+    In the presence of shared virtual memory, these pointers or pointer
+    members should work as expected as long as they are shared virtual memory
+    pointers and the referenced storage has been mapped appropriately.
+    Program scope varibales can be declared with `+__constant+` address space
+    qualifiers or if `__opencl_c_program_scope_global_variables` feature is
+    supported with `+__global+` address space qualifier.
 --
 
 
@@ -11022,6 +11267,11 @@ The reference value used to compute the ULP value of an arithmetic operation
 is the infinitely precise result.
 0 ulp is used for math functions that do not require rounding.
 
+Result overflow within the specified ULP error is permitted. Math functions are
+allowed to return infinity for a finite reference value when the next
+floating-point number that would be representable after the finite maximum, if
+there was sufficient range, meets ULP error tolerance.
+
 [[table-ulp-float-math]]
 .ULP values for single precision built-in math functions
 [cols=",",]
@@ -12634,6 +12884,11 @@ one of the integers 0, 1, ... h~t~ - 1.
     Colour measurement and management - Part 2-1: Colour management -
     Default RGB colour space - sRGB`",
     https://webstore.iec.ch/publication/6169 .
+  . [[embedded-c-spec]] "`ISO/IEC TR 18037:2008 Programming languages -
+    C - Extensions to support embedded processors`",
+    https://www.iso.org/standard/51126.html .
+    References are to sections of this specific version, referred to as the
+    "`Embedded C Specification`", although other versions exist.
 
 // This is generatig asciidoctor errors:
 //  OpenCL_C.txt: Failed to load AsciiDoc document - undefined method `+' for nil:NilClass
