@@ -213,6 +213,7 @@ class OpenCLConventions(ConventionsBase):
         return 'include::../config/attribs.txt[]\n' + \
             'include::../api/footnotes.asciidoc[]\n' + \
             'include::../c/footnotes.asciidoc[]\n' + \
+            'include::../c/feature-dictionary.asciidoc[]\n' + \
             'include::{generated}/api/api-dictionary-no-links.asciidoc[]'
 
     @property
