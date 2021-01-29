@@ -39,7 +39,7 @@ Working Draft - [red]*DO NOT SHIP*
 == Version
 
 Built On: {docdate} +
-Revision: 0.9.0
+Revision: 0.9.1
 
 == Dependencies
 
@@ -49,7 +49,7 @@ The functionality added by this extension uses the OpenCL C 2.0 atomic syntax an
 
 This extension interacts with `cl_khr_fp16` by optionally adding the ability to atomically operate on 16-bit floating point values in memory.
 
-This extension depends on `SPV_EXT_shader_float_atomic_add` and `SPV_EXT_shader_atomic_float_min_max` for implementations that support SPIR-V and floating-point atomic add, min, or max operations.
+This extension depends on `SPV_EXT_shader_atomic_float_add` and `SPV_EXT_shader_atomic_float_min_max` for implementations that support SPIR-V and floating-point atomic add, min, or max operations.
 
 == Overview
 
@@ -519,6 +519,25 @@ C atomic_fetch_max_explicit(volatile A *object, M operand, memory_order order)
 C atomic_fetch_min_explicit(volatile A *object, M operand, memory_order order, memory_scope scope)
 C atomic_fetch_max_explicit(volatile A *object, M operand, memory_order order, memory_scope scope)
 ----
+
+The floating-point atomic min and max operations may behave differently than the `fmin` and `fmax` built-in functions in some cases.
+For the floating-point atomic min operation:
+
+* *min*(x, y) = x if x < y and y otherwise,
+* *min*(-0, +0) = *min*(+0, -0) = +0 or -0,
+* *min*(x, qNaN) = *min*(qNaN, x) = x,
+* *min*(qNaN, qNaN) = qNaN,
+* *min*(x, sNaN) = *min*(sNaN, x) = NaN or x, and
+* *min*(NaN, sNaN) = *min*(sNaN, NaN) = NaN
+
+For the floating-point atomic max operation:
+
+* *max*(x, y) = y if x < y and x otherwise,
+* *max*(-0, +0) = *max*(+0, -0) = +0 or -0,
+* *max*(x, qNaN) = *max*(qNaN, x) = x,
+* *max*(qNaN, qNaN) = qNaN,
+* *max*(x, sNaN) = *max*(sNaN, x) = NaN or x, and
+* *max*(NaN, sNaN) = *max*(sNaN, NaN) = NaN
 --
 
 == Modifications to the OpenCL SPIR-V Environment Specification
@@ -588,6 +607,19 @@ This extension currently uses `+__opencl_c_ext_feature_name+` for the OpenCL C f
 `UNRESOLVED`: It is straightforward to add the legacy syntax if desired.
 --
 
+. Do we need to document any special floating-point behavior for floating-point atomic add?
++
+--
+`UNRESOLVED`: Consider NaNs, infinities, rounding modes, denorm behavior, +/-0.
+--
+
+. Do we need to document any special floating-point behavior for floating-point atomic min and max?
++
+--
+`UNRESOLVED`: This spec currently inherits all of the special-case NaN behavior from the SPIR-V atomic min and max spec.
+--
+
+
 == Revision History
 
 [cols="5,15,15,70"]
@@ -596,6 +628,7 @@ This extension currently uses `+__opencl_c_ext_feature_name+` for the OpenCL C f
 |========================================
 |Version|Date|Author|Changes
 |0.9.0|2020-01-26|Ben Ashbaugh|*Initial public revision.*
+|0.9.1|2020-01-28|Ben Ashbaugh|Fixed typo, added issues for special floating-point behavior.
 |========================================
 
 //************************************************************************
