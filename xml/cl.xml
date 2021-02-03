@@ -214,6 +214,9 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_device_enqueue_capabilities</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_mipmap_filter_mode_img</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_mem_alloc_flags_img</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_layer_info</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_layer_api_version</name>;</type>
+        <type category="define">typedef struct _cl_icd_dispatch       <name>cl_icd_dispatch</name>;</type>
 
             <comment>Structure types</comment>
         <type category="struct" name="cl_dx9_surface_info_khr">
@@ -393,6 +396,10 @@ server's OpenCL/api-docs repository.
 
     <enums name="Constants.cl_arm_import_memory" vendor="ARM" comment = "cl_arm_import_memory size constants, in cl_ext.h">
         <enum value="SIZE_MAX"      name="CL_IMPORT_MEMORY_WHOLE_ALLOCATION_ARM"/>
+    </enums>
+
+    <enums name="Constants.cl_loader_layers" vendor="Khronos" comment="Defined Layer API version, in cl_icd_layer.h">
+        <enum value="100"           name="CL_LAYER_API_VERSION_100"/>
     </enums>
 
     <enums start="0" end="-999" name="ErrorCodes.0" vendor="Khronos" comment="Error codes start at 0 and decrease">
@@ -1860,7 +1867,8 @@ server's OpenCL/api-docs repository.
     </enums>
 
     <enums start="0x4240" end="0x424F" name="enums.4240" comment="Reserved for ICD Loader Layers">
-        <unused start="0x4240" end="0x424F"/>
+        <enum value="0x4240"        name="CL_LAYER_API_VERSION"/>
+            <unused start="0x4241" end="0x424F"/>
     </enums>
 
     <enums start="0x4250" end="0x4FFF" name="enums.4250" comment="Reserved for vendor extensions. Allocate in groups of 16.">
@@ -3468,6 +3476,20 @@ server's OpenCL/api-docs repository.
             <param>const <type>cl_event</type>*                         <name>event_wait_list</name></param>
             <param><type>cl_event</type>*                               <name>event</name></param>
         </command>
+        <command>
+            <proto><type>cl_int</type>                                  <name>clGetLayerInfo</name></proto>
+            <param><type>size_t</type>                                  <name>param_value_size</name></param>
+            <param><type>cl_layer_info</type>                           <name>param_name</name></param>
+            <param><type>void</type>*                                   <name>param_value</name></param>
+            <param><type>size_t</type>*                                 <name>param_value_size_ret</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                                  <name>clInitLayer</name></proto>
+            <param><type>cl_uint</type>                                 <name>num_entries</name></param>
+            <param>const <type>cl_icd_dispatch</type>*                  <name>target_dispatch</name></param>
+            <param><type>cl_uint</type>*                                <name>num_entries_ret</name></param>
+            <param>const <type>cl_icd_dispatch</type>**                 <name>layer_dispatch</name></param>
+        </command>
     </commands>
 
     <!-- SECTION: OpenCL API interface definitions -->
@@ -4736,6 +4758,21 @@ server's OpenCL/api-docs repository.
             </require>
             <require>
                 <command name="clIcdGetPlatformIDsKHR"/>
+            </require>
+        </extension>
+        <extension name="cl_loader_layers" supported="opencl">
+            <require>
+                <type name="CL/cl_icd.h"/>
+            </require>
+            <require comment="cl_layer_info">
+                <enum name="CL_LAYER_API_VERSION"/>
+            </require>
+            <require comment="Misc API enums">
+                <enum name="CL_LAYER_API_VERSION_100"/>
+            </require>
+            <require>
+                <command name="clGetLayerInfo"/>
+                <command name="clInitLayer"/>
             </require>
         </extension>
         <extension name="cl_khr_il_program" supported="opencl">
