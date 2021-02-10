@@ -29,7 +29,7 @@ Shipping
 == Version
 
 Built On: {docdate} +
-Version: 0.2.0
+Version: 0.3.0
 
 == Dependencies
 
@@ -54,6 +54,9 @@ CL_DEVICE_SCHEDULING_KERNEL_BATCHING_ARM                (1 << 0)
 CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_ARM           (1 << 1)
 CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_MODIFIER_ARM  (1 << 2)
 CL_DEVICE_SCHEDULING_DEFERRED_FLUSH_ARM                 (1 << 3)
+CL_DEVICE_SCHEDULING_REGISTER_ALLOCATION_ARM            (1 << 4)
+
+CL_DEVICE_SUPPORTED_REGISTER_ALLOCATIONS_ARM              0x41EB
 ----
 
 Accepted value for the _param_name_ parameter to *clSetKernelExecInfo*:
@@ -72,6 +75,18 @@ CL_QUEUE_KERNEL_BATCHING_ARM 0x41E7
 CL_QUEUE_DEFERRED_FLUSH_ARM  0x41EC
 ----
 
+== New build options
+
+This extension adds a build option to control the number of registers allocated
+to each thread:
+
+[source,c]
+----
+-fregister-allocation=
+----
+
+NOTE: Missing before version 0.3.0
+
 == Modifications to the OpenCL API Specification
 
 (Modify Section 4.2, *Querying Devices*) ::
@@ -89,7 +104,7 @@ CL_QUEUE_DEFERRED_FLUSH_ARM  0x41EC
 | Description
 
 | `CL_DEVICE_SCHEDULING_CONTROLS_CAPABILITIES_ARM`
-| `cl_bitfield`
+| `cl_device_scheduling_controls_capabilities_arm`
 | Returns a bitfield of the scheduling controls this device supports:
  +
 - `CL_DEVICE_SCHEDULING_KERNEL_BATCHING_ARM` is set when the device supports
@@ -103,6 +118,14 @@ CL_QUEUE_DEFERRED_FLUSH_ARM  0x41EC
 - `CL_DEVICE_SCHEDULING_DEFERRED_FLUSH_ARM` is set when the device supports
   `CL_QUEUE_DEFERRED_FLUSH_ARM`.
 
+- `CL_DEVICE_SCHEDULING_REGISTER_ALLOCATION_ARM` is set when the device compiler
+  supports the `-fregister-allocation` option.
+
+| `CL_DEVICE_SUPPORTED_REGISTER_ALLOCATIONS_ARM`
+| `cl_int[]`
+| Returns an array of valid register allocations for this device. Each of the
+  returned values can be passed to the `-fregister-allocation` build option. +
+  Missing before version 0.3.
 |====
 
 --
@@ -136,6 +159,28 @@ CL_QUEUE_DEFERRED_FLUSH_ARM  0x41EC
   Missing before version 0.2.
 |====
 
+--
+--
+
+(Modify Section 5.8.6, *Compiler Options*) ::
++
+--
+
+(Add the following to _Optimization Options_) ::
++
+--
+
+The following options are supported when building programs created from
+source or intermediate language. Specifying these options when building
+a program created from a binary will result in {CL_INVALID_BUILD_OPTIONS}
+being returned by *clBuildProgram*.
+
+`-fregister-allocation=<number-of-registers-per-thread>` ::
+    This option overrides the compiler's selection of the number of machine
+    registers allocated to each thread for all kernels in the program.
+`-fregister-allocation=<kernel-name>:<number-of-registers-per-thread>[,...]` ::
+    This option overrides the compiler's selection of the number of machine
+    registers allocated to each thread for specific kernels in the program.
 --
 --
 
@@ -206,6 +251,7 @@ None.
 [options="header"]
 |====
 | Version | Date       | Author       | Changes
+| 0.3.0   | 2021-01-19 | Kévin Petit  | Add support for register allocation control
 | 0.2.0   | 2020-09-14 | Kévin Petit  | Add support for deferred queue flush control
 | 0.1.0   | 2020-08-28 | Kévin Petit  | Initial version
 |====
