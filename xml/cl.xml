@@ -219,6 +219,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef struct _cl_icd_dispatch       <name>cl_icd_dispatch</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_scheduling_controls_capabilities_arm</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_controlled_termination_capabilities_arm</name>;</type>
+        <type category="define">typedef <type>cl_bitfield</type>      <name>cl_command_queue_capabilities_intel</name>;</type>
 
             <comment>Structure types</comment>
         <type category="struct" name="cl_dx9_surface_info_khr">
@@ -275,6 +276,12 @@ server's OpenCL/api-docs repository.
         <type category="struct" name="cl_name_version_khr">
             <member><type>cl_version_khr</type>      <name>version</name></member>
             <member><type>char</type><name>name</name>[<enum>CL_NAME_VERSION_MAX_NAME_SIZE_KHR</enum>]</member>
+        </type>
+        <type category="struct" name="cl_queue_family_properties_intel">
+            <member><type>cl_command_queue_properties</type>            <name>properties</name></member>
+            <member><type>cl_command_queue_capabilities_intel</type>    <name>capabilities</name></member>
+            <member><type>cl_uint</type>                                <name>count</name></member>
+            <member><type>char</type><name>name</name>[<enum>CL_QUEUE_FAMILY_MAX_NAME_SIZE_INTEL</enum>]</member>
         </type>
     </types>
 
@@ -398,6 +405,11 @@ server's OpenCL/api-docs repository.
 
     <enums name="Constants.cl_arm_import_memory" vendor="ARM" comment = "cl_arm_import_memory size constants, in cl_ext.h">
         <enum value="SIZE_MAX"      name="CL_IMPORT_MEMORY_WHOLE_ALLOCATION_ARM"/>
+    </enums>
+
+    <enums name="Constants.cl_intel_command_queue_families" vendor="Intel" commant="cl_intel_command_queue_families constants, in cl_ext.h">
+        <enum value="64"            name="CL_QUEUE_FAMILY_MAX_NAME_SIZE_INTEL"/>
+        <enum value="0"             name="CL_QUEUE_DEFAULT_CAPABILITIES_INTEL"/>
     </enums>
 
     <enums name="Constants.cl_loader_layers" vendor="Khronos" comment="Defined Layer API version, in cl_icd_layer.h">
@@ -1117,6 +1129,27 @@ server's OpenCL/api-docs repository.
             <unused start="3" end="63"/>
     </enums>
 
+    <enums name="cl_command_queue_capabilities_intel" vendor="Intel" type="bitmask">
+        <enum bitpos="0"            name="CL_QUEUE_CAPABILITY_CREATE_SINGLE_QUEUE_EVENTS_INTEL"/>
+        <enum bitpos="1"            name="CL_QUEUE_CAPABILITY_CREATE_CROSS_QUEUE_EVENTS_INTEL"/>
+        <enum bitpos="2"            name="CL_QUEUE_CAPABILITY_SINGLE_QUEUE_EVENT_WAIT_LIST_INTEL"/>
+        <enum bitpos="3"            name="CL_QUEUE_CAPABILITY_CROSS_QUEUE_EVENT_WAIT_LIST_INTEL"/>
+            <unused start="4" end="7"/>
+        <enum bitpos="8"            name="CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_INTEL"/>
+        <enum bitpos="9"            name="CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_RECT_INTEL"/>
+        <enum bitpos="10"           name="CL_QUEUE_CAPABILITY_MAP_BUFFER_INTEL"/>
+        <enum bitpos="11"           name="CL_QUEUE_CAPABILITY_FILL_BUFFER_INTEL"/>
+        <enum bitpos="12"           name="CL_QUEUE_CAPABILITY_TRANSFER_IMAGE_INTEL"/>
+        <enum bitpos="13"           name="CL_QUEUE_CAPABILITY_MAP_IMAGE_INTEL"/>
+        <enum bitpos="14"           name="CL_QUEUE_CAPABILITY_FILL_IMAGE_INTEL"/>
+        <enum bitpos="15"           name="CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_IMAGE_INTEL"/>
+        <enum bitpos="16"           name="CL_QUEUE_CAPABILITY_TRANSFER_IMAGE_BUFFER_INTEL"/>
+            <unused start="17" end="23"/>
+        <enum bitpos="24"           name="CL_QUEUE_CAPABILITY_MARKER_INTEL"/>
+        <enum bitpos="25"           name="CL_QUEUE_CAPABILITY_BARRIER_INTEL"/>
+        <enum bitpos="26"           name="CL_QUEUE_CAPABILITY_KERNEL_INTEL"/>
+    </enums>
+
     <enums start="0x10000" end="0x1FFFF" name="cl_khronos_vendor_id" vendor="Khronos">
         <comment>
             In order to synchronize vendor IDs across Khronos APIs, Vulkan's vk.xml
@@ -1824,7 +1857,11 @@ server's OpenCL/api-docs repository.
     </enums>
 
     <enums start="0x4180" end="0x418F" name="enums.4180" vendor="Intel" comment="Per OpenCL-Registry #22">
-            <unused start="0x4180" end="0x418F"/>
+            <unused start="0x4180" end="0x418A"/>
+        <enum value="0x418B"        name="CL_DEVICE_QUEUE_FAMILY_PROPERTIES_INTEL"/>
+        <enum value="0x418C"        name="CL_QUEUE_FAMILY_INTEL"/>
+        <enum value="0x418D"        name="CL_QUEUE_INDEX_INTEL"/>
+            <unused start="0x418E" end="0x418F"/>
     </enums>
 
     <enums start="0x4190" end="0x419F" name="enums.4190" vendor="Intel">
@@ -5970,6 +6007,46 @@ server's OpenCL/api-docs repository.
                 <enum name="CL_COMMAND_TERMINATION_CONTROLLED_SUCCESS_ARM"/>
                 <enum name="CL_COMMAND_TERMINATION_CONTROLLED_FAILURE_ARM"/>
                 <enum name="CL_COMMAND_TERMINATION_ERROR_ARM"/>
+            </require>
+        </extension>
+        <extension name="cl_intel_command_queue_families" supported="opencl">
+            <require>
+                <type name="CL/cl.h"/>
+            </require>
+            <require>
+                <type name="cl_command_queue_capabilities_intel"/>
+            </require>
+            <require>
+                <enum name="CL_QUEUE_FAMILY_MAX_NAME_SIZE_INTEL"/>
+            </require>
+            <require>
+                <type name="cl_queue_family_properties_intel"/>
+            </require>
+            <require comment="cl_device_info">
+                <enum name="CL_DEVICE_QUEUE_FAMILY_PROPERTIES_INTEL"/>
+            </require>
+            <require comment="cl_queue_properties">
+                <enum name="CL_QUEUE_FAMILY_INTEL"/>
+                <enum name="CL_QUEUE_INDEX_INTEL"/>
+            </require>
+            <require comment="cl_command_queue_capabilities_intel">
+                <enum name="CL_QUEUE_DEFAULT_CAPABILITIES_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_CREATE_SINGLE_QUEUE_EVENTS_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_CREATE_CROSS_QUEUE_EVENTS_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_SINGLE_QUEUE_EVENT_WAIT_LIST_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_CROSS_QUEUE_EVENT_WAIT_LIST_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_RECT_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_MAP_BUFFER_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_FILL_BUFFER_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_TRANSFER_IMAGE_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_MAP_IMAGE_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_FILL_IMAGE_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_IMAGE_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_TRANSFER_IMAGE_BUFFER_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_MARKER_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_BARRIER_INTEL"/>
+                <enum name="CL_QUEUE_CAPABILITY_KERNEL_INTEL"/>
             </require>
         </extension>
     </extensions>
