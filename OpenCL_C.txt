@@ -22,10 +22,15 @@ Khronos{R} OpenCL Working Group
 
 :cpp: pass:[C++]
 :cpp11: pass:[C++11]
+:kernel: pass:[__kernel]
+:read_only: pass:[__read_only]
+:write_only: pass:[__write_only]
+:read_write: pass:[__read_write]
 :private: pass:[__private]
 :global: pass:[__global]
 :local: pass:[__local]
 :constant: pass:[__constant]
+:generic: pass:[__generic]
 :rte: pass:[_rte]
 :rtz: pass:[_rtz]
 :rtn: pass:[_rtn]
@@ -93,14 +98,14 @@ what versions of OpenCL C specify that feature.
   ** In some instances the variation of "For OpenCL C _major.minor_ or newer"
      is used, it has the identical meaning.
   * Requires support for OpenCL C 2.0, or OpenCL C 3.0 or newer and the
-    `+__opencl_c_feature_name+` feature:
+    {opencl_c_feature_name} feature:
     Features that were introduced in OpenCL C 2.0 as mandatory, but made
     <<optional-functionality, optional>> in OpenCL C 3.0.
     Compilers for versions of OpenCL C 1.2 or below will not provide these
     features, compilers for OpenCL C 2.0 will provide these features,
     compilers for OpenCL C 3.0 or newer may provide these features.
   * Requires support for OpenCL C 3.0 or newer and the
-    `+__opencl_c_feature_name+` feature: <<optional-functionality,
+    {opencl_c_feature_name} feature: <<optional-functionality,
     Optional>> features that were introduced in OpenCL C 3.0.
     Compilers for an earlier version of OpenCL C will not provide these
     features, compilers for OpenCL C 3.0 or newer may provide these features.
@@ -131,7 +136,7 @@ associated __feature test macro__ will be predefined.
 
 The following table describes OpenCL C 3.0 or newer features and their
 meaning. The naming convention for the feature macros is
-`+__opencl_c_<name>+`.
+{opencl_c_feature_name}.
 
 Feature macro identifiers are used as names of features in this document.
 
@@ -709,7 +714,7 @@ This rule applies to built-in types only, not structs or unions.
 
 The OpenCL compiler is responsible for aligning data items to the
 appropriate alignment as required by the data type.
-For arguments to a `+__kernel+` function declared to be a pointer to a data
+For arguments to a `{kernel}` function declared to be a pointer to a data
 type, the OpenCL compiler can assume that the pointee is always
 appropriately aligned as required by the data type.
 The behavior of an unaligned load or store is undefined, except for the
@@ -1028,12 +1033,12 @@ not be used otherwise.
   * Names reserved as keywords by C99.
   * OpenCL C data types defined in <<table-builtin-vector-types>>,
     <<table-other-builtin-types>>, and <<table-reserved-types>>.
-  * Address space qualifiers: `+__global+`, `global`, `+__local+`, `local`,
-    `+__constant+`, `constant`, `+__private+`, and `private`.
-    `+__generic+` and `generic` are reserved for future use.
-  * Function qualifiers: `+__kernel+` and `kernel`.
-  * Access qualifiers: `+__read_only+`, `read_only`, `+__write_only+`,
-    `write_only`, `+__read_write+` and `read_write`.
+  * Address space qualifiers: `{global}`, `global`, `{local}`, `local`,
+    `{constant}`, `constant`, `{private}`, and `private`.
+    `{generic}` and `generic` are reserved for future use.
+  * Function qualifiers: `{kernel}` and `kernel`.
+  * Access qualifiers: `{read_only}`, `read_only`, `{write_only}`,
+    `write_only`, `{read_write}` and `read_write`.
   * `uniform`, `pipe`.
 
 
@@ -2055,7 +2060,7 @@ defined in section 5 of <<embedded-c-spec, the Embedded C Specification>>. It
 extends the C syntax to allow an address space name as a valid type qualifier
 (section 5.1.2 of <<embedded-c-spec, the Embedded C Specification>>).
 OpenCL implements disjoint named address spaces with the spelling
-`+__global+`, `+__local+`, `+__constant+` and `+__private+`.
+`{global}`, `{local}`, `{constant}` and `{private}`.
 The address space qualifier may be used in variable declarations to specify
 the region where objects are to be allocated. If the type of an
 object is qualified by an address space name, the object is allocated in the
@@ -2112,10 +2117,10 @@ private local int i;
 private int *local ptr;
 ----------
 
-The `+__global+`, `+__constant+`, `+__local+`, `+__private+`, `global`,
+The `{global}`, `{constant}`, `{local}`, `{private}`, `global`,
 `constant`, `local`, and `private` names are reserved for use as address
 space qualifiers and shall not be used otherwise.
-The `+__generic+` and `generic` names are reserved for future use.
+The `{generic}` and `generic` names are reserved for future use.
 
 [NOTE]
 ====
@@ -2126,12 +2131,12 @@ always equals `+sizeof(__local int *)+`.
 --
 
 [[global-or-global]]
-=== `+__global+` (or `global`)
+=== `{global}` (or `global`)
 
 [open,refpage='global',desc='global Address Space Qualifiers',type='freeform',spec='clang',anchor='global-or-global',xrefs='addressSpaceQualifiers constant genericAddressSpace local private']
 --
 
-The `+__global+` or `global` address space name is used to refer to memory
+The `{global}` or `global` address space name is used to refer to memory
 objects (buffer or image objects) allocated from the `global` memory pool.
 
 A buffer memory object can be declared as a pointer to a scalar, vector or
@@ -2156,7 +2161,7 @@ global foo_t *my_info; // An array of foo_t elements
 ----------
 
 As image objects are always allocated from the `global` address space, the
-`+__global+` or `global` qualifier should not be specified for image types.
+`{global}` or `global` qualifier should not be specified for image types.
 The elements of an image object cannot be directly accessed.
 Built-in functions to read from and write to an image object are provided.
 
@@ -2170,12 +2175,12 @@ They are not shared across devices and have distinct storage.
 
 
 [[local-or-local]]
-=== `+__local+` (or `local`)
+=== `{local}` (or `local`)
 
 [open,refpage='local',desc='local Address Space Qualifiers',type='freeform',spec='clang',anchor='local-or-local',xrefs='addressSpaceQualifiers constant genericAddressSpace global private']
 --
 
-The `+__local+` or `local` address space name is used to describe variables that
+The `{local}` or `local` address space name is used to describe variables that
 are allocated in local memory and shared by all work-items in a work-group.
 
 Examples:
@@ -2193,7 +2198,7 @@ kernel void my_func(...)
 ----------
 [NOTE]
 ====
-Variables allocated in the `+__local+` address space inside a kernel
+Variables allocated in the `{local}` address space inside a kernel
 function are allocated for each work-group executing the kernel and exist
 only for the lifetime of the work-group executing the kernel.
 ====
@@ -2201,12 +2206,12 @@ only for the lifetime of the work-group executing the kernel.
 --
 
 [[constant-or-constant]]
-=== `+__constant+` (or `constant`)
+=== `{constant}` (or `constant`)
 
 [open,refpage='constant',desc='constant Address Space Qualifiers',type='freeform',spec='clang',anchor='constant-or-constant',xrefs='addressSpaceQualifiers genericAddressSpace global local private']
 --
 
-The `+__constant+` or `constant` address space name is used to describe
+The `{constant}` or `constant` address space name is used to describe
 read-only variables that are accessible globally. They may
 be declared in program scope or in the outermost kernel scope or inside
  functions with a `static` or `extern` storage class specifier. Such variables
@@ -2214,7 +2219,7 @@ be declared in program scope or in the outermost kernel scope or inside
 
 [NOTE]
 ====
-Each argument to a kernel that is a pointer to the `+__constant+` address
+Each argument to a kernel that is a pointer to the `{constant}` address
 space is counted separately towards the maximum number of such arguments,
 defined as the value of the <<opencl-device-queries,
 `CL_DEVICE_MAX_CONSTANT_ARGS` device query>>.
@@ -2243,12 +2248,12 @@ Implementations are not required to aggregate these declarations into the
 fewest number of constant arguments. This behavior is implementation defined.
 
 Thus portable code must conservatively assume that each variable declared
-inside a function or in program scope allocated in the `+__constant+`
+inside a function or in program scope allocated in the `{constant}`
 address space counts as a separate constant argument.
 --
 
 [[private-or-private]]
-=== `+__private+` (or `private`)
+=== `{private}` (or `private`)
 
 [open,refpage='private',desc='private Address Space Qualifiers',type='freeform',spec='clang',anchor='private-or-private',xrefs='addressSpaceQualifiers constant genericAddressSpace global local']
 --
@@ -2325,9 +2330,9 @@ kernel void my_func(...)
 Program scope variables or variables with a `extern` or `static` storage class
 specifier:
 
-  * Must be qualified by `__constant` in OpenCL C prior to 2.0 or OpenCL C 3.0
+  * Must be qualified by `{constant}` in OpenCL C prior to 2.0 or OpenCL C 3.0
     without {opencl_c_program_scope_global_variables} feature.
-  * Can be qualified by either `__constant` or `__global` for OpenCL C 2.0 or
+  * Can be qualified by either `{constant}` or `{global}` for OpenCL C 2.0 or
     OpenCL C 3.0 with {opencl_c_program_scope_global_variables} feature.
 
 Examples:
@@ -2357,8 +2362,8 @@ global int *constant ptr = &baz;  // OK.
 ----------
 
 Kernel function arguments declared to be a pointer or an array of a type
-must point to one of the named address spaces `+__global+`, `+__local+` or
-`+__constant+`.
+must point to one of the named address spaces `{global}`, `{local}` or
+`{constant}`.
 
 Examples:
 
@@ -2379,13 +2384,13 @@ kernel void my_kernel(int *ptr)
 
 === Initialization
 --
-Program scope and `static` variables in the `+__global+` address space are zero
+Program scope and `static` variables in the `{global}` address space are zero
 initialized by default. A constant expression may be given as an initializer.
 
-Variables allocated in the `+__local+` address space inside a kernel function
+Variables allocated in the `{local}` address space inside a kernel function
 cannot be initialized.
 
-Variables allocated in the +__constant+ address space are required to be initialized
+Variables allocated in the `{constant}` address space are required to be initialized
 and the values used to initialize these variables must be a compile time constant.
 
 Private address space objects are not initialized by default; any initializer is
@@ -2425,22 +2430,22 @@ therefore only the default address space is applicable.
 
 For OpenCL C 2.0 or with the {opencl_c_program_scope_global_variables}
 feature, the address space for a variable at program scope or a `static`
-or `extern` variable inside a function are inferred to be `+__global+`.
+or `extern` variable inside a function are inferred to be `{global}`.
 
 If the generic address space is supported i.e. for OpenCL C 2.0 or OpenCL C 3.0
 with {opencl_c_generic_address_space} feature, pointers that are declared
 without pointing to a named address space point to the generic address space.
 
-All string literal storage shall be in the `+__constant+` address space.
+All string literal storage shall be in the `{constant}` address space.
 
 For all other cases that are not listed above the address space is inferred to
-`+__private+`. This includes:
+`{private}`. This includes:
 
   * All function arguments as well as return values are in the private address
     space.
 
   * Pointers that are declared without pointing to a named address space point
-    to the `+__private+` address space if the generic address space is not
+    to the `{private}` address space if the generic address space is not
     supported.
 
   * Variables inside a function not declared with an address space qualifier
@@ -2506,7 +2511,7 @@ Qualifiers must be explicitly specified for:
   | *Initialization*
   | *Inference*
 
-| `+__global+`
+| `{global}`
   | Program scope variables, for OpenCL C 2.0 or
     OpenCL C 3.0 with the {opencl_c_program_scope_global_variables} feature,
 
@@ -2522,7 +2527,7 @@ Qualifiers must be explicitly specified for:
     `static` or `extern` local variables, for OpenCL C 2.0 or
     OpenCL C 3.0 with the {opencl_c_program_scope_global_variables} feature.
 
-| `+__private+`
+| `{private}`
   | Local scope variables,
 
     Function arguments and return types,
@@ -2538,7 +2543,7 @@ Qualifiers must be explicitly specified for:
     for OpenCL C prior to version 2.0 or OpenCL C 3.0 without the
     {opencl_c_generic_address_space} feature.
 
-| `+__constant+`
+| `{constant}`
   | Program scope variables,
 
     Kernel scope variables,
@@ -2549,7 +2554,7 @@ Qualifiers must be explicitly specified for:
   | Mandatory initialization with a compile time constant.
   | String literals.
 
-| `+__local+`
+| `{local}`
   | Kernel scope variables,
 
     Pointers.
@@ -2574,12 +2579,12 @@ Qualifiers must be explicitly specified for:
 OpenCL implements the address space nesting model for pointers from
 <<embedded-c-spec, Embedded C, section 5.1.3>> as follows:
 
-  * In OpenCL the named address spaces `+__global+`, `+__local+`,
-    `+__constant+` and `+__private+` are disjoint.
-  * The named address spaces `+__global+`, `+__local+`, and `+__private+`
+  * In OpenCL the named address spaces `{global}`, `{local}`,
+    `{constant}` and `{private}` are disjoint.
+  * The named address spaces `{global}`, `{local}`, and `{private}`
     are subsets of the unnamed generic address spaces.
-  * The unnamed generic address space does not overlap the named `+__constant+`
-    address space; the named `+__constant+` address space is not in the generic
+  * The unnamed generic address space does not overlap the named `{constant}`
+    address space; the named `{constant}` address space is not in the generic
     address space.
 
 [NOTE]
@@ -3015,7 +3020,7 @@ ptr = gptr;  // legal: implicit cast from global to generic,
 *Clause 6.7.3 - Type qualifiers*
 
 The type of an object with automatic storage duration are in private address
-space and therefore can be qualified with `private`/`__private`.
+space and therefore can be qualified with `private`/`{private}`.
 --
 
 
@@ -3032,11 +3037,11 @@ For OpenCL C 2.0, or with the {opencl_c_read_write_images} feature,
 image objects specified as arguments to a kernel can additionally be
 declared to be read-write.
 
-The `+__read_only+` (or `read_only`) access qualifier specifies that the
+The `{read_only}` (or `read_only`) access qualifier specifies that the
 image object is only being read by a kernel or function.
-The `+__write_only+` (or `write_only`) access qualifier specifies that the
+The `{write_only}` (or `write_only`) access qualifier specifies that the
 image object is only being written to by a kernel or function.
-The `+__read_write+` (or `read_write`) access qualifier specifies that the
+The `{read_write}` (or `read_write`) access qualifier specifies that the
 image object may be both read from or written to by a kernel or function.
 
 The default access qualifier is `read_only`, if no access qualifier is declared.
@@ -3057,9 +3062,9 @@ imageA is a read-only 2D image object, and image is a write-only 2D image
 object.
 
 The sampler-less read image and write image built-ins can be used with image
-declared with the `+__read_write+` (or `read_write`) qualifier.
+declared with the `{read_write}` (or `read_write`) qualifier.
 Calls to built-ins that read from an image using a sampler for images
-declared with the `+__read_write+` (or `read_write`) qualifier will be a
+declared with the `{read_write}` (or `read_write`) qualifier will be a
 compilation error.
 
 Pipe objects specified as arguments to a kernel also use these access
@@ -3067,7 +3072,7 @@ qualifiers.
 See the <<pipe-functions,detailed description on how these access qualifiers
 can be used with pipes>>.
 
-The `+__read_only+`, `+__write_only+`, `+__read_write+`, `read_only`,
+The `{read_only}`, `{write_only}`, `{read_write}`, `read_only`,
 `write_only` and `read_write` names are reserved for use as access
 qualifiers and shall not be used otherwise.
 --
@@ -3078,29 +3083,29 @@ qualifiers and shall not be used otherwise.
 
 
 [[kernel-or-kernel]]
-=== `+__kernel+` (or `kernel`)
+=== `{kernel}` (or `kernel`)
 
 [open,refpage='kernel',desc='Qualifiers for Kernel Functions',type='freeform',spec='clang',anchor='kernel-or-kernel',xrefs='accessQualifiers optionalAttributeQualifiers',alias='functionQualifiers']
 --
 
-The `+__kernel+` (or `kernel`) qualifier declares a function to be a kernel
+The `{kernel}` (or `kernel`) qualifier declares a function to be a kernel
 that can be executed by an application on an OpenCL device(s).
 The following rules apply to functions that are declared with this
 qualifier:
 
   * It can be executed on the device only
   * It can be called by the host
-  * It is just a regular function call if a `+__kernel+` function is called
+  * It is just a regular function call if a `{kernel}` function is called
     by another kernel function.
 
 [NOTE]
 ====
 Kernel functions with variables declared inside the function with the
-`+__local+` or `local` qualifier can be called by the host using appropriate
+`{local}` or `local` qualifier can be called by the host using appropriate
 APIs such as *clEnqueueNDRangeKernel*.
 ====
 
-The `+__kernel+` and `kernel` names are reserved for use as functions
+The `{kernel}` and `kernel` names are reserved for use as functions
 qualifiers and shall not be used otherwise.
 --
 
@@ -3111,12 +3116,12 @@ qualifiers and shall not be used otherwise.
 [open,refpage='optionalAttributeQualifiers',desc='Optional Attribute Qualifiers',type='freeform',spec='clang',anchor='optional-attribute-qualifiers',xrefs='accessQualifiers kernel',alias='reqd_work_group_size vec_type_hint work_group_size_hint']
 --
 
-The `+__kernel+` qualifier can be used with the keyword __attribute__ to
+The `{kernel}` qualifier can be used with the keyword __attribute__ to
 declare additional information about the kernel function as described below.
 
 The optional `+__attribute__((vec_type_hint(<type>)))+`
 footnote:[{fn-vec-type-hint}] is a hint to the compiler and is intended to be a
-representation of the computational _width_ of the `+__kernel+`, and should
+representation of the computational _width_ of the `{kernel}`, and should
 serve as the basis for calculating processor bandwidth utilization when the
 compiler is looking to autovectorize the code.
 In the `+__attribute__((vec_type_hint(<type>)))+` qualifier <type> is one of
@@ -3156,12 +3161,12 @@ __kernel
 void foo( __global float4 *p ) { ... }
 ----------
 
-If for example, a `+__kernel+` function is declared with
+If for example, a `{kernel}` function is declared with
 
 [none]
 * `+__attribute__(( vec_type_hint (float4)))+`
 
-(meaning that most operations in the `+__kernel+` function are explicitly
+(meaning that most operations in the `{kernel}` function are explicitly
 vectorized using `float4`) and the kernel is running using Intel^{reg}^
 Advanced Vector Instructions (Intel^{reg}^ AVX) which implements a
 8-float-wide vector unit, the autovectorizer might choose to merge two
@@ -3259,10 +3264,10 @@ kernel void my_func(image2d_t img, global float *a)
   . The use of pointers is somewhat restricted.
     The following rules apply:
     * Arguments to kernel functions declared in a program that are pointers
-      must be declared with the `+__global+`, `+__constant+` or `+__local+`
+      must be declared with the `{global}`, `{constant}` or `{local}`
       qualifier.
-    * A pointer declared with the `+__constant+` qualifier can only be
-      assigned to a pointer declared with the `+__constant+` qualifier
+    * A pointer declared with the `{constant}` qualifier can only be
+      assigned to a pointer declared with the `{constant}` qualifier
       respectively.
     * Pointers to functions are not allowed.
     * Arguments to kernel functions in a program cannot be
@@ -3280,8 +3285,8 @@ kernel void my_func(image2d_t img, global float *a)
 An image type cannot be used to declare a variable, a structure or union
 field, an array of images, a pointer to an image, or the return type of a
 function.
-An image type cannot be used with the `+__global+`, `+__private+`,
-`+__local+` and `+__constant+` address space qualifiers.
+An image type cannot be used with the `{global}`, `{private}`,
+`{local}` and `{constant}` address space qualifiers.
 +
 The sampler type (`sampler_t`) can only be used as the type of a function
 argument or a variable declared in the program scope or the outermost scope
@@ -3292,7 +3297,7 @@ A sampler argument or variable cannot be modified.
 +
 The sampler type cannot be used to declare a structure or union field, an
 array of samplers, a pointer to a sampler, or the return type of a function.
-The sampler type cannot be used with the `+__local+` and `+__global+`
+The sampler type cannot be used with the `{local}` and `{global}`
 address space qualifiers.
   . [[restrictions-bitfield]] Bit-field struct members are currently not
     supported.
@@ -3367,8 +3372,8 @@ do_proc (__global char *pA, short b,
     function argument.
     The event type cannot be used to declare a program scope variable.
     The event type cannot be used to declare a structure or union field.
-    The event type cannot be used with the `+__local+`, `+__constant+` and
-    `+__global+` address space qualifiers.
+    The event type cannot be used with the `{local}`, `{constant}` and
+    `{global}` address space qualifiers.
   . The `clk_event_t`, `ndrange_t` and `reserve_id_t` types cannot be used
     as arguments to kernel functions that get enqueued from the host.
     The `clk_event_t` and `reserve_id_t` types cannot be declared in program
@@ -3385,9 +3390,9 @@ do_proc (__global char *pA, short b,
 In the presence of shared virtual memory, these pointers or pointer
 members should work as expected as long as they are shared virtual memory
 pointers and the referenced storage has been mapped appropriately.
-Program scope varibales can be declared with `+__constant+` address space
+Program scope varibales can be declared with `{constant}` address space
 qualifiers or if {opencl_c_program_scope_global_variables} feature is
-supported with `+__global+` address space qualifier.
+supported with `{global}` address space qualifier.
 --
 
 
@@ -7639,7 +7644,7 @@ deprecated by>> OpenCL C 2.0.  Also see extensions
 `cl_khr_local_int32_base_atomics`, and `cl_khr_local_int32_extended_atomics`.
 
 OpenCL C 1.x had support for relaxed atomic operations via built-in functions
-that could operate on any memory address in `+__global+` or `+__local+` spaces.
+that could operate on any memory address in `{global}` or `{local}` spaces.
 Unlike C11 style atomics these did not require using dedicated atomic types,
 and instead operated on 32-bit signed integers, 32-bit unsigned integers, and
 only in the case of **atomic_xchg** additionally single precision floating-point.
@@ -10069,14 +10074,14 @@ pipe int4 pipeA; // a pipe with int4 packets
 pipe user_type_t pipeB; // a pipe with user_type_t packets
 ----------
 
-The `read_only` (or `+__read_only+`) and `write_only` (or `+__write_only+`)
+The `read_only` (or `{read_only}`) and `write_only` (or `{write_only}`)
 qualifiers must be used with the `pipe` specifier when a pipe is a parameter
 of a kernel or of a user-defined function to identify if a pipe can be read
 from or written to by a kernel and its callees and enqueued child kernels.
 If no qualifier is specified, `read_only` is assumed.
 
 A kernel cannot read from and write to the same pipe object.
-Using the `read_write` (or `+__read_write+`) qualifier with the `pipe`
+Using the `read_write` (or `{read_write}`) qualifier with the `pipe`
 specifier is a compilation error.
 
 In the following example
