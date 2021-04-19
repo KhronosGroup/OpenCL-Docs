@@ -49,7 +49,7 @@ __private int * ptr = addrspace_cast<__private int*>(genptr); // legal.
 float * genptrfloat = reinterpret_cast<float*>(ptr); // legal.
 // disjoint address space conversion.
 __constant int * constptr = addrspace_cast<__constant int*>(genptr); // illegal.
-----------
+------------
 
 Note that if generic address space is not supported any conversion of pointers
 pointing to different address spaces is illegal.
@@ -65,7 +65,7 @@ __private int * ptr = addrspace_cast<__private int*>(genptr); // legal, no op.
 float * genptrfloat = reinterpret_cast<float*>(ptr); // legal.
 // disjoint address space conversion.
 __constant int * constptr = addrspace_cast<__constant int*>(privptr); // illegal.
-----------
+------------
 
 [[references]]
 ==== References
@@ -73,9 +73,9 @@ __constant int * constptr = addrspace_cast<__constant int*>(privptr); // illegal
 Reference types can be qualified with an address space.
 
 [source,cpp]
-----------
+------------
 __private int & ref = ...; // references int in __private address space.
-----------
+------------
 
 By default references refer to generic address space objects if generic
 address space is supported or private address space otherwise, except
@@ -158,25 +158,25 @@ void bar()
 {
   S<N> s; // 's' is in __private address space.
 }
-----------
+------------
 
 [source,cpp]
-----------
+------------
 struct c1 {};
 using alias_c1 = c1; // 'alias_c1' is 'c1'.
 using alias_c1_ptr = c1 *; // 'alias_c1_ptr' is a generic address space pointer to 'c1'
                            // when generic address space is supported otherwise it
                            // points to 'c1' located in private address space.
-----------
+------------
 
 [source,cpp]
-----------
+------------
 __kernel void foo()
 {
   __local int i;
   decltype(i)* ii; // type of 'ii' is '__local int *__private'.
 }
-----------
+------------
 
 For the placeholder type specifier `auto` an address space of the outer type is
 deduced as if it would be any other regular type. However if `auto` is used in a
@@ -205,7 +205,7 @@ __kernel void foo()
                        // is deduced regularly,
                        // addr space of a pointee is taken from the pointee of 'ptr').
 }
-----------
+------------
 
 [[addrspace-member-function-qualifiers]]
 ==== Member function qualifier
@@ -220,7 +220,7 @@ to an address space among candidates, compilation will fail with a
 diagnostic.
 
 [source,cpp]
-----------
+------------
 struct C {
   void foo() __local;
   void foo(); // This is implicitly qualified by generic address space
@@ -236,7 +236,7 @@ __kernel void bar() {
   c3.foo(); // error due to mismatching address spaces - can't convert to
             // '__local' or generic/'__private' addr spaces.
 }
-----------
+------------
 
 All  member functions can be qualified by an address space qualifier including
 constructors and destructors.
@@ -251,7 +251,7 @@ that has generic address space by default if it is supported otherwise
 private address space. 
 
 [source,cpp]
-----------
+------------
 __kernel void foo() {
   auto priv1 = []() __private {};
   priv1();
@@ -265,8 +265,7 @@ __kernel void foo() {
   [&] () mutable __private {} ();
   [&] () __private mutable {} (); // error: mutable specifier should precede address space.
 }
-----------
-
+------------
 
 ==== Implicit special members
 
@@ -277,7 +276,7 @@ object pointer and reference parameters (see also
 address space is generic if it is supported or private otherwise.
 
 [source,cpp]
-----------
+------------
 class C {
   // Has the following implicitly defined member functions.
 
@@ -306,7 +305,7 @@ class C {
                                /* if supported */ 
                                /* in private address space otherwise. */
 };
-----------
+------------
 
 TODO: As an optimisation we can do an upgrade in this version and always infer
 the concrete address space! See "Builtin operators" for details. Needs
@@ -328,18 +327,18 @@ during type deduction if it is not explicitly provided in the
 instantiation.
 
 [source,cpp]
-----------
+------------
 template<typename T>
 void foo(T* i){
   T var;
  }
 
- __global int g;
+__global int g;
 void bar(){
   foo(&g); // error: template instantiation failed as function scope variable 'var'
            // appears to be declared in __global address space (see line 3).
 }
-----------
+------------
 
 It is not legal to specify multiple different address spaces between
 template definition and instantiation. If multiple different address
@@ -349,7 +348,7 @@ restriction immediately follows from `OpenCL C v3.0 s6.7` that
 disallows multiple address space qualifiers on a type.
 
 [source,cpp]
-----------
+------------
 template <typename T>
 void foo() {
   __private T var;
@@ -359,13 +358,13 @@ void bar() {
   foo<__global int>(); // error: conflicting address space qualifiers are provided
                        // for 'var', '__global' and '__private'.
 }
-----------
+------------
 
 Once a template has been instantiated, regular restrictions for
 address spaces will apply.
 
 [source,cpp]
-----------
+------------
 template<typename T>
 void foo(){
   T var;
@@ -375,7 +374,7 @@ void bar(){
   foo<__global int>(); // error: function scope variable 'var' cannot be declared
                        // in '__global' address space.
 }
-----------
+------------
 
 ==== Temporary materialization
 
@@ -384,7 +383,7 @@ with another address space is bound to them, a conversion will be generated
 in case it is valid, otherwise compilation will fail with a diagnostic.
 
 [source,cpp]
-----------
+------------
 int bar(const unsigned int &i); // references generic address space object
                                 // if generic address space is supported
                                 // otherwise private address space object.
@@ -400,7 +399,7 @@ __global const int& f(__global float &ref) {
               // created to hold value converted float->int and return
               // value type (can't convert from __private to __global).
 }
-----------
+------------
 
 ==== Construction, initialization and destruction
 
@@ -433,8 +432,7 @@ public:
   __local C & operator=(const C & par) __local;
   ~C() __local;
 };
-__
-kernel void foo() {
+__kernel void foo() {
   __local C locobj{}; // error: local address space objects can't be initialized
   __local C locobj; // uninitialised object
   locobj = {}; // calling copy assignment operator is allowed
@@ -518,7 +516,7 @@ when converting between address spaces in nested pointers:
    address spaces in nested pointers.
 
 [source,cpp]
-----------
+------------
 local int * * locdefptr;
 constant int * * cnstdefptr;
 int * * defdefptr;
@@ -527,4 +525,4 @@ defdefptr = static_cast<int * *>(cnstdefptr); // illegal.
 defdefptr = addrspace_cast<int * *>(cnstdefptr); // illegal.
 defdefptr = reinterpret_cast<int * *>(locdefptr); // legal.
 defdefptr = reinterpret_cast<int * *>(cnstdefptr); // legal.
-----------
+------------
