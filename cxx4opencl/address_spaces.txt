@@ -5,32 +5,33 @@
 [[address_space]]
 === Address spaces
 
-{cpp} for OpenCL inherits address space behavior from `OpenCL C v3.0 s6.7`.
+{cpp} for OpenCL inherits address space behavior from `OpenCL C 3.0 s6.7`.
 
 This section only documents behavior related to {cpp} features. For example
 conversion rules are extended from the qualification conversion {cpp}17
 `[conv.qual]` but the compatibility is determined using notation of sets and
 overlapping of address spaces from `section 5.1.3` of <<embedded-c-spec,
 The Embedded C Specification>>. For OpenCL kernel languages there are two
-main semantics depending on whether generic address space (`OpenCL C v3.0 6.7.`)
+main semantics depending on whether generic address space (`OpenCL C 3.0 6.7.`)
 is supported on not. The generic address space is always supported for
- * {cpp} for OpenCL v1.0;
- * {cpp} for OpenCL v1.1 with the presence of `+__opencl_c_generic_address_space+`
-   feature as explained in `OpenCL C v3.0 s6.2.1`.
+
+ * {cpp} for OpenCL 1.0;
+ * {cpp} for OpenCL 1.1 with the presence of `+__opencl_c_generic_address_space+`
+   feature as explained in `OpenCL C 3.0 s6.2.1`.
 
 If generic address space is not supported qualification conversions with pointer
 type where address spaces differ are not allowed. If generic address space is
 supported implicit conversions are allowed from a named address space (except for
-`+__constant+`) to generic. The reverse conversion is only allowed explicitly.
-The `+__constant+` address space does not overlap with any other and therefore no
-valid conversion between `+__constant+` and any other address space exists. This is
-aligned with rules from `OpenCL C v3.0 s6.7.9` and this logic regulates semantics
-described in this section.
+`+__constant+`) to generic address space. The reverse conversion is only allowed
+explicitly. The `+__constant+` address space does not overlap with any other and
+therefore no valid conversion between `+__constant+` and any other address space
+exists. This is aligned with rules from `OpenCL C 3.0 s6.7.9` and this logic
+regulates semantics described in this section.
 
 ==== Casts
 
-C-style casts follow rules of `OpenCL C v3.0 s6.7.9`. Conversions of
-pointers and references to the generic address space can be done by any {cpp} cast
+C-style casts follow rules of `OpenCL C 3.0 s6.7.9`. Conversions of
+references and pointers to the generic address space can be done by any {cpp} cast
 operator (as an implicit conversion); converting from generic to named address
 space can only be done using the dedicated `addrspace_cast` operator. The
 `addrspace_cast` operator can only convert between address spaces for pointers and
@@ -41,28 +42,33 @@ between `__constant` and any other other address space are disallowed.
 ------------
 // Example assumes generic address space support.
 int * genptr; // points to generic address space.
+
 // named -> generic address space conversions.
 __private float * ptrfloat = reinterpret_cast<__private float*>(genptr); // illegal.
 __private float * ptrfloat = addrspace_cast<__private float*>(genptr); // illegal.
 __private int * ptr = addrspace_cast<__private int*>(genptr); // legal.
+
 // generic -> named address space conversion.
 float * genptrfloat = reinterpret_cast<float*>(ptr); // legal.
+
 // disjoint address space conversion.
 __constant int * constptr = addrspace_cast<__constant int*>(genptr); // illegal.
 ------------
 
-Note that if generic address space is not supported any conversion of pointers
+If generic address space is not supported any conversion of references/pointers
 pointing to different address spaces is illegal.
 
 [source,cpp]
 ------------
 // Example without generic address space support.
 int * privptr; // points to private address space.
+
 // The same address space conversions.
 __private float * ptrfloat = reinterpret_cast<__private float*>(privptr); // legal.
 __private float * ptrfloat = addrspace_cast<__private float*>(privptr); // illegal.
 __private int * ptr = addrspace_cast<__private int*>(genptr); // legal, no op.
 float * genptrfloat = reinterpret_cast<float*>(ptr); // legal.
+
 // disjoint address space conversion.
 __constant int * constptr = addrspace_cast<__constant int*>(privptr); // illegal.
 ------------
@@ -80,16 +86,36 @@ __private int & ref = ...; // references int in __private address space.
 By default references refer to generic address space objects if generic
 address space is supported or private address space otherwise, except
 for dependent types that are not template specializations (see
-<<addrspace-deduction, _Deduction_>>). Address space compatibility checks
-are performed when references are bound to values. The logic follows the
-rules from address space pointer conversion (`OpenCL v3.0 s6.7.9`).
+<<addrspace-deduction, _Deduction_>>).
+
+[source,cpp]
+------------
+int & ref = ...; // references int in generic address space if it is
+                 // supported otherwise in __private address space.
+------------
+
+Address space compatibility checks are performed when references are
+bound to values. The logic follows the rules from address space pointer
+conversion (`OpenCL 3.0 s6.7.9`).
+
+[source,cpp]
+------------
+__global const int& f(__global float &ref) {
+  return ref; // error reference to global address space object cannot bind
+              // to a temporary object created in __private  address space.
+}
+const int& f(float &ref) {
+  return ref; // legal - reference to generic/__private address space object can
+              // bind to a temporary object created in __private  address space.
+}
+------------
 
 [[addrspace-deduction]]
-==== Deduction & Default address space
+====  Address space inference
 
 This section details what happens if address spaces for types are not
 provided in the source code explicitly. Most of the logic for address space
-deduction (i.e. default address space) follows rules from `OpenCL v3.0 s6.7.8`.
+inference (i.e. default address space) follows rules from `OpenCL 3.0 s6.7.8`.
 
 References inherit rules from pointers and therefore refer to generic
 address space objects by default (see <<references, _References_>>) if
@@ -97,9 +123,9 @@ generic address space is supported, otherwise they refer to private
 address space objects.
 
 Class static data members are deduced to `+__global+` address space. Note,
-that if implementations of {cpp} for OpenCL v1.1 does not support program
+that if implementations of {cpp} for OpenCL 1.1 does not support program
 scope variables (i.e. `+__opencl_c_program_scope_global_variables+` feature
-from `OpenCL v3.0 s6.1`) the address space qualifier must be  specified
+from `OpenCL 3.0 s6.1`) the address space qualifier must be  specified
 explicitly and it must be `+__constant+` address space.
 
 All non-static member functions take an implicit object parameter `this`
@@ -112,7 +138,7 @@ in disjoint address spaces will not be compiled unless the address for the
 object parameter `this` is explicitly specified using address space qualifiers
 on member functions (see <<addrspace-member-function-qualifiers,
 _Member function qualifier_>>). For example, use of member functions with
-objects in `+__constant+` address space will always require a `__constant`
+objects in `+__constant+` address space will always require a `+__constant+`
 member function qualifier as `__constant` address space is disjoint with any
 other.
 
@@ -137,9 +163,9 @@ template <typename T>
 void foo() {
   T m; // address space of 'm' will be known at template instantiation time.
   T * ptr; // 'ptr' points to generic address space object when it is
-           // supported other to private address space.
+           // supported other to __private address space.
   T & ref = ...; // 'ref' references an object in generic address space when
-                 // it is supported otherwise to private address space.
+                 // it is supported otherwise in __private address space.
 };
 
 template <int N>
@@ -148,9 +174,9 @@ struct S {
   static int ii; // 'ii' is in global address space if program scope variables
                  // are supported otherwise this statement is not legal.
   int * ptr; // 'ptr' points to int in generic address space if it is supported
-             // otherwise to private address space.
+             // otherwise to __private address space.
   int & ref = ...; // 'ref' references int in generic address space if it is
-                   // supported otherwise to private address space.
+                   // supported otherwise in __private address space.
 };
 
 template <int N>
@@ -166,7 +192,7 @@ struct c1 {};
 using alias_c1 = c1; // 'alias_c1' is 'c1'.
 using alias_c1_ptr = c1 *; // 'alias_c1_ptr' is a generic address space pointer to 'c1'
                            // when generic address space is supported otherwise it
-                           // points to 'c1' located in private address space.
+                           // points to 'c1' located in __private address space.
 ------------
 
 [source,cpp]
@@ -328,23 +354,23 @@ instantiation.
 
 [source,cpp]
 ------------
-template<typename T>
-void foo(T* i){
-  T var;
- }
-
-__global int g;
-void bar(){
-  foo(&g); // error: template instantiation failed as function scope variable 'var'
-           // appears to be declared in __global address space (see line 3).
-}
+1  template<typename T>
+2  void foo(T* i){
+3   T var;
+4  }
+5 
+6  __global int g;
+7  void bar(){
+8    foo(&g); // error: template instantiation failed as function scope variable 'var'
+9             // appears to be declared in __global address space (see line 3).
+10 }
 ------------
 
 It is not legal to specify multiple different address spaces between
 template definition and instantiation. If multiple different address
 spaces are specified in a template definition and instantiation,
 compilation of such a program will fail with a diagnostic. This
-restriction immediately follows from `OpenCL C v3.0 s6.7` that
+restriction immediately follows from `OpenCL C 3.0 s6.7` that
 disallows multiple address space qualifiers on a type.
 
 [source,cpp]
@@ -444,7 +470,7 @@ User defined constructors in `__constant` address space must be `constexpr`.
 Such objects can be initialized using literals and initialization lists if they
 do not require any user defined conversions.
 
-Objects in `__constant` address space can be initialized using:
+Objects in `+__constant+` address space can be initialized using:
 
  * Literal expressions;
  * Uniform initialization syntax `{}`;
