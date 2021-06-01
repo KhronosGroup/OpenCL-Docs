@@ -476,6 +476,8 @@ C atomic_fetch_sub_explicit(volatile A *object, M operand, memory_order order)
 C atomic_fetch_add_explicit(volatile A *object, M operand, memory_order order, memory_scope scope)
 C atomic_fetch_sub_explicit(volatile A *object, M operand, memory_order order, memory_scope scope)
 ----
+
+The floating-point atomic add and sub operations may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
 --
 
 Also add new floating-point atomic fetch and modify functions for the atomic operations min and max for the atomic types `atomic_half`, `atomic_float`, and `atomic_double`: ::
@@ -520,7 +522,10 @@ C atomic_fetch_min_explicit(volatile A *object, M operand, memory_order order, m
 C atomic_fetch_max_explicit(volatile A *object, M operand, memory_order order, memory_scope scope)
 ----
 
-The floating-point atomic min and max operations may behave differently than the `fmin` and `fmax` built-in functions in some cases.
+The floating-point atomic min and max operations may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
+
+Additionally, the floating-point atomic min and max operations may behave differently than the `fmin` and `fmax` built-in functions in some cases.
+
 For the floating-point atomic min operation:
 
 * *min*(x, y) = x if x < y and y otherwise,
@@ -562,6 +567,7 @@ Additionally:
   * When `CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES` includes `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT`, the *AtomicFloat64AddEXT* capability must be supported.
   * When `CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES` includes `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT`, the *AtomicFloat16AddEXT* capability must be supported.
   * For the *Atomic Instruction* *OpAtomicFAddEXT* added by these extensions:
+   ** The instruction may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
    ** When `CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES`, `CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES`, or `CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES` includes `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT`, the _Pointer_ operand may be a pointer to the *CrossWorkGroup* _Storage Class_.
    ** When `CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES`, `CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES`, or `CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES` includes `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT`, the _Pointer_ operand may be a pointer to the *Workgroup* _Storage Class_.
 //   ** When `CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES`, `CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES`, or `CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES` includes `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT`, and the *GenericPointer* capability is supported and declared, the _Pointer_ operand may be a pointer to the *Generic* _Storage Class_.
@@ -573,10 +579,10 @@ Additionally:
   * When `CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES` includes `CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT`, the *AtomicFloat64MinMaxEXT* capability must be supported.
   * When `CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES` includes `CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT`, the *AtomicFloat16MinMaxEXT* capability must be supported.
   * For the *Atomic Instructions* *OpAtomicFMinEXT* and *OpAtomicFMaxEXT* added by this extension:
+   ** These instructions may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
    ** When `CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES`, `CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES`, or `CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES` includes `CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT`, the _Pointer_ operand may be a pointer to the *CrossWorkGroup* _Storage Class_.
    ** When `CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES`, `CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES`, or `CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES` includes `CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT`, the _Pointer_ operand may be a pointer to the *Workgroup* _Storage Class_.
 //   ** When `CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES`, `CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES`, or `CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES` includes `CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT`, and the *GenericPointer* capability is supported and declared, the _Pointer_ operand may be a pointer to the *Generic* _Storage Class_.
-
 --
 
 == Issues
@@ -611,12 +617,16 @@ This extension currently uses `+__opencl_c_ext_feature_name+` for the OpenCL C f
 +
 --
 `UNRESOLVED`: Consider NaNs, infinities, rounding modes, denorm behavior, +/-0.
+
+Note, we do say explicitly that floating-point atomic add may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
 --
 
 . Do we need to document any special floating-point behavior for floating-point atomic min and max?
 +
 --
 `UNRESOLVED`: This spec currently inherits all of the special-case NaN behavior from the SPIR-V atomic min and max spec.
+
+Note, we do say explicitly that floating-point atomic min and max may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
 --
 
 
@@ -629,6 +639,7 @@ This extension currently uses `+__opencl_c_ext_feature_name+` for the OpenCL C f
 |Version|Date|Author|Changes
 |0.9.0|2020-01-26|Ben Ashbaugh|*Initial public revision.*
 |0.9.1|2020-01-28|Ben Ashbaugh|Fixed typo, added issues for special floating-point behavior.
+|0.9.2|2020-05-31|Ben Ashbaugh|Fixed formatting, documented interactions with compiler options affecting floating-point behavior.
 |========================================
 
 //************************************************************************
