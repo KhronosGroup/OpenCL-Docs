@@ -143,11 +143,12 @@ Accepted value for the _param_name_ parameter to *clGetDeviceInfo*:
 --
 * _flags_ is a bit-field that is used to specify allocation and usage
   information about the image memory object being created and is described in
-  the supported memory flag values table. If
-  `CL_MEM_ACCESS_FLAGS_UNRESTRICTED_INTEL` was specified in the memory flags
-  associated with _mem_object_ then _flags_ can specify any host and device
-  access capabilities regardless of the memory flags associated with
-  _mem_object_.
+  the supported memory flag values table. [...] If the `image_channel_order` of
+  _image_format_ is a Planar YUV format then _flags_ must include
+  `CL_MEM_HOST_NO_ACCESS`. If `CL_MEM_ACCESS_FLAGS_UNRESTRICTED_INTEL` was
+  specified in the memory flags associated with _mem_object_ then _flags_ can
+  specify any host and device access capabilities regardless of the memory flags
+  associated with _mem_object_.
 --
 
 (Modify the error code descriptions for clCreateImage in Section 5.3.1 - Creating Image Objects) ::
@@ -158,6 +159,8 @@ set to `CL_SUCCESS` if the image object is created successfully. Otherwise, it r
 a `NULL` value with one of the following error values returned in _errcode_ret_:
 
 * ...
+* `CL_INVALID_VALUE` if the `image_channel_order` of _image_format_ is a Planar
+  YUV format and _flags_ does not include `CL_MEM_HOST_NO_ACCESS`.
 * `CL_INVALID_VALUE` if an image is being created from another memory object
   (buffer or image) under one of the following circumstances: 1) _mem_object_
   was created with `CL_MEM_WRITE_ONLY` and _flags_ specifies `CL_MEM_READ_WRITE`
@@ -237,7 +240,7 @@ supported combinations:
   | `CL_UNSIGNED_INT8`
 |====
 
-* If mem_object is a Planar YUV image object the channel order specified in
+* If _mem_object_ is a Planar YUV image object the channel order specified in
 image format must be one of the following:
 +
 [width="75%",cols="3,2,1,2",options="header"]
