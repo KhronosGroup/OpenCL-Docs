@@ -19,6 +19,7 @@ functions to compute the dot product of vectors of integers.
 [cols="1,1,3",options="header",]
 |====
 | *Date*     | *Version* | *Description*
+| 2021-06-23 | 2.0.0     | All 8-bit support is mandatory, added 8-bit hardware properties.
 | 2021-06-17 | 1.0.0     | Initial version.
 |====
 
@@ -51,6 +52,9 @@ CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR      (1 << 0)
 CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR             (1 << 1)
 
 CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR              0x1073
+
+CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR           0x1074
+CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR  0x1075
 ----
 
 === New OpenCL C Functions
@@ -110,7 +114,27 @@ int dot_acc_sat_4x8packed_su_int(uint a, uint b, int acc);
 {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR} is set when dot product
   built-in functions and, when SPIR-V is supported, SPIR-V instructions that
   take four-component of 8-bit elements as input are supported. +
+  NOTE: {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR} must be set in version
+  2.x of the extension.
 
+
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR}
+| {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
+| Returns a structure describing the exact 8-bit dot product combinations
+  that are <<integer-dot-product-acceleration-properties,accelerated>> on the device. +
+  Each member is {CL_TRUE} if the combination it corresponds to is accelerated,
+  {CL_FALSE} otherwise. +
+  NOTE: {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR} is missing
+  before version 2.0 of the extension.
+
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR}
+| {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
+| Returns a structure describing the exact 4x8-bit packed dot product combinations
+  that are <<integer-dot-product-acceleration-properties,accelerated>> on the device. +
+  Each member is {CL_TRUE} if the combination it corresponds to is accelerated,
+  {CL_FALSE} otherwise. +
+  NOTE: {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR} is missing
+  before version 2.0 of the extension.
 |====
 
 --
@@ -130,6 +154,35 @@ returned for {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR}:
 | `__opencl_c_integer_dot_product_input_4x8bit`
 
 |====
+
+[[integer-dot-product-acceleration-properties]]
+The {cl_device_integer_dot_product_acceleration_properties_khr_TYPE} structure
+describes the exact dot product operations that are accelerated on the device:
+
+include::{generated}/api/structs/cl_device_integer_dot_product_acceleration_properties_khr.txt[]
+
+ * _signed_accelerated_ is {CL_TRUE} when signed dot product operations are
+   accelerated, {CL_FALSE} otherwise.
+ * _unsigned_accelerated_ is {CL_TRUE} when unsigned dot product operations
+   are accelerated, {CL_FALSE} otherwise.
+ * _mixed_signedness_accelerated_ is {CL_TRUE} when mixed signedness dot
+   product operations are accelerated, {CL_FALSE} otherwise.
+ * _accumulating_saturating_signed_accelerated_ is {CL_TRUE} when accumulating
+   saturating signed dot product operations are accelerated, {CL_FALSE}
+   otherwise.
+ * _accumulating_saturating_unsigned_accelerated_ is {CL_TRUE} when accumulating
+   saturating unsigned dot product operations are accelerated, {CL_FALSE}
+   otherwise.
+ * _accumulating_saturating_mixed_signedness_accelerated_ is {CL_TRUE} when
+   accumulating saturating mixed signedness dot product operations are
+   accelerated, {CL_FALSE} otherwise.
+
+A dot product operation is deemed accelerated if its implementation provides
+a performance advantage over application-provided code composed from elementary
+instructions and/or other dot product instructions, either because the
+implementation uses optimized machine code sequences whose generation from
+application-provided code cannot be guaranteed or because it uses hardware
+features that cannot otherwise be targeted from application-provided code.
 --
 
 --
