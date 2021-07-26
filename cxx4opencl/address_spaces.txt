@@ -420,3 +420,27 @@ gengenptr = addrspace_cast<int**>(cnstgenptr); // illegal.
 gengenptr = reinterpret_cast<int**>(locgenptr); // legal.
 gengenptr = reinterpret_cast<int**>(cnstgenptr); // legal.
 ----------
+
+[[remove-addrspace]]
+==== Address space removal
+
+Utility `+__remove address_space+` allows to derive types that have address
+space qualifiers removed. The tool only throws away address space qualifiers,
+therefore, other type qualifiers such as const or volatile remain unchanged.
+
+[source,cpp]
+----------
+template<typename T>
+void foo(T *par){
+  T var1; // error: function scope variable cannot be declared in global
+          // address space
+  __private T var2; // error: conflicting address space qualifiers are provided
+                    // between types '__private T' and '__global int'
+  __private __remove_address_space<T>::type var3; // type of var3 is __private int
+}
+
+void bar(){
+    __global int* ptr;
+    foo(ptr);
+}
+----------
