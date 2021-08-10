@@ -23,27 +23,29 @@ https://github.com/KhronosGroup/OpenCL-Docs
 == Contributors
 
 // spell-checker: disable
+Stuart Brady, ARM +
 Ben Ashbaugh, Intel +
 Alex Paige, Intel +
-Lukasz Towarek, Intel
+Lukasz Towarek, Intel +
+Ruihao Zhang, Qualcomm
 // spell-checker: enable
 
 == Notice
 
-Copyright TBD
+Copyright (c) 2021 The Khronos Group Inc.
 
 == Status
 
-Working Draft - [red]*DO NOT SHIP*
+Final Draft
 
 == Version
 
 Built On: {docdate} +
-Revision: 0.9.1
+Revision: 0.9.3
 
 == Dependencies
 
-This extension is written against the OpenCL API Specification, OpenCL C Specification, and OpenCL SPIR-V Environment Specification Versions 3.0.5.
+This extension is written against the OpenCL API Specification, OpenCL C Specification, and OpenCL SPIR-V Environment Specification Versions 3.0.8.
 
 The functionality added by this extension uses the OpenCL C 2.0 atomic syntax and hence requires OpenCL 2.0 or newer.
 
@@ -257,11 +259,11 @@ C atomic_fetch_min_explicit(volatile __local A *object, M operand, memory_order 
 C atomic_fetch_max_explicit(volatile __local A *object, M operand, memory_order order, memory_scope scope)
 
 // In addition to the requirements described in the OpenCL C 3.0 specification,
-// requires the __opencl_c_ext_fp16_global_atomic_min_mas feature
+// requires the __opencl_c_ext_fp16_global_atomic_min_max feature
 // or the __opencl_c_ext_fp16_local_atomic_min_mas feature (for atomic_half),
-// requires the __opencl_c_ext_fp32_global_atomic_min_mas feature
+// requires the __opencl_c_ext_fp32_global_atomic_min_max feature
 // or the __opencl_c_ext_fp32_local_atomic_min_mas feature (for atomic_float), or
-// requires the __opencl_c_ext_fp64_global_atomic_min_mas feature
+// requires the __opencl_c_ext_fp64_global_atomic_min_max feature
 // or the __opencl_c_ext_fp64_local_atomic_min_mas feature (for atomic_double).
 C atomic_fetch_min(volatile A *object, M operand)
 C atomic_fetch_max(volatile A *object, M operand)
@@ -596,37 +598,35 @@ Additionally:
 . Do the OpenCL C built-in functions or types added by this extension need an `ext` prefix or suffix?
 +
 --
-`UNRESOLVED`: I do not think we have had an EXT extension that extends OpenCL C yet.
+`RESOLVED`: No prefix is required for built-in functions added by EXT extensions if the functionality is unlikely to change if it becomes a KHR or core feature.
 --
 
 . Do we need to establish a naming convention for OpenCL C feature and feature test macro names added by extensions?
 +
 --
-`UNRESOLVED`: The core feature names are all `+__opencl_c_feature_name+`.
-For extensions we could either keep the same convention, or adopt something similar to `+__opencl_c_<khr|ext|vendor>_feature_name+`?
-This extension currently uses `+__opencl_c_ext_feature_name+` for the OpenCL C feature test macro names it adds.
+`RESOLVED`: Yes, we will include a prefix in the name of the feature and feature test macro names for EXT and vendor extensions.
+This gives us the ability to change functionality if it becomes a KHR or core feature.
+Because this is an EXT extension it will use `+__opencl_c_ext_feature_name+` for the OpenCL C feature names it adds.
 --
 
 . Do we need to support the legacy OpenCL C 1.x atomic syntax, or is it sufficient to only support the newer OpenCL C 2.0 atomic syntax?
 +
 --
-`UNRESOLVED`: It is straightforward to add the legacy syntax if desired.
+`RESOLVED`: We will only support the newer OpenCL 2.0 atomic syntax in the initial version of this extension.
 --
 
 . Do we need to document any special floating-point behavior for floating-point atomic add?
 +
 --
-`UNRESOLVED`: Consider NaNs, infinities, rounding modes, denorm behavior, +/-0.
-
-Note, we do say explicitly that floating-point atomic add may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
+`RESOLVED`: Floating-point atomic add may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`, otherwise there is no special behavior.
 --
 
 . Do we need to document any special floating-point behavior for floating-point atomic min and max?
 +
 --
-`UNRESOLVED`: This spec currently inherits all of the special-case NaN behavior from the SPIR-V atomic min and max spec.
-
-Note, we do say explicitly that floating-point atomic min and max may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
+`RESOLVED`: This spec inherits all of the special-case NaN behavior from the SPIR-V atomic min and max spec.
+Additionally, floating-point atomic min and max may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
+Otherwise, there is no special behavior.
 --
 
 
@@ -640,6 +640,7 @@ Note, we do say explicitly that floating-point atomic min and max may be affecte
 |0.9.0|2020-01-26|Ben Ashbaugh|*Initial public revision.*
 |0.9.1|2020-01-28|Ben Ashbaugh|Fixed typo, added issues for special floating-point behavior.
 |0.9.2|2020-05-31|Ben Ashbaugh|Fixed formatting, documented interactions with compiler options affecting floating-point behavior.
+|0.9.3|2020-08-09|Ben Ashbaugh|Finalized names of built-in functions and feature test macros.
 |========================================
 
 //************************************************************************
