@@ -140,7 +140,7 @@ def makeGenOpts(args):
             profile           = None,
             versions          = featuresPat,
             emitversions      = featuresPat,
-            defaultExtensions = None,
+            defaultExtensions = defaultExtensions,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
