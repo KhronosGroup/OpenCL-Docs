@@ -211,6 +211,7 @@ class OpenCLConventions(ConventionsBase):
     def extra_refpage_headers(self):
         """Return any extra text to add to refpage headers."""
         return 'include::../config/attribs.txt[]\n' + \
+            'include::../config/opencl.asciidoc[]\n' + \
             'include::../api/footnotes.asciidoc[]\n' + \
             'include::../c/footnotes.asciidoc[]\n' + \
             'include::../c/feature-dictionary.asciidoc[]\n' + \
