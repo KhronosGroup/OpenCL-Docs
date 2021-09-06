@@ -368,15 +368,16 @@ kernel void foo() {
 }
 ------------
 
-User defined constructors are not allowed to construct objects in `__constant`
-address space. Such objects can be initialized using literals and
-initialization lists if they do not require any user defined conversions.
+User defined constructors in `__constant` address space must be `constexpr`.
+Such objects can be initialized using literals and initialization lists if they
+do not require any user defined conversions.
 
 Objects in `__constant` address space can be initialized using:
 
  * Literal expressions;
  * Uniform initialization syntax `{}`;
  * Using implicit constructors.
+ * Using constexpr constructors.
 
 [source,cpp]
 ------------
@@ -386,14 +387,12 @@ struct C1 {
 
 struct C2 {
   int m;
-  C2(int init) __constant {};
+  constexpr C2(int init) __constant : m(init) {};
 };
 
-kernel void k() {
-  __constant C1 cobj1 = {1};
-  __constant C1 cobj2 = C1();
-  __constant C2 cobj3 = {1}; // error: user defined constructor can't be used
-}
+__constant C1 cobj1 = {1};
+__constant C1 cobj2 = C1();
+__constant C2 cobj3(1);
 ------------
 
 ==== Nested pointers
