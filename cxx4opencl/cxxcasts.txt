@@ -1,0 +1,45 @@
+// Copyright 2019-2021 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[cxxcasts]]
+=== {cpp} casts
+
+{cpp} has 3 casts in addition to C-style casts. `static_cast` and `const_cast`
+function the same way as in {cpp}, but `reinterpret_cast` has some additional
+functionality:
+
+* Conversion between vectors and scalars are allowed.
+* Conversion between OpenCL types are disallowed.
+
+==== Vectors and scalars
+
+`reinterpret_cast` reinterprets between integral types like integers and
+pointers. In {cpp} for openCL this also includes vector types, and so using
+`reinterpret_cast` between vectors and scalars is also possible, as long as the
+size of the vectors are the same.
+
+[source,cpp]
+----------
+int i;
+short2 s2 = reinterpret_cast<short2>(i); // legal.
+int2 i2 = reinterpret_cast<int2>(i); // illegal.
+
+short8 s8;
+int4 i4 = reinterpret_cast<int4>(s8); // legal.
+long l4 = reinterpret_cast<long>(s8); // illegal.
+----------
+
+==== OpenCL types
+
+Some of the OpenCL types are the same size as integers, or can be implemented as
+integers, but since they are not conceptually integral, they can not be used
+with `reinterpret_cast`. Therefore these are all illegal conversions:
+
+[source,cpp]
+----------
+reserve_id_t id;
+reserve_id_t id2 = reinterpret_cast<reserve_id_t>(id); // illegal.
+int i = reinterpret_cast<int>(r); // illegal.
+long l = reinterpret_cast<long>(r); // illegal.
+----------
