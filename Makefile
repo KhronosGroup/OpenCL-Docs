@@ -69,19 +69,19 @@ SPECREMARK = from git branch: $(shell echo `git symbolic-ref --short HEAD`) \
 	     commit: $(shell echo `git log -1 --format="%H"`)
 endif
 
-ATTRIBOPTS_NO_VERSION   = -a revdate="$(SPECDATE)" \
-	                  -a revremark="$(SPECREMARK)" \
-	                  -a stem=latexmath \
-	                  -a generated=$(GENERATED) \
-	                  -a sectnumlevels=5
+ATTRIBOPTS_NO_VERSION	= -a revdate="$(SPECDATE)" \
+			  -a revremark="$(SPECREMARK)" \
+			  -a stem=latexmath \
+			  -a generated=$(GENERATED) \
+			  -a sectnumlevels=5
 
 ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
-               $(ATTRIBOPTS_NO_VERSION)
+	       $(ATTRIBOPTS_NO_VERSION)
 
-ADOCEXTS              = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb -r $(CURDIR)/config/spec-macros.rb
+ADOCEXTS	      = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb -r $(CURDIR)/config/spec-macros.rb
 ADOCOPTS_NO_VERSION   = -d book $(ATTRIBOPTS_NO_VERSION) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
-ADOCOPTS              = -d book $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
-ADOCMANOPTS           = -d manpage $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
+ADOCOPTS	      = -d book $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
+ADOCMANOPTS	      = -d manpage $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
 
 # ADOCHTMLOPTS relies on the relative runtime path from the output HTML
 # file to the katex scripts being set with KATEXDIR. This is overridden
@@ -443,8 +443,9 @@ man/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(SCRIPTS)/clapi.py
 	$(PYTHON) $(GENREF) -rewrite man/rewritebody -toc man/tocbody \
 	    -log $(LOGFILE) $(SPECFILES)
 	cat man/tochead man/tocbody man/toctail > man/toc.html
-	cat man/rewritehead > man/.htaccess
-	sort < man/rewritebody >> man/.htaccess
+	(cat man/rewritehead ; \
+	 echo ; echo "# Aliases hard-coded in refpage markup" ; \
+	 sort < man/rewritebody) > man/.htaccess
 	$(CP) -p $(MANDIR)/static/*.txt $(MANDIR)/
 
 # These targets are HTML5 ref pages
