@@ -1,6 +1,7 @@
 #!/usr/bin/python3 -i
 #
 # Copyright 2013-2021 The Khronos Group Inc.
+#
 # SPDX-License-Identifier: Apache-2.0
 
 # Base class for working-group-specific style conventions,
@@ -70,10 +71,8 @@ class ConventionsBase:
         self._type_prefix = None
 
     def formatExtension(self, name):
-        """Mark up a name as an extension for the spec.
-
-        Must implement."""
-        raise NotImplementedError
+        """Mark up an extension name as a link the spec."""
+        return '`apiext:{}`'.format(name)
 
     @property
     def null(self):
@@ -103,7 +102,7 @@ class ConventionsBase:
 
         May override.
         """
-        return 'sname:'
+        return 'slink:'
 
     @property
     def external_macro(self):
@@ -310,3 +309,50 @@ class ConventionsBase:
         be skipped for a command."""
 
         return False
+
+    @property
+    def generate_index_terms(self):
+        """Return True if asiidoctor index terms should be generated as part
+           of an API interface from the docgenerator."""
+
+        return False
+
+    @property
+    def generate_enum_table(self):
+        """Return True if asciidoctor tables describing enumerants in a
+           group should be generated as part of group generation."""
+        return False
+
+    @property
+    def generate_max_enum_in_docs(self):
+        """Return True if MAX_ENUM tokens should be generated in
+           documentation includes."""
+        return False
+
+
+    def extension_include_string(self, ext):
+        """Return format string for include:: line for an extension appendix
+           file. ext is an object with the following members:
+            - name - extension string string
+            - vendor - vendor portion of name
+            - barename - remainder of name
+
+        Must implement."""
+        raise NotImplementedError
+
+    @property
+    def refpage_generated_include_path(self):
+        """Return path relative to the generated reference pages, to the
+           generated API include files.
+
+        Must implement."""
+        raise NotImplementedError
+
+    def valid_flag_bit(self, bitpos):
+        """Return True if bitpos is an allowed numeric bit position for
+           an API flag.
+
+           Behavior depends on the data type used for flags (which may be 32
+           or 64 bits), and may depend on assumptions about compiler
+           handling of sign bits in enumerated types, as well."""
+        return True
