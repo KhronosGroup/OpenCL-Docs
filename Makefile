@@ -115,7 +115,7 @@ GENDEPENDS = $(APIINCDIR)/timeMarker
 .PHONY: directories
 
 # README.md is a proxy for all the katex files that need to be installed
-katexinst: $(OUTDIR)/katex/README.md
+KATEXINST = $(OUTDIR)/katex/README.md
 
 $(OUTDIR)/katex/README.md: katex/README.md
 	$(QUIET)$(MKDIR) $(OUTDIR)
@@ -164,7 +164,7 @@ APISPECSRC = $(APISPEC).txt $(GENDEPENDS) \
 
 apihtml: $(HTMLDIR)/$(APISPEC).html $(APISPECSRC)
 
-$(HTMLDIR)/$(APISPEC).html: $(APISPECSRC) katexinst
+$(HTMLDIR)/$(APISPEC).html: $(APISPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(APISPEC).txt
 
 apipdf: $(PDFDIR)/$(APISPEC).pdf $(APISPECSRC)
@@ -190,7 +190,7 @@ ENVSPECSRC = $(ENVSPEC).txt $(GENDEPENDS) \
 
 envhtml: $(HTMLDIR)/$(ENVSPEC).html $(ENVSPECSRC)
 
-$(HTMLDIR)/$(ENVSPEC).html: $(ENVSPECSRC) katexinst
+$(HTMLDIR)/$(ENVSPEC).html: $(ENVSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(ENVSPEC).txt
 
 envpdf: $(PDFDIR)/$(ENVSPEC).pdf $(ENVSPECSRC)
@@ -214,7 +214,7 @@ EXTSPECSRC = $(EXTSPEC).txt $(GENDEPENDS) \
 
 exthtml: $(HTMLDIR)/$(EXTSPEC).html $(EXTSPECSRC)
 
-$(HTMLDIR)/$(EXTSPEC).html: $(EXTSPECSRC) katexinst
+$(HTMLDIR)/$(EXTSPEC).html: $(EXTSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTSPEC).txt
 
 extpdf: $(PDFDIR)/$(EXTSPEC).pdf $(EXTSPECSRC)
@@ -244,7 +244,7 @@ EXTENSIONS_PDF = $(patsubst %.asciidoc,$(PDFDIR)/%.pdf,$(EXTENSIONS))
 
 extensionshtml: $(HTMLDIR)/$(EXTENSIONSSPEC).html $(EXTENSIONSSPECSRC) $(EXTENSIONS_HTML)
 
-$(HTMLDIR)/$(EXTENSIONSSPEC).html: $(EXTENSIONSSPECSRC) katexinst
+$(HTMLDIR)/$(EXTENSIONSSPEC).html: $(EXTENSIONSSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTDIR)/$(EXTENSIONSSPEC).txt
 
 # I don't know why the pattern rule below requires vpath be overridden
@@ -252,12 +252,12 @@ $(HTMLDIR)/$(EXTENSIONSSPEC).html: $(EXTENSIONSSPECSRC) katexinst
 # points there.
 vpath %.asciidoc $(EXTDIR)
 
-$(HTMLDIR)/%.html: $(EXTDIR)/%.asciidoc
+$(HTMLDIR)/%.html: $(EXTDIR)/%.asciidoc $(GENDEPENDS)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $<
 
 extensionspdf: $(PDFDIR)/$(EXTENSIONSSPEC).pdf $(EXTENSIONSSPECSRC)
 
-$(PDFDIR)/$(EXTENSIONSSPEC).pdf: $(EXTENSIONSSPECSRC)
+$(PDFDIR)/$(EXTENSIONSSPEC).pdf: $(EXTENSIONSSPECSRC) $(GENDEPENDS)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(EXTDIR)/$(EXTENSIONSSPEC).txt
@@ -276,7 +276,7 @@ CEXTDOCSRC = $(CEXTDOC).txt $(GENDEPENDS) \
 
 cexthtml: $(HTMLDIR)/$(CEXTDOC).html $(CEXTDOCSRC)
 
-$(HTMLDIR)/$(CEXTDOC).html: $(CEXTDOCSRC) katexinst
+$(HTMLDIR)/$(CEXTDOC).html: $(CEXTDOCSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CEXTDOC).txt
 
 cextpdf: $(PDFDIR)/$(CEXTDOC).pdf $(CEXTDOCSRC)
@@ -300,7 +300,7 @@ CXXSPECSRC = $(CXXSPEC).txt $(GENDEPENDS) \
 
 cxxhtml: $(HTMLDIR)/$(CXXSPEC).html $(CXXSPECSRC)
 
-$(HTMLDIR)/$(CXXSPEC).html: $(CXXSPECSRC) katexinst
+$(HTMLDIR)/$(CXXSPEC).html: $(CXXSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CXXSPEC).txt
 
 cxxpdf: $(PDFDIR)/$(CXXSPEC).pdf $(CXXSPECSRC)
@@ -324,7 +324,7 @@ CSPECSRC = $(CSPEC).txt $(GENDEPENDS) \
 
 chtml: $(HTMLDIR)/$(CSPEC).html $(CSPECSRC)
 
-$(HTMLDIR)/$(CSPEC).html: $(CSPECSRC) katexinst
+$(HTMLDIR)/$(CSPEC).html: $(CSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CSPEC).txt
 
 cpdf: $(PDFDIR)/$(CSPEC).pdf $(CSPECSRC)
@@ -348,7 +348,7 @@ CXX4OPENCLDOCSRC = $(CXX4OPENCLDOC).txt $(GENDEPENDS) \
 
 cxx4openclhtml: $(HTMLDIR)/$(CXX4OPENCLDOC).html $(CXX4OPENCLDOCSRC)
 
-$(HTMLDIR)/$(CXX4OPENCLDOC).html: $(CXX4OPENCLDOCSRC) katexinst
+$(HTMLDIR)/$(CXX4OPENCLDOC).html: $(CXX4OPENCLDOCSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS_NO_VERSION) $(ADOCHTMLOPTS) -o $@ $(CXX4OPENCLDOC).txt
 
 cxx4openclpdf: $(PDFDIR)/$(CXX4OPENCLDOC).pdf $(CXX4OPENCLDOCSRC)
@@ -372,7 +372,7 @@ ICDINSTSPECSRC = $(ICDINSTSPEC).txt \
 
 icdinsthtml: $(HTMLDIR)/$(ICDINSTSPEC).html $(ICDINSTSPECSRC)
 
-$(HTMLDIR)/$(ICDINSTSPEC).html: $(ICDINSTSPECSRC) katexinst
+$(HTMLDIR)/$(ICDINSTSPEC).html: $(ICDINSTSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(ICDINSTSPEC).txt
 
 icdinstpdf: $(PDFDIR)/$(ICDINSTSPEC).pdf $(ICDINSTSPECSRC)
@@ -462,7 +462,7 @@ MANHTML     = $(MANSOURCES:$(REFPATH)/%.txt=$(MANHTMLDIR)/%.html)
 buildmanpages: $(MANHTML)
 
 $(MANHTMLDIR)/%.html: KATEXDIR = ../../katex
-$(MANHTMLDIR)/%.html: $(REFPATH)/%.txt $(MANCOPYRIGHT) $(GENDEPENDS) katexinst
+$(MANHTMLDIR)/%.html: $(REFPATH)/%.txt $(MANCOPYRIGHT) $(GENDEPENDS) $(KATEXINST)
 	$(QUIET)$(MKDIR) $(MANHTMLDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 -a cross-file-links \
 	    $(ADOCMANOPTS) $(ADOCHTMLOPTS) -o $@ $<
