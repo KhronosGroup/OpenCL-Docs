@@ -939,6 +939,11 @@ class OutputGenerator:
 
             # Clear prefix for subsequent iterations
             prefix = ''
+
+        # If prefix was originally non-empty and the param has no elements
+        # (e.g. is nothing but text), preserve it.
+        paramdecl = prefix + paramdecl
+
         if aligncol == 0:
             # Squeeze out multiple spaces other than the indentation
             paramdecl = indent + ' '.join(paramdecl.split())
