@@ -78,7 +78,9 @@ ATTRIBOPTS_NO_VERSION	= -a revdate="$(SPECDATE)" \
 ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
 	       $(ATTRIBOPTS_NO_VERSION)
 
-ADOCEXTS	      = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb -r $(CURDIR)/config/spec-macros.rb
+ADOCEXTS	      = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb \
+	-r $(CURDIR)/config/spec-macros.rb \
+	-r $(CURDIR)/config/rouge_opencl.rb
 ADOCOPTS_NO_VERSION   = -d book $(ATTRIBOPTS_NO_VERSION) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
 ADOCCOMMONOPTS	      = -a apispec="$(CURDIR)/api" \
 			-a config="$(CURDIR)/config" \
