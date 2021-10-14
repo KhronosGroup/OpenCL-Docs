@@ -83,6 +83,7 @@ ADOCOPTS_NO_VERSION   = -d book $(ATTRIBOPTS_NO_VERSION) $(NOTEOPTS) $(VERBOSE) 
 ADOCCOMMONOPTS	      = -a apispec="$(CURDIR)/api" \
 			-a config="$(CURDIR)/config" \
 			-a cspec="$(CURDIR)/c" \
+			-a images="$(CURDIR)/images" \
 			$(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
 ADOCOPTS	      = -d book $(ADOCCOMMONOPTS)
 ADOCMANOPTS	      = -d manpage $(ADOCCOMMONOPTS)
@@ -453,7 +454,7 @@ $(REFPATH)/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(GENERATED)
 # running the recursive make, so it doesn't trigger twice
 manhtmlpages: $(REFPATH)/apispec.txt $(GENDEPENDS)
 	$(MAKE) -e buildmanpages
-	$(CP) $(MANDIR)/*.html $(MANDIR)/*.css $(MANDIR)/*.gif $(MANDIR)/*.jpg $(MANHTMLDIR)
+	$(CP) $(MANDIR)/*.html $(MANDIR)/*.css $(MANDIR)/*.gif $(MANHTMLDIR)
 	$(CP) $(REFPATH)/.htaccess $(REFPATH)/*.html $(MANHTMLDIR)
 
 MANHTMLDIR  = $(OUTDIR)/man/html
