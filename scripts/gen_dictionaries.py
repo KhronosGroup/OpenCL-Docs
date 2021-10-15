@@ -117,7 +117,7 @@ if __name__ == "__main__":
         # Skip Vendor Extension Enums
         vendor = enums.get('vendor')
         name = enums.get('name')    # special-case: enum block with KHR enums assigned to vendor
-        include_anyway = name == 'enums.4010'
+        include_anyway = name in ('enums.4010','ErrorCodes.1002')
         if not vendor or vendor == 'Khronos' or vendor == 'Multiple' or include_anyway:
             for enum in enums.findall('enum'):
                 name = enum.get('name')
