@@ -176,7 +176,7 @@ CL_COMMAND_SEMAPHORE_SIGNAL_KHR                             0x2043
 
 // TODO: This error code is already allocated.  Use -1141 instead?
 
-Following error codes can be returned by APIs introduced as part of this spec or the specs may depend on this:
+The following error codes can be returned by APIs introduced as part of this specification or the specifications that depend on this:
 [source]
 ----
 CL_INVALID_SEMAPHORE_KHR                                    -1142
@@ -229,7 +229,7 @@ Following new types are added:
 * {cl_semaphore_khr_TYPE} to represent semaphore objects.
 
 Note that above types can be extended in future based on the need for additional types of semaphore and properties required by them.
-The specifics of the same can be added as a newer version of this spec or by a separate spec that depends on this for basic semaphore support.
+The specifics of the same can be added as a newer version of this specification or by a separate specification that depends on this for basic semaphore support.
 
 === Description of new APIs added by this spec
 
@@ -430,7 +430,7 @@ being queried by _param_value_. If _param_value_size_ret_ is `NULL`, it is ignor
 
 | {CL_DEVICE_HANDLE_LIST_KHR}
   | {cl_device_id_TYPE}[]
-      | Returns list of OpenCL devices the semaphore is associated with.
+      | Returns the list of OpenCL devices the semaphore is associated with.
 |====
 
 {clGetSemaphoreInfoKHR} returns {CL_SUCCESS} if the information is queried successfully.
@@ -452,7 +452,7 @@ include::{generated}/api/protos/clReleaseSemaphoreKHR.txt[]
 
 _sema_object_ specifies the semaphore object to be released.
 
-The _sema_object_ reference count is incremented.
+The _sema_object_ reference count is decremented.
 
 {clReleaseSemaphoreKHR} returns {CL_SUCCESS} if the function is executed successfully.
 Otherwise, it returns one of the following errors:
@@ -472,21 +472,21 @@ To retain a semaphore object, call the function
 
 include::{generated}/api/protos/clRetainSemaphoreKHR.txt[]
 
-_sema_object_ specifies a valid semaphore object created.
+_sema_object_ specifies the semaphore object to be retained.
 
 increments the reference count of _sema_object_.
 
 {clRetainSemaphoreKHR} returns {CL_SUCCESS} if the function is executed successfully.
 Otherwise, it returns one of the following errors:
 
-* {CL_INVALID_SEMAPHORE_KHR} if sema_object is not a valid semaphore object.
+* {CL_INVALID_SEMAPHORE_KHR} if _sema_object_ is not a valid semaphore object.
 * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required by the OpenCL implementation on the device.
 * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources required by the OpenCL implementation on the host.
 
 [[cl_khr_semaphore-Sample-Code]]
 === Sample Code
 
-. Example for semaphore creation in single device context
+. Example for semaphore creation in a single device context
 +
 --
 [source]
@@ -494,10 +494,10 @@ Otherwise, it returns one of the following errors:
 // Get cl_devices of the platform.
 clGetDeviceIDs(..., &devices, &deviceCount);
 
-// Create cl_context with first just first device
+// Create cl_context with just first device
 context = clCreateContext(..., 1, devices, ...);
 
-// Create clSema of type cl_semaphore_khr usable on single device in the context device0
+// Create clSema of type cl_semaphore_khr usable on single device in the context
 
 cl_semaphore_properties_khr sema_props[] =
         {(cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR,
@@ -512,7 +512,7 @@ cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
 ----
 --
 
-. Example for semaphore creation for single device in multi-device context
+. Example for semaphore creation for a single device in a multi-device context
 +
 --
 [source]
@@ -523,7 +523,7 @@ clGetDeviceIDs(..., &devices, &deviceCount);
 // Create cl_context with first two devices
 clCreateContext(..., 2, devices, ...);
 
-// Create clSema of type cl_semaphore_khr usable only on device0
+// Create clSema of type cl_semaphore_khr usable only on devices[0]
 
 cl_semaphore_properties_khr sema_props[] =
         {(cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR,
@@ -633,7 +633,7 @@ while (true) {
     else {
         // Do something else
     }
-    // (not shown) Launch other work that waits on  'clSema'
+    // (not shown) Launch other work that waits on 'clSema'
 }
 ----
 --

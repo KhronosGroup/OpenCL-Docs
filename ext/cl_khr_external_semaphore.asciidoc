@@ -198,7 +198,7 @@ Following new enums are added to the list of supported _param_names_ by {clGetDe
 
 {clGetDeviceInfo} when called with _param_name_ {CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR} returns a list of external semaphore handle types supported for importing.
 
-{clGetDeviceInfo} when called with _param_name_ {CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR} returns a list of external semaphore handle types supported for exporting/
+{clGetDeviceInfo} when called with _param_name_ {CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR} returns a list of external semaphore handle types supported for exporting.
 
 One of the above two queries {CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR} and {CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR} must return a non-empty list indicating support for at least one of the valid semaphore handles types either for import or for export or both.
 
@@ -232,7 +232,7 @@ Add to the list of error conditions for {clCreateSemaphoreWithPropertiesKHR}:
 //{cl_semaphore_khr_TYPE} being created will belong to.
 * {CL_INVALID_DEVICE} if one or more devices identified by properties {CL_DEVICE_HANDLE_LIST_KHR} can not import the requested external semaphore handle type.
 
-{clCreateSemaphoreWithPropertiesKHR} may return NULL value on some implementations if _sema_props_ does an external semaphore handle type to import.
+{clCreateSemaphoreWithPropertiesKHR} may return a NULL value on some implementations if _sema_props_ does not contain an external semaphore handle type to import.
 Such implementations are required to return a valid semaphore when a supported external memory handle type and valid external semaphore handle is specified.
 
 Add to the list of supported _param_names_ by {clGetSemaphoreInfoKHR}:
@@ -274,7 +274,7 @@ Add to the list of supported _param_names_ by {clGetSemaphoreInfoKHR}:
 | {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR}
   | {cl_external_semaphore_handle_type_khr_TYPE}[]
       | Returns the list of external semaphore handle types that may be used for
-        exporting. This size of this query may be 0 indicating that this
+        exporting. The size of this query may be 0 indicating that this
         semaphore does not support any handle types for exporting.
 |====
 
@@ -356,7 +356,7 @@ copy transference has the same side effects on the source semaphore's payload as
 executing a semaphore wait operation. If the semaphore was using a temporarily
 imported payload, the semaphore's prior permanent payload will be restored.
 
-Please, refer to handle specific specs for more details on transference and
+Please refer to handle specific specifications for more details on transference and
 permanence requirements specific to handle type.
 
 === Descriptions of External Semaphore Handle Types
@@ -423,7 +423,7 @@ When waiting on semaphores using {clEnqueueWaitSemaphoresKHR} or signaling semap
 then the _sema_payload_list_ should point to a list of _num_sema_objects_ payload values for each cl_semaphore in _sema_objects_. 
 However, the payload values corresponding to semaphores with type CL_SEMAPHORE_TYPE_BINARY_KHR can be set to 0 or will be ignored.
 
-*clEnqueueWaitSemaphoresKHR* and *clEnqueueSignalSemaphoresKHR* may return *CL_INVALID_VALUE* if _sema_objects_ list has one or more cl_semaphore obtained from *CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR* and _sema_payload_list is NULL.
+*clEnqueueWaitSemaphoresKHR* and *clEnqueueSignalSemaphoresKHR* may return *CL_INVALID_VALUE* if _sema_objects_ list has one or more cl_semaphore obtained from *CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR* and _sema_payload_list_ is NULL.
 
 
 
@@ -466,7 +466,7 @@ For these extensions, importing a semaphore payload from Windows handles does no
 [[cl_khr_external_semaphore-Sample-Code]]
 === Sample Code
 
-. Example for importing semaphore created by other API in OpenCL in single-device context.
+. Example for importing a semaphore created by another API in OpenCL in a single-device context.
 +
 --
 [source]
@@ -478,10 +478,10 @@ clGetDeviceIDs(..., &devices, &deviceCount);
 clCreateContext(..., 1, devices, ...);
     
 // Obtain fd/win32 or similar handle for external semaphore to be imported
-// from other API.
+// from the other API.
 int fd = getFdForExternalSemaphore();
 
-// Create clSema of type cl_semaphore_khr usable on only available device0
+// Create clSema of type cl_semaphore_khr usable on the only available device
 // assuming the semaphore was imported from the same device.
 
 cl_semaphore_properties_khr sema_props[] = 
@@ -499,7 +499,7 @@ cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
 
 ----
 --
-. Example for importing semaphore created by other API in OpenCL in multi-device context for single device usage.
+. Example for importing a semaphore created by another API in OpenCL in a multi-device context for single device usage.
 +
 --
 [source]
@@ -511,10 +511,10 @@ clGetDeviceIDs(..., &devices, &deviceCount);
 clCreateContext(..., 2, devices, ...);
     
 // Obtain fd/win32 or similar handle for external semaphore to be imported
-// from other API.
+// from the other API.
 int fd = getFdForExternalSemaphore();
 
-// Create clSema of type cl_semaphore_khr usable only on device1
+// Create clSema of type cl_semaphore_khr usable only on devices[1]
 // assuming the semaphore was imported from the same device.
 
 cl_semaphore_properties_khr sema_props[] = 
@@ -534,12 +534,12 @@ cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
 
 ----
 --
-. Example for synchronization using semaphore created by other API and imported in OpenCL
+. Example for synchronization using a semaphore created by another API and imported in OpenCL
 +
 --
 [source]
 ----
-// Create clSema usinge one of the above examples of external semaphore creation.
+// Create clSema using one of the above examples of external semaphore creation.
 
 int errcode_ret = 0;
 cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
@@ -570,7 +570,7 @@ while (true) {
                                  /*event_wait_list*/         NULL,
                                  /*event*/                   NULL);
 
-    // (not shown) Launch work in other API that waits on  'clSema'
+    // (not shown) Launch work in the other API that waits on 'clSema'
 
 }
 ----
@@ -647,7 +647,7 @@ while (true) {
                                  /*event_wait_list*/         NULL,
                                  /*event*/                   NULL);
 
-    // (not shown) Launch work in other API that waits on  'clSema'
+    // (not shown) Launch work in the other API that waits on 'clSema'
 
 }
 ----
