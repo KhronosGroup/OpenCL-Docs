@@ -44,6 +44,7 @@ if __name__ == "__main__":
 
     linkFileName   = args.directory + '/api-dictionary.asciidoc'
     nolinkFileName = args.directory + '/api-dictionary-no-links.asciidoc'
+    typeFileName   = args.directory + '/api-types.txt'
 
     specpath = args.registry
     #specpath = "https://raw.githubusercontent.com/KhronosGroup/OpenCL-Registry/master/xml/cl.xml"
@@ -56,6 +57,7 @@ if __name__ == "__main__":
     nolinkFile = open(nolinkFileName, 'w')
     linkFile.write( GetHeader() )
     nolinkFile.write( GetHeader() )
+    typeFile = open(typeFileName, 'w')
 
     # Generate the API functions dictionaries:
 
@@ -239,6 +241,11 @@ if __name__ == "__main__":
             nolinkFile.write('endif::[]\n')
             nolinkFile.write('\n')
 
+            # Print the type list to a file for custom syntax highlighting.
+            # For this we only care about CL types, not base types.
+            if category != 'basetype':
+                typeFile.write('        ' + name + '\n')
+
             numberOfTypes = numberOfTypes + 1
 
     print('Found ' + str(numberOfTypes) + ' API types.')
@@ -247,7 +254,9 @@ if __name__ == "__main__":
     linkFile.close()
     nolinkFile.write( GetFooter() )
     nolinkFile.close()
+    typeFile.close()
 
     print('Successfully generated file: ' + linkFileName)
     print('Successfully generated file: ' + nolinkFileName)
+    print('Successfully generated file: ' + typeFileName)
 
