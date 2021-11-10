@@ -5,7 +5,7 @@ module Rouge
   module Lexers
     load_lexer 'cpp.rb'
 
-    class OpencL < Cpp
+    class OpenCL < Cpp
       title "OpenCL"
       desc "The OpenCL standard for heterogeneous computing from the Khronos Group"
 
