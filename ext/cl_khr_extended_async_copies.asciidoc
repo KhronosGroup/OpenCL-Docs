@@ -3,9 +3,9 @@
 // http://creativecommons.org/licenses/by/4.0/
 
 [[cl_khr_extended_async_copies]]
-== Extended Async Copies (Provisional)
+== Extended Async Copies
 
-This section describes the *cl_khr_extended_async_copies* provisional extension.
+This section describes the *cl_khr_extended_async_copies* extension.
 This extension augments built-in asynchronous copy functions to OpenCL C
 to support more patterns:
 
@@ -20,6 +20,8 @@ to support more patterns:
 |====
 | *Date*     | *Version* | *Description*
 | 2020-04-21 | 0.9.0     | First assigned version (provisional).
+| 2020-09-06 | 0.9.1     | Elements-based proposal update.
+| 2021-11-10 | 1.0.0     | First non-provisional version.
 |====
 
 [[cl_khr_extended_async_copies-additions-to-chapter-6-of-the-opencl-specification]]
@@ -33,11 +35,11 @@ Note that *async_work_group_strided_copy* is a special case of
 *async_work_group_copy_2D2D*, namely one which copies a single column to a
 single line or vice versa.
 For example: +
-`async_work_group_strided_copy(dst, src, num_gentypes, src_stride)` is equal to +
-`async_work_group_copy_2D2D(dst, src, 1, num_gentypes, src_stride-1, 1)`
+`async_work_group_strided_copy(dst, src, num_gentypes, src_stride, event)` is equal to
+`async_work_group_copy_2D2D(dst, 0, src, 0, sizeof(gentype), 1, num_gentypes, src_stride, 1, event)`
 
-These new built-in functions support the same `gentype` generic type names as
-the standard asynchronous copy functions unless otherwise stated.
+These new built-in functions support arbitrary `gentype`-based buffers by
+casting pointers to `void *`.
 
 [cols="1a,1",options="header",]
 |=======================================================================
@@ -45,34 +47,49 @@ the standard asynchronous copy functions unless otherwise stated.
 |[source,opencl_c]
 ----
 event_t async_work_group_copy_2D2D(
-    __local gentype *dst,
-    const __global gentype *src,
+    __local void *dst,
+    size_t dst_offset,
+    const __global void *src,
+    size_t src_offset,
+    size_t num_bytes_per_element,
     size_t num_elements_per_line,
     size_t num_lines,
-    size_t src_stride,
-    size_t dst_stride,
+    size_t src_total_line_length,
+    size_t dst_total_line_length,
     event_t event)
 
 event_t async_work_group_copy_2D2D(
-    __global gentype *dst,
-    const __local gentype *src,
+    __global void *dst,
+    size_t dst_offset,
+    const __local void *src,
+    size_t src_offset,
+    size_t num_bytes_per_element,
     size_t num_elements_per_line,
     size_t num_lines,
-    size_t src_stride,
-    size_t dst_stride,
+    size_t src_total_line_length,
+    size_t dst_total_line_length,
     event_t event)
 ----
-| Perform an asynchronous copy of _num_lines_ lines from _src_ to _dst_.  Each line
-contains _num_elements_per_line_ `gentype` elements.  After each line of
-transfer, _src_ address is incremented by
-(_src_stride_ + _num_elements_per_line_) `gentype` elements,
-_dst_ address is incremented by
-(_dst_stride_ + _num_elements_per_line_) `gentype` elements
+| Perform an async copy of (_num_elements_per_line_ * _num_lines_) elements
+of size _num_bytes_per_element_ from
+(_src_ + (_src_offset_ * _num_bytes_per_element_)) to
+(_dst_ + (_dst_offset_ * _num_bytes_per_element_)). All pointer arithmetic
+is performed with implicit casting to `char *` by the implementation.
+Each line contains _num_elements_per_line_ elements of size
+_num_bytes_per_element_.
+After each line of transfer, _src_ address is incremented by
+_src_total_line_length_ elements
+(aka _src_total_line_length_ * _num_bytes_per_element_ bytes),
+_dst_ address is incremented by _dst_total_line_length_ elements
+(aka _dst_total_line_length_ * _num_bytes_per_element_ bytes),
 for the next line of transfer.
 
-For these functions, the stride describes the number of elements between
-the *end* of the current line and the *beginning* of the next line, i.e.,
-without overlap.
+All _src_offset_, _dst_offset_, _src_total_line_length_
+and _dst_total_line_length_ values are expressed in elements.
+
+Both _src_total_line_length_ and _dst_total_line_length_ describe
+the number of elements between the *beginning* of the current line
+and the *beginning* of the next line.
 
 Returns an event object that can be used by *wait_group_events* to wait
 for the async copy to finish.  The _event_ argument can also be used to
@@ -91,6 +108,15 @@ _num_elements_per_line_ or _src_stride_ or _dst_stride_ values cause
 the _src_ or _dst_ addresses to exceed the upper bounds of the address
 space during the copy.
 
+The behavior of *async_work_group_copy_2D2D* is undefined if the
+_src_total_line_length_ or _dst_total_line_length_ or _src_offset_
+or _dst_offset_ values cause the _src_ or _dst_ addresses to exceed
+the upper bounds of the address space during the copy.
+
+The behavior of *async_work_group_copy_2D2D* is undefined if the
+_src_total_line_length_ or _dst_total_line_length_ values are smaller
+than _num_elements_per_line_, i.e. overlapping of lines is undefined.
+
 The async copy is performed by all work-items in a work-group and this
 built-in function must therefore be encountered by all work-items in a
 work-group executing the kernel with the same argument values;
@@ -99,39 +125,62 @@ otherwise the results are undefined.
 |[source,opencl_c]
 ----
 event_t async_work_group_copy_3D3D(
-    __local gentype *dst,
-    const __global gentype *src,
+    __local void *dst,
+    size_t dst_offset,
+    const __global void *src,
+    size_t src_offset,
+    size_t num_bytes_per_element,
     size_t num_elements_per_line,
     size_t num_lines,
-    size_t src_line_stride,
-    size_t dst_line_stride,
     size_t num_planes,
-    size_t src_plane_stride,
-    size_t dst_plane_stride,
+    size_t src_total_line_length,
+    size_t src_total_plane_area,
+    size_t dst_total_line_length,
+    size_t dst_total_plane_area,
     event_t event)
 
 event_t async_work_group_copy_3D3D(
-    __global gentype *dst,
-    const __local gentype *src,
+    __global void *dst,
+    size_t dst_offset,
+    const __local void *src,
+    size_t src_offset,
+    size_t num_bytes_per_element,
     size_t num_elements_per_line,
     size_t num_lines,
-    size_t src_line_stride,
-    size_t dst_line_stride,
     size_t num_planes,
-    size_t src_plane_stride,
-    size_t dst_plane_stride,
+    size_t src_total_line_length,
+    size_t src_total_plane_area,
+    size_t dst_total_line_length,
+    size_t dst_total_plane_area,
     event_t event)
 ----
-| Perform an async copy of _num_planes_ times _num_lines_ lines from _src_ to
-_dst_ arranged in _num_planes_ planes.  Each plane contains _num_lines_
-lines.  Each line contains _num_elements_per_line_ `gentype` elements.
+| Perform an async copy of
+((_num_elements_per_line_ * _num_lines_) * _num_planes_) elements
+of size _num_bytes_per_element_ from
+(_src_ + (_src_offset_ * _num_bytes_per_element_)) to
+(_dst_ + (_dst_offset_ * _num_bytes_per_element_)),
+arranged in _num_planes_ planes. All pointer arithmetic
+is performed with implicit casting to `char *` by the implementation.
+Each plane contains _num_lines_ lines.
+Each line contains _num_elements_per_line_ elements.
 After each line of transfer, _src_ address is incremented by
-(_src_line_stride_ + _num_elements_per_line_) `gentype` elements, _dst_
-address is incremented by (_dst_line_stride_ + _num_elements_per_line_)
-`gentype` elements for the next line of transfer.  For the last line of a
-plane, an additional _src_plane_stride_ `gentype` elements is added to
-_src_ address, and an additional _dst_plane_stride_ `gentype` elements is
-added to _dst_ address.
+_src_total_line_length_ elements
+(aka _src_total_line_length_ * _num_bytes_per_element_ bytes),
+_dst_ address is incremented by _dst_total_line_length_ elements
+(aka _dst_total_line_length_ * _num_bytes_per_element_ bytes),
+for the next line of transfer.
+
+All _src_offset_, _dst_offset_, _src_total_line_length_,
+_dst_total_line_length_, _src_total_plane_area_ and
+_dst_total_plane_area_ values are expressed in elements.
+
+Both _src_total_line_length_ and _dst_total_line_length_ describe
+the number of elements between the *beginning* of the current line
+and the *beginning* of the next line.
+
+Both _src_total_plane_area_ and _dst_total_plane_area_ describe
+the number of elements between the *beginning* of the current plane
+and the *beginning* of the next plane.
 
 Returns an event object that can be used by *wait_group_events* to wait
 for the async copy to finish.  The _event_ argument can also be used to
@@ -145,10 +194,19 @@ argument will be returned.
 This function does not perform any implicit synchronization of source
 data such as using a *barrier* before performing the copy.
 
-The behavior of *async_work_group_copy_3D3D* is undefined if any of
-_num_elements_per_line_, _src_line_stride_, _dst_line_stride_,
-_src_plane_stride_ or _dst_plane_stride_ values cause the _src_ or _dst_
-addresses to exceed the upper bounds of the address space during the copy.
+The behavior of *async_work_group_copy_3D3D* is undefined if the
+_src_total_size_ or _dst_total_size_ or _src_offset_
+or _dst_offset_ values cause the _src_ or _dst_ addresses to exceed
+the upper bounds of the address space during the copy.
+
+The behavior of *async_work_group_copy_3D3D* is undefined if the
+_src_total_line_length_ or _dst_total_line_length_ values are smaller
+than _num_elements_per_line_, i.e. overlapping of lines is undefined.
+
+The behavior of *async_work_group_copy_3D3D* is undefined if
+_src_total_plane_area_ is smaller than (_num_lines_ * _src_total_line_length_),
+or _dst_total_plane_area_ is smaller than (_num_lines_ * _dst_total_line_length_),
+i.e. overlapping of planes is undefined.
 
 The async copy is performed by all work-items in a work-group and this
 built-in function must therefore be encountered by all work-items in a
@@ -156,5 +214,3 @@ work-group executing the kernel with the same argument values;
 otherwise the results are undefined.
 
 |=======================================================================
-
-NOTE: This is a preview of an OpenCL provisional extension specification that has been Ratified under the Khronos Intellectual Property Framework. It is being made publicly available prior to being uploaded to the Khronos registry to enable review and feedback from the community. If you have feedback please create an issue on https://github.com/KhronosGroup/OpenCL-Docs/
