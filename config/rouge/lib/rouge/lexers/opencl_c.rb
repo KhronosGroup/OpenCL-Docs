@@ -68,6 +68,9 @@ module Rouge
         as_short2
         as_short8
         as_uint
+        async_work_group_copy_fence
+        async_work_group_copy_2D2D
+        async_work_group_copy_3D3D
         atomic_compare_exchange_strong
         atomic_compare_exchange_strong_explicit
         atomic_compare_exchange_weak

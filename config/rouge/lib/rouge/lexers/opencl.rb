@@ -68,6 +68,7 @@ module Rouge
         cl_kernel
         cl_event
         cl_sampler
+        cl_semaphore_khr
         cl_bool
         cl_bitfield
         cl_properties
@@ -140,6 +141,20 @@ module Rouge
         cl_command_queue_capabilities_intel
         cl_device_feature_capabilities_intel
         cl_device_integer_dot_product_capabilities_khr
+        cl_semaphore_properties_khr
+        cl_semaphore_info_khr
+        cl_semaphore_type_khr
+        cl_semaphore_payload_khr
+        cl_external_semaphore_handle_type_khr
+        cl_external_memory_handle_type_khr
+        cl_device_command_buffer_capabilities_khr
+        cl_command_buffer_khr
+        cl_sync_point_khr
+        cl_command_buffer_info_khr
+        cl_command_buffer_state_khr
+        cl_command_buffer_properties_khr
+        cl_ndrange_kernel_command_properties_khr
+        cl_mutable_command_khr
         cl_dx9_surface_info_khr
         cl_motion_estimation_desc_intel
         cl_mem_ext_host_ptr
