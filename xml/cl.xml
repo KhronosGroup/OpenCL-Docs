@@ -250,6 +250,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_uint</type>          <name>cl_command_buffer_structure_type_khr</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_fp_atomic_capabilities_ext</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_image_requirements_info_ext</name>;</type>
+        <type category="define">typedef <type>cl_bitfield</type>      <name>cl_platform_command_buffer_capabilities_khr</name>;</type>
 
             <comment>Structure types</comment>
         <type category="struct" name="cl_dx9_surface_info_khr">
@@ -1292,20 +1293,29 @@ server's OpenCL/api-docs repository.
             <unused start="2" end="9999"/>
     </enums>
 
+    <enums name="cl_platform_command_buffer_capabilities_khr " vendor="Khronos" type="bitmask">
+        <enum bitpos="0"            name="CL_COMMAND_BUFFER_PLATFORM_UNIVERSAL_SYNC_KHR"/>
+        <enum bitpos="1"            name="CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR"/>
+        <enum bitpos="2"            name="CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR"/>
+            <unused start="3" end="31"/>
+    </enums>
+
     <enums name="cl_device_command_buffer_capabilities_khr " vendor="Khronos" type="bitmask">
         <enum bitpos="0"            name="CL_COMMAND_BUFFER_CAPABILITY_KERNEL_PRINTF_KHR"/>
         <enum bitpos="1"            name="CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR"/>
         <enum bitpos="2"            name="CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR"/>
         <enum bitpos="3"            name="CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR"/>
-            <unused start="4" end="5" comment="Used by future command-buffer extensions"/>
+        <enum bitpos="4"            name="CL_COMMAND_BUFFER_CAPABILITY_MULTIPLE_QUEUE_KHR"/>
+            <unused start="5" end="6" comment="Used by future command-buffer extensions"/>
             <unused start="6" end="31"/>
     </enums>
 
     <enums name="cl_command_buffer_flags_khr" vendor="Khronos" type="bitmask">
         <enum bitpos="0"            name="CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR"/>
         <enum bitpos="1"            name="CL_COMMAND_BUFFER_MUTABLE_KHR"/>
-        <unused start="2" end="2" comment="Used by future command-buffer extensions"/>
-            <unused start="3" end="31"/>
+        <enum bitpos="2"            name="CL_COMMAND_BUFFER_DEVICE_SIDE_SYNC_KHR"/>
+            <unused start="3" end="4" comment="Used by future command-buffer extensions"/>
+            <unused start="4" end="31"/>
     </enums>
 
     <enums name="cl_command_buffer_state_khr" vendor="Khronos">
@@ -1366,7 +1376,7 @@ server's OpenCL/api-docs repository.
         <enum value="0x0906"        name="CL_PLATFORM_NUMERIC_VERSION"/>
         <enum value="0x0907"        name="CL_PLATFORM_EXTENSIONS_WITH_VERSION_KHR"/>
         <enum value="0x0907"        name="CL_PLATFORM_EXTENSIONS_WITH_VERSION"/>
-            <unused start="0x0908" end="0x0908" comment="Reserved for MR 192"/>
+        <enum value="0x0908"        name="CL_PLATFORM_COMMAND_BUFFER_CAPABILITIES_KHR"/>
             <unused start="0x0909" end="0x091F" comment="Reserved to Khronos"/>
         <enum value="0x0920"        name="CL_PLATFORM_ICD_SUFFIX_KHR"/>
             <unused start="0x0921" end="0x09FF" comment="Vendor extensions"/>
@@ -1741,7 +1751,8 @@ server's OpenCL/api-docs repository.
         <enum value="0x12A8"             name="CL_COMMAND_COMMAND_BUFFER_KHR"/>
         <enum value="0x12A9"             name="CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR"/>
         <enum value="0x12AA"             name="CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR"/>
-            <unused start="0x12AB" end="0x12AC" comment="Used by future command-buffer extensions"/>
+        <enum value="0x12AB"             name="CL_DEVICE_COMMAND_BUFFER_NUM_SYNC_DEVICES_KHR"/>
+        <enum value="0x12AC"             name="CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR"/>
         <enum value="0x12AD"             name="CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR"/>
             <unused start="0x12AE" end="0x12AF" comment="Used by future command-buffer extensions"/>
         <enum value="0x12B0"             name="CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR"/>
@@ -3190,6 +3201,17 @@ server's OpenCL/api-docs repository.
             <param><type>size_t</type>                       <name>param_value_size</name></param>
             <param><type>void</type>*                        <name>param_value</name></param>
             <param><type>size_t</type>*                      <name>param_value_size_ret</name></param>
+        </command>
+        <command>
+            <proto><type>cl_command_buffer_khr</type>         <name>clRemapCommandBufferKHR</name></proto>
+            <param><type>cl_command_buffer_khr</type>         <name>command_buffer</name></param>
+            <param><type>cl_bool</type>                       <name>automatic</name></param>
+            <param><type>cl_uint</type>                       <name>num_queues</name></param>
+            <param>const <type>cl_command_queue</type>*       <name>queues</name></param>
+            <param><type>cl_uint</type>                       <name>num_handles</name></param>
+            <param>const <type>cl_mutable_command_khr</type>* <name>handles</name></param>
+            <param><type>cl_mutable_command_khr</type>*       <name>handles_ret</name></param>
+            <param><type>cl_int</type>*                       <name>errcode_ret</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_0">
             <proto><type>cl_int</type>                     <name>clSetContentSizeBufferPoCL</name></proto>
@@ -7244,6 +7266,35 @@ server's OpenCL/api-docs repository.
             <require comment="cl_mem_properties">
                 <enum name="CL_MEM_LOCALLY_UNCACHED_RESOURCE_INTEL"/>
                 <enum name="CL_MEM_DEVICE_ID_INTEL"/>
+            </require>
+        </extension>
+        <extension name="cl_khr_command_buffer_multi_device" requires="cl_khr_command_buffer" comment="in sync with rev 16" supported="opencl">
+            <require>
+                <type name="CL/cl.h"/>
+            </require>
+            <require>
+                <type name="cl_platform_command_buffer_capabilities_khr"/>
+            </require>
+            <require comment="cl_platform_info">
+                <enum name="CL_PLATFORM_COMMAND_BUFFER_CAPABILITIES_KHR"/>
+            </require>
+            <require comment="cl_platform_command_buffer_capabilities_khr - bitfield">
+                <enum name="CL_COMMAND_BUFFER_PLATFORM_UNIVERSAL_SYNC_KHR"/>
+                <enum name="CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR"/>
+                <enum name="CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR"/>
+            </require>
+            <require comment="cl_device_info">
+                <enum name="CL_DEVICE_COMMAND_BUFFER_NUM_SYNC_DEVICES_KHR"/>
+                <enum name="CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR"/>
+            </require>
+            <require comment="cl_device_command_buffer_capabilities_khr - bitfield">
+                <enum name="CL_COMMAND_BUFFER_CAPABILITY_MULTIPLE_QUEUE_KHR"/>
+            </require>
+            <require comment="cl_command_buffer_flags_khr - bitfield">
+               <enum name="CL_COMMAND_BUFFER_DEVICE_SIDE_SYNC_KHR"/>
+            </require>
+            <require>
+                <command name="clRemapCommandBufferKHR"/>
             </require>
         </extension>
     </extensions>
