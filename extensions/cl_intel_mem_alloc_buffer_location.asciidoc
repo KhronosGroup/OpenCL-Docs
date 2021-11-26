@@ -1,0 +1,152 @@
+cl_intel_mem_alloc_buffer_location
+=============================
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
+
+Name Strings
+------------
+
++cl_intel_mem_alloc_buffer_location+
+
+Contact
+-------
+
+Kris Kang, Intel (kris 'dot' kang 'at' intel 'dot' com)
+
+Contributors
+------------
+
+* Sherry Yuan, Intel
+* Peter Colberg, Intel
+* Zibai Wang, Intel
+* Tanner Young-Schultz, Intel
+* Ben Ashbaugh, Intel
+* Kris Kang, Intel
+
+Notice
+------
+
+Copyright (c) 2020-2021 Intel Corporation. All rights reserved.
+
+Status
+------
+
+Final Draft
+
+Version
+-------
+
+[width="40%",cols="25,25"]
+|========================================
+| Last Modified | 2021-11-26
+| Revision      | 1
+|========================================
+
+Dependencies
+------------
+
+This extension is written against the OpenCL Specification Version 1.0, Revision 48.
+
+This extension requires OpenCL 1.0 or later and the cl_intel_create_buffer_with_properties extension.
+
+Overview
+--------
+
+On FPGA, memory can be physically idsjoint. A user might have DDRs, QDRs, SDRs plugged into the board. The different global memory type are specified in board_spec.xml. For example
+
+[source,xml]
+----
+<!-- DDR4-2400 -->
+<global_mem name="DDR" max_bandwidth="19200" interleaved_bytes="1024" config_addr="0x018">
+    <interface name="board" port="kernel_mem0" type="slave" width="512" maxburst="16" address="0x0" size="0x8000000" latency="240"/>
+</global_mem>
+
+<!-- QDR -->
+<global_mem name="QDR" max_bandwidth="19200" interleaved_bytes="1024" config_addr="0x024">
+    <interface name="board" port="kernel_mem0" type="slave" width="512" maxburst="16" address="0x8000000" size="0x8000000" latency="120"/>
+</global_mem>
+----
+
+This USM extension allows user to explicitly specify where the device memory should be allocated by passing in ID of the buffer location, where ID is the index of the global memory type as specified in the board_spec.xml
+
+Example Usage
+
+[source,c]
+----
+cl_mem_properties_intel property[3] = {
+    CL_MEM_ALLOC_BUFFER_LOCATION_INTEL, 0,
+    0};
+void *test_ptr = clDeviceMemAllocINTEL(m_context, m_device[0], &(property[0]), 8, alignment, &status);
+----
+
+Likewise for other memory allocation types
+
+Then user can query where the memory is allocated by passing it into *clGetMemAllocInfoINTEL*
+
+[source,c]
+----
+clGetMemAllocInfoINTEL(context, ptr, CL_MEM_ALLOC_BUFFER_LOCATION_INTEL, sizeof(cl_uint), param_value, param_value_ret)
+----
+
+Should return 0 given the previous allocation.
+
+New API Functions
+-----------------
+
+None.
+
+New API Enums
+-------------
+
+Accepted USM property for the _properties_ parameter to *clDeviceMemAllocINTEL*, *clSharedMemAllocINTEL*, *clHostMemAllocINTEL* to specify requested global memory type ID and *clGetMemAllocInfoINTEL* to get the location of allocated bu:
+
+[source,c]
+----
+#define CL_MEM_ALLOC_BUFFER_LOCATION_INTEL    0x419E
+----
+
+Modifications to the OpenCL API Specification
+---------------------------------------------
+
+(Add Table 5.X: *List of supported USM extensions*) ::
++
+
+[cols="1,1,4",options="header",width = "90%"]
+|====
+| cl_mem_properties_intel enum
+| Property value
+| Description
+
+| +CL_MEM_ALLOC_BUFFER_LOCATION_INTEL+
+| +cl_uint+
+| Identifies the ID of global memory type to which the memory should be allocated. The range of legal values is defined in board package. If the value is not valid, or the implementation is unable to allocate memory in the requested memory type, an error will be emitted as the ID will be out of range.
+|====
+
+
+Issues
+------
+
+None.
+
+Revision History
+----------------
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1|2020-05-29|Kris Kang|*Initial public release*
+|========================================
