@@ -734,6 +734,45 @@ Otherwise, it will return one of the following error values:
 
 |====
 
+==== Specifying Which Global Memory Type To Allocate Device Memory
+
+On FPGA, memory can be physically disjoint. A user might have DDRs, QDRs, SDRs plugged into the board. The different global memory type are specified in board_spec.xml. For example
+
+[source,xml]
+----
+<!-- DDR4-2400 -->
+<global_mem name="DDR" max_bandwidth="19200" interleaved_bytes="1024" config_addr="0x018">
+    <interface name="board" port="kernel_mem0" type="slave" width="512" maxburst="16" address="0x0" size="0x8000000" latency="240"/>
+</global_mem>
+<!-- QDR -->
+<global_mem name="QDR" max_bandwidth="19200" interleaved_bytes="1024" config_addr="0x024">
+    <interface name="board" port="kernel_mem0" type="slave" width="512" maxburst="16" address="0x8000000" size="0x8000000" latency="120"/>
+</global_mem>
+----
+
+This USM extension allows user to explicitly specify where the device memory should be allocated by passing in ID of the buffer location, where ID is the index of the global memory type as specified in the board_spec.xml
+
+Example Usage
+
+[source,c]
+----
+cl_mem_properties_intel property[3] = {
+    CL_MEM_ALLOC_BUFFER_LOCATION_INTEL, 0,
+    0};
+void *test_ptr = clDeviceMemAllocINTEL(m_context, m_device[0], &(property[0]), 8, alignment, &status);
+----
+
+Likewise for other memory allocation types
+
+Then user can query where the memory is allocated by passing it into *clGetMemAllocInfoINTEL*
+
+[source,c]
+----
+clGetMemAllocInfoINTEL(context, ptr, CL_MEM_ALLOC_BUFFER_LOCATION_INTEL, sizeof(cl_uint), param_value, param_value_ret)
+----
+
+Should return 0 given the previous allocation.
+
 ==== Using Unified Shared Memory with Kernels
 
 The function
