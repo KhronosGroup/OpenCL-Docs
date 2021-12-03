@@ -100,13 +100,12 @@ conversion (`OpenCL 3.0 s6.7.9`).
 
 [source,cpp]
 ------------
-__global const int& f(__global float &ref) {
-  return ref; // error reference to global address space object cannot bind
-              // to a temporary object created in __private  address space.
-}
-const int& f(float &ref) {
-  return ref; // legal - reference to generic/__private address space object can
-              // bind to a temporary object created in __private  address space.
+void f(float &ref, __global float &globref) {
+  const int& tmp = ref; // legal - reference to generic/__private address space object can
+                        // bind to a temporary object created in __private  address space.
+
+  __global const int& globtmp = globref; // error reference to global address space object cannot bind
+                                         // to a temporary object created in __private  address space.
 }
 ------------
 
@@ -248,15 +247,19 @@ diagnostic.
 [source,cpp]
 ------------
 struct C {
+  C() __local {};
+  C() __private {};
+  constexpr C() __constant {};
+
   void foo() __local;
   void foo(); // This is implicitly qualified by generic address space
               // if it is supported otherwise by '__private'.
 };
 
 __kernel void bar() {
-  __local C c1;
-  __private C c2;
-  __constant C c3;
+  __local C c1;      // will resolve to the first constructor overload.
+  __private C c2;    // will resolve to the second constructor overload.
+  __constant C c3{}; // will resolve to the third constructor overload.
   c1.foo(); // will resolve to the first 'foo'.
   c2.foo(); // will resolve to the second 'foo'.
   c3.foo(); // error due to mismatching address spaces - can't convert to
