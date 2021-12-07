@@ -116,54 +116,50 @@ if __name__ == "__main__":
     numberOfEnums = 0
 
     for enums in spec.findall('enums'):
-        # Skip Vendor Extension Enums
-        vendor = enums.get('vendor')
-        name = enums.get('name')    # special-case: enum block with KHR enums assigned to vendor
-        include_anyway = name in ('enums.4010','ErrorCodes.1002')
-        if not vendor or vendor == 'Khronos' or vendor == 'Multiple' or include_anyway:
-            for enum in enums.findall('enum'):
-                name = enum.get('name')
-                #print('found enum: ' + name)
+        name = enums.get('name')
+        for enum in enums.findall('enum'):
+            name = enum.get('name')
+            #print('found enum: ' + name)
 
-                # Create a variant of the name that precedes underscores with
-                # "zero width" spaces.  This causes some long names to be
-                # broken at more intuitive places.
-                htmlName = name[:3] + name[3:].replace("_", "_<wbr>")
-                otherName = name[:3] + name[3:].replace("_", "_&#8203;")
+            # Create a variant of the name that precedes underscores with
+            # "zero width" spaces.  This causes some long names to be
+            # broken at more intuitive places.
+            htmlName = name[:3] + name[3:].replace("_", "_<wbr>")
+            otherName = name[:3] + name[3:].replace("_", "_&#8203;")
 
-                # Example with link:
-                #
-                # // CL_MEM_READ_ONLY
-                #:CL_MEM_READ_ONLY_label: pass:q[`CL_MEM_READ_ONLY`]
-                #:CL_MEM_READ_ONLY: <<CL_MEM_READ_ONLY,{CL_MEM_READ_ONLY_label}>>
-                #:CL_MEM_READ_ONLY_anchor: [[CL_MEM_READ_ONLY]]{CL_MEM_READ_ONLY}
-                linkFile.write('// ' + name + '\n')
-                linkFile.write('ifdef::backend-html5[]\n')
-                linkFile.write(':' + name + '_label: pass:q[`' + htmlName + '`]\n')
-                linkFile.write('endif::[]\n')
-                linkFile.write('ifndef::backend-html5[]\n')
-                linkFile.write(':' + name + '_label: pass:q[`' + otherName + '`]\n')
-                linkFile.write('endif::[]\n')
-                linkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
-                linkFile.write(':' + name + '_anchor: [[' + name + ']]{' + name + '}\n')
-                linkFile.write('\n')
+            # Example with link:
+            #
+            # // CL_MEM_READ_ONLY
+            #:CL_MEM_READ_ONLY_label: pass:q[`CL_MEM_READ_ONLY`]
+            #:CL_MEM_READ_ONLY: <<CL_MEM_READ_ONLY,{CL_MEM_READ_ONLY_label}>>
+            #:CL_MEM_READ_ONLY_anchor: [[CL_MEM_READ_ONLY]]{CL_MEM_READ_ONLY}
+            linkFile.write('// ' + name + '\n')
+            linkFile.write('ifdef::backend-html5[]\n')
+            linkFile.write(':' + name + '_label: pass:q[`' + htmlName + '`]\n')
+            linkFile.write('endif::[]\n')
+            linkFile.write('ifndef::backend-html5[]\n')
+            linkFile.write(':' + name + '_label: pass:q[`' + otherName + '`]\n')
+            linkFile.write('endif::[]\n')
+            linkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
+            linkFile.write(':' + name + '_anchor: [[' + name + ']]{' + name + '}\n')
+            linkFile.write('\n')
 
-                # Example without link:
-                #
-                # // CL_MEM_READ_ONLY
-                #:CL_MEM_READ_ONLY: pass:q[`CL_MEM_READ_ONLY`]
-                #:CL_MEM_READ_ONLY_anchor: {CL_MEM_READ_ONLY}
-                nolinkFile.write('// ' + name + '\n')
-                nolinkFile.write('ifdef::backend-html5[]\n')
-                nolinkFile.write(':' + name + ': pass:q[`' + htmlName + '`]\n')
-                nolinkFile.write('endif::[]\n')
-                nolinkFile.write('ifndef::backend-html5[]\n')
-                nolinkFile.write(':' + name + ': pass:q[`' + otherName + '`]\n')
-                nolinkFile.write('endif::[]\n')
-                nolinkFile.write(':' + name + '_anchor: {' + name + '}\n')
-                nolinkFile.write('\n')
+            # Example without link:
+            #
+            # // CL_MEM_READ_ONLY
+            #:CL_MEM_READ_ONLY: pass:q[`CL_MEM_READ_ONLY`]
+            #:CL_MEM_READ_ONLY_anchor: {CL_MEM_READ_ONLY}
+            nolinkFile.write('// ' + name + '\n')
+            nolinkFile.write('ifdef::backend-html5[]\n')
+            nolinkFile.write(':' + name + ': pass:q[`' + htmlName + '`]\n')
+            nolinkFile.write('endif::[]\n')
+            nolinkFile.write('ifndef::backend-html5[]\n')
+            nolinkFile.write(':' + name + ': pass:q[`' + otherName + '`]\n')
+            nolinkFile.write('endif::[]\n')
+            nolinkFile.write(':' + name + '_anchor: {' + name + '}\n')
+            nolinkFile.write('\n')
 
-                numberOfEnums = numberOfEnums + 1
+            numberOfEnums = numberOfEnums + 1
 
     print('Found ' + str(numberOfEnums) + ' API enumerations.')
 
