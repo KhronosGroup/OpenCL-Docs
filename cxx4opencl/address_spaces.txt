@@ -337,11 +337,6 @@ constructors and destructors, the implementation defines an ABI format for
 runtime initialization and destruction of global objects before/after all
 kernels are enqueued.
 
-Non-trivial destructors for global objects are not required to be supported
-by all implementations. The macro `__opencl_cpp_global_destructor`,
-which is defined if and only if such destructors are supported by the implementation,
-can be used to check whether this functionality is available when compiling kernel code.
-
 Objects in `__local` address space can not have initializers in
 declarations and therefore a constructor can not be called. All objects
 created in the local address space have undefined state at the point of
@@ -393,6 +388,41 @@ struct C2 {
 __constant C1 cobj1 = {1};
 __constant C1 cobj2 = C1();
 __constant C2 cobj3(1);
+------------
+
+Non-trivial destructors for objects in non-default address spaces (i.e. all
+other than generic address space) are not required to be supported by
+implementations. The macro `+__opencl_cpp_destructor_with_address_spaces+`,
+which is defined if and only if such destructors are supported by an
+implementation, can be used to check whether this functionality can be used
+in kernel sources. Additionally destructors with global objects might not be
+supported even if address spaces are supported with destructors in general.
+Such functionality is indicated by the presence of
+`+__opencl_cpp_global_destructor+` macro. If the macro
+`+__opencl_cpp_global_destructor+` is defined then
+`+__opencl_cpp_destructor_with_address_spaces+` must also be defined. Note that
+the destruction of objects in named address spaces global, local, or private
+can be performed using destructors with default address space (i.e. generic)
+by utilising address space conversions.
+
+[source,cpp]
+------------
+1  class C {
+2   public:
+3   #ifdef __opencl_cpp_destructor_with_address_spaces
+4     ~C() __private;
+5   #else
+6     ~C();
+7   #endif
+8   };
+9
+10  kernel void foo() {
+11    __local C locobj;
+12      locobj.~C();    // uses destructor in private address space (on line 4)
+13                      // if such destructors are supported,
+14                      // otherwise uses generic address space destructor (on line 6)
+15                      // converting to generic address prior to call into destructor.
+16  }
 ------------
 
 ==== Nested pointers
