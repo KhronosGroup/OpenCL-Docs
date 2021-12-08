@@ -122,10 +122,10 @@ generic address space is supported, otherwise they refer to private
 address space objects.
 
 Class static data members are deduced to `+__global+` address space. Note,
-that if implementation of {cpp} for OpenCL 2021 does not support program
+that if the {cpp} for OpenCL 2021 implementation does not support program
 scope variables (i.e. `+__opencl_c_program_scope_global_variables+` feature
 from `OpenCL C 3.0 s6.1`) the address space qualifier must be  specified
-explicitly and it must be `+__constant+` address space.
+explicitly and it must be the `+__constant+` address space.
 
 All non-static member functions take an implicit object parameter `this`
 that is a pointer type. By default the `this` pointer parameter is in the
@@ -150,8 +150,8 @@ Address spaces are not deduced for:
   * non-pointer/non-reference template parameters except for template
     specializations or non-type type based template parameters.
   * non-pointer/non-reference class members except for static data members
-    that are deduced to `+__global+` address space for {cpp} for OpenCL 1.0
-    or {cpp} for OpenCL 2021 with `__opencl_c_program_scope_global_variables`
+    that are deduced to the `+__global+` address space for {cpp} for OpenCL 1.0
+    or {cpp} for OpenCL 2021 with the `__opencl_c_program_scope_global_variables`
     feature.
   * non-pointer/non-reference type alias declarations.
   * decltype expressions.
@@ -171,11 +171,11 @@ template <int N>
 struct S {
   int i; // 'i' has no address space.
   static int ii; // 'ii' is in global address space if program scope variables
-                 // are supported otherwise this statement is not legal.
-  int * ptr; // 'ptr' points to int in generic address space if it is supported
+                 // are supported; otherwise this statement is not legal.
+  int * ptr; // 'ptr' points to int in generic address space if it is supported;
              // otherwise to __private address space.
   int & ref = ...; // 'ref' references int in generic address space if it is
-                   // supported otherwise in __private address space.
+                   // supported; otherwise in __private address space.
 };
 
 template <int N>
@@ -190,7 +190,7 @@ void bar()
 struct c1 {};
 using alias_c1 = c1; // 'alias_c1' is 'c1'.
 using alias_c1_ptr = c1 *; // 'alias_c1_ptr' is a generic address space pointer to
-                           // 'c1' when generic address space is supported otherwise
+                           // 'c1' when generic address space is supported; otherwise
                            // it points to 'c1' located in __private address space.
 ------------
 
@@ -267,7 +267,7 @@ __kernel void bar() {
 }
 ------------
 
-All  member functions can be qualified by an address space qualifier including
+All member functions can be qualified by an address space qualifier including
 constructors and destructors.
 
 
@@ -311,7 +311,7 @@ class C {
   // Has the following implicitly defined member functions.
 
   // C(); /* implicit 'this' parameter is a pointer to */
-          /* object in generic address space if supported */
+          /* object in generic address space if supported, or */
           /* in private address space otherwise. */
 
   // C(const C & par); /* 'this'/'par' is a pointer/reference to */
@@ -360,7 +360,7 @@ instantiation.
 ------------
 1  template<typename T>
 2  void foo(T* i){
-3   T var;
+3    T var;
 4  }
 5 
 6  __global int g;
