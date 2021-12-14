@@ -71,7 +71,7 @@ endif
 # C++ for OpenCL doc revision scheme in aligned with its release date.
 # Revision naming scheme is as follows:
 # DOCREVYYYY.MM,
-# where YYYY correspomds to its release year,
+# where YYYY corresponds to its release year,
 # MM corresponds to its release month.
 # Example for the release in Dec 2021 the revision is DOCREV2021.12.
 # Leave blank if the doc content does not correspond to any official revision.
