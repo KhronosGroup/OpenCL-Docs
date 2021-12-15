@@ -68,12 +68,12 @@ SPECREVISION = $(shell echo `git describe --tags --dirty`)
 SPECREMARK = from git branch: $(shell echo `git symbolic-ref --short HEAD`) \
 	     commit: $(shell echo `git log -1 --format="%H"`)
 endif
-# C++ for OpenCL document revision scheme in aligned with its release date.
+# The C++ for OpenCL document revision scheme is aligned with its release date.
 # Revision naming scheme is as follows:
 # DocRevYYYY.MM,
 # where YYYY corresponds to its release year,
 # MM corresponds to its release month.
-# Example for the release in Dec 2021 the revision is DOCREV2021.12.
+# Example for the release in Dec 2021 the revision is DocRev2021.12.
 # Leave as 'DocRevYYYY.MM-Next' if the doc content does not correspond to any official revision.
 # where DocRevYYYY.MM is the last released revision.
 CXX4OPENCL_DOCREVISION = DocRev2021.12
