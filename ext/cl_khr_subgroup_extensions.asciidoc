@@ -43,7 +43,7 @@ For all of the extensions described in this section:
 [[extended-subgroups-summary]]
 === Summary of New OpenCL C Functions
 
-[source,c]
+[source,opencl_c]
 ----
 // These functions are available to devices supporting
 // cl_khr_subgroup_extended_types:
@@ -191,14 +191,14 @@ For the functions below, the generic type name `gentype` may be the one of the s
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 int sub_group_elect()
 ----
 | Elects a single work item in the subgroup to perform a task.
 This function will return true (nonzero) for the active work item in the subgroup with the smallest subgroup local ID, and false (zero) for all other active work items in the subgroup.
 
-|[source,c]
+|[source,opencl_c]
 ----
 int sub_group_non_uniform_all(
     int predicate )
@@ -207,7 +207,7 @@ int sub_group_non_uniform_all(
 
 Note: This behavior is the same as `sub_group_all` from `cl_khr_subgroups` and OpenCL 2.1, except this function need not be encountered by all work items in the subgroup executing the kernel.
 
-|[source,c]
+|[source,opencl_c]
 ----
 int sub_group_non_uniform_any(
     int predicate )
@@ -216,7 +216,7 @@ int sub_group_non_uniform_any(
 
 Note: This behavior is the same as `sub_group_any` from `cl_khr_subgroups` and OpenCL 2.1, except this function need not be encountered by all work items in the subgroup executing the kernel.
 
-|[source,c]
+|[source,opencl_c]
 ----
 int sub_group_non_uniform_all_equal(
     gentype value )
@@ -247,7 +247,7 @@ For the `sub_group_non_uniform_broadcast` function, the generic type name `genty
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_non_uniform_broadcast(
     gentype value,
@@ -259,14 +259,14 @@ Behavior is undefined when the value of _index_ is not equivalent for all active
 
 The return value is undefined if the work item with subgroup local ID equal to _index_ is inactive or if _index_ is greater than or equal to the size of the subgroup.
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_broadcast_first(
     gentype value )
 ----
 | Returns _value_ for the work item with the smallest subgroup local ID among active work items in the subgroup.
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint4 sub_group_ballot(
     int predicate )
@@ -275,7 +275,7 @@ uint4 sub_group_ballot(
 Bit zero of the first vector component represents the subgroup local ID zero, with higher-order bits and subsequent vector components representing, in order, increasing subgroup local IDs.
 The representative bit in the bitfield is set if the work item is active and the _predicate_ is non-zero, and is unset otherwise.
 
-|[source,c]
+|[source,opencl_c]
 ----
 int sub_group_inverse_ballot(
     uint4 value )
@@ -287,7 +287,7 @@ Behavior is undefined when _value_ is not equivalent for all active work items i
 
 This is a specialized function that may perform better than the equivalent `sub_group_ballot_bit_extract` on some implementations.
 
-|[source,c]
+|[source,opencl_c]
 ----
 int sub_group_ballot_bit_extract(
     uint4 value,
@@ -298,72 +298,72 @@ The predicate return value will be non-zero if the bit in the bitfield _value_ f
 
 The predicate return value is undefined if the work item with subgroup local ID equal to _index_ is greater than or equal to the size of the subgroup.
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint sub_group_ballot_bit_count(
     uint4 value )
 ----
-| Returns the number of bits that are set in the bitfield _value_, only considering the bits in _value_ that represent predicate values from all work items in the subgroup.
+| Returns the number of bits that are set in the bitfield _value_, only considering the bits in _value_ that represent predicate values corresponding to subgroup local IDs less than the maximum subgroup size within the dispatch (as returned by `get_max_sub_group_size`).
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint sub_group_ballot_inclusive_scan(
     uint4 value )
 ----
 | Returns the number of bits that are set in the bitfield _value_, only considering the bits in _value_ representing work items with a subgroup local ID less than or equal to this work item's subgroup local ID.
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint sub_group_ballot_exclusive_scan(
     uint4 value )
 ----
 | Returns the number of bits that are set in the bitfield _value_, only considering the bits in _value_ representing work items with a subgroup local ID less than this work item's subgroup local ID.
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint sub_group_ballot_find_lsb(
     uint4 value )
 ----
-| Returns the smallest subgroup local ID with a bit set in the bitfield _value_, only considering the bits in _value_ that represent predicate values from all work items in the subgroup.
+| Returns the smallest subgroup local ID with a bit set in the bitfield _value_, only considering the bits in _value_ that represent predicate values corresponding to subgroup local IDs less than the maximum subgroup size within the dispatch (as returned by `get_max_sub_group_size`).
 If no bits representing predicate values from all work items in the subgroup are set in the bitfield _value_ then the return value is undefined.
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint sub_group_ballot_find_msb(
     uint4 value )
 ----
-| Returns the largest subgroup local ID with a bit set in the bitfield _value_, only considering the bits in _value_ that represent predicate values from all work items in the subgroup.
+| Returns the largest subgroup local ID with a bit set in the bitfield _value_, only considering the bits in _value_ that represent predicate values corresponding to subgroup local IDs less than the maximum subgroup size within the dispatch (as returned by `get_max_sub_group_size`).
 If no bits representing predicate values from all work items in the subgroup are set in the bitfield _value_ then the return value is undefined.
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint4 get_sub_group_eq_mask()
 ----
 | Generates a bitmask where the bit is set in the bitmask if the bit index equals the subgroup local ID and unset otherwise.
 Bit zero of the first vector component represents the subgroup local ID zero, with higher-order bits and subsequent vector components representing, in order, increasing subgroup local IDs.
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint4 get_sub_group_ge_mask()
 ----
 | Generates a bitmask where the bit is set in the bitmask if the bit index is greater than or equal to the subgroup local ID and less than the maximum subgroup size, and unset otherwise.
 Bit zero of the first vector component represents the subgroup local ID zero, with higher-order bits and subsequent vector components representing, in order, increasing subgroup local IDs.
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint4 get_sub_group_gt_mask()
 ----
 | Generates a bitmask where the bit is set in the bitmask if the bit index is greater than the subgroup local ID and less than the maximum subgroup size, and unset otherwise.
 Bit zero of the first vector component represents the subgroup local ID zero, with higher-order bits and subsequent vector components representing, in order, increasing subgroup local IDs.
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint4 get_sub_group_le_mask()
 ----
 | Generates a bitmask where the bit is set in the bitmask if the bit index is less than or equal to the subgroup local ID and unset otherwise.
 Bit zero of the first vector component represents the subgroup local ID zero, with higher-order bits and subsequent vector components representing, in order, increasing subgroup local IDs.
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint4 get_sub_group_lt_mask()
 ----
@@ -391,7 +391,7 @@ For the functions below, the generic type name `gentype` may be one of the suppo
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_non_uniform_reduce_add(
     gentype value )
@@ -406,7 +406,7 @@ gentype sub_group_non_uniform_reduce_mul(
 
 Note: This behavior is the same as the *add*, *min*, and *max* reduction built-in functions from `cl_khr_subgroups` and OpenCL 2.1, except these functions support additional types and need not be encountered by all work items in the subgroup executing the kernel.
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_non_uniform_scan_inclusive_add(
     gentype value )
@@ -421,7 +421,7 @@ gentype sub_group_non_uniform_scan_inclusive_mul(
 
 Note: This behavior is the same as the *add*, *min*, and *max* inclusive scan built-in functions from `cl_khr_subgroups` and OpenCL 2.1, except these functions support additional types and need not be encountered by all work items in the subgroup executing the kernel.
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_non_uniform_scan_exclusive_add(
     gentype value )
@@ -457,7 +457,7 @@ For the functions below, the generic type name `gentype` may be one of the suppo
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_non_uniform_reduce_and(
     gentype value )
@@ -468,7 +468,7 @@ gentype sub_group_non_uniform_reduce_xor(
 ----
 | Returns the bitwise *and*, *or*, or *xor* of _value_ for all active work items in the subgroup.
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_non_uniform_scan_inclusive_and(
     gentype value )
@@ -479,7 +479,7 @@ gentype sub_group_non_uniform_scan_inclusive_xor(
 ----
 | Returns the result of an inclusive scan operation, which is the bitwise *and*, *or*, or *xor* of _value_ for all active work items in the subgroup with a subgroup local ID less than or equal to this work item's subgroup local ID.
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_non_uniform_scan_exclusive_and(
     gentype value )
@@ -507,7 +507,7 @@ For these functions, a non-zero _predicate_ argument or return value is logicall
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 int sub_group_non_uniform_reduce_logical_and(
     int predicate )
@@ -518,7 +518,7 @@ int sub_group_non_uniform_reduce_logical_xor(
 ----
 | Returns the logical *and*, *or*, or *xor* of _predicate_ for all active work items in the subgroup.
 
-|[source,c]
+|[source,opencl_c]
 ----
 int sub_group_non_uniform_scan_inclusive_logical_and(
     int predicate )
@@ -529,7 +529,7 @@ int sub_group_non_uniform_scan_inclusive_logical_xor(
 ----
 | Returns the result of an inclusive scan operation, which is the logical *and*, *or*, or *xor* of _predicate_ for all active work items in the subgroup with a subgroup local ID less than or equal to this work item's subgroup local ID.
 
-|[source,c]
+|[source,opencl_c]
 ----
 int sub_group_non_uniform_scan_exclusive_logical_and(
     int predicate )
@@ -563,7 +563,7 @@ For the functions below, the generic type name `gentype` may be one of the suppo
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_shuffle(
     gentype value, uint index )
@@ -573,7 +573,7 @@ The shuffle _index_ need not be the same for all work items in the subgroup.
 
 The return value is undefined if the work item with subgroup local ID equal to _index_ is inactive or if _index_ is greater than or equal to the size of the subgroup.
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_shuffle_xor(
     gentype value, uint mask )
@@ -604,7 +604,7 @@ For the functions below, the generic type name `gentype` may be one of the suppo
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_shuffle_up(
     gentype value, uint delta )
@@ -616,7 +616,7 @@ The return value is undefined if the work item with subgroup local ID equal to t
 
 This is a specialized function that may perform better than the equivalent `sub_group_shuffle` on some implementations.
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_shuffle_down(
     gentype value, uint delta )
@@ -638,11 +638,10 @@ This extension adds support for clustered reductions that operate on a subset of
 
 ==== Add a new Section 6.15.X - Subgroup Clustered Reduction Built-in Functions
 
-This section describes arithmetic operations that are performed subset of work items in a subgroup, referred to as a cluster.
+This section describes arithmetic operations that are performed on a subset of work items in a subgroup, referred to as a cluster.
 A cluster is described by a specified cluster size.
 Work items in a subgroup are assigned to clusters such that for cluster size _n_, the _n_ work items in the subgroup with the smallest subgroup local IDs are assigned to the first cluster, then the _n_ remaining work items with the smallest subgroup local IDs are assigned to the next cluster, and so on.
-The specified cluster size must be an integer constant expression that is a power-of-two.
-Behavior is undefined if the specified cluster size is greater than the maximum size of a subgroup within the dispatch.
+Behavior is undefined if the specified cluster size is not an integer constant expression, is not a power-of-two, or is greater than the maximum size of a subgroup within the dispatch.
 
 ===== Arithmetic Operations
 
@@ -655,7 +654,7 @@ For the functions below, the generic type name `gentype` may be one of the suppo
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_clustered_reduce_add(
     gentype value, uint clustersize )
@@ -683,7 +682,7 @@ For the functions below, the generic type name `gentype` may be the one of the s
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_clustered_reduce_and(
     gentype value, uint clustersize )
@@ -707,7 +706,7 @@ For these functions, a non-zero _predicate_ argument or return value is logicall
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 int sub_group_clustered_reduce_logical_and(
     int predicate, uint clustersize )
@@ -1038,34 +1037,34 @@ Note: This extension adds new types to uniform subgroup operations.
 
 3+| For `cl_khr_subgroup_clustered_reduce`:
 
-| `sub_&#8203;group_&#8203;reduce_&#8203;clustered_&#8203;add`
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;add`
         | *OpGroupNonUniformIAdd*, *OpGroupNonUniformFAdd*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;reduce_&#8203;clustered_&#8203;mul`
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;mul`
         | *OpGroupNonUniformIMul*, *OpGroupNonUniformFMul*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;reduce_&#8203;clustered_&#8203;min`
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;min`
         | *OpGroupNonUniformSMin*, *OpGroupNonUniformUMin*, *OpGroupNonUniformFMin*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;reduce_&#8203;clustered_&#8203;max`
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;max`
         | *OpGroupNonUniformSMax*, *OpGroupNonUniformUMax*, *OpGroupNonUniformFMax*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;reduce_&#8203;clustered_&#8203;and`
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;and`
         | *OpGroupNonUniformBitwiseAnd*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;reduce_&#8203;clustered_&#8203;or`
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;or`
         | *OpGroupNonUniformBitwiseOr*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;reduce_&#8203;clustered_&#8203;xor`
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;xor`
         | *OpGroupNonUniformBitwiseXor*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;reduce_&#8203;clustered_&#8203;logical_&#8203;and`
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;logical_&#8203;and`
         | *OpGroupNonUniformLogicalAnd*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;reduce_&#8203;clustered_&#8203;logical_&#8203;or`
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;logical_&#8203;or`
         | *OpGroupNonUniformLogicalOr*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;reduce_&#8203;clustered_&#8203;logical_&#8203;xor`
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;logical_&#8203;xor`
         | *OpGroupNonUniformLogicalXor*
             | *GroupNonUniformClustered*
 

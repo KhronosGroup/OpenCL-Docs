@@ -69,19 +69,26 @@ SPECREMARK = from git branch: $(shell echo `git symbolic-ref --short HEAD`) \
 	     commit: $(shell echo `git log -1 --format="%H"`)
 endif
 
-ATTRIBOPTS_NO_VERSION   = -a revdate="$(SPECDATE)" \
-	                  -a revremark="$(SPECREMARK)" \
-	                  -a stem=latexmath \
-	                  -a generated=$(GENERATED) \
-	                  -a sectnumlevels=5
+ATTRIBOPTS_NO_VERSION	= -a revdate="$(SPECDATE)" \
+			  -a revremark="$(SPECREMARK)" \
+			  -a stem=latexmath \
+			  -a generated=$(GENERATED) \
+			  -a sectnumlevels=5
 
 ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
-               $(ATTRIBOPTS_NO_VERSION)
+	       $(ATTRIBOPTS_NO_VERSION)
 
-ADOCEXTS              = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb -r $(CURDIR)/config/spec-macros.rb
+ADOCEXTS	      = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb \
+	-r $(CURDIR)/config/spec-macros.rb \
+	-r $(CURDIR)/config/rouge_opencl.rb
 ADOCOPTS_NO_VERSION   = -d book $(ATTRIBOPTS_NO_VERSION) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
-ADOCOPTS              = -d book $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
-ADOCMANOPTS           = -d manpage $(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
+ADOCCOMMONOPTS	      = -a apispec="$(CURDIR)/api" \
+			-a config="$(CURDIR)/config" \
+			-a cspec="$(CURDIR)/c" \
+			-a images="$(CURDIR)/images" \
+			$(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
+ADOCOPTS	      = -d book $(ADOCCOMMONOPTS)
+ADOCMANOPTS	      = -d manpage $(ADOCCOMMONOPTS)
 
 # ADOCHTMLOPTS relies on the relative runtime path from the output HTML
 # file to the katex scripts being set with KATEXDIR. This is overridden
@@ -103,6 +110,7 @@ ADOCPDFOPTS  = $(ADOCPDFEXTS) -a mathematical-format=svg \
 # the API interface includes.
 # GENDEPENDS could have multiple dependencies.
 GENERATED  = $(CURDIR)/generated
+REFPATH    = $(GENERATED)/refpage
 APIINCDIR  = $(GENERATED)/api
 VERSIONDIR = $(APIINCDIR)/version-notes
 GENDEPENDS = $(APIINCDIR)/timeMarker
@@ -110,7 +118,7 @@ GENDEPENDS = $(APIINCDIR)/timeMarker
 .PHONY: directories
 
 # README.md is a proxy for all the katex files that need to be installed
-katexinst: $(OUTDIR)/katex/README.md
+KATEXINST = $(OUTDIR)/katex/README.md
 
 $(OUTDIR)/katex/README.md: katex/README.md
 	$(QUIET)$(MKDIR) $(OUTDIR)
@@ -159,7 +167,7 @@ APISPECSRC = $(APISPEC).txt $(GENDEPENDS) \
 
 apihtml: $(HTMLDIR)/$(APISPEC).html $(APISPECSRC)
 
-$(HTMLDIR)/$(APISPEC).html: $(APISPECSRC) katexinst
+$(HTMLDIR)/$(APISPEC).html: $(APISPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(APISPEC).txt
 
 apipdf: $(PDFDIR)/$(APISPEC).pdf $(APISPECSRC)
@@ -185,7 +193,7 @@ ENVSPECSRC = $(ENVSPEC).txt $(GENDEPENDS) \
 
 envhtml: $(HTMLDIR)/$(ENVSPEC).html $(ENVSPECSRC)
 
-$(HTMLDIR)/$(ENVSPEC).html: $(ENVSPECSRC) katexinst
+$(HTMLDIR)/$(ENVSPEC).html: $(ENVSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(ENVSPEC).txt
 
 envpdf: $(PDFDIR)/$(ENVSPEC).pdf $(ENVSPECSRC)
@@ -209,7 +217,7 @@ EXTSPECSRC = $(EXTSPEC).txt $(GENDEPENDS) \
 
 exthtml: $(HTMLDIR)/$(EXTSPEC).html $(EXTSPECSRC)
 
-$(HTMLDIR)/$(EXTSPEC).html: $(EXTSPECSRC) katexinst
+$(HTMLDIR)/$(EXTSPEC).html: $(EXTSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTSPEC).txt
 
 extpdf: $(PDFDIR)/$(EXTSPEC).pdf $(EXTSPECSRC)
@@ -239,7 +247,7 @@ EXTENSIONS_PDF = $(patsubst %.asciidoc,$(PDFDIR)/%.pdf,$(EXTENSIONS))
 
 extensionshtml: $(HTMLDIR)/$(EXTENSIONSSPEC).html $(EXTENSIONSSPECSRC) $(EXTENSIONS_HTML)
 
-$(HTMLDIR)/$(EXTENSIONSSPEC).html: $(EXTENSIONSSPECSRC) katexinst
+$(HTMLDIR)/$(EXTENSIONSSPEC).html: $(EXTENSIONSSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTDIR)/$(EXTENSIONSSPEC).txt
 
 # I don't know why the pattern rule below requires vpath be overridden
@@ -247,12 +255,12 @@ $(HTMLDIR)/$(EXTENSIONSSPEC).html: $(EXTENSIONSSPECSRC) katexinst
 # points there.
 vpath %.asciidoc $(EXTDIR)
 
-$(HTMLDIR)/%.html: $(EXTDIR)/%.asciidoc
+$(HTMLDIR)/%.html: $(EXTDIR)/%.asciidoc $(GENDEPENDS)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $<
 
 extensionspdf: $(PDFDIR)/$(EXTENSIONSSPEC).pdf $(EXTENSIONSSPECSRC)
 
-$(PDFDIR)/$(EXTENSIONSSPEC).pdf: $(EXTENSIONSSPECSRC)
+$(PDFDIR)/$(EXTENSIONSSPEC).pdf: $(EXTENSIONSSPECSRC) $(GENDEPENDS)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(EXTDIR)/$(EXTENSIONSSPEC).txt
@@ -271,7 +279,7 @@ CEXTDOCSRC = $(CEXTDOC).txt $(GENDEPENDS) \
 
 cexthtml: $(HTMLDIR)/$(CEXTDOC).html $(CEXTDOCSRC)
 
-$(HTMLDIR)/$(CEXTDOC).html: $(CEXTDOCSRC) katexinst
+$(HTMLDIR)/$(CEXTDOC).html: $(CEXTDOCSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CEXTDOC).txt
 
 cextpdf: $(PDFDIR)/$(CEXTDOC).pdf $(CEXTDOCSRC)
@@ -295,7 +303,7 @@ CXXSPECSRC = $(CXXSPEC).txt $(GENDEPENDS) \
 
 cxxhtml: $(HTMLDIR)/$(CXXSPEC).html $(CXXSPECSRC)
 
-$(HTMLDIR)/$(CXXSPEC).html: $(CXXSPECSRC) katexinst
+$(HTMLDIR)/$(CXXSPEC).html: $(CXXSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CXXSPEC).txt
 
 cxxpdf: $(PDFDIR)/$(CXXSPEC).pdf $(CXXSPECSRC)
@@ -319,7 +327,7 @@ CSPECSRC = $(CSPEC).txt $(GENDEPENDS) \
 
 chtml: $(HTMLDIR)/$(CSPEC).html $(CSPECSRC)
 
-$(HTMLDIR)/$(CSPEC).html: $(CSPECSRC) katexinst
+$(HTMLDIR)/$(CSPEC).html: $(CSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CSPEC).txt
 
 cpdf: $(PDFDIR)/$(CSPEC).pdf $(CSPECSRC)
@@ -343,7 +351,7 @@ CXX4OPENCLDOCSRC = $(CXX4OPENCLDOC).txt $(GENDEPENDS) \
 
 cxx4openclhtml: $(HTMLDIR)/$(CXX4OPENCLDOC).html $(CXX4OPENCLDOCSRC)
 
-$(HTMLDIR)/$(CXX4OPENCLDOC).html: $(CXX4OPENCLDOCSRC) katexinst
+$(HTMLDIR)/$(CXX4OPENCLDOC).html: $(CXX4OPENCLDOCSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS_NO_VERSION) $(ADOCHTMLOPTS) -o $@ $(CXX4OPENCLDOC).txt
 
 cxx4openclpdf: $(PDFDIR)/$(CXX4OPENCLDOC).pdf $(CXX4OPENCLDOCSRC)
@@ -367,7 +375,7 @@ ICDINSTSPECSRC = $(ICDINSTSPEC).txt \
 
 icdinsthtml: $(HTMLDIR)/$(ICDINSTSPEC).html $(ICDINSTSPECSRC)
 
-$(HTMLDIR)/$(ICDINSTSPEC).html: $(ICDINSTSPECSRC) katexinst
+$(HTMLDIR)/$(ICDINSTSPEC).html: $(ICDINSTSPECSRC) $(KATEXINST)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(ICDINSTSPEC).txt
 
 icdinstpdf: $(PDFDIR)/$(ICDINSTSPEC).pdf $(ICDINSTSPECSRC)
@@ -395,9 +403,9 @@ clean_pdf:
 	$(QUIET)$(RMRF) $(PDFDIR) $(PDFMATHDIR)
 
 clean_generated:
-	$(QUIET)$(RMRF) $(APIINCDIR)/* $(SCRIPTS)/clapi.py
-	$(QUIET)$(RM) man/apispec.txt $(MANGENSOURCES) $(MANTMP)
+	$(QUIET)$(RMRF) $(APIINCDIR)/* $(GENERATED)/api.py $($(REFPATH)/
 	$(QUIET)$(RMRF) $(PDFMATHDIR)
+	$(QUIET)$(RMRF) $(GENERATED)/__pycache__
 
 # Ref page targets for individual pages
 MANDIR	    := man
@@ -406,22 +414,12 @@ MANSECTION  := 3
 # These lists should be autogenerated
 
 # Ref page sources for all CL interfaces
-# Most are autogenerated; $(MANCOPYRIGHT) are static
-
-# Static asciidoctor files in the man/ directory that aren't refpages
-MANCOPYRIGHT = $(MANDIR)/copyright-ccby.txt $(MANDIR)/footer.txt
+# Most are autogenerated; man/static/*.txt are hand-coded at present
 
 # MANSOURCES is the list of individual refpage sources, excluding the
-# copyright, single-page index, and any include files.
-MANSOURCES   = $(filter-out $(MANCOPYRIGHT) $(MANDIR)/apispec.txt  $(wildcard $(MANDIR)/*Inc.txt), $(wildcard $(MANDIR)/[A-Za-z]*.txt))
-
-# MANGENSOURCES is the list of generated refpage sources, excluding the
-# static index page but including the files copied from static/
-MANGENSOURCES= $(filter-out $(MANDIR)/intro.txt, $(MANSOURCES))
-
-# MANTMP are temp files created by the rules
-MANTMP	     = $(LOGFILE) $(MANDIR)/tocbody $(MANDIR)/toc.html \
-	       $(MANDIR)/rewritebody $(MANDIR)/.htaccess
+# single-page index, boilerplate document footer, and include files.
+# For now, always build all refpages.
+MANSOURCES   = $(filter-out $(REFPATH)/apispec.txt $(REFPATH)/footer.txt $(wildcard $(REFPATH)/*Inc.txt), $(wildcard $(REFPATH)/*.txt))
 
 # Generation of ref page asciidoctor sources by extraction from the
 # specification(s).
@@ -432,49 +430,53 @@ MANTMP	     = $(LOGFILE) $(MANDIR)/tocbody $(MANDIR)/toc.html \
 #
 # Should pass in $(EXTOPTIONS) to determine which pages to generate.
 # For now, all core and extension ref pages are extracted by genRef.py.
-LOGFILE = man/logfile
 ## Temporary - eventually should be all spec asciidoctor source files
-SPECFILES = $(wildcard api/*.asciidoc) $(wildcard man/static/*.txt) OpenCL_API.txt OpenCL_C.txt
-##SPECFILES = api/opencl_platform_layer.txt
+SPECFILES = $(wildcard api/*.asciidoc) OpenCL_API.txt OpenCL_C.txt
 SCRIPTS = scripts
 GENREF = $(SCRIPTS)/genRef.py
+LOGFILE = $(REFPATH)/refpage.log
 
-man/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(SCRIPTS)/clapi.py
-	$(PYTHON) $(GENREF) -rewrite man/rewritebody -toc man/tocbody \
+refpages: $(REFPATH)/apispec.txt
+$(REFPATH)/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(GENERATED)/api.py
+	$(QUIET)$(MKDIR) $(REFPATH)
+	$(PYTHON) $(GENREF) -genpath $(GENERATED) -basedir $(REFPATH) \
+	    -rewrite $(REFPATH)/rewritebody -toc $(REFPATH)/tocbody \
 	    -log $(LOGFILE) $(SPECFILES)
-	cat man/tochead man/tocbody man/toctail > man/toc.html
-	cat man/rewritehead > man/.htaccess
-	sort < man/rewritebody >> man/.htaccess
-	$(CP) -p $(MANDIR)/static/*.txt $(MANDIR)/
+	cat $(MANDIR)/tochead $(REFPATH)/tocbody $(MANDIR)/toctail > $(REFPATH)/toc.html
+	(cat $(MANDIR)/rewritehead ; \
+	 echo ; echo "# Aliases hard-coded in refpage markup" ; \
+	 sort < $(REFPATH)/rewritebody) > $(REFPATH)/.htaccess
+	$(CP) $(MANDIR)/static/*.txt $(REFPATH)
 
 # These targets are HTML5 ref pages
 #
 # The recursive $(MAKE) is an apparently unavoidable hack, since the
 # actual list of man page sources isn't known until after
-# man/apispec.txt is generated. $(GENDEPENDS) is generated before
+# $(REFPATH)/apispec.txt is generated. $(GENDEPENDS) is generated before
 # running the recursive make, so it doesn't trigger twice
-manhtmlpages: man/apispec.txt $(GENDEPENDS)
+manhtmlpages: $(REFPATH)/apispec.txt $(GENDEPENDS)
 	$(MAKE) -e buildmanpages
-	$(CP) $(MANDIR)/*.jpg $(MANDIR)/*.gif $(MANDIR)/*.css $(MANDIR)/*.html $(MANHTMLDIR)
-	$(CP) $(MANDIR)/.htaccess $(MANHTMLDIR)/.htaccess
+	$(CP) $(MANDIR)/*.html $(MANDIR)/*.css $(MANDIR)/*.gif $(MANHTMLDIR)
+	$(CP) $(REFPATH)/.htaccess $(REFPATH)/*.html $(MANHTMLDIR)
 
 MANHTMLDIR  = $(OUTDIR)/man/html
-MANHTML     = $(MANSOURCES:$(MANDIR)/%.txt=$(MANHTMLDIR)/%.html)
+MANHTML     = $(MANSOURCES:$(REFPATH)/%.txt=$(MANHTMLDIR)/%.html)
+
 buildmanpages: $(MANHTML)
 
 $(MANHTMLDIR)/%.html: KATEXDIR = ../../katex
-$(MANHTMLDIR)/%.html: $(MANDIR)/%.txt $(MANCOPYRIGHT) $(GENDEPENDS) katexinst
+$(MANHTMLDIR)/%.html: $(REFPATH)/%.txt $(MANCOPYRIGHT) $(GENDEPENDS) $(KATEXINST)
 	$(QUIET)$(MKDIR) $(MANHTMLDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 -a cross-file-links \
 	    $(ADOCMANOPTS) $(ADOCHTMLOPTS) -o $@ $<
 
-$(MANHTMLDIR)/intro.html: $(MANDIR)/intro.txt $(MANCOPYRIGHT)
+$(MANHTMLDIR)/intro.html: $(REFPATH)/intro.txt $(MANCOPYRIGHT)
 	$(QUIET)$(MKDIR) $(MANHTMLDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 -a cross-file-links \
 	    $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $<
 
 # Targets generated from the XML and registry processing scripts
-#   clapi.py - Python encoding of the registry
+#   api.py - Python encoding of the registry
 #   $(APIINCDIR)/timeMarker - proxy for 'apiinc' - generate API interfaces
 #
 # $(GENSCRIPTEXTRA) are extra options that can be passed to the
@@ -489,15 +491,14 @@ VERSIONSCRIPT  = $(SCRIPTS)/gen_version_notes.py
 GENSCRIPTOPTS  = $(VERSIONOPTIONS) $(EXTOPTIONS) $(GENSCRIPTEXTRA) -registry $(APIXML)
 GENSCRIPTEXTRA =
 
-$(SCRIPTS)/clapi.py: $(APIXML) $(GENSCRIPT)
-	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(SCRIPTS) clapi.py
+$(GENERATED)/api.py: $(APIXML) $(GENSCRIPT)
+	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(GENERATED) api.py
 
 apiinc: $(APIINCDIR)/timeMarker
 
 $(APIINCDIR)/timeMarker: $(APIXML) $(DICTSCRIPT) $(GENSCRIPT) $(VERSIONSCRIPT)
-	$(QUIET)$(MKDIR) -p $(APIINCDIR)
+	$(QUIET)$(MKDIR) $(APIINCDIR)
 	$(QUIET)$(PYTHON) $(DICTSCRIPT) -registry $(APIXML) -o $(APIINCDIR)
-	$(QUIET)$(MKDIR) -p $(VERSIONDIR)
+	$(QUIET)$(MKDIR) $(VERSIONDIR)
 	$(QUIET)$(PYTHON) $(VERSIONSCRIPT) -registry $(APIXML) -o $(VERSIONDIR)
 	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(APIINCDIR) apiinc
-

@@ -9,35 +9,21 @@ Khronos{R} OpenCL Working Group
 :icons: font
 :toc2:
 :toclevels: 3
-:max-width: 100
+:max-width: 100%
 :numbered:
 :imagewidth: 800
 :fullimagewidth: width="800"
-:source-highlighter: coderay
+:source-highlighter: rouge
+:source-language: opencl_c
+:rouge-style: opencl.spec
 :title-logo-image: image:images/OpenCL.png[Logo,pdfwidth=4in,align=right]
 :sectnumoffset: 5
 
-// Needed for expressing C math in unary ops section
-:pp: ++
-
-:cpp: pass:[C++]
-:cpp11: pass:[C++11]
-:kernel: pass:[__kernel]
-:read_only: pass:[__read_only]
-:write_only: pass:[__write_only]
-:read_write: pass:[__read_write]
-:private: pass:[__private]
-:global: pass:[__global]
-:local: pass:[__local]
-:constant: pass:[__constant]
-:generic: pass:[__generic]
-:rte: pass:[_rte]
-:rtz: pass:[_rtz]
-:rtn: pass:[_rtn]
-:rtp: pass:[_rtp]
-
 // Various special / math symbols. This is easier to edit with than Unicode.
 include::config/attribs.txt[]
+
+// Attributes that are shared by OpenCL specifications.
+include::config/opencl.asciidoc[]
 
 // Feature Dictionary
 include::c/feature-dictionary.asciidoc[]
@@ -175,8 +161,9 @@ share SVM memory with each other and the host process.
 | The OpenCL C compiler supports built-in functions to enqueue additional work
 from the device.
 
-OpenCL C compilers that define the feature macro {opencl_c_device_enqueue}
-must also define the feature macro {opencl_c_generic_address_space}.
+OpenCL C compilers that define the feature macro {opencl_c_device_enqueue} must also
+define {opencl_c_generic_address_space} and {opencl_c_program_scope_global_variables}
+feature macros.
 
 | {opencl_c_generic_address_space}
 | The OpenCL C compiler supports the unnamed generic address space.
@@ -237,7 +224,7 @@ for earlier OpenCL C versions are allowed to define feature test macros
 but they are not required to do so. This means that applications which
 target earlier OpenCL C versions should not rely on the presence of
 feature test macros because there is no guarantee that feature test macros
-will be defined and that if defined they will indicate the presence of the 
+will be defined and that if defined they will indicate the presence of the
 corresponding optional functionality.
 
 [[extensions]]
@@ -394,7 +381,7 @@ The `half` data type can only be used to declare a pointer to a buffer that
 contains `half` values.
 A few valid examples are given below:
 
-[source,c]
+[source,opencl_c]
 ----------
 void
 bar (__global half *p)
@@ -415,7 +402,7 @@ foo (__global half *pg, __local half *pl)
 
 Below are some examples that are not valid usage of the `half` type:
 
-[source,c]
+[source,opencl_c]
 ----------
 half a;
 half b[100];
@@ -756,7 +743,7 @@ In addition, a form with a single scalar of the same type as the element
 type of the vector is available.
 For example, the following forms are available for `float4`:
 
-[source,c]
+[source,opencl_c]
 ----------
 (float4)( float, float, float, float )
 (float4)( float2, float, float )
@@ -781,7 +768,7 @@ replicated across all lanes of the vector.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 float4 f = (float4)(1.0f, 2.0f, 3.0f, 4.0f);
 uint4 u = (uint4)(1); //  u will be (1, 1, 1, 1).
@@ -809,7 +796,7 @@ Vector data types with four or more components can access `.rgba` elements.
 Accessing components beyond those declared for the vector type is an error
 so, for example:
 
-[source,c]
+[source,opencl_c]
 ----------
 float2 coord;
 coord.x = 1.0f; // is legal
@@ -825,7 +812,7 @@ pos.w = 1.0f; // is illegal, since pos only has three components
 The component selection syntax allows multiple components to be selected by
 appending their names after the period (*.*).
 
-[source,c]
+[source,opencl_c]
 ----------
 float4 c;
 
@@ -838,7 +825,7 @@ c.xyz = (float3)(3.0f, 4.0f, 5.0f);
 The component selection syntax also allows components to be permuted or
 replicated.
 
-[source,c]
+[source,opencl_c]
 ----------
 float4 pos = (float4)(1.0f, 2.0f, 3.0f, 4.0f);
 
@@ -854,7 +841,7 @@ contain no duplicate components, and it results in an l-value of scalar or
 vector type, depending on number of components specified.
 Each component must be a supported scalar or vector type.
 
-[source,c]
+[source,opencl_c]
 ----------
 float4 pos = (float4)(1.0f, 2.0f, 3.0f, 4.0f);
 
@@ -896,7 +883,7 @@ The numeric indices must be preceded by the letter `s` or `S`.
 
 In the following example
 
-[source,c]
+[source,opencl_c]
 ----------
 float8 f;
 ----------
@@ -906,7 +893,7 @@ refers to the 8^th^ element of the `float8` variable `f`.
 
 In the following example
 
-[source,c]
+[source,opencl_c]
 ----------
 float16 x;
 ----------
@@ -921,7 +908,7 @@ cannot be intermixed with `.xyzw` notation used to access elements of a 1 ..
 
 For example
 
-[source,c]
+[source,opencl_c]
 ----------
 float4 f, a;
 
@@ -944,7 +931,7 @@ The `.odd` suffix refers to the odd elements of a vector.
 
 Some examples to help illustrate this are given below:
 
-[source,c]
+[source,opencl_c]
 ----------
 float4 vf;
 
@@ -961,7 +948,7 @@ vector type with the value in the `w` component undefined.
 
 Some examples are given below:
 
-[source,c]
+[source,opencl_c]
 ----------
 float8 vf;
 float4 odd = vf.odd;
@@ -1009,7 +996,7 @@ It is illegal to take the address of a vector element and will result in a
 compilation error.
 For example:
 
-[source,c]
+[source,opencl_c]
 ----------
 float8 vf;
 
@@ -1085,7 +1072,7 @@ Standard typecasts for built-in scalar data types defined in
 `void` and `half` footnote:[{fn-cl_khr_fp16}]).
 In the example below:
 
-[source,c]
+[source,opencl_c]
 ----------
 float f = 1.0f;
 int i = (int)f;
@@ -1097,7 +1084,7 @@ value `1.0f` in `f` converted to an integer value.
 Explicit casts between vector types are not legal.
 The examples below will generate a compilation error.
 
-[source,c]
+[source,opencl_c]
 ----------
 int4 i;
 uint4 u = (uint4) i; //  not allowed
@@ -1122,7 +1109,7 @@ otherwise.
 
 Below are some correct examples of explicit casts.
 
-[source,c]
+[source,opencl_c]
 ----------
 float f = 1.0f;
 float4 va = (float4)f;
@@ -1152,7 +1139,7 @@ uchar4 vtrue = (uchar4)true;
 
 Explicit conversions may be performed using the
 
-[source,c]
+[source,opencl_c]
 ----------
 convert_destType(sourceType)
 ----------
@@ -1169,7 +1156,7 @@ The number of elements in the source and destination vectors must match.
 
 In the example below:
 
-[source,c]
+[source,opencl_c]
 ----------
 uchar4 u;
 int4 c = convert_int4(u);
@@ -1177,7 +1164,7 @@ int4 c = convert_int4(u);
 
 `convert_int4` converts a `uchar4` vector `u` to an `int4` vector `c`.
 
-[source,c]
+[source,opencl_c]
 ----------
 float f;
 int i = convert_int(f);
@@ -1191,7 +1178,7 @@ behavior.
 
 The full form of the scalar convert function is:
 
-[source,c]
+[source,opencl_c]
 ----------
 destType convert_destType<_sat><_roundingMode>(sourceType)
 ----------
@@ -1200,7 +1187,7 @@ where `dstType` is the destination scalar type and `sourceType` is the source sc
 
 The full form of the vector convert function is:
 
-[source,c]
+[source,opencl_c]
 ----------
 destTypen convert_destTypen<_sat><_roundingMode>(sourceTypen)
 ----------
@@ -1280,7 +1267,7 @@ formats.
 
 Example 1:
 
-[source,c]
+[source,opencl_c]
 ----------
 short4 s;
 
@@ -1294,7 +1281,7 @@ char4 c = convert_char4_sat( s );
 
 Example 2:
 
-[source,c]
+[source,opencl_c]
 ----------
 float4 f;
 
@@ -1318,7 +1305,7 @@ int4 i4 = convert_int4_sat_rte( f );
 
 Example 3:
 
-[source,c]
+[source,opencl_c]
 ----------
 int4 i;
 
@@ -1358,7 +1345,7 @@ then the value of the additional bytes is undefined.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 // d only if double precision is supported
 union { float f; uint u; double d; } u;
@@ -1412,7 +1399,7 @@ reinterpret data to a type of a different number of bytes.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 float f = 1.0f;
 uint u = as_uint(f); // Legal. Contains:  0x3f800000
@@ -2018,7 +2005,7 @@ independently on each component of the vector, in a component-wise fashion.
 
 For example,
 
-[source,c]
+[source,opencl_c]
 ----------
 float4 v, u;
 float f;
@@ -2028,7 +2015,7 @@ v = u + f;
 
 will be equivalent to
 
-[source,c]
+[source,opencl_c]
 ----------
 v.x = u.x + f;
 v.y = u.y + f;
@@ -2038,7 +2025,7 @@ v.w = u.w + f;
 
 And
 
-[source,c]
+[source,opencl_c]
 ----------
 float4 v, u, w;
 
@@ -2047,7 +2034,7 @@ w = v + u;
 
 will be equivalent to
 
-[source,c]
+[source,opencl_c]
 ----------
 w.x = v.x + u.x;
 w.y = v.y + u.y;
@@ -2083,7 +2070,7 @@ corresponding address space names with the `+__+` prefix.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 // declares a pointer p in the global address space that
 // points to an object in the global address space
@@ -2108,7 +2095,7 @@ C it is allowed to qualify local variables with an address space qualifier.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 // OK.
 int f() { ... }
@@ -2158,7 +2145,7 @@ object is allocated via appropriate API calls in the host code.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 global float4 *color; // An array of float4 elements
 
@@ -2195,7 +2182,7 @@ are allocated in local memory and shared by all work-items in a work-group.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void my_func(...)
 {
@@ -2240,7 +2227,7 @@ result in a compilation error.
 
 Example:
 
-[source,c]
+[source,opencl_c]
 ----------
 constant int a = 3; // int allocated in the constant address space
 kernel void k1(global int *buf)
@@ -2274,7 +2261,7 @@ variables, in particular variables with automatic storage duration.
 
 Example:
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void foo(...)
 {
@@ -2296,7 +2283,7 @@ types and it represents a placeholder for any of the named address spaces
 in one of these concrete named address spaces. The exact address space
 resolution can occur dynamically during the kernel execution.
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void foo(int a)
 {
@@ -2321,7 +2308,7 @@ kernel function can be qualified by the local or constant address spaces.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void my_func(...)
 {
@@ -2347,7 +2334,7 @@ specifier:
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_program_scope_global_variables feature macro.
@@ -2377,7 +2364,7 @@ must point to one of the named address spaces `{global}`, `{local}` or
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
  // OK.
 kernel void my_kernel(global int *ptr)
@@ -2408,7 +2395,7 @@ allowed to be given.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 global int a = 12;      // Initialization is allowed.
 global int b;           // Zero initialized.
@@ -2462,8 +2449,8 @@ For all other cases that are not listed above the address space is inferred to
     are inferred to be in the private address space.
 
 Examples:
- 
-[source,c]
+
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_program_scope_global_variables feature macro.
@@ -2506,7 +2493,7 @@ Qualifiers must be explicitly specified for:
 
   * Program scope variables or variables inside functions with
     a `static` or `extern` type specifier for OpenCL C prior to version 2.0 or
-    OpenCL C 3.0 without {opencl_c_program_scope_global_variables} feature, 
+    OpenCL C 3.0 without {opencl_c_program_scope_global_variables} feature,
 
   * Pointers used as arguments to kernel functions (the address space pointed
     to must be specified explicitly).
@@ -2604,7 +2591,7 @@ definition in section 5 of the <<embedded-c-spec, Embedded C Specification>>. In
 OpenCL C, no objects can be allocated in this address space. It can only be used
 with pointer types, where a pointer pointing to a location in the generic
 address space can be used for objects allocated in any of the concrete named
-address spaces `private`, `local`, or `global`. 
+address spaces `private`, `local`, or `global`.
 ====
 
 Following section 5.3 of the <<embedded-c-spec, Embedded C Specification>>, it
@@ -2635,7 +2622,7 @@ This is the canonical example.
 In this example, function `foo` is declared with an argument that is a
 pointer with the unnamed generic address space address space qualifier.
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -2664,7 +2651,7 @@ In the example below, `var` is a pointer to the unnamed generic address space.
 A pointer to the `global` or `local` address space may be assigned to `var`
 depending on the result of a conditional expression.
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -2689,7 +2676,7 @@ objects in the `global`, `local`, and `private` address spaces,
 but it is not legal for a pointer to the unnamed generic address to
 point to an object in the `constant` address space.
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -2718,7 +2705,7 @@ a pointer to the unnamed generic address space.
 It is also not legal to assign a pointer to the unnamed generic address
 space to a pointer to a named address space without a cast.
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -2745,7 +2732,7 @@ cp = p; // Error.
 The example below illustrates the implicit conversion between named address
 spaces.
 
-[source,c]
+[source,opencl_c]
 ----------
 global int *gp;
 local int *lp;
@@ -2775,7 +2762,7 @@ cp = gp; // Error.
 The example below demonstrates explicit conversions for pointers pointing to
 different address spaces.
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -2796,7 +2783,7 @@ Explicitly casting between different address spaces in nested pointers is
 allowed but the use of such pointers can lead to incorrect behavior such as
 accessing invalid memory locations.
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -2832,10 +2819,10 @@ Various clarifications and examples illustrating how changes to ISO/IEC
 9899:1999 detailed in <<embedded-c-spec, Embedded C, section 5.3>> apply
 to OpenCL C with the generic address space.
 
-*Clause 6.2.5 - Types*: 
+*Clause 6.2.5 - Types*:
 
 If address space qualifier on type T is omitted refer to
-<<addr-spaces-inference>>. 
+<<addr-spaces-inference>>.
 
 *Clause 6.3.2.3 - Pointers*
 
@@ -2846,7 +2833,7 @@ Conversions between disjoint address spaces are disallowed in OpenCL
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -2876,7 +2863,7 @@ kernel void test1()
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -2907,7 +2894,7 @@ if (lptr == gptr) // illegal, compiler error
 
 Consider the following example:
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -2936,7 +2923,7 @@ operator is replaced with a relational operator.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -2978,7 +2965,7 @@ if (l == NULL) // legal
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -3005,7 +2992,7 @@ kernel void test1()
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 // Note: these examples assume OpenCL C 2.0 or the
 // __opencl_c_generic_address_space feature support.
@@ -3058,7 +3045,7 @@ The default access qualifier is `read_only`, if no access qualifier is declared.
 
 In the following example
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void
 foo (read_only image2d_t imageA,
@@ -3153,7 +3140,7 @@ work-items in any dimension modulo N is not zero.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 // autovectorize assuming float4 as the
 // basic computation width
@@ -3234,7 +3221,7 @@ a function declared in the `global` or `constant` address space.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 extern constant float4 noise_table[256];
 static constant float4 color_table[256];
@@ -3356,7 +3343,7 @@ address space qualifiers.
 The kernel example below shows what memory operations are not supported on
 built-in types less than 32-bits in size.
 +
-[source,c]
+[source,opencl_c]
 ----------
 kernel void
 do_proc (__global char *pA, short b,
@@ -3431,7 +3418,7 @@ directive (prior to any macro replacement), then no macro replacement is
 performed on the directive, and the directive shall have one of the
 following forms whose meanings are described elsewhere:
 
-[source,c]
+[source,opencl_c]
 ----------
 // on-off-switch is one of ON, OFF, or DEFAULT
 #pragma OPENCL FP_CONTRACT on-off-switch
@@ -3505,7 +3492,7 @@ The following predefined macro names are available.
 `+__kernel_exec(X, typen)+` (and `kernel_exec(X, typen)`) ::
     is defined as:
 
-[source,c]
+[source,opencl_c]
 ----------
 __kernel __attribute__((work_group_size_hint(X, 1, 1))) \
     __attribute__((vec_type_hint(typen)))
@@ -3626,13 +3613,13 @@ This attribute specifies a minimum alignment (in bytes) for variables of the
 specified type.
 For example, the declarations:
 
-[source,c]
+[source,opencl_c]
 ----------
 struct S { short f[3]; } __attribute__ ((aligned (8)));
 typedef int more_aligned_int __attribute__ ((aligned (8)));
 ----------
 
-force the compiler to insure (as far as it can) that each variable whose
+force the compiler to ensure (as far as it can) that each variable whose
 type is `struct S` or `more_aligned_int` will be allocated and aligned _at
 least_ on a 8-byte boundary.
 
@@ -3653,7 +3640,7 @@ compiler to align a type to the maximum useful alignment for the target
 machine you are compiling for.
 For example, you could write:
 
-[source,c]
+[source,opencl_c]
 ----------
 struct S { short f[3]; } __attribute__ ((aligned));
 ----------
@@ -3697,7 +3684,7 @@ In the following example, the members of `my_packed_struct` are packed
 closely together, but the internal layout of its `s` member is not packed.
 To do that, struct `my_unpacked_struct` would need to be packed, too.
 
-[source,c]
+[source,opencl_c]
 ----------
 struct my_unpacked_struct
 {
@@ -3744,7 +3731,7 @@ This attribute specifies a minimum alignment for the variable or structure
 field, measured in bytes.
 For example, the declaration:
 +
-[source,c]
+[source,opencl_c]
 ----------
 int x __attribute__ ((aligned (16))) = 0;
 ----------
@@ -3756,7 +3743,7 @@ The alignment value specified must be a power of two.
 You can also specify the alignment of structure fields.
 For example, to create a double-word aligned `int` pair, you could write:
 +
-[source,c]
+[source,opencl_c]
 ----------
 struct foo { int x[2] __attribute__ ((aligned (8))); };
 ----------
@@ -3772,7 +3759,7 @@ compiler to align a variable or field to the maximum useful alignment for
 the target machine you are compiling for.
 For example, you could write:
 +
-[source,c]
+[source,opencl_c]
 ----------
 short array[3] __attribute__ ((aligned));
 ----------
@@ -3807,7 +3794,7 @@ specify a larger value with the aligned attribute.
 Here is a structure in which the field `x` is packed, so that it immediately
 follows a:
 +
-[source,c]
+[source,opencl_c]
 ----------
 struct foo
 {
@@ -3822,7 +3809,7 @@ type body apply to the type.
 +
 For example:
 +
-[source,c]
+[source,opencl_c]
 ----------
 /* a has alignment of 128 */
 __attribute__((aligned(128))) struct A {int i;} a;
@@ -3847,7 +3834,7 @@ The default is `device`.
 +
 For example:
 +
-[source,c]
+[source,opencl_c]
 ----------
 global float4 *p __attribute__ ((endian(host)));
 ----------
@@ -3886,7 +3873,7 @@ The `nosvm` attribute is deprecated, and the compiler can ignore it.
 For basic blocks and control-flow-statements the attribute is placed before
 the structure in question, for example:
 
-[source,c]
+[source,opencl_c]
 ----------
 __attribute__((attr1)) {...}
 
@@ -3931,7 +3918,7 @@ appear immediately before the loop to be affected.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 __attribute__((opencl_unroll_hint(2)))
 while (*s != 0)
@@ -3940,7 +3927,7 @@ while (*s != 0)
 
 The tells the compiler to unroll the above while loop by a factor of 2.
 
-[source,c]
+[source,opencl_c]
 ----------
 __attribute__((opencl_unroll_hint))
 for (int i=0; i<2; i++)
@@ -3952,7 +3939,7 @@ for (int i=0; i<2; i++)
 In the example above, the compiler will determine how much to unroll the
 loop.
 
-[source,c]
+[source,opencl_c]
 ----------
 __attribute__((opencl_unroll_hint(1)))
 for (int i=0; i<32; i++)
@@ -3966,7 +3953,7 @@ The above is an example where the loop should not be unrolled.
 Below are some examples of invalid usage of
 `+__attribute__((opencl_unroll_hint(n)))+`.
 
-[source,c]
+[source,opencl_c]
 ----------
 __attribute__((opencl_unroll_hint(-1)))
 while (...)
@@ -3978,7 +3965,7 @@ while (...)
 The above example is an invalid usage of the loop unroll factor as the loop
 unroll factor is negative.
 
-[source,c]
+[source,opencl_c]
 ----------
 __attribute__((opencl_unroll_hint))
 if (...)
@@ -3990,7 +3977,7 @@ if (...)
 The above example is invalid because the unroll attribute qualifier is used
 on a non-loop construct
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void
 my_kernel( ... )
@@ -4068,7 +4055,7 @@ in which it was defined.
 If you declare a Block as a variable, you can then use it just as you would
 a function:
 
-[source,c]
+[source,opencl_c]
 ----------
 int multiplier = 7;
 
@@ -4090,7 +4077,7 @@ to a function, except that you use ^ instead of *.
 The Block type fully interoperates with the rest of the C type system.
 The following are valid Block variable declarations:
 
-[source,c]
+[source,opencl_c]
 ----------
 void (^blockReturningVoidWithVoidArgument)(void);
 int (^blockReturningIntWithIntAndCharArguments)(int, char);
@@ -4108,7 +4095,7 @@ You can also create types for Blocks -- doing so is generally considered to
 be best practice when you use a block with a given signature in multiple
 places:
 
-[source,c]
+[source,opencl_c]
 ----------
 typedef float (^MyBlockType)(float, float);
 
@@ -4139,7 +4126,7 @@ is allowed as a function reference.
 
 The following Block literal:
 
-[source,c]
+[source,opencl_c]
 ----------
 ^ void (void) { printf("hello world**\n**"); }
 ----------
@@ -4156,14 +4143,14 @@ void )` argument list may also be omitted.
 
 So:
 
-[source,c]
+[source,opencl_c]
 ----------
 ^ ( void ) { printf("hello world**\n**"); }
 ----------
 
 and:
 
-[source,c]
+[source,opencl_c]
 ----------
 ^ { printf("hello world**\n**"); }
 ----------
@@ -4197,7 +4184,7 @@ variables at global or local `static` scope.
 
 You can also declare a Block as a global literal in program scope.
 
-[source,c]
+[source,opencl_c]
 ----------
 int GlobalInt = 0;
 
@@ -4257,7 +4244,7 @@ are described below.
 
 Example 1:
 
-[source,c]
+[source,opencl_c]
 ----------
 void foo(int *x, int (^bar)(int, int))
 {
@@ -4276,7 +4263,7 @@ void k(global int *x, global int *z)
 
 Example 2:
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel
 void k(global int *x, global int *z)
@@ -4292,7 +4279,7 @@ void k(global int *x, global int *z)
 
 Example 3:
 
-[source,c]
+[source,opencl_c]
 ----------
 int GlobalInt = 0;
 int (^getGlobalInt)(void) = ^{ return GlobalInt; }; // legal
@@ -4311,7 +4298,7 @@ void foo()
 
 Example 4:
 
-[source,c]
+[source,opencl_c]
 ----------
 void (^bl0)(void) = ^{
     ...
@@ -4333,7 +4320,7 @@ kernel void k()
 
 Example 5:
 
-[source,c]
+[source,opencl_c]
 ----------
 struct v {
     int arr[2];
@@ -5113,7 +5100,7 @@ If this pragma is used in any other context, the behavior is undefined.
 
 The pragma definition to set `FP_CONTRACT` is:
 
-[source,c]
+[source,opencl_c]
 ----------
 // on-off-switch is one of ON, OFF, or DEFAULT.
 // The DEFAULT value is ON.
@@ -5130,7 +5117,7 @@ The macro names given in the following list must use the values specified.
 These constant expressions are suitable for use in `#if` preprocessing
 directives.
 
-[source,c]
+[source,opencl_c]
 ----------
 #define FLT_DIG         6
 #define FLT_MANT_DIG    24
@@ -5204,7 +5191,7 @@ The macro names given in the following list must use the values specified.
 These constant expressions are suitable for use in `#if` preprocessing
 directives.
 
-[source,c]
+[source,opencl_c]
 ----------
 #define DBL_DIG         15
 #define DBL_MANT_DIG    53
@@ -5417,7 +5404,7 @@ The macro names given in the following list must use the values specified.
 The values shall all be constant expressions suitable for use in `#if`
 preprocessing directives.
 
-[source,c]
+[source,opencl_c]
 ----------
 #define CHAR_BIT        8
 #define CHAR_MAX        SCHAR_MAX
@@ -5536,7 +5523,7 @@ as *mad* or *fma*.
 
 This is equivalent to:
 
-[source,c]
+[source,opencl_c]
 ----------
 gentype t;
 t = clamp ((x - edge0) / (edge1 - edge0), 0, 1);
@@ -5615,7 +5602,7 @@ _p_ * *half_rsqrt*(__p.x__^2^ + __p.y__^2^ + ...)
 The result shall be within 8192 ulps error from the infinitely precise
 result of
 
-[source,c]
+[source,opencl_c]
 ----------
 if (all(p == 0.0f))
   result = p;
@@ -6255,7 +6242,7 @@ in a subgroup.
   spaces.
   For the *sub_group_barrier* variant that does not take a
   memory scope, the _scope_ is `memory_scope_sub_group`.
-  
+
   `CLK_LOCAL_MEM_FENCE` - The *sub_group_barrier* function will either flush
   any variables stored in local memory or queue a memory fence to ensure
   correct ordering of memory operations to local memory.
@@ -6341,7 +6328,7 @@ The OpenCL C programming language implements the following explicit memory fence
 [[address-space-qualifier-functions]]
 === Address Space Qualifier Functions
 
-[open,refpage='addressSpaceQualifierFuncs',desc='Address Space Qualifier Functions',type='freeform',spec='clang',anchor='address-space-qualifier-functions',xrefs='qualifiers',alias='get_fence to_global to_local to_private']
+[open,refpage='addressSpaceQualifierFuncs',desc='Address Space Qualifier Functions',type='freeform',spec='clang',anchor='address-space-qualifier-functions',alias='get_fence to_global to_local to_private']
 --
 
 NOTE: The functionality described in this section <<unified-spec, requires>>
@@ -6616,7 +6603,7 @@ initialized using `ATOMIC_VAR_INIT` is initially in an indeterminate state;
 however, the default (zero) initialization for objects with `static` storage
 duration is guaranteed to produce a valid state.
 
-[source,c]
+[source,opencl_c]
 ----------
 #define ATOMIC_VAR_INIT(C value)
 ----------
@@ -6626,7 +6613,7 @@ in program scope in the `global` address space.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 global atomic_int guide = ATOMIC_VAR_INIT(42);
 ----------
@@ -6645,7 +6632,7 @@ operation, constitutes a data-race.
 The `atomic_init` function non-atomically initializes the atomic object
 pointed to by obj to the value value.
 
-[source,c]
+[source,opencl_c]
 ----------
 // Requires OpenCL C 3.0 or newer.
 void atomic_init(volatile __global A *obj, C value)
@@ -6658,7 +6645,7 @@ void atomic_init(volatile A *obj, C value)
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 local atomic_int guide;
 if (get_local_id(0) == 0)
@@ -6768,7 +6755,7 @@ The following table lists the enumeration constants:
 --
 The following fence operations are supported.
 
-[source,c]
+[source,opencl_c]
 ----------
 void atomic_work_item_fence(cl_mem_fence_flags flags,
                             memory_order order,
@@ -6855,7 +6842,7 @@ This section specifies each general kind.
 
 [open,refpage='atomic_store',desc='The atomic_store Functions',type='freeform',spec='clang',anchor='atomic_store',xrefs='atomicFunctions atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_flag_test_and_set_explicit atomic_init atomic_load atomic_store atomic_work_item_fence']
 --
-[source,c]
+[source,opencl_c]
 ----------
 // Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device features.
@@ -6926,7 +6913,7 @@ feature.
 
 [open,refpage='atomic_load',desc='The atomic_load Functions',type='freeform',spec='clang',anchor='atomic_load',xrefs='atomicFunctions atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_flag_test_and_set_explicit atomic_init atomic_load atomic_store atomic_work_item_fence']
 --
-[source,c]
+[source,opencl_c]
 ----------
 // Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device features.
@@ -6990,7 +6977,7 @@ feature.
 
 [open,refpage='atomic_exchange',desc='The atomic_exchange Functions',type='freeform',spec='clang',anchor='atomic_exchange',xrefs='atomicFunctions atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_flag_test_and_set_explicit atomic_init atomic_load atomic_store atomic_work_item_fence']
 --
-[source,c]
+[source,opencl_c]
 ----------
 // Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device features.
@@ -7062,7 +7049,7 @@ feature.
 
 [open,refpage='atomic_compare_exchange',desc='The atomic_compare_exchange Functions',type='freeform',spec='clang',anchor='atomic_compare_exchange',xrefs='atomicFunctions atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_flag_test_and_set_explicit atomic_init atomic_load atomic_store atomic_work_item_fence']
 --
-[source,c]
+[source,opencl_c]
 ----------
 // Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device features.
@@ -7341,7 +7328,7 @@ Otherwise, these operations are atomic load operations.
 ====
 The effect of the compare-and-exchange operations is
 
-[source,c]
+[source,opencl_c]
 ----------
 if (memcmp(object, expected, sizeof(*object) == 0)
     memcpy(object, &desired, sizeof(*object));
@@ -7404,7 +7391,7 @@ For *atomic_fetch* and modify functions with *key* = `or`, `xor`, `and`,
 and on atomic type `atomic_uintptr_t`, `M` is `uintptr_t`.
 ====
 
-[source,c]
+[source,opencl_c]
 ----------
 // Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device features.
@@ -7497,7 +7484,7 @@ scope in the `global` address space with the `atomic_flag` type.
 
 Example:
 
-[source,c]
+[source,opencl_c]
 ----------
 global atomic_flag guard = ATOMIC_FLAG_INIT;
 ----------
@@ -7509,7 +7496,7 @@ global atomic_flag guard = ATOMIC_FLAG_INIT;
 
 [open,refpage='atomicFlagTestAndSet',desc='The atomic_flag_test_and_set Functions',type='freeform',spec='clang',anchor='atomic_flag_test_and_set',xrefs='atomicFunctions atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_init atomic_load atomic_store atomic_work_item_fence',alias='atomic_flag_test_and_set atomic_flag_test_and_set_explicit']
 --
-[source,c]
+[source,opencl_c]
 ----------
 // Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device features.
@@ -7583,7 +7570,7 @@ feature.
 
 [open,refpage='atomic_flag_clear',desc='The atomic_flag_clear Functions',type='freeform',spec='clang',anchor='atomic_flag_clear',xrefs='atomicFunctions atomicTypes atomic_compare_exchange atomic_exchange atomic_fetch_key atomic_flag atomic_flag_clear atomic_flag_test_and_set atomic_flag_test_and_set_explicit atomic_init atomic_load atomic_store atomic_work_item_fence']
 --
-[source,c]
+[source,opencl_c]
 ----------
 // Requires OpenCL C 3.0 or newer and both the __opencl_c_atomic_order_seq_cst
 // and __opencl_c_atomic_scope_device features.
@@ -7965,7 +7952,7 @@ which element of the one or two input vectors the result element gets.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 uint4 mask = (uint4)(3, 2, 1, 0);
 float4 a;
@@ -7987,7 +7974,7 @@ b = shuffle(a, mask);
 
 Examples that are not valid are:
 
-[source,c]
+[source,opencl_c]
 ----------
 uint8 mask;
 short16 a;
@@ -8344,7 +8331,7 @@ floating number with the given precision.
 
 A few examples of printf are given below:
 
-[source,c]
+[source,opencl_c]
 ----------
 float4  f = (float4)(1.0f, 2.0f, 3.0f, 4.0f);
 uchar4 uc = (uchar4)(0xFA, 0xFB, 0xFC, 0xFD);
@@ -8355,7 +8342,7 @@ printf("uc = %#v4hhx\n", uc);
 
 The above two printf calls print the following:
 
-[source,c]
+[source,opencl_c]
 ----------
 f4 = 1.00,2.00,3.00,4.00
 uc = 0xfa,0xfb,0xfc,0xfd
@@ -8365,7 +8352,7 @@ A few examples of valid use cases of printf for the conversion specifier *s*
 are given below.
 The argument value must be a pointer to a literal string.
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void my_kernel( ... )
 {
@@ -8376,7 +8363,7 @@ kernel void my_kernel( ... )
 A few examples of invalid use cases of printf for the conversion specifier
 *s* are given below:
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void my_kernel(global char *s, ... )
 {
@@ -8391,7 +8378,7 @@ A few examples of invalid use cases of printf where data types given by the
 vector specifier and length modifier do not match the argument type are
 given below:
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void my_kernel(global char *s, ... )
 {
@@ -8494,21 +8481,21 @@ These properties control how elements of an image object are read by
 Samplers can also be declared as global constants in the program source
 using the following syntax.
 
-[source,c]
+[source,opencl_c]
 ----------
 const sampler_t <sampler name> = <value>
 ----------
 
 or
 
-[source,c]
+[source,opencl_c]
 ----------
 constant sampler_t <sampler name> = <value>
 ----------
 
 or
 
-[source,c]
+[source,opencl_c]
 ----------
 __constant sampler_t <sampler_name> = <value>
 ----------
@@ -8583,7 +8570,7 @@ The sampler fields are described in the following table.
 
 *Examples*:
 
-[source,c]
+[source,opencl_c]
 ----------
 const sampler_t samplerA = CLK_NORMALIZED_COORDS_TRUE |
                            CLK_ADDRESS_REPEAT |
@@ -9875,7 +9862,7 @@ an image, the *work_group_barrier*(`CLK_IMAGE_MEM_FENCE`) should be used.
 
 Consider the following example:
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void
 foo(read_write image2d_t img, ... )
@@ -10023,7 +10010,7 @@ is the size of the work-group) elements [a~0~, a~1~, ... a~n-1~] and returns
 
 Consider the following example:
 
-[source,c]
+[source,opencl_c]
 ----------
 void foo(int *p)
 {
@@ -10082,7 +10069,7 @@ and vector data types.
 
 Examples:
 
-[source,c]
+[source,opencl_c]
 ----------
 pipe int4 pipeA; // a pipe with int4 packets
 
@@ -10101,7 +10088,7 @@ specifier is a compilation error.
 
 In the following example
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void
 foo (read_only pipe fooA_t pipeA,
@@ -10415,7 +10402,7 @@ block:
 
 Below are some examples of how to enqueue a block.
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void
 my_func_A(global int *a, global int *b, global int *c)
@@ -10459,7 +10446,7 @@ my_func_C(global int *a, global int *b, global int *c)
 
 The example below shows how to declare a block literal and enqueue it.
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void
 my_func(global int *a, global int *b)
@@ -10502,7 +10489,7 @@ the `local` or `private` address space.
 
 Example:
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void
 foo(global int *a, local int *lptr, ...)
@@ -10533,7 +10520,7 @@ the enqueued block.
 
 Some examples follow:
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void
 my_func_A_local_arg1(global int *a, local int *lptr, ...)
@@ -10602,7 +10589,7 @@ If new nd-range work does need to be performed, then evaluate_dp_work_A will
 enqueue a new instance of dp_func_A .
 This process is repeated until all the work is completed.
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void
 dp_func_A(queue_t q, ...)
@@ -10891,7 +10878,7 @@ built-in function.
 The example below shows how events can be used with kernels enqueued to
 multiple device queues.
 
-[source,c]
+[source,opencl_c]
 ----------
 extern void barA_kernel(...);
 extern void barB_kernel(...);
@@ -10929,7 +10916,7 @@ foo(queue_t q0, queue q1, ...)
 The example below shows how the marker command can be used with kernels
 enqueued to a device queue.
 
-[source,c]
+[source,opencl_c]
 ----------
 kernel void
 foo(queue_t q, ...)
@@ -12057,7 +12044,7 @@ For example, *sin*({plusmn}0) = {plusmn}0 shall be interpreted to mean
 * *normalize*(_v_) for which any element in _v_ is infinite shall proceed
      as if the elements in _v_ were replaced as follows:
 +
-[source,c]
+[source,opencl_c]
 ----------
 for (i = 0; i < sizeof(v) / sizeof(v[0]); i++)
    v[i] = isinf(v[i]) ? copysign(1.0, v[i]) : 0.0 * v[i];
@@ -12111,7 +12098,7 @@ for (i = 0; i < sizeof(v) / sizeof(v[0]); i++)
 
 *modf* behaves as though implemented by:
 
-[source,c]
+[source,opencl_c]
 ----------
 gentype modf(gentype value, gentype *iptr)
 {
@@ -12210,7 +12197,7 @@ is obtained.
 This means the image element at location (_i_,_j_,_k_) becomes the image
 element value, where
 
-[source,c]
+[source,opencl_c]
 ----------
 i = address_mode((int)floor(u))
 j = address_mode((int)floor(v))
@@ -12239,7 +12226,7 @@ _w_.
 
 The `clamp` function used in this table is defined as:
 
-[source,c]
+[source,opencl_c]
 ----------
 clamp(a, b, c) = return (a < b) ? b : ((a > c) ? c : a)
 ----------
@@ -12256,7 +12243,7 @@ This 2{times}2 square or 2{times}2{times}2 cube is obtained as follows.
 
 Let
 
-[source,c]
+[source,opencl_c]
 ----------
 i0 = address_mode((int)floor(u - 0.5))
 j0 = address_mode((int)floor(v - 0.5))
@@ -12274,7 +12261,7 @@ floor(x)`.
 
 For a 3D image, the image element value is found as
 
-[source,c]
+[source,opencl_c]
 ----------
 T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * (1 - b) * (1 - c) * T_i1j0k0
@@ -12290,7 +12277,7 @@ where `T_ijk` is the image element at location (_i_,_j_,_k_) in the 3D image.
 
 For a 2D image, the image element value is found as
 
-[source,c]
+[source,opencl_c]
 ----------
 T = (1 - a) * (1 - b) * T_i0j0
     + a * (1 - b) * T_i1j0
@@ -12321,7 +12308,7 @@ When filter mode is `CLK_FILTER_NEAREST`, the image element at location
 (_i_,_j_,_k_) becomes the image element value, with _i_, _j_, and _k_
 computed as
 
-[source,c]
+[source,opencl_c]
 ----------
 u = (s - floor(s)) * w_t
 i = (int)floor(u)
@@ -12354,7 +12341,7 @@ This 2{times}2 square or 2{times}2{times}2 cube is obtained as follows.
 
 Let
 
-[source,c]
+[source,opencl_c]
 ----------
 u = (s - floor(s)) * w_t
 i0 = (int)floor(u - 0.5)
@@ -12390,7 +12377,7 @@ floor(x)`.
 
 For a 3D image, the image element value is found as
 
-[source,c]
+[source,opencl_c]
 ----------
 T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * (1 - b) * (1 - c) * T_i1j0k0
@@ -12406,7 +12393,7 @@ where `T_ijk` is the image element at location (_i_,_j_,_k_) in the 3D image.
 
 For a 2D image, the image element value is found as
 
-[source,c]
+[source,opencl_c]
 ----------
 T = (1 - a) * (1 - b) * T_i0j0
     + a * (1 - b) * T_i1j0
@@ -12437,7 +12424,7 @@ When filter mode is `CLK_FILTER_NEAREST`, the image element at location
 (_i_,_j_,_k_) becomes the image element value, with _i_,_j_ and k computed
 as
 
-[source,c]
+[source,opencl_c]
 ----------
 s' = 2.0f * rint(0.5f * s)
 s' = fabs(s - s')
@@ -12472,7 +12459,7 @@ This 2{times}2 square or 2{times}2{times}2 cube is obtained as follows.
 
 Let
 
-[source,c]
+[source,opencl_c]
 ----------
 s' = 2.0f * rint(0.5f * s)
 s' = fabs(s - s')
@@ -12508,7 +12495,7 @@ floor(x)`.
 
 For a 3D image, the image element value is found as
 
-[source,c]
+[source,opencl_c]
 ----------
 T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * (1 - b) * (1 - c) * T_i1j0k0
@@ -12524,7 +12511,7 @@ where `T_ijk` is the image element at location (_i_,_j_,_k_) in the 3D image.
 
 For a 2D image, the image element value is found as
 
-[source,c]
+[source,opencl_c]
 ----------
 T = (1 - a) * (1 - b) * T_i0j0
     + a * (1 - b) * T_i1j0
@@ -12536,7 +12523,7 @@ where `T_ij` is the image element at location (_i_,_j_) in the 2D image.
 
 For a 1D image, the image element value is found as
 
-[source,c]
+[source,opencl_c]
 ----------
 T = (1 - a) * T_i0
     + a * T_i1
@@ -12856,7 +12843,7 @@ The following is the conversion rule for converting a normalized 8-bit
 unsigned integer sRGB color value to a floating-point linear RGB color value
 using *read_imagef*.
 
-[source,c]
+[source,opencl_c]
 ----------
 // Convert the normalized 8-bit unsigned integer R, G and B channel values
 // to a floating-point value (call it c) as per rules described in section
@@ -12876,7 +12863,7 @@ The following are the conversion rules for converting a linear RGB
 floating-point color value (call it _c_) to a normalized 8-bit unsigned
 integer sRGB value using *write_imagef*.
 
-[source,c]
+[source,opencl_c]
 ----------
 if (c is NaN)
     c = 0.0;
@@ -12981,6 +12968,10 @@ one of the integers 0, 1, ... h~t~ - 1.
     https://www.iso.org/standard/51126.html .
     References are to sections of this specific version, referred to as the
     "`Embedded C Specification`", although other versions exist.
+
+:numbered!:
+
+include::c/appendix_a.asciidoc[]
 
 // This is generatig asciidoctor errors:
 //  OpenCL_C.txt: Failed to load AsciiDoc document - undefined method `+' for nil:NilClass

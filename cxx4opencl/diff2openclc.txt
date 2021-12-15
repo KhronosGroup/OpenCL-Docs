@@ -102,7 +102,7 @@ encouraged to define `NULL` as an alias to pointer literal `nullptr`.
 
 {cpp}17 does not support `restrict` and therefore {cpp} for OpenCL
 can not support it either. Some compilers might provide extensions
-with some functionality of `restrict` in {cpp}, e.g. `__restrict`
+with some functionality of `restrict` in {cpp}, e.g. `+__restrict+`
 in Clang.
 
 This feature only affects optimizations and the source
@@ -110,7 +110,7 @@ code can be modified by removing it. As a workaround to avoid manual
 modifications, macro substitutions can be used to either remove the
 keyword during the preprocessing by defining `restrict` as an empty
 macro or mapping it to another similar compiler features, e.g.
-`__restrict` in Clang. This can be done in headers or using `-D`
+`+__restrict+` in Clang. This can be done in headers or using `-D`
 compilation flag.
 
 ===== Limitations of goto statements
@@ -129,6 +129,18 @@ label:  // invalid: jumping forward over declaration of n
    // ...
 ----------
 
+===== Ternary Selection Operator
+
+The ternary selection operator (`?:`) inherits its behaviour from both
+{cpp} and OpenCL C. It operates on three expressions
+`(exp1 ? exp2 : exp3)`. If all three expressions are scalar values,
+the {cpp}17 rules for ternary operator are followed. If the result is
+a vector value, then this is equivalent to calling
+`select(exp3, exp2, exp1)` as described in `OpenCL C 3.0 s6.15.6`.
+The rules from OpenCL C impose limitation that `exp1` cannot be a
+vector of float values. However, `exp1` can be evaluated to a scalar
+float as it is contextually convertible to bool in {cpp}.
+
 ==== OpenCL specific difference
 
 This section describes where {cpp} for OpenCL differs from OpenCL C
@@ -137,32 +149,39 @@ in OpenCL specific behavior.
 ===== Variadic macros
 
 {cpp} for OpenCL eliminates the restriction on variadic macros from
-`OpenCL C v2.0 s6.9.e`.
+`OpenCL C 3.0 s6.11.f`.
 Variadic macros can be used normally as per {cpp}17 `[cpp.replace]`.
 
 ===== Predefined macros
 
-The macro `+__OPENCL_C_VERSION__+` described in `OpenCL C v2.0 s6.10`,
+The macro `+__OPENCL_C_VERSION__+` described in `OpenCL C 3.0 s6.12`,
 is not defined.
 
 The following new predefined macros are added in {cpp} for OpenCL:
 
- * `+__OPENCL_CPP_VERSION__+` set to value `100`.
- * `+__CL_CPP_VERSION_1_0__+` also set to `100` and can be used for
+ * `+__OPENCL_CPP_VERSION__+` set to integer value reflecting the C++
+   for OpenCL version the translation unit is compiled for. The value
+   `100` corresponds to the language version 1.0 and `202100` corresponds
+   to the version 2021.
+ * `+__CL_CPP_VERSION_1_0__+` set to `100` and can be used for
+   convenience instead of a literal.
+ * `+__CL_CPP_VERSION_2021__+` set to `202100` and can be used for
    convenience instead of a literal.
 
 ===== Atomic operations
 
-{cpp} for OpenCL relaxes restriction from `OpenCL C v2.0 s6.13.11` to
+{cpp} for OpenCL relaxes restriction from `OpenCL C 3.0 s6.15.12` to
 atomic types allowing them to be used by builtin operators, and not
-only by builtin functions.
+only by builtin functions. This relaxation does not apply to
+{cpp} for OpenCL version 2021 if the sequential consistency memory model
+(i.e. `+__opencl_c_atomic_order_seq_cst+` feature) is not supported.
 
 Operators on atomic types behave as described in {cpp}17
 sections `[atomics.types.int]` `[atomics.types.pointer]`
 `[atomics.types.float]`.
-
 [source,c]
 ----------
+// Assumes support of sequential consistency memory model.
 atomic_int acnt;
 acnt++; // equivalent to atomic_fetch_add(&acnt, 1);
 ----------

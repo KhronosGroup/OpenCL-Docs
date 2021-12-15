@@ -1861,7 +1861,7 @@ include::{generated}/api/version-notes/clCreateImage3D.asciidoc[]
     If _image_row_pitch_ is not 0, it must be a multiple of the image element
     size in bytes.
   * _image_slice_pitch_ is the size in bytes of each 2D slice in the 3D image.
-     This be be 0 if _host_ptr_ is `NULL` and can be 0 or {geq}
+     This must be 0 if _host_ptr_ is `NULL` and can be 0 or {geq}
      _image_row_pitch_ {times} _image_height_ if _host_ptr_ is not `NULL`.
      If _host_ptr_ is not `NULL` and _image_slice_pitch_ is 0,
      _image_slice_pitch_ is calculated as _image_row_pitch_ {times}
@@ -5947,7 +5947,7 @@ ignored.
 
 For example, consider the following program source:
 
-[source,c]
+[source,opencl_c]
 ----
 #include <foo.h>
 #include <mydir/myinc.h>
@@ -5965,7 +5965,7 @@ This kernel includes two headers foo.h and mydir/myinc.h.
 The following describes how these headers can be passed as embedded headers
 in program objects:
 
-[source,c]
+[source,opencl]
 ----
 cl_program foo_pg = clCreateProgramWithSource(context,
     1, &foo_header_src, NULL, &err);
@@ -7102,7 +7102,7 @@ include::{generated}/api/version-notes/clSetKernelArg.asciidoc[]
 
 For example, consider the following kernel:
 
-[source,c]
+[source,opencl_c]
 ----
 kernel void image_filter (int n,
                           int m,
@@ -7219,6 +7219,16 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+
+When {clSetKernelArg} returns an error code different from {CL_SUCCESS}, the
+internal state of _kernel_ may only be modified when that error code is
+{CL_OUT_OF_RESOURCES} or {CL_OUT_OF_HOST_MEMORY}. When the internal state
+of _kernel_ is modified, it is implementation-defined whether:
+
+  * The argument value that was previously set is kept so that it can be used in
+    further kernel enqueues.
+  * The argument value is unset such that a subsequent kernel enqueue fails with
+    {CL_INVALID_KERNEL_ARGS}. footnote:[{fn-setkernelarg-prefer-unset-on-error}]
 --
 
 [open,refpage='clSetKernelArgSVMPointer',desc='Set a SVM pointer as the argument value for a specific argument of a kernel.',type='protos']
@@ -7339,7 +7349,7 @@ either be passed as an argument in the call to that kernel or it must be
 made available to the kernel using {clSetKernelExecInfo}.
 For example, we might pass extra SVM pointers as follows:
 
-[source,c]
+[source,opencl]
 ----
 clSetKernelExecInfo(kernel,
                     CL_KERNEL_EXEC_INFO_SVM_PTRS,
@@ -8464,7 +8474,7 @@ are called; otherwise the behavior is undefined.
 For example, the following code sequence will result in undefined behavior
 of {clReleaseMemObject}.
 
-[source,c]
+[source,opencl]
 ----
 ev1 = clCreateUserEvent(ctx, NULL);
 clEnqueueWriteBuffer(cq, buf1, CL_FALSE, ..., 1, &ev1, NULL);
@@ -8475,7 +8485,7 @@ clSetUserEventStatus(ev1, CL_COMPLETE);
 
 The following code sequence, however, works correctly.
 
-[source,c]
+[source,opencl]
 ----
 ev1 = clCreateUserEvent(ctx, NULL);
 clEnqueueWriteBuffer(cq, buf1, CL_FALSE, ..., 1, &ev1, NULL);
