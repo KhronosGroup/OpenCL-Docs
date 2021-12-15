@@ -28,6 +28,7 @@ therefore, no valid conversion between `+__constant+` and any other address spac
 exists. This is aligned with rules from `OpenCL C 3.0 s6.7.9` and this logic
 regulates semantics described in this section.
 
+[[address_space_casts]]
 ==== Casts
 
 C-style casts follow rules of `OpenCL C 3.0 s6.7.9`. Conversions of
@@ -86,7 +87,7 @@ __private int & ref = ...; // references int in __private address space.
 By default references refer to generic address space objects if generic
 address space is supported or private address space otherwise, except
 for dependent types that are not template specializations (see
-<<addrspace-deduction, _Deduction_>>).
+<<addrspace-deduction, _Address space inference_>>).
 
 [source,cpp]
 ------------
@@ -101,11 +102,13 @@ conversion (`OpenCL C 3.0 s6.7.9`).
 [source,cpp]
 ------------
 void f(float &ref, __global float &globref) {
-  const int& tmp = ref; // legal - reference to generic/__private address space object can
-                        // bind to a temporary object created in __private  address space.
+  const int& tmp = ref; // legal - reference to generic/__private address space object
+                        // can bind to a temporary object created in __private
+                        // address space.
 
-  __global const int& globtmp = globref; // error reference to global address space object cannot bind
-                                         // to a temporary object created in __private  address space.
+  __global const int& globtmp = globref; // error: reference to global address space
+                                         // object cannot bind to a temporary object
+                                         // created in __private  address space.
 }
 ------------
 
@@ -132,9 +135,10 @@ that is a pointer type. By default the `this` pointer parameter is in the
 generic address space if it is supported and in the private address space
 otherwise. All concrete objects passed as an argument to the
 implicit `this` parameter will be converted to this default (generic or private)
-address space first if such conversion is valid. Therefore, programs using objects
-in disjoint address spaces will not be compiled unless the address spaces for the
-object parameter `this` is explicitly specified using address space qualifiers
+address space first if such conversion is valid. Therefore, when member functions
+are called with objects created in disjoint address spaces from the default one,
+the compilation must fail. To prevent the failure the address space on implicit
+object parameter `this` must be specified using address space qualifiers
 on member functions (see <<addrspace-member-function-qualifiers,
 _Member function qualifier_>>). For example, use of member functions with
 objects in `+__constant+` address space will always require a `+__constant+`
@@ -148,7 +152,7 @@ be implemented to exploit memory access coalescing for segments with memory bank
 Address spaces are not deduced for:
 
   * non-pointer/non-reference template parameters except for template
-    specializations or non-type type based template parameters.
+    specializations or non-type based template parameters.
   * non-pointer/non-reference class members except for static data members
     that are deduced to the `+__global+` address space for {cpp} for OpenCL 1.0
     or {cpp} for OpenCL 2021 with the
@@ -316,37 +320,37 @@ class C {
 
   // C(const C & par); /* 'this'/'par' is a pointer/reference to */
                        /*  object in generic address space */
-                       /*  if supported */
+                       /*  if supported, or */
                        /* in private address space otherwise. */
 
   // C(C && par); /* 'this'/'par' is a pointer/r-val reference to */
-                  /* object in generic address space if supported */
+                  /* object in generic address space if supported, or */
                   /* in private address space otherwise. */
 
   // C & operator=(const C & par); /* 'this'/'par'/return value is */
                                    /* a pointer/reference/reference to */
                                    /* object in generic address space */
-                                   /* if supported */ 
+                                   /* if supported, or */ 
                                    /* in private address space otherwise. */
 
   // C & operator=(C && par)'; /* 'this'/'par'/return value is */
                                /* a pointer/r-val reference/reference to */
                                /* object in generic address space, */
-                               /* if it is supported or */ 
+                               /* if it supported, or */ 
                                /* in private address space otherwise. */
 };
 ------------
 
 ==== Builtin operators
 
-All builtin operators are available in the specific named address spaces, thus
+All builtin operators are available with the specific address spaces, thus
 no address space conversions (i.e. to generic address space) are performed.
 
 ==== Templates
 
 There is no deduction of address spaces in non-pointer/non-reference
 template parameters and dependent types (see <<addrspace-deduction,
-_Deduction_>>). The address space of a template parameter is deduced
+_Address space inference_>>). The address space of a template parameter is deduced
 during type deduction if it is not explicitly provided in the
 instantiation.
 
@@ -385,7 +389,7 @@ void bar() {
 ------------
 
 Once a template has been instantiated, regular restrictions for
-address spaces will apply.
+address spaces will apply `OpenCL C 3.0 s6.7`.
 
 [source,cpp]
 ------------
@@ -418,10 +422,11 @@ void foo() {
           // of parameter reference.
 }
 
-__global const int& f(__global float &ref) {
-  return ref; // error: address space mismatch between temporary object
-              // created to hold value converted float->int and return
-              // value type (can't convert from __private to __global).
+void f(__global float &ref) {
+  __global const int& newref = ref; // error: address space mismatch between
+                                    // temporary object created to hold value
+                                    // converted float->int and local variable
+                                    // (can't convert from __private to __global).
 }
 ------------
 
@@ -458,8 +463,8 @@ public:
 };
 __kernel void foo() {
   __local C locobj{}; // error: local address space objects can't be initialized
-  __local C locobj; // uninitialised object
-  locobj = {}; // calling copy assignment operator is allowed
+  __local C locobj; // uninitialised object.
+  locobj = {}; // calling copy assignment operator is allowed.
   locobj.~C(); // local address space object destructors are not invoked
                // automatically.
 }
@@ -474,7 +479,7 @@ Objects in `+__constant+` address space can be initialized using:
  * Literal expressions;
  * Uniform initialization syntax `{}`;
  * Using implicit constructors.
- * Using constexpr constructors.
+ * Using `constexpr` constructors.
 
 [source,cpp]
 ------------
@@ -487,14 +492,15 @@ struct C2 {
   constexpr C2(int init) __constant : m(init) {};
 };
 
-__constant C1 cobj1 = {1};
-__constant C1 cobj2 = C1();
-__constant C2 cobj3(1);
+__constant C1 c1obj1 = {1};
+__constant C1 c1obj2 = C1();
+__constant C2 c2obj1(1);
 ------------
 
 Non-trivial destructors for objects in non-default address spaces (i.e. all
-other than generic address space) are not required to be supported by
-implementations. The macro `+__opencl_cpp_destructor_with_address_spaces+`,
+other than generic address space when it is supported or `+__private+`
+otherwise) are not required to be supported by implementations.
+The macro `+__opencl_cpp_destructor_with_address_spaces+`,
 which is defined if and only if such destructors are supported by an
 implementation, can be used to check whether this functionality can be used
 in kernel sources. Additionally destructors with global objects might not be
@@ -502,29 +508,51 @@ supported even if address spaces are supported with destructors in general.
 Such functionality is indicated by the presence of the
 `+__opencl_cpp_global_destructor+` macro. If the macro
 `+__opencl_cpp_global_destructor+` is defined then
-`+__opencl_cpp_destructor_with_address_spaces+` must also be defined. Note that
-the destruction of objects in named address spaces global, local, or private
-can be performed using destructors with default address space (i.e. generic)
-by utilising address space conversions.
+`+__opencl_cpp_destructor_with_address_spaces+` must also be defined.
+
+Note that the destruction of objects in named address spaces `+__global+`,
+`+__local+`, or `+__private+` can be performed using destructors with
+default address space (i.e. generic) by utilising address space conversions.
 
 [source,cpp]
 ------------
-1   class C {
-2   public:
-3   #ifdef __opencl_cpp_destructor_with_address_spaces
-4     ~C() __local;
-5   #else
-6     ~C();
-7   #endif
-8   };
-9
-10  kernel void foo() {
-11    __local C locobj;
-12    locobj.~C();    // uses destructor in local address space (on line 4)
-13                    // if such destructors are supported,
-14                    // otherwise uses generic address space destructor (on line 6)
-15                    // converting to generic address prior to call into destructor.
-16  }
+1   // Example assumes generic address space support.
+2   class C {
+3   public:
+4   #ifdef __opencl_cpp_destructor_with_address_spaces
+5     ~C() __local;
+6   #else
+7     ~C();
+8   #endif
+9   };
+10
+11  kernel void foo() {
+12    __local C locobj;
+13    locobj.~C();    // uses destructor in local address space (on line 5)
+14                    // if such destructors are supported,
+15                    // otherwise uses generic address space destructor (on line 7)
+16                    // converting to generic address prior to call into destructor.
+17  }
+------------
+
+However, when generic address space feature is unsupported, absence of
+destructor support with address spaces results in a compilation failure
+when such destructors overloaded with non-default address spaces are
+encountered in the kernel code. 
+
+[source,cpp]
+------------
+// Example assumes generic address space is not supported.
+class C {
+public:
+  ~C();
+};
+
+kernel void foo() {
+  __local C locobj;
+  locobj.~C();    // error due to illegal conversion of 'this' from __local
+                  // to __private address space pointer.
+}
 ------------
 
 ==== Nested pointers
@@ -553,29 +581,30 @@ defdefptr = reinterpret_cast<int * *>(cnstdefptr); // legal.
 ------------
 
 [[remove-addrspace]]
-==== Address space removal
+==== Address space removal type trait
 
 `+template<class T> struct __remove_address_space;+`
 
-{cpp} for OpenCL 2021 supports utility `+__remove_address_space+` which allows to
-derive types that have address space qualifiers removed. Its effect is analogous
-to `+__remove_const+` and other similar traits in {cpp}17 `[meta.trans]`. The
-utility only removes an address space qualifier from a given type, therefore, other
-type qualifiers such as `+const+` or `+volatile+` remain unchanged.
+{cpp} for OpenCL 2021 supports the type trait `+__remove_address_space+`
+that provides the member `typedef type` which is the same as `T`, except
+that its topmost address space qualifier is removed. Its effect is analogous
+to `+remove_const+` and other similar type traits in {cpp}17 `[meta.trans]`.
+The trait only removes an address space qualifier from a given type, therefore,
+all other type qualifiers such as `+const+` or `+volatile+` remain unchanged.
 
 [source,cpp]
-----------
+------------
 template<typename T>
 void foo(T *par) {
   T var1; // error: function scope variable cannot be declared in global
-          // address space
+          // address space.
   __private T var2; // error: conflicting address space qualifiers are provided
-                    // between types '__private T' and '__global int'
-  __private __remove_address_space<T>::type var3; // type of var3 is __private int
+                    // between types '__private T' and '__global int'.
+  __private __remove_address_space<T>::type var3; // type of var3 is __private int.
 }
 
 void bar() {
   __global int* ptr;
   foo(ptr);
 }
-----------
+------------
