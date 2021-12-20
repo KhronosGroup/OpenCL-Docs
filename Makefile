@@ -68,20 +68,36 @@ SPECREVISION = $(shell echo `git describe --tags --dirty`)
 SPECREMARK = from git branch: $(shell echo `git symbolic-ref --short HEAD`) \
 	     commit: $(shell echo `git log -1 --format="%H"`)
 endif
+# The C++ for OpenCL document revision scheme is aligned with its release date.
+# Revision naming scheme is as follows:
+# DocRevYYYY.MM,
+# where YYYY corresponds to its release year,
+# MM corresponds to its release month.
+# Example for the release in Dec 2021 the revision is DocRev2021.12.
+# Leave as 'DocRevYYYY.MM-Next' if the doc content does not correspond to any official revision.
+# where DocRevYYYY.MM is the last released revision.
+CXX4OPENCL_DOCREVISION = DocRev2021.12
+CXX4OPENCL_DOCREMARK = $(SPECREMARK) \
+			tag: $(SPECREVISION)
 
-ATTRIBOPTS_NO_VERSION	= -a revdate="$(SPECDATE)" \
-			  -a revremark="$(SPECREMARK)" \
+COMMONATTRIBOPTS	= -a revdate="$(SPECDATE)" \
 			  -a stem=latexmath \
 			  -a generated=$(GENERATED) \
 			  -a sectnumlevels=5
 
 ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
-	       $(ATTRIBOPTS_NO_VERSION)
+	       -a revremark="$(SPECREMARK)" \
+	       $(COMMONATTRIBOPTS)
+
+CXX4OPENCL_ATTRIBOPTS   = -a revnumber="$(CXX4OPENCL_DOCREVISION)" \
+			  -a revremark="$(CXX4OPENCL_DOCREMARK)" \
+			  $(COMMONATTRIBOPTS)
+
 
 ADOCEXTS	      = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb \
 	-r $(CURDIR)/config/spec-macros.rb \
 	-r $(CURDIR)/config/rouge_opencl.rb
-ADOCOPTS_NO_VERSION   = -d book $(ATTRIBOPTS_NO_VERSION) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
+CXX4OPENCL_ADOCOPTS   = -d book $(CXX4OPENCL_ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
 ADOCCOMMONOPTS	      = -a apispec="$(CURDIR)/api" \
 			-a config="$(CURDIR)/config" \
 			-a cspec="$(CURDIR)/c" \
@@ -352,14 +368,14 @@ CXX4OPENCLDOCSRC = $(CXX4OPENCLDOC).txt $(GENDEPENDS) \
 cxx4openclhtml: $(HTMLDIR)/$(CXX4OPENCLDOC).html $(CXX4OPENCLDOCSRC)
 
 $(HTMLDIR)/$(CXX4OPENCLDOC).html: $(CXX4OPENCLDOCSRC) $(KATEXINST)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS_NO_VERSION) $(ADOCHTMLOPTS) -o $@ $(CXX4OPENCLDOC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(CXX4OPENCL_ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CXX4OPENCLDOC).txt
 
 cxx4openclpdf: $(PDFDIR)/$(CXX4OPENCLDOC).pdf $(CXX4OPENCLDOCSRC)
 
 $(PDFDIR)/$(CXX4OPENCLDOC).pdf: $(CXX4OPENCLDOCSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS_NO_VERSION) $(ADOCPDFOPTS) -o $@ $(CXX4OPENCLDOC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(CXX4OPENCL_ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CXX4OPENCLDOC).txt
 ifndef GS_EXISTS
 	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
 else
