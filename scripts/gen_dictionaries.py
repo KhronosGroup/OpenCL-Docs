@@ -19,7 +19,7 @@ def parse_xml(path):
 
 # File Header:
 def GetHeader():
-    return """// Copyright 2017-2021 The Khronos Group. This work is licensed under a
+    return """// Copyright 2017-2022 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
