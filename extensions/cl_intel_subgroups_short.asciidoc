@@ -1,23 +1,9 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+
 = cl_intel_subgroups_short
-
-// This section needs to be after the document title.
-:doctype: book
-:toc2:
-:toc: left
-:encoding: utf-8
-:lang: en
-
-:blank: pass:[ +]
-
-// Set the default source code type in this document to C,
-// for syntax highlighting purposes.
-:language: c
-
-// This is what is needed for C++, since docbook uses c++
-// and everything else uses cpp.  This doesn't work when
-// source blocks are in table cells, though, so don't use
-// C++ unless it is required.
-//:language: {basebackend@docbook:c++:cpp}
 
 == Name Strings
 
@@ -31,6 +17,7 @@ Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
 
 // spell-checker: disable
 Ben Ashbaugh, Intel +
+Eugene Chereshnev, Intel +
 Felix J Degrood, Intel +
 Biju George, Intel +
 Raun M Krisch, Intel +
@@ -49,7 +36,7 @@ Final Draft
 == Version
 
 Built On: {docdate} +
-Revision: 3
+Revision: 1.1.0
 
 == Dependencies
 
@@ -146,6 +133,14 @@ void  intel_sub_group_block_write_us( image2d_t image, int2 byte_coord, ushort d
 void  intel_sub_group_block_write_us2( image2d_t image, int2 byte_coord, ushort2 data )
 void  intel_sub_group_block_write_us4( image2d_t image, int2 byte_coord, ushort4 data )
 void  intel_sub_group_block_write_us8( image2d_t image, int2 byte_coord, ushort8 data )
+
+// Extension version 1.1 adds the functions:
+
+ushort16 intel_sub_group_block_read_us16( const __global ushort* p )
+ushort16 intel_sub_group_block_read_us16( image2d_t image, int2 byte_coord )
+
+void  intel_sub_group_block_write_us16( __global ushort* p, ushort16 data )
+void  intel_sub_group_block_write_us16( image2d_t image, int2 byte_coord, ushort16 data )
 ----
 --
 
@@ -418,9 +413,13 @@ ushort4  intel_sub_group_block_read_us4(
           const __global ushort* p )
 ushort8  intel_sub_group_block_read_us8(
           const __global ushort* p )
+
+// For extension version 1.1 or newer:
+ushort16 intel_sub_group_block_read_us16(
+          const __global ushort* p )
 ----
 
-| Reads 1, 2, 4, or 8 ushorts of data for each work item in the sub-group from the specified pointer as a block operation.
+| Reads 1, 2, 4, or 8 (or 16, for extension version 1.1 or newer) ushorts of data for each work item in the sub-group from the specified pointer as a block operation.
 The data is read strided, so the first value read is:
 
 `p[ sub_group_local_id ]`
@@ -449,9 +448,14 @@ ushort4  intel_sub_group_block_read_us4(
 ushort8  intel_sub_group_block_read_us8(
           image2d_t image,
           int2 byte_coord )
+
+// For extension version 1.1 or newer:
+ushort16 intel_sub_group_block_read_us16(
+          image2d_t image,
+          int2 byte_coord )
 ----
 
-| Reads 1, 2, 4, or 8 ushorts of data for each work item in the sub-group from the specified _image_ at the specified coordinate as a block operation.
+| Reads 1, 2, 4, or 8 (or 16, for extension version 1.1 or newer) ushorts of data for each work item in the sub-group from the specified _image_ at the specified coordinate as a block operation.
 Note that the coordinate is a byte coordinate, not an image element coordinate.
 Also note that the image data is read without format conversion, so each work item may read multiple image elements
 (for images with element size smaller than 16-bits).
@@ -470,9 +474,13 @@ void  intel_sub_group_block_write_us4(
         __global ushort* p, ushort4 data )
 void  intel_sub_group_block_write_us8(
         __global ushort* p, ushort8 data )
+
+// For extension version 1.1 or newer:
+void  intel_sub_group_block_write_us16(
+        __global ushort* p, ushort16 data )
 ----
 
-| Writes 1, 2, 4, or 8 ushorts of data for each work item in the sub-group to the specified pointer as a block operation.
+| Writes 1, 2, 4, or 8 (or 16, for extension version 1.1 or newer) ushorts of data for each work item in the sub-group to the specified pointer as a block operation.
 The data is written strided, so the first value is written to:
 
 `p[ sub_group_local_id ]`
@@ -501,9 +509,15 @@ void  intel_sub_group_block_write_us4(
 void  intel_sub_group_block_write_us8(
         image2d_t image,
         int2 byte_coord, ushort8 data )
+
+// For extension version 1.1 or newer:
+void  intel_sub_group_block_write_us16(
+        image2d_t image,
+        int2 byte_coord, ushort16 data )
+
 ----
 
-| Writes 1, 2, 4, or 8 ushorts of data for each work item in the sub-group to the specified _image_ at the specified coordinate as a block operation.
+| Writes 1, 2, 4, or 8 (or 16, for extension version 1.1 or newer) ushorts of data for each work item in the sub-group to the specified _image_ at the specified coordinate as a block operation.
 Note that the coordinate is a byte coordinate, not an image element coordinate.
 Unlike the image block read function, which may read from any arbitrary byte offset, the x-component of the byte coordinate for the image block write functions must be a multiple of four;
 in other words, the write must begin at 32-bit boundary.
@@ -533,10 +547,12 @@ None.
 [grid="rows"]
 [options="header"]
 |========================================
-|Rev|Date|Author|Changes
-|1|2016-10-20|Ben Ashbaugh|*First public revision.*
-|2|2018-11-15|Ben Ashbaugh|Conversion to asciidoc.
-|3|2019-09-17|Ben Ashbaugh|Added vec3 types for shuffles and asciidoctor formatting fixes.
+|Version|Date|Author|Changes
+|rev 1|2016-10-20|Ben Ashbaugh|*First public revision.*
+|rev 2|2018-11-15|Ben Ashbaugh|Conversion to asciidoc.
+|rev 3|2019-09-17|Ben Ashbaugh|Added vec3 types for shuffles and asciidoctor formatting fixes.
+|1.0.0|-|-|First assigned version (same as rev 3).
+|1.1.0|2023-04-14|Ben Ashbaugh|Added vec16 types for block reads and writes, switched to formal versioning.
 |========================================
 
 //************************************************************************
