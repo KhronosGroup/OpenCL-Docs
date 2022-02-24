@@ -1,0 +1,193 @@
+// Copyright 2018-2022 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+include::{generated}/api/api-dictionary-no-links.asciidoc[]
+:source-highlighter: coderay
+
+= cl_ext_image_drm_format_modifier
+:R: pass:q,r[^(R)^]
+Khronos{R} OpenCL Working Group
+
+== Name Strings
+
+`cl_ext_image_drm_format_modifier`
+
+== Contact
+
+Please see the *Issues* list in the Khronos *OpenCL-Docs* repository: +
+https://github.com/KhronosGroup/OpenCL-Docs
+
+== Contributors
+
+Kevin Petit, Arm Ltd. +
+Ahmed Hesham, Arm Ltd. +
+
+== Notice
+
+
+include::../copyrights.txt[]
+
+== Status
+
+Draft spec, NOT APPROVED!!
+
+== Version
+
+Built On: {docdate} +
+Version: 0.1.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification version 3.0.10.
+
+This extension requires OpenCL 3.0.
+
+This extension requires `cl_ext_image_tiling_control`.
+
+This extension requires `cl_ext_image_requirements_info`.
+
+== Overview
+
+This extension makes it possible to use DRM format modifiers to control the
+tiling of images.
+
+== New API Enums
+
+New valid value for `cl_image_tiling_ext`:
+
+[source,c]
+----
+#define CL_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT 3
+----
+
+New error code returned by *clCreateImageWithProperties*:
+
+[source,c]
+----
+#define CL_IMAGE_FORMAT_REQUIRES_DRM_FORMAT_MODIFIER_EXT -1109
+----
+
+Accepted value for the _properties_ parameter to *clCreateImageWithProperties*:
+
+[source,c]
+----
+CL_MEM_IMAGE_DRM_FORMAT_MODIFIER_EXT 0x4237
+----
+
+Accepted value for the _param_name_ parameter to *clGetImageInfo*:
+
+[source,c]
+----
+CL_IMAGE_DRM_FORMAT_MODIFIER_EXT 0x4238
+----
+
+Accepted value for the _param_name_ parameter to *clGetImageRequirementsInfoEXT*:
+
+[source,c]
+----
+CL_IMAGE_REQUIREMENTS_SUPPORTED_DRM_FORMAT_MODIFIERS_EXT 0x4239
+CL_IMAGE_REQUIREMENTS_DRM_FORMAT_MODIFIER_REQUIRED_EXT   0x423A
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify section 5.3.X, *Querying Image requirements*) ::
++
+--
+
+The following is added to _Table XX: List of supported param_names by *clGetImageRequirementsInfoEXT*_:
+[cols="4,1,4",options="header"]
+|====
+| Image Format Info | Return type | Info. returned in _param_value_
+
+| {CL_IMAGE_REQUIREMENTS_SUPPORTED_DRM_FORMAT_MODIFIERS_EXT}
+| {cl_ulong_TYPE}[]
+| Return an array of supported DRM format modifiers that can be passed via
+  {CL_MEM_IMAGE_DRM_FORMAT_MODIFIER_EXT} when creating an image using the
+  parameters passed to {clGetImageRequirementsInfoEXT}.
+  _image_desc_ is allowed to be `NULL`. When _image_desc_ is `NULL`, each
+  of the modifiers returned must be correct for all possible values of
+  _image_desc_.
+
+| {CL_IMAGE_REQUIREMENTS_DRM_FORMAT_MODIFIER_REQUIRED_EXT}
+| {cl_bool_TYPE}
+| Returns a boolean specifying whether providing a DRM format modifier
+  via {CL_MEM_IMAGE_DRM_FORMAT_MODIFIER_EXT} is required when creating an image
+  using the parameters passed to {clGetImageRequirementsInfoEXT}.
+
+|====
+--
+
+
+(Modify section 5.3.1, *Creating Image Objects*) ::
++
+--
+The following additional values for the {CL_MEM_IMAGE_TILING_EXT} property are
+accepted:
+
+  * {CL_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT} requires image data be laid out according
+    to the DRM format modifier passed via the {CL_MEM_IMAGE_DRM_FORMAT_MODIFIER_EXT}
+    property. Applications are required to provide a value for
+    {CL_MEM_IMAGE_DRM_FORMAT_MODIFIER_EXT} when they set {CL_MEM_IMAGE_TILING_EXT} to
+    {CL_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT}.
+
+{CL_MEM_IMAGE_DRM_FORMAT_MODIFIER_EXT} can be passed as part of the _properties_
+parameter to *clCreateImageWithProperties* to provide the DRM format modifier
+that describes the layout of image data when an image is created with
+{CL_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT}.
+
+The following error can be returned by *clCreateImageWithProperties*:
+
+  * {CL_IMAGE_FORMAT_REQUIRES_DRM_FORMAT_MODIFIER_EXT} when a DRM format
+    modifier is required to create an image with a specific combination of
+    parameters but was not provided. Applications can use
+    {CL_IMAGE_REQUIREMENTS_DRM_FORMAT_MODIFIER_REQUIRED_EXT} to determine
+    whether a DRM format modifier is required or not.
+--
+
+(Modify section 5.3.7, *Image Object Queries*) ::
++
+--
+
+The following is added to _Table 22: List of supported param_names by *clGetImageInfo*_:
+--
+
+[cols="1,1,4",options="header"]
+|====
+| Image info
+| Return Type
+| Description
+
+| {CL_IMAGE_DRM_FORMAT_MODIFIER_EXT}
+| {cl_ulong_TYPE}
+| If the image was created with the {CL_MEM_IMAGE_TILING_EXT} property set
+  to {CL_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT}, return the value that was passed
+  for {CL_MEM_IMAGE_DRM_FORMAT_MODIFIER_EXT}, otherwise return 0.
+|====
+
+== Interactions with Other Extensions
+
+TODO any?
+
+== Conformance tests
+
+TODO
+
+== Issues
+
+None.
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 0.1.0   | 2023-11-23 | Kevin Petit  | *Initial revision*
+|====
+
