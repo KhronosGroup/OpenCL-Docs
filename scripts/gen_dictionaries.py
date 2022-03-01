@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright 2019-2021 The Khronos Group Inc.
+# Copyright 2019-2022 The Khronos Group Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 from collections import OrderedDict
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     typeFileName   = args.directory + '/api-types.txt'
 
     specpath = args.registry
-    #specpath = "https://raw.githubusercontent.com/KhronosGroup/OpenCL-Registry/master/xml/cl.xml"
+    #specpath = "https://raw.githubusercontent.com/KhronosGroup/OpenCL-Registry/main/xml/cl.xml"
 
     print('Generating dictionaries from: ' + specpath)
 
