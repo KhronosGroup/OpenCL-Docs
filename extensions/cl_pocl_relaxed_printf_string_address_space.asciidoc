@@ -1,0 +1,96 @@
+cl_pocl_relaxed_printf_address_space
+====================================
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+:blank: pass:[ +]
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+== Name Strings
+
++cl_pocl_relaxed_printf_address_space+
+
+== Contact
+
+Pekka Jääskeläinen, Parmance (pekka /at/ parmance /dot/ com)
+
+== Contributors
+
+Pekka Jääskeläinen, Parmance +
+Henry Linjamäki, Parmance +
+Brice Videau, Argonne National Laboratory
+
+== Notice
+
+Copyright (c) 2022 Parmance
+
+== Status
+
+Early Draft
+
+== Version
+
+Built On: {docdate} +
+Revision: 1
+
+== Dependencies
+
+This extension is written against the OpenCL Specification Version 1.2, Revision 19.
+
+This extension requires OpenCL 1.2.
+
+== Overview
+
+The printf as defined OpenCL 1.2 deviates from the C99 printf enough that makes
+using it as a drop-in function for programs originally written in C99 and using
+printf sometimes cumbersome.
+
+This extension addresses a major gap in this regard by allowing the format
+string specifier and the arguments to the %s conversion specifier to originate
+from any address space, not only from the constant address space as specified
+in the OpenCL 1.2 specification.
+
+This relaxation implies that the format strings and the strings passed as %s
+arguments can be dynamically produced during the execution time of the kernel.
+
+== Modifications to the OpenCL C Specification
+
+=== Modify Table 6.21
+
+Add new function overloads (added to the bottom left cell of Table 6.21): ::
++
+
+indexterm:[clGetKernelSubGroupInfoKHR]
+[source,c]
+----
+int printf(global char * restrict format, ...)
+int printf(local char * restrict format, ...)
+int printf(private char * restrict format, ...)
+----
+
+
+=== Modify Section 6.12.13.3 - "Differences between OpenCL C and C99 printf"
+
+Remove the last bullet point: ::
+
+----
+* In OpenCL C, the conversion specifier s can only be used for arguments that
+are literal strings.
+----
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author             | Changes
+| 1       | 2022-04-08 | Pekka Jääskeläinen | *Initial revision for comments*
+|====
