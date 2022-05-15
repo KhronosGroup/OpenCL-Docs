@@ -1,4 +1,4 @@
-// Copyright 2017-2021 The Khronos Group. This work is licensed under a
+// Copyright 2017-2022 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -2579,7 +2579,7 @@ OpenCL implements the address space nesting model for pointers from
   * In OpenCL the named address spaces `{global}`, `{local}`,
     `{constant}` and `{private}` are disjoint.
   * The named address spaces `{global}`, `{local}`, and `{private}`
-    are subsets of the unnamed generic address spaces.
+    are subsets of the unnamed generic address space.
   * The unnamed generic address space does not overlap the named `{constant}`
     address space; the named `{constant}` address space is not in the generic
     address space.
@@ -6762,7 +6762,7 @@ void atomic_work_item_fence(cl_mem_fence_flags flags,
                             memory_scope scope)
 
 // Older syntax memory fences are equivalent to atomic_work_item_fence with the
-// same flags parameter, memory_scope_work_group scope, and ordering follows:
+// same flags parameter, memory_scope_work_group scope, and ordering as follows:
 void mem_fence(cl_mem_fence_flags flags)        // memory_order_acq_rel
 void read_mem_fence(cl_mem_fence_flags flags)   // memory_order_acquire
 void write_mem_fence(cl_mem_fence_flags flags)  // memory_order_release
@@ -7023,11 +7023,11 @@ C atomic_exchange_explicit(volatile A *object,
                            memory_scope scope)
 ----------
 
-Atomically replace the value pointed to by object with desired.
-Memory is affected according to the value of order.
+Atomically replace the value pointed to by `object` with `desired`.
+Memory is affected according to the value of `order`.
 These operations are read-modify-write operations (as defined by
 <<C11-spec,section 5.1.2.4 of the C11 Specification>>).
-Atomically returns the value pointed to by object immediately before the
+Atomically returns the value pointed to by `object` immediately before the
 effects.
 
 NOTE: The non-explicit `atomic_exchange` function <<unified-spec, requires>>
@@ -7079,7 +7079,8 @@ bool atomic_compare_exchange_strong(
     volatile A *object,
     C *expected, C desired)
 
-// Requires OpenCL C 3.0 or newer.
+// Requires OpenCL C 3.0 or newer and the __opencl_c_atomic_scope_device
+// feature.
 bool atomic_compare_exchange_strong_explicit(
     volatile __global A *object,
     __global C *expected,
@@ -7117,8 +7118,9 @@ bool atomic_compare_exchange_strong_explicit(
     memory_order success,
     memory_order failure)
 
-// Requires OpenCL C 2.0, or OpenCL C 3.0 or newer and the
-// opencl_c_generic_address_space feature.
+// Requires OpenCL C 2.0, or OpenCL C 3.0 or newer and both the
+// __opencl_c_generic_address_space and
+// __opencl_c_atomic_scope_device features.
 bool atomic_compare_exchange_strong_explicit(
     volatile A *object,
     C *expected,
@@ -7208,7 +7210,8 @@ bool atomic_compare_exchange_weak(
     volatile A *object,
     C *expected, C desired)
 
-// Requires OpenCL C 3.0 or newer.
+// Requires OpenCL C 3.0 or newer and the __opencl_c_atomic_scope_device
+// feature.
 bool atomic_compare_exchange_weak_explicit(
     volatile __global A *object,
     __global C *expected,
@@ -7246,8 +7249,9 @@ bool atomic_compare_exchange_weak_explicit(
     memory_order success,
     memory_order failure)
 
-// Requires OpenCL C 2.0, or OpenCL C 3.0 or newer and the
-// opencl_c_generic_address_space feature.
+// Requires OpenCL C 2.0, or OpenCL C 3.0 or newer and both the
+// __opencl_c_generic_address_space and
+// __opencl_c_atomic_scope_device features.
 bool atomic_compare_exchange_weak_explicit(
     volatile A *object,
     C *expected,
@@ -7313,8 +7317,8 @@ bool atomic_compare_exchange_weak_explicit(
 The `failure` argument shall not be `memory_order_release` nor
 `memory_order_acq_rel`.
 The `failure` argument shall be no stronger than the `success` argument.
-Atomically, compares the value pointed to by object for equality with that
-in expected, and if _true_, replaces the value pointed to by `object` with
+Atomically, compares the value pointed to by `object` for equality with that
+in `expected`, and if _true_, replaces the value pointed to by `object` with
 `desired`, and if _false_, updates the value in `expected` with the value
 pointed to by `object`.
 Further, if the comparison is _true_, memory is affected according to the
@@ -7330,10 +7334,11 @@ The effect of the compare-and-exchange operations is
 
 [source,opencl_c]
 ----------
-if (memcmp(object, expected, sizeof(*object) == 0)
+if (memcmp(object, expected, sizeof(*object)) == 0) {
     memcpy(object, &desired, sizeof(*object));
-else
+} else {
     memcpy(expected, object, sizeof(*object));
+}
 ----------
 ====
 
@@ -7435,7 +7440,7 @@ C atomic_fetch_key_explicit(volatile A *object,
                             memory_scope scope)
 ----------
 
-Atomically replaces the value pointed to by object with the result of the
+Atomically replaces the value pointed to by `object` with the result of the
 computation applied to the value pointed to by `object` and the given
 operand.
 Memory is affected according to the value of `order`.
@@ -7618,8 +7623,8 @@ void atomic_flag_clear_explicit(
 
 The `order` argument shall not be `memory_order_acquire` nor
 `memory_order_acq_rel`.
-Atomically sets the value pointed to by object to false.
-Memory is affected according to the value of order.
+Atomically sets the value pointed to by `object` to _false_.
+Memory is affected according to the value of `order`.
 
 NOTE: The non-explicit `atomic_flag_clear` function <<unified-spec, requires>>
 support for OpenCL C 2.0, or OpenCL C 3.0 or newer and both the

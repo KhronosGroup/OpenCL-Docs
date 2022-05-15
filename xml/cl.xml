@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <registry>
     <comment>
-Copyright (c) 2013-2021 The Khronos Group Inc.
+Copyright 2013-2022 The Khronos Group Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,8 +39,8 @@ machine-readable definition of the API, parameter and member validation
 language incorporated into the Specification and reference pages, and other
 material which is registered by Khronos.
 
-The authoritative public version of cl.xml is maintained in the master
-branch of the Khronos OpenCL-API GitHub repository. The authoritative
+The authoritative public version of cl.xml is maintained in the `main`
+branch of the Khronos OpenCL-Docs GitHub repository. The authoritative
 private version is maintained in the master branch of the member gitlab
 server's OpenCL/api-docs repository.
     </comment>
@@ -874,7 +874,7 @@ server's OpenCL/api-docs repository.
             <unused start="6" end="31"/>
     </enums>
 
-    <enums name="cl_kernel_arg_type_qualifer" vendor="Khronos" type="bitmask">
+    <enums name="cl_kernel_arg_type_qualifier" vendor="Khronos" type="bitmask">
         <enum value="0"             name="CL_KERNEL_ARG_TYPE_NONE"/>
         <enum bitpos="0"            name="CL_KERNEL_ARG_TYPE_CONST"/>
         <enum bitpos="1"            name="CL_KERNEL_ARG_TYPE_RESTRICT"/>
@@ -2108,7 +2108,11 @@ server's OpenCL/api-docs repository.
         <enum value="0x4211"        name="CL_DEVICE_MAX_HOST_READ_PIPES_INTEL"/>
         <enum value="0x4212"        name="CL_DEVICE_MAX_HOST_WRITE_PIPES_INTEL"/>
         <enum value="0x4213"        name="CL_MEM_CHANNEL_INTEL"/>
-            <unused start="0x4214" end="0x421F"/>
+        <enum value="0x4214"        name="CL_COMMAND_READ_HOST_PIPE_INTEL"/>
+        <enum value="0x4215"        name="CL_COMMAND_WRITE_HOST_PIPE_INTEL"/>
+        <enum value="0x4216"        name="CL_PROGRAM_NUM_HOST_PIPES_INTEL"/>
+        <enum value="0x4217"        name="CL_PROGRAM_HOST_PIPE_NAMES_INTEL"/>
+            <unused start="0x4218" end="0x421F"/>
     </enums>
 
     <enums start="0x4220" end="0x422F" name="enums.4220" vendor="IMG">
@@ -2120,7 +2124,8 @@ server's OpenCL/api-docs repository.
         <enum value="0x4231"        name="CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT"/>
         <enum value="0x4232"        name="CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT"/>
         <enum value="0x4233"        name="CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT"/>
-            <unused start="0x4234" end="0x423F"/>
+            <unused start="0x4234" end="0x4236" comment="Reserved for cl_ext_image_tiling_control"/>
+            <unused start="0x4237" end="0x423F"/>
     </enums>
 
     <enums start="0x4240" end="0x424F" name="enums.4240" comment="Reserved for ICD Loader Layers">
@@ -4007,8 +4012,8 @@ server's OpenCL/api-docs repository.
         </command>
         <command>
             <proto><type>cl_int</type>                                  <name>clGetLayerInfo</name></proto>
-            <param><type>size_t</type>                                  <name>param_value_size</name></param>
             <param><type>cl_layer_info</type>                           <name>param_name</name></param>
+            <param><type>size_t</type>                                  <name>param_value_size</name></param>
             <param><type>void</type>*                                   <name>param_value</name></param>
             <param><type>size_t</type>*                                 <name>param_value_size_ret</name></param>
         </command>
@@ -4066,6 +4071,30 @@ server's OpenCL/api-docs repository.
             <param><type>cl_uint</type>             <name>num_entries</name></param>
             <param><type>VAImageFormat</type>*      <name>va_api_formats</name></param>
             <param><type>cl_uint</type>*            <name>num_surface_formats</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>              <name>clEnqueueReadHostPipeINTEL</name></proto>
+            <param><type>cl_command_queue</type>    <name>command_queue</name></param>
+            <param><type>cl_program</type>          <name>program</name></param>
+            <param>const <type>char</type>*         <name>pipe_symbol</name></param>
+            <param><type>cl_bool</type>             <name>blocking_read</name></param>
+            <param><type>void</type>*               <name>ptr</name></param>
+            <param><type>size_t</type>              <name>size</name></param>
+            <param><type>cl_uint</type>             <name>num_events_in_wait_list</name></param>
+            <param>const <type>cl_event</type>*     <name>event_wait_list</name></param>
+            <param><type>cl_event</type>*           <name>event</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>              <name>clEnqueueWriteHostPipeINTEL</name></proto>
+            <param><type>cl_command_queue</type>    <name>command_queue</name></param>
+            <param><type>cl_program</type>          <name>program</name></param>
+            <param>const <type>char</type>*         <name>pipe_symbol</name></param>
+            <param><type>cl_bool</type>             <name>blocking_write</name></param>
+            <param>const <type>void</type>*               <name>ptr</name></param>
+            <param><type>size_t</type>              <name>size</name></param>
+            <param><type>cl_uint</type>             <name>num_events_in_wait_list</name></param>
+            <param>const <type>cl_event</type>*     <name>event_wait_list</name></param>
+            <param><type>cl_event</type>*           <name>event</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_3_0">
             <proto><type>cl_int</type>                                  <name>clGetImageRequirementsInfoEXT</name></proto>
@@ -4480,6 +4509,14 @@ server's OpenCL/api-docs repository.
             <enum name="CL_RUNNING"/>
             <enum name="CL_SUBMITTED"/>
             <enum name="CL_QUEUED"/>
+        </require>
+        <require comment="cl_khronos_vendor_id">
+            <!-- The cl_khronos_vendor_id type was added in OpenCL 3.0, but the
+                 concept of assigned vendor IDs has existed since OpenCL 1.0.
+                 These enums can be used in any OpenCL version because the type
+                 used in the API is cl_uint. -->
+            <enum name="CL_KHRONOS_VENDOR_ID_CODEPLAY"/>
+            <enum name="CL_KHRONOS_VENDOR_ID_POCL"/>
         </require>
         <require comment="Platform APIs">
             <command name="clGetPlatformIDs"/>
@@ -5045,7 +5082,7 @@ server's OpenCL/api-docs repository.
         </require>
     </feature>
 
-    <feature api="opencl" name="CL_VERSION_3_0" number="3.0" comment="OpenCL experimental API interface definitions">
+    <feature api="opencl" name="CL_VERSION_3_0" number="3.0" comment="OpenCL core API interface definitions">
         <require>
             <type name="cl_device_atomic_capabilities"/>
             <type name="cl_device_device_enqueue_capabilities"/>
@@ -6957,6 +6994,23 @@ server's OpenCL/api-docs repository.
                 <enum name="CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT"/>
                 <enum name="CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT"/>
                 <enum name="CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT"/>
+            </require>
+        </extension>
+        <extension name="cl_intel_program_scope_host_pipe" supported="opencl">
+            <require>
+                <type name="CL/cl.h"/>
+            </require>
+            <require comment="clGetEventInfo response when param_name is CL_EVENT_COMMAND_TYPE">
+                <enum name="CL_COMMAND_READ_HOST_PIPE_INTEL"/>
+                <enum name="CL_COMMAND_WRITE_HOST_PIPE_INTEL"/>
+            </require>
+            <require comment="clGetProgramInfo param_name">
+                <enum name="CL_PROGRAM_NUM_HOST_PIPES_INTEL"/>
+                <enum name="CL_PROGRAM_HOST_PIPE_NAMES_INTEL"/>
+            </require>
+            <require>
+                <command name="clEnqueueReadHostPipeINTEL"/>
+                <command name="clEnqueueWriteHostPipeINTEL"/>
             </require>
         </extension>
         <extension name="cl_ext_image_requirements_info" supported="opencl">

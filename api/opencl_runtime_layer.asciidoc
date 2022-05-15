@@ -1,4 +1,4 @@
-// Copyright 2017-2021 The Khronos Group. This work is licensed under a
+// Copyright 2017-2022 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -3430,15 +3430,25 @@ include::{generated}/api/version-notes/CL_IMAGE_ELEMENT_SIZE.asciidoc[]
 
 include::{generated}/api/version-notes/CL_IMAGE_ROW_PITCH.asciidoc[]
   | {size_t_TYPE}
-      | Return calculated row pitch in bytes of a row of elements of the
-        image object given by _image_.
+      | Returns the row pitch in bytes of a row of elements of the
+        image object given by _image_. +
+        If _image_ was created with a non-zero value for `image_row_pitch`,
+        then the value provided for `image_row_pitch` by the application is
+        returned, otherwise the returned value is calculated as
+        {CL_IMAGE_WIDTH} {times} {CL_IMAGE_ELEMENT_SIZE}.
 | {CL_IMAGE_SLICE_PITCH_anchor}
 
 include::{generated}/api/version-notes/CL_IMAGE_SLICE_PITCH.asciidoc[]
   | {size_t_TYPE}
-      | Return calculated slice pitch in bytes of a 2D slice for the 3D
+      | Returns the slice pitch in bytes of a 2D slice for the 3D
         image object or size of each image in a 1D or 2D image array given
-        by _image_.
+        by _image_. +
+        If _image_ was created with a non-zero value for `image_slice_pitch`
+        then the value provided for `image_slice_pitch` by the application
+        is returned, otherwise the returned value is calculated as: +
+         - {CL_IMAGE_ROW_PITCH} for 1D image arrays. +
+         - {CL_IMAGE_HEIGHT} {times} {CL_IMAGE_ROW_PITCH} for 3D images and
+           2D image arrays. +
         For a 1D image, 1D image buffer and 2D image object return 0.
 | {CL_IMAGE_WIDTH_anchor}
 
@@ -7819,8 +7829,10 @@ Otherwise, it returns one of the following errors:
     the <<kernel-subgroup-info-table,Kernel Object Subgroup Queries>> table
     and _param_value_ is not `NULL`.
   * {CL_INVALID_VALUE} if _param_name_ is
-    {CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE} and the size in bytes specified by
-    _input_value_size_ is not valid or if _input_value_ is `NULL`.
+    {CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE},
+    {CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE} or
+    {CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT} and the size in bytes specified
+    by _input_value_size_ is not valid or if _input_value_ is `NULL`.
   * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
@@ -9357,6 +9369,9 @@ Otherwise, it returns one of the following errors:
     not set for the command-queue, if the execution status of the command
     identified by _event_ is not {CL_COMPLETE} or if _event_ is a user event
     object.
+    Prior to OpenCL 3.0, implementations may return
+    {CL_PROFILING_INFO_NOT_AVAILABLE} for an event created by
+    {clEnqueueSvmFree}.
   * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
     specified by _param_value_size_ is < size of return type as described in
     the <<event-profiling-info-table,Event Profiling Queries>> table and
