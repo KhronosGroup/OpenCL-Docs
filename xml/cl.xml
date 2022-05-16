@@ -244,6 +244,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_properties</type>    <name>cl_ndrange_kernel_command_properties_khr</name>;</type>
         <type category="define">typedef struct _cl_mutable_command_khr* <name>cl_mutable_command_khr</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_fp_atomic_capabilities_ext</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_image_requirements_info_ext</name>;</type>
 
             <comment>Structure types</comment>
         <type category="struct" name="cl_dx9_surface_info_khr">
@@ -1657,8 +1658,9 @@ server's OpenCL/api-docs repository.
         <enum value="0x1283"        name="CL_PROFILING_COMMAND_END"/>
         <enum value="0x1284"        name="CL_PROFILING_COMMAND_COMPLETE"/>
             <unused start="0x1285" end="0x128F" comment="Reserved for cl_profiling_info"/>
-            <unused start="0x1290" end="0x1291" comment="Reserved for MR179"/>
-        <enum value="0x1292"        name="Reserved for PR750"/>
+        <enum value="0x1290"        name="CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT"/>
+            <unused start="0x1291" end="0x1291" comment="Reserved for MR179"/>
+        <enum value="0x1292"        name="CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT"/>
         <enum value="0x1293"             name="CL_COMMAND_BUFFER_FLAGS_KHR"/>
         <enum value="0x1294"             name="CL_COMMAND_BUFFER_QUEUES_KHR"/>
         <enum value="0x1295"             name="CL_COMMAND_BUFFER_NUM_QUEUES_KHR"/>
@@ -1670,7 +1672,11 @@ server's OpenCL/api-docs repository.
         <enum value="0x12A9"             name="CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR"/>
         <enum value="0x12AA"             name="CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR"/>
             <unused start="0x12AB" end="0x12B1" comment="Used by future command-buffer extensions"/>
-            <unused start="0x12B2" end="0x12B6" comment="Reserved for PR750"/>
+        <enum value="0x12B2"        name="CL_IMAGE_REQUIREMENTS_SIZE_EXT"/>
+        <enum value="0x12B3"        name="CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT"/>
+        <enum value="0x12B4"        name="CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT"/>
+        <enum value="0x12B5"        name="CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT"/>
+        <enum value="0x12B6"        name="CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT"/>
             <unused start="0x12B7" end="0x1FFF" comment="Reserved for core API tokens"/>
     </enums>
 
@@ -4089,6 +4095,18 @@ server's OpenCL/api-docs repository.
             <param><type>cl_uint</type>             <name>num_events_in_wait_list</name></param>
             <param>const <type>cl_event</type>*     <name>event_wait_list</name></param>
             <param><type>cl_event</type>*           <name>event</name></param>
+        </command>
+        <command suffix="CL_API_SUFFIX__VERSION_3_0">
+            <proto><type>cl_int</type>                                  <name>clGetImageRequirementsInfoEXT</name></proto>
+            <param><type>cl_context</type>                              <name>context</name></param>
+            <param>const <type>cl_mem_properties</type>*                <name>properties</name></param>
+            <param><type>cl_mem_flags</type>                            <name>flags</name></param>
+            <param>const <type>cl_image_format</type>*                  <name>image_format</name></param>
+            <param>const <type>cl_image_desc</type>*                    <name>image_desc</name></param>
+            <param><type>cl_image_requirements_info_ext</type>          <name>param_name</name></param>
+            <param><type>size_t</type>                                  <name>param_value_size</name></param>
+            <param><type>void</type>*                                   <name>param_value</name></param>
+            <param><type>size_t</type>*                                 <name>param_value_size_ret</name></param>
         </command>
     </commands>
 
@@ -6993,6 +7011,23 @@ server's OpenCL/api-docs repository.
             <require>
                 <command name="clEnqueueReadHostPipeINTEL"/>
                 <command name="clEnqueueWriteHostPipeINTEL"/>
+            </require>
+        </extension>
+        <extension name="cl_ext_image_requirements_info" supported="opencl">
+            <require comment="Types">
+                <type name="cl_image_requirements_info_ext"/>
+            </require>
+            <require comment="cl_image_requirements_info_ext">
+                <enum name="CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT"/>
+                <enum name="CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT"/>
+                <enum name="CL_IMAGE_REQUIREMENTS_SIZE_EXT"/>
+                <enum name="CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT"/>
+                <enum name="CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT"/>
+                <enum name="CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT"/>
+                <enum name="CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT"/>
+            </require>
+            <require comment="Enqueued Commands APIs">
+                <command name="clGetImageRequirementsInfoEXT"/>
             </require>
         </extension>
     </extensions>
