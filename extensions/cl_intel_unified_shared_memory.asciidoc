@@ -52,7 +52,7 @@ Shipping
 == Version
 
 Built On: {docdate} +
-Revision: 1.0.0
+Revision: 1.1.0
 
 == Dependencies
 
@@ -744,8 +744,14 @@ Arguments to the kernel are referred to by indices that go from 0 for the leftmo
 _arg_value_ is the pointer value that should be used as the argument specified by _arg_index_.
 The pointer value will be used as the argument by all API calls that enqueue a kernel until the argument value is set to a different pointer value by a subsequent call.
 A pointer into Unified Shared Memory allocation may only be set as an argument value for an argument declared to be a pointer to `global` or `constant` memory.
+
+The definition of a valid argument value was changed in extension version 1.1.0:
+
+* For extension versions prior to version 1.1.0:
 For devices supporting shared system allocations, any pointer value is valid.
 Otherwise, the pointer value must be `NULL` or must point into a Unified Shared Memory allocation returned by *clHostMemAllocINTEL*, *clDeviceMemAllocINTEL*, or *clSharedMemAllocINTEL*.
+* For extension versions 1.1.0 and newer:
+For all devices, any pointer value is valid and may be set as an argument to a kernel.
 
 *clSetKernelArgMemPointerINTEL* returns `CL_SUCCESS` if the function is executed successfully.
 Otherwise, it will return one of the following errors:
@@ -1236,12 +1242,16 @@ Note that some flags will not be valid, such as `CL_MEM_USE_HOST_PTR`.
 . Should it be an error to set an unknown pointer as a kernel argument using *clSetKernelArgMemPointerINTEL* if no devices support shared system allocations?
 +
 --
-*UNRESOLVED*:
-Returning an error for an unknown pointer is helpful to identify and diagnose possible programming errors sooner, but passing a pointer to arbitrary memory to a function on the host is not an error until the pointer is dereferenced.
+`RESOLVED`:
+The behavior of *clSetKernelArgMemPointerINTEL* and  was changed in version 1.1.0 of this extension.
 
-If we relax the error condition for *clSetKernelArgMemPointerINTEL* then we could also consider relaxing the error condition for *clSetKernelExecInfo*(`CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL`) similarly.
+Prior to version 1.1.0, it was considered an error to set an arbitrary pointer value as an argument to a kernel if no devices support system USM.
+This was helpful to identify possible programming errors, however it did not match the behavior of passing a pointer to a function on the host, where it is only a programming error if an invalid pointer is dereferenced.
+To help provide a similar programming experience, the error condition was relaxed in version 1.1.0, and any arbitrary pointer value may be passed to a kernel.
 
-Note that if the error condition is removed we can still check for possible programming errors via optional USM checking layers, such as the https://github.com/intel/opencl-intercept-layer/blob/master/docs/controls.md#usmchecking-bool[USMChecking] functionality in the https://github.com/intel/opencl-intercept-layer[OpenCL Intercept Layer].
+The behavior was also changed for *clSetKernelExecInfo*(`CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL`), similarly.
+
+If desired, checking to identify possible programming errors may still be provided via optional USM checking layers, such as the https://github.com/intel/opencl-intercept-layer/blob/master/docs/controls.md#usmchecking-bool[USMChecking] functionality in the https://github.com/intel/opencl-intercept-layer[OpenCL Intercept Layer].
 --
 
 . Should we support a "rect" memcpy similar to *clEnqueueCopyBufferRect*?
@@ -1280,7 +1290,11 @@ Note that there is no similar SVM "rect" memcpy.
 |R|2020-08-21|Ben Ashbaugh|Fixed enum name typo in table.
 |S|2020-08-26|Maciej Dziuban|Added initial placement flags for shared allocations.
 |1.0.0|2021-11-07|Ben Ashbaugh|Added version and other minor updates prior to posting on the OpenCL registry.
+<<<<<<< HEAD
 |1.0.0|2022-11-08|Ben Ashbaugh|Added new issues regarding error behavior for clSetKernelArgMemPointerINTEL and rect copies.
+=======
+|1.1.0|2022-06-08|Ben Ashbaugh|Modified error behavior for `clSetKernelArgMemPointerINTEL`.
+>>>>>>> c5966770 (relax error behavior for clSetKernelArgMemPointerINTEL)
 |========================================
 
 //************************************************************************
