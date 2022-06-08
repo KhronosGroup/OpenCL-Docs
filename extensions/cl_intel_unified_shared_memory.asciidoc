@@ -1156,11 +1156,14 @@ Is `size` equal to zero valid?
 --
 
 . Should we add a device query for a maximum supported USM alignment, or should the maximum supported alignment implicitly be defined by the size of the largest data type supported by the device?
+Should we allow implementation-defined behavior for alignments larger than the size of the largest data type supported by the device?
 +
 --
 *UNRESOLVED*:
 A device query would allow for larger supported alignments, such as page alignment.
 Note that supported alignments should always be a power of two.
+
+Note that there are no maximum supported alignments defined for `posix_memalign` or `_aligned_alloc`, and supported alignments for the standard `aligned_alloc` and `std::aligned_alloc` are implementation-defined.
 --
 
 . Should we add a device query for a maximum supported USM fill pattern size, or should the maximum supported fill pattern size implicitly be defined by the size of the largest data type supported by the device?
@@ -1230,6 +1233,17 @@ Note that some flags will not be valid, such as `CL_MEM_USE_HOST_PTR`.
 *UNRESOLVED*:
 --
 
+. Should it be an error to set an unknown pointer as a kernel argument using `clSetKernelArgMemPointerINTEL` if no devices support shared system allocations?
++
+--
+*UNRESOLVED*:
+Returning an error for an unknown pointer is helpful to identify and diagnose possible programming errors sooner, but passing a pointer to arbitrary memory to a function on the host is not an error until the pointer is dereferenced.
+
+If we relax the error condition for `clSetKernelArgMemPointerINTEL` then we could also consider relaxing the error condition for `clSetKernelExecInfo(CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL)` similarly.
+
+Note that if the error condition is removed we can still check for possible programming errors via optional USM checking layers, such as the https://github.com/intel/opencl-intercept-layer/blob/master/docs/controls.md#usmchecking-bool[USMChecking] functionality in the https://github.com/intel/opencl-intercept-layer[OpenCL Intercept Layer].
+--
+
 == Revision History
 
 [cols="5,15,15,70"]
@@ -1257,6 +1271,7 @@ Note that some flags will not be valid, such as `CL_MEM_USE_HOST_PTR`.
 |R|2020-08-21|Ben Ashbaugh|Fixed enum name typo in table.
 |S|2020-08-26|Maciej Dziuban|Added initial placement flags for shared allocations.
 |1.0.0|2021-11-07|Ben Ashbaugh|Added version and other minor updates prior to posting on the OpenCL registry.
+|1.1.0|2022-10-24|Ben Ashbaugh|Added an issue regarding error behavior for clSetKernelArgMemPointerINTEL.
 |========================================
 
 //************************************************************************
