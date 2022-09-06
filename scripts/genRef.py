@@ -395,8 +395,10 @@ def emitPage(baseDir, specDir, pi, file):
 
         # Specification text from beginning to just before the parameter
         # section. This covers the description, the prototype, the version
-        # note, and any additional version note text.
-        lines = remapIncludes(file[pi.begin:pi.param], baseDir, specDir)
+        # note, and any additional version note text. If a parameter section
+        # is absent then go a line beyond the include.
+        remap_end = pi.include + 1 if pi.param is None else pi.param
+        lines = remapIncludes(file[pi.begin:remap_end], baseDir, specDir)
         specText = ''.join(lines)
 
         if pi.param is not None:
