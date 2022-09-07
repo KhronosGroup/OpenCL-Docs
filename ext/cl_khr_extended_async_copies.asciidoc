@@ -38,8 +38,35 @@ For example: +
 `async_work_group_strided_copy(dst, src, num_gentypes, src_stride, event)` is equal to
 `async_work_group_copy_2D2D(dst, 0, src, 0, sizeof(gentype), 1, num_gentypes, src_stride, 1, event)`
 
-These new built-in functions support arbitrary `gentype`-based buffers by
-casting pointers to `void *`.
+The async copy built-in functions described in this section support arbitrary
+`gentype`-based buffers by casting pointers to `void*`.
+
+These async copy built-in functions do not perform any implicit synchronization
+of source data such as using a *barrier* before performing the copy.
+
+These async copy built-in functions are performed by all work-items in a
+work-group and must therefore be encountered by all work-items in a work-group
+executing the kernel with the same argument values; otherwise the results are
+undefined.
+
+The _src_offset_, _dst_offset_, _src_total_line_length_,
+_dst_total_line_length_, _src_total_plane_area_ and _dst_total_plane_area_
+function arguments are expressed in elements.
+
+Both _src_total_line_length_ and _dst_total_line_length_ describe the number of
+elements between the beginning of the current line and the beginning of the next
+line.
+
+Both _src_total_plane_area_ and _dst_total_plane_area_ describe the number of
+elements between the beginning of the current plane and the beginning of the
+next plane.
+
+These async copy built-in functions return an event object that can be used by
+*wait_group_events* to wait for the async copy to finish.  The _event_ argument
+can also be used to associate the async copy with a previous async copy allowing
+an event to be shared by multiple async copies; otherwise _event_ should be
+zero.  If the _event_ argument is non-zero, the event object supplied as the
+_event_ argument will be returned.
 
 [cols="1a,1",options="header",]
 |=======================================================================
@@ -77,31 +104,12 @@ of size _num_bytes_per_element_ from
 is performed with implicit casting to `char*` by the implementation.
 Each line contains _num_elements_per_line_ elements of size
 _num_bytes_per_element_.
-After each line of transfer, _src_ address is incremented by
+After each line of transfer, the _src_ address is incremented by
 _src_total_line_length_ elements
 (i.e. _src_total_line_length_ * _num_bytes_per_element_ bytes),
-_dst_ address is incremented by _dst_total_line_length_ elements
+and the _dst_ address is incremented by _dst_total_line_length_ elements
 (i.e. _dst_total_line_length_ * _num_bytes_per_element_ bytes),
 for the next line of transfer.
-
-All _src_offset_, _dst_offset_, _src_total_line_length_
-and _dst_total_line_length_ values are expressed in elements.
-
-Both _src_total_line_length_ and _dst_total_line_length_ describe
-the number of elements between the beginning of the current line
-and the beginning of the next line.
-
-Returns an event object that can be used by *wait_group_events* to wait
-for the async copy to finish.  The _event_ argument can also be used to
-associate the *async_work_group_copy_2D2D* with a previous async copy
-allowing an event to be shared by multiple async copies;
-otherwise _event_ should be zero.
-
-If _event_ argument is non-zero, the event object supplied in _event_
-argument will be returned.
-
-This function does not perform any implicit synchronization of source
-data such as using a *barrier* before performing the copy.
 
 The behavior of *async_work_group_copy_2D2D* is undefined if the
 source or destination addresses exceed the upper bounds of the address space
@@ -110,11 +118,6 @@ during the copy.
 The behavior of *async_work_group_copy_2D2D* is also undefined if the
 _src_total_line_length_ or _dst_total_line_length_ values are smaller
 than _num_elements_per_line_, i.e. overlapping of lines is undefined.
-
-The async copy is performed by all work-items in a work-group and this
-built-in function must therefore be encountered by all work-items in a
-work-group executing the kernel with the same argument values;
-otherwise the results are undefined.
 
 |[source,opencl_c]
 ----
@@ -148,8 +151,7 @@ event_t async_work_group_copy_3D3D(
     size_t dst_total_plane_area,
     event_t event)
 ----
-| Perform an async copy of
-((_num_elements_per_line_ * _num_lines_) * _num_planes_) elements
+| Perform an async copy of \((_num_elements_per_line_ * _num_lines_) * _num_planes_) elements
 of size _num_bytes_per_element_ from
 (_src_ + (_src_offset_ * _num_bytes_per_element_)) to
 (_dst_ + (_dst_offset_ * _num_bytes_per_element_)),
@@ -157,36 +159,12 @@ arranged in _num_planes_ planes. All pointer arithmetic
 is performed with implicit casting to `char*` by the implementation.
 Each plane contains _num_lines_ lines.
 Each line contains _num_elements_per_line_ elements.
-After each line of transfer, _src_ address is incremented by
+After each line of transfer, the _src_ address is incremented by
 _src_total_line_length_ elements
 (i.e. _src_total_line_length_ * _num_bytes_per_element_ bytes),
-_dst_ address is incremented by _dst_total_line_length_ elements
+and the _dst_ address is incremented by _dst_total_line_length_ elements
 (i.e. _dst_total_line_length_ * _num_bytes_per_element_ bytes),
 for the next line of transfer.
-
-All _src_offset_, _dst_offset_, _src_total_line_length_,
-_dst_total_line_length_, _src_total_plane_area_ and
-_dst_total_plane_area_ values are expressed in elements.
-
-Both _src_total_line_length_ and _dst_total_line_length_ describe
-the number of elements between the beginning of the current line
-and the beginning of the next line.
-
-Both _src_total_plane_area_ and _dst_total_plane_area_ describe
-the number of elements between the beginning of the current plane
-and the beginning of the next plane.
-
-Returns an event object that can be used by *wait_group_events* to wait
-for the async copy to finish.  The _event_ argument can also be used to
-associate the *async_work_group_copy_3D3D* with a previous async copy
-allowing an event to be shared by multiple async copies;
-otherwise _event_ should be zero.
-
-If _event_ argument is non-zero, the event object supplied in _event_
-argument will be returned.
-
-This function does not perform any implicit synchronization of source
-data such as using a *barrier* before performing the copy.
 
 The behavior of *async_work_group_copy_3D3D* is undefined if the
 source or destination addresses exceed the upper bounds of the address space
@@ -200,10 +178,5 @@ The behavior of *async_work_group_copy_3D3D* is also undefined if
 _src_total_plane_area_ is smaller than (_num_lines_ * _src_total_line_length_),
 or _dst_total_plane_area_ is smaller than (_num_lines_ * _dst_total_line_length_),
 i.e. overlapping of planes is undefined.
-
-The async copy is performed by all work-items in a work-group and this
-built-in function must therefore be encountered by all work-items in a
-work-group executing the kernel with the same argument values;
-otherwise the results are undefined.
 
 |=======================================================================
