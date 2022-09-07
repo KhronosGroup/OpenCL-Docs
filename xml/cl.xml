@@ -207,6 +207,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_uint</type>          <name>cl_profiling_info</name>;</type>
         <type category="define">typedef <type>cl_properties</type>    <name>cl_sampler_properties</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_kernel_exec_info</name>;</type>
+        <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_terminate_capability_khr</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_unified_shared_memory_capabilities_intel</name>;</type>
         <type category="define">typedef <type>cl_properties</type>    <name>cl_mem_properties_intel</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_mem_alloc_flags_intel</name>;</type>
@@ -243,6 +244,9 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_command_buffer_flags_khr</name>;</type>
         <type category="define">typedef <type>cl_properties</type>    <name>cl_ndrange_kernel_command_properties_khr</name>;</type>
         <type category="define">typedef struct _cl_mutable_command_khr* <name>cl_mutable_command_khr</name>;</type>
+        <type category="define">typedef <type>cl_bitfield</type>       <name>cl_mutable_dispatch_fields_khr</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_mutable_command_info_khr</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_command_buffer_structure_type_khr</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_fp_atomic_capabilities_ext</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_image_requirements_info_ext</name>;</type>
 
@@ -333,6 +337,38 @@ server's OpenCL/api-docs repository.
             <member><type>cl_bool</type><name>accumulating_saturating_signed_accelerated</name></member>
             <member><type>cl_bool</type><name>accumulating_saturating_unsigned_accelerated</name></member>
             <member><type>cl_bool</type><name>accumulating_saturating_mixed_signedness_accelerated</name></member>
+        </type>
+        <type category="struct" name="cl_mutable_dispatch_arg_khr">
+            <member><type>cl_uint</type>          <name>arg_index</name></member>
+            <member><type>size_t</type>           <name>arg_size</name></member>
+            <member>const <type>void</type>*      <name>arg_value</name></member>
+        </type>
+        <type category="struct" name="cl_mutable_dispatch_exec_info_khr">
+            <member><type>cl_uint</type>                <name>param_name</name></member>
+            <member><type>size_t</type>                 <name>param_value_size</name></member>
+            <member>const <type>void</type>*            <name>param_value</name></member>
+        </type>
+        <type category="struct" name="cl_mutable_dispatch_config_khr">
+            <member><type>cl_command_buffer_structure_type_khr</type>      <name>type</name></member>
+            <member>const <type>void</type>*                               <name>next</name></member>
+            <member><type>cl_mutable_command_khr</type>                    <name>command</name></member>
+            <member><type>cl_uint</type>                                   <name>num_args</name></member>
+            <member><type>cl_uint</type>                                   <name>num_svm_args</name></member>
+            <member><type>cl_uint</type>                                   <name>num_exec_infos</name></member>
+            <member><type>cl_uint</type>                                   <name>work_dim</name></member>
+            <member>const <type>cl_mutable_dispatch_arg_khr</type>*        <name>arg_list</name></member>
+            <member>const <type>cl_mutable_dispatch_arg_khr</type>*        <name>arg_svm_list</name></member>
+            <member>const <type>cl_mutable_dispatch_exec_info_khr</type>*  <name>exec_info_list</name></member>
+            <member>const <type>size_t</type>*                             <name>global_work_offset</name></member>
+            <member>const <type>size_t</type>*                             <name>global_work_size</name></member>
+            <member>const <type>size_t</type>*                             <name>local_work_size</name></member>
+        </type>
+
+        <type category="struct" name="cl_mutable_base_config_khr">
+            <member><type>cl_command_buffer_structure_type_khr</type>    <name>type</name></member>
+            <member>const <type>void</type>*                             <name>next</name></member>
+            <member><type>cl_uint</type>                                 <name>num_mutable_dispatch</name></member>
+            <member>const <type>cl_mutable_dispatch_config_khr</type>*   <name>mutable_dispatch_list</name></member>
         </type>
     </types>
 
@@ -640,7 +676,7 @@ server's OpenCL/api-docs repository.
         <enum value="-1138"         name="CL_INVALID_COMMAND_BUFFER_KHR"/>
         <enum value="-1139"         name="CL_INVALID_SYNC_POINT_WAIT_LIST_KHR"/>
         <enum value="-1140"         name="CL_INCOMPATIBLE_COMMAND_QUEUE_KHR"/>
-            <unused start="-1141" end="-1141" comment="Used by future command-buffer extensions"/>
+        <enum value="-1141"         name="CL_INVALID_MUTABLE_COMMAND_KHR"/>
     </enums>
 
     <enums start="-1142" end="-1142" name="ErrorCodes.1142" vendor="Khronos" comment="For cl_khr_semaphore">
@@ -794,6 +830,11 @@ server's OpenCL/api-docs repository.
         <enum bitpos="29"           name="CL_QUEUE_NO_SYNC_OPERATIONS_INTEL"/>
         <enum bitpos="30"           name="CL_QUEUE_RESERVED_QCOM"/>
         <enum bitpos="31"           name="CL_QUEUE_THREAD_LOCAL_EXEC_ENABLE_INTEL"/>
+    </enums>
+
+    <enums name="cl_device_terminate_capability_khr" vendor="Khronos" type="bitmask">
+        <enum bitpos="0"            name="CL_DEVICE_TERMINATE_CAPABILITY_CONTEXT_KHR"/>
+            <unused start="1" end="31"/>
     </enums>
 
     <enums name="cl_queue_priority_khr" vendor="Khronos" type="bitmask">
@@ -1191,7 +1232,9 @@ server's OpenCL/api-docs repository.
         <enum bitpos="2"            name="CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_MODIFIER_ARM"/>
         <enum bitpos="3"            name="CL_DEVICE_SCHEDULING_DEFERRED_FLUSH_ARM"/>
         <enum bitpos="4"            name="CL_DEVICE_SCHEDULING_REGISTER_ALLOCATION_ARM"/>
-            <unused start="5" end="63"/>
+        <enum bitpos="5"            name="CL_DEVICE_SCHEDULING_WARP_THROTTLING_ARM"/>
+        <enum bitpos="6"            name="CL_DEVICE_SCHEDULING_COMPUTE_UNIT_BATCH_QUEUE_SIZE_ARM"/>
+            <unused start="7" end="63"/>
     </enums>
 
     <enums name="cl_command_termination_reason_arm" vendor="Arm">
@@ -1253,14 +1296,15 @@ server's OpenCL/api-docs repository.
         <enum bitpos="1"            name="CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR"/>
         <enum bitpos="2"            name="CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR"/>
         <enum bitpos="3"            name="CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR"/>
-            <unused start="4" end="6" comment="Used by future command-buffer extensions"/>
+            <unused start="4" end="5" comment="Used by future command-buffer extensions"/>
             <unused start="6" end="31"/>
     </enums>
 
     <enums name="cl_command_buffer_flags_khr" vendor="Khronos" type="bitmask">
         <enum bitpos="0"            name="CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR"/>
-            <unused start="1" end="2" comment="Used by future command-buffer extensions"/>
-            <unused start="2" end="31"/>
+        <enum bitpos="1"            name="CL_COMMAND_BUFFER_MUTABLE_KHR"/>
+        <unused start="2" end="2" comment="Used by future command-buffer extensions"/>
+            <unused start="3" end="31"/>
     </enums>
 
     <enums name="cl_command_buffer_state_khr" vendor="Khronos">
@@ -1268,6 +1312,20 @@ server's OpenCL/api-docs repository.
         <enum value="1"            name="CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR"/>
         <enum value="2"            name="CL_COMMAND_BUFFER_STATE_PENDING_KHR"/>
         <enum value="3"            name="CL_COMMAND_BUFFER_STATE_INVALID_KHR"/>
+    </enums>
+    <enums name="cl_mutable_dispatch_fields_khr" vendor="Khronos" type="bitmask">
+        <enum bitpos="0"            name="CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR"/>
+        <enum bitpos="1"            name="CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR"/>
+        <enum bitpos="2"            name="CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR"/>
+        <enum bitpos="3"            name="CL_MUTABLE_DISPATCH_ARGUMENTS_KHR"/>
+        <enum bitpos="4"            name="CL_MUTABLE_DISPATCH_EXEC_INFO_KHR"/>
+            <unused start="5" end="31"/>
+    </enums>
+
+    <enums name="cl_command_buffer_structure_type_khr" vendor="Khronos">
+        <enum value="0"             name="CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR"/>
+        <enum value="1"             name="CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR"/>
+            <unused start="2" end="2" comment="Used by future command-buffer extensions"/>
     </enums>
 
     <enums name="cl_device_fp_atomic_capabilities_ext" vendor="EXT" type="bitmask">
@@ -1668,11 +1726,24 @@ server's OpenCL/api-docs repository.
         <enum value="0x1296"             name="CL_COMMAND_BUFFER_REFERENCE_COUNT_KHR"/>
         <enum value="0x1297"             name="CL_COMMAND_BUFFER_STATE_KHR"/>
         <enum value="0x1298"             name="CL_COMMAND_BUFFER_PROPERTIES_ARRAY_KHR"/>
-            <unused start="0x1299" end="0x12A7" comment="Used by future command-buffer extensions"/>
+            <unused start="0x1299" comment="Reserved for MR199"/>
+            <unused start="0x129A" end="0x129F" comment="Available to use"/>
+        <enum value="0x12A0"             name="CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR"/>
+        <enum value="0x12A1"             name="CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR"/>
+        <enum value="0x12A2"             name="CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR"/>
+        <enum value="0x12A3"             name="CL_MUTABLE_DISPATCH_KERNEL_KHR"/>
+        <enum value="0x12A4"             name="CL_MUTABLE_DISPATCH_DIMENSIONS_KHR"/>
+        <enum value="0x12A5"             name="CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR"/>
+        <enum value="0x12A6"             name="CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR"/>
+        <enum value="0x12A7"             name="CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR"/>
         <enum value="0x12A8"             name="CL_COMMAND_COMMAND_BUFFER_KHR"/>
         <enum value="0x12A9"             name="CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR"/>
         <enum value="0x12AA"             name="CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR"/>
-            <unused start="0x12AB" end="0x12B1" comment="Used by future command-buffer extensions"/>
+            <unused start="0x12AB" end="0x12AC" comment="Used by future command-buffer extensions"/>
+        <enum value="0x12AD"             name="CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR"/>
+            <unused start="0x12AE" end="0x12AF" comment="Used by future command-buffer extensions"/>
+        <enum value="0x12B0"             name="CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR"/>
+        <enum value="0x12B1"             name="CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR"/>
         <enum value="0x12B2"        name="CL_IMAGE_REQUIREMENTS_SIZE_EXT"/>
         <enum value="0x12B3"        name="CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT"/>
         <enum value="0x12B4"        name="CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT"/>
@@ -2082,14 +2153,17 @@ server's OpenCL/api-docs repository.
         <enum value="0x41E5"        name="CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM"/>
         <enum value="0x41E6"        name="CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM"/>
         <enum value="0x41E7"        name="CL_QUEUE_KERNEL_BATCHING_ARM"/>
-            <unused start="0x41E8" end="0x41EA"/>
+        <enum value="0x41E8"        name="CL_KERNEL_EXEC_INFO_WARP_COUNT_LIMIT_ARM"/>
+        <enum value="0x41E9"        name="CL_KERNEL_MAX_WARP_COUNT_ARM"/>
+        <enum value="0x41EA"        name="CL_DEVICE_MAX_WARP_COUNT_ARM"/>
         <enum value="0x41EB"        name="CL_DEVICE_SUPPORTED_REGISTER_ALLOCATIONS_ARM"/>
         <enum value="0x41EC"        name="CL_QUEUE_DEFERRED_FLUSH_ARM"/>
         <enum value="0x41ED"        name="CL_EVENT_COMMAND_TERMINATION_REASON_ARM"/>
         <enum value="0x41EE"        name="CL_DEVICE_CONTROLLED_TERMINATION_CAPABILITIES_ARM"/>
         <enum value="0x41EF"        name="CL_IMPORT_ANDROID_HARDWARE_BUFFER_PLANE_INDEX_ARM"/>
         <enum value="0x41F0"        name="CL_IMPORT_ANDROID_HARDWARE_BUFFER_LAYER_INDEX_ARM"/>
-            <unused start="0x41F1" end="0x41FF"/>
+        <enum value="0x41F1"        name="CL_KERNEL_EXEC_INFO_COMPUTE_UNIT_MAX_QUEUED_BATCHES_ARM"/>
+            <unused start="0x41F2" end="0x41FF"/>
     </enums>
 
     <enums start="0x4200" end="0x420F" name="enums.4200" vendor="Intel">
@@ -3092,7 +3166,19 @@ server's OpenCL/api-docs repository.
             <param><type>void</type>*                      <name>param_value</name></param>
             <param><type>size_t</type>*                    <name>param_value_size_ret</name></param>
         </command>
-
+        <command>
+            <proto><type>cl_int</type>                             <name>clUpdateMutableCommandsKHR</name></proto>
+            <param><type>cl_command_buffer_khr</type>              <name>command_buffer</name></param>
+            <param>const <type>cl_mutable_base_config_khr</type>*  <name>mutable_config</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                       <name>clGetMutableCommandInfoKHR</name></proto>
+            <param><type>cl_mutable_command_khr</type>       <name>command</name></param>
+            <param><type>cl_mutable_command_info_khr</type>  <name>param_name</name></param>
+            <param><type>size_t</type>                       <name>param_value_size</name></param>
+            <param><type>void</type>*                        <name>param_value</name></param>
+            <param><type>size_t</type>*                      <name>param_value_size_ret</name></param>
+        </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_0">
             <proto><type>cl_int</type>                     <name>clSetContentSizeBufferPoCL</name></proto>
             <param><type>cl_mem</type>                     <name>buffer</name></param>
@@ -5442,11 +5528,17 @@ server's OpenCL/api-docs repository.
             <require>
                 <type name="CL/cl.h"/>
             </require>
+            <require>
+                <type name="cl_device_terminate_capability_khr"/>
+            </require>
             <require comment="cl_device_info">
                 <enum name="CL_DEVICE_TERMINATE_CAPABILITY_KHR"/>
             </require>
             <require comment="cl_context_properties">
                 <enum name="CL_CONTEXT_TERMINATE_KHR"/>
+            </require>
+            <require comment="cl_device_terminate_capability_khr">
+                <enum name="CL_DEVICE_TERMINATE_CAPABILITY_CONTEXT_KHR"/>
             </require>
             <require comment="Error codes">
                 <enum name="CL_CONTEXT_TERMINATED_KHR"/>
@@ -6481,14 +6573,22 @@ server's OpenCL/api-docs repository.
                 <enum name="CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_MODIFIER_ARM"/>
                 <enum name="CL_DEVICE_SCHEDULING_DEFERRED_FLUSH_ARM"/>
                 <enum name="CL_DEVICE_SCHEDULING_REGISTER_ALLOCATION_ARM"/>
+                <enum name="CL_DEVICE_SCHEDULING_WARP_THROTTLING_ARM"/>
+                <enum name="CL_DEVICE_SCHEDULING_COMPUTE_UNIT_BATCH_QUEUE_SIZE_ARM"/>
             </require>
             <require comment="cl_device_info">
                 <enum name="CL_DEVICE_SCHEDULING_CONTROLS_CAPABILITIES_ARM"/>
                 <enum name="CL_DEVICE_SUPPORTED_REGISTER_ALLOCATIONS_ARM"/>
+                <enum name="CL_DEVICE_MAX_WARP_COUNT_ARM"/>
             </require>
             <require comment="cl_kernel_exec_info">
                 <enum name="CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM"/>
                 <enum name="CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM"/>
+                <enum name="CL_KERNEL_EXEC_INFO_WARP_COUNT_LIMIT_ARM"/>
+                <enum name="CL_KERNEL_EXEC_INFO_COMPUTE_UNIT_MAX_QUEUED_BATCHES_ARM"/>
+            </require>
+            <require comment="cl_kernel_info">
+                <enum name="CL_KERNEL_MAX_WARP_COUNT_ARM"/>
             </require>
             <require comment="cl_queue_properties">
                 <enum name="CL_QUEUE_KERNEL_BATCHING_ARM"/>
@@ -7042,6 +7142,62 @@ server's OpenCL/api-docs repository.
             </require>
             <require comment="cl_queue_properties">
                 <enum name="CL_QUEUE_JOB_SLOT_ARM"/>
+            </require>
+        </extension>
+        <extension name="cl_khr_command_buffer_mutable_dispatch" comment="version 0.9.0" supported="opencl">
+            <require>
+                <type name="CL/cl.h"/>
+            </require>
+            <require>
+                <extension name="cl_khr_command_buffer"/>
+            </require>
+            <require>
+                <type name="cl_command_buffer_structure_type_khr"/>
+                <type name="cl_mutable_dispatch_fields_khr"/>
+                <type name="cl_mutable_command_info_khr"/>
+                <type name="cl_mutable_dispatch_arg_khr"/>
+                <type name="cl_mutable_dispatch_exec_info_khr"/>
+                <type name="cl_mutable_dispatch_config_khr"/>
+                <type name="cl_mutable_base_config_khr"/>
+            </require>
+            <require comment="cl_command_buffer_flags_khr - bitfield">
+               <enum name="CL_COMMAND_BUFFER_MUTABLE_KHR"/>
+            </require>
+            <require comment="Error codes">
+                <enum name="CL_INVALID_MUTABLE_COMMAND_KHR"/>
+            </require>
+            <require comment="cl_device_info">
+                <enum name="CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR"/>
+            </require>
+            <require comment="cl_ndrange_kernel_command_properties_khr">
+               <enum name="CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR"/>
+            </require>
+
+            <require comment="cl_mutable_dispatch_fields_khr - bitfield">
+                <enum name="CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR"/>
+                <enum name="CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR"/>
+                <enum name="CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR"/>
+                <enum name="CL_MUTABLE_DISPATCH_ARGUMENTS_KHR"/>
+                <enum name="CL_MUTABLE_DISPATCH_EXEC_INFO_KHR"/>
+            </require>
+            <require comment="cl_mutable_command_info_khr">
+               <enum name="CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR"/>
+               <enum name="CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR"/>
+               <enum name="CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR"/>
+               <enum name="CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR"/>
+               <enum name="CL_MUTABLE_DISPATCH_KERNEL_KHR"/>
+               <enum name="CL_MUTABLE_DISPATCH_DIMENSIONS_KHR"/>
+               <enum name="CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR"/>
+               <enum name="CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR"/>
+               <enum name="CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR"/>
+            </require>
+            <require comment="cl_command_buffer_structure_type_khr">
+                <enum name="CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR"/>
+                <enum name="CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR"/>
+            </require>
+            <require>
+                <command name="clUpdateMutableCommandsKHR"/>
+                <command name="clGetMutableCommandInfoKHR"/>
             </require>
         </extension>
     </extensions>
