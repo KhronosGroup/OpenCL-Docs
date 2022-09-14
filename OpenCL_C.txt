@@ -10802,17 +10802,15 @@ events.
 | *Built-in Function* | *Description*
 
 | void *retain_event*(clk_event_t _event_)
-    | Increments the event reference count. _event_ must be an event
-      returned by enqueue_kernel or enqueue_marker or a user event.
+    | Increments the event reference count.
+      Behavior is undefined if _event_ is not a valid event.
 | void *release_event*(clk_event_t _event_)
     | Decrements the event reference count.
       The event object is deleted once the event reference count is zero,
       the specific command identified by this event has completed (or
-      terminated) and there are no commands in any device command queue that
+      terminated), and there are no commands in any device command queue that
       require a wait for this event to complete.
-
-      _event_ must be an event returned by enqueue_kernel, enqueue_marker or
-      a user event.
+      Behavior is undefined if _event_ is not a valid event.
 | |
 | clk_event_t *create_user_event*()
     | Create a user event.
@@ -10824,7 +10822,8 @@ events.
       Otherwise returns _false_.
 | void *set_user_event_status*(clk_event_t _event_, int _status_)
     | Sets the execution status of a user event.
-      _event_ must be a user-event.
+      Behavior is undefined if _event_ is not a valid event returned by
+      *create_user_event*.
       _status_ can be either `CL_COMPLETE` or a negative integer value
       indicating an error.
 | |
@@ -10832,12 +10831,12 @@ events.
   clk_profiling_info _name_, global void *_value_)
    a| Captures the profiling information for functions that are enqueued as
       commands.
-      The specific function being referred to is: enqueue_kernel.
       These enqueued commands are identified by unique event objects.
       The profiling information will be available in _value_ once the
       command identified by _event_ has completed.
 
-_event_ must be an event returned by enqueue_kernel.
+Behavior is undefined if _event_ is not a valid event returned by
+*enqueue_kernel*.
 
 _name_ identifies which profiling information is to be queried and can be:
 
