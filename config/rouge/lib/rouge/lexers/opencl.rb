@@ -155,6 +155,8 @@ module Rouge
         cl_command_buffer_properties_khr
         cl_ndrange_kernel_command_properties_khr
         cl_mutable_command_khr
+        cl_mutable_command_info_khr
+        cl_mutable_base_config_khr
         cl_dx9_surface_info_khr
         cl_motion_estimation_desc_intel
         cl_mem_ext_host_ptr
