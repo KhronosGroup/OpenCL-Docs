@@ -1,0 +1,330 @@
+// Copyright 2018-2022 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+= cl_khr_defined_builtin_kernels =
+
+:source-highlighter: coderay
+
+[[cl_khr_defined_builtin_kernels]]
+== Khronos-Defined Built-in Kernels (Early Draft)
+
+The purpose of this extension is to provide a standardized set of built-in
+kernels with well-defined semantics useful for accelerating applications
+from various domains.  The extension specification is designed to rapidly
+expand and "live" via addition of new well-defined built-in kernel
+definitions and updating of previously defined ones.
+
+=== General Information
+
+==== Name Strings
+
+`cl_khr_defined_builtin_kernels`
+
+==== Version History
+
+[cols="1,1,3",options="header",]
+|====
+| *Date*     | *Version* | *Description*
+| 2022-12-13 | 0.1.0     | First formulation as an extension specification like proposed by Ben Ashbaugh.
+|====
+
+==== Dependencies
+
+This extension is written against the OpenCL Specification version 3.0.12.
+
+This extension requires OpenCL 1.2 or later.
+
+==== Contributors
+
+Pekka Jääskeläinen, Intel and Tampere University. +
+Topi Leppänen, Tampere University. +
+Jan Solanti, Tampere University. +
+Ben Ashbaugh, Intel. +
+
+=== Overview
+
+OpenCL 1.2 specifies a built-in kernel (BiK) as a kernel that is executed on
+an OpenCL device or custom device by fixed-function hardware or in firmware.
+Applications can query the built-in kernels supported by a device or custom
+device.
+
+BiKs are referred to by a name (a C string) without any semantics attached
+to the functionality. The semantics behind the name is completely device
+specific, typically documented in vendor-specific extension specifications.
+
+The goal for this extension is to lower the bar for utilizing hardware
+accelerated functions in drivers by providing a library of
+well-defined BiKs with good coverage for common acceleration needs
+and which is designed to easily evolve over time.
+
+The device drivers that implement this extension can freely choose which
+subset of defined BiKs they implement and advertise to the clients. The
+clients can use the BiKs to accelerate their applications by manually
+executing invoking the BiKs. The extension is designed to also support using
+automated task graph lowering tooling later.
+
+==== Background
+
+ASIC-based coarse-grained hardware accelerators are specialized logic meant to
+speed up execution of workloads of interest, or to provide improvements in
+energy-efficiency. Examples of contemporary workloads that are beneficially hardware
+accelerated over software-based implementations include video coding, deep learning,
+cryptography, software-defined radio and graphics rendering.
+
+FPGAs form a special case somewhere between instruction-set architectures and fixed
+function hardware accelerators. While advances in high-level synthesis tools
+have attempted to bridge the programmability gap between GPU and FPGA programming,
+FPGAs are still considered as devices which are challenging to achieve efficient
+implementations with. Due to extensive manual optimization work required for efficient
+implementations of the accelerated functionality, defining FPGA designs as
+a system of "hardware accelerator IPs" is still a widely used "application abstraction".
+FPGAs can be thus seen as a platform that can realize and integrate any
+hardware accelerator implementable with the programmable fabric.
+
+The means to utilize hardware accelerators have typically been
+vendor-specific and abstracted behind domain-specific libraries.
+The overhead with the "bunch of libraries"-approach is seen in the lowest level
+of integration: The libraries utilize a low level library (typically
+vendor-specific) to interface with the actual hardware, and thus does not
+integrate efficiently with other libraries or software-programmable processors
+that might be available on the same chip.
+
+==== Rationale
+
+OpenCL's built-in kernel abstraction allows pushing both hardware
+accelerated and software defined kernels to the same command-queues,
+providing a powerful means for asynchronous execution of heterogeneous
+task graphs on diverse heterogeneous platforms. The ability to invoke hardware
+accelerators while being able to synchronize and optimize data transfers at
+the lowest levels of the driver stack can provide significant latency benefits,
+especially when combined with the command-buffering mechanism.
+
+However, the BiK abstraction works well only when it is widely adopted by
+vendors, and when multiple vendors implement the same definitions. Otherwise
+each vendor specifies and implements their own BiKs closely matching their
+own hardware accelerator properties, resulting in lack of cross-vendor
+portability in the API abstraction presented to the upper layers of
+heterogeneous computing software stacks.
+
+This extension standardizes a set of well-defined BiKs the clients can
+call from higher level programming stacks built with different languages
+and multiple libraries, possibly mix accelerator calls with calls to software kernel
+commands, and rely on the driver stack to optimize the execution (especially
+the synchronization and communication) as a low level heterogeneous task graph.
+It aims to promote the use of BiKs as a programming model for hardware accelerated
+functionality, to improve cross-vendor portability of hardware accelerated computing.
+
+=== Modifications to section 4.2 of the OpenCL API Specification
+
+Modify *Table 5*, _Device Queries_, of section 4.2, by adding the following
+sentences to the description cell of `CL_DEVICE_BUILT_IN_KERNELS`:
+
+[quote]
+The semantics of the returned built-in kernels are undefined or defined in
+vendor-specific documentation, unless the name starts with prefix `khr_',
+which means it's a built-in kernel with semantics defined in Appendix I.
+
+=== Add new appendix "Appendix I - Defined Built-in Kernels" to OpenCL API Specification
+
+This chapter describes standard built-in kernels (BiK) with well-defined
+semantics. A conformant device can report to support zero or more of the built-in
+kernels via `CL_DEVICE_BUILT_IN_KERNELS` or `CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION` device queries.
+
+The general client-side abstraction of the defined built-in kernels is similar to a call
+to a C function of which implementation is hidden. The device driver can invoke one or
+more physical hardware accelerators combined with firmware to implement the semantics
+as efficiently as possible.
+
+It is the driver's responsibility to handle efficient synchronization and communication
+to the hardware accelerator, the internal accelerator state management and resource sharing
+across multiple OpenCL contexts.
+
+==== Standard Built-in Kernels ====
+
+The following list of recognized built-ins is organized according to their application
+domain and handled data types. It is expected to grow and update while preserving backwards
+compatibility.
+
+[caption="Table A.I.1. "]
+.Standard Built-in Kernels and Their Semantics. *The table has been populated with a small set of non-trivial example entries which are subject to change and the list to expand during drafting.*
+[cols="1,3,2,2"]
+|===
+4+| *General linear algebra*
+// https://netlib.org/blas/blasqr.pdf
+| Name | Description | NDRange Dimensions | Arguments
+| *khr_blas_gemm_float*
+| xGEMM: General matrix multiplication with real single precision floating point numbers as described in Basic Linear Algebra Subprograms. Performs C = alpha * trans(A) * trans(B) + beta*C, where A, B and C are matrices, and alpha and beta scalars. trans() is a configurable transpose operation.
+a|
+[start=1]
+. The height.
+. The width.
+a|
+[start=0]
+. int: transpose operation (trans) type for matrix A (0 = none, 1 = transpose, 2 = conjugate transpose)
+. int: transpose type for matrix B (0 = none, 1 = transpose, 2 = conjugate transpose)
+. float: scalar (alpha) to multiply the matrix multiplication result elements with
+. float* (input): matrix A
+. int: leading dimension of A (0 = row-major, 1 = column-major)
+. float* (input): matrix B
+. int: leading dimension of B (0 = row-major, 1 = column-major)
+. float: scalar (beta) to multiply the C matrix elements with before adding it to the result
+. float* (input&output): matrix C which is added to the matrix multiplication result, and stores the output
+. int: leading dimension of C (0 = row-major, 1 = column-major)
+4+| OpenCL C Semantics
+4+a|
+[source,c]
+----
+__kernel void __khr_blas_gemm_float(
+   int transA, int transB, float alpha, const global float *A, int ldA,
+   const global float *B, int ldB,
+   float beta, global float *C, int ldC) {
+   // TBD: An example implementation that can be used for verification
+   // and as a fallback SW implementation.
+}
+----
+
+4+| *OpenVX Neural Network Extension Compatible Kernels*
+// Copied from https://registry.khronos.org/OpenVX/extensions/vx_khr_nn/1.2/html/d6/d9a/group__group__cnn.html#ga69764625f436c14d739fc467515c1584
+| Name | Description | NDRange Dimensions | Arguments
+| *khr_openvx_nn_extension_convolution_uchar*
+| Convolution for 8bit unsigned integer inputs and weights.
+a|
+[start=1]
+. Batch size.
+. Width.
+. Height.
+a|
+[start=0]
+. uchar* [in]: The input tensor data. 3 lower dimensions represent a single input, all following dimensions represent number of batches, possibly nested. The dimension order is [width, height, #IFM, #batches].
+. uchar* [in]: Weights, as a 4d tensor with dimensions [kernel_x, kernel_y, #IFM, #OFM].
+. uchar* [in]: Biases (optional, ignored if NULL). The biases, which may be shared (one per ofm) or unshared (one per ofm * output location). The possible layouts are either [#OFM] or [width, height, #OFM]. Biases data type must match the data type of the inputs. (Kernel parameter #2) 
+. size_t: (dilation_x) “inflate” the kernel by inserting zeros between the kernel elements in the x direction. The value is the number of zeros to insert.
+. size_t: (dilation_y) “inflate” the kernel by inserting zeros between the kernel elements in the y direction. The value is the number of zeros to insert.
+. int: Rounding method for calculating output dimensions. 
+. int: A VX_TYPE_ENUM of the vx_convert_policy_e enumeration.
+. size_t: Number of elements padded at each side in the x dimension of the input.
+. size_t: Number of elements padded at each side in the y dimension of the input.
+. int:  A VX_TYPE_ENUM of the vx_round_policy_e enumeration.
+. uchar* [out]: The output tensor data. Output will have the same number and structure of dimensions as input. Output tensor data type must be same as the inputs. (Kernel parameter #4)
+
+4+| OpenCL C Semantics
+4+a|
+[source,c]
+----
+__kernel void __khr_openvx_nn_extension_convolution_uchar(
+   const uchar *input, const uchar *weights, const uchar *biases,
+   size_t dilation_x, size_t dilation_y,
+   int down_scale_rounding, int overflow_policy, size_t padding_x, size_t padding_y,
+   int rounding_policy, uchar *output) {
+   // TBD.
+}
+----
+
+4+| *Direct Input/Output Operations*
+4+| Kernels for accessing data sources and destinations directly without host involvement.
+| Name | Description | NDRange Dimensions | Arguments
+| *khr_io_stream_in_uchar*
+| Non-blocking read of data from a sensor/stream associated with the device.
+a| -
+a|
+[start=0]
+. uchar* [out]: The data.
+. size_t* [in+out]: In: number of bytes to read. Out: Number of bytes that could be read (can be 0). (Compatible with the `cl_pocl_content_size` extension to optimize data transfers with.)
+
+4+| OpenCL C Semantics
+4+a|
+[source,c]
+----
+__kernel void __khr_io_stream_in_uchar(
+   uchar *output, size_t *num) {
+   // It is not feasible to describe this kernel in OpenCL C as I/O devices
+   // are not representable with it.
+}
+----
+
+| *khr_io_stream_out_uchar*
+| Non-blocking write of data to an output/sink associated with the device.
+| -
+a|
+[start=0]
+. uchar* [in]: The data to write.
+. size_t* [in+out]: In: Number of bytes to write. Out: Number of bytes that could be written (can be 0).
+4+| OpenCL C Semantics
+4+a|
+[source,c]
+----
+__kernel void __khr_io_stream_out_uchar(
+   uchar *input, size_t *num) {
+   // It is not feasible to describe this kernel in OpenCL C as I/O devices
+   // are not representable with it.
+}
+----
+
+| *khr_io_stream_in_blocking_uchar*
+| Blocking read of data from a sensor/stream associated with the device.
+a| -
+a|
+[start=0]
+. uchar* [out]: The data.
+* size_t* [in]: How many bytes to read before returning.
+
+4+| OpenCL C Semantics
+4+a|
+[source,c]
+----
+__kernel void __khr_io_stream_in_blocking_uchar(uchar *output, size_t *num) {
+   while (*num) {
+       size_t num_read = *num;
+       __khr_io_stream_in_uchar(output, &num_read);
+       num -= num_read;
+       output += num_read;
+   }
+}
+----
+
+|===
+
+==== Launching BiKs from the Device Side ====
+
+BiKs are primarily meant to be launched as kernel commands via host-side command queues.
+Optionally, they can be callable from device-side via
+`enqueue_kernel`: This capability can be queried on per BiK basis at compile-time in OpenCL C by checking for macro definitions which has the following naming convention: `cl_khr_bik_BUILTIN_KERNEL_NAME`. In case a BiK macro is defined, a kernel with a naming convention `__khr_BUILTIN_KERNEL_NAME()` can be enqueued by the program at device side as software-defined kernels.
+
+
+=== Open questions
+
+. Should we enable launching BiKs from the device side without requiring device-side enqueue? The main problem is those with NDRange as they are not simple single-WI helper functions.
++
+--
+*UNRESOLVED*
+
+--
+
+. Should the NDRange be used at all in BiKs? It feels sort of unnatural as typically the NDRange is used to imply SPMD parallelism while the hardware/firmware is free to choose whatever parallelism degree to implement the function. On the other hand, similar applies to software kernel launches as the work-items can be executed serially if adhering to barrier semantics.
++
+--
+*UNRESOLVED*
+
+--
+
+. Different accelerators prefer different channel orders (NHWC vs. NCHW...) for the processed data. Should the channel order be passed as a BiK argument (like in the example GEMM's row/column order) or is it better to have different BiK variations for each?
++
+--
+*UNRESOLVED*
+
+--
+
+. How to denote preference? Some of the BiKs are more efficient on a given device as they map more naturally to the underlying HW accelerator, but the slower variations (for example, with unoptimal channel order in NN accelerators) might be still beneficially accelerated.
++
+--
+*UNRESOLVED*
+
+--
+
+. Since the defined built-in kernel concept is basically just a C-like API inside another API, should it be made more generic and thus directly usable for SYCL and Vulkan as well?
++
+--
+*UNRESOLVED*
+
+--
+
