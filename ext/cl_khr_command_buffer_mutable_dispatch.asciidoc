@@ -91,7 +91,7 @@ enqueues of the command-buffer.
 Types for using mutable-commands objects from
 <<mutable-commands, Section 5.X.5>>:
 
-[source,c]
+[source,opencl]
 ----
 // Bitfield covering each aspect of a mutable-dispatch which can be updated
 typedef cl_bitfield cl_mutable_dispatch_fields_khr;
@@ -103,30 +103,15 @@ typedef cl_uint cl_mutable_command_info_khr;
 typedef cl_uint cl_command_buffer_structure_type_khr;
 ----
 
-[[cl_mutable_dispatch_arg_khr]]
 Struct type for setting kernel arguments normally passed using {clSetKernelArg}
 and {clSetKernelArgSVMPointer}:
 
-[source, c]
-----
-typedef struct _cl_mutable_dispatch_arg_khr {
-    cl_uint arg_index;
-    size_t arg_size;
-    const void* arg_value;
-} cl_mutable_dispatch_arg_khr;
-----
+include::{generated}/api/structs/cl_mutable_dispatch_arg_khr.txt[]
 
-[[cl_mutable_dispatch_exec_info_khr]]
 Struct type for setting kernel execution info normally passed using
 {clSetKernelExecInfo}:
-[source, c]
-----
-typedef struct _cl_mutable_dispatch_exec_info_khr {
-    cl_uint param_name;
-    size_t param_value_size;
-    const void* param_value;
-} cl_mutable_dispatch_exec_info_khr;
-----
+
+include::{generated}/api/structs/cl_mutable_dispatch_exec_info_khr.txt[]
 
 [NOTE]
 ====
@@ -135,27 +120,10 @@ extension can be implemented on OpenCL 1.2 where the {cl_kernel_exec_info_TYPE}
 typedef is unavailable.
 ====
 
-[[cl_mutable_dispatch_config_khr]]
 Struct type passed to {clUpdateMutableCommandsKHR} for setting the kernel
 configuration of a mutable {clCommandNDRangeKernelKHR} command:
-[source, c]
-----
-typedef struct _cl_mutable_dispatch_config_khr {
-    cl_command_buffer_structure_type_khr type;
-    const void* next;
-    cl_mutable_command_khr command;
-    cl_uint num_args;
-    cl_uint num_svm_args;
-    cl_uint num_exec_infos;
-    cl_uint work_dim;
-    const cl_mutable_dispatch_arg_khr* arg_list;
-    const cl_mutable_dispatch_arg_khr* arg_svm_list;
-    const cl_mutable_dispatch_exec_info_khr* exec_info_list;
-    const size_t* global_work_offset;
-    const size_t* global_work_size;
-    const size_t* local_work_size;
-} cl_mutable_dispatch_config_khr;
-----
+
+include::{generated}/api/structs/cl_mutable_dispatch_config_khr.txt[]
 
 _type_ Type of this structure, must be
 {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}.
@@ -178,19 +146,19 @@ and work-items in the work-group. See {clEnqueueNDRangeKernel} for valid usage.
 _arg_list_ Is an array describing the new kernel arguments for this enqueue. It
 must contain _num_args_ array elements, each of which encapsulates parameters
 passed to {clSetKernelArg}. See {clSetKernelArg} for usage of
-<<cl_mutable_dispatch_arg_khr, cl_mutable_dispatch_arg_khr>> members.
+{cl_mutable_dispatch_arg_khr_TYPE} members.
 
 _arg_svm_list_ is an array describing the new SVM kernel arguments for this
 enqueue. It must contain _num_svm_args_ array elements, each of which
 encapsulates parameters passed to {clSetKernelArgSVMPointer}. See
 {clSetKernelArgSVMPointer} for usage of
-<<cl_mutable_dispatch_arg_khr, cl_mutable_dispatch_arg_khr>> members,
+{cl_mutable_dispatch_arg_khr_TYPE} members,
 `arg_size` is ignored.
 
 _exec_info_list_ Is an array containing _num_exec_infos_ elements
 specifying the list of execution info objects use for this command-buffer
 enqueue. See {clSetKernelExecInfo} for usage of
-<<cl_mutable_dispatch_exec_info_khr, cl_mutable_dispatch_exec_info_khr>>
+{cl_mutable_dispatch_exec_info_khr_TYPE}
 members.
 
 _global_work_offset_ Can be used to specify an array of _work_dim_ unsigned
@@ -210,7 +178,7 @@ the kernel. If _local_work_size_ is `NULL` then the number of local work-items
 in the dispatch is not changed. See {clEnqueueNDRangeKernel} for valid usage.
 
 [[cl_mutable_base_config_khr]]
-[source,c]
+[source,opencl]
 ----
 typedef struct _cl_mutable_base_config_khr {
     cl_command_buffer_structure_type_khr type,
@@ -231,12 +199,12 @@ in this enqueue of the command-buffer.
 _mutable_dispatch_list_ Is an array containing _num_mutable_dispatch_ elements
 describing the configurations of mutable kernel execution commands in the
 command-buffer. For a description of struct members making up each array
-element see <<cl_mutable_dispatch_config_khr, cl_mutable_dispatch_config_khr>>.
+{cl_mutable_dispatch_config_khr_TYPE}.
 
 === New API Functions
 
 Mutable-handle entry points from <<mutable-commands, Section 5.X.5>>:
-[source,c]
+[source,opencl]
 ----
 cl_int clUpdateMutableCommandsKHR(
     cl_command_buffer_khr command_buffer,
@@ -255,7 +223,7 @@ cl_int clGetMutableCommandInfoKHR(
 Enums for working with mutable-command objects from
 <<mutable-commands, Section 5.X.5>>:
 
-[source,c]
+[source,opencl]
 ----
 // Error code
 CL_INVALID_MUTABLE_COMMAND_KHR                     -1141
@@ -292,7 +260,7 @@ Enum values for {cl_command_buffer_structure_type_khr_TYPE} allowing the structu
 types used for mutating commands between enqueues to be extended by future
 extensions built on top of `cl_khr_command_buffer_mutable_dispatch`. Based on
 structure pointer chains in Vulkan.
-[source,c]
+[source,opencl]
 ----
 CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR          0
 CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR      1
@@ -301,10 +269,13 @@ CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR      1
 === Modifications to section 4.2 of the OpenCL API Specification
 
 Add to *Table 5*, _Device Queries_, of section 4.2:
+
 [[command-dispatch-queries]]
+[caption="Table 5. "]
+.List of supported param_names by {clGetDeviceInfo}
 [cols="1,1,4",options="header"]
 |====
-| cl_device_info
+| Device Info
 | Return Type
 | Description
 
@@ -381,7 +352,7 @@ in the table below.
   Determines whether the _global_work_offset_ of kernel execution can be
   modified after recording. If set, the _global_work_offset_ of the kernel
   execution can be changed with {clUpdateMutableCommandsKHR} using the
-  <<cl_mutable_dispatch_config_khr, cl_mutable_dispatch_config_khr>> field
+  {cl_mutable_dispatch_config_khr_TYPE} field
   of the _mutable_config_ parameter. Otherwise, the _global_work_offset_ cannot
   be modified.
 
@@ -389,7 +360,7 @@ in the table below.
   Determines whether the _global_work_size_ of kernel execution can be
   modified after recording. If set, the _global_work_size_ of the kernel
   execution can be changed with {clUpdateMutableCommandsKHR} using the
-  <<cl_mutable_dispatch_config_khr, cl_mutable_dispatch_config_khr>> field
+  {cl_mutable_dispatch_config_khr_TYPE} field
   of the _mutable_config_ parameter. Otherwise, the _global_work_size_ cannot be
   modified.
 
@@ -397,7 +368,7 @@ in the table below.
   Determines whether the _local_work_size_ of kernel execution can be
   modified after recording. If set, the _local_work_size_ of the kernel
   execution can be changed with {clUpdateMutableCommandsKHR} using the
-  <<cl_mutable_dispatch_config_khr, cl_mutable_dispatch_config_khr>> field
+  {cl_mutable_dispatch_config_khr_TYPE} field
   of the _mutable_config_ parameter. Otherwise, the _local_work_size_ cannot be
   modified.
 
@@ -406,7 +377,7 @@ in the table below.
   between executions. If set, the kernel arguments normally set with
   {clSetKernelArg} and {clSetKernelArgSVMPointer} can be changed with
   {clUpdateMutableCommandsKHR} using the
-  <<cl_mutable_dispatch_config_khr, cl_mutable_dispatch_config_khr>> field
+  {cl_mutable_dispatch_config_khr_TYPE} field
   of the _mutable_config_ parameter. Otherwise, the kernel arguments cannot be
   modified between executions.
 
@@ -414,7 +385,7 @@ in the table below.
   Determines whether the information passed to _kernel_ can be updated between
   executions. If set, the execution information of the kernel can be changed
   with {clUpdateMutableCommandsKHR} using the
-  <<cl_mutable_dispatch_config_khr, cl_mutable_dispatch_config_khr>> field of
+  {cl_mutable_dispatch_config_khr_TYPE} field of
   the _mutable_config_ parameter. Otherwise, the kernel execution information
   cannot be modified.
 
@@ -428,7 +399,7 @@ in the table below.
 Description of the _mutable_handle_ parameter is changed to:
 
 _mutable_handle_ Returns a handle to the command that can be used in the
-<<cl_mutable_dispatch_config_khr, cl_mutable_dispatch_config_khr>> struct
+{cl_mutable_dispatch_config_khr_TYPE} struct
 to update the command configuration between recordings, may be `NULL`. The
 lifetime of this handle is tied to the parent command-buffer, such that freeing
 the command-buffer will also free this handle.
@@ -455,17 +426,17 @@ as it can be returned from any command recording entry-point in the
 `cl_khr_command_buffer` family of extensions. The mutable-command handles
 returned by {clCommandNDRangeKernelKHR} in particular are referred to as
 _mutable-dispatch_ objects, and can be modified through the fields of
-<<cl_mutable_dispatch_config_khr, cl_mutable_dispatch_config_khr>>.
+{cl_mutable_dispatch_config_khr_TYPE}.
 
 Mutable-command handles are updated between enqueues using entry-point
 {clUpdateMutableCommandsKHR}. To enable performant usage, all aspects of
 mutation are encapsulated inside a single
-<<cl_mutable_base_config_khr,cl_mutable_base_config_khr>> parameter. This means
+{cl_mutable_base_config_khr_TYPE} parameter. This means
 that the runtime has access to all the information about how the command-buffer
 will change, allowing the command-buffer to be rebuilt as efficiently as
 possible. Any modifications to the arguments or execution info of a mutable-dispatch
-handle using <<cl_mutable_dispatch_arg_khr, cl_mutable_dispatch_arg_khr>> or
-<<cl_mutable_dispatch_exec_info_khr, cl_mutable_dispatch_exec_info_khr>> have no
+handle using {cl_mutable_dispatch_arg_khr_TYPE} or
+{cl_mutable_dispatch_exec_info_khr_TYPE} have no
 affect on the original kernel object used when the command was recorded, and
 only influence the {clCommandNDRangeKernelKHR} command associated with the
 mutable-dispatch.
@@ -499,7 +470,7 @@ individually.
 _command_buffer_ Refers to a valid command-buffer object.
 
 _mutable_config_ Is a pointer to a
-<<cl_mutable_base_config_khr,cl_mutable_base_config_khr>> structure defining
+{cl_mutable_base_config_khr_TYPE} structure defining
 updates to make to mutable-commands.
 
 {clUpdateMutableCommandsKHR} returns {CL_SUCCESS} if all the mutable-command
@@ -539,7 +510,7 @@ errors defined by {clEnqueueNDRangeKernel}, {clSetKernelExecInfo},
 {clSetKernelArg}, and {clSetKernelArgSVMPointer} are returned by
 {clUpdateMutableCommandsKHR} if any of the array elements are set to an invalid
 value. Additionally, the following errors are returned if any
-<<cl_mutable_dispatch_config_khr, cl_mutable_dispatch_config_khr>> element of
+{cl_mutable_dispatch_config_khr_TYPE} element of
 the array violates the defined conditions:
 
 * {CL_INVALID_MUTABLE_COMMAND_KHR} if _command_ is not a valid mutable
@@ -723,7 +694,7 @@ successfully. Otherwise, it returns one of the following errors:
 Sample application updating the arguments to a mutable-dispatch between
 command-buffer submissions.
 
-[source]
+[source,opencl]
 ----
   #define CL_CHECK(ERROR)                             \
     if (ERROR) {                                      \
