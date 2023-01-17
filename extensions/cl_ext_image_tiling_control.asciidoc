@@ -1,0 +1,219 @@
+// Copyright 2021-2023 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+include::{generated}/api/api-dictionary-no-links.asciidoc[]
+:source-highlighter: coderay
+
+= cl_ext_image_tiling_control
+
+== Name Strings
+
+`cl_ext_image_tiling_control`
+
+== Contact
+
+Kevin Petit (kevin.petit 'at' arm.com)
+
+== Contributors
+
+Kevin Petit, Arm Ltd. +
+Plamen Petkov, Arm Ltd. +
+Ben Ashbaugh, Intel +
+Balaji Calidas, Qualcomm +
+Jeremy Kemp, Google +
+Nikhil Joshi, NVidia +
+
+== Notice
+
+Copyright (c) 2021-2023 The Khronos Group Inc.
+
+== Status
+
+Draft
+
+== Version
+
+Built On: {docdate} +
+Version: 0.2.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification version 3.0.12.
+
+This extension requires OpenCL 3.0.
+
+== Overview
+
+This extension gives applications explicit control over how image data is laid out in memory.
+
+== New API Types
+
+[source,c]
+----
+typedef cl_uint cl_image_tiling_ext;
+
+#define CL_IMAGE_TILING_LINEAR_EXT   1
+#define CL_IMAGE_TILING_OPTIMAL_EXT  2
+
+typedef cl_bitfield cl_device_image_tiling_capabilities_ext;
+
+#define CL_DEVICE_IMAGE_TILING_DEVICE_ACCESS_EXT (1 << 0)
+#define CL_DEVICE_IMAGE_TILING_HOST_ACCESS_EXT   (1 << 1)
+----
+
+== New API Enums
+
+Accepted value for the _param_name_ parameter to *clGetDeviceInfo*:
+
+[source,c]
+----
+CL_DEVICE_IMAGE_TILING_CAPABILITIES_EXT 0x4234
+----
+
+Accepted value for the _properties_ parameter to *clCreateImageWithProperties*:
+
+[source,c]
+----
+CL_MEM_IMAGE_TILING_EXT       0x4235
+----
+
+Accepted value for the _param_name_ parameter to *clGetImageInfo*:
+
+[source,c]
+----
+CL_IMAGE_TILING_EXT 0x4236
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 4.2, *Querying Devices*) ::
++
+--
+
+(Add the following to Table 5, _List of supported param_names by *clGetDeviceInfo*_) ::
++
+--
+
+[cols="1,1,4",options="header"]
+|====
+| cl_device_info
+| Return Type
+| Description
+
+| {CL_DEVICE_IMAGE_TILING_CAPABILITIES_EXT}
+| {cl_device_image_tiling_capabilities_ext_TYPE}
+| Returns the image tiling capabilities supported by the device.
+ +
+- {CL_DEVICE_IMAGE_TILING_DEVICE_ACCESS_EXT} is always set indicating that all
+  implementations that support `cl_ext_image_tiling_control` must support
+  device access to tiled images. +
+- {CL_DEVICE_IMAGE_TILING_HOST_ACCESS_EXT} is set when it is allowed to pass
+    {CL_MEM_IMAGE_TILING_EXT} with a value different from {CL_IMAGE_TILING_LINEAR_EXT}
+    in the _properties_ given to *clCreateImageWithProperties* when creating host-accessible images.
+    Host-accessible images are all images created without {CL_MEM_HOST_NO_ACCESS}.
+|====
+
+--
+--
+
+(Modify section 5.3.1, *Creating Image Objects*) ::
++
+--
+{CL_MEM_IMAGE_TILING_EXT} can be passed as part of the _properties_ parameter
+to *clCreateImageWithProperties* to control the tiling used for the image being
+created. The following values are accepted:
+
+  * {CL_IMAGE_TILING_LINEAR_EXT}, which is the default value used if
+    {CL_MEM_IMAGE_TILING_EXT} is not specified in the _properties_. Image data is
+    laid out in so-called raster order, one row after the other, one slice or array
+    layer after the other in memory according to the pitches provided by the application
+    or calculated.
+
+  * {CL_IMAGE_TILING_OPTIMAL_EXT} requires image data be laid out in an implementation-defined
+    format which can vary depending on the type of image, its format and/or dimensions.
+    The will attempt to select the best layout for the image.
+
+If {CL_MEM_IMAGE_TILING_EXT} is passed and set to a value different from
+{CL_IMAGE_TILING_LINEAR_EXT}, {CL_MEM_USE_HOST_PTR} must not be set in _mem_flags_.
+
+If {CL_MEM_IMAGE_TILING_EXT} is passed and set to a value different from
+{CL_IMAGE_TILING_LINEAR_EXT} and {CL_MEM_COPY_HOST_PTR} is set in _mem_flags_, the data
+pointed to by _host_ptr_ is laid out using linear tiling and its layout is described
+in the same way as for case whe {CL_MEM_IMAGE_TILING_EXT} is not set or set to
+{CL_IMAGE_TILING_LINEAR_EXT}.
+
+When creating an image from a buffer, _image_row_pitch_ and _image_slice_pitch_
+must both be `0` if {CL_MEM_IMAGE_TILING_EXT} is passed and set to
+{CL_IMAGE_TILING_OPTIMAL_EXT}. The data in the buffer and its underlying memory
+are reused as-is and the exact behaviour is implementation-defined.
+--
+
+(Modify section 5.3.6, *Mapping Image Objects*) ::
++
+--
+If the image object is created with {CL_MEM_IMAGE_TILING_EXT} set to a value
+different from {CL_IMAGE_TILING_LINEAR_EXT}, the implementation may need to
+allocate memory and perform a copy as part of the map operation. The pointer
+returned to the application will always point to data in linear tiling
+laid out according to the returned _image_row_pitch_ and _image_slice_pitch_.
+--
+
+(Modify section 5.3.7, *Image Object Queries*) ::
++
+--
+
+If the image object is created with {CL_MEM_IMAGE_TILING_EXT} set to a value
+different from {CL_IMAGE_TILING_LINEAR_EXT}, the value returned for
+
+* {CL_IMAGE_ROW_PITCH} is the value that would be returned as _image_row_pitch_
+  by *clEnqueueMapImage* when mapping the entire image.
+* {CL_IMAGE_SLICE_PITCH} is the value that would be returned as _image_slice_pitch_
+  by *clEnqueueMapImage* when mapping the entire image.
+
+The following is added to _Table 22: List of supported param_names by *clGetImageInfo*_:
+--
+
+[cols="1,1,4",options="header"]
+|====
+| Image info
+| Return Type
+| Description
+
+| {CL_IMAGE_TILING_EXT}
+| {cl_image_tiling_ext_TYPE}
+| Return the tiling passed using the {CL_MEM_IMAGE_TILING_EXT} property or
+  {CL_IMAGE_TILING_LINEAR_EXT} if none was passed at image creation time.
+|====
+
+== Interactions with Other Extensions
+
+None.
+
+== Conformance tests
+
+None.
+
+== Issues
+
+. How can an application get a view of tiled image data?
++
+--
+*RESOLVED*: An application wishing to get visibility of tiled data can do so by
+creating images from a buffer and mapping the buffer directly.
+--
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 0.2.0   | 2023-01-17 | Kevin Petit  | WIP discussion with other vendors
+| 0.1.0   | 2021-11-01 | Kevin Petit  | *Initial revision*
+|====
+
