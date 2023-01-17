@@ -257,6 +257,8 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_kernel_clock_capabilities_khr</name>;</type>
         <type category="define">typedef <type>cl_ulong</type>         <name>cl_mem_device_address_ext</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_perf_hint_qcom</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_image_tiling_ext</name>;</type>
+        <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_image_tiling_capabilities_ext</name>;</type>
 
             <comment>Structure types</comment>
         <type category="struct" name="cl_dx9_surface_info_khr">
@@ -1394,6 +1396,17 @@ server's OpenCL/api-docs repository.
         <enum bitpos="2"            name="CL_DEVICE_KERNEL_CLOCK_SCOPE_SUB_GROUP_KHR"/>
             <unused start="3" end="63"/>
     </enums>
+    <enums name="cl_image_tiling_ext" vendor="Multiple">
+            <unused start="0" end="0"/>
+        <enum value="1"             name="CL_IMAGE_TILING_LINEAR_EXT"/>
+        <enum value="2"             name="CL_IMAGE_TILING_OPTIMAL_EXT"/>
+            <unused start="3" end="0xFFFFFFFF"/>
+    </enums>
+    <enums name="cl_device_image_tiling_capabilities_ext" vendor="Multiple" type="bitmask">
+        <enum bitpos="0"            name="CL_DEVICE_IMAGE_TILING_DEVICE_ACCESS_EXT"/>
+        <enum bitpos="1"            name="CL_DEVICE_IMAGE_TILING_HOST_ACCESS_EXT"/>
+            <unused start="2" end="63"/>
+    </enums>
 
     <enums start="0x10000" end="0x1FFFF" name="cl_khronos_vendor_id" vendor="Khronos">
         <comment>
@@ -2277,7 +2290,9 @@ server's OpenCL/api-docs repository.
         <enum value="0x4231"        name="CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT"/>
         <enum value="0x4232"        name="CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT"/>
         <enum value="0x4233"        name="CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT"/>
-            <unused start="0x4234" end="0x4236" comment="Reserved for cl_ext_image_tiling_control"/>
+        <enum value="0x4234"        name="CL_DEVICE_IMAGE_TILING_CAPABILITIES_EXT"/>
+        <enum value="0x4235"        name="CL_MEM_IMAGE_TILING_EXT"/>
+        <enum value="0x4236"        name="CL_IMAGE_TILING_EXT"/>
             <unused start="0x4237" end="0x423A" comment="Reserved for cl_ext_image_drm_modifier"/>
             <unused start="0x423B" end="0x423F"/>
     </enums>
@@ -7588,6 +7603,29 @@ server's OpenCL/api-docs repository.
             </require>
             <require>
                 <command name="clSetPerfHintQCOM"/>
+            </require>
+        </extension>
+        <extension name="cl_ext_image_tiling_control" supported="opencl">
+            <require>
+                <type name="cl_image_tiling_ext"/>
+                <type name="cl_device_image_tiling_capabilities_ext"/>
+            </require>
+            <require comment="cl_image_tiling_ext">
+                <enum name="CL_IMAGE_TILING_LINEAR_EXT"/>
+                <enum name="CL_IMAGE_TILING_OPTIMAL_EXT"/>
+            </require>
+            <require comment="cl_device_info">
+                <enum name="CL_DEVICE_IMAGE_TILING_CAPABILITIES_EXT"/>
+            </require>
+            <require comment="cl_device_image_tiling_capabilities_ext">
+                <enum name="CL_DEVICE_IMAGE_TILING_HOST_ACCESS_EXT"/>
+                <enum name="CL_DEVICE_IMAGE_TILING_DEVICE_ACCESS_EXT"/>
+            </require>
+            <require comment="cl_mem_properties">
+                <enum name="CL_MEM_IMAGE_TILING_EXT"/>
+            </require>
+            <require comment="cl_image_info">
+                <enum name="CL_IMAGE_TILING_EXT"/>
             </require>
         </extension>
     </extensions>
