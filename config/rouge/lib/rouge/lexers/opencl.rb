@@ -155,6 +155,8 @@ module Rouge
         cl_command_buffer_properties_khr
         cl_ndrange_kernel_command_properties_khr
         cl_mutable_command_khr
+        cl_mutable_command_info_khr
+        cl_mutable_base_config_khr
         cl_dx9_surface_info_khr
         cl_motion_estimation_desc_intel
         cl_mem_ext_host_ptr
@@ -175,6 +177,15 @@ module Rouge
         CL_VERSION_PATCH_KHR
         CL_MAKE_VERSION_KHR
         cl_device_integer_dot_product_acceleration_properties_khr
+        cl_command_buffer_khr
+        cl_mutable_command_khr
+        cl_command_buffer_structure_type_khr
+        cl_mutable_base_config_khr
+        cl_mutable_command_info_khr
+        cl_mutable_dispatch_arg_khr
+        cl_mutable_dispatch_config_khr
+        cl_mutable_dispatch_exec_info_khr
+        cl_mutable_dispatch_fields_khr
       )
 
       # Here are some interesting tokens
