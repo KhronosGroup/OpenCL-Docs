@@ -1,0 +1,133 @@
+// Copyright 2017-2023 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[cl_icdl-opencl]]
+== OpenCL ICD Loader Info Queries
+
+[[cl_icdl-overview]]
+=== Overview
+
+This section describes *cl_icdl* loader extension which defines
+a simple mechanism through which an OpenCL installable client
+driver loader (ICD Loader) may report loader specific meta-data
+such as version or vendor.
+
+=== General information
+
+==== Version history
+
+[cols="1,1,3",options="header",]
+|====
+| *Date*     | *Version* | *Description*
+| 2023-02-24 | 1.0.0     | First assigned version.
+|====
+
+==== Contributors
+
+Vincent Danjean, Université Grenoble Alpes
+Brice Videau, Argonne National Laboratory
+
+[[cl_icdl-new-procedures-and-functions]]
+=== New Procedures and Functions
+
+An ICD loader needs to implement and expose through
+*clGetExtensionFunctionAddress* and
+*clGetExtensionFunctionAddressForPlatform* this new
+entry point.
+
+[source,opencl]
+----
+cl_int clGetICDLoaderInfoOCLICD(cl_icdl_info  param_name,
+                                size_t        param_value_size,
+                                void         *param_value,
+                                size_t       *param_value_size_ret);
+----
+
+[[cl_icdl-new-api-types]]
+=== New API Types
+
+[source,opencl]
+----
+typedef cl_uint cl_icdl_info;
+----
+
+[[cl_icdl-new-enums]]
+=== New API Enums
+
+Accepted as _param_name_ to the function *clGetICDLoaderInfoOCLICD*:
+
+[source,opencl]
+----
+#define CL_ICDL_OCL_VERSION 1
+#define CL_ICDL_VERSION     2
+#define CL_ICDL_NAME        3
+#define CL_ICDL_VENDOR      4
+----
+
+Note that for backward compatibility reasons, the enum values do not
+follow OpenCL enum values attribution.
+
+[[cl_icdl-documentation]]
+=== OpenCL ICD Loader Info Queries Documentation
+
+==== Querying ICD Loader Info
+
+[open,refpage='clGetICDLoaderInfoOCLICD',desc='Query information about an OpenCL ICD Loader',type='protos']
+Information concerning an OpenCL ICD Loader can be obtained with the function:
+[source,opencl]
+----
+cl_int clGetICDLoaderInfoOCLICD(cl_icdl_info  param_name,
+                                size_t        param_value_size,
+                                void         *param_value,
+                                size_t       *param_value_size_ret);
+----
+
+  * _param_name_ is an enumeration constant that identifies the ICD loader
+    information being queried. It can be one of the following values as
+    specified in the <<loader-queries-table, ICD Loader Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size in bytes must be ≥ to the size of return type specified in the
+    <<loader-queries-table, ICD Loader Queries>> table.
+  * _param_value_ is a pointer to memory location where appropriate values for a
+    given _param_name_, as specified in the <<loader-queries-table, ICD Loader Queries
+    Queries>> table, will be returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ret_ returns the actual size in bytes of data being
+    queried by _param_name_.
+    If _param_value_size_ret_ is `NULL`, it is ignored.
+
+The information that can be queried using *clGetICDLoaderInfoOCLICD* is specified
+in the <<loader-queries-table, ICD Loader Queries>> table.
+
+[[loader-queries-table]]
+.List of supported param_names by <<clGetICDLoaderInfoOCLICD>>
+[width="100%",cols="<34%,<33%,<33%",options="header"]
+|====
+| ICD Loader Info | Return Type | Description
+| *CL_ICDL_OCL_VERSION* | char[] | OpenCL version supported by the ICD Loader
+| *CL_ICDL_VERSION* | char[] | ICD Loader version string
+| *CL_ICDL_NAME* | char[] | ICD Loader name string
+| *CL_ICDL_VENDOR* | char[] | ICD Loader vendor string
+|====
+
+*clGetICDLoaderInfoOCLICD* returns *CL_SUCCESS* if the function is
+executed successfully.
+Otherwise, it returns one of the following errors.
+
+  * *CL_INVALID_VALUE* if _param_name_ is not one of the supported values or
+    if size in bytes specified by _param_value_size_ is < size of return
+    type as specified in the <<loader-queries-table, ICD Loader Queries>> table,
+    and _param_value_ is not a `NULL` value.
+
+[[cl_icdl-info-queries-souce-code]]
+=== Source Code
+
+The official source for the ICD loader is available on github, at:
+
+https://github.com/KhronosGroup/OpenCL-ICD-Loader
+The official API headers are available on github, at:
+
+https://github.com/KhronosGroup/OpenCL-Headers
+The header file *CL/cl_icdl.h* defines the ICD Loader info queries.
