@@ -1,42 +1,69 @@
-// Copyright 2017-2023 The Khronos Group. This work is licensed under a
+// Copyright 2018-2023 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
-[[cl_icdl-opencl]]
-== OpenCL ICD Loader Info Queries
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
 
-[[cl_icdl-overview]]
-=== Overview
+= cl_loader_info
+:R: pass:q,r[^(R)^]
+Khronos{R} OpenCL Working Group
 
-This section describes *cl_icdl* loader extension which defines
-a simple mechanism through which an OpenCL installable client
-driver loader (ICD Loader) may report loader specific meta-data
-such as version or vendor.
+== Name Strings
 
-=== General information
+`cl_loader_info`
 
-==== Version history
+== Contact
 
-[cols="1,1,3",options="header",]
-|====
-| *Date*     | *Version* | *Description*
-| 2023-02-24 | 1.0.0     | First assigned version.
-|====
+Please see the *Issues* list in the Khronos *OpenCL-Docs* repository: +
+https://github.com/KhronosGroup/OpenCL-Docs
 
-==== Contributors
+****
+The 'Contact' section describes a way for users of the extension to
+report bugs or to suggest clarifications to the specification text.
+It may be a pointer to a 'git' repo, or to a vendors support forum,
+or an email address for the principal extension author.
+****
 
-Vincent Danjean, Université Grenoble Alpes
+== Contributors
+
+// spell-checker: disable
+Vincent Danjean, Université Grenoble Alpes +
 Brice Videau, Argonne National Laboratory
+// spell-checker: enable
 
-[[cl_icdl-new-procedures-and-functions]]
-=== New Procedures and Functions
+== Notice
 
-An ICD loader needs to implement and expose through
-*clGetExtensionFunctionAddress* and
-*clGetExtensionFunctionAddressForPlatform* this new
-entry point.
+Copyright (c) 2023 The Khronos Group Inc.
 
-[source,opencl]
+== Status
+
+Final Draft
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification
+Version 1.0, Revision 1.
+
+This extension requires OpenCL 1.0.
+
+== Overview
+
+This extension describes the `cl_loader_info` loader extension which
+defines a simple mechanism through which an OpenCL installable client
+driver loader (ICD Loader) may report loader specific meta-data such
+as version or vendor.
+
+== New API Functions
+
+[source,c]
 ----
 cl_int clGetICDLoaderInfoOCLICD(cl_icdl_info  param_name,
                                 size_t        param_value_size,
@@ -44,20 +71,18 @@ cl_int clGetICDLoaderInfoOCLICD(cl_icdl_info  param_name,
                                 size_t       *param_value_size_ret);
 ----
 
-[[cl_icdl-new-api-types]]
-=== New API Types
+== New API Types
 
-[source,opencl]
+[source,c]
 ----
 typedef cl_uint cl_icdl_info;
 ----
 
-[[cl_icdl-new-enums]]
-=== New API Enums
+== New API Enums
 
 Accepted as _param_name_ to the function *clGetICDLoaderInfoOCLICD*:
 
-[source,opencl]
+[source,c]
 ----
 #define CL_ICDL_OCL_VERSION 1
 #define CL_ICDL_VERSION     2
@@ -68,14 +93,11 @@ Accepted as _param_name_ to the function *clGetICDLoaderInfoOCLICD*:
 Note that for backward compatibility reasons, the enum values do not
 follow OpenCL enum values attribution.
 
-[[cl_icdl-documentation]]
-=== OpenCL ICD Loader Info Queries Documentation
-
-==== Querying ICD Loader Info
+== Modifications to the OpenCL API Specification
 
 [open,refpage='clGetICDLoaderInfoOCLICD',desc='Query information about an OpenCL ICD Loader',type='protos']
 Information concerning an OpenCL ICD Loader can be obtained with the function:
-[source,opencl]
+[source,c]
 ----
 cl_int clGetICDLoaderInfoOCLICD(cl_icdl_info  param_name,
                                 size_t        param_value_size,
@@ -121,13 +143,27 @@ Otherwise, it returns one of the following errors.
     type as specified in the <<loader-queries-table, ICD Loader Queries>> table,
     and _param_value_ is not a `NULL` value.
 
-[[cl_icdl-info-queries-souce-code]]
-=== Source Code
 
-The official source for the ICD loader is available on github, at:
+== Conformance tests
 
-https://github.com/KhronosGroup/OpenCL-ICD-Loader
-The official API headers are available on github, at:
+. The new *clGetICDLoaderInfoOCLICD* entrypoint must be called and succeed.
+. The value returned for `CL_ICDL_OCL_VERSION` must repect the OpenCL version
+  string format. 
 
-https://github.com/KhronosGroup/OpenCL-Headers
-The header file *CL/cl_icdl.h* defines the ICD Loader info queries.
+== Issues
+
+. Should this extension be a regular extension?
++
+--
+*RESOLVED*: Yes.  This is a userfacing extension.
+--
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 1.0.0   | 2023-03-01 | Brice Videau | *Initial revision*
+|====
