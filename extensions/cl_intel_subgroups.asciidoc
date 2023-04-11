@@ -62,17 +62,17 @@ This extension is written against revision 24 of the OpenCL 2.0 API specificatio
 
 == Overview
 
-The goal of this extension is to allow programmers to improve the performance of their applications by taking advantage of the fact that some work items in a work group execute together as a group (a "sub-group"), and that work items in a sub-group can take advantage of hardware features that are not available to work items in a work group.
-Specifically, this extension is designed to allow work items in a sub-group to share data without the use of local memory and work group barriers, and to utilize specialized hardware to load and store blocks of data.
+The goal of this extension is to allow programmers to improve the performance of their applications by taking advantage of the fact that some work items in a work-group execute together as a group (a "sub-group"), and that work items in a sub-group can take advantage of hardware features that are not available to work items in a work-group.
+Specifically, this extension is designed to allow work items in a sub-group to share data without the use of local memory and work-group barriers, and to utilize specialized hardware to load and store blocks of data.
 
 There is a large amount of overlap between the functionality in this extension and the functionality in the Khronos sub-groups extension `cl_khr_subgroups`, so this extension reuses many of the names, concepts, and functions already described by the `cl_khr_subgroups` extension.
 The key differences between the Intel sub-groups extension and the Khronos sub-groups extension are:
 
 * The Khronos sub-groups extension requires OpenCL 2.0, but the Intel sub-groups extension may be available on OpenCL 1.2 devices.
 
-* The Khronos sub-groups extension guarantees that sub-groups in a work group will make independent forward progress, but the Intel extension does not guarantee that sub-groups in a work group will make independent forward progress.
+* The Khronos sub-groups extension guarantees that sub-groups in a work-group will make independent forward progress, but the Intel extension does not guarantee that sub-groups in a work-group will make independent forward progress.
 
-* The Intel extension adds a rich set of sub-group "shuffle" functions to allow work items within a work group to interchange data without the use of local memory and work group barriers.
+* The Intel extension adds a rich set of sub-group "shuffle" functions to allow work items within a work-group to interchange data without the use of local memory and work-group barriers.
 
 * The Intel extension adds a set of sub-group "block read and write" functions to take advantage of specialized hardware to read or write blocks of data from or to buffers or images.
 
@@ -242,9 +242,9 @@ Change the description for Sub-groups to: ::
 --
 Sub-group ::
 Sub-groups are an implementation-dependent grouping of work items within a
-work group.
+work-group.
 The size and number of sub-groups is implementation-defined and not exposed in the core OpenCL 2.0 feature set.
-Sub-groups execute concurrently within a work group, but are not guaranteed to make independent forward progress.
+Sub-groups execute concurrently within a work-group, but are not guaranteed to make independent forward progress.
 Sub-groups may synchronize internally using sub-group barrier operations without synchronizing with other sub-groups.
 --
 
@@ -253,7 +253,7 @@ Sub-groups may synchronize internally using sub-group barrier operations without
 Change the paragraph describing sub-groups to: ::
 +
 --
-An implementation of OpenCL may divide each work group into one or more sub-groups.
+An implementation of OpenCL may divide each work-group into one or more sub-groups.
 The size and number of sub-groups is implementation-defined and not exposed in the
 core OpenCL 2.0 feature set.
 --
@@ -267,23 +267,23 @@ Remove the last paragraph describing sub-groups and independent forward progress
 This text is largely the same as the text in the Khronos sub-groups extension. Only the sentence about independent forward progress has been modified: ::
 +
 --
-Within a work group, work items may be divided into sub-groups in an implementation-
+Within a work-group, work items may be divided into sub-groups in an implementation-
 defined fashion.  The mapping of work items to sub-groups is implementation-defined
 and may be queried at runtime.  While sub-groups may be used in multi-dimensional
-work groups, each sub-group is 1-dimensional and any given work item may query which
+work-groups, each sub-group is 1-dimensional and any given work item may query which
 sub-group it is a member of.
 
 Work items are mapped into sub-groups through a combination of compile-time decisions
 and the parameters of the dispatch.  The mapping to sub-groups is invariant for the
 duration of a kernel's execution, across dispatches of a given kernel with the same
-launch parameters, and from one work group to another within the dispatch (excluding
-the trailing edge work groups in the presence of non-uniform work group sizes).  In
-addition, all sub-groups within a work group will be the same size, apart from the
-sub-group with the maximum index, which may be smaller if the size of the work group 
+launch parameters, and from one work-group to another within the dispatch (excluding
+the trailing edge work-groups in the presence of non-uniform work-group sizes).  In
+addition, all sub-groups within a work-group will be the same size, apart from the
+sub-group with the maximum index, which may be smaller if the size of the work-group 
 is not evenly divisible by the size of the sub-groups.
 
-Sub-groups execute concurrently within a given work group.  Similar to work items
-within a work group, sub-groups executing within a work group are not guaranteed to make
+Sub-groups execute concurrently within a given work-group.  Similar to work items
+within a work-group, sub-groups executing within a work-group are not guaranteed to make
 independent forward progress.  Work items in a sub-group can internally synchronize 
 using sub-group barrier operations without synchronizing with other sub-groups.
 --
@@ -456,10 +456,10 @@ This value will be invariant for a given set of dispatch dimensions and a kernel
 uint get_num_sub_groups( void )
 ----
 
-| Returns the number of sub-groups that the current work group is divided into.
+| Returns the number of sub-groups that the current work-group is divided into.
 
-This number will be constant for the duration of a work group's execution.
-If the kernel is executed with a non-uniform work group size in any dimension, calls to this built-in may return a different values for some work groups than for other work groups.
+This number will be constant for the duration of a work-group's execution.
+If the kernel is executed with a non-uniform work-group size in any dimension, calls to this built-in may return a different values for some work-groups than for other work-groups.
 
 |[source,c]
 ----
@@ -476,7 +476,7 @@ uint get_sub_group_local_id( void )
 ----
 
 | Returns the unique work item ID within the current sub-group.
-The mapping from *get_local_id* to *get_sub_group_local_id* will be invariant for the lifetime of the work group.
+The mapping from *get_local_id* to *get_sub_group_local_id* will be invariant for the lifetime of the work-group.
 
 |====
 
@@ -492,9 +492,9 @@ If OpenCL 2.0 is supported:
 uint get_enqueued_num_sub_groups( void )
 ----
 
-| Returns the same value as that returned by *get_num_sub_groups* if the kernel is executed with a uniform work group size.  This value will be constant for the entire ND-range.
+| Returns the same value as that returned by *get_num_sub_groups* if the kernel is executed with a uniform work-group size.  This value will be constant for the entire ND-range.
 
-If the kernel is executed with a non-uniform work group size, returns the number of sub-groups in a work group that makes up the uniform region of the global ND-range.
+If the kernel is executed with a non-uniform work-group size, returns the number of sub-groups in a work-group that makes up the uniform region of the global ND-range.
 
 |====
 --
@@ -517,7 +517,7 @@ void sub_group_barrier(
 
 | All work items in a sub-group executing the kernel on a processor must execute this  function before any are allowed to continue execution beyond the sub-group barrier.
 This function must be encountered by all work items in a sub-group executing the kernel.
-These rules apply to ND-ranges implemented with uniform and non-uniform work groups.
+These rules apply to ND-ranges implemented with uniform and non-uniform work-groups.
 
 If *sub_group_barrier* is inside a conditional statement then all work items within the sub-group must enter the conditional if any work item in the sub-group enters the conditional statement and executes the *sub_group_barrier*.
 
@@ -553,7 +553,7 @@ void sub_group_barrier(
 The *sub_group_barrier* function also supports a variant that specifies the memory scope.
 For the sub_group_barrier variant that does not take a memory scope, the scope is `memory_scope_sub_group`.
 
-The scope argument specifies whether the memory accesses of work items in the sub-group to memory address space(s) identified by flags become visible to all  work items in the sub-group, the work group, the device, or all SVM devices.
+The scope argument specifies whether the memory accesses of work items in the sub-group to memory address space(s) identified by flags become visible to all  work items in the sub-group, the work-group, the device, or all SVM devices.
 
 ...
 
@@ -586,7 +586,7 @@ This memory scope can be used when performing atomic operations to global or
 local memory.
 --
 
-=== Additions to Section 6.13.15 - "Work Group Functions"
+=== Additions to Section 6.13.15 - "Work-group Functions"
 
 These additions are copied from the Khronos sub-groups extension: ::
 +
@@ -671,7 +671,7 @@ The scan order is defined by increasing sub-group local ID within the sub-group.
 |====
 --
 
-=== Add a new Section 6.13.X - "Sub Group Shuffle Functions"
+=== Add a new Section 6.13.X - "Sub-group Shuffle Functions"
 
 These are new functions: ::
 +
@@ -764,7 +764,7 @@ There is no defined behavior for out-of-range indices.
 |====
 --
 
-=== Add a new Section 6.13.X - "Sub Group Read and Write Functions"
+=== Add a new Section 6.13.X - "Sub-group Read and Write Functions"
 
 These are new functions: ::
 +
