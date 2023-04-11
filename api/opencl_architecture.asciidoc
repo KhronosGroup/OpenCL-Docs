@@ -288,10 +288,10 @@ Each of these executing kernel functions is called a _work-item_.
 The work-items associated with a given kernel-instance are managed by the
 device in groups called _work-groups_.
 These work-groups define a coarse grained decomposition of the Index space.
-Work-groups are further divided into _subgroups_, which provide an
+Work-groups are further divided into _sub-groups_, which provide an
 additional level of control over execution.
 
-NOTE: Subgroups are <<unified-spec, missing before>> version 2.1.
+NOTE: Sub-groups are <<unified-spec, missing before>> version 2.1.
 
 Work-items have a global ID based on their coordinates within the Index
 space.
@@ -384,30 +384,30 @@ is computed as:
 [[index-space-image]]
 image::images/index_space.jpg[align="center", title="An example of an ND-range index space showing work-items, their global IDs and their mapping onto the pair of work-group and local IDs. In this case, we assume that in each dimension, the size of the work-group evenly divides the global ND-range size (i.e. all work-groups have the same size) and that the offset is equal to zero."]
 
-Within a work-group work-items may be divided into subgroups.
-The mapping of work-items to subgroups is implementation-defined and may be
+Within a work-group work-items may be divided into sub-groups.
+The mapping of work-items to sub-groups is implementation-defined and may be
 queried at runtime.
-While subgroups may be used in multi-dimensional work-groups, each
-subgroup is 1-dimensional and any given work-item may query which subgroup
+While sub-groups may be used in multi-dimensional work-groups, each
+sub-group is 1-dimensional and any given work-item may query which sub-group
 it is a member of.
 
-NOTE: Subgroups are <<unified-spec, missing before>> version 2.1.
+NOTE: Sub-groups are <<unified-spec, missing before>> version 2.1.
 
-Work-items are mapped into subgroups through a combination of compile-time
+Work-items are mapped into sub-groups through a combination of compile-time
 decisions and the parameters of the dispatch.
-The mapping to subgroups is invariant for the duration of a kernels
+The mapping to sub-groups is invariant for the duration of a kernels
 execution, across dispatches of a given kernel with the same work-group
 dimensions, between dispatches and query operations consistent with the
 dispatch parameterization, and from one work-group to another within the
 dispatch (excluding the trailing edge work-groups in the presence of
 non-uniform work-group sizes).
-In addition, all subgroups within a work-group will be the same size, apart
-from the subgroup with the maximum index which may be smaller if the size
-of the work-group is not evenly divisible by the size of the subgroups.
+In addition, all sub-groups within a work-group will be the same size, apart
+from the sub-group with the maximum index which may be smaller if the size
+of the work-group is not evenly divisible by the size of the sub-groups.
 
-In the degenerate case, a single subgroup must be supported for each
+In the degenerate case, a single sub-group must be supported for each
 work-group.
-In this situation all subgroup scope functions are equivalent to their
+In this situation all sub-group scope functions are equivalent to their
 work-group level equivalents.
 
 
@@ -474,28 +474,28 @@ There is no safe and portable way to synchronize across the independent
 execution of work-groups since once in the work-pool, they can execute in
 any order.
 
-The work-items within a single subgroup execute concurrently but not
+The work-items within a single sub-group execute concurrently but not
 necessarily in parallel (i.e. they are not guaranteed to make independent
 forward progress).
-Therefore, only high-level synchronization constructs (e.g. subgroup
-functions such as barriers) that apply to all the work-items in a subgroup
+Therefore, only high-level synchronization constructs (e.g. sub-group
+functions such as barriers) that apply to all the work-items in a sub-group
 are well defined and included in OpenCL.
 
-NOTE: Subgroups are <<unified-spec, missing before>> version 2.1.
+NOTE: Sub-groups are <<unified-spec, missing before>> version 2.1.
 
-Subgroups execute concurrently within a given work-group and with
+Sub-groups execute concurrently within a given work-group and with
 appropriate device support (see <<platform-querying-devices, Querying
 Devices>>), may make independent forward progress with respect to each
 other, with respect to host threads and with respect to any entities
 external to the OpenCL system but running on an OpenCL device, even in the
 absence of work-group barrier operations.
-In this situation, subgroups are able to internally synchronize using
+In this situation, sub-groups are able to internally synchronize using
 barrier operations without synchronizing with each other and may perform
-operations that rely on runtime dependencies on operations other subgroups
+operations that rely on runtime dependencies on operations other sub-groups
 perform.
 
 The work-items within a single work-group execute concurrently but are only
-guaranteed to make independent progress in the presence of subgroups and
+guaranteed to make independent progress in the presence of sub-groups and
 device support.
 In the absence of this capability, only high-level synchronization
 constructs (e.g. work-group functions such as barriers) that apply to all
@@ -503,13 +503,13 @@ the work-items in a work-group are well defined and included in OpenCL for
 synchronization within the work-group.
 
 In the absence of synchronization functions (e.g. a barrier), work-items
-within a subgroup may be serialized.
-In the presence of subgroup functions, work-items within a subgroup may
-be serialized before any given subgroup function, between dynamically
-encountered pairs of subgroup functions and between a work-group function
+within a sub-group may be serialized.
+In the presence of sub-group functions, work-items within a sub-group may
+be serialized before any given sub-group function, between dynamically
+encountered pairs of sub-group functions and between a work-group function
 and the end of the kernel.
 
-In the absence of independent forward progress of constituent subgroups,
+In the absence of independent forward progress of constituent sub-groups,
 work-items within a work-group may be serialized before, after or between
 work-group synchronization functions.
 
@@ -570,9 +570,9 @@ Consider the following three domains of synchronization in OpenCL:
 
   * Work-group synchronization: Constraints on the order of execution for
     work-items in a single work-group
-  * Subgroup synchronization: Constraints on the order of execution for
-    work-items in a single subgroup.
-    Note: Subgroups are <<unified-spec, missing before>> version 2.1
+  * Sub-group synchronization: Constraints on the order of execution for
+    work-items in a single sub-group.
+    Note: Sub-groups are <<unified-spec, missing before>> version 2.1
   * Command synchronization: Constraints on the order of commands launched
     for execution
 
@@ -596,24 +596,24 @@ OpenCL since OpenCL does not define forward-progress or ordering relations
 between work-groups, hence collective synchronization operations are not
 well defined.
 
-Synchronization across all work-items within a single subgroup is carried
-out using a _subgroup function_.
+Synchronization across all work-items within a single sub-group is carried
+out using a _sub-group function_.
 These functions carry out collective operations across all the work-items in
-a subgroup.
+a sub-group.
 Available collective operations are: barrier, reduction, broadcast, prefix
 sum, and evaluation of a predicate.
-A subgroup function must occur within a converged control flow; i.e. all
-work-items in the subgroup must encounter precisely the same subgroup
+A sub-group function must occur within a converged control flow; i.e. all
+work-items in the sub-group must encounter precisely the same sub-group
 function.
 For example, if a work-group function occurs within a loop, the work-items
-must encounter the same subgroup function in the same loop iterations.
-All the work-items of a subgroup must execute the subgroup function and
+must encounter the same sub-group function in the same loop iterations.
+All the work-items of a sub-group must execute the sub-group function and
 complete reads and writes to memory before any are allowed to continue
-execution beyond the subgroup function.
-Synchronization between subgroups must either be performed using work-group
+execution beyond the sub-group function.
+Synchronization between sub-groups must either be performed using work-group
 functions, or through memory operations.
-Using memory operations for subgroup synchronization should be used
-carefully as forward progress of subgroups relative to each other is only
+Using memory operations for sub-group synchronization should be used
+carefully as forward progress of sub-groups relative to each other is only
 supported optionally by OpenCL implementations.
 
 Command synchronization is defined in terms of distinct *synchronization
@@ -1176,7 +1176,7 @@ enumeration constant:
   * *memory_scope_work_item*: memory-ordering constraints only apply within
     the work-item footnote:[{fn-image-mem-fence}].
   * *memory_scope_sub_group*: memory-ordering constraints only apply within
-    the subgroup.
+    the sub-group.
   * *memory_scope_work_group*: memory-ordering constraints only apply to
     work-items executing within a single work-group.
   * *memory_scope_device:* memory-ordering constraints only apply to
@@ -1322,7 +1322,7 @@ Two actions *A* and *B* are defined to have an inclusive scope if they have
 the same scope *P* such that:
 
   * *P* is *memory_scope_sub_group* and *A* and *B* are executed by
-    work-items within the same subgroup.
+    work-items within the same sub-group.
   * *P* is *memory_scope_work_group* and *A* and *B* are executed by
     work-items within the same work-group.
   * *P* is *memory_scope_device* and *A* and *B* are executed by work-items
@@ -1793,20 +1793,20 @@ must execute the same work-group function call site, or dynamic work-group
 function instance.
 
 
-==== Subgroup Functions
+==== Sub-group Functions
 
-NOTE: Subgroup functions are <<unified-spec, missing before>> version 2.1.
+NOTE: Sub-group functions are <<unified-spec, missing before>> version 2.1.
 Also see extension *cl_khr_subgroups*.
 
 The OpenCL kernel execution model includes collective operations across the
-work-items within a single subgroup.
-These are called subgroup functions.
-We will first discuss the subgroup barrier.
-Other subgroup functions are discussed afterwards.
+work-items within a single sub-group.
+These are called sub-group functions.
+We will first discuss the sub-group barrier.
+Other sub-group functions are discussed afterwards.
 
 The barrier function provides a mechanism for a kernel to synchronize the
-work-items within a single subgroup: informally, each work-item of the
-subgroup must execute the barrier before any are allowed to proceed.
+work-items within a single sub-group: informally, each work-item of the
+sub-group must execute the barrier before any are allowed to proceed.
 It also orders memory operations to a specified combination of one or more
 address spaces such as local memory or global memory, in a similar manner to
 a fence.
@@ -1816,7 +1816,7 @@ distinguish between a dynamic and a static instance of the call to a
 barrier.
 A call to a barrier can appear in a loop, for example, and each execution of
 the same static barrier call results in a new dynamic instance of the
-barrier that will independently synchronize the work-items in a subgroup.
+barrier that will independently synchronize the work-items in a sub-group.
 
 A work-item executing a dynamic instance of a barrier results in two
 operations, both fences, that are called the entry and exit fences.
@@ -1830,21 +1830,21 @@ chapter as well as the following:
   * For each work-item the entry fence is sequenced before the exit fence.
   * If the flags have `CLK_GLOBAL_MEM_FENCE` set then for each work-item the
     entry fence global-synchronizes-with the exit fence of all other
-    work-items in the same subgroup.
+    work-items in the same sub-group.
   * If the flags have `CLK_LOCAL_MEM_FENCE` set then for each work-item the
     entry fence local-synchronizes-with the exit fence of all other
-    work-items in the same subgroup.
+    work-items in the same sub-group.
 
-Other subgroup functions include such functions as scans, reductions,
+Other sub-group functions include such functions as scans, reductions,
 and broadcasts, and are described in the kernel languages and IL specifications.
-The use of these subgroup functions implies sequenced-before relationships
+The use of these sub-group functions implies sequenced-before relationships
 between statements within the execution of a single work-item in order to
 satisfy data dependencies.
-For example, a work-item that provides a value to a subgroup function must
+For example, a work-item that provides a value to a sub-group function must
 behave as if it generates that value before beginning execution of that
-subgroup function.
-Furthermore, the programmer must ensure that all work-items in a subgroup
-must execute the same subgroup function call site, or dynamic subgroup
+sub-group function.
+Furthermore, the programmer must ensure that all work-items in a sub-group
+must execute the same sub-group function call site, or dynamic sub-group
 function instance.
 
 
