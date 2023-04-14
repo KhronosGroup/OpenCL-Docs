@@ -1,0 +1,211 @@
+// Copyright 2021-2023 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+include::{generated}/api/api-dictionary-no-links.asciidoc[]
+:source-highlighter: coderay
+
+= cl_ext_image_tiling_control
+
+== Name Strings
+
+`cl_ext_image_tiling_control`
+
+== Contact
+
+Kevin Petit (kevin.petit 'at' arm.com)
+
+== Contributors
+
+Kevin Petit, Arm Ltd. +
+Plamen Petkov, Arm Ltd. +
+Ben Ashbaugh, Intel +
+Balaji Calidas, Qualcomm +
+Joshua Kelly, Qualcomm +
+Jeremy Kemp, Google +
+Nikhil Joshi, NVidia +
+
+== Notice
+
+Copyright (c) 2021-2023 The Khronos Group Inc.
+
+== Status
+
+Draft
+
+== Version
+
+Built On: {docdate} +
+Version: 0.2.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification version 3.0.12.
+
+This extension requires OpenCL 3.0.
+This extension requires `cl_ext_image_requirements_info`
+
+== Overview
+
+This extension gives applications explicit control over how image data is arranged in memory.
+
+== New API Types
+
+[source,c]
+----
+typedef cl_bitfield cl_image_tiling_ext;
+
+#define CL_IMAGE_TILING_LINEAR_EXT   (1 << 0)
+#define CL_IMAGE_TILING_OPTIMAL_EXT  (1 << 1)
+
+----
+
+== New API Enums
+
+Accepted value for the _properties_ parameter to *clCreateImageWithProperties*:
+
+[source,c]
+----
+CL_MEM_IMAGE_TILING_EXT       0x4235
+----
+
+Accepted value for the _param_name_ parameter to *clGetImageInfo*:
+
+[source,c]
+----
+CL_IMAGE_TILING_EXT 0x4236
+----
+
+[source,c]
+----
+CL_IMAGE_MAP_NO_DETILE_REQUIRED_EXT 0x????
+----
+
+Accepted value for the _map_flags_ parameter to *clEnqueueMapImage*:
+
+----
+CL_MAP_IMAGE_NO_DETILE_EXT 0x????
+----
+
+Accepted value for the _param_name_ parameter to *clGetImageRequirementsInfoEXT*:
+
+[source,c]
+----
+CL_IMAGE_REQUIREMENTS_TILING_MODES_EXT    0x???
+----
+
+== Modifications to the OpenCL API Specification
+
+--
+--
+
+(Modify section 5.3.1, *Creating Image Objects*) ::
++
+--
+{CL_MEM_IMAGE_TILING_EXT} can be passed as part of the _properties_ parameter
+to *clCreateImageWithProperties* to control the tiling used for the image being
+created. The following values are accepted:
+
+  * {CL_IMAGE_TILING_LINEAR_EXT} Image data is
+    laid out in so-called raster order, one row after the other, one slice or array
+    layer after the other in memory according to the pitches provided by the application
+    or calculated.
+
+  * {CL_IMAGE_TILING_OPTIMAL_EXT} requires image data be laid out in an implementation-defined
+    format which can vary depending on the type of image, its format and/or dimensions.
+    The will attempt to select the best layout for the image. The selected layout may be linear.
+
+When creating an image from a buffer, _image_row_pitch_ and _image_slice_pitch_
+must both be `0` if {CL_MEM_IMAGE_TILING_EXT} is passed as part of properties and set to
+{CL_IMAGE_TILING_OPTIMAL_EXT}. The data in the buffer and its underlying memory
+are reused as-is and the exact behaviour is implementation-defined.
+
+If the image is created from a buffer and the  _image_row_pitch_ or _image_slice_pitch_ are not `0`, the image is assumed to be linear if not specified through properties. If the tiling is specified as part of properties passed to *clCreateImageWithProperties*, it must be set to linear.
+--
+
+(Modify section 5.3.6, *Mapping Image Objects*) ::
++
+--
+If the image object was created with {CL_IMAGE_TILING_OPTIMAL_EXT}, the implementation may need to
+allocate memory and perform a copy as part of the map operation. The entire image will be mapped, regardless of _region_ and _origin_. The pointer returned to the application will refer to linear image data, laid out according to _image_row_pitch_ and _image_slice_pitch_.
+
+If {CL_MAP_IMAGE_NO_DETILE_EXT} is passed to *clEnqueueMapImage* via _map_flags_, the returned _image_row_pitch_ and _image_slice_pitch_ are implementation defined.  The pointer returned to the application will point to data in an implementation defined format.
+
+--
+
+(Modify section 5.3.7, *Image Object Queries*) ::
++
+--
+
+If the image object is created with {CL_MEM_IMAGE_TILING_EXT} set to {CL_IMAGE_TILING_OPTIMAL_EXT}, the value returned for
+
+* {CL_IMAGE_ROW_PITCH} is the value that would be returned as _image_row_pitch_
+  by *clEnqueueMapImage* when mapping the entire image without passing {CL_MAP_IMAGE_NO_DETILE_EXT} in _map_flags_.
+* {CL_IMAGE_SLICE_PITCH} is the value that would be returned as _image_slice_pitch_
+  by *clEnqueueMapImage* when mapping the entire image without passing {CL_MAP_IMAGE_NO_DETILE_EXT} in _map_flags_.
+
+The following is added to _Table 22: List of supported param_names by *clGetImageInfo*_:
+--
+
+[cols="1,1,4",options="header"]
+|====
+| Image info
+| Return Type
+| Description
+
+| {CL_IMAGE_TILING_EXT}
+| {cl_image_tiling_ext_TYPE}
+| Return the underlaying memory layout selected by the implementation.
+| {CL_IMAGE_MAP_NO_DETILE_REQUIRED_EXT}
+| {cl_bool_TYPE}
+| If true, image can only be mapped by passing {CL_MAP_IMAGE_NO_DETILE_EXT} to *clEnqueueMapImage* via _map_flags_.
+|====
+
+
+--
+
+(Modify Table 2 of cl_ext_image_requirements_info, *List of supported param_names by clGetImageRequirementsInfoEXT*) ::
++
+--
+Add the following row to Table 2
+[cols="4,1,4",options="header"]
+|====
+| Image Format Info | Return type | Info. returned in _param_value_
+
+| {CL_IMAGE_REQUIREMENTS_TILING_MODES_EXT}
+| `cl_bitfield`
+| Returns a bitfield specifying which tiling modes are supported for the specified image parameters, either {CL_IMAGE_TILING_OPTIMAL_EXT} and/or {CL_IMAGE_TILING_LINEAR_EXT}.
+|====
+
+== Interactions with Other Extensions and the Core Specification
+
+Images created using *clCreateImage* or *clCreateImageWithProperties* without passing {CL_IMAGE_TILING_EXT} as a property, are implicitly created with optimal tiling. There are some exceptions, such as when an image is created from a buffer.  These exceptions are described in this document.
+
+== Conformance tests
+
+None.
+
+== Issues
+
+. How can an application get a view of tiled image data?
++
+--
+*RESOLVED*: An application can map the image using the {CL_MAP_IMAGE_NO_DETILE_EXT} flag to view tile data. Alternatively, the application wishing to get visibility of tiled data can also do so by
+creating images from a buffer and mapping the buffer directly.
+--
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 0.3.0   | 2023-03-30 | Balaji Calidas | WIP updates
+| 0.2.0   | 2023-01-17 | Kevin Petit  | WIP discussion with other vendors
+| 0.1.0   | 2021-11-01 | Kevin Petit  | *Initial revision*
+|====
+
