@@ -104,6 +104,14 @@ cl_int clGetSemaphoreHandleForTypeKHR(
     size_t *handle_size_ret);
 ----
 
+API function added by `cl_khr_external_semaphore_sync_fd` 
+
+----    
+cl_int clImportSemaphoreSyncFdKHR(
+    cl_semaphore_khr sema_object,
+    int fd);
+----
+
 === New API Enums
 
 Accepted value for the _param_name_ parameter to {clGetPlatformInfo} to query external semaphore handle types that may be imported or exported by all devices in an OpenCL platform:
@@ -328,6 +336,25 @@ imported payload, the semaphore's prior permanent payload will be restored.
 
 Please refer to handle specific specifications for more details on transference and
 permanence requirements specific to handle type.
+
+The `cl_khr_external_semaphore_sync_fd` extension adds {clImportSemaphoreSyncFdKHR}, which allows importing an external handle of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} into an existing binary semaphore.  The semaphore must have been created with {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} in _props_list_ of {clCreateSemaphoreWithPropertiesKHR}.
+
+To import a handle of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} into an existing semaphore, call the function
+
+include::{generated}/api/protos/clImportSemaphoreSyncFdKHR.txt[]
+
+_sema_object_ specifies a valid semaphore object with importable properties.
+
+_fd_ specifies a valid sync fd handle
+
+If the handle _fd_ is not compatible with the devices specified to {clCreateSemaphoreWithPropertiesKHR} in _props_list_, undefined behavior will result. {clImportSemaphoreSyncFdKHR} returns {CL_SUCCESS} if _fd_ is imported successfully.
+Otherwise, it returns one of the following errors:
+
+* {CL_INVALID_SEMAPHORE_KHR}
+** if _sema_object_ is not a valid semaphore
+* {CL_INVALID_VALUE} if the requested external semaphore handle type was not specified when _sema_object_ was created.
+* {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources required by the OpenCL implementation on the host.
+* {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required by the OpenCL implementation on the device.
 
 === Descriptions of External Semaphore Handle Types
 
