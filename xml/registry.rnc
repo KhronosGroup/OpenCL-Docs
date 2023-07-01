@@ -357,6 +357,12 @@ Command = element command {
 #   <require> / <remove> contains features to require or remove in
 #                        this version
 #     profile - only require/remove when generated profile matches
+#     etype - can but "enum", "bitfield", "constants" or "OpenCL-C only"
+#               If omited, etype="enum" is assumed
+#     group - type name, dedicated to a select group of enums
+#               Only exists for "enum" and "bitfield" etype's
+#               Multiple <require> blocks can add enums to the same group
+#               In such cases, the same etype attribute has to be present
 #     comment - unused
 Feature = element feature {
     attribute api { text } ,
@@ -369,6 +375,8 @@ Feature = element feature {
         element require {
             ProfileName ? ,
             ExtensionName ? ,
+			GroupName ? ,
+			EType ? ,
             Comment ? ,
             (
                 InterfaceElement |
@@ -422,9 +430,15 @@ Extensions = element extensions {
 #       this extension. It may be empty string.
 #       e.g. 'VK_VERSION_1_1', or 'VK_EXT_debug_utils', or ''
 #   provisional - 'true' if this extension is released provisionally
-# In addition, <require> / <remove> tags also support an api attribute:
+# In addition, <require> / <remove> tags also support attributes:
 #     api - only require/remove these features for the matching API.
 #       Not a regular expression.
+#     etype - can but "enum", "bitfield", "constants" or "OpenCL-C only"
+#               If omited, etype="enum" is assumed
+#     group - type name, dedicated to a select group of enums
+#               Only exists for "enum" and "bitfield" etype's
+#               Multiple <require> blocks can add enums to the same group
+#               In such cases, the same etype attribute has to be present
 Extension = element extension {
     Name ,
     attribute number { Integer } ? ,
@@ -450,6 +464,8 @@ Extension = element extension {
             ProfileName ? ,
             ExtensionName ? ,
             FeatureName ? ,
+			GroupName ? ,
+			EType ? ,
             Comment ? ,
             (
                 InterfaceElement |
@@ -507,6 +523,8 @@ ProfileName = attribute profile { text }
 ExtensionName = attribute extension { text }
 FeatureName = attribute feature { text }
 Vendor = attribute vendor { text }
+GroupName = attribute group { text }
+EType = attribute etype { text }
 Comment = attribute comment { text }
 Name = attribute name { text }
 
