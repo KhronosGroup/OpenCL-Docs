@@ -1053,7 +1053,7 @@ include::{generated}/api/version-notes/CL_DEVICE_NUMERIC_VERSION.asciidoc[]
 
 include::{generated}/api/version-notes/CL_DEVICE_OPENCL_C_VERSION.asciidoc[]
   | {char_TYPE}[]
-      | Returns the highest fully backwards compatible OpenCL C version 
+      | Returns the highest fully backwards compatible OpenCL C version
         supported by the compiler for the device.
         For devices supporting compilation from OpenCL C source, this will
         return a version string with the following format:
@@ -1465,7 +1465,109 @@ include::{generated}/api/version-notes/CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASS
       | Returns the latest version of the conformance test suite that this device
         has fully passed in accordance with the official conformance process.
 
+ifdef::cl_khr_integer_dot_product[]
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR.asciidoc[]
+  | {cl_device_integer_dot_product_capabilities_khr_type}
+      | Returns the integer dot product capabilities supported by the
+        device.
+
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR} is always
+        set, indicating that all implementations that support
+        *cl_khr_integer_dot_product* must support dot product built-in
+        functions and, when SPIR-V is supported, SPIR-V instructions that
+        take four-component vectors of 8-bit integers packed into 32-bit
+        integers as input.
+
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR} is set when dot
+        product built-in functions and, when SPIR-V is supported, SPIR-V
+        instructions that take four-component of 8-bit elements as input are
+        supported.
+        NOTE: {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR}
+        must be set in version 2.x of the extension.
+
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR.asciidoc[]
+
+  | {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
+      | Returns a structure describing the exact 8-bit dot product
+        combinations that are <<integer-dot-product-acceleration-properties,
+        accelerated>> on the device.
+        Each member is {CL_TRUE} if the combination it corresponds to is
+        accelerated, {CL_FALSE} otherwise.
+        NOTE:
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR} is
+        missing before version 2.0 of the extension.
+
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR.asciidoc[]
+
+  | {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
+      | Returns a structure describing the exact 4x8-bit packed dot product
+        combinations that are <<integer-dot-product-acceleration-properties,
+        accelerated>> on the device.
+        Each member is {CL_TRUE} if the combination it corresponds to is
+        accelerated, {CL_FALSE} otherwise.
+        NOTE:
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR}
+        is missing before version 2.0 of the extension.
+endif::cl_khr_integer_dot_product[]
+
+ifdef::cl_khr_command_buffer[]
+| {CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR.asciidoc[]
+
+  | {cl_device_command_buffer_capabilities_khr_TYPE}
+      | Describes device command-buffer capabilities, encoded as bits in a bitfield.
+        Supported capabilities are:
+
+        {CL_COMMAND_BUFFER_CAPABILITY_KERNEL_PRINTF_KHR} Device supports the ability
+        to record commands that execute kernels which contain printf calls.
+
+        {CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR} Device supports the
+        ability to record commands that execute kernels which contain device-side
+        kernel-enqueue calls.
+
+        {CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR} Device supports the
+        command-buffers having a <<pending_count, Pending Count>> that exceeds 1.
+
+        {CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR} Device supports the ability
+        to record command-buffers to out-of-order command-queues.
+
+| {CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR.asciidoc[]
+
+  | {cl_command_queue_properties_TYPE}
+      | Bitmask of the minimum properties with which a command-queue must be created
+        to allow a command-buffer to be executed on it.
+        It is valid for a command-queue to be created with extra properties
+        in addition to this base requirement and still be compatible with
+        command-buffer execution.
+endif::cl_khr_command_buffer[]
 |====
+
+ifdef::cl_khr_integer_dot_product[]
+OpenCL 3 devices must report the following feature macros via
+{CL_DEVICE_OPENCL_C_FEATURES} when the corresponding bit is set in the bitfield
+returned for {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR}:
+
+[cols="1,1",options="header"]
+|====
+| Feature bit
+| Feature macro
+
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR}
+| `__opencl_c_integer_dot_product_input_4x8bit_packed`
+
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR}
+| `__opencl_c_integer_dot_product_input_4x8bit`
+|====
+endif::cl_khr_integer_dot_product[]
 
 // refError
 
@@ -1485,6 +1587,40 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 --
+
+ifdef::cl_khr_integer_dot_product[]
+[open,refpage='cl_device_integer_dot_product_acceleration_properties_khr',desc='Structure describing supported dot product operations',type='structs']
+--
+[[integer-dot-product-acceleration-properties]]
+The {cl_device_integer_dot_product_acceleration_properties_khr_TYPE} structure
+describes the exact dot product operations that are accelerated on the device:
+
+include::{generated}/api/structs/cl_device_integer_dot_product_acceleration_properties_khr.txt[]
+
+ * _signed_accelerated_ is {CL_TRUE} when signed dot product operations are
+   accelerated, {CL_FALSE} otherwise.
+ * _unsigned_accelerated_ is {CL_TRUE} when unsigned dot product operations
+   are accelerated, {CL_FALSE} otherwise.
+ * _mixed_signedness_accelerated_ is {CL_TRUE} when mixed signedness dot
+   product operations are accelerated, {CL_FALSE} otherwise.
+ * _accumulating_saturating_signed_accelerated_ is {CL_TRUE} when accumulating
+   saturating signed dot product operations are accelerated, {CL_FALSE}
+   otherwise.
+ * _accumulating_saturating_unsigned_accelerated_ is {CL_TRUE} when accumulating
+   saturating unsigned dot product operations are accelerated, {CL_FALSE}
+   otherwise.
+ * _accumulating_saturating_mixed_signedness_accelerated_ is {CL_TRUE} when
+   accumulating saturating mixed signedness dot product operations are
+   accelerated, {CL_FALSE} otherwise.
+
+A dot product operation is deemed accelerated if its implementation provides
+a performance advantage over application-provided code composed from elementary
+instructions and/or other dot product instructions, either because the
+implementation uses optimized machine code sequences whose generation from
+application-provided code cannot be guaranteed or because it uses hardware
+features that cannot otherwise be targeted from application-provided code.
+--
+endif::cl_khr_integer_dot_product[]
 
 [open,refpage='clGetDeviceAndHostTimer',desc='Query synchronized host and device timestamps',type='protos']
 --

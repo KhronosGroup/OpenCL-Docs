@@ -1,22 +1,19 @@
 # Copyright (c) 2013-2023 The Khronos Group Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# OpenCL Specifications Makefile
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# To build the specifications / reference pages (refpages) with optional
+# extensions included, set the $(EXTENSIONS) variable on the make
+# command line to a space-separated list of extension names.
+# $(EXTENSIONS) is converted into generator script
+# arguments $(EXTOPTIONS) and into $(ATTRIBFILE)
+
+EXTS := $(sort $(EXTENSIONS))
+EXTOPTIONS := $(foreach ext,$(EXTS),-extension $(ext))
 
 QUIET	    ?=
 ASCIIDOCTOR ?= asciidoctor
-XMLLINT     ?= xmllint
-DBLATEX     ?= dblatex
-DOS2UNIX    ?= dos2unix
 RM	    = rm -f
 RMRF	    = rm -rf
 MKDIR	    = mkdir -p
@@ -89,7 +86,7 @@ ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
 	       -a revremark="$(SPECREMARK)" \
 	       $(COMMONATTRIBOPTS)
 
-CXX4OPENCL_ATTRIBOPTS   = -a revnumber="$(CXX4OPENCL_DOCREVISION)" \
+CXX4OPENCL_ATTRIBOPTS	= -a revnumber="$(CXX4OPENCL_DOCREVISION)" \
 			  -a revremark="$(CXX4OPENCL_DOCREMARK)" \
 			  $(COMMONATTRIBOPTS)
 
@@ -124,12 +121,13 @@ ADOCPDFOPTS  = $(ADOCPDFEXTS) -a mathematical-format=svg \
 # Where to put dynamically generated dependencies of the spec and other
 # targets, from API XML. GENERATED and APIINCDIR specify the location of
 # the API interface includes.
-# GENDEPENDS could have multiple dependencies.
 GENERATED  = $(CURDIR)/generated
 REFPATH    = $(GENERATED)/refpage
 APIINCDIR  = $(GENERATED)/api
 VERSIONDIR = $(APIINCDIR)/version-notes
-GENDEPENDS = $(APIINCDIR)/timeMarker
+ATTRIBFILE = $(GENERATED)/specattribs.adoc
+# All generated dependencies
+GENDEPENDS = $(APIINCDIR)/timeMarker $(ATTRIBFILE)
 
 .PHONY: directories
 
@@ -179,7 +177,7 @@ src:
 # Top-level spec source file
 APISPEC = OpenCL_API
 APISPECSRC = $(APISPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(APISPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+    $(shell grep ^include:: $(APISPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e "s#{generated}#$(GENERATED)#" | xargs echo)
 
 apihtml: $(HTMLDIR)/$(APISPEC).html $(APISPECSRC)
 
@@ -419,7 +417,7 @@ clean_pdf:
 	$(QUIET)$(RMRF) $(PDFDIR) $(PDFMATHDIR)
 
 clean_generated:
-	$(QUIET)$(RMRF) $(APIINCDIR)/* $(GENERATED)/api.py $($(REFPATH)/
+	$(QUIET)$(RMRF) $(APIINCDIR)/* $(GENERATED)/api.py $(ATTRIBFILE)
 	$(QUIET)$(RMRF) $(PDFMATHDIR)
 	$(QUIET)$(RMRF) $(GENERATED)/__pycache__
 
@@ -518,3 +516,12 @@ $(APIINCDIR)/timeMarker: $(APIXML) $(DICTSCRIPT) $(GENSCRIPT) $(VERSIONSCRIPT)
 	$(QUIET)$(MKDIR) $(VERSIONDIR)
 	$(QUIET)$(PYTHON) $(VERSIONSCRIPT) -registry $(APIXML) -o $(VERSIONDIR)
 	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(APIINCDIR) apiinc
+
+# This generates a single file containing asciidoc attributes for each
+# extension in the spec being built.
+attribs: $(ATTRIBFILE)
+
+$(ATTRIBFILE):
+	for attrib in $(EXTS) ; do \
+	    echo ":$${attrib}:" ; \
+	done > $@

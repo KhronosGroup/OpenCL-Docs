@@ -169,7 +169,6 @@ include::{generated}/api/version-notes/clCreateCommandQueue.asciidoc[]
     If set, the profiling of commands is enabled.
     Otherwise profiling of commands is disabled.
 |====
-
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
@@ -421,8 +420,8 @@ include::{generated}/api/version-notes/clSetCommandQueueProperty.asciidoc[]
     enabled (if _enable_ is {CL_TRUE}) or disabled (if _enable_ is {CL_FALSE})
     for the command-queue.
   * _old_properties_ returns the command-queue properties before they were
-    changed by {clSetCommandQueueProperty}.  If _old_properties_ is `NULL`, it
-    is ignored.
+    changed by {clSetCommandQueueProperty}. If _old_properties_ is `NULL`,
+    it is ignored.
 
 [NOTE]
 ====
@@ -3954,8 +3953,8 @@ pointer that has been unmapped is undefined.
 
 The mapped pointer returned by {clEnqueueMapBuffer} or {clEnqueueMapImage}
 can be used as the _ptr_ argument value to {clEnqueueReadBuffer},
-{clEnqueueWriteBuffer}, {clEnqueueReadBufferRect}, 
-{clEnqueueWriteBufferRect}, {clEnqueueReadImage}, or 
+{clEnqueueWriteBuffer}, {clEnqueueReadBufferRect},
+{clEnqueueWriteBufferRect}, {clEnqueueReadImage}, or
 {clEnqueueWriteImage} provided the rules described above are adhered to.
 
 
@@ -4239,7 +4238,7 @@ include::{generated}/api/version-notes/CL_MEM_PROPERTIES.asciidoc[]
         return the values specified in the properties argument in the
         same order and without including additional properties.
 
-        If _memobj_ was created using {clCreateBuffer}, 
+        If _memobj_ was created using {clCreateBuffer},
         {clCreateSubBuffer}, {clCreateImage}, {clCreateImage2D}, or
         {clCreateImage3D}, or if the _properties_ argument specified
         in {clCreateBufferWithProperties} or
@@ -7093,7 +7092,7 @@ include::{generated}/api/version-notes/clSetKernelArg.asciidoc[]
     leftmost argument to _n_ - 1, where _n_ is the total number of arguments
     declared by a kernel (see below).
   * _arg_size_ specifies the size of the argument value.
-    If the argument is a memory object, the _arg_size_ value must be equal to 
+    If the argument is a memory object, the _arg_size_ value must be equal to
     `sizeof({cl_mem_TYPE})`.
     For arguments declared with the `local` qualifier, the size specified will
     be the size in bytes of the buffer that must be allocated for the `local`
@@ -7931,7 +7930,7 @@ include::{generated}/api/version-notes/CL_KERNEL_ARG_TYPE_QUALIFIER.asciidoc[]
       | Returns a bitfield describing one or more type qualifiers specified
         for the argument given by _arg_index_.
         The returned values can be:
-        
+
         {CL_KERNEL_ARG_TYPE_CONST_anchor}
         footnote:[{fn-kernel-arg-type-qualifier}]
         footnote:[{fn-kernel-arg-type-const-addr-space}] +
@@ -9461,3 +9460,1219 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 --
+
+
+ifdef::cl_khr_command_buffer[]
+
+== Command-Buffers
+
+A _command-buffer_ object represents a series of operations to be enqueued
+on one or more command-queues without any application code interaction.
+Grouping the operations together allows efficient enqueuing of repetitive
+operations, as well as enabling driver optimizations.
+
+Command-buffers are _sequential use_ by default, but may also be set to
+_simultaneous use_ on creation if the device optionally supports this
+capability.
+A sequential use command-buffer must have a <<pending_count, Pending Count>>
+of 0 or 1.
+The simultaneous use capability removes this restriction and allows
+command-buffers to have a <<pending_count, Pending Count>> greater than 1.
+
+[[compatible]]
+Command-buffers are created using an ordered list of command-queues that
+commands are recorded to and execute on by default.
+These command-queues can be replaced on command-buffer enqueue with
+different command-queues, provided for each element in the replacement list
+the substitute command-queue is compatible with the command-queue used on
+command-buffer creation.
+Where a _compatible_ command-queue is defined as a command-queue with
+identical properties targeting the same device and in the same OpenCL
+context.
+
+
+=== Command-Buffer Lifecycle
+
+A command-buffer is always in one of the following states:
+
+[[recording]]
+Recording:: Initial state of a command-buffer on creation, where commands can be
+recorded to the command-buffer.
+
+[[executable]]
+Executable:: State after command recording has finished with
+{clFinalizeCommandBufferKHR} and the command-buffer may be enqueued.
+
+[[pending]]
+Pending:: Once a command-buffer has been enqueued to a command-queue it enters
+the Pending state until completion, at which point it moves back to the
+<<executable, Executable>> state.
+
+[[invalid]]
+Invalid:: A command-buffer can enter the Invalid state if a resource that was
+used in a command has been modified or freed.
+The only valid operation to perform on a command-buffer in the Invalid state
+is to call {clReleaseCommandBufferKHR} for each of the reference counts the
+application owns.
+
+image::images/commandbuffer_lifecycle.svg[align="center", title="Lifecycle of a command-buffer."]
+
+[[pending_count]]
+The Pending Count is the number of copies of the command
+buffer in the <<pending, Pending>> state.
+By default a command-buffer's Pending Count must be 0 or 1.
+If the command-buffer was created with
+{CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} then the command-buffer may have a
+Pending Count greater than 1.
+
+
+=== Creating Command Buffer Objects
+
+[open,refpage='clCreateCommandBufferKHR',desc='Create a command-buffer',type='protos']
+--
+To create a command-buffer that can record commands to the specified
+queues, call the function
+
+include::{generated}/api/protos/clCreateCommandBufferKHR.txt[]
+include::{generated}/api/version-notes/clCreateCommandBufferKHR.asciidoc[]
+
+  * _num_queues_ is the number of command-queues listed in _queues_.
+    This extension only supports a single command-queue, so this **must** be
+    one.
+  * _queues_ is a pointer to a command-queue that the command-buffer
+    commands will be recorded to.
+    _queues_ must be a non-`NULL` value.
+  * _properties_ specifies a list of properties for the command-buffer and
+    their corresponding values.
+    Each property name is immediately followed by the corresponding desired
+    value.
+    The list is terminated with 0.
+    The list of supported properties is described in the table below.
+    If a supported property and its value is not specified in properties,
+    its default value will be used.
+    _properties_ can be `NULL` in which case the default values for
+    supported command-buffer properties will be used.
++
+[[commandbuffer-properties]]
+.{clCreateCommandBufferKHR} properties
+[cols=",,",options="header",]
+|====
+| *Recording Properties* | *Property Value* | *Description*
+
+| {CL_COMMAND_BUFFER_FLAGS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_FLAGS_KHR.asciidoc[]
+  | {cl_command_buffer_flags_khr_TYPE}
+      | This is a bitfield and can be set to a combination of the following values:
+
+        {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR_anchor} - Allow multiple
+        instances of the command-buffer to be submitted to the device for
+        execution.
+        If set, devices must support
+        {CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR}.
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR.asciidoc[]
+
+        The default value of this property is `0`.
+|====
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+[NOTE]
+====
+Upon creation the command-buffer is defined as being in the
+<<recording, Recording>> state, in order for the command-buffer to be enqueued
+it must first be finalized using {clFinalizeCommandBufferKHR} after which no
+further commands can be recorded.
+A command-buffer is submitted for execution on command-queues with a call to
+{clEnqueueCommandBufferKHR}.
+====
+
+// refError
+
+{clCreateCommandBufferKHR} returns a valid non-zero command-buffer and
+_errcode_ret_ is set to {CL_SUCCESS} if the command-buffer is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_COMMAND_QUEUE} if any command-queue in _queues_ is not a
+    valid command-queue.
+  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if any command-queue in _queues_ is
+    an out-of-order command-queue and the device associated with the
+    command-queue does not support the
+    {CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR} capability.
+  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the properties of any
+    command-queue in _queues_ does not contain the minimum properties
+    specified by {CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR}.
+  * {CL_INVALID_CONTEXT} if all the command-queues in _queues_ do not have
+    the same OpenCL context.
+  * {CL_INVALID_VALUE} if _num_queues_ is not one.
+  * {CL_INVALID_VALUE} if _queues_ is `NULL`.
+  * {CL_INVALID_VALUE} if values specified in _properties_ are not valid, or
+    if the same property name is specified more than once.
+  * {CL_INVALID_PROPERTY} if values specified in _properties_ are valid but
+    are not supported by all the devices associated with command-queues in
+    _queues_.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clRetainCommandBufferKHR',desc='Increment a command-buffer\'s reference count',type='protos']
+--
+To increment a command-buffer's reference count, call the function
+
+include::{generated}/api/protos/clRetainCommandBufferKHR.txt[]
+include::{generated}/api/version-notes/clRetainCommandBufferKHR.asciidoc[]
+
+  * _command_buffer_ specifies the command-buffer to retain.
+
+[NOTE]
+====
+A command-buffer object updates the reference count for objects such as
+buffers, images, and kernels used as parameters for commands recorded to the
+command-buffer.
+
+For example, recording a ND-range kernel via {clCommandNDRangeKernelKHR} into a
+command-buffer and then releasing the kernel object will still allow continued
+safe use of the command-buffer.
+As the reference count of the kernel object will have been incremented when
+the command was recorded, and then on command-buffer release the kernel
+reference count will be decremented.
+If at that point the kernel reference count reaches 0, the kernel object
+will be freed.
+====
+
+// refError
+
+{clRetainCommandBufferKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clReleaseCommandBufferKHR',desc='Decrement a command-buffer\'s reference count',type='protos']
+--
+To decrement a command-buffer's reference count, call the function
+
+include::{generated}/api/protos/clReleaseCommandBufferKHR.txt[]
+include::{generated}/api/version-notes/clReleaseCommandBufferKHR.asciidoc[]
+
+  * _command_buffer_ specifies the command-buffer to release.
+
+[NOTE]
+====
+After the _command_buffer_ reference count becomes zero and has finished
+execution, the command-buffer is deleted.
+====
+
+// refError
+
+{clReleaseCommandBufferKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+
+=== Enqueuing a Command Buffer
+
+[open,refpage='clFinalizeCommandBufferKHR',desc='Finalize command recording for a command-buffer',type='protos']
+--
+To finalize command recording ready for enqueuinga command-buffer on a
+command-queue, call the function
+
+include::{generated}/api/protos/clFinalizeCommandBufferKHR.txt[]
+include::{generated}/api/version-notes/clFinalizeCommandBufferKHR.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+
+[NOTE]
+====
+{clFinalizeCommandBufferKHR} places the command-buffer in the
+<<executable, Executable>> state where commands can no longer be recorded, at
+this point the command-buffer is ready to be enqueued.
+====
+
+// refError
+
+{clFinalizeCommandBufferKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ is not in the <<recording,
+    Recording>> state.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clEnqueueCommandBufferKHR',desc='Enqueue a command-buffer to execute on command-queues',type='protos']
+--
+To enqueue a command-buffer to execute on command-queues, call the function
+
+include::{generated}/api/protos/clEnqueueCommandBufferKHR.txt[]
+include::{generated}/api/version-notes/clEnqueueCommandBufferKHR.asciidoc[]
+
+  * _num_queues_ is the number of command-queues listed in _queues_.
+  * _queues_ is a pointer to an ordered list of command-queues <<compatible,
+    compatible>> with the command-queues used on recording.
+    _queues_ can be `NULL`, in which case the default command-queues used on
+    command-buffer creation are used and _num_queues_ must be 0.
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _event_wait_list_, _num_events_in_wait_list_ specify events that need to
+    complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not
+    wait on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If event_wait_list is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+    The context associated with events in _event_wait_list_ and
+    command_queue must be the same.
+    The memory associated with _event_wait_list_ can be reused or freed
+    after the function returns.
+  * _event_ will return an event object that identifies this command and can be
+    used to query for profiling information or queue a wait for this
+    particular command to complete.
+    _event_ can be `NULL` in which case it will not be possible for the
+    application to wait on this command or query it for profiling
+    information.
+
+[NOTE]
+====
+To enqueue a command-buffer it must be in a <<executable, Executable>> state,
+see {clFinalizeCommandBufferKHR}.
+====
+
+// refError
+
+{clEnqueueCommandBufferKHR} returns {CL_SUCCESS} if the command-buffer
+execution was successfully queued, or one of the errors below:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has not been finalized.
+  * {CL_INVALID_OPERATION} if _command_buffer_ was not created with the
+    {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} flag and is in the <<pending,
+    Pending>> state.
+  * {CL_INVALID_VALUE} if _queues_ is `NULL` and _num_queues_ is > 0, or
+    _queues_ is not `NULL` and _num_queues_ is 0.
+  * {CL_INVALID_VALUE} if _num_queues_ is > 0 and not the same value as
+    _num_queues_ set on _command_buffer_ creation.
+  * {CL_INVALID_COMMAND_QUEUE} if any element of _queues_ is not a valid
+    command-queue.
+  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if any element of _queues_ is not
+    <<compatible, compatible>> with the command-queue set on
+    _command_buffer_ creation at the same list index.
+  * {CL_INVALID_CONTEXT} if any element of _queues_ does not have the same
+    context as the command-queue set on _command_buffer_ creation at the
+    same list index.
+  * {CL_INVALID_CONTEXT} if context associated with _command_buffer_ and
+    events in _event_wait_list_ are not the same.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to queue the execution
+    instance of _command_buffer_ on the command-queues because of
+    insufficient resources needed to execute _command_buffer_.
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
+    are not valid events.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+
+=== Recording Commands to a Command Buffer
+
+[open,refpage='clCommandBarrierWithWaitListKHR',desc='Record a barrier operation to a command-queue',type='protos']
+--
+To record a barrier operation used as a synchronization point, call the
+function
+
+include::{generated}/api/protos/clCommandBarrierWithWaitListKHR.txt[]
+include::{generated}/api/version-notes/clCommandBarrierWithWaitListKHR.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _command_queue_ specifies the command-queue the command will be recorded
+    to.
+    This parameter is unused by `cl_khr_command_buffer`, as only a single
+    command-queue is supported, and **must** be `NULL`.
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    synchronization-points that need to complete before this particular
+    command can be executed.
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_
+must be 0.
+If _sync_point_wait_list_ is not `NULL`, the list of
+synchronization-points pointed to by _sync_point_wait_list_ must be
+valid and _num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points.
+The command-buffer associated with synchronization-points in
+_sync_point_wait_list_ must be the same as _command_buffer_.
+The memory associated with _sync_point_wait_list_ can be reused or freed
+after the function returns.
++
+If _sync_point_wait_list_ is `NULL`, then this particular command
+waits until all previous recorded commands to _command_queue_ have
+completed.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    Synchronization-point objects are unique and can be used to identify
+    this barrier command later on.
+    _sync_point_ can be `NULL` in which case it will not be possible for the
+    application to record a wait for this command to complete.
+    If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+    `NULL`, the _sync_point_ argument should not refer to an element of the
+    _sync_point_wait_list_ array.
+  * _mutable_handle_ returns a handle to the command.
+    This parameter is unused by `cl_khr_command_buffer`, and **must** be
+    `NULL`.
+
+[NOTE]
+====
+{clCommandBarrierWithWaitListKHR} waits for either a list of
+synchronization-points to complete, or if the list is empty it waits for all
+commands previously recorded in _command_buffer_ to complete before it
+completes.
+This command blocks command execution, that is, any following commands
+recorded after it do not execute until it completes.
+====
+
+// refError
+
+{clCommandBarrierWithWaitListKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_ and
+    _command_buffer_ is not the same.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+    `NULL` and _num_sync_points_in_wait_list_ is > 0, or
+    _sync_point_wait_list_ is not `NULL` and _num_sync_points_in_wait_list_
+    is 0, or if synchronization-point objects in _sync_point_wait_list_ are
+    not valid synchronization-points.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clCommandCopyBufferKHR',desc='Record a command to copy between two buffer objects',type='protos']
+--
+To record a command to copy from one buffer object to another, call the
+function
+
+include::{generated}/api/protos/clCommandCopyBufferKHR.txt[]
+include::{generated}/api/version-notes/clCommandCopyBufferKHR.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _command_queue_ specifies the command-queue the command will be recorded
+    to.
+    This parameter is unused by `cl_khr_command_buffer`, as only a single
+    command-queue is supported, and **must** be `NULL`.
+  * _src_buffer_, _dst_buffer_, _src_offset_, _dst_offset_, _size_ refer
+    to {clEnqueueCopyBuffer}.
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    synchronization-points that need to complete before this particular
+    command can be executed.
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_
+must be 0.
+If _sync_point_wait_list_ is not `NULL`, the list of
+synchronization-points pointed to by _sync_point_wait_list_ must be
+valid and _num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points.
+The command-buffer associated with synchronization-points in
+_sync_point_wait_list_ must be the same as _command_buffer_.
+The memory associated with _sync_point_wait_list_ can be reused or freed
+after the function returns.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    Synchronization-point objects are unique and can be used to identify
+    this command later on.
+    _sync_point_ can be `NULL` in which case it will not be possible for the
+    application to record a wait for this command to complete.
+    If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+    `NULL`, the _sync_point_ argument should not refer to an element of the
+    _sync_point_wait_list_ array.
+  * _mutable_handle_ returns a handle to the command.
+    This parameter is unused by `cl_khr_command_buffer`, and **must** be
+    `NULL`.
+
+// refError
+
+{clCommandCopyBufferKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns the errors defined by {clEnqueueCopyBuffer} except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+    _command_buffer_, _src_buffer_, and _dst_buffer_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+    `NULL` and _num_sync_points_in_wait_list_ is > 0, or
+    _sync_point_wait_list_ is not `NULL` and _num_sync_points_in_wait_list_
+    is 0, or if synchronization-point objects in _sync_point_wait_list_ are
+    not valid synchronization-points.
+
+New errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+--
+
+[open,refpage='clCommandCopyBufferRectKHR',desc='Record a command to copy a rectangular region from one buffer object to another',type='protos']
+--
+To record a command to copy a rectangular region from a buffer object to
+another buffer object, call the function
+
+include::{generated}/api/protos/clCommandCopyBufferRectKHR.txt[]
+include::{generated}/api/version-notes/clCommandCopyBufferRectKHR.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _command_queue_ specifies the command-queue the command will be recorded
+    to.
+    This parameter is unused by `cl_khr_command_buffer`, as only a single
+    command-queue is supported, and **must** be `NULL`.
+  * _src_origin_, _dst_origin_, _region_, _src_row_pitch_,
+    _src_slice_pitch_, _dst_row_pitch_, _dst_slice_pitch_ refer to
+    {clEnqueueCopyBufferRect}.
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    synchronization-points that need to complete before this particular
+    command can be executed.
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_ must
+be 0.
+If _sync_point_wait_list_ is not `NULL`, the list of
+synchronization-points pointed to by _sync_point_wait_list_ must be
+valid and _num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points.
+The command-buffer associated with synchronization-points in
+_sync_point_wait_list_ must be the same as _command_buffer_.
+The memory associated with _sync_point_wait_list_ can be reused or freed
+after the function returns.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    Synchronization-point objects are unique and can be used to identify
+    this command later on.
+    _sync_point_ can be `NULL` in which case it will not be possible for the
+    application to record a wait for this command to complete.
+    If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+    `NULL`, the _sync_point_ argument should not refer to an element of the
+    _sync_point_wait_list_ array.
+  * _mutable_handle_ returns a handle to the command.
+    This parameter is unused by `cl_khr_command_buffer`, and **must** be
+    `NULL`.
+
+[NOTE]
+====
+{clCommandCopyBufferRectKHR} records a command to copy a 2D or 3D rectangular
+region from the buffer object identified by _src_buffer_ to a 2D or 3D region
+in the buffer object identified by _dst_buffer_.
+Copying begins at the source offset and destination offset which are
+computed as described in the description for _src_origin_ and _dst_origin_.
+
+Each byte of the region's width is copied from the source offset to the
+destination offset.
+After copying each width, the source and destination offsets are incremented
+by their respective source and destination row pitches.
+After copying each 2D rectangle, the source and destination offsets are
+incremented by their respective source and destination slice pitches.
+====
+
+// refError
+
+{clCommandCopyBufferRectKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+Otherwise, it returns the errors defined by {clEnqueueCopyBufferRect}
+except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+    _command_buffer_, _src_buffer_, and _dst_buffer_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+    `NULL` and _num_sync_points_in_wait_list_ is > 0, or
+    _sync_point_wait_list_ is not `NULL` and _num_sync_points_in_wait_list_
+    is 0, or if synchronization-point objects in _sync_point_wait_list_ are
+    not valid synchronization-points.
+
+New errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+--
+
+[open,refpage='clCommandCopyBufferToImageKHR',desc='Record a command to copy a buffer object to an image object',type='protos']
+--
+To record a command to copy a buffer object to an image object, call the
+function
+
+include::{generated}/api/protos/clCommandCopyBufferToImageKHR.txt[]
+include::{generated}/api/version-notes/clCommandCopyBufferToImageKHR.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _command_queue_ specifies the command-queue the command will be recorded
+    to.
+    This parameter is unused by `cl_khr_command_buffer`, as only a single
+    command-queue is supported, and **must** be `NULL`.
+  * _src_buffer_, _dst_image_, _src_offset_, _dst_origin_, _region_ refer to
+    {clEnqueueCopyBufferToImage}
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    synchronization-points that need to complete before this particular
+    command can be executed.
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_ must
+be 0.
+If _sync_point_wait_list_ is not `NULL`, the list of
+synchronization-points pointed to by _sync_point_wait_list_ must be
+valid and _num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points.
+The command-buffer associated with synchronization-points in
+_sync_point_wait_list_ must be the same as _command_buffer_.
+The memory associated with _sync_point_wait_list_ can be reused or freed
+after the function returns.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    Synchronization-point objects are unique and can be used to identify
+    this command later on.
+    _sync_point_ can be `NULL` in which case it will not be possible for the
+    application to record a wait for this command to complete.
+    If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+    `NULL`, the _sync_point_ argument should not refer to an element of the
+    _sync_point_wait_list_ array.
+  * _mutable_handle_ returns a handle to the command.
+    This parameter is unused by `cl_khr_command_buffer`, and **must** be
+    `NULL`.
+
+// refError
+
+{clCommandCopyBufferToImageKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns the errors defined by {clEnqueueCopyBufferToImage}
+except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+    _command_buffer_, _src_buffer_, and _dst_image_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+    `NULL` and _num_sync_points_in_wait_list_ is > 0, or
+    _sync_point_wait_list_ is not `NULL` and _num_sync_points_in_wait_list_
+    is 0, or if synchronization-point objects in _sync_point_wait_list_ are
+    not valid synchronization-points.
+
+New errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+--
+
+[open,refpage='clCommandCopyImageKHR',desc='Record a command to copy between two image objects',type='protos']
+--
+To record a command to copy between two image objects, call the function
+
+include::{generated}/api/protos/clCommandCopyImageKHR.txt[]
+include::{generated}/api/version-notes/clCommandCopyImageKHR.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _command_queue_ specifies the command-queue the command will be recorded
+    to.
+    This parameter is unused by `cl_khr_command_buffer`, as only a single
+    command-queue is supported, and **must** be `NULL`.
+  * _src_image_, _dst_image_, _src_origin_, _dst_origin_, _region_ refer to
+    {clEnqueueCopyImage}.
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    synchronization-points that need to complete before this particular
+    command can be executed.
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_ must
+be 0.
+If _sync_point_wait_list_ is not `NULL`, the list of
+synchronization-points pointed to by _sync_point_wait_list_ must be
+valid and _num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points.
+The command-buffer associated with synchronization-points in
+_sync_point_wait_list_ must be the same as _command_buffer_.
+The memory associated with _sync_point_wait_list_ can be reused or freed
+after the function returns.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    Synchronization-point objects are unique and can be used to identify
+    this command later on.
+    _sync_point_ can be `NULL` in which case it will not be possible for the
+    application to record a wait for this command to complete.
+    If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+    `NULL`, the _sync_point_ argument should not refer to an element of the
+    _sync_point_wait_list_ array.
+  * _mutable_handle_ returns a handle to the command.
+    This parameter is unused by `cl_khr_command_buffer`, and **must** be
+    `NULL`.
+
+[NOTE]
+====
+It is currently a requirement that the _src_image_ and _dst_image_ image
+memory objects for {clCommandCopyImageKHR} must have the exact same image
+format, i.e. the {cl_image_format_TYPE} descriptor specified when
+_src_image_ and _dst_image_ are created must match.
+====
+
+// refError
+
+{clCommandCopyImageKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns the errors defined by {clEnqueueCopyImage} except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+    _command_buffer_, _src_image_, and _dst_image_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+    `NULL` and _num_sync_points_in_wait_list_ is > 0, or
+    _sync_point_wait_list_ is not `NULL` and _num_sync_points_in_wait_list_
+    is 0, or if synchronization-point objects in _sync_point_wait_list_ are
+    not valid synchronization-points.
+
+New errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+--
+
+[open,refpage='clCommandCopyImageToBufferKHR',desc='Record a command to copy an image object to a buffer object',type='protos']
+--
+To record a command to copy an image object to a buffer object, call the
+function
+
+include::{generated}/api/protos/clCommandCopyImageToBufferKHR.txt[]
+include::{generated}/api/version-notes/clCommandCopyImageToBufferKHR.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _command_queue_ specifies the command-queue the command will be recorded
+    to.
+    This parameter is unused by `cl_khr_command_buffer`, as only a single
+    command-queue is supported, and **must** be `NULL`.
+  * _src_image_, _dst_buffer_, _src_origin_, _region_, _dst_offset_ refer to
+    {clEnqueueCopyImageToBuffer}.
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    synchronization-points that need to complete before this particular
+    command can be executed.
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_
+must be 0.
+If _sync_point_wait_list_ is not `NULL`, the list of
+synchronization-points pointed to by _sync_point_wait_list_ must be
+valid and _num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points.
+The command-buffer associated with synchronization-points in
+_sync_point_wait_list_ must be the same as _command_buffer_.
+The memory associated with _sync_point_wait_list_ can be reused or freed
+after the function returns.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    Synchronization-point objects are unique and can be used to identify
+    this command later on.
+    _sync_point_ can be `NULL` in which case it will not be possible for the
+    application to record a wait for this command to complete.
+    If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+    `NULL`, the _sync_point_ argument should not refer to an element of the
+    _sync_point_wait_list_ array.
+  * _mutable_handle_ returns a handle to the command.
+    This parameter is unused by `cl_khr_command_buffer`, and **must** be
+    `NULL`.
+
+// refError
+
+{clCommandCopyImageToBufferKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+Otherwise, it returns the errors defined by {clEnqueueCopyImageToBuffer}
+except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+    _command_buffer_, _src_image_, and _dst_buffer_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+    `NULL` and _num_sync_points_in_wait_list_ is > 0, or
+    _sync_point_wait_list_ is not `NULL` and _num_sync_points_in_wait_list_
+    is 0, or if synchronization-point objects in _sync_point_wait_list_ are
+    not valid synchronization-points.
+
+New errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+--
+
+[open,refpage='clCommandFillBufferKHR',desc='Record a command to fill a buffer object with a pattern',type='protos']
+--
+To record a command to fill a buffer object with a pattern of a given
+pattern size, call the function
+
+include::{generated}/api/protos/clCommandFillBufferKHR.txt[]
+include::{generated}/api/version-notes/clCommandFillBufferKHR.asciidoc[]
+
+[NOTE]
+====
+The usage information which indicates whether the memory object can be read or
+written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE} argument
+value specified when _buffer_ is created is ignored by
+{clCommandFillBufferKHR}.
+====
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _command_queue_ specifies the command-queue the command will be recorded
+    to.
+    This parameter is unused by `cl_khr_command_buffer`, as only a single
+    command-queue is supported, and **must** be `NULL`.
+  * _buffer_, _pattern_, _pattern_size_, _offset_, _size_ refer to
+    {clEnqueueFillBuffer}.
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    synchronization-points that need to complete before this particular
+    command can be executed.
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_
+must be 0.
+If _sync_point_wait_list_ is not `NULL`, the list of
+synchronization-points pointed to by _sync_point_wait_list_ must be
+valid and _num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points.
+The command-buffer associated with synchronization-points in
+_sync_point_wait_list_ must be the same as _command_buffer_.
+The memory associated with _sync_point_wait_list_ can be reused or freed
+after the function returns.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    Synchronization-point objects are unique and can be used to identify
+    this command later on.
+    _sync_point_ can be `NULL` in which case it will not be possible for the
+    application to record a wait for this command to complete.
+    If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+    `NULL`, the _sync_point_ argument should not refer to an element of the
+    _sync_point_wait_list_ array.
+  * _mutable_handle_ returns a handle to the command.
+    This parameter is unused by `cl_khr_command_buffer`, and **must** be
+    `NULL`.
+
+// refError
+
+{clCommandFillBufferKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns the errors defined by {clEnqueueFillBuffer} except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+    _command_buffer_, and _buffer_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+    `NULL` and _num_sync_points_in_wait_list_ is > 0, or
+    _sync_point_wait_list_ is not `NULL` and _num_sync_points_in_wait_list_
+    is 0, or if synchronization-point objects in _sync_point_wait_list_ are
+    not valid synchronization-points.
+
+New errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+--
+
+[open,refpage='clCommandFillImageKHR',desc='Record a command to fill an image object with a specified color',type='protos']
+--
+To record a command to fill an image object with a specified color, call the
+function
+
+include::{generated}/api/protos/clCommandFillImageKHR.txt[]
+include::{generated}/api/version-notes/clCommandFillImageKHR.asciidoc[]
+
+[NOTE]
+====
+The usage information which indicates whether the memory object can be read or
+written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE} argument
+value specified when image is created is ignored by {clCommandFillImageKHR}.
+====
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _command_queue_ specifies the command-queue the command will be recorded
+    to.
+    This parameter is unused by `cl_khr_command_buffer`, as only a single
+    command-queue is supported, and **must** be `NULL`.
+  * _image_, _fill_color_, _origin_, _region_ refer to {clEnqueueFillImage}.
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    synchronization-points that need to complete before this particular
+    command can be executed.
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_
+must be 0.
+If _sync_point_wait_list_ is not `NULL`, the list of
+synchronization-points pointed to by _sync_point_wait_list_ must be
+valid and _num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points.
+The command-buffer associated with synchronization-points in
+_sync_point_wait_list_ must be the same as _command_buffer_.
+The memory associated with _sync_point_wait_list_ can be reused or freed
+after the function returns.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    Synchronization-point objects are unique and can be used to identify
+    this command later on.
+    _sync_point_ can be `NULL` in which case it will not be possible for the
+    application to record a wait for this command to complete.
+    If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+    `NULL`, the _sync_point_ argument should not refer to an element of the
+    _sync_point_wait_list_ array.
+  * _mutable_handle_ returns a handle to the command.
+    This parameter is unused by `cl_khr_command_buffer`, and **must** be
+    `NULL`.
+
+// refError
+
+{clCommandFillImageKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns the errors defined by {clEnqueueFillImage} except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+    _command_buffer_, and _image_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+    `NULL` and _num_sync_points_in_wait_list_ is > 0, or
+    _sync_point_wait_list_ is not `NULL` and _num_sync_points_in_wait_list_
+    is 0, or if synchronization-point objects in _sync_point_wait_list_ are
+    not valid synchronization-points.
+
+New errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+--
+
+[open,refpage='clCommandNDRangeKernelKHR',desc='Record a command to execute a kernel on a device',type='protos']
+--
+To record a command to execute a kernel on a device, call the function
+
+include::{generated}/api/protos/clCommandNDRangeKernelKHR.txt[]
+include::{generated}/api/version-notes/clCommandNDRangeKernelKHR.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _command_queue_ specifies the command-queue the command will be recorded
+    to.
+    This parameter is unused by `cl_khr_command_buffer`, as only a single
+    command-queue is supported, and **must** be `NULL`.
+  * _properties_ specifies a list of properties for the kernel command and
+    their corresponding values.
+    Each property name is immediately followed by the corresponding desired
+    value.
+    The list is terminated with 0.
+    If no properties are required, _properties_ may be `NULL`.
+    This extension does not define any properties.
+  * _kernel_ is a valid kernel object which **must** have its arguments set.
+    Any changes to _kernel_ after calling {clCommandNDRangeKernelKHR}, such
+    as with {clSetKernelArg} or {clSetKernelExecInfo}, have no effect on the
+    recorded command.
+    If _kernel_ is recorded to a following {clCommandNDRangeKernelKHR}
+    command however, then that command will capture the updated state of
+    _kernel_.
+  * _work_dim_, _global_work_offset_, _global_work_size_, _local_work_size_
+    Refer to {clEnqueueNDRangeKernel}.
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    synchronization-points that need to complete before this particular
+    command can be executed.
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_ must
+be 0.
+If _sync_point_wait_list_ is not `NULL`, the list of
+synchronization-points pointed to by _sync_point_wait_list_ must be
+valid and _num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points.
+The command-buffer associated with synchronization-points in
+_sync_point_wait_list_ must be the same as _command_buffer_.
+The memory associated with _sync_point_wait_list_ can be reused or freed
+after the function returns.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    Synchronization-point objects are unique and can be used to identify
+    this command later on.
+    _sync_point_ can be `NULL` in which case it will not be possible for the
+    application to record a wait for this command to complete.
+    If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+    `NULL`, the _sync_point_ argument should not refer to an element of the
+    _sync_point_wait_list_ array.
+  * _mutable_handle_ returns a handle to the command.
+    This parameter is unused by `cl_khr_command_buffer`, and **must** be
+    `NULL`.
+
+[NOTE]
+====
+The work-group size to be used for _kernel_ can also be specified in the
+program source using the
+`+__attribute__((reqd_work_group_size(X, Y, Z)))+` qualifier.
+In this case the size of work-group specified by _local_work_size_ must
+match the value specified by the `reqd_work_group_size` `+__attribute__+`
+qualifier.
+
+These work-group instances are executed in parallel across multiple compute
+units or concurrently on the same compute unit.
+
+Each work-item is uniquely identified by a global identifier.
+The global ID, which can be read inside the kernel, is computed using the
+value given by _global_work_size_ and _global_work_offset_.
+In addition, a work-item is also identified within a work-group by a unique
+local ID.
+The local ID, which can also be read by the kernel, is computed using the
+value given by _local_work_size_.
+The starting local ID is always (0, 0, ... 0).
+====
+
+// refError
+
+{clCommandNDRangeKernelKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns the errors defined by {clEnqueueNDRangeKernel} except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+    _command_buffer_, and _kernel_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+    `NULL` and _num_sync_points_in_wait_list_ is > 0, or
+    _sync_point_wait_list_ is not `NULL` and _num_sync_points_in_wait_list_
+    is 0, or if synchronization-point objects in _sync_point_wait_list_ are
+    not valid synchronization-points.
+
+New errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_VALUE} if values specified in _properties_ are not valid
+  * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+  * {CL_INVALID_OPERATION} if the device associated with _command_queue_
+    does not support {CL_COMMAND_BUFFER_CAPABILITY_KERNEL_PRINTF_KHR} and
+    _kernel_ contains a printf call.
+  * {CL_INVALID_OPERATION} if the device associated with _command_queue_
+    does not support {CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR}
+    and _kernel_ contains a kernel-enqueue call.
+--
+
+
+=== Command-Buffer Queries
+
+[open,refpage='clGetCommandBufferInfoKHR',desc='Query information about a command-buffer',type='protos']
+--
+To query information about a command-buffer, call the function
+
+include::{generated}/api/protos/clGetCommandBufferInfoKHR.txt[]
+include::{generated}/api/version-notes/clGetCommandBufferInfoKHR.asciidoc[]
+
+  * _command_buffer_ specifies the command-buffer being queried.
+  * _param_name_ specifies the information to query.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be {geq} size of return type as described in the table
+    below.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_ is a pointer to a memory location where the appropriate
+    result being queried is returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ret_ returns the actual size in bytes of data being
+    queried by _param_value_.
+    If _param_value_size_ret_ is `NULL`, it is ignored.
+
+The list of supported _param_name_ values and the information returned in
+_param_value_ by {clGetCommandBufferInfoKHR} is described in the table below.
+
+.{clGetCommandBufferInfoKHR} values
+[cols=",,",options="header",]
+|====
+| Command Buffer Info | Return Type | Description
+| {CL_COMMAND_BUFFER_NUM_QUEUES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_NUM_QUEUES_KHR.asciidoc[]
+  | {cl_uint_TYPE}
+      | The number of command-queues specified when _command_buffer_ was created.
+
+| {CL_COMMAND_BUFFER_QUEUES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_QUEUES_KHR.asciidoc[]
+  | {cl_command_queue_TYPE}[]
+      | Return the list of command-queues specified when the
+        _command_buffer_ was created.
+
+| {CL_COMMAND_BUFFER_REFERENCE_COUNT_KHR_anchor} footnote:[{fn-reference-count-usage}]
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_REFERENCE_COUNT_KHR.asciidoc[]
+  | {cl_uint_TYPE}
+      | Return the _command_buffer_ reference count.
+
+| {CL_COMMAND_BUFFER_STATE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_KHR.asciidoc[]
+  | {cl_command_buffer_state_khr_TYPE}
+      | Return the state of _command_buffer_.
+
+        {CL_COMMAND_BUFFER_STATE_RECORDING_KHR_anchor} is returned when
+        _command_buffer_ has not been finalized.
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_RECORDING_KHR.asciidoc[]
+
+        {CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR_anchor} is returned when
+        _command_buffer_ has been finalized and there is not a <<pending,
+        Pending>> instance of _command_buffer_ awaiting completion on a
+        command_queue.
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR.asciidoc[]
+
+        {CL_COMMAND_BUFFER_STATE_PENDING_KHR_anchor} is returned when an
+        instance of _command_buffer_ has been enqueued for execution but not
+        yet completed.
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_PENDING_KHR.asciidoc[]
+
+        {CL_COMMAND_BUFFER_STATE_INVALID_KHR_anchor} is returned when
+        _command_buffer_ is in an <<invalid, Invalid>> state.
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_INVALID_KHR.asciidoc[]
+
+| {CL_COMMAND_BUFFER_PROPERTIES_ARRAY_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_PROPERTIES_ARRAY_KHR.asciidoc[]
+  | {cl_command_buffer_properties_khr_TYPE}[]
+      | Return the _properties_ argument specified in
+        {clCreateCommandBufferKHR}.
+
+        If the _properties_ argument specified in {clCreateCommandBufferKHR}
+        used to create _command_buffer_ was not `NULL`, the implementation
+        must return the values specified in the properties argument.
+
+        If the _properties_ argument specified in {clCreateCommandBufferKHR}
+        used to create _command_buffer_ was `NULL`, the implementation may
+        return either a _param_value_size_ret_ of 0 (i.e. there is are no
+        properties to be returned), or the implementation may return a
+        property value of 0 (where 0 is used to terminate the properties
+        list).
+
+| {CL_COMMAND_BUFFER_CONTEXT_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_CONTEXT_KHR.asciidoc[]
+  | {cl_context_TYPE}
+      | Return the context associated with _command_buffer_.
+
+|====
+
+// refError
+
+{clGetCommandBufferInfoKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values or
+    if size in bytes specified by _param_value_size_ is less than size of
+    return type and _param_value_ is not a `NULL` value.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+endif::cl_khr_command_buffer[]
