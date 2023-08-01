@@ -104,12 +104,14 @@ cl_int clGetSemaphoreHandleForTypeKHR(
     size_t *handle_size_ret);
 ----
 
-API function added by `cl_khr_external_semaphore_sync_fd` 
-
 ----    
-cl_int clImportSemaphoreSyncFdKHR(
+cl_int clImportSemaphoreKHR(
     cl_semaphore_khr sema_object,
-    int fd);
+    cl_semaphore_properties_khr *import_props,
+    cl_external_semaphore_handle_type_khr handle_type,
+    size_t handle_size,
+    void *handle_ptr,
+    size_t *handle_size_ret);
 ----
 
 === New API Enums
@@ -337,22 +339,33 @@ imported payload, the semaphore's prior permanent payload will be restored.
 Please refer to handle specific specifications for more details on transference and
 permanence requirements specific to handle type.
 
-The `cl_khr_external_semaphore_sync_fd` extension adds {clImportSemaphoreSyncFdKHR}, which allows importing an external handle of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} into an existing binary semaphore.  The semaphore must have been created with {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} in _props_list_ of {clCreateSemaphoreWithPropertiesKHR}.
-
 To import a handle of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} into an existing semaphore, call the function
 
-include::{generated}/api/protos/clImportSemaphoreSyncFdKHR.txt[]
+include::{generated}/api/protos/clImportSemaphoreKHR.txt[]
 
 _sema_object_ specifies a valid semaphore object with importable properties.
 
-_fd_ specifies a valid sync fd handle
+_import_props_  Must be `NULL`.  Reserved for future use.
 
-If the handle _fd_ is not compatible with the devices specified to {clCreateSemaphoreWithPropertiesKHR} in _props_list_, undefined behavior will result. {clImportSemaphoreSyncFdKHR} returns {CL_SUCCESS} if _fd_ is imported successfully.
-Otherwise, it returns one of the following errors:
+_handle_type_ specifies the type of semaphore handle being imported, and must be one of the
+handle types imported when _sema_object_ was created.
+
+_handle_size_ specifies the size of memory pointed by _handle_ptr_.
+
+_handle_ptr_ is a pointer to the imported external handle.
+If _handle_ptr_ is `NULL`, _handle_size_ret_ must not be `NULL`.
+
+_handle_size_ret_ returns the actual size in bytes for the external handle.
+If _handle_size_ret_ is `NULL`, it is ignored.
+
+Calling {clImportSemaphoreKHR} is equivalent to destroying _sema_object_ and re-creating it with the original _sema_props_
+from {clCreateSemaphoreWithPropertiesKHR}, except _handle_ will be imported.
+The semaphore _sema_object_ must have originally imported a handle of type _handle_type_.
 
 * {CL_INVALID_SEMAPHORE_KHR}
 ** if _sema_object_ is not a valid semaphore
 * {CL_INVALID_VALUE} if the requested external semaphore handle type was not specified when _sema_object_ was created.
+* {CL_INVALID_VALUE} if _handle_size_ is not equal to the expected size of the external handle.
 * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources required by the OpenCL implementation on the host.
 * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required by the OpenCL implementation on the device.
 
