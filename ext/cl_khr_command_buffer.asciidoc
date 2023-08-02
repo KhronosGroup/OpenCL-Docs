@@ -21,6 +21,7 @@ This extension adds the ability to record and replay buffers of OpenCL commands.
 | 2021-11-10 | 0.9.0     | First assigned version (provisional).
 | 2022-08-24 | 0.9.1     | Specify an error if a command-buffer is finalized multiple times (provisional).
 | 2023-03-31 | 0.9.2     | Introduce context query {CL_COMMAND_BUFFER_CONTEXT_KHR} (provisional).
+| 2023-04-04 | 0.9.3     | Remove Invalid command-buffer state (provisional).
 |====
 
 ==== Dependencies
@@ -399,7 +400,6 @@ CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR         (0x1 << 3)
 CL_COMMAND_BUFFER_STATE_RECORDING_KHR              0x0
 CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR             0x1
 CL_COMMAND_BUFFER_STATE_PENDING_KHR                0x2
-CL_COMMAND_BUFFER_STATE_INVALID_KHR                0x3
 ----
 
 Enums for base <<command-buffer, command-buffers>> functionality:
@@ -492,6 +492,36 @@ with the command-queue used on command-buffer creation. Where a _compatible_
 command-queue is defined as a command-queue with identical properties targeting
 the same device and in the same OpenCL context.
 
+While constructing a command-buffer it is valid for the user to interleave calls
+to the same queue which create commands, such as {clCommandNDRangeKernelKHR}, with
+queue submission calls, such as {clEnqueueNDRangeKernel} or
+{clEnqueueCommandBufferKHR}. That is, there is no effect on queue state from
+recording commands. The purpose of the queue parameter is to define the device
+and properties of the command, which are constant queries on the queue object.
+
+A command-buffer object should increment the reference count of attached OpenCL
+objects such as queues, buffers, images, and kernels referenced in commands
+recorded to the command-buffer. This enables correct behavior of the
+command-buffer when its attached objects have been released. On destruction of
+the command-buffer it should decrement these reference counts, allowing the
+attached objects to be freed if appropriate.
+
+[[command-buffer-kernel-argument-ref-counting]]
+[NOTE]
+====
+A command-buffer object does not update the reference count of objects set as
+arguments on kernels recorded into the command-buffer. This is consistent with
+the reference counting behavior of {clSetKernelArg}.
+
+Applications should ensure that objects passed as arguments to kernels recorded
+to a command-buffer are not deleted until the command-buffer has been released.
+Undefined behavior may result from the failure to follow this usage requirement
+for all the command-buffers an object is used as a kernel argument in.
+
+If using layered extension `cl_khr_command_buffer_mutable_dispatch`,
+<<mutable-dispatch-kernel-argument-safe-usage,
+see related note on safe usage>>.
+====
 
 ==== Add new section "Section 5.X.1 - Command Buffer Lifecycle"
 
@@ -510,14 +540,22 @@ Pending:: Once a command-buffer has been enqueued to a command-queue it enters
 the Pending state until completion, at which point it moves back to the
 <<executable, Executable>> state.
 
-[[invalid]]
-Invalid:: A command-buffer can enter the Invalid state if a resource that was
-used in a command has been modified or freed. The only valid operation to
-perform on a command-buffer in the Invalid state is to call
-{clReleaseCommandBufferKHR} for each of the reference counts the application
-owns.
+////
+Image generated from the following mermaid diagram description using https://mermaid.live
+Ideally we'd use the asciidoctor-diagram extension to generate the rendered diagram, but
+there are issues installing the gem with ruby 2.3.3
 
-image::images/commandbuffer_lifecycle.svg[align="center", title="Lifecycle of a command-buffer."]
+[mermaid, "Lifecycle of a command-buffer", png]
+....
+stateDiagram-v2
+    [*] --> Recording: Create
+    Recording -->Executable: Finalize
+    Executable --> Pending: Enqueue
+    Pending --> Executable: Completion
+....
+////
+
+image::images/commandbuffer_lifecycle.png[align="center", title="Lifecycle of a command-buffer."]
 
 [[pending_count]]
 The Pending Count is the number of copies of the command
@@ -621,21 +659,6 @@ The function
 include::{generated}/api/protos/clRetainCommandBufferKHR.txt[]
 
 Increments the _command_buffer_ reference count.
-
-[NOTE]
-====
-A command-buffer object updates the reference count for objects such as
-buffers, images, and kernels used as parameters for commands recorded to the
-command-buffer.
-
-For example, recording a ND-range kernel via {clCommandNDRangeKernelKHR} into a
-command-buffer and then releasing the kernel object will still allow continued
-safe use of the command-buffer. As the reference count of the kernel object
-will have been incremented when the command was recorded, and then on
-command-buffer release the kernel reference count will be decremented. If at
-that point the kernel reference count reaches 0, the kernel object will be
-freed.
-====
 
 _command_buffer_ Specifies the command-buffer to retain.
 
@@ -1574,9 +1597,6 @@ _param_value_ by {clGetCommandBufferInfoKHR} is described in the table below.
 
   {CL_COMMAND_BUFFER_STATE_PENDING_KHR} is returned when an instance of
   _command_buffer_ has been enqueued for execution but not yet completed.
-
-  {CL_COMMAND_BUFFER_STATE_INVALID_KHR} is returned when _command_buffer_ is
-  in an <<invalid, Invalid>> state.
 
 | {CL_COMMAND_BUFFER_PROPERTIES_ARRAY_KHR}
 | {cl_command_buffer_properties_khr_TYPE}[]
