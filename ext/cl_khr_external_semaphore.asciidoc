@@ -71,8 +71,8 @@ Ben Ashbaugh, INTEL +
 Carsten Rohde, NVIDIA +
 Christoph Kubisch, NVIDIA +
 Debalina Bhattacharjee, NVIDIA +
+Faith Ekstrand, INTEL +
 James Jones, NVIDIA +
-Jason Ekstrand, INTEL +
 Jeremy Kemp, IMAGINATION +
 Joshua Kelly, QUALCOMM +
 Karthik Raghavan Ravi, NVIDIA +
@@ -217,7 +217,7 @@ Following new properties are added to the list of possible supported properties 
 
 Add to the list of error conditions for {clCreateSemaphoreWithPropertiesKHR}:
 
-* {CL_INVALID_DEVICE} if one or more devices identified by properties {CL_DEVICE_HANDLE_LIST_KHR} can not import the requested external semaphore handle type.
+* {CL_INVALID_DEVICE} if one or more devices identified by properties {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} can not import the requested external semaphore handle type.
 
 {clCreateSemaphoreWithPropertiesKHR} may return a NULL value on some implementations if _sema_props_ does not contain an external semaphore handle type to import.
 Such implementations are required to return a valid semaphore when a supported external memory handle type and valid external semaphore handle is specified.
@@ -472,18 +472,18 @@ clCreateContext(..., 2, devices, ...);
 // from the other API.
 int fd = getFdForExternalSemaphore();
 
-// Create clSema of type cl_semaphore_khr usable only on devices[1]
+// Create clSema of type cl_semaphore_khr usable only on device 1
 // assuming the semaphore was imported from the same device.
-
-cl_semaphore_properties_khr sema_props[] = 
-        {(cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR, 
-         (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
-         (cl_semaphore_properties_khr)CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR, 
-         (cl_semaphore_properties_khr)fd,
-         (cl_semaphore_properties_khr)CL_DEVICE_HANDLE_LIST_KHR, 
-         (cl_semaphore_properties_khr)devices[1], CL_DEVICE_HANDLE_LIST_END_KHR,
-          0};
-
+cl_semaphore_properties_khr sema_props[] = {
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR, 
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR, 
+    (cl_semaphore_properties_khr)fd,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR, 
+    (cl_semaphore_properties_khr)devices[1],
+    CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR,
+    0
+};
 
 int errcode_ret = 0;
 cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
@@ -546,16 +546,17 @@ clGetDeviceIDs(..., &devices, &deviceCount);
 clCreateContext(..., 2, devices, ...);
 
 // Create clSema of type cl_semaphore_khr usable only on device 1
-cl_semaphore_properties_khr sema_props[] = 
-        {(cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR, 
-         (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
-         (cl_semaphore_properties_khr)CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR, 
-         (cl_semaphore_properties_khr)CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
-         CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR,
-         (cl_semaphore_properties_khr)CL_DEVICE_HANDLE_LIST_KHR, 
-         (cl_semaphore_properties_khr)devices[1],
-         CL_DEVICE_HANDLE_LIST_END_KHR,
-         0};
+cl_semaphore_properties_khr sema_props[] = {
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR, 
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR, 
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
+    CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR, 
+    (cl_semaphore_properties_khr)devices[1],
+    CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR,
+    0
+};
 
 int errcode_ret = 0;
 cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
@@ -606,7 +607,6 @@ while (true) {
                                  /*event*/                   NULL);
 
     // (not shown) Launch work in the other API that waits on 'clSema'
-
 }
 ----
 --
