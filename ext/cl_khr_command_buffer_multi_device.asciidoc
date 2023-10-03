@@ -179,14 +179,17 @@ of section 4.2. Also, add additional text to the
 
 | {CL_DEVICE_COMMAND_BUFFER_NUM_SYNC_DEVICES_KHR}
 | {cl_uint_TYPE}
-| Return the number of devices _device_ can use device-side synchronization
-  with.
+| Return the number of root devices listed in
+  {CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR} that _device_ can use device-side
+  synchronization with.
 
 | {CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR}
 | {cl_device_id_TYPE}[]
-| Return the list of devices and sub-devices _device_ can use device-side
-  synchronization with. A device should list itself only if it has native
-  support for synchronizing commands.
+| Return the list of root devices _device_ can use device-side synchronization
+  with. A device should list itself only if it has native support for
+  synchronizing commands. Sub-devices are not listed to avoid non-deterministic
+  results as sub-devices are created, instead if a root device is listed, then
+  any of its partitioned sub-devices can also be natively synchronized with.
 
 |====
 
@@ -458,8 +461,8 @@ values.
 | OK - May be performance implications when synchronizing commands between devices
   without device-side sync support.
 
-.2+| No
-.2+| No
+| No
+| No
 | Always
 | Error - {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR}
 
@@ -493,14 +496,14 @@ Additional errors:
 
 * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the
   {CL_COMMAND_BUFFER_DEVICE_SIDE_SYNC_KHR} flag is set, and any device
-  associated with a command-queue in _queues_ does not have the other devices
-  associated with _queues_ enumerated in
+  associated with a command-queue in _queues_ cannot natively synchronize with
+  the other devices associated with _queues_ as reported by
   {CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR}.
 
 * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the platform doesn't support the
   {CL_COMMAND_BUFFER_PLATFORM_UNIVERSAL_SYNC_KHR} capability, and any device
-  associated with a command-queue in _queues_ does not have the other devices
-  associated with _queues_ enumerated in
+  associated with a command-queue in _queues_ cannot natively synchronize with
+  the other devices associated with _queues_ as reported by
   {CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR}.
 
 ==== Command recording entry points

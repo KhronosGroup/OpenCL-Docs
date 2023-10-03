@@ -37,6 +37,7 @@ In particular, this extension defines:
 [cols="1,1,3",options="header",]
 |====
 | *Date*     | *Version* | *Description*
+| 2023-08-01 | 0.9.1     | Changed device handle list enum to the semaphore-specific {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} (provisional).
 | 2021-09-10 | 0.9.0     | Initial version (provisional).
 |====
 
@@ -58,8 +59,8 @@ Ben Ashbaugh, INTEL +
 Carsten Rohde, NVIDIA +
 Christoph Kubisch, NVIDIA +
 Debalina Bhattacharjee, NVIDIA +
+Faith Ekstrand, INTEL +
 James Jones,  NVIDIA +
-Jason Ekstrand, INTEL +
 Jeremy Kemp, IMAGINATION +
 Joshua Kelly, QUALCOMM +
 Karthik Raghavan Ravi, NVIDIA +
@@ -154,16 +155,16 @@ CL_SEMAPHORE_PROPERTIES_KHR                                 0x203B
 CL_SEMAPHORE_PAYLOAD_KHR                                    0x203C
 ----
 
-// TODO: We don't need an enum assigned for CL_DEVICE_HANDLE_LIST_END_KHR and should just use 0.
-// TODO: Do we need to define CL_DEVICE_HANDLE_LIST here or should it be in the external semaphore spec instead?
+// TODO: We don't need an enum assigned for CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR and should just use 0.
+// TODO: Do we need to define CL_SEMAPHORE_DEVICE_HANDLE_LIST here or should it be in the external semaphore spec instead?
 
 New attributes that can be passed as part of {cl_semaphore_info_khr_TYPE} or {cl_semaphore_properties_khr_TYPE}:
 
 [source]
 ----
 CL_SEMAPHORE_TYPE_KHR                                       0x203D
-CL_DEVICE_HANDLE_LIST_KHR                                   0x2051
-CL_DEVICE_HANDLE_LIST_END_KHR                               0
+CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR                         0x2053
+CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR                     0
 ----
 
 New return values from {clGetEventInfo} when _param_name_ is {CL_EVENT_COMMAND_TYPE}:
@@ -243,7 +244,7 @@ include::{generated}/api/protos/clCreateSemaphoreWithPropertiesKHR.txt[]
 
 _context_ identifies a valid OpenCL context that the created {cl_semaphore_khr_TYPE} will belong to.
 
-// TODO: Do we want the same "all devices in the context" behavior if CL_DEVICE_HANDLE_LIST_KHR is not specified?
+// TODO: Do we want the same "all devices in the context" behavior if CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR is not specified?
 
 _sema_props_ specifies additional semaphore properties in the form list of <property_name, property_value> pairs terminated with 0.
 {CL_SEMAPHORE_TYPE_KHR} must be part of the list of properties specified by _sema_props_.
@@ -257,12 +258,12 @@ Following new properties are added to the list of possible supported properties 
 | {CL_SEMAPHORE_TYPE_KHR}
   | {cl_semaphore_type_khr_TYPE}
       | Specifies the type of semaphore to create. This property is always required.
-| {CL_DEVICE_HANDLE_LIST_KHR}
+| {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR}
   | {cl_device_id_TYPE}[]
-      | Specifies the list of OpenCL devices (terminated with {CL_DEVICE_HANDLE_LIST_END_KHR}) to associate with the semaphore.
+      | Specifies the list of OpenCL devices (terminated with {CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR}) to associate with the semaphore.
 |====
 
-If {CL_DEVICE_HANDLE_LIST_KHR} is not specified as part of _sema_props_, the semaphore object created by {clCreateSemaphoreWithPropertiesKHR} is by default accessible to all devices in the _context_.
+If {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} is not specified as part of _sema_props_, the semaphore object created by {clCreateSemaphoreWithPropertiesKHR} is by default accessible to all devices in the _context_.
 
 _errcode_ret_ returns an appropriate error code. If _errcode_ret_ is `NULL`, no error code is returned.
 
@@ -271,7 +272,7 @@ Otherwise, it returns a `NULL` value with one of the following error values retu
 
 * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
 * {CL_INVALID_PROPERTY} if a property name in _sema_props_ is not a supported property name, if the value specified for a supported property name is not valid, or if the same property name is specified more than once.
-* {CL_INVALID_DEVICE} if {CL_DEVICE_HANDLE_LIST_KHR} is specified as part of _sema_props_, but it does not identify a valid device or if a device identified by {CL_DEVICE_HANDLE_LIST_KHR} is not one of the devices within _context_.
+* {CL_INVALID_DEVICE} if {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} is specified as part of _sema_props_, but it does not identify a valid device or if a device identified by {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} is not one of the devices within _context_.
 * {CL_INVALID_VALUE}
 ** if _sema_props_ is `NULL`, or
 ** if _sema_props_ do not specify <property, value> pairs for minimum set of properties (i.e. {CL_SEMAPHORE_TYPE_KHR}) required for successful creation of a {cl_semaphore_khr_TYPE}, or
@@ -315,7 +316,7 @@ Otherwise, it returns one of the following errors:
 
 * {CL_INVALID_COMMAND_QUEUE}
 ** if _command_queue_ is not a valid command-queue, or
-** if the device associated with _command_queue_ is not same as one of the devices specified by {CL_DEVICE_HANDLE_LIST_KHR} at the time of creating one or more of _sema_objects_, or
+** if the device associated with _command_queue_ is not same as one of the devices specified by {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} at the time of creating one or more of _sema_objects_, or
 ** if one or more of _sema_objects_ belong to a context that does not contain a device associated with _command_queue_.
 * {CL_INVALID_VALUE} if _num_sema_objects_ is 0.
 * {CL_INVALID_SEMAPHORE_KHR} if any of the semaphore objects specified by _sema_objects_ is not valid.
@@ -366,7 +367,7 @@ Otherwise, it returns one of the following errors:
 
 * {CL_INVALID_COMMAND_QUEUE}
 ** if _command_queue_ is not a valid command-queue, or
-** if the device associated with _command_queue_ is not same as one of the devices specified by {CL_DEVICE_HANDLE_LIST_KHR} at the time of creating one or more of _sema_objects_, or
+** if the device associated with _command_queue_ is not same as one of the devices specified by {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} at the time of creating one or more of _sema_objects_, or
 ** if one or more of _sema_objects_ belong to a context that does not contain a device associated with _command_queue_.
 * {CL_INVALID_VALUE} if _num_sema_objects_ is 0
 * {CL_INVALID_SEMAPHORE_KHR} if any of the semaphore objects specified by _sema_objects_ is not valid.
@@ -429,7 +430,7 @@ being queried by _param_value_. If _param_value_size_ret_ is `NULL`, it is ignor
         if the semaphore is in an un-signaled state and `1` if it is in a
         signaled state.
 
-| {CL_DEVICE_HANDLE_LIST_KHR}
+| {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR}
   | {cl_device_id_TYPE}[]
       | Returns the list of OpenCL devices the semaphore is associated with.
 |====
@@ -524,14 +525,15 @@ clGetDeviceIDs(..., &devices, &deviceCount);
 // Create cl_context with first two devices
 clCreateContext(..., 2, devices, ...);
 
-// Create clSema of type cl_semaphore_khr usable only on devices[0]
-
-cl_semaphore_properties_khr sema_props[] =
-        {(cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR,
-         (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
-         (cl_semaphore_properties_khr)CL_DEVICE_HANDLE_LIST_KHR,
-         (cl_semaphore_properties_khr)devices[0], CL_DEVICE_HANDLE_LIST_END_KHR,
-          0};
+// Create clSema of type cl_semaphore_khr usable only on device 0
+cl_semaphore_properties_khr sema_props[] = {
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR,
+    (cl_semaphore_properties_khr)devices[0],
+    CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR,
+    0
+};
 
 int errcode_ret = 0;
 
