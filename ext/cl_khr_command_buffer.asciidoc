@@ -22,13 +22,15 @@ This extension adds the ability to record and replay buffers of OpenCL commands.
 | 2022-08-24 | 0.9.1     | Specify an error if a command-buffer is finalized multiple times (provisional).
 | 2023-03-31 | 0.9.2     | Introduce context query {CL_COMMAND_BUFFER_CONTEXT_KHR} (provisional).
 | 2023-04-04 | 0.9.3     | Remove Invalid command-buffer state (provisional).
+| 2023-05-11 | 0.9.4     | Add clCommandSVMMemcpyKHR and clCommandSVMMemFillKHR command entries (provisional).
 |====
 
 ==== Dependencies
 
 This extension is written against the OpenCL Specification version 3.0.6.
 
-This extension requires OpenCL 1.2 or later.
+This extension requires OpenCL 1.2 or later. Buffering of SVM commands
+requires OpenCL 2.0 or later.
 
 ==== Contributors
 
@@ -44,7 +46,7 @@ Aharon Abramson, Intel. +
 Ben Ashbaugh, Intel. +
 Boaz Ouriel, Intel. +
 Chris Gearing, Intel. +
-Pekka Jääskeläinen, Tampere University +
+Pekka Jääskeläinen, Tampere University and Intel. +
 Jan Solanti, Tampere University +
 Nikhil Joshi, NVIDIA +
 James Price, Google +
@@ -378,6 +380,35 @@ cl_int clGetCommandBufferInfoKHR(
     size_t* param_value_size_ret);
 ----
 
+The following SVM entry points are supported only with at least OpenCL 2.0 and
+starting from 0.9.4 of this extension:
+
+[source]
+----
+
+cl_int clCommandSVMMemcpyKHR(
+    cl_command_buffer_khr command_buffer,
+    cl_command_queue command_queue,
+    void* dst_ptr,
+    const void* src_ptr,
+    size_t size,
+    cl_uint num_sync_points_in_wait_list,
+    const cl_sync_point_khr* sync_point_wait_list,
+    cl_sync_point_khr* sync_point,
+    cl_mutable_command_khr* mutable_handle);
+
+cl_int clCommandSVMMemFillKHR(
+    cl_command_buffer_khr command_buffer,
+    cl_command_queue command_queue,
+    void* svm_ptr,
+    const void* pattern,
+    size_t pattern_size,
+    size_t size,
+    cl_uint num_sync_points_in_wait_list,
+    const cl_sync_point_khr* sync_point_wait_list,
+    cl_sync_point_khr* sync_point,
+    cl_mutable_command_khr* mutable_handle);
+----
 
 === New API Enums
 
@@ -1538,6 +1569,173 @@ New errors:
 * {CL_INVALID_OPERATION} if the device associated with _command_queue_ does not
   support {CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR} and _kernel_
   contains a kernel-enqueue call.
+
+
+The function
+
+include::{generated}/api/protos/clCommandSVMMemcpyKHR.txt[]
+
+Records a command to do an SVM memcpy operation.
+
+_command_buffer_ Refers to a valid command-buffer object.
+
+_command_queue_ Specifies the command-queue the command will be recorded to.
+Parameter is unused by this extension as only a single command-queue is
+supported and **must** be `NULL`.
+
+_dst_ptr_ is the pointer to a host (if the device supports system SVM)
+or SVM memory allocation where data is copied to.
+
+_src_ptr_ is the pointer to a host (if the device supports system SVM)
+or SVM memory allocation where data is copied from.
+
+_size_ is the size in bytes of data being copied.
+
+_sync_point_wait_list_, _num_sync_points_in_wait_list_ Specify
+synchronization-points that need to complete before this
+particular command can be executed.
+
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_
+must be 0. If _sync_point_wait_list_ is not `NULL`, the list of
+synchronization-points pointed to by _sync_point_wait_list_ must be
+valid and _num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points. The command-buffer associated
+with synchronization-points in _sync_point_wait_list_ must be the same
+as _command_buffer_. The memory associated with _sync_point_wait_list_
+can be reused or freed after the function returns.
+
+_sync_point_ Returns a synchronization-point ID that identifies this particular
+command. Synchronization-point objects are unique and can be used to
+identify this command later on. _sync_point_ can be `NULL` in which case it
+will not be possible for the application to record a wait for this command to
+complete. If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+`NULL`, the _sync_point_ argument should not refer to an element of the
+_sync_point_wait_list_ array.
+
+_mutable_handle_ Returns a handle to the command. Handle is unused by
+this extension and must be passed as `NULL`.
+
+{clCommandSVMMemcpyKHR} returns {CL_SUCCESS} if the function is executed
+successfully. Otherwise, it returns the errors defined by
+{clEnqueueSVMMemcpy} except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+* {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+* {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+  _command_buffer_, and _kernel_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+* {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is `NULL` and
+  _num_sync_points_in_wait_list_ is > 0, or _sync_point_wait_list_ is not
+  `NULL` and _num_sync_points_in_wait_list_ is 0, or if
+  synchronization-point objects in _sync_point_wait_list_ are not valid
+  synchronization-points.
+
+New errors:
+
+* {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+  command-buffer.
+
+* {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+
+* {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+
+
+The function
+
+include::{generated}/api/protos/clCommandSVMMemFillKHR.txt[]
+
+Records a command to fill a region in SVM with a pattern of a given pattern size.
+
+_command_buffer_ Refers to a valid command-buffer object.
+
+_command_queue_ Specifies the command-queue the command will be recorded to.
+Parameter is unused by this extension as only a single command-queue is
+supported and **must** be `NULL`.
+
+_svm_ptr_ is a pointer to a (if the device supports system SVM)
+or SVM memory region that will be filled with _pattern_. It must be
+aligned to _pattern_size_ bytes.
+If _svm_ptr_ is allocated using {clSVMAlloc} then it must be allocated from
+the same context from which _command_queue_ was created.
+Otherwise the behavior is undefined.
+
+_pattern_ is a pointer to the data pattern of size _pattern_size_ in bytes.
+_pattern_ will be used to fill a region in _buffer_ starting at _svm_ptr_
+and is _size_ bytes in size.
+The data pattern must be a scalar or vector integer or floating-point data
+type supported by OpenCL.
+For example, if region pointed to by _svm_ptr_ is to be filled with a
+pattern of float4 values, then _pattern_ will be a pointer to a cl_float4
+value and _pattern_size_ will be `sizeof(cl_float4)`.
+The maximum value of _pattern_size_ is the size of the largest integer or
+floating-point vector data type supported by the OpenCL device.
+The memory associated with _pattern_ can be reused or freed after the
+function returns.
+
+_size_ is the size in bytes of region being filled starting with _svm_ptr_
+and must be a multiple of _pattern_size_.
+
+_sync_point_wait_list_, _num_sync_points_in_wait_list_ Specify
+synchronization-points that need to complete before this
+particular command can be executed.
+
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_
+must be 0. If _sync_point_wait_list_ is not `NULL`, the list of
+synchronization-points pointed to by _sync_point_wait_list_ must be
+valid and _num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points. The command-buffer associated
+with synchronization-points in _sync_point_wait_list_ must be the same
+as _command_buffer_. The memory associated with _sync_point_wait_list_
+can be reused or freed after the function returns.
+
+_sync_point_ Returns a synchronization-point ID that identifies this particular
+command. Synchronization-point objects are unique and can be used to
+identify this command later on. _sync_point_ can be `NULL` in which case it
+will not be possible for the application to record a wait for this command to
+complete. If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+`NULL`, the _sync_point_ argument should not refer to an element of the
+_sync_point_wait_list_ array.
+
+_mutable_handle_ Returns a handle to the command. Handle is unused by
+this extension and must be passed as `NULL`.
+
+{clCommandSVMMemFillKHR} returns {CL_SUCCESS} if the function is executed
+successfully. Otherwise, it returns the errors defined by
+{clEnqueueSVMMemFill} except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+* {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+* {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+  _command_buffer_, and _kernel_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+* {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is `NULL` and
+  _num_sync_points_in_wait_list_ is > 0, or _sync_point_wait_list_ is not
+  `NULL` and _num_sync_points_in_wait_list_ is 0, or if
+  synchronization-point objects in _sync_point_wait_list_ are not valid
+  synchronization-points.
+
+New errors:
+
+* {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+  command-buffer.
+
+* {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+
+* {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
 
 ==== Add new section "Section 5.X.4 - Command Buffer Queries"
 
