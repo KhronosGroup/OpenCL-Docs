@@ -40,11 +40,11 @@ def FullNote(name, added_in, deprecated_by):
     if added_in == "1.0" and deprecated_by == None:
         return "\n// Intentionally empty, %s has always been present." % name
     if added_in != "1.0" and deprecated_by == None:
-        return "\nIMPORTANT: {%s} is <<unified-spec, missing before>> version %s." % (name, added_in)
+        return "\nIMPORTANT: {%s} is {missing_before} version %s." % (name, added_in)
     if added_in == "1.0" and deprecated_by != None:
-        return "\nIMPORTANT: {%s} is <<unified-spec, deprecated by>> version %s." % (name, deprecated_by)
+        return "\nIMPORTANT: {%s} is {deprecated_by} version %s." % (name, deprecated_by)
     if added_in != "1.0" and deprecated_by != None:
-        return "\nIMPORTANT: {%s} is <<unified-spec, missing before>> version %s and <<unified-spec, deprecated by>> version %s." % (name, added_in, deprecated_by)
+        return "\nIMPORTANT: {%s} is {missing_before} version %s and {deprecated_by} version %s." % (name, added_in, deprecated_by)
 
 def ShortNote(name, added_in, deprecated_by):
     # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
@@ -52,11 +52,11 @@ def ShortNote(name, added_in, deprecated_by):
     if added_in == "1.0" and deprecated_by == None:
         return "// Intentionally empty, %s has always been present." % name
     if added_in != "1.0" and deprecated_by == None:
-        return "<<unified-spec, Missing before>> version %s." % added_in
+        return "{missing_before} version %s." % added_in
     if added_in == "1.0" and deprecated_by != None:
-        return "<<unified-spec, Deprecated by>> version %s." % deprecated_by
+        return "{deprecated_by} version %s." % deprecated_by
     if added_in != "1.0" and deprecated_by != None:
-        return "<<unified-spec, Missing before>> version %s and <<unified-spec, deprecated by>> version %s." % (added_in, deprecated_by)
+        return "{missing_before} version %s and {deprecated_by} version %s." % (added_in, deprecated_by)
 
 # Find feature groups that are parents of a feature/require/${entry_type}
 # hierarchy, and then find all the ${entry_type} within each hierarchy:
