@@ -2,6 +2,10 @@
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
+// Extensions to enable
+// Must be included before the header and attribs.txt
+include::generated/specattribs.adoc[]
+
 = The OpenCL^(TM)^ C Specification
 :R: pass:q,r[^(R)^]
 Khronos{R} OpenCL Working Group
@@ -211,6 +215,19 @@ of work-items.
 | The OpenCL C compiler supports built-in functions that perform collective
 operations across a work-group.
 
+ifdef::cl_khr_integer_dot_product[]
+| {opencl_c_integer_dot_product_input_4x8bit_packed} +
+  (when the {cl_khr_integer_dot_product} extension macro is defined)
+
+| The OpenCL C compiler supports built-in functions that perform dot
+products on 4x8 bit packed integer vectors
+
+| {opencl_c_integer_dot_product_input_4x8bit} +
+  (when the {cl_khr_integer_dot_product} extension macro is defined)
+| The OpenCL C compiler supports built-in functions that perform dot
+products on 4x8 bit integer vectors
+endif::cl_khr_integer_dot_product[]
+
 |====
 
 In OpenCL C 3.0 or newer, feature macros must expand to the value `1` if the
@@ -228,6 +245,7 @@ target earlier OpenCL C versions should not rely on the presence of
 feature test macros because there is no guarantee that feature test macros
 will be defined and that if defined they will indicate the presence of the
 corresponding optional functionality.
+
 
 [[extensions]]
 === Extensions
@@ -247,6 +265,7 @@ language feature was an optional extension to an earlier version of OpenCL C it
 can still be used as an extension, i.e. the same predefined extension macros are
 still valid in OpenCL C 3.0 or newer, however the use of feature macros is
 preferred whenever possible.
+
 
 [[supported-data-types]]
 == Supported Data Types
@@ -5316,6 +5335,57 @@ all arguments and the return type unless otherwise specified.
       type of _x_, if _x_ is a vector.
 
       <<unified-spec, Requires>> support for OpenCL 2.0 or newer.
+ifdef::cl_khr_integer_dot_product[]
+| uint *dot*(uchar4 a, uchar4 b) +
+  int *dot*(char4 a, char4 b) +
+  int *dot*(uchar4 a, char4 b) +
+  int *dot*(char4 a, uchar4 b)
+    | `dot` returns the dot product of the two input vectors `a` and `b`.
+      The components of `a` and `b` are sign- or zero-extended to the width
+      of the destination type and the vectors with extended components are
+      multiplied component-wise.
+      All the components of the resulting vectors are added together to form
+      the final result.
+
+      <<unified-spec, Requires>> that the
+      {opencl_c_integer_dot_product_input_4x8bit} feature macro is defined,
+
+| uint *dot_acc_sat*(uchar4 a, uchar4 b, uint acc) +
+  int *dot_acc_sat*(char4 a, char4 b, int acc) +
+  int *dot_acc_sat*(uchar4 a, char4 b, int acc) +
+  int *dot_acc_sat*(char4 a, uchar4 b, int acc)
+   a| `dot_acc_sat` returns the saturating addition of the dot product of
+      the two input vectors `a` and `b` and the accumulator `acc`:
+----
+product = dot(a,b);
+result = add_sat(product, acc);
+----
+
+<<unified-spec, Requires>> that the
+{opencl_c_integer_dot_product_input_4x8bit} feature macro is defined,
+
+| uint *dot_4x8packed_uu_uint*(uint a, uint b) +
+  int *dot_4x8packed_ss_int*(uint a, uint b) +
+  int *dot_4x8packed_us_int*(uint a, uint b) +
+  int *dot_4x8packed_su_int*(uint a, uint b)
+    | Returns *dot* for 4x8 bit input vectors packed into a 32-bit word.
+
+      <<unified-spec, Requires>> that the
+      {opencl_c_integer_dot_product_input_4x8bit_packed} feature macro is
+      defined,
+
+| uint *dot_acc_sat_4x8packed_uu_uint*(uint a, uint b, uint acc) +
+  int *dot_acc_sat_4x8packed_ss_int*(uint a, uint b, int acc) +
+  int *dot_acc_sat_4x8packed_us_int*(uint a, uint b, int acc) +
+  int *dot_acc_sat_4x8packed_su_int*(uint a, uint b, int acc)
+    | Returns *dot_acc_set* for 4x8 bit input vectors packed into a 32-bit
+      word.
+
+      <<unified-spec, Requires>> that the
+      {opencl_c_integer_dot_product_input_4x8bit_packed} feature macro is
+      defined,
+endif::cl_khr_integer_dot_product[]
+
 | gentype *mad_hi*(gentype _a_, gentype _b_, gentype _c_)
     | Returns *mul_hi*(_a_, _b_) + _c_.
 | gentype *mad_sat*(gentype _a_, gentype _b_, gentype _c_)
