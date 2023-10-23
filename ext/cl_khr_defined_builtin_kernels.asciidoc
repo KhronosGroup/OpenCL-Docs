@@ -26,7 +26,9 @@ definitions and updating of previously defined ones.
 |====
 | *Date*     | *Version* | *Description*
 | 2022-12-13 | 0.1.0     | First formulation as an extension specification like proposed by Ben Ashbaugh.
-| TODO       | TODO      | TODO
+| 2022-10-23 | 0.2.0     |
+Add APIs for defined built-in kernel (DBK) creation. Model DBKs on
+tensor type. Add sample code.
 |====
 
 ==== Dependencies
@@ -35,7 +37,12 @@ This extension is written against the OpenCL Specification version 3.0.12.
 
 This extension requires OpenCL 1.2 or later.
 
-This extension requires cl_khr_tensor (Note: unpublished draft, work in progress)
+This extension requires cl_khr_tensor.
+
+[NOTE]
+cl_khr_tensor is unpublished, work-in-progress
+extension. Briefly, It will bring concept of tensor, N-dimensional
+data structure whose data layout is opaque to applications.
 
 ==== Contributors
 
@@ -43,6 +50,7 @@ Pekka Jääskeläinen, Intel and Tampere University. +
 Topi Leppänen, Tampere University. +
 Jan Solanti, Tampere University. +
 Ben Ashbaugh, Intel. +
+Henry Linjamäki, Intel. +
 
 === Overview
 
@@ -62,7 +70,7 @@ well-defined built-in kernel with good coverage for common acceleration needs
 and which is designed to easily evolve over time.
 
 The device drivers that implement this extension can freely choose which
-subset of DBKs they implement and advertise to the clients. The
+subset of defined built-in-kernels (DBKs) they implement and advertise to the clients. The
 clients can use the DBKs to accelerate their applications by manually
 executing invoking the DBKs. The extension is designed to also support using
 automated task graph lowering tooling later.
@@ -110,13 +118,18 @@ own hardware accelerator properties, resulting in lack of cross-vendor
 portability in the API abstraction presented to the upper layers of
 heterogeneous computing software stacks.
 
-This extension standardizes a set of well-defined built-in kernels the clients can
-call from higher level programming stacks built with different languages
-and multiple libraries, possibly mix accelerator calls with calls to software kernel
-commands, and rely on the driver stack to optimize the execution (especially
-the synchronization and communication) as a low level heterogeneous task graph.
-It aims to promote the use of built-in kernels as a programming model for hardware accelerated
-functionality, to improve cross-vendor portability of hardware accelerated computing.
+This extension standardizes a set of well-defined built-in kernels the
+clients can call from higher level programming stacks built with
+different languages and multiple libraries, possibly mix accelerator
+calls with calls to software kernel commands, and rely on the driver
+stack to optimize the execution (especially the synchronization and
+communication) as a low level heterogeneous task graph.  The
+heterogeneous task graph can be described using multiple
+command-queues and optionally cached using the command buffer
+extension (cl_khr_command_buffer).  It aims to promote the use of
+built-in kernels as a programming model for hardware accelerated
+functionality, to improve cross-vendor portability of hardware
+accelerated computing.
 
 
 === Add new section X.Y.Z Querying Defined Built-in Kernels
@@ -166,7 +179,7 @@ _errcode_ret_ is set to one of following code:
   conditions descried in defined built-in kernel entry in Appendix I.
 
 * CL_DBK_UNAVAILABLE if kernel attributes are valid but the
-  kernel is not supported one of the devices.
+  kernel is not supported on one of the devices.
 
 * CL_DBK_UNSUPPORTED_MODE_PROPERTY if _cl_dbk_mode_properties_ includes
   at least one property not listed in DBK's entry.
@@ -175,17 +188,15 @@ _errcode_ret_ is set to one of following code:
   meet the requested constraint set by
   CL_DBK_PROPERTY_MAX_RELATIVE_ERROR property.
 
-* TODO: other error cases.
-
-
 [cols="2,1,2",stripes=odd]
 |===
 | *DBK Mode Property* | *Property Value* | *Description*
 
 | CL_DBK_PROPERTY_MAX_RELATIVE_ERROR | float
 
-a| Request a DBK whose maximum relative error is bounded by the given
-value measured in ULPs.
+a| Require that the DBK produces the results which do not deviate more
+than the given amount value of ULPs (units in the last place) respect
+to infnitely precise result.
 
 | CL_DBK_PROPERTY_NON_DETERMINISTIC | cl_bool
 
@@ -194,14 +205,6 @@ implementation to switch algorithm of the kernel on each launch for
 possibly better performance.
 // Idea from https://pytorch.org/docs/stable/notes/randomness.html#cuda-convolution-benchmarking
 
-| ... | -
-a|
-Ideas:
-
-* accumulation with saturation.
-* Finite math only.
-* Flush denormals to zero.
-* data layout preferences (NHWC for convolution).
 |===
 
 === Add new function to 5.8.1 Creating Program Objects
@@ -263,7 +266,7 @@ cl_kernel clCreateDefinedBuiltInKernel(
 === Add new appendix "Appendix I - Defined Built-in Kernels" to OpenCL API Specification
 
 This chapter describes standard defined built-in kernels (DBK) with
-well-defined semantics. A conformant devices can report to
+well-defined semantics. Devices can report
 availability of the built-in kernels listed in this section with
 `clCreateDefinedBuiltInKernelDescriptor` call. The availability of a
 DBK is determined from the arguments passed to the
@@ -272,38 +275,45 @@ is indicated by CL_DBK_UNAVAILABLE error code.
 
 The general client-side abstraction of the DBKs is similar to a call
 to a C function of which implementation is hidden. The device driver
-can invoke one or more physical hardware accelerators combined with
+are free to implement a DBK by invoking one or more coarse and fine grained hardware accelerators combined with
 firmware to implement the semantics as efficiently as possible.
 
 It is the driver's responsibility to handle efficient synchronization and communication
 to the hardware accelerator, the internal accelerator state management and resource sharing
 across multiple OpenCL contexts.
 
-Identical DBKs with identical inputs, are not guaranteed to produce
-identical results:
+==== Reproducibility ====
 
-* across vendors,
+Identical DBKs or same DBKs executed repeatedly with identical inputs are
+guaranteed to produce identical results, unless otherwise stated in
+the DBK's description, when:
 
-* across driver versions and
+* enqueued to the same device,
 
-* across devices.
+* on the same platform,
 
-Otherwise, identical results are produced unless:
+* on the same vendor with the same driver version and
 
-* otherwise stated in DBK's description or
+* CL_DBK_PROPERTY_NON_DETERMINISTIC property is not set on.
 
-* the DBK has CL_DBK_PROPERTY_NON_DETERMINISTIC property set to true.
-
-Two DKBs are considered identical if their descriptors are created
+Two DBK descriptors for a device are considered identical if they are created
 using identical kernel name, kernel attribute and kernel mode property
-arguments.
+arguments. In other cases, identical and inputs may produce different
+results. The result difference may occur because, for example,
+different algorithms being used across devices.
 
-==== Standard Defined Built-in Kernels ====
+DBKs may produce approximated results and the error, respect to
+infinitely precise result, can be optionally controlled by
+CL_DBK_PROPERTY_MAX_RELATIVE_ERROR when the property name is listed in
+the DBK's description. DBKs without CL_DBK_PROPERTY_MAX_RELATIVE_ERROR
+property produces exact result.
 
-The following list of recognized defined built-in kernels. It is
-expected to grow and update while preserving backwards compatibility.
+==== The Defined Built-in Kernels ====
 
-Each defined built-in kernel entry is organized as followed:
+The following is list of recognized defined built-in kernels. It is
+expected to be expanded and updated over the versions of this extensions, while preserving backwards compatibility.
+
+Each defined built-in kernel entry is organized as follows:
 
 * *Name*: Name of the defined built-in kernel (an enumeration).
 
@@ -331,11 +341,11 @@ Each defined built-in kernel entry is organized as followed:
 [caption="Table A.I.1. "]
 .Standard Built-in Kernels and Their Semantics. *The table has been populated with a small set of non-trivial example entries which are subject to change and the list to expand during drafting.*
 |===
-| Name: *khr_matmul_v1*
+| Name: *khr_matmul*
 | *Kernel Attributes*
 a|
 
-Fields of the `cl_dkb_attributes_matmul_v1` structure:
+Fields of the `cl_dkb_attributes_matmul` structure:
 
 . cl_tensor_desc_t A: Tensor description for input matrix A.
 . cl_tensor_desc_t B: Tensor description for input matrix B.
@@ -381,10 +391,10 @@ This DBK accepts the following properties:
 
 * CL_DBK_PROPERTY_MAX_RELATIVE_ERROR: Unset property defaults to positive infinity.
 |
-| Name: *khr_leaky_relu_v1*
+| Name: *khr_leaky_relu*
 | *Kernel Attributes*
 a|
-Fields of the `cl_dbk_leaky_relu_v1` structure:
+Fields of the `cl_dbk_leaky_relu` structure:
 . cl_tensor_desc_t in: Input tensor description.
 . cl_tensor_desc_t out: Output tensor description.
 . cl_float alpha: Coefficient of leakage.
@@ -430,13 +440,13 @@ cl_tensor_desc_t lhs_tensor_desc = TBD;
 cl_tensor_desc_t rhs_tensor_desc = TBD;
 cl_tensor_desc_t res_tensor_desc = TBD;
 
-cl_dkb_attributes_matmul_v1 matmul_attrs = {
+cl_dkb_attributes_matmul matmul_attrs = {
   lhs_tensor_desc, rhs_tensor_desc, res_tensor_desc,
   1, 0 // = Transpose lhs tensor
 }
 
 cl_dbk_mode_properties matmul_props = {
-  // Request a matmul implementation that meets this precision.
+  // Request a matmul instance that meets this precision.
   CL_DBK_PROPERTY_MAX_RELATIVE_ERROR, 100, // in ULPs.
 }
 
@@ -445,7 +455,7 @@ std::vector<cl_dbk_descriptor> kernel_descriptions;
 cl_dbk_descriptor matmul_desc =
   clCreateDefinedBuiltInKernelDescriptor(
   context, num_devices, device_list,
-  CL_DBK_MATMUL_V1, &matmul_attrs, &matmul_props, &err);
+  CL_DBK_MATMUL, &matmul_attrs, &matmul_props, &err);
 
 } else if (err == CL_DBK_UNAVAILABLE) {
   // Kernel attributes are valid but the kernel is not supported in at least
@@ -496,7 +506,7 @@ clEnqueueNDRangeKernel(cmd_q, matmul_kernel, 0, NULL, NULL, NULL, 0, NULL, NULL)
 
 --
 
-. Should the NDRange be used at all in DBKs? It feels sort of unnatural as typically the NDRange is used to imply SPMD parallelism while the hardware/firmware is free to choose whatever parallelism degree to implement the function. On the other hand, similar applies to software kernel launches as the work-items can be executed serially if adhering to barrier semantics.
+. Should the NDRange be used at all in DBKs? It feels sort of unnatural as typically the NDRange is used to imply SPMD parallelism while the hardware/firmware is free to choose whatever parallelization strategy to implement the function. On the other hand, similar applies to software kernel launches as the NDRange-launched work-items can be executed serially if adhering to barrier semantics.
 +
 --
 *UNRESOLVED*
@@ -522,4 +532,13 @@ clEnqueueNDRangeKernel(cmd_q, matmul_kernel, 0, NULL, NULL, NULL, 0, NULL, NULL)
 --
 *UNRESOLVED*
 
+--
+
+. What other DBK mode properties we should have? Here are some ideas:
+** Perform accumulation with saturation.
+** Finite math only
+** Flush denormals to zero.
+** data layout preferences (NHWC for convolution).
+--
+*UNRESOLVED*
 --

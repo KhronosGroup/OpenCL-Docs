@@ -482,9 +482,10 @@ definitions and updating of previously defined ones.</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">First formulation as an extension specification like proposed by Ben Ashbaugh.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">TODO</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">TODO</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Reference new concept as "defined built-in kernel".</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2022-10-23</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add APIs for defined built-in kernel (DBK) creation. Model DBKs on
+tensor type. Add sample code.</p></td>
 </tr>
 </tbody>
 </table>
@@ -497,6 +498,23 @@ definitions and updating of previously defined ones.</p>
 <div class="paragraph">
 <p>This extension requires OpenCL 1.2 or later.</p>
 </div>
+<div class="paragraph">
+<p>This extension requires cl_khr_tensor.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+cl_khr_tensor is unpublished, work-in-progress
+extension. Briefly, It will bring concept of tensor, N-dimensional
+data structure whose data layout is opaque to applications.
+</td>
+</tr>
+</table>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_contributors">Contributors</h4>
@@ -504,7 +522,8 @@ definitions and updating of previously defined ones.</p>
 <p>Pekka Jääskeläinen, Intel and Tampere University.<br>
 Topi Leppänen, Tampere University.<br>
 Jan Solanti, Tampere University.<br>
-Ben Ashbaugh, Intel.<br></p>
+Ben Ashbaugh, Intel.<br>
+Henry Linjamäki, Intel.<br></p>
 </div>
 </div>
 </div>
@@ -530,9 +549,9 @@ and which is designed to easily evolve over time.</p>
 </div>
 <div class="paragraph">
 <p>The device drivers that implement this extension can freely choose which
-subset of defined BiKs they implement and advertise to the clients. The
-clients can use the BiKs to accelerate their applications by manually
-executing invoking the BiKs. The extension is designed to also support using
+subset of defined built-in-kernels (DBKs) they implement and advertise to the clients. The
+clients can use the DBKs to accelerate their applications by manually
+executing invoking the DBKs. The extension is designed to also support using
 automated task graph lowering tooling later.</p>
 </div>
 <div class="sect3">
@@ -585,41 +604,232 @@ portability in the API abstraction presented to the upper layers of
 heterogeneous computing software stacks.</p>
 </div>
 <div class="paragraph">
-<p>This extension standardizes a set of well-defined built-in kernels the clients can
-call from higher level programming stacks built with different languages
-and multiple libraries, possibly mix accelerator calls with calls to software kernel
-commands, and rely on the driver stack to optimize the execution (especially
-the synchronization and communication) as a low level heterogeneous task graph.
-It aims to promote the use of built-in kernels as a programming model for hardware accelerated
-functionality, to improve cross-vendor portability of hardware accelerated computing.</p>
+<p>This extension standardizes a set of well-defined built-in kernels the
+clients can call from higher level programming stacks built with
+different languages and multiple libraries, possibly mix accelerator
+calls with calls to software kernel commands, and rely on the driver
+stack to optimize the execution (especially the synchronization and
+communication) as a low level heterogeneous task graph.  The
+heterogeneous task graph can be described using multiple
+command-queues and optionally cached using the command buffer
+extension (cl_khr_command_buffer).  It aims to promote the use of
+built-in kernels as a programming model for hardware accelerated
+functionality, to improve cross-vendor portability of hardware
+accelerated computing.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_modifications_to_section_4_2_of_the_opencl_api_specification">Modifications to section 4.2 of the OpenCL API Specification</h3>
+<h3 id="_add_new_section_x_y_z_querying_defined_built_in_kernels">Add new section X.Y.Z Querying Defined Built-in Kernels</h3>
 <div class="paragraph">
-<p>Modify <strong>Table 5</strong>, <em>Device Queries</em>, of section 4.2, by adding the following
-sentences to the description cell of <code>CL_DEVICE_BUILT_IN_KERNELS</code>:</p>
+<p>To request a defined built-in kernel to be executed in the given
+devices use:</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-The semantics of the returned built-in kernels are undefined or defined in
-vendor-specific documentation, unless the name starts with prefix `khr_',
-which means it&#8217;s a defined built-in kernel with semantics defined in Appendix I.
-</blockquote>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-c" data-lang="c">cl_dbk_descriptor clCreateDefinedBuiltInKernelDescriptor(
+    cl_context context,
+    cl_uint num_devices,
+    const cl_device_id* device_list,
+    cl_dbk_name kernel_name,
+    const void *kernel_attributes,
+    const cl_dbk_mode_properties* kernel_config,
+    cl_int *errcode_ret);</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>context</em> must be a valid OpenCL context.</p>
+</li>
+<li>
+<p><em>num_devices</em> is the number of devices listed in
+device_list. <em>num_devices</em> must be non-zero.</p>
+</li>
+<li>
+<p><em>device_list</em> is a pointer to a list of devices that are in
+context. <em>device_list</em> must be a non-NULL value. The defined built-in kernels
+are loaded for devices specified in this list.</p>
+</li>
+<li>
+<p><em>kernel_name</em> is the name of the defined built-in kernel listed in Appendix I.</p>
+</li>
+<li>
+<p><em>kernel_attributes</em> is a pointer to the structure declared in
+description of the kernel in Appendix I. The structure holds
+kernel&#8217;s attributes.</p>
+</li>
+<li>
+<p><em>cl_dbk_mode_properties</em> is a pointer to a list of defined built-in
+kernel mode properties. The supported mode properties are listed in
+DBK&#8217;s entry with default settings in Appendix I. It is valid to set
+this argument to NULL in which case default properties apply (if
+any).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>clCreateDefinedBuiltInKernelDescriptor</strong> returns a valid kernel
+descriptor on success indicated by <em>errcode_ret</em> which is set to
+CL_SUCCESS. Otherwise, the returned object is NULL and the
+<em>errcode_ret</em> is set to one of following code:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>CL_DBK_INVALID_ATTRIBUTE if one or more kernel attributes violates
+conditions descried in defined built-in kernel entry in Appendix I.</p>
+</li>
+<li>
+<p>CL_DBK_UNAVAILABLE if kernel attributes are valid but the
+kernel is not supported on one of the devices.</p>
+</li>
+<li>
+<p>CL_DBK_UNSUPPORTED_MODE_PROPERTY if <em>cl_dbk_mode_properties</em> includes
+at least one property not listed in DBK&#8217;s entry.</p>
+</li>
+<li>
+<p>CL_DBK_UNMET_MAX_RELATIVE_ERROR if the DBK is available but does not
+meet the requested constraint set by
+CL_DBK_PROPERTY_MAX_RELATIVE_ERROR property.</p>
+</li>
+</ul>
+</div>
+<table class="tableblock frame-all grid-all stripes-odd stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 20%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"><strong>DBK Mode Property</strong></th>
+<th class="tableblock halign-left valign-top"><strong>Property Value</strong></th>
+<th class="tableblock halign-left valign-top"><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CL_DBK_PROPERTY_MAX_RELATIVE_ERROR</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">float</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>Require that the DBK produces the results which do not deviate more
+than the given amount value of ULPs (units in the last place) respect
+to infnitely precise result.</p>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CL_DBK_PROPERTY_NON_DETERMINISTIC</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">cl_bool</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>Allow results of the kernel to be non-reproducible. This allows
+implementation to switch algorithm of the kernel on each launch for
+possibly better performance.</p>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_add_new_function_to_5_8_1_creating_program_objects">Add new function to 5.8.1 Creating Program Objects</h3>
+<div class="paragraph">
+<p>To create a program with a set of defined built-in kernel use:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-c" data-lang="c">cl_program clCreateProgramWithDefinedKernels(
+    cl_context context,
+    size_t num_kernel_desc,
+    const void* kernel_desc_list,
+    cl_int* errcode_ret);</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>context</em> must be a valid OpenCL context.</p>
+</li>
+<li>
+<p><em>num_kernel_desc</em> is the number of kernel descriptors.</p>
+</li>
+<li>
+<p><em>kernel_desc_list</em> is the array of valid
+cl_dbk_descriptor objects. The array length must be at
+least <em>num_kernel_desc</em>. The kernel descriptors must be created on
+the same context.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>clCreateProgramWithDefinedKernels</strong> returns a valid program on success
+indicated by <em>errcode_ret</em> which is set to CL_SUCCESS. Otherwise, the
+returned object is NULL and the <em>errcode_ret</em> is set to one of
+following code:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>TODO.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_add_new_function_to_5_9_1_creating_kernel_objects">Add new function to 5.9.1 Creating Kernel Objects</h3>
+<div class="paragraph">
+<p>To get a kernel handle for a defined built-in kernel in a program use:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-c" data-lang="c">cl_kernel clCreateDefinedBuiltInKernel(
+    cl_program program,
+    cl_dbk_descriptor kernel_desc,
+    cl_int* errcode_ret);</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>program</em> is a program object with a successfully built executable.</p>
+</li>
+<li>
+<p><em>kernel_desc</em> is a defined built-in kernel descriptor in the program.</p>
+</li>
+<li>
+<p><em>errcode_ret</em> will return an appropriate error code. If errcode_ret is
+NULL, no error code is returned.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>clCreateDefinedBuiltInKernel</strong> returns a valid non-zero kernel object
+ and errcode_ret is set to CL_SUCCESS if the kernel object is created
+ successfully. Otherwise, it returns a NULL value with one of the
+ following error values returned in <em>errcode_ret</em>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>TODO.</p>
+</li>
+</ul>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_add_new_appendix_appendix_i_defined_built_in_kernels_to_opencl_api_specification">Add new appendix "Appendix I - Defined Built-in Kernels" to OpenCL API Specification</h3>
 <div class="paragraph">
-<p>This chapter describes standard defined built-in kernels (DBK) with well-defined
-semantics. A conformant device can report to support zero or more of the built-in
-kernels via <code>CL_DEVICE_BUILT_IN_KERNELS</code> or <code>CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION</code> device queries.</p>
+<p>This chapter describes standard defined built-in kernels (DBK) with
+well-defined semantics. Devices can report
+availability of the built-in kernels listed in this section with
+<code>clCreateDefinedBuiltInKernelDescriptor</code> call. The availability of a
+DBK is determined from the arguments passed to the
+<code>clCreateDefinedBuiltInKernelDescriptor</code> and unavailability of a DBK
+is indicated by CL_DBK_UNAVAILABLE error code.</p>
 </div>
 <div class="paragraph">
 <p>The general client-side abstraction of the DBKs is similar to a call
 to a C function of which implementation is hidden. The device driver
-can invoke one or more physical hardware accelerators combined with
+are free to implement a DBK by invoking one or more coarse and fine grained hardware accelerators combined with
 firmware to implement the semantics as efficiently as possible.</p>
 </div>
 <div class="paragraph">
@@ -628,292 +838,356 @@ to the hardware accelerator, the internal accelerator state management and resou
 across multiple OpenCL contexts.</p>
 </div>
 <div class="sect3">
-<h4 id="_standard_defined_built_in_kernels">Standard Defined Built-in Kernels</h4>
+<h4 id="_reproducibility">Reproducibility</h4>
 <div class="paragraph">
-<p>The following list of recognized defined built-ins is organized
-according to their application domain and handled data types. It is
-expected to grow and update while preserving backwards compatibility.</p>
+<p>Identical DBKs or same DBKs executed repeatedly with identical inputs are
+guaranteed to produce identical results, unless otherwise stated in
+the DBK&#8217;s description, when:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>enqueued to the same device,</p>
+</li>
+<li>
+<p>on the same platform,</p>
+</li>
+<li>
+<p>on the same vendor with the same driver version and</p>
+</li>
+<li>
+<p>CL_DBK_PROPERTY_NON_DETERMINISTIC property is not set on.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Two DBK descriptors for a device are considered identical if they are created
+using identical kernel name, kernel attribute and kernel mode property
+arguments. In other cases, identical and inputs may produce different
+results. The result difference may occur because, for example,
+different algorithms being used across devices.</p>
+</div>
+<div class="paragraph">
+<p>DBKs may produce approximated results and the error, respect to
+infinitely precise result, can be optionally controlled by
+CL_DBK_PROPERTY_MAX_RELATIVE_ERROR when the property name is listed in
+the DBK&#8217;s description. DBKs without CL_DBK_PROPERTY_MAX_RELATIVE_ERROR
+property produces exact result.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_the_defined_built_in_kernels">The Defined Built-in Kernels</h4>
+<div class="paragraph">
+<p>The following is list of recognized defined built-in kernels. It is
+expected to be expanded and updated over the versions of this extensions, while preserving backwards compatibility.</p>
+</div>
+<div class="paragraph">
+<p>Each defined built-in kernel entry is organized as follows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Name</strong>: Name of the defined built-in kernel (an enumeration).</p>
+</li>
+<li>
+<p><strong>Kernel attributes</strong>: The kernel attributes required for creating the
+defined built-in kernel via
+clCreateDefinedBuiltInKernelDescriptor. Attribute values are
+immutable.</p>
+</li>
+<li>
+<p><strong>Kernel arguments</strong>: The kernel arguments.</p>
+</li>
+<li>
+<p><strong>Description</strong>: The description of the kernel in detail.</p>
+</li>
+<li>
+<p><strong>Attribute validation rules</strong>: Conditions of the kernel attribute for
+the kernel. Implementation must return CL_DBK_INVALID_ATTRIBUTE on
+clCreateDefinedBuiltInKernelDescriptor call if any of the conditions
+are violated.</p>
+</li>
+<li>
+<p><strong>Kernel mode properties</strong>: List of kernel mode
+properties (cl_dbk_mode_properties) the kernel recognizes. The
+properties can be used to tweak certain implementation details and
+behaviors in the kernel execution. If a property not listed in the
+DBK entry is fed to clCreateDefinedBuiltInKernelDescriptor call,
+then implementation must return CL_DKB_UNSUPPORTED_MODE_PROPERTY.</p>
+</li>
+</ul>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <caption class="title">Table A.I.1. Standard Built-in Kernels and Their Semantics. <strong>The table has been populated with a small set of non-trivial example entries which are subject to change and the list to expand during drafting.</strong></caption>
 <colgroup>
-<col style="width: 12.5%;">
-<col style="width: 37.5%;">
-<col style="width: 25%;">
-<col style="width: 25%;">
+<col style="width: 100%;">
 </colgroup>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top" colspan="4"><p class="tableblock"><strong>General linear algebra</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Name: <strong>khr_matmul</strong></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Name</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Description</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">NDRange Dimensions</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Arguments</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Kernel Attributes</strong></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>khr_blas_gemm_float</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">xGEMM: General matrix multiplication with real single precision floating point numbers as described in Basic Linear Algebra Subprograms. Performs C = alpha * trans(A) * trans(B) + beta*C, where A, B and C are matrices, and alpha and beta scalars. trans() is a configurable transpose operation.</p></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="olist arabic">
-<ol class="arabic" start="1">
-<li>
-<p>The height.</p>
-</li>
-<li>
-<p>The width.</p>
-</li>
-</ol>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="olist arabic">
-<ol class="arabic" start="0">
-<li>
-<p>int: transpose operation (trans) type for matrix A (0 = none, 1 = transpose, 2 = conjugate transpose)</p>
-</li>
-<li>
-<p>int: transpose type for matrix B (0 = none, 1 = transpose, 2 = conjugate transpose)</p>
-</li>
-<li>
-<p>float: scalar (alpha) to multiply the matrix multiplication result elements with</p>
-</li>
-<li>
-<p>float* (input): matrix A</p>
-</li>
-<li>
-<p>int: leading dimension of A (0 = row-major, 1 = column-major)</p>
-</li>
-<li>
-<p>float* (input): matrix B</p>
-</li>
-<li>
-<p>int: leading dimension of B (0 = row-major, 1 = column-major)</p>
-</li>
-<li>
-<p>float: scalar (beta) to multiply the C matrix elements with before adding it to the result</p>
-</li>
-<li>
-<p>float* (input&amp;output): matrix C which is added to the matrix multiplication result, and stores the output</p>
-</li>
-<li>
-<p>int: leading dimension of C (0 = row-major, 1 = column-major)</p>
-</li>
-</ol>
-</div></div></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top" colspan="4"><p class="tableblock">OpenCL C Semantics</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top" colspan="4"><div class="content"><div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">__kernel void __khr_blas_gemm_float(
-   int transA, int transB, float alpha, const global float *A, int ldA,
-   const global float *B, int ldB,
-   float beta, global float *C, int ldC) {
-   // TBD: An example implementation that can be used for verification
-   // and as a fallback SW implementation.
-}</code></pre>
-</div>
-</div></div></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top" colspan="4"><p class="tableblock"><strong>OpenVX Neural Network Extension Compatible Kernels</strong></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Name</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Description</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">NDRange Dimensions</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Arguments</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>khr_openvx_nn_extension_convolution_uchar</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Convolution for 8bit unsigned integer inputs and weights.</p></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="olist arabic">
-<ol class="arabic" start="1">
-<li>
-<p>Batch size.</p>
-</li>
-<li>
-<p>Width.</p>
-</li>
-<li>
-<p>Height.</p>
-</li>
-</ol>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="olist arabic">
-<ol class="arabic" start="0">
-<li>
-<p>uchar* [in]: The input tensor data. 3 lower dimensions represent a single input, all following dimensions represent number of batches, possibly nested. The dimension order is [width, height, #IFM, #batches].</p>
-</li>
-<li>
-<p>uchar* [in]: Weights, as a 4d tensor with dimensions [kernel_x, kernel_y, #IFM, #OFM].</p>
-</li>
-<li>
-<p>uchar* [in]: Biases (optional, ignored if NULL). The biases, which may be shared (one per ofm) or unshared (one per ofm * output location). The possible layouts are either [#OFM] or [width, height, #OFM]. Biases data type must match the data type of the inputs. (Kernel parameter #2)</p>
-</li>
-<li>
-<p>size_t: (dilation_x) “inflate” the kernel by inserting zeros between the kernel elements in the x direction. The value is the number of zeros to insert.</p>
-</li>
-<li>
-<p>size_t: (dilation_y) “inflate” the kernel by inserting zeros between the kernel elements in the y direction. The value is the number of zeros to insert.</p>
-</li>
-<li>
-<p>int: Rounding method for calculating output dimensions.</p>
-</li>
-<li>
-<p>int: A VX_TYPE_ENUM of the vx_convert_policy_e enumeration.</p>
-</li>
-<li>
-<p>size_t: Number of elements padded at each side in the x dimension of the input.</p>
-</li>
-<li>
-<p>size_t: Number of elements padded at each side in the y dimension of the input.</p>
-</li>
-<li>
-<p>int:  A VX_TYPE_ENUM of the vx_round_policy_e enumeration.</p>
-</li>
-<li>
-<p>uchar* [out]: The output tensor data. Output will have the same number and structure of dimensions as input. Output tensor data type must be same as the inputs. (Kernel parameter #4)</p>
-</li>
-</ol>
-</div></div></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top" colspan="4"><p class="tableblock">OpenCL C Semantics</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top" colspan="4"><div class="content"><div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">__kernel void __khr_openvx_nn_extension_convolution_uchar(
-   const uchar *input, const uchar *weights, const uchar *biases,
-   size_t dilation_x, size_t dilation_y,
-   int down_scale_rounding, int overflow_policy, size_t padding_x, size_t padding_y,
-   int rounding_policy, uchar *output) {
-   // TBD.
-}</code></pre>
-</div>
-</div></div></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top" colspan="4"><p class="tableblock"><strong>Direct Input/Output Operations</strong></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top" colspan="4"><p class="tableblock">Kernels for accessing data sources and destinations directly without host involvement.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Name</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Description</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">NDRange Dimensions</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Arguments</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>khr_io_stream_in_uchar</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Non-blocking read of data from a sensor/stream associated with the device.</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>-</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="olist arabic">
-<ol class="arabic" start="0">
+<p>Fields of the <code>cl_dkb_attributes_matmul</code> structure:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
 <li>
-<p>uchar* [out]: The data.</p>
+<p>cl_tensor_desc_t A: Tensor description for input matrix A.</p>
 </li>
 <li>
-<p>size_t* [in+out]: In: number of bytes to read. Out: Number of bytes that could be read (can be 0). (Compatible with the <code>cl_pocl_content_size</code> extension to optimize data transfers with.)</p>
+<p>cl_tensor_desc_t B: Tensor description for input matrix B.</p>
+</li>
+<li>
+<p>cl_tensor_desc_t R: Tensor description for output matrix C.</p>
+</li>
+<li>
+<p>cl_int transposeA: Non-zero transposes A matrix.</p>
+</li>
+<li>
+<p>cl_int transposeB: Non-zero transposes B matrix.</p>
 </li>
 </ol>
 </div></div></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top" colspan="4"><p class="tableblock">OpenCL C Semantics</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Kernel Arguments</strong></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top" colspan="4"><div class="content"><div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">__kernel void __khr_io_stream_in_uchar(
-   uchar *output, size_t *num) {
-   // It is not feasible to describe this kernel in OpenCL C as I/O devices
-   // are not representable with it.
-}</code></pre>
-</div>
-</div></div></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>khr_io_stream_out_uchar</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Non-blocking write of data to an output/sink associated with the device.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">-</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="olist arabic">
-<ol class="arabic" start="0">
+<ol class="arabic">
 <li>
-<p>uchar* [in]: The data to write.</p>
+<p>cl_tensor_t A: Matrix A (read only).</p>
 </li>
 <li>
-<p>size_t* [in+out]: In: Number of bytes to write. Out: Number of bytes that could be written (can be 0).</p>
+<p>cl_tensor_t B: Matrix B (read only).</p>
+</li>
+<li>
+<p>cl_tensor_t R: Output matrix. (write only).</p>
 </li>
 </ol>
 </div></div></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top" colspan="4"><p class="tableblock">OpenCL C Semantics</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Description</strong></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top" colspan="4"><div class="content"><div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">__kernel void __khr_io_stream_out_uchar(
-   uchar *input, size_t *num) {
-   // It is not feasible to describe this kernel in OpenCL C as I/O devices
-   // are not representable with it.
-}</code></pre>
-</div>
-</div></div></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>khr_io_stream_in_blocking_uchar</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Blocking read of data from a sensor/stream associated with the device.</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>-</p>
+<p>Performs (batched) matrix multiplication: <code>R = trans(A) * trans(B)</code>,
+where <code>A</code>, <code>B</code> and <code>R</code> are tensors with at least rank two. The
+<code>trans()</code> is a configurable transpose operation.</p>
+</div>
+<div class="paragraph">
+<p>Last two dimensions of the tensors are treated as operands to the
+matric multiplication and rest of the dimensions are treated as batch
+dimensions.</p>
+</div>
+<div class="paragraph">
+<p>Operations of the matrix muliplication are performed in the precision
+of the <code>elementof(R)</code>.</p>
+</div>
+<div class="paragraph">
+<p>If an overflow occurs in the accumulation of the products, then <code>R</code>
+tensor&#8217;s result will be undefined.</p>
 </div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="olist arabic">
-<ol class="arabic" start="0">
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Attribute validation rules</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
 <li>
-<p>uchar* [out]: The data.</p>
+<p><code>rankof(A) == rankof(B) &gt;= 2</code>.</p>
+</li>
+<li>
+<p>Let <code>shapeof(A<sub>t</sub>) == (b&#8230;&#8203;, m, k)</code> and <code>shapeof(B<sub>t</sub>) = (b&#8230;&#8203;, k,
+n)</code> of tensors <code>A</code> and <code>B</code>, respectively, after possible tranposing.
+<code>shapeof(R)</code> must be <code>(b&#8230;&#8203;, m, n)</code>.</p>
+</li>
+<li>
+<p><code>elementof(A) == elementof(B)</code></p>
+</li>
+<li>
+<p><code>elemkindof(R) == elemkindof(A)</code></p>
+</li>
+<li>
+<p><code>elementof(R) == elementof(A)</code> or <code>elementof(A)</code> is promotable to
+<code>elementof(R)</code> without loss of meaning.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Kernel mode properties</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>This DBK accepts the following properties:</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
-<p>size_t* [in]: How many bytes to read before returning.</p>
+<p>CL_DBK_PROPERTY_MAX_RELATIVE_ERROR: Unset property defaults to positive infinity.</p>
 </li>
 </ul>
-</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Name: <strong>khr_leaky_relu</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Kernel Attributes</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>Fields of the <code>cl_dbk_leaky_relu</code> structure:
+. cl_tensor_desc_t in: Input tensor description.
+. cl_tensor_desc_t out: Output tensor description.
+. cl_float alpha: Coefficient of leakage.</p>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Kernel arguments</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>cl_tensor_t in: The input tensor.</p>
+</li>
+<li>
+<p>cl_tensor_t out: The output tensor.</p>
 </li>
 </ol>
 </div></div></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top" colspan="4"><p class="tableblock">OpenCL C Semantics</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Description</strong></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top" colspan="4"><div class="content"><div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">__kernel void __khr_io_stream_in_blocking_uchar(uchar *output, size_t *num) {
-   while (*num) {
-       size_t num_read = *num;
-       __khr_io_stream_in_uchar(output, &amp;num_read);
-       num -= num_read;
-       output += num_read;
-   }
-}</code></pre>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>Applies operation <code>alpha * x if x &lt; 0 else x</code> on all
+elements of the <code>in</code> tensor.</p>
 </div>
+<div class="paragraph">
+<p>If target device does not support denormals, then <code>alpha</code> is flushed
+to zero before the operation is applied.</p>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Kernel mode properties</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Attribute validation rules</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p><code>shapeof(in) == shapeof(out)</code></p>
+</li>
+<li>
+<p><code>elementof(in) == elementof(out)</code></p>
+</li>
+<li>
+<p><code>alpha</code> must be a finite value.</p>
+</li>
+</ul>
 </div></div></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect3">
-<h4 id="_launching_biks_from_the_device_side">Launching BiKs from the Device Side</h4>
+<h4 id="_launching_dbks_from_the_device_side">Launching DBKs from the Device Side</h4>
 <div class="paragraph">
-<p>BiKs are primarily meant to be launched as kernel commands via host-side command queues.
-Optionally, they can be callable from device-side via
-<code>enqueue_kernel</code>: This capability can be queried on per BiK basis at compile-time in OpenCL C by checking for macro definitions which has the following naming convention: <code>cl_khr_bik_BUILTIN_KERNEL_NAME</code>. In case a BiK macro is defined, a kernel with a naming convention <code>__khr_BUILTIN_KERNEL_NAME()</code> can be enqueued by the program at device side as software-defined kernels.</p>
+<p>DBKs are primarily meant to be launched as kernel commands via
+host-side command queues.  Optionally, they can be callable from
+device-side via <code>enqueue_kernel</code>:</p>
+</div>
+<div class="paragraph">
+<p>TBC. This probably needs device-side function corresponding to
+clCreateDefinedBuiltInKernelDescriptor.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_sample_code">Sample Code</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-c" data-lang="c">// TBD. Similarly in cl_qcom_ml_ops, tensors have type
+// (cl_channel_type) and a number of dimensions (rank) and dimension
+// sizes (shape). Difference over the cl_qcom_ml_ops is that the rank is
+// "unlimited".
+cl_tensor_desc_t lhs_tensor_desc = TBD;
+cl_tensor_desc_t rhs_tensor_desc = TBD;
+cl_tensor_desc_t res_tensor_desc = TBD;
+
+cl_dkb_attributes_matmul matmul_attrs = {
+  lhs_tensor_desc, rhs_tensor_desc, res_tensor_desc,
+  1, 0 // = Transpose lhs tensor
+}
+
+cl_dbk_mode_properties matmul_props = {
+  // Request a matmul instance that meets this precision.
+  CL_DBK_PROPERTY_MAX_RELATIVE_ERROR, 100, // in ULPs.
+}
+
+cl_uint err;
+std::vector&lt;cl_dbk_descriptor&gt; kernel_descriptions;
+cl_dbk_descriptor matmul_desc =
+  clCreateDefinedBuiltInKernelDescriptor(
+  context, num_devices, device_list,
+  CL_DBK_MATMUL, &amp;matmul_attrs, &amp;matmul_props, &amp;err);
+
+} else if (err == CL_DBK_UNAVAILABLE) {
+  // Kernel attributes are valid but the kernel is not supported in at least
+  // one of the devices.
+} else if (err == CL_DBK_UNMET_MAX_RELATIVE_ERROR) {
+  // E.g. Kernel is supported but is not precise enough.
+} else if (err == CL_DBK_UNSUPPORTED_MODE_PROPERTY) {
+  // cl_dbk_mode_properties has a property not listed in the description of the
+  // defined built-in kernel.
+} else
+  kernel_descriptions.push_back(matmul_desc);
+
+...
+
+cl_program dbk_lib = clCreateProgramWithDefinedBuiltInKernels(
+  context, kernel_descriptions.size(), kernel_descriptors.data(), err);
+
+...
+
+cl_kernel matmul_kernel = clCreateDefinedBuiltinKernel(
+  dkb_lib, matmul_desc, err);
+
+// TBD: allocate space for tensors. Perhaps like cl_qcom_ml_ops: query
+// tensor sizes after the final program has been created or after
+// command buffer (with DBKs within) is finalized. Implementation
+// determines the optimal data layout (opaque to the application) for
+// the tensors based on their usage.  Application uses the tensor
+// sizes to create cl_mem buffers which are bound to the tensors.
+cl_tensor_t lhs_tensor = TBD;
+cl_tensor_t rhs_tensor = TBD;
+cl_tensor_t res_tensor = TBD;
+
+// Transfer data to input tensors
+
+clSetKernelArg(matmul_kernel, 0, sizeof(cl_tensor_t), &amp;lhs_tensor);
+clSetKernelArg(matmul_kernel, 1, sizeof(cl_tensor_t), &amp;rhs_tensor);
+clSetKernelArg(matmul_kernel, 2, sizeof(cl_tensor_t), &amp;res_tensor);
+
+clEnqueueNDRangeKernel(cmd_q, matmul_kernel, 0, NULL, NULL, NULL, 0, NULL, NULL);</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -922,7 +1196,7 @@ Optionally, they can be callable from device-side via
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Should we enable launching BiKs from the device side without requiring device-side enqueue? The main problem is those with NDRange as they are not simple single-WI helper functions.</p>
+<p>Should we enable launching DBKs from the device side without requiring device-side enqueue? The main problem is those with NDRange as they are not simple single-WI helper functions.</p>
 <div class="openblock">
 <div class="content">
 <div class="paragraph">
@@ -932,7 +1206,7 @@ Optionally, they can be callable from device-side via
 </div>
 </li>
 <li>
-<p>Should the NDRange be used at all in BiKs? It feels sort of unnatural as typically the NDRange is used to imply SPMD parallelism while the hardware/firmware is free to choose whatever parallelism degree to implement the function. On the other hand, similar applies to software kernel launches as the work-items can be executed serially if adhering to barrier semantics.</p>
+<p>Should the NDRange be used at all in DBKs? It feels sort of unnatural as typically the NDRange is used to imply SPMD parallelism while the hardware/firmware is free to choose whatever parallelization strategy to implement the function. On the other hand, similar applies to software kernel launches as the NDRange-launched work-items can be executed serially if adhering to barrier semantics.</p>
 <div class="openblock">
 <div class="content">
 <div class="paragraph">
@@ -942,7 +1216,7 @@ Optionally, they can be callable from device-side via
 </div>
 </li>
 <li>
-<p>Different accelerators prefer different channel orders (NHWC vs. NCHW&#8230;&#8203;) for the processed data. Should the channel order be passed as a BiK argument (like in the example GEMM&#8217;s row/column order) or is it better to have different BiK variations for each?</p>
+<p>Different accelerators prefer different channel orders (NHWC vs. NCHW&#8230;&#8203;) for the processed data. Should the channel order be passed as a DBK argument (like in the example GEMM&#8217;s row/column order) or is it better to have different DBK variations for each?</p>
 <div class="openblock">
 <div class="content">
 <div class="paragraph">
@@ -952,7 +1226,7 @@ Optionally, they can be callable from device-side via
 </div>
 </li>
 <li>
-<p>How to denote preference? Some of the BiKs are more efficient on a given device as they map more naturally to the underlying HW accelerator, but the slower variations (for example, with unoptimal channel order in NN accelerators) might be still beneficially accelerated.</p>
+<p>How to denote preference? Some of the DBKs are more efficient on a given device as they map more naturally to the underlying HW accelerator, but the slower variations (for example, with unoptimal channel order in NN accelerators) might be still beneficially accelerated.</p>
 <div class="openblock">
 <div class="content">
 <div class="paragraph">
@@ -971,7 +1245,33 @@ Optionally, they can be callable from device-side via
 </div>
 </div>
 </li>
+<li>
+<p>What other DBK mode properties we should have? Here are some ideas:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Perform accumulation with saturation.</p>
+</li>
+<li>
+<p>Finite math only</p>
+</li>
+<li>
+<p>Flush denormals to zero.</p>
+</li>
+<li>
+<p>data layout preferences (NHWC for convolution).</p>
+</li>
+</ul>
+</div>
+</li>
 </ol>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="paragraph">
+<p><strong>UNRESOLVED</strong></p>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -979,7 +1279,7 @@ Optionally, they can be callable from device-side via
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-10-11 14:38:56 +0300
+Last updated 2023-10-23 15:08:14 +0300
 </div>
 </div>
 </body>
