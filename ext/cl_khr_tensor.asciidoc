@@ -1,0 +1,547 @@
+// Copyright 2023 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+= cl_khr_tensor
+
+:source-highlighter: coreray
+
+[[cl_khr_tensor]]
+== Tensor Data Type
+
+Purpose of this extension is to provide ...
+
+=== General information
+
+==== Name Strings
+
+`cl_khr_tensor`
+
+==== Version history
+
+[cols="1,1,3",options="header",]
+|====
+| *Date*     | *Version* | *Description*
+| 2023-10-XX | 0.1.0     | First assigned version.
+|====
+
+==== Dependencies
+
+This extension is written against the OpenCL Specification version 3.0.14.
+
+This extension requires OpenCL 1.2 or later.
+
+This extension requires cl_khr_command_buffer.
+
+==== Contributors
+
+Henry Linjamäki, Intel. +
+
+=== Overview
+
+
+=== Modifications to OpenCL
+
+==== New OpenCL Functions
+
+To create a tensor use:
+
+[source,c]
+----
+cl_tensor clCreateTensor(
+    cl_context context,
+    const cl_tensor_peoperties *properties,
+    size_t rank,
+    size_t shape,
+    cl_tensor_type dtype,
+    cl_int *errcode_ret);
+----
+
+* _context_ is a valid OpenCL context used to create the tensor object.
+
+* _properties_ is an optional list of properties for the tensor object
+  and their corresponding values. The list is terminated with the
+  special property 0. If no properties are required, properties may be
+  NULL.
+
+* _rank_ is the number of dimensions. Zero value creates a "scalar"
+  tensor which has no dimensions but has storage for one element.
+
+* _shape_ is a list of sizes of the dimensions. The length of the list
+  must be _rank_ elements. _shape_ can be NULL if _rank_ value is
+  zero. All the first _rank_ values in the list must be non-zero.
+
+* _dtype_ is the element type of _tensor_. Refer to the
+  <<TensorDtypes>> table for the types.
+
+* _errcode_ret_ may return an appropriate error code. If errcode_ret
+  is NULL, no error code is returned.
+
+clCreateTensor function creates a `rank`-dimensional tensor with
+`shape[0] * shape[1] * ... * shape[rank-1]` elements of _dtype_
+type. At the creation time of the tensor, it does not have
+storage. The storage is assigned to the tensor either by:
+
+* calling clCreateBufferWithProperties() with CL_MEM_BIND_TO_TENSOR or
+
+* automatically by command buffers - possibly on-demand basis - if the
+  tensor is created with CL_TENSOR_COMMAND_BUFFER_TEMPORARY property
+  set on.
+
+A command that refers to a tensor must be bound to a valid buffer
+object before enqueuing the command into a command queue unless the
+command is recorded in a command buffer and
+CL_TENSOR_COMMAND_BUFFER_TEMPORARY is set to true.
+
+*clCreateTensor* returns a valid non-zero tensor object and errcode_ret
+is set to CL_SUCCESS if the tensor object is created
+successfully. Otherwise, they return a NULL value with one of the
+following error values returned in errcode_ret:
+
+* CL_INVALID_CONTEXT if context is not a valid context.
+
+* CL_INVALID_PROPERTY if a property name in properties is not a
+  supported property name, if the value specified for a supported
+  property name is not valid, or if the same property name is
+  specified more than once.
+
+* CL_INVALID_VALUE if a value specified in dtype is invalid.
+
+* CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+  required by the OpenCL implementation on the host.
+
+.Tensor element types
+[cols="1,2",stripes=odd]
+[#TensorDtypes]
+|===
+| *Tensor element data type* | *Description*
+
+| CL_TENSOR_BOOL       | 1-bit signedless integer.
+| CL_TENSOR_INT8       | 8-bit signed integer.
+| CL_TENSOR_INT16      | 16-bit signed integer.
+| CL_TENSOR_INT32      | 32-bit signed integer.
+| CL_TENSOR_INT64      | 64-bit signed integer.
+| CL_TENSOR_UINT8      | 8-bit signed integer.
+| CL_TENSOR_UINT16     | 16-bit signed integer.
+| CL_TENSOR_UINT32     | 32-bit signed integer.
+| CL_TENSOR_UINT64     | 64-bit signed integer.
+| CL_TENSOR_HALF       | Half precision floating-point value.
+| CL_TENSOR_BFLOAT16   | 16-bit brain floating-point value.
+| CL_TENSOR_FLOAT      | Single precision floating-point value.
+| CL_TENSOR_DOUBLE     | Double precision floating-point value.
+| CL_TENSOR_COMPLEX64  | 64-bit complex floating point value with
+  32-bit real and imaginary part.
+| CL_TENSOR_COMPLEX128 | 128-bit complex floating point value with
+  64-bit real and imaginary part.
+|===
+
+.Tensor properties
+[cols="2,1,2",stripes=odd]
+|===
+| *Tensor Property* | *Property Value* | *Description*
+
+| CL_TENSOR_COMMAND_BUFFER_TEMPORARY | cl_bool
+
+a| If the value is true, create a "temporary" tensor that only can be
+used on commands recorded in command buffers. The storage of the
+temporary tensors are managed by command buffers. When a temporary
+tensor is used by multiple command buffer, the tensor receive separate
+storage for each command buffer.
+
+// IOW, Data may not be exchanged between command buffers through
+// temporary tensors.
+
+Temporary tensors may not be bound to buffer objects.
+
+Data stored in temporary tensors are not preserved across command
+buffer executions.
+|===
+
+To retain a tensor object, call the function
+
+[source,c]
+----
+cl_int clRetainTensorObject(
+  cl_tensor tensor);
+----
+
+* _tensor_ is the tensor object to be retained.
+
+The _tensor_ reference count is incremented.
+
+*clRetainTensor* returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:
+
+* CL_INVALID_TENSOR if tensor is not a valid tensor object.
+
+To release a tensor object, call the function
+
+[source,c]
+----
+cl_int clReleaseTensorObject(
+  cl_tensor tensor);
+----
+
+* _tensor_ is the tensor object to be released.
+
+The _tensor_ reference count is decremented.
+
+The tensor object is deleted once the number of instances that are
+retained to tensor become zero and the tensor object is no longer
+needed by any enqueued or recorded commands that use _tensor_. Using
+this function to release a reference that was not obtained by creating
+the object or by calling *clRetainTensor* causes undefined behavior.
+
+*clReleaseTensor* returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:
+
+* CL_INVALID_TENSOR if tensor is not a valid tensor object.
+
+// TODO: add clSetTensorObjectDestructorCallback?
+
+To return information about a tensor object, call the function
+
+[source,c]
+----
+cl_int clGetTensorInfo(
+  cl_tensor tensor,
+  cl_tensor_info param_name,
+  size_t param_value_size,
+  void* param_value,
+  size_t* param_value_size_ret);
+----
+
+* _tensor_ specifies the tensor object being queried.
+
+* _param_name_ specifies the information to query. The list of
+  supported param_name types and the information returned in
+  _param_value_ by clGetTensorInfo is described in the <<Tensor Object
+  Queries>> table.
+
+* _param_value_ is a pointer to memory where the appropriate result
+  being queried is returned. If _param_value_ is NULL, it is ignored.
+
+* _param_value_size_ is used to specify the size in bytes of memory
+  pointed to by _param_value_. This size must be ≥ size of return type
+  as described in the <<Tensor Object Queries>> table.
+
+* _param_value_size_ret_ returns the actual size in bytes of data
+  being queried by _param_name_. If _param_value_size_ret_ is NULL, it is
+  ignored.
+
+*clGetTensorInfo* returns CL_SUCCESS if the function is executed
+ succesfully. Otherwise, it returns one of the following errors:
+
+* CL_INVALID_TENSOR if _tensor_ is not a valid tensor object.
+
+[#Tensor Object Quaries]
+.List of supported param_names by clGetTensorInfo
+[cols="2,1,2",stripes=odd]
+|===
+| CL_TENSOR_RANK  | size_t         | Return the tensor rank.
+| CL_TENSOR_SHAPE | size_t[]       | Return the tensor shape.
+| CL_TENSOR_DTYPE | cl_tensor_type | Return the tensor data type.
+
+| CL_TENSOR_COMMAND_BUFFER_TEMPORARY | cl_bool | Return true if the
+tensor is temporary tensor for command buffers.
+
+| CL_TENSOR_BOUND_TO_BUFFER | cl_bool | Return true if the tensor is
+bound to a buffer. If CL_TENSOR_COMMAND_BUFFER_TEMPORARY is true, then
+CL_TENSOR_BOUND_TO_BUFFER must return false.
+
+| CL_TENSOR_BUFFER | cl_mem a| If CL_TENSOR_BOUND_TO_BUFFER is true,
+return the buffer object the tensor is bound to. Otherwise,
+clGetTensorInfo call returns:
+
+* CL_INVALID_MEM_OBJECT if the tensor is not bound to a buffer object.
+
+* CL_INVALID_PROPERTY otherwise.
+
+| CL_TENSOR_CONTEXT | cl_context | Return the context specified when
+  the tensor object is created.
+
+| CL_TENSOR_REFERENCE_COUNT | cl_uint | Return the tensor reference
+count.
+|===
+
+To read from a tensor to host memory / buffer object or to write to a
+tensor object from host memory / buffer object call one of the functions.
+
+[source,c]
+----
+cl_int clEnqueueReadTensor(
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  cl_bool blocking_command,
+  cl_mem buffer,
+  void* host_ptr,
+  cl_uint num_events_in_wait_list,
+  const cl_event* event_wait_list,
+  cl_event* event);
+----
+
+[source,c]
+----
+cl_int clEnqueueWriteTensor(
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  cl_bool blocking_command,
+  cl_mem buffer,
+  void* host_ptr,
+  cl_uint num_events_in_wait_list,
+  const cl_event* event_wait_list,
+  cl_event* event);
+----
+
+* _command_queue_ is a valid host command-queue in which the read /
+  write command will be queued. _command_queue_ and _tensor_ must be
+  created with the same OpenCL context.
+
+* _tensor_ refers to a valid tensor object which is bound to a buffer.
+
+* _blocking_command_ indicate if the read and write operations are
+  blocking or non-blocking (see below).
+
+* _buffer_ refers to a valid buffer object where data is to be
+  read into or to be written from when the value of _host_ptr_ is
+  NULL. If _host_ptr_ is non-NULL then value of _buffer_ is ignored.
+
+* _host_ptr_ is the pointer to buffer in host memory where data is to
+  be read into or to be written from when the value is non-NULL.
+
+* _event_wait_list_ and _num_events_in_wait_list_ specify events that
+  need to complete before this particular command can be executed. If
+  _event_wait_list_ is NULL, then this particular command does not
+  wait on any event to complete. If _event_wait_list_ is NULL,
+  _num_events_in_wait_list_ must be 0. If _event_wait_list_ is not
+  NULL, the list of events pointed to by _event_wait_list_ must be
+  valid and _num_events_in_wait_list_ must be greater than 0. The
+  events specified in _event_wait_list_ act as synchronization
+  points. The context associated with events in _event_wait_list_ and
+  _command_queue_ must be the same. The memory associated with
+  _event_wait_list_ can be reused or freed after the function returns.
+
+* _event_ returns an event object that identifies this read / write
+  command and can be used to query or queue a wait for this command to
+  complete. If _event_ is NULL or the enqueue is unsuccessful, no
+  event will be created and therefore it will not be possible to query
+  the status of this command or to wait for this command to
+  complete. If _event_wait_list_ and _event_ are not NULL, _event_
+  must not refer to an element of the _event_wait_list_ array.
+
+For a read and write operation, the elements of N-dimensional tensor are
+related to host memory / buffer object as followed:
+
+----
+tensor.element(i0, i1, ..., i<N-2>, i<N-1>)) == (tensor.dtype)buffer_or_host_ptr[
+  i0 * tensor.shape[1] * tensor.shape[2] * ... * tensor.shape[N-1] +
+  i1 * tensor.shape[2] * tensor.shape[3] * ... * tensor.shape[N-1] +
+  ... +
+  i<N-2> * tensor.shape[i(N-1)] +
+  i<N-1>]
+----
+
+Where `iX` is a tensor coordinate index with inclusive range of `0..<shape[X]>`.
+
+// TODO: add clEnqueueCopyTensor
+
+// TODO: add clEnqueueFillTensor?
+
+// TODO: add command buffer variants for clEnqueue{copy,read,write}Tensor.
+
+
+==== Add New Buffer Property in Section 5.2.1
+
+[cols="2,1,2",stripes=odd]
+|===
+| CL_MEM_BIND_TO_TENSOR | cl_tensor a| Use the created buffer as
+storage for the given valid tensor. To succeed creating the buffer,
+the target tensor may not have storage already, must not have
+CL_TENSOR_COMMAND_BUFFER_TEMPORARY property set on and _size_ argument
+of the clCreateBufferWithProperties() must be zero.
+
+Size of the memory buffer is implementation-defined and it can be
+queried with clGetTensorInfo().
+
+Memory layout of the tensor in the created memory buffer is
+implementation-defined and opaque to the applications and it may
+change at unspecified points. Implementation may store auxiliary data
+in the memory buffer for the tensor. Therefore, writing data into the
+memory buffer directly using the cl_mem handle leads to undefined
+behavior.
+
+If the tensor is already bound to a buffer object,
+clCreateBufferWithProperties call returns CL_TENSOR_BOUND_TO_BUFFER
+error code.
+|===
+
+=== Sample Codes
+
+Helper functions used in the follow up tensor code samples:
+
+[source,c]
+----
+cl_kernel create_matmul_kernel(
+  cl_context ctx, std::span<cl_device_id> device_span,
+  cl_tensor lhs, cl_tensor rhs, cl_tensor out) {
+  // A hypothetical matmul kernel signature in pseudo OpenCL C for
+  // illustrative purposes:
+  //
+  //   kernel void matmul(
+  //     global read_only tensor_t,
+  //     global read_only tensor_t,
+  //     global write_only tensor_t);
+
+  cl_kernel matmul_kernel = /* Omitted. */;
+  clSetKernelArg(matmul_kernel, 0, sizeof(cl_tensor), &lhs);
+  clSetKernelArg(matmul_kernel, 1, sizeof(cl_tensor), &rhs);
+  clSetKernelArg(matmul_kernel, 2, sizeof(cl_tensor), &out);
+  return matmul_kernel;
+}
+
+cl_kernel create_matmul_kernel(
+  cl_context ctx, std::span<cl_device_id> device_span,
+  cl_tensor lhs, cl_tensor rhs, cl_tensor out) {
+  // A hypothetical add kernel signature in pseudo OpenCL C for illustrative
+  // purposes:
+  //
+  // kernel void add(
+  //     global read_only tensor_t,
+  //     global read_only tensor_t,
+  //     global write_only tensor_t);
+
+  cl_tensor add_kernel = /* Omitted. */;
+  clSetKernelArg(add_kernel, 0, sizeof(cl_tensor), &lhs);
+  clSetKernelArg(add_kernel, 1, sizeof(cl_tensor), &rhs);
+  clSetKernelArg(add_kernel, 2, sizeof(cl_tensor), &out);
+  return add_kernel;
+}
+----
+An example usage of tensors on a command queue:
+
+[source,c]
+----
+constexpr size_t b = 64, m = 100, n = 200, k = 50;
+
+cl_tensor in0 = clCreateTensor(ctx, nullptr, 3, {b, m, k}, CL_TENSOR_FLOAT, err);
+cl_tensor in1 = clCreateTensor(ctx, nullptr, 3, {b, k, n}, CL_TENSOR_FLOAT, err);
+cl_tensor in2 = clCreateTensor(ctx, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err);
+cl_tensor t0  = clCreateTensor(ctx, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err);
+cl_tensor out = clCreateTensor(ctx, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err);
+
+cl_kernel matmul_kernel = create_matmul_kernel(ctx, device_span, in0, in1, t0);
+cl_kernel add_kernel = create_add_kernel(ctx, device_span, t0, in2, out);
+
+// Allocate storage for the tensors. The buffer size must be set to zero
+// when the buffer is bound to a tensor. OpenCL implementation may
+// determine optimal data layout and the storage needed for it, based
+// on the tensor's uses (matmul kernel in this sample) so far.
+cl_int err;
+cl_mem in0_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_BIND_TO_TENSOR, in0, 0}, CL_MEM_READ_ONLY,
+  0 /* must be zero for CL_MEM_BIND_TO_TENSOR. */, nullptr, &err);
+cl_mem in1_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_BIND_TO_TENSOR, in1, 0}, CL_MEM_READ_ONLY,
+  0, nullptr, &err);
+cl_mem in2_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_BIND_TO_TENSOR, in2, 0}, CL_MEM_READ_ONLY,
+  0, nullptr, &err);
+cl_mem t0_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_BIND_TO_TENSOR, t0, 0}, CL_MEM_READ_WRITE,
+  0, nullptr, &err);
+cl_mem out_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_BIND_TO_TENSOR, out, 0}, CL_MEM_WRITE_ONLY,
+  0, nullptr, &err);
+
+std::vector<float> in0_data = ...;
+std::vector<float> in1_data = ...;
+std::vector<float> out_data(b * m * n);
+
+// Copies data into in0 tensor while possibly rearranging the data to the
+// optimal data layout.
+clEnqueueWriteTensor(
+  cmd_q, in0, false, nullptr, nullptr, {b, m, k}, nullptr, in0_data.data(),
+  0, nullptr, nullptr);
+
+clEnqueueWriteTensor(
+  cmd_q, in1, false, nullptr, nullptr, {b, k, n}, nullptr, in1_data.data(),
+  0, nullptr, nullptr);
+clEnqueueNDRangeKernel(
+  cmd_q, matmul_kernel, 0, nullptr, nullptr, nullptr, 0, nullptr, nullptr);
+clEnqueueNDRangeKernel(
+  cmd_q, add_kernel, 0, nullptr, nullptr, nullptr, 0, nullptr, nullptr);
+clEnqueueReadTensor(
+  cmd_q, out, false, nullptr, nullptr, {b, m, n}, nullptr, out_data.data(),
+  0, nullptr, nullptr);
+----
+
+An example use of tensors in a command buffer when cl_khr_command_buffer
+extension is supported:
+
+[source,c]
+----
+constexpr size_t b = 64, m = 100, n = 200, k = 50;
+
+cl_int err;
+// Create tensors which are used as temporaries in a command buffer.
+// Command buffers allocate space for them as needed.
+//
+// NOTE: same temporary tensor handle used in multiple command buffers
+//       will have separate storage. IOW, command buffers may not exchange
+//       data via temporary buffers between them.
+cl_tensor in0 = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
+  3, {b, m, k}, CL_TENSOR_FLOAT, err);
+cl_tensor in1 = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
+  3, {b, k, n}, CL_TENSOR_FLOAT, err);
+cl_tensor in2 = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
+  3, {b, m, n}, CL_TENSOR_FLOAT, err);
+cl_tensor t0  = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
+  3, {b, m, n}, CL_TENSOR_FLOAT, err);
+cl_tensor out = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
+  3, {b, m, n}, CL_TENSOR_FLOAT, err);
+
+cl_kernel matmul_kernel = create_matmul_kernel(ctx, device_span, in0, in1, t0);
+cl_kernel add_kernel = create_add_kernel(ctx, device_span, t0, in2, out);
+
+// Binding a buffer to temporary tensor is not allowed.
+auto ignored = clCreateBufferWithProperties(
+  ctx, {CL_MEM_BIND_TO_TENSOR, t0, 0}, CL_MEM_READ_WRITE, 0, nullptr, &err);
+assert(err == CL_TENSOR_IS_TEMPORARY)
+
+std::vector<float> in0_data = ...;
+std::vector<float> in1_data = ...;
+std::vector<float> out_data(b * m * n);
+
+cl_command_buffer_khr cb =
+  clCreateCommandBufferKHR(num_queues, queue_list, nullptr, &err);
+
+cl_sync_point_khr in0_syncp, in1_syncp, matmul_syncp, add_syncp;
+clCommandWriteTensorKHR(
+  cmd_b, cmd_q, in0, false, nullptr, nullptr, {b, m, k}, nullptr,
+  in0_data.data(), 0, nullptr, &in0_syncp);
+clCommandWriteTensorKHR(
+  cmd_b, cmd_q, in1, false, nullptr, nullptr, {b, k, m}, nullptr,
+  in1_data.data(), 0, nullptr, &in1_syncp);
+clCommandNDRangeKernelKHR(
+  cmd_b, cmd_q, nullptr, matmul_kernel, 0, nullptr, nullptr, nullptr,
+  2, {in0_syncp, in2_syncp}, &matmul_syncp, nullptr);
+clCommandNDRangeKernelKHR(
+  cmd_b, cmd_q, nullptr, add_kernel, 0, nullptr, nullptr, nullptr,
+  1, {matmul_syncp}, &add_syncp, nullptr);
+clCommandReadTensorKHR(
+  cmd_b, cmd_q, out,  false, nullptr, nullptr, {b, k, m}, nullptr,
+  out_data.data(), 1, {add_syncp}, nullptr);
+
+// Finalize the command buffer. At this point the OpenCL
+// implementation may reserve enough storage for all the tensor
+// temporaries. Temporary tensors might be eliminated - for example,
+// OpenCL implementation could use 'out' tensor to store result of
+// matmul_kernel , thus, eliminating the need of 't0' tensor.
+clFinalizeCommandBufferKHR(cmd_b);
+
+// Temporary tensors used in a command buffer can't be read or written
+// into. A hypothetical reason is that the finalized command buffer
+// might not use some of the tensor.
+assert(clEnqueueReadTensor(..., t0, ...) == CL_INVALID_OPERATION);
+----
+
+=== Open Questions ===
