@@ -474,7 +474,9 @@ include::{generated}/api/version-notes/clCreateBufferWithProperties.asciidoc[]
   * _properties_ is an optional list of properties for the buffer object and their corresponding values.
     The list is terminated with the special property `0`.
     If no properties are required, _properties_ may be `NULL`.
-    OpenCL 3.0 does not define any optional properties for buffers.
+    OpenCL 3.0 does not define any optional properties for buffers,
+    but extensions may define properties as described in the
+    <<external-buffer-memory-properties-table>>.
   * _flags_ is a bit-field that is used to specify allocation and usage
     information about the image memory object being created and is described in
     the <<memory-flags-table, supported memory flag values>> table.
@@ -506,6 +508,37 @@ Locations in the buffers underlying shared memory can be operated on using
 atomic operations to the devices level of support as defined in the memory
 model.
 
+[[external-buffer-memory-properties-table]]
+.List of supported buffer creation properties
+[width="100%",cols="<33%,<17%,<50%",options="header"]
+|====
+| Property | Property Value | Description
+ifdef::cl_khr_external_memory[]
+| {CL_MEM_DEVICE_HANDLE_LIST_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_DEVICE_HANDLE_LIST_KHR.asciidoc[]
+  | {cl_device_id_TYPE}[]
+      | Specifies the list of OpenCL devices (terminated with
+        {CL_MEM_DEVICE_HANDLE_LIST_END_KHR}) to associate with the external
+        memory handle.
+endif::cl_khr_external_memory[]
+|====
+
+ifdef::cl_khr_external_memory[]
+If {CL_MEM_DEVICE_HANDLE_LIST_KHR} is not specified as part of _properties_,
+the memory object created by {clCreateBufferWithProperties} or
+{clCreateImageWithProperties} is by default accessible to all devices in the
+_context_.
+
+The properties used to create a buffer from an external memory handle are
+<<external-memory-handle-types, described for the corresponding
+extensions>>.
+When a buffer is created from an external memory handle, the
+_flags_ used to specify usage information for the buffer must not
+include {CL_MEM_USE_HOST_PTR}, {CL_MEM_ALLOC_HOST_PTR}, or
+{CL_MEM_COPY_HOST_PTR}, and the _host_ptr_ argument must be `NULL`.
+endif::cl_khr_external_memory[]
+
 // refError
 
 {clCreateBuffer} and {clCreateBufferWithProperties} returns a valid non-zero
@@ -534,6 +567,26 @@ returned in _errcode_ret_:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_khr_external_memory[]
+  * {CL_INVALID_DEVICE}
+  ** if a device identified by the property {CL_MEM_DEVICE_HANDLE_LIST_KHR}
+     is not a valid device or is not associated with _context_, or
+  ** if a device identified by property {CL_MEM_DEVICE_HANDLE_LIST_KHR}
+     cannot import the requested external memory object type, or
+  ** if {CL_MEM_DEVICE_HANDLE_LIST_KHR} is not specified as part of
+     _properties_ and one or more devices in _context_ cannot import the
+     requested external memory object type.
+  * {CL_INVALID_VALUE}
+  ** if _properties_ includes a supported external memory handle and _flags_
+     includes {CL_MEM_USE_HOST_PTR}, {CL_MEM_ALLOC_HOST_PTR}, or
+     {CL_MEM_COPY_HOST_PTR}.
+  * {CL_INVALID_HOST_PTR}
+  ** if _properties_ includes a supported external memory handle and
+     _host_ptr_ is not `NULL`.
+  * {CL_INVALID_PROPERTY}
+  ** if _properties_ does not include a supported external memory handle and
+     {CL_MEM_DEVICE_HANDLE_LIST_KHR} is specified as part of _properties_.
+endif::cl_khr_external_memory[]
 
 [[memory-flags-table]]
 .List of supported memory flag values
@@ -1606,7 +1659,9 @@ include::{generated}/api/version-notes/clCreateImageWithProperties.asciidoc[]
   * _properties_ is an optional list of properties for the image object and their corresponding values.
     The list is terminated with the special property `0`.
     If no properties are required, _properties_ may be `NULL`.
-    OpenCL 3.0 does not define any optional properties for images.
+    OpenCL 3.0 does not define any optional properties for images,
+    but extensions may define properties as described in the
+    <<external-image-memory-properties-table>>.
   * _flags_ is a bit-field that is used to specify allocation and usage
     information about the image memory object being created and is described in
     the <<memory-flags-table, supported memory flag values>> table.
@@ -1672,6 +1727,42 @@ stored as a single scanline which is a linear sequence of adjacent elements.
 Image elements are stored according to their image format as described in the
 <<image-format-descriptor, Image Format Descriptor>> section.
 
+[[external-image-memory-properties-table]]
+.List of supported image creation properties
+[width="100%",cols="<33%,<17%,<50%",options="header"]
+|====
+| Property | Property Value | Description
+ifdef::cl_khr_external_memory[]
+| {CL_MEM_DEVICE_HANDLE_LIST_KHR}
+
+include::{generated}/api/version-notes/CL_MEM_DEVICE_HANDLE_LIST_KHR.asciidoc[]
+  | {cl_device_id_TYPE}[]
+      | Specifies the list of OpenCL devices (terminated with
+        {CL_MEM_DEVICE_HANDLE_LIST_END_KHR}) to associate with the external
+        memory handle.
+endif::cl_khr_external_memory[]
+|====
+
+ifdef::cl_khr_external_memory[]
+If {CL_MEM_DEVICE_HANDLE_LIST_KHR} is not specified as part of _properties_,
+the memory object created by {clCreateBufferWithProperties} or
+{clCreateImageWithProperties} is by default accessible to all devices in the
+_context_.
+
+The properties used to create an image from an external memory handle are
+<<external-memory-handle-types, described for the corresponding
+extensions>>.
+When an image is created from an external memory handle, the
+_flags_ used to specify usage information for the image must not
+include {CL_MEM_USE_HOST_PTR}, {CL_MEM_ALLOC_HOST_PTR}, or
+{CL_MEM_COPY_HOST_PTR}, and the _host_ptr_ argument must be `NULL`.
+When images are created from an external memory handle, implementations may
+acquire information about image attributes such as format and layout at the
+time of creation.
+When such information is acquired at image creation time, it is used for the
+lifetime of the image object.
+endif::cl_khr_external_memory[]
+
 // refError
 
 {clCreateImage} and {clCreateImageWithProperties} returns a valid non-zero
@@ -1727,6 +1818,26 @@ returned in _errcode_ret_:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_khr_external_memory[]
+  * {CL_INVALID_DEVICE}
+  ** if a device identified by the property {CL_MEM_DEVICE_HANDLE_LIST_KHR}
+     is not a valid device or is not associated with _context_, or
+  ** if a device identified by property {CL_MEM_DEVICE_HANDLE_LIST_KHR}
+     cannot import the requested external memory object type, or
+  ** if {CL_MEM_DEVICE_HANDLE_LIST_KHR} is not specified as part of
+     _properties_ and one or more devices in _context_ cannot import the
+     requested external memory object type.
+  * {CL_INVALID_VALUE}
+  ** if _properties_ includes a supported external memory handle and _flags_
+     includes {CL_MEM_USE_HOST_PTR}, {CL_MEM_ALLOC_HOST_PTR}, or
+     {CL_MEM_COPY_HOST_PTR}.
+  * {CL_INVALID_HOST_PTR}
+  ** if _properties_ includes a supported external memory handle and
+     _host_ptr_ is not `NULL`.
+  * {CL_INVALID_PROPERTY}
+  ** if _properties_ does not include a supported external memory handle and
+     {CL_MEM_DEVICE_HANDLE_LIST_KHR} is specified as part of _properties_.
+endif::cl_khr_external_memory[]
 
 [[host-ptr-buffer-size-table]]
 .Required _host_ptr_ buffer sizes for images
@@ -1931,11 +2042,11 @@ format, and is defined as:
 
 include::{generated}/api/structs/cl_image_format.txt[]
 
-  * `image_channel_order` specifies the number of channels and the channel
+  * _image_channel_order_ specifies the number of channels and the channel
     layout i.e. the memory layout in which channels are stored in the image.
     Valid values are described in the <<image-channel-order-table,Image Channel
     Order>> table.
-  * `image_channel_data_type` describes the size of the channel data type.
+  * _image_channel_data_type_ describes the size of the channel data type.
     The list of supported values is described in the
     <<image-channel-data-types-table,Image Channel Data Types>> table.
     The number of bits per element determined by the `image_channel_data_type`
@@ -2158,11 +2269,11 @@ and dimensions of an image or image array when creating an image using
 
 include::{generated}/api/structs/cl_image_desc.txt[]
 
-  * `image_type` describes the image type and must be either
+  * _image_type_ describes the image type and must be either
     {CL_MEM_OBJECT_IMAGE1D}, {CL_MEM_OBJECT_IMAGE1D_BUFFER},
     {CL_MEM_OBJECT_IMAGE1D_ARRAY}, {CL_MEM_OBJECT_IMAGE2D},
     {CL_MEM_OBJECT_IMAGE2D_ARRAY}, or {CL_MEM_OBJECT_IMAGE3D}.
-  * `image_width` is the width of the image in pixels.
+  * _image_width_ is the width of the image in pixels.
     For a 2D image and image array, the image width must be a value {geq} 1 and
     {leq} {CL_DEVICE_IMAGE2D_MAX_WIDTH}.
     For a 3D image, the image width must be a value {geq} 1 and {leq}
@@ -2171,44 +2282,59 @@ include::{generated}/api/structs/cl_image_desc.txt[]
     {CL_DEVICE_IMAGE_MAX_BUFFER_SIZE}.
     For a 1D image and 1D image array, the image width must be a value {geq} 1
     and {leq} {CL_DEVICE_IMAGE2D_MAX_WIDTH}.
-  * `image_height` is the height of the image in pixels.
+  * _image_height_ is the height of the image in pixels.
     This is only used if the image is a 2D or 3D image, or a 2D image array.
     For a 2D image or image array, the image height must be a value {geq} 1 and
     {leq} {CL_DEVICE_IMAGE2D_MAX_HEIGHT}.
     For a 3D image, the image height must be a value {geq} 1 and {leq}
     {CL_DEVICE_IMAGE3D_MAX_HEIGHT}.
-  * `image_depth` is the depth of the image in pixels.
+  * _image_depth_ is the depth of the image in pixels.
     This is only used if the image is a 3D image and must be a value {geq} 1 and
     {leq} {CL_DEVICE_IMAGE3D_MAX_DEPTH}.
-  * `image_array_size` footnote:[{fn-image-array-performance}] is the number of
+  * _image_array_size_ footnote:[{fn-image-array-performance}] is the number of
     images in the image array.
     This is only used if the image is a 1D or 2D image array.
     The values for `image_array_size`, if specified, must be a value {geq} 1 and
     {leq} {CL_DEVICE_IMAGE_MAX_ARRAY_SIZE}.
-  * `image_row_pitch` is the scan-line pitch in bytes.
-    This must be 0 if _host_ptr_ is `NULL` and can be either 0 or {geq}
-    `image_width` {times} size of element in bytes if _host_ptr_ is not `NULL`.
-    If _host_ptr_ is not `NULL` and `image_row_pitch` = 0, `image_row_pitch` is
-    calculated as `image_width` {times} size of element in bytes.
-    If `image_row_pitch` is not 0, it must be a multiple of the image element
-    size in bytes.
-    For a 2D image created from a buffer, the pitch specified (or computed if
-    pitch specified is 0) must be a multiple of the maximum of the
-    {CL_DEVICE_IMAGE_PITCH_ALIGNMENT} value for all devices in the context
-    associated with the buffer specified by `mem_object` that support images.
-  * `image_slice_pitch` is the size in bytes of each 2D slice in the 3D image or
-    the size in bytes of each image in a 1D or 2D image array.
-    This must be 0 if _host_ptr_ is `NULL`.
-    If _host_ptr_ is not `NULL`, `image_slice_pitch` can be either 0 or {geq}
-    `image_row_pitch` {times} `image_height` for a 2D image array or 3D image
-    and can be either 0 or {geq} `image_row_pitch` for a 1D image array.
-    If _host_ptr_ is not `NULL` and `image_slice_pitch` = 0, `image_slice_pitch`
-    is calculated as `image_row_pitch` {times} `image_height` for a 2D image
-    array or 3D image and `image_row_pitch` for a 1D image array.
-    If `image_slice_pitch` is not 0, it must be a multiple of the
-    `image_row_pitch`.
-  * `num_mip_levels` and `num_samples` must be 0.
-  * `mem_object` may refer to a valid buffer or image memory object.
+  * _image_row_pitch_ is the scan-line pitch in bytes.
+    The _image_row_pitch_ must be zero if _host_ptr_ is `NULL`,
+ifdef::cl_khr_external_memory[]
+    the image is not an image created from an external memory handle,
+endif::cl_khr_external_memory[]
+    and the image is not a 2D image created from a buffer,
+    If _image_row_pitch_ is zero and _host_ptr_ is not `NULL`, then the
+    image row pitch is calculated as _image_width_ {times} the size of an
+    image element in bytes.
+ifdef::cl_khr_external_memory[]
+    If _image_row_pitch_ is zero and the image is created from an external
+    memory handle, then the image row pitch is implementation-defined.
+endif::cl_khr_external_memory[]
+    The image row pitch must be {geq} _image_width_ {times} the size of an
+    image element in bytes, and must be a multiple of the size of an image
+    element in bytes.
+    For a 2D image created from a buffer the image row pitch must also be a
+    multiple of the maximum of the {CL_DEVICE_IMAGE_PITCH_ALIGNMENT} value
+    for all devices in the context that support images.
+  * _image_slice_pitch_ is the size in bytes of each 2D slice in a 3D image,
+    or the size in bytes of each image in a 1D or 2D image array.
+    The _image_slice_pitch_ must be zero if _host_ptr_ is `NULL`
+ifdef::cl_khr_external_memory[]
+    and the image is not an image created from an external memory handle,
+endif::cl_khr_external_memory[]
+    If _image_slice_pitch_ is zero and _host_ptr_ is not `NULL` then the
+    image slice pitch is calculated as the image row pitch {times}
+    _image_height_ for a 2D image array or a 3D image, and as the image row
+    pitch for a 1D image array.
+ifdef::cl_khr_external_memory[]
+    If _image_slice_pitch_ is zero and the image is created from an external
+    memory handle, then the image slice pitch is implementation-defined.
+endif::cl_khr_external_memory[]
+    The image slice pitch must be {geq} the image image row pitch {times}
+    _image_height_ for a 2D image array or a 3D image, must be {geq} the
+    image row pitch for a 1D image array, and must be a multiple of the
+    image row pitch.
+  * _num_mip_levels_ and _num_samples_ must be 0.
+  * _mem_object_ may refer to a valid buffer or image memory object.
     `mem_object` can be a buffer memory object if `image_type` is
     {CL_MEM_OBJECT_IMAGE1D_BUFFER} or
     {CL_MEM_OBJECT_IMAGE2D} footnote:[{fn-image-from-buffer}].
@@ -3828,6 +3954,286 @@ for which the callback function is invoked and for such cases the behavior
 of OpenCL APIs is considered to be undefined.
 ====
 --
+
+
+ifdef::cl_khr_external_memory[]
+
+[[acquiring-external-memory]]
+==== Acquiring and Releasing External Memory Objects
+
+[open,refpage='clEnqueueAcquireExternalMemObjectsKHR',desc='Enqueue a command to acquire OpenCL memory objects created from external memory handles',type='protos']
+--
+To enqueue a command to acquire OpenCL memory objects created from external
+memory handles, call the function
+
+include::{generated}/api/protos/clEnqueueAcquireExternalMemObjectsKHR.txt[]
+include::{generated}/api/version-notes/clEnqueueAcquireExternalMemObjectsKHR.asciidoc[]
+
+  * _command_queue_ specifies a valid command-queue.
+  * _num_mem_objects_ specifies the number of memory objects to acquire.
+  * _mem_objects_ points to a list of valid memory objects.
+  * _num_events_in_wait_list_ specifies the number of events in
+    _event_wait_list_.
+  * _event_wait_list_ points to the list of events that need to complete
+    before {clEnqueueAcquireExternalMemObjectsKHR} can be executed.
+    If _event_wait_list_ is `NULL`, then
+    {clEnqueueAcquireExternalMemObjectsKHR} does not explicitly wait on any
+    event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+    The context associated with events in _event_wait_list_ and that of
+    _command_queue_ must be the same.
+  * _event_ returns an event object that identifies this particular command
+    and can be used to query or queue a wait for this particular command to
+    complete.
+    _event_ can be `NULL` in which case it will not be possible for the
+    application to query the status of this command or queue a wait for this
+    command to complete.
+
+Applications must acquire the memory objects that are created using external
+handles before they can be used by any OpenCL commands queued to a
+command-queue.
+Behavior is undefined if a memory object created from an external memory
+handle is used by an OpenCL command queued to a command-queue without being
+acquired.
+This is to guarantee that the state of the memory objects is up-to-date and
+they are accessible to OpenCL.
+See <<cl_khr_external_memory-Sample-Code, "`Example with Acquire /
+Release`">> for more details on how to use this API.
+
+If _num_mem_objects_ is 0 and _mem_objects_ is `NULL`, the command will
+trivially succeed after its event dependencies are satisfied and will update
+its completion event.
+
+// refError
+
+{clEnqueueAcquireExternalMemObjectsKHR} returns {CL_SUCCESS} if the function
+is executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_mem_objects_ is zero and _mem_objects_ is not
+    a `NULL` value, or if _num_mem_objects_ is greater than 0 and
+    _mem_objects_ is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if any of the memory objects in _mem_objects_ is
+    not a valid OpenCL memory object created using an external memory
+    handle.
+  * {CL_INVALID_COMMAND_QUEUE}
+  ** if _command_queue_ is not a valid command-queue, or
+  ** if device associated with _command_queue_ is not one of the devices
+     specified by {CL_MEM_DEVICE_HANDLE_LIST_KHR} at the time of creating
+     one or more of _mem_objects_, or ** if one or more of _mem_objects_
+     belong to a context that does not contain a device associated with
+     _command_queue_.
+  * {CL_INVALID_EVENT_WAIT_LIST}
+  ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ is not 0,
+     or
+  ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is 0,
+     or
+  ** if event objects in _event_wait_list_ are not valid events.
+  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the execution status
+    of any of the events in _event_wait_list_ is a negative integer value.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clEnqueueReleaseExternalMemObjectsKHR',desc='Enqueue a command to release OpenCL memory objects created from external memory handles',type='protos']
+--
+To enqueue a command to release OpenCL memory objects created from external
+memory handles, call the function
+
+include::{generated}/api/protos/clEnqueueReleaseExternalMemObjectsKHR.txt[]
+
+  * _command_queue_ specifies a valid command-queue.
+  * _num_mem_objects_ specifies the number of memory objects to release.
+  * _mem_objects_ points to a list of valid memory objects.
+  * _num_events_in_wait_list_ specifies the number of events in
+    _event_wait_list_.
+  * _event_wait_list_ points to the list of events that need to complete
+    before {clEnqueueReleaseExternalMemObjectsKHR} can be executed.
+    If _event_wait_list_ is `NULL`, then
+    {clEnqueueReleaseExternalMemObjectsKHR} does not wait on any event to
+    complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+    The context associated with events in _event_wait_list_ and that of
+    _command_queue_ must be the same.
+  * _event_ returns an event object that identifies this particular command
+    and can be used to query or queue a wait for this particular command to
+    complete.
+    _event_ can be `NULL` in which case it will not be possible for the
+    application to query the status of this command or queue a wait for this
+    command to complete.
+
+Applications must release the memory objects that are acquired using
+{clEnqueueReleaseExternalMemObjectsKHR} before using them through any
+commands in the other API.
+This is to guarantee that the state of memory objects is up-to-date and they
+are accessible to the other API.
+See "`Example with Acquire / Release`" provided in
+<<cl_khr_external_memory-Sample-Code>> for more details on how to use this
+API.
+
+If _num_mem_objects_ is 0 and _mem_objects_ is `NULL`, the command will
+trivially succeed after its event dependencies are satisfied and will update
+its completion event.
+
+// refError
+
+{clEnqueueReleaseExternalMemObjectsKHR} returns {CL_SUCCESS} if the function
+is executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_mem_objects_ is zero and _mem_objects_ is not
+    a `NULL` value, or if _num_mem_objects_ is greater than 0 and
+    _mem_objects_ is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if any of the memory objects in _mem_objects_ is
+    not a valid OpenCL memory object created using an external memory
+    handle.
+  * {CL_INVALID_COMMAND_QUEUE}
+  ** if _command_queue_ is not a valid command-queue, or
+  ** if device associated with _command_queue_ is not one of the devices
+     specified by {CL_MEM_DEVICE_HANDLE_LIST_KHR} at the time of creating
+     one or more of _mem_objects_, or
+  ** if one or more of _mem_objects_ belong to a context that does not
+     contain a device associated with _command_queue_.
+  * {CL_INVALID_EVENT_WAIT_LIST}
+  ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ is not 0,
+     or
+  ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is 0,
+     or
+  ** if event objects in _event_wait_list_ are not valid events.
+  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the execution status
+    of any of the events in _event_wait_list_ is a negative integer value.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+
+[[external-memory-handle-types]]
+=== Descriptions of External Memory Handle Types
+
+This section describes external memory handle types that are added by
+extensions.
+
+Applications can import the same payload into multiple OpenCL contexts and
+multiple times into a given OpenCL context. In all cases, each import
+operation must create a distinct memory object.
+
+
+==== File Descriptor Handle Types
+
+ifdef::cl_khr_external_memory_opaque_fd[]
+The `<<cl_khr_external_memory_opaque_fd>>` extension extends
+{cl_external_memory_handle_type_khr_TYPE} to support the following new types
+of handles, and adds as a property that may be specified when creating a
+buffer or an image memory object from an external handle:
+
+  * {CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR} specifies a POSIX file
+    descriptor handle that has only limited valid usage outside of OpenCL
+    and other compatible APIs.
+    It must be compatible with the POSIX system calls `dup`, `dup2`,
+    `close`, and the non-standard system call `dup3`.
+    Additionally, it must be transportable over a socket using a
+    `SCM_RIGHTS` control message.
+    It owns a reference to the underlying memory resource represented by its
+    memory object.
+endif::cl_khr_external_memory_opaque_fd[]
+
+ifdef::cl_khr_external_memory_dma_buf[]
+The `<<cl_khr_external_memory_dma_buf>>` extension extends
+{cl_external_memory_handle_type_khr_TYPE} to support the following types of
+handles, and adds as a property that may be specified when creating a buffer
+or an image memory object from an external handle:
+
+  * {CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR} is a file descriptor for a Linux
+    dma_buf.
+    It owns a reference to the underlying memory resource represented by its
+    memory object.
+endif::cl_khr_external_memory_dma_buf[]
+
+For these extensions, importing memory from a file descriptor transfers
+ownership of the file descriptor from the application to the OpenCL
+implementation.
+The application must not perform any operations on the file descriptor after
+a successful import.
+The imported memory object holds a reference to its payload.
+
+
+==== NT Handle Types
+
+ifdef::cl_khr_external_memory_dx[]
+The `<<cl_khr_external_memory_dx>>` extension extends
+{cl_external_memory_handle_type_khr_TYPE} to support the following new types
+of handles, and adds as a property that may be specified when creating a
+buffer or an image memory object from an external handle:
+
+  * {CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR} specifies an NT handle
+    returned by `IDXGIResource1::CreateSharedHandle` referring to a Direct3D
+    10 or 11 texture resource.
+    It owns a reference to the memory used by the Direct3D resource.
+  * {CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR} specifies a global
+    share handle returned by `IDXGIResource::GetSharedHandle` referring to a
+    Direct3D 10 or 11 texture resource.
+    It does not own a reference to the underlying Direct3D resource, and
+    will therefore become invalid when all memory objects and Direct3D
+    resources associated with it are destroyed.
+  * {CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR} specifies an NT handle
+    returned by `ID3D12Device::CreateSharedHandle` referring to a Direct3D
+    12 heap resource.
+    It owns a reference to the resources used by the Direct3D heap.
+  * {CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR} specifies an NT handle
+    returned by `ID3D12Device::CreateSharedHandle` referring to a Direct3D
+    12 committed resource.
+    It owns a reference to the memory used by the Direct3D resource.
+endif::cl_khr_external_memory_dx[]
+
+ifdef::cl_khr_external_memory_win32[]
+The `<<cl_khr_external_memory_win32>>` extension extends
+{cl_external_memory_handle_type_khr_TYPE} to support the following new types
+of handles, and adds as a property that may be specified when creating a
+buffer or an image memory object from an external handle:
+
+  * {CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR} specifies an NT handle that
+    has only limited valid usage outside of OpenCL and other compatible
+    APIs.
+    It must be compatible with the functions `DuplicateHandle`,
+    `CloseHandle`, `CompareObjectHandles`, `GetHandleInformation`, and
+    `SetHandleInformation`.
+    It owns a reference to the underlying memory resource represented by its
+    memory object.
+  * {CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR} specifies a global
+    share handle that has only limited valid usage outside of OpenCL and
+    other compatible APIs.
+    It is not compatible with any native APIs.
+    It does not own a reference to the underlying memory resource
+    represented by its memory object, and will therefore become invalid when
+    all memory objects associated with it are destroyed.
+endif::cl_khr_external_memory_win32[]
+
+For these extensions, importing memory object payloads from Windows handles
+does not transfer ownership of the handle to the OpenCL implementation.
+For handle types defined as NT handles, the application must release handle
+ownership using the CloseHandle system call when the handle is no longer
+needed.
+For handle types defined as NT handles, the imported memory object holds a
+reference to its payload.
+
+Note: Non-NT handle import operations do not add a reference to their
+associated payload.
+If the original object owning the payload is destroyed, all resources and
+handles sharing that payload will become invalid.
+
+endif::cl_khr_external_memory[]
 
 
 [[unmapping-mapped-memory]]
