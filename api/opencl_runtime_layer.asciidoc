@@ -9910,9 +9910,44 @@ These command-queues can be replaced on command-buffer enqueue with
 different command-queues, provided for each element in the replacement list
 the substitute command-queue is compatible with the command-queue used on
 command-buffer creation.
-Where a _compatible_ command-queue is defined as a command-queue with
+A _compatible_ command-queue is defined as a command-queue with
 identical properties targeting the same device and in the same OpenCL
 context.
+
+While constructing a command-buffer it is valid for the user to interleave
+calls to the same queue which create commands, such as
+{clCommandNDRangeKernelKHR}, with queue submission calls, such as
+{clEnqueueNDRangeKernel} or {clEnqueueCommandBufferKHR}.
+That is, there is no effect on queue state from recording commands.
+The purpose of the queue parameter is to define the device and properties of
+the command, which are constant queries on the queue object.
+
+A command-buffer object should increment the reference count of attached
+OpenCL objects such as queues, buffers, images, and kernels referenced in
+commands recorded to the command-buffer.
+This enables correct behavior of the command-buffer when its attached
+objects have been released.
+On destruction of the command-buffer it should decrement these reference
+counts, allowing the attached objects to be freed if appropriate.
+
+[[command-buffer-kernel-argument-ref-counting]]
+[NOTE]
+====
+A command-buffer object does not update the reference count of objects set
+as arguments on kernels recorded into the command-buffer.
+This is consistent with the reference counting behavior of {clSetKernelArg}.
+
+Applications should ensure that objects passed as arguments to kernels
+recorded to a command-buffer are not deleted until the command-buffer has
+been released.
+Undefined behavior may result from the failure to follow this usage
+requirement for all the command-buffers an object is used as a kernel
+argument in.
+
+If using layered extension `<<cl_khr_command_buffer_mutable_dispatch>>`,
+<<mutable-dispatch-kernel-argument-safe-usage, see related note on safe
+usage>>.
+====
 
 
 === Command-Buffer Lifecycle
@@ -9932,14 +9967,20 @@ Pending:: Once a command-buffer has been enqueued to a command-queue it enters
 the Pending state until completion, at which point it moves back to the
 <<executable, Executable>> state.
 
-[[invalid]]
-Invalid:: A command-buffer can enter the Invalid state if a resource that was
-used in a command has been modified or freed.
-The only valid operation to perform on a command-buffer in the Invalid state
-is to call {clReleaseCommandBufferKHR} for each of the reference counts the
-application owns.
+// Image generated from the following mermaid diagram description using https://mermaid.live
+// Ideally we'd use the asciidoctor-diagram extension to generate the rendered diagram, but
+// there are issues installing the gem with ruby 2.3.3
+//
+// [mermaid, "Lifecycle of a command-buffer", png]
+// ....
+// stateDiagram-v2
+//     [*] --> Recording: Create
+//     Recording -->Executable: Finalize
+//     Executable --> Pending: Enqueue
+//     Pending --> Executable: Completion
+// ....
 
-image::images/commandbuffer_lifecycle.svg[align="center", title="Lifecycle of a command-buffer."]
+image::images/commandbuffer_lifecycle.png[align="center", title="Lifecycle of a command-buffer."]
 
 [[pending_count]]
 The Pending Count is the number of copies of the command
@@ -10051,22 +10092,6 @@ include::{generated}/api/protos/clRetainCommandBufferKHR.txt[]
 include::{generated}/api/version-notes/clRetainCommandBufferKHR.asciidoc[]
 
   * _command_buffer_ specifies the command-buffer to retain.
-
-[NOTE]
-====
-A command-buffer object updates the reference count for objects such as
-buffers, images, and kernels used as parameters for commands recorded to the
-command-buffer.
-
-For example, recording a ND-range kernel via {clCommandNDRangeKernelKHR} into a
-command-buffer and then releasing the kernel object will still allow continued
-safe use of the command-buffer.
-As the reference count of the kernel object will have been incremented when
-the command was recorded, and then on command-buffer release the kernel
-reference count will be decremented.
-If at that point the kernel reference count reaches 0, the kernel object
-will be freed.
-====
 
 // refError
 
@@ -10238,7 +10263,7 @@ include::{generated}/api/version-notes/clCommandBarrierWithWaitListKHR.asciidoc[
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded
     to.
-    This parameter is unused by `cl_khr_command_buffer`, as only a single
+    This parameter is unused, as only a single
     command-queue is supported, and **must** be `NULL`.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
     synchronization-points that need to complete before this particular
@@ -10269,8 +10294,7 @@ completed.
     `NULL`, the _sync_point_ argument should not refer to an element of the
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
-    This parameter is unused by `cl_khr_command_buffer`, and **must** be
-    `NULL`.
+    This parameter is unused, and **must** be `NULL`.
 
 [NOTE]
 ====
@@ -10317,8 +10341,8 @@ include::{generated}/api/version-notes/clCommandCopyBufferKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded
     to.
-    This parameter is unused by `cl_khr_command_buffer`, as only a single
-    command-queue is supported, and **must** be `NULL`.
+    This parameter is unused, as only a single command-queue is supported,
+    and **must** be `NULL`.
   * _src_buffer_, _dst_buffer_, _src_offset_, _dst_offset_, _size_ refer
     to {clEnqueueCopyBuffer}.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -10346,8 +10370,7 @@ after the function returns.
     `NULL`, the _sync_point_ argument should not refer to an element of the
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
-    This parameter is unused by `cl_khr_command_buffer`, and **must** be
-    `NULL`.
+    This parameter is unused, and **must** be `NULL`.
 
 // refError
 
@@ -10391,8 +10414,8 @@ include::{generated}/api/version-notes/clCommandCopyBufferRectKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded
     to.
-    This parameter is unused by `cl_khr_command_buffer`, as only a single
-    command-queue is supported, and **must** be `NULL`.
+    This parameter is unused, as only a single command-queue is supported,
+    and **must** be `NULL`.
   * _src_origin_, _dst_origin_, _region_, _src_row_pitch_,
     _src_slice_pitch_, _dst_row_pitch_, _dst_slice_pitch_ refer to
     {clEnqueueCopyBufferRect}.
@@ -10421,8 +10444,7 @@ after the function returns.
     `NULL`, the _sync_point_ argument should not refer to an element of the
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
-    This parameter is unused by `cl_khr_command_buffer`, and **must** be
-    `NULL`.
+    This parameter is unused, and **must** be `NULL`.
 
 [NOTE]
 ====
@@ -10483,8 +10505,8 @@ include::{generated}/api/version-notes/clCommandCopyBufferToImageKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded
     to.
-    This parameter is unused by `cl_khr_command_buffer`, as only a single
-    command-queue is supported, and **must** be `NULL`.
+    This parameter is unused, as only a single command-queue is supported,
+    and **must** be `NULL`.
   * _src_buffer_, _dst_image_, _src_offset_, _dst_origin_, _region_ refer to
     {clEnqueueCopyBufferToImage}
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -10512,8 +10534,7 @@ after the function returns.
     `NULL`, the _sync_point_ argument should not refer to an element of the
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
-    This parameter is unused by `cl_khr_command_buffer`, and **must** be
-    `NULL`.
+    This parameter is unused, and **must** be `NULL`.
 
 // refError
 
@@ -10557,8 +10578,8 @@ include::{generated}/api/version-notes/clCommandCopyImageKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded
     to.
-    This parameter is unused by `cl_khr_command_buffer`, as only a single
-    command-queue is supported, and **must** be `NULL`.
+    This parameter is unused, as only a single command-queue is supported,
+    and **must** be `NULL`.
   * _src_image_, _dst_image_, _src_origin_, _dst_origin_, _region_ refer to
     {clEnqueueCopyImage}.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -10586,8 +10607,7 @@ after the function returns.
     `NULL`, the _sync_point_ argument should not refer to an element of the
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
-    This parameter is unused by `cl_khr_command_buffer`, and **must** be
-    `NULL`.
+    This parameter is unused, and **must** be `NULL`.
 
 [NOTE]
 ====
@@ -10639,8 +10659,8 @@ include::{generated}/api/version-notes/clCommandCopyImageToBufferKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded
     to.
-    This parameter is unused by `cl_khr_command_buffer`, as only a single
-    command-queue is supported, and **must** be `NULL`.
+    This parameter is unused, as only a single command-queue is supported,
+    and **must** be `NULL`.
   * _src_image_, _dst_buffer_, _src_origin_, _region_, _dst_offset_ refer to
     {clEnqueueCopyImageToBuffer}.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -10668,8 +10688,7 @@ after the function returns.
     `NULL`, the _sync_point_ argument should not refer to an element of the
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
-    This parameter is unused by `cl_khr_command_buffer`, and **must** be
-    `NULL`.
+    This parameter is unused, and **must** be `NULL`.
 
 // refError
 
@@ -10722,8 +10741,8 @@ value specified when _buffer_ is created is ignored by
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded
     to.
-    This parameter is unused by `cl_khr_command_buffer`, as only a single
-    command-queue is supported, and **must** be `NULL`.
+    This parameter is unused, as only a single command-queue is supported,
+    and **must** be `NULL`.
   * _buffer_, _pattern_, _pattern_size_, _offset_, _size_ refer to
     {clEnqueueFillBuffer}.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -10751,8 +10770,7 @@ after the function returns.
     `NULL`, the _sync_point_ argument should not refer to an element of the
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
-    This parameter is unused by `cl_khr_command_buffer`, and **must** be
-    `NULL`.
+    This parameter is unused, and **must** be `NULL`.
 
 // refError
 
@@ -10803,8 +10821,8 @@ value specified when image is created is ignored by {clCommandFillImageKHR}.
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded
     to.
-    This parameter is unused by `cl_khr_command_buffer`, as only a single
-    command-queue is supported, and **must** be `NULL`.
+    This parameter is unused, as only a single command-queue is supported,
+    and **must** be `NULL`.
   * _image_, _fill_color_, _origin_, _region_ refer to {clEnqueueFillImage}.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
     synchronization-points that need to complete before this particular
@@ -10831,8 +10849,7 @@ after the function returns.
     `NULL`, the _sync_point_ argument should not refer to an element of the
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
-    This parameter is unused by `cl_khr_command_buffer`, and **must** be
-    `NULL`.
+    This parameter is unused, and **must** be `NULL`.
 
 // refError
 
@@ -10875,8 +10892,8 @@ include::{generated}/api/version-notes/clCommandNDRangeKernelKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded
     to.
-    This parameter is unused by `cl_khr_command_buffer`, as only a single
-    command-queue is supported, and **must** be `NULL`.
+    This parameter is unused, as only a single command-queue is supported,
+    and **must** be `NULL`.
   * _properties_ specifies a list of properties for the kernel command and
     their corresponding values.
     Each property name is immediately followed by the corresponding desired
@@ -10918,8 +10935,7 @@ after the function returns.
     `NULL`, the _sync_point_ argument should not refer to an element of the
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
-    This parameter is unused by `cl_khr_command_buffer`, and **must** be
-    `NULL`.
+    This parameter is unused, and **must** be `NULL`.
 
 [NOTE]
 ====
@@ -10981,6 +10997,172 @@ New errors:
     and _kernel_ contains a kernel-enqueue call.
 --
 
+[open,refpage='clCommandSVMMemcpyKHR',desc='Record a command to do an SVM memcpy operation',type='protos']
+--
+To record a command to do an SVM memcpy operation, call the function
+
+include::{generated}/api/protos/clCommandSVMMemcpyKHR.txt[]
+include::{generated}/api/version-notes/clCommandSVMMemcpyKHR.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _command_queue_ specifies the command-queue the command will be recorded
+    to.
+    This parameter is unused, as only a single command-queue is supported,
+    and **must** be `NULL`.
+  * _dst_ptr_ is the pointer to a host (if the device supports system SVM)
+    or SVM memory allocation where data is copied to.
+  * _src_ptr_ is the pointer to a host (if the device supports system SVM)
+    or SVM memory allocation where data is copied from.
+  * _size_ is the size in bytes of data being copied.
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    synchronization-points that need to complete before this particular
+    command can be executed.
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_ must be
+0.
+If _sync_point_wait_list_ is not `NULL`, the list of synchronization-points
+pointed to by _sync_point_wait_list_ must be valid and
+_num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points.
+The command-buffer associated with synchronization-points in
+_sync_point_wait_list_ must be the same as _command_buffer_.
+The memory associated with _sync_point_wait_list_ can be reused or freed
+after the function returns.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    Synchronization-point objects are unique and can be used to identify
+    this command later on.
+    _sync_point_ can be `NULL` in which case it will not be possible for the
+    application to record a wait for this command to complete.
+    If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+    `NULL`, the _sync_point_ argument should not refer to an element of the
+    _sync_point_wait_list_ array.
+  * _mutable_handle_ returns a handle to the command.
+    This parameter is unused, and **must** be `NULL`.
+
+// refError
+
+{clCommandSVMMemcpyKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns the errors defined by {clEnqueueSVMMemcpy} except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+    _command_buffer_, and _kernel_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+    `NULL` and _num_sync_points_in_wait_list_ is > 0, or
+    _sync_point_wait_list_ is not `NULL` and _num_sync_points_in_wait_list_
+    is 0, or if synchronization-point objects in _sync_point_wait_list_ are
+    not valid synchronization-points.
+
+New errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+--
+
+[open,refpage='clCommandSVMMemFillKHR',desc='Record a command to fill a region in SVM with a pattern of a given pattern size',type='protos']
+--
+To record a command to fill a region in SVM with a pattern of a given
+pattern size, call the function
+
+include::{generated}/api/protos/clCommandSVMMemFillKHR.txt[]
+include::{generated}/api/version-notes/clCommandSVMMemFillKHR.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _command_queue_ specifies the command-queue the command will be recorded
+    to.
+    This parameter is unused, as only a single command-queue is supported,
+    and **must** be `NULL`.
+  * _svm_ptr_ is a pointer to a (if the device supports system SVM)
+    or SVM memory region that will be filled with _pattern_.
+    It must be aligned to _pattern_size_ bytes.
+    If _svm_ptr_ is allocated using {clSVMAlloc}, then it must be allocated
+    from the same context from which _command_queue_ was created.
+    Otherwise the behavior is undefined.
+  * _pattern_ is a pointer to the data pattern of size _pattern_size_ in
+    bytes.
+    _pattern_ will be used to fill a region in _buffer_ starting at
+    _svm_ptr_ and is _size_ bytes in size.
+    The data pattern must be a scalar or vector integer or floating-point
+    data type supported by OpenCL.
+    For example, if the region pointed to by _svm_ptr_ is to be filled with
+    a pattern of `float4` values, then _pattern_ will be a pointer to a
+    `cl_float4` value and _pattern_size_ will be `sizeof(cl_float4)`.
+    The maximum value of _pattern_size_ is the size of the largest integer
+    or floating-point vector data type supported by the OpenCL device.
+    The memory associated with _pattern_ can be reused or freed after the
+    function returns.
+  * _size_ is the size in bytes of region being filled starting with
+    _svm_ptr_ and must be a multiple of _pattern_size_.
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    synchronization-points that need to complete before this
+    particular command can be executed.
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_ must be
+0.
+If _sync_point_wait_list_ is not `NULL`, the list of synchronization-points
+pointed to by _sync_point_wait_list_ must be valid and
+_num_sync_points_in_wait_list_ must be greater than 0.
+The synchronization-points specified in _sync_point_wait_list_ are
+*device-side* synchronization-points.
+The command-buffer associated with synchronization-points in
+_sync_point_wait_list_ must be the same as _command_buffer_.
+The memory associated with _sync_point_wait_list_ can be reused or freed
+after the function returns.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    Synchronization-point objects are unique and can be used to identify
+    this command later on.
+    _sync_point_ can be `NULL` in which case it will not be possible for the
+    application to record a wait for this command to complete.
+    If the _sync_point_wait_list_ and the _sync_point_ arguments are not
+    `NULL`, the _sync_point_ argument should not refer to an element of the
+    _sync_point_wait_list_ array.
+  * _mutable_handle_ returns a handle to the command.
+    This parameter is unused, and **must** be `NULL`.
+
+// refError
+
+{clCommandSVMMemFillKHR} returns {CL_SUCCESS} if the function is executed
+successfully. Otherwise, it returns the errors defined by
+{clEnqueueSVMMemFill} except:
+
+{CL_INVALID_COMMAND_QUEUE} is replaced with:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+
+{CL_INVALID_CONTEXT} is replaced with:
+
+  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
+    _command_buffer_, and _kernel_ are not the same.
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+    `NULL` and _num_sync_points_in_wait_list_ is > 0, or
+    _sync_point_wait_list_ is not `NULL` and _num_sync_points_in_wait_list_
+    is 0, or if synchronization-point objects in _sync_point_wait_list_ are
+    not valid synchronization-points.
+
+New errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
+  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+--
 
 === Command-Buffer Queries
 
@@ -11051,10 +11233,6 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR.as
         instance of _command_buffer_ has been enqueued for execution but not
         yet completed.
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_PENDING_KHR.asciidoc[]
-
-        {CL_COMMAND_BUFFER_STATE_INVALID_KHR_anchor} is returned when
-        _command_buffer_ is in an <<invalid, Invalid>> state.
-include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_INVALID_KHR.asciidoc[]
 
 | {CL_COMMAND_BUFFER_PROPERTIES_ARRAY_KHR_anchor}
 
