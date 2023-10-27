@@ -482,7 +482,7 @@ definitions and updating of previously defined ones.</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">First formulation as an extension specification like proposed by Ben Ashbaugh.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2022-10-23</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2023-11-21</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">0.2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Add APIs for defined built-in kernel (DBK) creation. Model DBKs on
 tensor type. Add sample code.</p></td>
@@ -499,7 +499,7 @@ tensor type. Add sample code.</p></td>
 <p>This extension requires OpenCL 1.2 or later.</p>
 </div>
 <div class="paragraph">
-<p>This extension requires cl_khr_tensor.</p>
+<p>This extension requires cl_exp_tensor.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -508,7 +508,7 @@ tensor type. Add sample code.</p></td>
 <div class="title">Note</div>
 </td>
 <td class="content">
-cl_khr_tensor is unpublished, work-in-progress
+cl_exp_tensor is unpublished, work-in-progress
 extension. Briefly, It will bring concept of tensor, N-dimensional
 data structure whose data layout is opaque to applications.
 </td>
@@ -1124,25 +1124,21 @@ clCreateDefinedBuiltInKernelDescriptor.</p>
 <h4 id="_sample_code">Sample Code</h4>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">// TBD. Similarly in cl_qcom_ml_ops, tensors have type
-// (cl_channel_type) and a number of dimensions (rank) and dimension
-// sizes (shape). Difference over the cl_qcom_ml_ops is that the rank is
-// "unlimited".
-cl_tensor_desc lhs_tensor_desc = TBD;
-cl_tensor_desc rhs_tensor_desc = TBD;
-cl_tensor_desc res_tensor_desc = TBD;
+<pre class="highlight"><code class="language-c" data-lang="c">constexpr size_t b = 64, m = 100, n = 200, k = 50;
+cl_int err;
+cl_tensor lhs_tensor = clCreateTensor(context, nullptr, 3, {b, m, k}, CL_TENSOR_FLOAT, err);
+cl_tensor rhs_tensor = clCreateTensor(context, nullptr, 3, {b, k, n}, CL_TENSOR_FLOAT, err);
+cl_tensor res_tensor = clCreateTensor(context, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err);
 
 cl_dkb_attributes_matmul matmul_attrs = {
-  lhs_tensor_desc, rhs_tensor_desc, res_tensor_desc,
-  1, 0 // = Transpose lhs tensor
-}
+  lhs_tensor, rhs_tensor, res_tensor, 1, 0 // = Transpose lhs tensor
+};
 
 cl_dbk_mode_properties matmul_props = {
   // Request a matmul instance that meets this precision.
   CL_DBK_PROPERTY_MAX_RELATIVE_ERROR, 100, // in ULPs.
-}
+};
 
-cl_uint err;
 std::vector&lt;cl_dbk_descriptor&gt; kernel_descriptions;
 cl_dbk_descriptor matmul_desc =
   clCreateDefinedBuiltInKernelDescriptor(
@@ -1152,11 +1148,14 @@ cl_dbk_descriptor matmul_desc =
 } else if (err == CL_DBK_UNAVAILABLE) {
   // Kernel attributes are valid but the kernel is not supported in at least
   // one of the devices.
+  ...
 } else if (err == CL_DBK_UNMET_MAX_RELATIVE_ERROR) {
   // E.g. Kernel is supported but is not precise enough.
+  ...
 } else if (err == CL_DBK_UNSUPPORTED_MODE_PROPERTY) {
   // cl_dbk_mode_properties has a property not listed in the description of the
   // defined built-in kernel.
+  ...
 } else
   kernel_descriptions.push_back(matmul_desc);
 
@@ -1168,25 +1167,39 @@ cl_program dbk_lib = clCreateProgramWithDefinedBuiltInKernels(
 ...
 
 cl_kernel matmul_kernel = clCreateDefinedBuiltinKernel(
-  dkb_lib, matmul_desc, err);
+  dkb_lib, matmul_desc, &amp;err);
 
-// TBD: allocate space for tensors. Perhaps like cl_qcom_ml_ops: query
-// tensor sizes after the final program has been created or after
-// command buffer (with DBKs within) is finalized. Implementation
-// determines the optimal data layout (opaque to the application) for
-// the tensors based on their usage.  Application uses the tensor
-// sizes to create cl_mem buffers which are bound to the tensors.
-cl_tensor lhs_tensor = TBD;
-cl_tensor rhs_tensor = TBD;
-cl_tensor res_tensor = TBD;
-
-// Transfer data to input tensors
-
+// Set tensor kernel arguments before binding storage to the tensors. This
+// gives clCreateBufferWithProperties() opportunity to reason about tensors'
+// uses for determining the optimal memory layout (opaque to application) and
+// the space neededfor the tensors.
 clSetKernelArg(matmul_kernel, 0, sizeof(cl_tensor_t), &amp;lhs_tensor);
 clSetKernelArg(matmul_kernel, 1, sizeof(cl_tensor_t), &amp;rhs_tensor);
 clSetKernelArg(matmul_kernel, 2, sizeof(cl_tensor_t), &amp;res_tensor);
 
-clEnqueueNDRangeKernel(cmd_q, matmul_kernel, 0, NULL, NULL, NULL, 0, NULL, NULL);</code></pre>
+// Allocate storage for tensors.
+cl_mem lhs_mem = clCreateBufferWithProperties(
+  context, {CL_MEM_BIND_TO_TENSOR, lhs_tensor, 0}, CL_MEM_READ_ONLY, 0, nullptr, &amp;err);
+cl_mem rhs_mem = clCreateBufferWithProperties(
+  context, {CL_MEM_BIND_TO_TENSOR, rhs_tensor, 0}, CL_MEM_READ_ONLY, 0, nullptr, &amp;err);
+cl_mem res_mem = clCreateBufferWithProperties(
+  context, {CL_MEM_BIND_TO_TENSOR, res_tensor, 0}, CL_MEM_WRITE_ONLY, 0, nullptr, &amp;err);
+
+// Transfer data to input tensors, execute DBK, and import results
+// from the output tensor.
+
+std::vector&lt;float&gt; lhs_data = ...;
+std::vector&lt;float&gt; rhs_data = ...;
+std::vector&lt;float&gt; res_data(b * m * n);
+
+clEnqueueExportToTensor(cmd_q, lhs_tensor, false, {0, 0, 0}, {0, 0, 0}, {b, m, k},
+  nullptr, nullptr, lhs_data.data(), 0, nullptr, nullptr)
+clEnqueueExportToTensor(cmd_q, rhs_tensor, false, {0, 0, 0}, {0, 0, 0}, {b, k, n},
+  nullptr, nullptr, rhs_data.data(), 0, nullptr, nullptr)
+clEnqueueNDRangeKernel(cmd_q, matmul_kernel, 0, NULL, NULL, NULL, 0, NULL, NULL);
+clEnqueueImportFromTensor(
+  cmd_q, res_tensor, false,  {0, 0, 0}, {0, 0, 0}, {b, m, n},
+  nullptr, nullptr, res_data.data(), 0, nullptr, nullptr);</code></pre>
 </div>
 </div>
 </div>
@@ -1279,7 +1292,7 @@ clEnqueueNDRangeKernel(cmd_q, matmul_kernel, 0, NULL, NULL, NULL, 0, NULL, NULL)
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-10-25 10:24:30 +0300
+Last updated 2023-11-21 13:16:24 +0200
 </div>
 </div>
 </body>
