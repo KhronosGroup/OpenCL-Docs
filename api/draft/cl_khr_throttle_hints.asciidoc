@@ -1,0 +1,77 @@
+[[cl_khr_throttle_hints]]
+== Throttle Hints
+
+*Name String*::
+`cl_khr_throttle_hints`
+*Revision*::
+1.0.0
+*Ratification Status*::
+Ratified
+*Extension and Version Dependencies*::
+TBD
+*Contact*::
+  * TBD
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2020-04-21
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+    TBD
+
+=== Description
+
+`cl_khr_throttle_hints` adds throttle hints for OpenCL, but does not specify
+the throttling behavior or minimum guarantees.
+It is expected that the user guide associated with each implementation which
+supports this extension will describe the throttling behavior guarantees.
+
+Note that the throttle hint is orthogonal to functionality defined in
+`<<cl_khr_priority_hints>>` extension.
+For example, a task may have high priority ({CL_QUEUE_PRIORITY_HIGH_KHR})
+but should at the same time be executed at an optimized throttle setting
+({CL_QUEUE_THROTTLE_LOW_KHR}).
+
+=== New Types
+
+  * {cl_queue_throttle_khr_TYPE}
+
+=== New Enums
+
+  * {cl_queue_properties_TYPE}
+  ** {CL_QUEUE_THROTTLE_KHR}
+  * {cl_queue_throttle_khr_TYPE}
+  ** {CL_QUEUE_THROTTLE_HIGH_KHR}
+  ** {CL_QUEUE_THROTTLE_MED_KHR}
+  ** {CL_QUEUE_THROTTLE_LOW_KHR}
+
+
+=== Version History
+
+  * Revision 1.0.0, 2020-04-21
+  ** First assigned version.
+
+
+=== Host-Side API Modifications
+
+The function {clCreateCommandQueueWithProperties} (Section 5.1) is extended
+to support a new {CL_QUEUE_THROTTLE_KHR} value as part of the _properties_
+argument.
+
+The properties field accepts the following values:
+
+  * {CL_QUEUE_THROTTLE_HIGH_KHR} (full throttle, i.e., OK to consume more
+    energy)
+  * {CL_QUEUE_THROTTLE_MED_KHR} (normal throttle)
+  * {CL_QUEUE_THROTTLE_LOW_KHR} (optimized/lowest energy consumption)
+
+If {CL_QUEUE_THROTTLE_KHR} is not specified, then the default priority is
+{CL_QUEUE_THROTTLE_MED_KHR}.
+
+To the error section for {clCreateCommandQueueWithProperties}, the following
+is added:
+
+  * {CL_INVALID_QUEUE_PROPERTIES} if the {CL_QUEUE_THROTTLE_KHR} property is
+    specified and the queue is a {CL_QUEUE_ON_DEVICE}.

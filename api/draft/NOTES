@@ -1,0 +1,356 @@
+  - Questions sent to Ben Ashbaugh, 2023-10-29
+
+  -- Are all cl_khr* extensions in main branch of OpenCL-Docs ratified?
+
+     My assumption: yes.
+
+  -- There are XML attributes for tagging extensions as to various kinds of
+     status: promoted, provisional, ratified, deprecated, obsoleted, etc. Is
+     this worth adding? Some of the generator scripts use this information,
+     and it's been helpful to have it discoverable by other tools. For
+     example, in Vulkan we can ask to generate a spec which is (core + all
+     ratified extensions).
+
+     My recommendation: add the tagging (and keep it up to date with new
+     extensions going forward).
+
+  -- Many of the extensions are mostly adding OpenCL C functions. Should the
+     C spec have extension appendices, like the API spec, or should the
+     connection just be noted in the API extension appendix?
+
+     My recommendation: Just note / link from the API extension appendix.
+
+  -- Related, there are not many exammples of tagging OpenCL C functions
+     with dependencies. The most common is like:
+
+> << unified-spec, Requires>> support for OpenCL C 2.0 or newer, also see
+> `cl_khr_depth_images` extension.
+
+     which I propose changing (where something was promoted) to:
+
+> << unified-spec, Requires>> support for OpenCL C 2.0 or newer, or for
+> the `cl_khr_depth_images` extension macro.
+
+  -- OpenCL C function prototypes in extension specs tables are a mix of
+     straight asciidoctor markup:
+
+> | void *write_imagef* ( +
+>   image3d_t _image_, +
+>   int4 _coord_, +
+>   float4 _color_)
+
+     and of code blocks:
+
+|[source,opencl_c]
+----
+int sub_group_non_uniform_all_equal(
+    gentype value )
+----
+
+     Likewise in the spec - see the refpages for 'atomic_compare_exchange'
+     vs. 'asyncCopyFunctions', for example. Is markup uniformity worthwhile
+     enough to put some effort into making the conversion, and if so, which
+     way?
+
+     My recommendation: use the [source] markup. It is slightly longer but
+     looks nicer, and is much easier to edit.
+
+  -- cl.xml does not tag which enums belong to which cl_* types, but could -
+     this would help autogenerate parts of the extension appendices, as well
+     as potentially downstream tooling. Is this of interest?
+
+     My recommendation: useful, but hold off until the bulk of the khr
+     integration work is done. This would probably require some new XML
+     tagging to identify which <enum> tags go with which type.
+
+-------- Other Questions / Issues TBD --------
+
+TODO
+  * Several specs define multiple extensions and need to be split into one /
+    extension
+  * proper indentation / tagging of New XXX sections (which should be generated,
+    but will require additional XML tagging)
+  * Use Title Case consistently
+  * Replace 'DESC' in refpage block headers with actual description
+  * move refError blocks to end of refpage blocks
+  * Update Ratification Status - are they *all* ratified?
+  * Move 'promoted to' language into 'Other Metadata'
+  * Add new error codes to appendix_f / <<error_codes>>.
+    In general make sure all enums / types / structs are included, not just
+    commands.
+
+[open,refpage='clName',desc='description',type='protos']
+--
+To record a command to do an SVM memcpy operation, call the function
+
+include::{generated}/api/protos/clName.txt[]
+include::{generated}/api/version-notes/clName.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
+    ...
++
+If _sync_point_wait_list_ is `NULL`, _num_sync_points_in_wait_list_ must be
+0.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command.
+    ...
+
+// refError
+
+{clCommandSVMMemcpyKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns the errors defined by {clEnqueueSVMMemcpy} except:
+
+{CL_INVALID_EVENT_WAIT_LIST} is replaced with:
+
+  * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
+
+New errors:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+--
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+<case in section names is variable, should be rewritten to Title Case>
+
+
+[[extname]]
+=* Title
+
+<overview / descriptive text, possibly multiple paragraphs>
+
+
+=* Name Strings
+
+`cl_foo` +
+`cl_bar` ...
+
+
+=* Version History
+
+<table, needs reformatting>
+
+
+=* Dependencies
+
+<text, multiple paragraphs>
+
+
+=* Contributors
+
+// spell-checker: <anything>
+Person A, Co. A +
+...
+Person B, Co. B
+
+
+=* Overview
+
+<multiple paragraphs>
+
+<may also include nested sections>
+
+
+[[optional anchor]]
+=* New (Types|API Types|API Functions|Procedures and Functions|Enums|API Enums|Tokens|Environment Variables|OpenCL C Functions)
+
+<random text, essentially, though possibly processable>
+
+<' +0x[0-9A-F]+ *$' -> strip numeric values of enums>
+
+
+=* Modifications to <blah>
+    -or-
+=* Additions to <blah>
+
+<sometimes>
+Add the following <blah> to section <blah>:
+    -or-
+Add new .*(sub|)section <number>.*:
+
+<random spec text>, often with tables embedded titles - possibly tricky to
+determine boundaries
+
+... repeats for possible (likely) multiple sections
+
+
+=* Conformance tests
+
+<random text>
+
+
+[[optional extname-Sample-Code or exname-source-code]]
+=* Sample Code
+
+Paragraph or
+.Title (rewrite to subsection title)
+
+<optional-'+' or blank lines>
+
+[source]
+----
+block content
+----
+
+... repeats for possible multiple examples
+
+
+[[optional (ignored) anchor extname-issues]]
+=* Issues
+
+. text (possibly multiple lines)
++
+--
+text of resolution
+--
+
+... repeats for possible multiple issues
+
+... optional provisional NOTE at the end
+
+-------- Promotion / Deprecation Stuff, from Appendix E --------
+
+The following features are added to the OpenCL C programming language
+(_section 6_) in OpenCL 1.1:
+
+  * *cl_khr_byte_addressable_store* extension is a core feature.
+  * *cl_khr_global_int32_base_atomics*,
+    *cl_khr_global_int32_extended_atomics*,
+    *cl_khr_local_int32_base_atomics* and
+    *cl_khr_local_int32_extended_atomics* extensions are core features.
+    The built-in atomic function names are changed to use the *atomic_*
+    prefix instead of *atom_*.
+  * Macros `CL_VERSION_1_0` and `CL_VERSION_1_1`.
+
+The following features in OpenCL 1.0 are deprecated (see glossary) in OpenCL
+1.1:
+
+  * The *cl_khr_select_fprounding_mode* extension is deprecated and its
+    use is no longer recommended.
+
+The following new extensions are added to _section 9_ in OpenCL 1.1:
+
+  * *cl_khr_gl_event* for creating a CL event object from a GL sync object.
+  * *cl_khr_d3d10_sharing* for sharing memory objects with Direct3D 10.
+
+
+The following features are added to the OpenCL 1.2 platform layer and
+runtime (_sections 4 and 5_):
+
+  * {clUnloadPlatformCompiler} to request that a single platform's compiler is
+    unloaded.  This is compatible with the *cl_khr_icd* extension if that is
+    supported, unlike {clUnloadCompiler}.
+
+
+== Summary of changes from OpenCL 1.2 to OpenCL 2.0
+
+The following features are added to the OpenCL C programming language
+(_section 6_) in OpenCL 2.0:
+
+  * New built-in functions (sections 6.15.10, 6.15.12, and 6.15.16).
+  * 3D image writes are a core feature.
+  * The `CL_VERSION_2_0` and `NULL` macros.
+
+
+== Summary of changes from OpenCL 2.0 to OpenCL 2.1
+
+The SPIR-V and OpenCL SPIR-V Environment specifications have been added.
+
+
+== Summary of changes from OpenCL 2.2 to OpenCL 3.0
+
+OpenCL 3.0 is a major revision that breaks backwards compatibility with
+previous versions of OpenCL.
+<<opencl-3.0-backwards-compatibility, OpenCL 3.0 Backwards Compatibility>>
+for details.
+
+OpenCL 3.0 adds the OpenCL 3.0 C kernel language, which includes
+feature macros to describe OpenCL C language support.
+Please refer to the OpenCL C specification for details.
+
+// GitHub issue #178
+Scalar input arguments to the *any* and *all* built-in functions have
+been deprecated in the OpenCL 3.0 C kernel language.
+These functions behaved inconsistently with the C language's use of
+scalar integers as logical values.
+
+OpenCL 3.0 adds new queries to determine supported OpenCL C language
+versions and supported OpenCL C features:
+
+  * {CL_DEVICE_OPENCL_C_ALL_VERSIONS} to determine the set
+    of OpenCL C language versions supported by a device.
+  * {CL_DEVICE_OPENCL_C_FEATURES} to determine
+    optional OpenCL C language features supported by a device.
+
+== Summary of changes from OpenCL 3.0
+
+The first non-provisional version of the OpenCL 3.0 specifications was *v3.0.5*.
+
+Changes from *v3.0.5*:
+
+  * Added new extensions:
+      ** `cl_khr_extended_versioning`
+      ** `cl_khr_subgroup_extended_types`
+      ** `cl_khr_subgroup_non_uniform_vote`
+      ** `cl_khr_subgroup_ballot`
+      ** `cl_khr_subgroup_non_uniform_arithmetic`
+      ** `cl_khr_subgroup_shuffle`
+      ** `cl_khr_subgroup_shuffle_relative`
+      ** `cl_khr_subgroup_clustered_reduce`
+
+Changes from *v3.0.6*:
+
+  * Added new extensions:
+      ** `cl_khr_extended_bit_ops`
+      ** `cl_khr_pci_bus_info`
+      ** `cl_khr_spirv_extended_debug_info`
+      ** `cl_khr_spirv_linkonce_odr`
+      ** `cl_khr_suggested_local_work_size`
+
+Changes from *v3.0.7*:
+
+  * Added new extension:
+      ** `cl_khr_integer_dot_product`
+
+Changes from *v3.0.8*:
+
+  * Added new extensions:
+      ** `cl_khr_integer_dot_product` (version 2)
+      ** `cl_khr_semaphore` (provisional)
+      ** `cl_khr_external_semaphore` (provisional)
+      ** `cl_khr_external_semaphore_dx_fence` (provisional)
+      ** `cl_khr_external_semaphore_opaque_fd` (provisional)
+      ** `cl_khr_external_semaphore_sync_fd` (provisional)
+      ** `cl_khr_external_semaphore_win32` (provisional)
+      ** `cl_khr_external_memory` (provisional)
+      ** `cl_khr_external_memory_dma_buf` (provisional)
+      ** `cl_khr_external_memory_dx` (provisional)
+      ** `cl_khr_external_memory_opaque_fd` (provisional)
+      ** `cl_khr_external_memory_win32` (provisional)
+
+Changes from *v3.0.9*:
+
+  * Added new extensions:
+      ** `cl_khr_async_copy_fence` (final)
+      ** `cl_khr_extended_async_copies` (final)
+      ** `cl_khr_expect_assume`
+      ** `cl_khr_command_buffer` (provisional)
+
+Changes from *v3.0.10*:
+
+  * Clarified that the extended versioning extension is a core OpenCL 3.0 feature.
+  * Added new extensions:
+      ** `cl_khr_subgroup_rotate`
+      ** `cl_khr_work_group_uniform_arithmetic`
+
+Changes from *v3.0.11*:
+
+  * Added new extension:
+      ** `cl_khr_command_buffer_mutable_dispatch` (provisional)
+
+Changes from *v3.0.13*:
+
+  * Added new extension:
+      ** `cl_khr_command_buffer_multi_device` (provisional)
