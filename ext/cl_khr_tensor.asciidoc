@@ -66,7 +66,8 @@ cl_tensor clCreateTensor(
 * _properties_ is an optional list of properties for the tensor object
   and their corresponding values. The list is terminated with the
   special property 0. If no properties are required, properties may be
-  NULL.
+  NULL. This extension does not define any optional properties for
+  tensors.
 
 * _rank_ is the number of dimensions. Zero value creates a "scalar"
   tensor which has no dimensions but has storage for one element.
@@ -84,18 +85,11 @@ cl_tensor clCreateTensor(
 clCreateTensor function creates a `rank`-dimensional tensor with
 `shape[0] * shape[1] * ... * shape[rank-1]` elements of _dtype_
 type. At the creation time of the tensor, it does not have
-storage. The storage is assigned to the tensor either by:
-
-* calling clCreateBufferWithProperties() with CL_MEM_BIND_TO_TENSOR or
-
-* automatically by command buffers - possibly on-demand basis - if the
-  tensor is created with CL_TENSOR_COMMAND_BUFFER_TEMPORARY property
-  set on.
+storage. The storage is assigned to the tensor by calling
+clCreateBufferWithProperties() with CL_MEM_BIND_TO_TENSOR.
 
 A command that refers to a tensor must be bound to a valid buffer
-object before enqueuing the command that refers to the tensor into a command queue unless the
-command is recorded in a command buffer and
-CL_TENSOR_COMMAND_BUFFER_TEMPORARY is set to true.
+object before enqueuing or recording the command.
 
 *clCreateTensor* returns a valid non-zero tensor object and errcode_ret
 is set to CL_SUCCESS if the tensor object is created
@@ -137,28 +131,6 @@ following error values returned in errcode_ret:
   32-bit real and imaginary part.
 | CL_TENSOR_COMPLEX128 | 128-bit complex floating point with
   64-bit real and imaginary part.
-|===
-
-.Tensor properties
-[cols="2,1,2",stripes=odd]
-|===
-| *Tensor Property* | *Property Value* | *Description*
-
-| CL_TENSOR_COMMAND_BUFFER_TEMPORARY | cl_bool
-
-a| If the value is true, create a "temporary" tensor that only can be
-used on commands recorded in command buffers. The storage of the
-temporary tensors are managed by command buffers. When a temporary
-tensor is used by multiple command buffers, the tensor receives separate
-storage for each command buffer.
-
-// IOW, Data may not be exchanged between command buffers through
-// temporary tensors.
-
-Temporary tensors may not be bound to buffer objects.
-
-Data stored in temporary tensors are not preserved across command
-buffer executions.
 |===
 
 To retain a tensor object, call the function
@@ -244,12 +216,8 @@ cl_int clGetTensorInfo(
 | CL_TENSOR_SHAPE | size_t[]       | Return the tensor shape.
 | CL_TENSOR_DTYPE | cl_tensor_type | Return the tensor data type.
 
-| CL_TENSOR_COMMAND_BUFFER_TEMPORARY | cl_bool | Return true if the
-tensor is a temporary tensor for command buffers.
-
 | CL_TENSOR_BOUND_TO_BUFFER | cl_bool | Return true if the tensor is
-bound to a buffer. If CL_TENSOR_COMMAND_BUFFER_TEMPORARY is true, then
-CL_TENSOR_BOUND_TO_BUFFER must return false.
+bound to a buffer.
 
 | CL_TENSOR_BUFFER | cl_mem a| If CL_TENSOR_BOUND_TO_BUFFER is true,
 return the buffer object the tensor is bound to. Otherwise,
@@ -366,11 +334,34 @@ addresses is unspecified.
 
 [cols="2,1,2",stripes=odd]
 |===
+| CL_MEM_COMMAND_BUFFER_TEMPORARY | cl_bool
+
+a| This property can be set if *cl_khr_command_buffer* extension is
+supported.
+
+If the value is true, create a "temporary" buffer object that only can
+be used on commands recorded in command buffers. Non-recording
+command enqueue functions must return CL_INVALID_OPERATION if the
+command refers to a temporary buffer object.
+
+The temporary buffer objects are managed by command buffers. When a
+temporary buffer object is used by multiple command buffer, the object
+receives disjoint storage for each command buffer.
+
+// Consequently, Data may not be exchanged between command buffers through
+// temporary buffers.
+
+Storage of the temporary buffer objects may be allocated on-demand
+basis. At the times the buffer is not needed, OpenCL implementations
+may reuse storage for other tasks within the command buffer.
+
+Contents of the temporary buffers are not guaranteed to be preserved
+across command buffer executions.
+
 | CL_MEM_BIND_TO_TENSOR | cl_tensor a| Use the created buffer as
 storage for the given valid tensor. To succeed creating the buffer,
-the target tensor may not have storage already, must not have
-CL_TENSOR_COMMAND_BUFFER_TEMPORARY property set on and _size_ argument
-of the clCreateBufferWithProperties() must be zero.
+the target tensor may not have storage already and _size_
+argument of the clCreateBufferWithProperties() must be zero.
 
 Size of the memory buffer is implementation-defined and it can be
 queried with clGetTensorInfo().
@@ -385,6 +376,26 @@ behavior.
 If the tensor is already bound to a buffer object,
 clCreateBufferWithProperties call returns CL_TENSOR_BOUND_TO_BUFFER
 error code.
+|===
+
+==== Add New Memory Object Query in Section 5.5.5
+
+[cols="2,1,2",stripes=odd]
+|===
+| CL_MEM_COMMAND_BUFFER_TEMPORARY | cl_bool | This property can be
+queried if *cl_khr_command_buffer* extension is supported.
+
+Return true if the _memobj_ is temporary buffer object for command
+buffers.
+|===
+
+==== Add New Error Codes in Appendix F
+
+[cols="2,3", stripes=odd]
+|===
+| CL_TENSOR_BOUND_TO_BUFFER | Returned when attempting to bind a
+  buffer object to a tensor which already has been bound to the same
+  or another.
 |===
 
 === Sample Codes
@@ -495,30 +506,36 @@ extension is supported:
 constexpr size_t b = 64, m = 100, n = 200, k = 50;
 
 cl_int err;
-// Create tensors which are used as temporaries in a command buffer.
-// Command buffers allocate space for them as needed.
-//
-// NOTE: same temporary tensor handle used in multiple command buffers
-//       will have separate storage. IOW, command buffers may not exchange
-//       data via temporary buffers between them.
-cl_tensor in0 = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
-  3, {b, m, k}, CL_TENSOR_FLOAT, err);
-cl_tensor in1 = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
-  3, {b, k, n}, CL_TENSOR_FLOAT, err);
-cl_tensor in2 = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
-  3, {b, m, n}, CL_TENSOR_FLOAT, err);
-cl_tensor t0  = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
-  3, {b, m, n}, CL_TENSOR_FLOAT, err);
-cl_tensor out = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
-  3, {b, m, n}, CL_TENSOR_FLOAT, err);
+cl_tensor in0 = clCreateTensor(ctx, nullptr, 3, {b, m, k}, CL_TENSOR_FLOAT, err);
+cl_tensor in1 = clCreateTensor(ctx, nullptr, 3, {b, k, n}, CL_TENSOR_FLOAT, err);
+cl_tensor in2 = clCreateTensor(ctx, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err);
+cl_tensor t0  = clCreateTensor(ctx, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err);
+cl_tensor out = clCreateTensor(ctx, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err);
 
 cl_kernel matmul_kernel = create_matmul_kernel(ctx, device_span, in0, in1, t0);
 cl_kernel add_kernel = create_add_kernel(ctx, device_span, t0, in2, out);
 
-// Binding a buffer to temporary tensor is not allowed.
-auto ignored = clCreateBufferWithProperties(
-  ctx, {CL_MEM_BIND_TO_TENSOR, t0, 0}, CL_MEM_READ_WRITE, 0, nullptr, &err);
-assert(err == CL_TENSOR_IS_TEMPORARY);
+// Bind command buffer managed storage to tensors.
+//
+// NOTE: same temporary tensor handle used in multiple command buffers
+//       will have separate storage. IOW, command buffers may not exchange
+//       data via temporary buffers between them.
+cl_mem in0_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_COMMAND_BUFFER_TEMPORARY, true, CL_MEM_BIND_TO_TENSOR, in0, 0},
+  CL_MEM_READ_ONLY, 0 /* must be zero for CL_MEM_BIND_TO_TENSOR. */,
+  nullptr, &err);
+cl_mem in1_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_COMMAND_BUFFER_TEMPORARY, true, CL_MEM_BIND_TO_TENSOR, in1, 0},
+  CL_MEM_READ_ONLY, 0, nullptr, &err);
+cl_mem in2_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_COMMAND_BUFFER_TEMPORARY, true, CL_MEM_BIND_TO_TENSOR, in2, 0},
+  CL_MEM_READ_ONLY, 0, nullptr, &err);
+cl_mem t0_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_COMMAND_BUFFER_TEMPORARY, true, CL_MEM_BIND_TO_TENSOR, t0, 0},
+  CL_MEM_READ_WRITE, 0, nullptr, &err);
+cl_mem out_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_COMMAND_BUFFER_TEMPORARY, true, CL_MEM_BIND_TO_TENSOR, out, 0},
+  CL_MEM_WRITE_ONLY, 0, nullptr, &err);
 
 std::vector<float> in0_data = ...;
 std::vector<float> in1_data = ...;
