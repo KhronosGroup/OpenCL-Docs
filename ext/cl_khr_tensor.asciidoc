@@ -271,7 +271,7 @@ tensor object from host memory / buffer object.
 
 [source,c]
 ----
-cl_int clEnqueueReadTensor(
+cl_int clEnqueueTranslateFromTensor(
   cl_command_queue command_queue,
   cl_tensor tensor,
   cl_bool blocking_command,
@@ -284,7 +284,7 @@ cl_int clEnqueueReadTensor(
 
 [source,c]
 ----
-cl_int clEnqueueWriteTensor(
+cl_int clEnqueueTranslateToTensor(
   cl_command_queue command_queue,
   cl_tensor tensor,
   cl_bool blocking_command,
@@ -331,8 +331,14 @@ cl_int clEnqueueWriteTensor(
   complete. If _event_wait_list_ and _event_ are not NULL, _event_
   must not refer to an element of the _event_wait_list_ array.
 
-For a read and write operation, the elements of N-dimensional tensor are
-related to host memory / buffer object as follows:
+The *clEnqueueTranslateToTensor* function copies contents of the buffer
+object / host allocation to tensor's storage in
+implementation-defined, opaque memory layout. The
+*clEnqueueTranslateFromTensor* function copies data from tensor's
+storage to buffer object / host allocation.
+
+The elements of buffer object / host allocation are mapped to tensor
+coordinates as follows:
 
 ----
 tensor.element(i0, i1, ..., i<N-2>, i<N-1>) == (tensor.dtype)buffer_or_host_ptr[
@@ -343,7 +349,11 @@ tensor.element(i0, i1, ..., i<N-2>, i<N-1>) == (tensor.dtype)buffer_or_host_ptr[
   i<N-1>]
 ----
 
-Where `iX` is a tensor coordinate index with inclusive range of `0..<shape[X]>`.
+Where `iX` is a tensor coordinate index with inclusive range of
+`0..<shape[X]-1>`. The `tensor.element()` represents an abstract
+function that accesses a tensor element in its storage at given
+coordinate. The method how the coordinates translate to tensor storage
+addresses is unspecified.
 
 // TODO: add clEnqueueCopyTensor
 
