@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.16">
-<title>cl_khr_tensor</title>
+<title>cl_exp_tensor</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -439,21 +439,26 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="article">
 <div id="header">
-<h1>cl_khr_tensor</h1>
+<h1>cl_exp_tensor</h1>
 </div>
 <div id="content">
 <div class="sect1">
-<h2 id="cl_khr_tensor">Tensor Data Type</h2>
+<h2 id="cl_exp_tensor">Tensor Data Type</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Purpose of this extension is to provide &#8230;&#8203;</p>
+<p>This extension provides a new opaque OpenCL datatype called
+<code>cl_tensor</code>. It is used for storing N-dimensional tensor data in
+implementation-defined memory layout which may be optimized based on
+tensor&#8217;s use cases. The datatype is designed to be efficiently used
+within the <code>cl_khr_command_buffers</code> extension to capture task graphs
+which can utilize tensors as input, output and temporary storage.</p>
 </div>
 <div class="sect2">
 <h3 id="_general_information">General information</h3>
 <div class="sect3">
 <h4 id="_name_strings">Name Strings</h4>
 <div class="paragraph">
-<p><code>cl_khr_tensor</code></p>
+<p><code>cl_exp_tensor</code></p>
 </div>
 </div>
 <div class="sect3">
@@ -488,14 +493,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="paragraph">
 <p>This extension requires OpenCL 1.2 or later.</p>
 </div>
-<div class="paragraph">
-<p>This extension requires cl_khr_command_buffer.</p>
-</div>
 </div>
 <div class="sect3">
 <h4 id="_contributors">Contributors</h4>
 <div class="paragraph">
-<p>Henry Linjamäki, Intel.<br></p>
+<p>Henry Linjamäki, Intel.<br>
+Pekka Jääslkeläinen, Intel and Tampere University.<br>
+Ben Ashbaugh, Intel.<br></p>
 </div>
 </div>
 </div>
@@ -516,8 +520,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
     cl_context context,
     const cl_tensor_peoperties *properties,
     size_t rank,
-    size_t shape,
-    cl_tensor_type dtype,
+    const size_t* shape,
+    cl_tensor_datatype dtype,
     cl_int *errcode_ret);</code></pre>
 </div>
 </div>
@@ -530,7 +534,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p><em>properties</em> is an optional list of properties for the tensor object
 and their corresponding values. The list is terminated with the
 special property 0. If no properties are required, properties may be
-NULL.</p>
+NULL. This extension does not define any optional properties for
+tensors.</p>
 </li>
 <li>
 <p><em>rank</em> is the number of dimensions. Zero value creates a "scalar"
@@ -555,25 +560,12 @@ is NULL, no error code is returned.</p>
 <p>clCreateTensor function creates a <code>rank</code>-dimensional tensor with
 <code>shape[0] * shape[1] * &#8230;&#8203; * shape[rank-1]</code> elements of <em>dtype</em>
 type. At the creation time of the tensor, it does not have
-storage. The storage is assigned to the tensor either by:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>calling clCreateBufferWithProperties() with CL_MEM_BIND_TO_TENSOR or</p>
-</li>
-<li>
-<p>automatically by command buffers - possibly on-demand basis - if the
-tensor is created with CL_TENSOR_COMMAND_BUFFER_TEMPORARY property
-set on.</p>
-</li>
-</ul>
+storage. The storage is assigned to the tensor by calling
+clCreateBufferWithProperties() with CL_MEM_BIND_TO_TENSOR.</p>
 </div>
 <div class="paragraph">
 <p>A command that refers to a tensor must be bound to a valid buffer
-object before enqueuing the command into a command queue unless the
-command is recorded in a command buffer and
-CL_TENSOR_COMMAND_BUFFER_TEMPORARY is set to true.</p>
+object before enqueuing or recording the command.</p>
 </div>
 <div class="paragraph">
 <p><strong>clCreateTensor</strong> returns a valid non-zero tensor object and errcode_ret
@@ -636,80 +628,45 @@ required by the OpenCL implementation on the host.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_UINT8</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">8-bit signed integer.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8-bit unsigned integer.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_UINT16</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">16-bit signed integer.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">16-bit unsigned integer.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_UINT32</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">32-bit signed integer.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">32-bit unsigned integer.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_UINT64</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">64-bit signed integer.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">64-bit unsigned integer.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_HALF</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Half precision floating-point value.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Half precision floating-point.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_BFLOAT16</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">16-bit brain floating-point value.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">16-bit brain floating-point.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_FLOAT</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Single precision floating-point value.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Single precision floating-point.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_DOUBLE</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Double precision floating-point value.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Double precision floating-point.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_COMPLEX64</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">64-bit complex floating point value with
+<td class="tableblock halign-left valign-top"><p class="tableblock">64-bit complex floating point with
   32-bit real and imaginary part.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_COMPLEX128</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">128-bit complex floating point value with
+<td class="tableblock halign-left valign-top"><p class="tableblock">128-bit complex floating point with
   64-bit real and imaginary part.</p></td>
-</tr>
-</tbody>
-</table>
-<table class="tableblock frame-all grid-all stripes-odd stretch">
-<caption class="title">Table 2. Tensor properties</caption>
-<colgroup>
-<col style="width: 40%;">
-<col style="width: 20%;">
-<col style="width: 40%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top"><strong>Tensor Property</strong></th>
-<th class="tableblock halign-left valign-top"><strong>Property Value</strong></th>
-<th class="tableblock halign-left valign-top"><strong>Description</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_COMMAND_BUFFER_TEMPORARY</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">cl_bool</p></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>If the value is true, create a "temporary" tensor that only can be
-used on commands recorded in command buffers. The storage of the
-temporary tensors are managed by command buffers. When a temporary
-tensor is used by multiple command buffer, the tensor receive separate
-storage for each command buffer.</p>
-</div>
-<div class="paragraph">
-<p>Temporary tensors may not be bound to buffer objects.</p>
-</div>
-<div class="paragraph">
-<p>Data stored in temporary tensors are not preserved across command
-buffer executions.</p>
-</div></div></td>
 </tr>
 </tbody>
 </table>
@@ -718,8 +675,7 @@ buffer executions.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">cl_int clRetainTensorObject(
-  cl_tensor tensor);</code></pre>
+<pre class="highlight"><code class="language-c" data-lang="c">cl_int clRetainTensorObject(cl_tensor tensor);</code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -739,7 +695,7 @@ successfully. Otherwise, it returns one of the following errors:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>CL_INVALID_TENSOR if tensor is not a valid tensor object.</p>
+<p>CL_INVALID_TENSOR if the tensor is not a valid tensor object.</p>
 </li>
 </ul>
 </div>
@@ -748,8 +704,7 @@ successfully. Otherwise, it returns one of the following errors:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">cl_int clReleaseTensorObject(
-  cl_tensor tensor);</code></pre>
+<pre class="highlight"><code class="language-c" data-lang="c">cl_int clReleaseTensorObject(cl_tensor tensor);</code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -833,7 +788,7 @@ ignored.</p>
 </ul>
 </div>
 <table class="tableblock frame-all grid-all stripes-odd stretch">
-<caption class="title">Table 3. List of supported param_names by clGetTensorInfo</caption>
+<caption class="title">Table 2. List of supported param_names by clGetTensorInfo</caption>
 <colgroup>
 <col style="width: 40%;">
 <col style="width: 20%;">
@@ -852,21 +807,14 @@ ignored.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_DTYPE</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">cl_tensor_type</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">cl_tensor_datatype</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Return the tensor data type.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_COMMAND_BUFFER_TEMPORARY</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">cl_bool</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Return true if the
-tensor is temporary tensor for command buffers.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_BOUND_TO_BUFFER</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">cl_bool</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Return true if the tensor is
-bound to a buffer. If CL_TENSOR_COMMAND_BUFFER_TEMPORARY is true, then
-CL_TENSOR_BOUND_TO_BUFFER must return false.</p></td>
+bound to a buffer.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_BUFFER</p></td>
@@ -902,12 +850,12 @@ count.</p></td>
 </tbody>
 </table>
 <div class="paragraph">
-<p>To read from a tensor to host memory / buffer object or to write to a
-tensor object from host memory / buffer object call one of the functions.</p>
+<p>The following functions are for reading from a tensor to host memory / buffer object or to write to a
+tensor object from host memory / buffer object.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">cl_int clEnqueueReadTensor(
+<pre class="highlight"><code class="language-c" data-lang="c">cl_int clEnqueueTranslateFromTensor(
   cl_command_queue command_queue,
   cl_tensor tensor,
   cl_bool blocking_command,
@@ -920,12 +868,12 @@ tensor object from host memory / buffer object call one of the functions.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">cl_int clEnqueueWriteTensor(
+<pre class="highlight"><code class="language-c" data-lang="c">cl_int clEnqueueTranslateToTensor(
   cl_command_queue command_queue,
   cl_tensor tensor,
   cl_bool blocking_command,
   cl_mem buffer,
-  void* host_ptr,
+  const void* host_ptr,
   cl_uint num_events_in_wait_list,
   const cl_event* event_wait_list,
   cl_event* event);</code></pre>
@@ -946,13 +894,10 @@ created with the same OpenCL context.</p>
 blocking or non-blocking (see below).</p>
 </li>
 <li>
-<p><em>buffer</em> refers to a valid buffer object where data is to be
-read into or to be written from when the value of <em>host_ptr</em> is
-NULL. If <em>host_ptr</em> is non-NULL then value of <em>buffer</em> is ignored.</p>
-</li>
-<li>
-<p><em>host_ptr</em> is the pointer to buffer in host memory where data is to
-be read into or to be written from when the value is non-NULL.</p>
+<p><em>buffer</em> and <em>host_ptr</em> refer to a valid buffer object / host
+allocation where data is to be read into or to be written from.
+Either the <em>buffer</em> or <em>host_ptr</em> can be non-NULL in which case the
+non-NULL argument is used as the operand for the operation.</p>
 </li>
 <li>
 <p><em>event_wait_list</em> and <em>num_events_in_wait_list</em> specify events that
@@ -979,12 +924,19 @@ must not refer to an element of the <em>event_wait_list</em> array.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>For a read and write operation, the elements of N-dimensional tensor are
-related to host memory / buffer object as followed:</p>
+<p>The <strong>clEnqueueTranslateToTensor</strong> function copies contents of the buffer
+object / host allocation to tensor&#8217;s storage in
+implementation-defined, opaque memory layout. The
+<strong>clEnqueueTranslateFromTensor</strong> function copies data from tensor&#8217;s
+storage to buffer object / host allocation.</p>
+</div>
+<div class="paragraph">
+<p>The elements of buffer object / host allocation are mapped to tensor
+coordinates as follows:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>tensor.element(i0, i1, ..., i&lt;N-2&gt;, i&lt;N-1&gt;)) == (tensor.dtype)buffer_or_host_ptr[
+<pre>tensor.element(i0, i1, ..., i&lt;N-2&gt;, i&lt;N-1&gt;) == (tensor.dtype)buffer_or_host_ptr[
   i0 * tensor.shape[1] * tensor.shape[2] * ... * tensor.shape[N-1] +
   i1 * tensor.shape[2] * tensor.shape[3] * ... * tensor.shape[N-1] +
   ... +
@@ -993,7 +945,11 @@ related to host memory / buffer object as followed:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Where <code>iX</code> is a tensor coordinate index with inclusive range of <code>0..&lt;shape[X]&gt;</code>.</p>
+<p>Where <code>iX</code> is a tensor coordinate index with inclusive range of
+<code>0..&lt;shape[X]-1&gt;</code>. The <code>tensor.element()</code> represents an abstract
+function that accesses a tensor element in its storage at given
+coordinate. The method how the coordinates translate to tensor storage
+addresses is unspecified.</p>
 </div>
 </div>
 <div class="sect3">
@@ -1004,6 +960,31 @@ related to host memory / buffer object as followed:</p>
 <col style="width: 20%;">
 <col style="width: 40%;">
 </colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">CL_MEM_COMMAND_BUFFER_TEMPORARY</th>
+<th class="tableblock halign-left valign-top">cl_bool</th>
+<th class="tableblock halign-left valign-top">This property can be set if <strong>cl_khr_command_buffer</strong> extension is
+supported.
+
+If the value is true, create a "temporary" buffer object that only can
+be used on commands recorded in command buffers. Non-recording
+command enqueue functions must return CL_INVALID_OPERATION if the
+command refers to a temporary buffer object.
+
+The temporary buffer objects are managed by command buffers. When a
+temporary buffer object is used by multiple command buffer, the object
+receives disjoint storage for each command buffer.
+
+
+Storage of the temporary buffer objects may be allocated on-demand
+basis. At the times the buffer is not needed, OpenCL implementations
+may reuse storage for other tasks within the command buffer.
+
+Contents of the temporary buffers are not guaranteed to be preserved
+across command buffer executions.</th>
+</tr>
+</thead>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_MEM_BIND_TO_TENSOR</p></td>
@@ -1011,9 +992,8 @@ related to host memory / buffer object as followed:</p>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
 <p>Use the created buffer as
 storage for the given valid tensor. To succeed creating the buffer,
-the target tensor may not have storage already, must not have
-CL_TENSOR_COMMAND_BUFFER_TEMPORARY property set on and <em>size</em> argument
-of the clCreateBufferWithProperties() must be zero.</p>
+the target tensor may not have storage already and <em>size</em>
+argument of the clCreateBufferWithProperties() must be zero.</p>
 </div>
 <div class="paragraph">
 <p>Size of the memory buffer is implementation-defined and it can be
@@ -1032,6 +1012,48 @@ behavior.</p>
 clCreateBufferWithProperties call returns CL_TENSOR_BOUND_TO_BUFFER
 error code.</p>
 </div></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_add_new_memory_object_query_in_section_5_5_5">Add New Memory Object Query in Section 5.5.5</h4>
+<table class="tableblock frame-all grid-all stripes-odd stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 20%;">
+<col style="width: 40%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CL_MEM_COMMAND_BUFFER_TEMPORARY</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">cl_bool</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This property can be
+queried if <strong>cl_khr_command_buffer</strong> extension is supported.</p>
+<p class="tableblock">Return true if the <em>memobj</em> is temporary buffer object for command
+buffers.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_add_new_error_codes_in_appendix_f">Add New Error Codes in Appendix F</h4>
+<table class="tableblock frame-all grid-all stripes-odd stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_BOUND_TO_BUFFER</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Returned when attempting to bind a
+  buffer object to a tensor which already has been bound to the same
+  or another.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CL_INVALID_TENSOR</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Returned then the specified tensor is not a
+  valid tensor object.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1062,7 +1084,7 @@ error code.</p>
   return matmul_kernel;
 }
 
-cl_kernel create_matmul_kernel(
+cl_kernel create_add_kernel(
   cl_context ctx, std::span&lt;cl_device_id&gt; device_span,
   cl_tensor lhs, cl_tensor rhs, cl_tensor out) {
   // A hypothetical add kernel signature in pseudo OpenCL C for illustrative
@@ -1149,30 +1171,36 @@ extension is supported:</p>
 <pre class="highlight"><code class="language-c" data-lang="c">constexpr size_t b = 64, m = 100, n = 200, k = 50;
 
 cl_int err;
-// Create tensors which are used as temporaries in a command buffer.
-// Command buffers allocate space for them as needed.
-//
-// NOTE: same temporary tensor handle used in multiple command buffers
-//       will have separate storage. IOW, command buffers may not exchange
-//       data via temporary buffers between them.
-cl_tensor in0 = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
-  3, {b, m, k}, CL_TENSOR_FLOAT, err);
-cl_tensor in1 = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
-  3, {b, k, n}, CL_TENSOR_FLOAT, err);
-cl_tensor in2 = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
-  3, {b, m, n}, CL_TENSOR_FLOAT, err);
-cl_tensor t0  = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
-  3, {b, m, n}, CL_TENSOR_FLOAT, err);
-cl_tensor out = clCreateTensor(ctx, {CL_TENSOR_COMMAND_BUFFER_TEMPORARY, true, 0},
-  3, {b, m, n}, CL_TENSOR_FLOAT, err);
+cl_tensor in0 = clCreateTensor(ctx, nullptr, 3, {b, m, k}, CL_TENSOR_FLOAT, err);
+cl_tensor in1 = clCreateTensor(ctx, nullptr, 3, {b, k, n}, CL_TENSOR_FLOAT, err);
+cl_tensor in2 = clCreateTensor(ctx, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err);
+cl_tensor t0  = clCreateTensor(ctx, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err);
+cl_tensor out = clCreateTensor(ctx, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err);
 
 cl_kernel matmul_kernel = create_matmul_kernel(ctx, device_span, in0, in1, t0);
 cl_kernel add_kernel = create_add_kernel(ctx, device_span, t0, in2, out);
 
-// Binding a buffer to temporary tensor is not allowed.
-auto ignored = clCreateBufferWithProperties(
-  ctx, {CL_MEM_BIND_TO_TENSOR, t0, 0}, CL_MEM_READ_WRITE, 0, nullptr, &amp;err);
-assert(err == CL_TENSOR_IS_TEMPORARY)
+// Bind command buffer managed storage to tensors.
+//
+// NOTE: same temporary tensor handle used in multiple command buffers
+//       will have separate storage. IOW, command buffers may not exchange
+//       data via temporary buffers between them.
+cl_mem in0_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_COMMAND_BUFFER_TEMPORARY, true, CL_MEM_BIND_TO_TENSOR, in0, 0},
+  CL_MEM_READ_ONLY, 0 /* must be zero for CL_MEM_BIND_TO_TENSOR. */,
+  nullptr, &amp;err);
+cl_mem in1_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_COMMAND_BUFFER_TEMPORARY, true, CL_MEM_BIND_TO_TENSOR, in1, 0},
+  CL_MEM_READ_ONLY, 0, nullptr, &amp;err);
+cl_mem in2_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_COMMAND_BUFFER_TEMPORARY, true, CL_MEM_BIND_TO_TENSOR, in2, 0},
+  CL_MEM_READ_ONLY, 0, nullptr, &amp;err);
+cl_mem t0_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_COMMAND_BUFFER_TEMPORARY, true, CL_MEM_BIND_TO_TENSOR, t0, 0},
+  CL_MEM_READ_WRITE, 0, nullptr, &amp;err);
+cl_mem out_mem = clCreateBufferWithProperties(
+  ctx, {CL_MEM_COMMAND_BUFFER_TEMPORARY, true, CL_MEM_BIND_TO_TENSOR, out, 0},
+  CL_MEM_WRITE_ONLY, 0, nullptr, &amp;err);
 
 std::vector&lt;float&gt; in0_data = ...;
 std::vector&lt;float&gt; in1_data = ...;
@@ -1214,14 +1242,24 @@ assert(clEnqueueReadTensor(..., t0, ...) == CL_INVALID_OPERATION);</code></pre>
 </div>
 <div class="sect2">
 <h3 id="_open_questions">Open Questions</h3>
-
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Should we have support for tensors with undefined shape and tensors
+with unknown / symbolic dimension sizes like in ONNX?</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><strong>UNRESOLVED</strong></p>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-10-30 16:51:10 +0200
+Last updated 2023-11-02 14:25:56 +0200
 </div>
 </div>
 </body>
