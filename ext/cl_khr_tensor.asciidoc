@@ -51,7 +51,7 @@ cl_tensor clCreateTensor(
     cl_context context,
     const cl_tensor_peoperties *properties,
     size_t rank,
-    size_t shape,
+    const size_t* shape,
     cl_tensor_type dtype,
     cl_int *errcode_ret);
 ----
@@ -88,7 +88,7 @@ storage. The storage is assigned to the tensor either by:
   set on.
 
 A command that refers to a tensor must be bound to a valid buffer
-object before enqueuing the command into a command queue unless the
+object before enqueuing the command that refers to the tensor into a command queue unless the
 command is recorded in a command buffer and
 CL_TENSOR_COMMAND_BUFFER_TEMPORARY is set to true.
 
@@ -124,7 +124,7 @@ following error values returned in errcode_ret:
 | CL_TENSOR_UINT16     | 16-bit signed integer.
 | CL_TENSOR_UINT32     | 32-bit signed integer.
 | CL_TENSOR_UINT64     | 64-bit signed integer.
-| CL_TENSOR_HALF       | Half precision floating-point value.
+| CL_TENSOR_HALF       | Half precision floating-point.
 | CL_TENSOR_BFLOAT16   | 16-bit brain floating-point value.
 | CL_TENSOR_FLOAT      | Single precision floating-point value.
 | CL_TENSOR_DOUBLE     | Double precision floating-point value.
@@ -144,7 +144,7 @@ following error values returned in errcode_ret:
 a| If the value is true, create a "temporary" tensor that only can be
 used on commands recorded in command buffers. The storage of the
 temporary tensors are managed by command buffers. When a temporary
-tensor is used by multiple command buffer, the tensor receive separate
+tensor is used by multiple command buffers, the tensor receives separate
 storage for each command buffer.
 
 // IOW, Data may not be exchanged between command buffers through
@@ -171,7 +171,7 @@ The _tensor_ reference count is incremented.
 *clRetainTensor* returns CL_SUCCESS if the function is executed
 successfully. Otherwise, it returns one of the following errors:
 
-* CL_INVALID_TENSOR if tensor is not a valid tensor object.
+* CL_INVALID_TENSOR if the tensor is not a valid tensor object.
 
 To release a tensor object, call the function
 
@@ -242,7 +242,7 @@ cl_int clGetTensorInfo(
 | CL_TENSOR_DTYPE | cl_tensor_type | Return the tensor data type.
 
 | CL_TENSOR_COMMAND_BUFFER_TEMPORARY | cl_bool | Return true if the
-tensor is temporary tensor for command buffers.
+tensor is a temporary tensor for command buffers.
 
 | CL_TENSOR_BOUND_TO_BUFFER | cl_bool | Return true if the tensor is
 bound to a buffer. If CL_TENSOR_COMMAND_BUFFER_TEMPORARY is true, then
@@ -263,8 +263,8 @@ clGetTensorInfo call returns:
 count.
 |===
 
-To read from a tensor to host memory / buffer object or to write to a
-tensor object from host memory / buffer object call one of the functions.
+The following functions are for reading from a tensor to host memory / buffer object or to write to a
+tensor object from host memory / buffer object.
 
 [source,c]
 ----
@@ -286,7 +286,7 @@ cl_int clEnqueueWriteTensor(
   cl_tensor tensor,
   cl_bool blocking_command,
   cl_mem buffer,
-  void* host_ptr,
+  const void* host_ptr,
   cl_uint num_events_in_wait_list,
   const cl_event* event_wait_list,
   cl_event* event);
@@ -329,10 +329,10 @@ cl_int clEnqueueWriteTensor(
   must not refer to an element of the _event_wait_list_ array.
 
 For a read and write operation, the elements of N-dimensional tensor are
-related to host memory / buffer object as followed:
+related to host memory / buffer object as follows:
 
 ----
-tensor.element(i0, i1, ..., i<N-2>, i<N-1>)) == (tensor.dtype)buffer_or_host_ptr[
+tensor.element(i0, i1, ..., i<N-2>, i<N-1>) == (tensor.dtype)buffer_or_host_ptr[
   i0 * tensor.shape[1] * tensor.shape[2] * ... * tensor.shape[N-1] +
   i1 * tensor.shape[2] * tensor.shape[3] * ... * tensor.shape[N-1] +
   ... +
@@ -505,7 +505,7 @@ cl_kernel add_kernel = create_add_kernel(ctx, device_span, t0, in2, out);
 // Binding a buffer to temporary tensor is not allowed.
 auto ignored = clCreateBufferWithProperties(
   ctx, {CL_MEM_BIND_TO_TENSOR, t0, 0}, CL_MEM_READ_WRITE, 0, nullptr, &err);
-assert(err == CL_TENSOR_IS_TEMPORARY)
+assert(err == CL_TENSOR_IS_TEMPORARY);
 
 std::vector<float> in0_data = ...;
 std::vector<float> in1_data = ...;
