@@ -20,11 +20,9 @@ from generator import write
 
 
 from pygenerator import PyOutputGenerator
-from reflib import logDiag, logWarn, setLogFile
+from reflib import logDiag, logWarn, logErr, setLogFile
 from reg import Registry
-
-from clconventions import OpenCLConventions as APIConventions
-
+from apiconventions import APIConventions
 
 # Simple timer functions
 startTime = None
@@ -131,6 +129,11 @@ def makeGenOpts(args):
     # An API style conventions object
     conventions = APIConventions()
 
+    if args.apiname is not None:
+        defaultAPIName = args.apiname
+    else:
+        defaultAPIName = conventions.xml_api_name
+
     # API include files for spec and ref pages
     # Overwrites include subdirectories in spec source tree
     # The generated include files do not include the calling convention
@@ -145,7 +148,7 @@ def makeGenOpts(args):
             filename          = 'timeMarker',
             directory         = directory,
             genpath           = genpath,
-            apiname           = 'opencl',
+            apiname           = defaultAPIName,
             profile           = None,
             versions          = featuresPat,
             emitversions      = featuresPat,
@@ -163,14 +166,14 @@ def makeGenOpts(args):
 
     # Python representation of API information, used by scripts that
     # don't need to load the full XML.
-    genOpts['api.py'] = [
+    genOpts['apimap.py'] = [
           PyOutputGenerator,
           DocGeneratorOptions(
             conventions       = conventions,
-            filename          = 'api.py',
+            filename          = 'apimap.py',
             directory         = directory,
-            genpath           = genpath,
-            apiname           = 'opencl',
+            genpath           = None,
+            apiname           = defaultAPIName,
             profile           = None,
             versions          = featuresPat,
             emitversions      = featuresPat,
@@ -180,6 +183,7 @@ def makeGenOpts(args):
             emitExtensions    = emitExtensionsPat,
             reparentEnums     = False)
         ]
+
 
     # Extension metainformation for spec extension appendices
     # Includes all extensions by default, but only so that the generated
@@ -192,7 +196,7 @@ def makeGenOpts(args):
             filename          = 'timeMarker',
             directory         = directory,
             genpath           = None,
-            apiname           = 'opencl',
+            apiname           = defaultAPIName,
             profile           = None,
             versions          = featuresPat,
             emitversions      = None,
@@ -284,7 +288,7 @@ def makeGenOpts(args):
             filename          = 'cl.h',
             directory         = directory,
             genpath           = None,
-            apiname           = 'opencl',
+            apiname           = defaultAPIName,
             profile           = None,
             versions          = featuresPat,
             emitversions      = featuresPat,
@@ -353,8 +357,11 @@ def genTarget(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('-apiname', action='store',
+                        default=None,
+                        help='Specify API to generate (defaults to repository-specific conventions object value)')
     parser.add_argument('-defaultExtensions', action='store',
-                        default='opencl',
+                        default=APIConventions().xml_api_name,
                         help='Specify a single class of extensions to add to targets')
     parser.add_argument('-extension', action='append',
                         default=[],
@@ -425,10 +432,12 @@ if __name__ == '__main__':
     else:
         diag = None
 
-    (gen, options) = (None, None)
-    if not args.validate:
-      # Create the API generator & generator options
-      (gen, options) = genTarget(args)
+    if args.time:
+        # Log diagnostics and warnings
+        setLogFile(setDiag = True, setWarn = True, filename = '-')
+
+    # Create the API generator & generator options
+    (gen, options) = genTarget(args)
 
     # Create the registry object with the specified generator and generator
     # options. The options are set before XML loading as they may affect it.
@@ -443,10 +452,6 @@ if __name__ == '__main__':
     startTimer(args.time)
     reg.loadElementTree(tree)
     endTimer(args.time, '* Time to parse ElementTree =')
-
-    if args.validate:
-        success = reg.validateRegistry()
-        sys.exit(0 if success else 1)
 
     if args.dump:
         logDiag('* Dumping registry to regdump.txt')

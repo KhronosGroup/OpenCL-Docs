@@ -20,24 +20,34 @@ MKDIR	    = mkdir -p
 CP	    = cp
 GITHEAD     = ./.git/logs/HEAD
 
+# Where the repo root is
+ROOTDIR        = $(CURDIR)
+# Where the spec files are
+SPECDIR        = $(CURDIR)
+
+# Path to scripts used in generation
+SCRIPTS  = $(ROOTDIR)/scripts
+# Path to configs and asciidoc extensions used in generation
+CONFIGS  = $(ROOTDIR)/config
+
 # Target directories for output files
 # HTMLDIR - 'html' target
 # PDFDIR - 'pdf' target
 # CHECKDIR - 'allchecks' target
-OUTDIR	  := out
-HTMLDIR   := $(OUTDIR)/html
-PDFDIR	  := $(OUTDIR)/pdf
+OUTDIR	  = out
+HTMLDIR   = $(OUTDIR)/html
+PDFDIR	  = $(OUTDIR)/pdf
+PYAPIMAP  = $(GENERATED)/apimap.py
 
 # PDF Equations are written to SVGs, this dictates the location to store those files (temporary)
-PDFMATHDIR := $(OUTDIR)/equations_temp
+PDFMATHDIR = $(OUTDIR)/equations_temp
 
 # Set VERBOSE to -v to see what asciidoc is doing.
 VERBOSE =
 
 # asciidoc attributes to set.
 # NOTEOPTS   sets options controlling which NOTEs are generated
-# ATTRIBOPTS sets the api revision and enables MathJax generation, and
-#	     the path to generate include files
+# ATTRIBOPTS sets the api revision and enables KaTeX generation
 # ADOCOPTS   options for asciidoc->HTML5 output (book document type)
 # ADOCMANOPTS options for asciidoc->HTML5 output (manpage document type)
 # Currently unused in CL spec
@@ -90,12 +100,12 @@ CXX4OPENCL_ATTRIBOPTS	= -a revnumber="$(CXX4OPENCL_DOCREVISION)" \
 			  $(COMMONATTRIBOPTS)
 
 
-ADOCEXTS	      = -r $(CURDIR)/config/sectnumoffset-treeprocessor.rb \
-	-r $(CURDIR)/config/spec-macros.rb \
-	-r $(CURDIR)/config/rouge_opencl.rb
+ADOCEXTS	      = -r $(CONFIGS)/sectnumoffset-treeprocessor.rb \
+			-r $(CONFIGS)/spec-macros.rb \
+			-r $(CONFIGS)/rouge_opencl.rb
 CXX4OPENCL_ADOCOPTS   = -d book $(CXX4OPENCL_ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
 ADOCCOMMONOPTS	      = -a apispec="$(CURDIR)/api" \
-			-a config="$(CURDIR)/config" \
+			-a config="$(CONFIGS)" \
 			-a cspec="$(CURDIR)/c" \
 			-a images="$(CURDIR)/images" \
 			$(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
@@ -108,9 +118,9 @@ ADOCMANOPTS	      = -d manpage $(ADOCCOMMONOPTS)
 # ADOCHTMLOPTS also relies on the absolute build-time path to the
 # 'stylesdir' containing our custom CSS.
 KATEXDIR     = ../katex
-ADOCHTMLEXTS = -r $(CURDIR)/config/katex_replace.rb
+ADOCHTMLEXTS = -r $(CONFIGS)/katex_replace.rb
 ADOCHTMLOPTS = $(ADOCHTMLEXTS) -a katexpath=$(KATEXDIR) \
-	       -a stylesheet=khronos.css -a stylesdir=$(CURDIR)/config \
+	       -a stylesheet=khronos.css -a stylesdir=$(CONFIGS) \
 	       -a sectanchors
 
 ADOCPDFEXTS  = -r asciidoctor-pdf -r asciidoctor-mathematical --trace
@@ -357,18 +367,28 @@ $(PDFDIR)/$(ICDINSTSPEC).pdf: $(ICDINSTSPECSRC)
 
 # Clean generated and output files
 
-clean: clean_html clean_pdf clean_generated
+clean: clean_html clean_pdf clean_man clean_generated
 
 clean_html:
-	$(QUIET)$(RMRF) $(HTMLDIR) $(MANHTMLDIR) $(OUTDIR)/katex
+	$(QUIET)$(RMRF) $(HTMLDIR) $(OUTDIR)/katex
 
 clean_pdf:
 	$(QUIET)$(RMRF) $(PDFDIR) $(PDFMATHDIR)
 
+clean_man:
+	$(QUIET)$(RMRF) $(MANHTMLDIR)
+
+# Generated directories and files to remove
+CLEAN_GEN_PATHS = \
+    $(APIINCDIR) \
+    $(REFPATH) \
+    $(GENERATED)/__pycache__ \
+    $(PDFMATHDIR) \
+    $(PYAPIMAP) \
+    $(ATTRIBFILE)
+
 clean_generated:
-	$(QUIET)$(RMRF) $(APIINCDIR)/* $(GENERATED)/api.py $(ATTRIBFILE)
-	$(QUIET)$(RMRF) $(PDFMATHDIR)
-	$(QUIET)$(RMRF) $(GENERATED)/__pycache__
+	$(QUIET)$(RMRF) $(CLEAN_GEN_PATHS)
 
 # Ref page targets for individual pages
 MANDIR	    := man
@@ -395,12 +415,11 @@ MANSOURCES   = $(filter-out $(REFPATH)/apispec.txt $(REFPATH)/footer.txt $(wildc
 # For now, all core and extension ref pages are extracted by genRef.py.
 ## Temporary - eventually should be all spec asciidoctor source files
 SPECFILES = $(wildcard api/*.asciidoc) OpenCL_API.txt OpenCL_C.txt
-SCRIPTS = scripts
 GENREF = $(SCRIPTS)/genRef.py
 LOGFILE = $(REFPATH)/refpage.log
 
 refpages: $(REFPATH)/apispec.txt
-$(REFPATH)/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(GENERATED)/api.py
+$(REFPATH)/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(PYAPIMAP)
 	$(QUIET)$(MKDIR) $(REFPATH)
 	$(PYTHON) $(GENREF) -genpath $(GENERATED) -basedir $(REFPATH) \
 	    -rewrite $(REFPATH)/rewritebody -toc $(REFPATH)/tocbody \
@@ -439,14 +458,14 @@ $(MANHTMLDIR)/intro.html: $(REFPATH)/intro.txt $(MANCOPYRIGHT)
 	    $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $<
 
 # Targets generated from the XML and registry processing scripts
-#   api.py - Python encoding of the registry
+#   apimap.py - Python encoding of the registry
 #   $(APIINCDIR)/timeMarker - proxy for 'apiinc' - generate API interfaces
 #
 # $(GENSCRIPTEXTRA) are extra options that can be passed to the
 # generation script, such as
 #   '-diag diag'
 
-REGISTRY       = xml
+REGISTRY       = $(ROOTDIR)/xml
 APIXML	       = $(REGISTRY)/cl.xml
 GENSCRIPT      = $(SCRIPTS)/gencl.py
 DICTSCRIPT     = $(SCRIPTS)/gen_dictionaries.py
@@ -454,8 +473,13 @@ VERSIONSCRIPT  = $(SCRIPTS)/gen_version_notes.py
 GENSCRIPTOPTS  = $(VERSIONOPTIONS) $(EXTOPTIONS) $(GENSCRIPTEXTRA) -registry $(APIXML)
 GENSCRIPTEXTRA =
 
-$(GENERATED)/api.py: $(APIXML) $(GENSCRIPT)
-	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(GENERATED) api.py
+PYAPIMAP  = $(GENERATED)/apimap.py
+
+scriptapi: pyapi
+
+pyapi $(PYAPIMAP): $(APIXML) $(GENSCRIPT)
+	$(QUIET)$(MKDIR) $(GENERATED)
+	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(GENERATED) apimap.py
 
 apiinc: $(APIINCDIR)/timeMarker
 
@@ -474,3 +498,6 @@ $(ATTRIBFILE):
 	for attrib in $(EXTS) ; do \
 	    echo ":$${attrib}:" ; \
 	done > $@
+
+# Debugging aid - generate all files from registry XML
+generated: $(PYAPIMAP) $(GENDEPENDS)

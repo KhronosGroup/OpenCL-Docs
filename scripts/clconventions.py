@@ -12,27 +12,23 @@ from conventions import ConventionsBase
 
 
 class OpenCLConventions(ConventionsBase):
-    def formatExtension(self, name):
-        """Mark up a name as an extension for the spec."""
-        return '`<<{}>>`'.format(name)
-
     @property
     def null(self):
         """Preferred spelling of NULL."""
         return '`NULL`'
 
-    @property
-    def constFlagBits(self):
-        """Returns True if static const flag bits should be generated, False if an enumerated type should be generated."""
-        return False
+    def formatExtension(self, name):
+        """Mark up a name as an extension for the spec."""
+        return '`<<{}>>`'.format(name)
 
     @property
     def struct_macro(self):
         return 'sname:'
 
     @property
-    def external_macro(self):
-        return 'code:'
+    def constFlagBits(self):
+        """Returns True if static const flag bits should be generated, False if an enumerated type should be generated."""
+        return False
 
     @property
     def structtype_member_name(self):
@@ -89,19 +85,19 @@ class OpenCLConventions(ConventionsBase):
             return None
 
     @property
-    def xml_supported_name_of_api(self):
-        """Return the supported= attribute used in API XML"""
-        return 'opencl'
-
-    @property
     def api_prefix(self):
         """Return API token prefix"""
         return 'CL_'
 
     @property
-    def api_version_prefix(self):
-        """Return API core version token prefix"""
-        return 'CL_VERSION_'
+    def write_contacts(self):
+        """Return whether contact list should be written to extension appendices"""
+        return True
+
+    @property
+    def write_refpage_include(self):
+        """Return whether refpage include should be written to extension appendices"""
+        return True
 
     @property
     def KHR_prefix(self):
@@ -112,33 +108,6 @@ class OpenCLConventions(ConventionsBase):
     def EXT_prefix(self):
         """Return extension name prefix for EXT extensions"""
         return 'cl_ext_'
-
-    @property
-    def write_contacts(self):
-        """Return whether contact list should be written to extension appendices"""
-        return True
-
-    @property
-    def write_refpage_include(self):
-        """Return whether refpage include should be written to extension appendices"""
-        return False
-
-    def writeFeature(self, featureExtraProtect, filename):
-        """Returns True if OutputGenerator.endFeature should write this feature.
-           Used in COutputGenerator
-        """
-        return True
-
-    def requires_error_validation(self, return_type):
-        """Returns True if the return_type element is an API result code
-           requiring error validation.
-        """
-        return False
-
-    @property
-    def required_errors(self):
-        """Return a list of required error codes for validation."""
-        return []
 
     def is_externsync_command(self, protoname):
         """Returns True if the protoname element is an API command requiring
@@ -151,18 +120,6 @@ class OpenCLConventions(ConventionsBase):
         For OpenCL, these are names with a case-insensitive 'cl' prefix.
         """
         return name[0:2].lower() == 'cl'
-
-    def is_voidpointer_alias(self, tag, text, tail):
-        """Return True if the declaration components (tag,text,tail) of an
-           element represents a void * type
-        """
-        return tag == 'type' and text == 'void' and tail.startswith('*')
-
-    def make_voidpointer_alias(self, tail):
-        """Reformat a void * declaration to include the API alias macro.
-           Vulkan doesn't have an API alias macro, so do nothing.
-        """
-        return tail
 
     def specURL(self, spectype = 'api'):
         """Return public registry URL which ref pages should link to for
@@ -197,16 +154,6 @@ class OpenCLConventions(ConventionsBase):
         return '../appendices/meta'
 
     @property
-    def extra_refpage_headers(self):
-        """Return any extra text to add to refpage headers."""
-        return 'include::{config}/attribs.txt[]\n' + \
-            'include::{config}/opencl.asciidoc[]\n' + \
-            'include::{apispec}/footnotes.asciidoc[]\n' + \
-            'include::{cspec}/footnotes.asciidoc[]\n' + \
-            'include::{cspec}/feature-dictionary.asciidoc[]\n' + \
-            'include::{generated}/api/api-dictionary-no-links.asciidoc[]'
-
-    @property
     def extension_index_prefixes(self):
         """Return a list of extension prefixes used to group extension refpages."""
         return ['cl_khr', 'cl_ext', 'cl']
@@ -221,7 +168,7 @@ class OpenCLConventions(ConventionsBase):
     @property
     def spec_reflow_path(self):
         """Return the relative path to the spec source folder to reflow"""
-        return '.'
+        return os.getcwd()
 
     @property
     def spec_no_reflow_dirs(self):
@@ -239,3 +186,26 @@ class OpenCLConventions(ConventionsBase):
         Vulkan, so these checks are not appropriate."""
 
         return True
+
+    @property
+    def extra_refpage_headers(self):
+        """Return any extra text to add to refpage headers."""
+        return 'include::{config}/attribs.txt[]\n' + \
+            'include::{config}/opencl.asciidoc[]\n' + \
+            'include::{apispec}/footnotes.asciidoc[]\n' + \
+            'include::{cspec}/footnotes.asciidoc[]\n' + \
+            'include::{cspec}/feature-dictionary.asciidoc[]\n' + \
+            'include::{generated}/api/api-dictionary-no-links.asciidoc[]'
+
+    @property
+    def extra_refpage_body(self):
+        """Return any extra text (following the title) for generated
+           reference pages."""
+        return 'include::{generated}/specattribs.adoc[]'
+
+    @property
+    def docgen_language(self):
+        """Return the language to be used in docgenerator [source]
+           blocks."""
+
+        return 'opencl'
