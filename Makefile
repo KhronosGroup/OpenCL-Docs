@@ -21,7 +21,6 @@ RM	    = rm -f
 RMRF	    = rm -rf
 MKDIR	    = mkdir -p
 CP	    = cp
-GS_EXISTS   := $(shell command -v gs 2> /dev/null)
 GITHEAD     = ./.git/logs/HEAD
 
 # Target directories for output files
@@ -163,6 +162,10 @@ icdinst: icdinsthtml icdinstpdf
 
 html: apihtml envhtml exthtml extensionshtml cxxhtml chtml icdinsthtml
 
+# PDF optimizer - usage $(OPTIMIZEPDF) in.pdf out.pdf
+# OPTIMIZEPDFOPTS=--compress-pages is slightly better, but much slower
+OPTIMIZEPDF = hexapdf optimize $(OPTIMIZEPDFOPTS)
+
 pdf: apipdf envpdf extpdf extensionspdf cxxpdf cpdf icdinstpdf
 
 # Spec targets.
@@ -192,13 +195,7 @@ $(PDFDIR)/$(APISPEC).pdf: $(APISPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(APISPEC).txt
-ifndef GS_EXISTS
-	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
-else
-	$(QUIET)$(CURDIR)/config/optimize-pdf $@
-	$(QUIET)rm $@
-	$(QUIET)mv $(PDFDIR)/$(APISPEC)-optimized.pdf $@
-endif
+	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # Environment spec
 
@@ -218,13 +215,7 @@ $(PDFDIR)/$(ENVSPEC).pdf: $(ENVSPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(ENVSPEC).txt
-ifndef GS_EXISTS
-	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
-else
-	$(QUIET)$(CURDIR)/config/optimize-pdf $@
-	$(QUIET)rm $@
-	$(QUIET)mv $(PDFDIR)/$(ENVSPEC)-optimized.pdf $@
-endif
+	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # Extensions spec
 EXTSPEC = OpenCL_Ext
@@ -242,13 +233,7 @@ $(PDFDIR)/$(EXTSPEC).pdf: $(EXTSPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(EXTSPEC).txt
-ifndef GS_EXISTS
-	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
-else
-	$(QUIET)$(CURDIR)/config/optimize-pdf $@
-	$(QUIET)rm $@
-	$(QUIET)mv $(PDFDIR)/$(EXTSPEC)-optimized.pdf $@
-endif
+	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # Individual extensions spec(s)
 EXTDIR = extensions
@@ -280,13 +265,7 @@ $(PDFDIR)/$(EXTENSIONSSPEC).pdf: $(EXTENSIONSSPECSRC) $(GENDEPENDS)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(EXTDIR)/$(EXTENSIONSSPEC).txt
-ifndef GS_EXISTS
-	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
-else
-	$(QUIET)$(CURDIR)/config/optimize-pdf $@
-	$(QUIET)rm $@
-	$(QUIET)mv $(PDFDIR)/$(EXTENSIONSSPEC)-optimized.pdf $@
-endif
+	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # Language Extensions spec
 CEXTDOC = OpenCL_LangExt
@@ -304,13 +283,7 @@ $(PDFDIR)/$(CEXTDOC).pdf: $(CEXTDOCSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CEXTDOC).txt
-ifndef GS_EXISTS
-	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
-else
-	$(QUIET)$(CURDIR)/config/optimize-pdf $@
-	$(QUIET)rm $@
-	$(QUIET)mv $(PDFDIR)/$(CEXTDOC)-optimized.pdf $@
-endif
+	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # C++ (cxx) spec
 CXXSPEC = OpenCL_Cxx
@@ -328,13 +301,7 @@ $(PDFDIR)/$(CXXSPEC).pdf: $(CXXSPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CXXSPEC).txt
-ifndef GS_EXISTS
-	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
-else
-	$(QUIET)$(CURDIR)/config/optimize-pdf $@
-	$(QUIET)rm $@
-	$(QUIET)mv $(PDFDIR)/$(CXXSPEC)-optimized.pdf $@
-endif
+	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # C spec
 CSPEC = OpenCL_C
@@ -352,13 +319,7 @@ $(PDFDIR)/$(CSPEC).pdf: $(CSPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CSPEC).txt
-ifndef GS_EXISTS
-	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
-else
-	$(QUIET)$(CURDIR)/config/optimize-pdf $@
-	$(QUIET)rm $@
-	$(QUIET)mv $(PDFDIR)/$(CSPEC)-optimized.pdf $@
-endif
+	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # C++ for OpenCL doc
 CXX4OPENCLDOC = CXX_for_OpenCL
@@ -376,13 +337,7 @@ $(PDFDIR)/$(CXX4OPENCLDOC).pdf: $(CXX4OPENCLDOCSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(CXX4OPENCL_ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CXX4OPENCLDOC).txt
-ifndef GS_EXISTS
-	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
-else
-	$(QUIET)$(CURDIR)/config/optimize-pdf $@
-	$(QUIET)rm $@
-	$(QUIET)mv $(PDFDIR)/$(CXX4OPENCLDOC)-optimized.pdf $@
-endif
+	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # ICD installation guidelines
 ICDINSTSPEC = OpenCL_ICD_Installation
@@ -400,13 +355,7 @@ $(PDFDIR)/$(ICDINSTSPEC).pdf: $(ICDINSTSPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(ICDINSTSPEC).txt
-ifndef GS_EXISTS
-	$(QUIET) echo "Warning: Ghostscript not installed, skipping pdf optimization"
-else
-	$(QUIET)$(CURDIR)/config/optimize-pdf $@
-	$(QUIET)rm $@
-	$(QUIET)mv $(PDFDIR)/$(ICDINSTSPEC)-optimized.pdf $@
-endif
+	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # Clean generated and output files
 
