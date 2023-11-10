@@ -743,15 +743,19 @@ Arguments to the kernel are referred to by indices that go from 0 for the leftmo
 
 _arg_value_ is the pointer value that should be used as the argument specified by _arg_index_.
 The pointer value will be used as the argument by all API calls that enqueue a kernel until the argument value is set to a different pointer value by a subsequent call.
-A pointer into Unified Shared Memory allocation may only be set as an argument value for an argument declared to be a pointer to `global` or `constant` memory.
+A pointer may only be set as an argument value for an argument declared to be a pointer to `global` or `constant` memory.
 
-The definition of a valid argument value was changed in extension version 1.1.0:
+[[valid-usm-pointer-argument-definition]]
+The definition of a valid pointer value was changed in extension version 1.1.0:
 
 * For extension versions prior to version 1.1.0:
 For devices supporting shared system allocations, any pointer value is valid.
 Otherwise, the pointer value must be `NULL` or must point into a Unified Shared Memory allocation returned by *clHostMemAllocINTEL*, *clDeviceMemAllocINTEL*, or *clSharedMemAllocINTEL*.
 * For extension versions 1.1.0 and newer:
 For all devices, any pointer value is valid and may be set as an argument to a kernel.
+
+In this definition, a valid pointer value means that the function will not return an error.
+It still may not be valid to dereference the pointer inside of a kernel if the memory that the pointer points to is not accessible on the device.
 
 *clSetKernelArgMemPointerINTEL* returns `CL_SUCCESS` if the function is executed successfully.
 Otherwise, it will return one of the following errors:
@@ -794,13 +798,7 @@ The new _param_name_ values described below may be used with the existing *clSet
 
 |====
 
-The definition of a valid Unified Shared Memory allocation specified using `CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL` was changed in extension version 1.1.0:
-
-* For extension versions prior to version 1.1.0:
-For devices supporting shared system allocations, any pointer value is valid.
-Otherwise, the pointer value must point into a Unified Shared Memory allocation returned by *clHostMemAllocINTEL*, *clDeviceMemAllocINTEL*, or *clSharedMemAllocINTEL*.
-* For extension versions 1.1.0 and newer:
-For all devices, any pointer value is valid.
+The <<valid-usm-pointer-argument-definition,definition of a valid pointer value>> specified using `CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL` was changed in extension version 1.1.0.
 
 ==== Filling and Copying Unified Shared Memory
 
