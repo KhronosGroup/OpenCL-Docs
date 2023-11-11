@@ -81,7 +81,7 @@ class ConventionsBase(abc.ABC):
         self._type_prefix = None
 
     def formatExtension(self, name):
-        """Mark up an extension name as a link the spec."""
+        """Mark up an extension name as a link in the spec."""
         return '`<<{}>>`'.format(name)
 
     @property
@@ -259,6 +259,42 @@ class ConventionsBase(abc.ABC):
 
         Must implement."""
         raise NotImplementedError
+
+    @property
+    def extension_name_prefix(self):
+        """Return extension name prefix.
+
+        Typically two uppercase letters followed by an underscore.
+
+        Assumed to be the same as api_prefix, but some APIs use different
+        case convntions."""
+
+        return self.api_prefix
+
+    @property
+    def write_contacts(self):
+        """Return whether contact list should be written to extension appendices"""
+        return False
+
+    @property
+    def write_extension_type(self):
+        """Return whether extension type should be written to extension appendices"""
+        return True
+
+    @property
+    def write_extension_number(self):
+        """Return whether extension number should be written to extension appendices"""
+        return True
+
+    @property
+    def write_extension_revision(self):
+        """Return whether extension revision number should be written to extension appendices"""
+        return True
+
+    @property
+    def write_refpage_include(self):
+        """Return whether refpage include should be written to extension appendices"""
+        return True
 
     @property
     def api_version_prefix(self):

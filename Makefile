@@ -86,10 +86,16 @@ CXX4OPENCL_DOCREVISION = DocRev2021.12
 CXX4OPENCL_DOCREMARK = $(SPECREMARK) \
 			tag: $(SPECREVISION)
 
+# Some of the attributes used in building spec documents:
+#   generated - absolute path to generated sources
+#   refprefix - controls which generated extension metafiles are
+#	included at build time. Must be empty for specification,
+#	'refprefix.' for refpages (see ADOCREFOPTS below).
 COMMONATTRIBOPTS	= -a revdate="$(SPECDATE)" \
 			  -a stem=latexmath \
 			  -a generated=$(GENERATED) \
-			  -a sectnumlevels=5
+			  -a sectnumlevels=5 \
+			  -a refprefix
 
 ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
 	       -a revremark="$(SPECREMARK)" \
@@ -110,7 +116,16 @@ ADOCCOMMONOPTS	      = -a apispec="$(CURDIR)/api" \
 			-a images="$(CURDIR)/images" \
 			$(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
 ADOCOPTS	      = -d book $(ADOCCOMMONOPTS)
-ADOCMANOPTS	      = -d manpage $(ADOCCOMMONOPTS)
+
+# Asciidoctor options to build refpages
+#
+# ADOCMANOPTS *must* be placed after ADOCOPTS in the command line, so
+# that it can override spec attribute values.
+#
+# cross-file-links makes custom macros link to other refpages
+# refprefix includes the refpage (not spec) extension metadata.
+# isrefpage is for refpage-specific content
+ADOCMANOPTS	      = -a cross-file-links -a refprefix='refpage.' -a isrefpage -d manpage $(ADOCCOMMONOPTS)
 
 # ADOCHTMLOPTS relies on the relative runtime path from the output HTML
 # file to the katex scripts being set with KATEXDIR. This is overridden
@@ -128,15 +143,21 @@ ADOCPDFOPTS  = $(ADOCPDFEXTS) -a mathematical-format=svg \
 	       -a imagesoutdir=$(PDFMATHDIR)
 
 # Where to put dynamically generated dependencies of the spec and other
-# targets, from API XML. GENERATED and APIINCDIR specify the location of
+# targets, from API XML. GENERATED and APIPATH specify the location of
 # the API interface includes.
 GENERATED  = $(CURDIR)/generated
 REFPATH    = $(GENERATED)/refpage
-APIINCDIR  = $(GENERATED)/api
-VERSIONDIR = $(APIINCDIR)/version-notes
+APIPATH    = $(GENERATED)/api
+METAPATH   = $(GENERATED)/meta
+VERSIONDIR = $(APIPATH)/version-notes
 ATTRIBFILE = $(GENERATED)/specattribs.adoc
+
+# timeMarker is a proxy target created when many generated files are
+# made at once
+APIDEPEND  = $(APIPATH)/timeMarker
+METADEPEND = $(METAPATH)/timeMarker
 # All generated dependencies
-GENDEPENDS = $(APIINCDIR)/timeMarker $(ATTRIBFILE)
+GENDEPENDS = $(APIDEPEND) $(METADEPEND) $(ATTRIBFILE)
 
 .PHONY: directories
 
@@ -250,9 +271,9 @@ EXTENSIONSSPECSRC = $(EXTDIR)/$(EXTENSIONSSPEC).txt \
     $(shell grep ^include:: $(EXTDIR)/$(EXTENSIONSSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
 
 # Included extension documents
-EXTENSIONS := $(notdir $(wildcard $(EXTDIR)/[A-Za-z]*.asciidoc))
-EXTENSIONS_HTML = $(patsubst %.asciidoc,$(HTMLDIR)/%.html,$(EXTENSIONS))
-EXTENSIONS_PDF = $(patsubst %.asciidoc,$(PDFDIR)/%.pdf,$(EXTENSIONS))
+EXTDOCS := $(notdir $(wildcard $(EXTDIR)/[A-Za-z]*.asciidoc))
+EXTENSIONS_HTML = $(patsubst %.asciidoc,$(HTMLDIR)/%.html,$(EXTDOCS))
+EXTENSIONS_PDF = $(patsubst %.asciidoc,$(PDFDIR)/%.pdf,$(EXTDOCS))
 
 extensionshtml: $(HTMLDIR)/$(EXTENSIONSSPEC).html $(EXTENSIONSSPECSRC) $(EXTENSIONS_HTML)
 
@@ -380,7 +401,8 @@ clean_man:
 
 # Generated directories and files to remove
 CLEAN_GEN_PATHS = \
-    $(APIINCDIR) \
+    $(APIPATH) \
+    $(METAPATH) \
     $(REFPATH) \
     $(GENERATED)/__pycache__ \
     $(PDFMATHDIR) \
@@ -449,17 +471,16 @@ buildmanpages: $(MANHTML)
 $(MANHTMLDIR)/%.html: KATEXDIR = ../../katex
 $(MANHTMLDIR)/%.html: $(REFPATH)/%.txt $(MANCOPYRIGHT) $(GENDEPENDS) $(KATEXINST)
 	$(QUIET)$(MKDIR) $(MANHTMLDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 -a cross-file-links \
-	    $(ADOCMANOPTS) $(ADOCHTMLOPTS) -o $@ $<
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCHTMLOPTS) $(ADOCMANOPTS) -o $@ $<
 
 $(MANHTMLDIR)/intro.html: $(REFPATH)/intro.txt $(MANCOPYRIGHT)
 	$(QUIET)$(MKDIR) $(MANHTMLDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 -a cross-file-links \
-	    $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $<
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCHTMLOPTS) $(ADOCMANOPTS) -o $@ $<
 
 # Targets generated from the XML and registry processing scripts
 #   apimap.py - Python encoding of the registry
-#   $(APIINCDIR)/timeMarker - proxy for 'apiinc' - generate API interfaces
+#   apiinc / proxy $(APIDEPEND) - API interface include files in $(APIPATH)
+#   extinc / proxy $(METADEPEND) - extension appendix metadata include files in $(METAPATH)
 #
 # $(GENSCRIPTEXTRA) are extra options that can be passed to the
 # generation script, such as
@@ -481,14 +502,20 @@ pyapi $(PYAPIMAP): $(APIXML) $(GENSCRIPT)
 	$(QUIET)$(MKDIR) $(GENERATED)
 	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(GENERATED) apimap.py
 
-apiinc: $(APIINCDIR)/timeMarker
+apiinc: $(APIDEPEND)
 
-$(APIINCDIR)/timeMarker: $(APIXML) $(DICTSCRIPT) $(GENSCRIPT) $(VERSIONSCRIPT)
-	$(QUIET)$(MKDIR) $(APIINCDIR)
-	$(QUIET)$(PYTHON) $(DICTSCRIPT) -registry $(APIXML) -o $(APIINCDIR)
+$(APIDEPEND): $(APIXML) $(DICTSCRIPT) $(GENSCRIPT) $(VERSIONSCRIPT)
+	$(QUIET)$(MKDIR) $(APIPATH)
+	$(QUIET)$(PYTHON) $(DICTSCRIPT) -registry $(APIXML) -o $(APIPATH)
 	$(QUIET)$(MKDIR) $(VERSIONDIR)
 	$(QUIET)$(PYTHON) $(VERSIONSCRIPT) -registry $(APIXML) -o $(VERSIONDIR)
-	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(APIINCDIR) apiinc
+	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(APIPATH) apiinc
+
+extinc: $(METADEPEND)
+
+$(METADEPEND): $(APIXML) $(GENSCRIPT)
+	$(QUIET)$(MKDIR) $(METAPATH)
+	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(METAPATH) extinc
 
 # This generates a single file containing asciidoc attributes for each
 # extension in the spec being built.

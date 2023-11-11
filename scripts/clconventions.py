@@ -6,9 +6,10 @@
 # Working-group-specific style conventions,
 # used in generation.
 
+import os
 import re
 
-from conventions import ConventionsBase
+from spec_tools.conventions import ConventionsBase
 
 
 class OpenCLConventions(ConventionsBase):
@@ -23,7 +24,7 @@ class OpenCLConventions(ConventionsBase):
 
     @property
     def struct_macro(self):
-        return 'sname:'
+        return ''
 
     @property
     def constFlagBits(self):
@@ -33,12 +34,12 @@ class OpenCLConventions(ConventionsBase):
     @property
     def structtype_member_name(self):
         """Return name of the structure type member"""
-        return 'sType'
+        return 'type'
 
     @property
     def nextpointer_member_name(self):
         """Return name of the structure pointer chain member"""
-        return 'pNext'
+        return 'next'
 
     @property
     def valid_pointer_prefix(self):
@@ -90,9 +91,29 @@ class OpenCLConventions(ConventionsBase):
         return 'CL_'
 
     @property
+    def extension_name_prefix(self):
+        """Return extension name prefix"""
+        return 'cl_'
+
+    @property
     def write_contacts(self):
         """Return whether contact list should be written to extension appendices"""
-        return True
+        return False
+
+    @property
+    def write_extension_type(self):
+        """Return whether extension type should be written to extension appendices"""
+        return False
+
+    @property
+    def write_extension_number(self):
+        """Return whether extension number should be written to extension appendices"""
+        return False
+
+    @property
+    def write_extension_revision(self):
+        """Return whether extension revision number should be written to extension appendices"""
+        return False
 
     @property
     def write_refpage_include(self):
@@ -152,6 +173,22 @@ class OpenCLConventions(ConventionsBase):
     def specification_path(self):
         """Return relpath to the Asciidoctor specification sources in this project."""
         return '../appendices/meta'
+
+    def extension_file_path(self, name):
+        """Return file path to an extension appendix relative to a directory
+           containing all such appendices.
+           - name - extension name
+
+           Must implement."""
+        return f'{name}{self.file_suffix}'
+
+    def extension_include_string(self, name):
+        """Return format string for include:: line for an extension appendix
+           file.
+            - name - extension name"""
+
+        return 'include::{{chapters}}/{}[]'.format(
+                self.extension_file_path(name))
 
     @property
     def extension_index_prefixes(self):

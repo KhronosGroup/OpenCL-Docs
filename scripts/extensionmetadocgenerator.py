@@ -86,7 +86,7 @@ class Extension:
                 pass # supercedingAPIVersion, supercedingExtension is None
             elif supercededBy.startswith(self.conventions.api_version_prefix):
                 self.supercedingAPIVersion = supercededBy
-            elif supercededBy.startswith(self.conventions.api_prefix):
+            elif supercededBy.startswith(self.conventions.extension_name_prefix):
                 self.supercedingExtension = supercededBy
             else:
                 self.generator.logMsg('error', 'Unrecognized ' + self.deprecationType + ' attribute value \'' + supercededBy + '\'!')
@@ -176,7 +176,7 @@ class Extension:
     def resolveDeprecationChain(self, extensions, succeededBy, isRefpage, file):
         if succeededBy not in extensions:
             write(f'  ** *NOTE* The extension `{succeededBy}` is not supported for the API specification being generated', file=file)
-            self.generator.logMsg('warn', f'resolveDeprecationChain: {self.name} defines a superseding interface {succeededBy} which is not in the supported extensions list')
+            self.generator.logMsg('warn', f'resolveDeprecationChain: {self.name} defines a superceding interface {succeededBy} which is not in the supported extensions list')
             return
 
         ext = extensions[succeededBy]
@@ -260,10 +260,13 @@ class Extension:
             write('', file=fp)
 
             self.writeTag('Name String', '`' + self.name + '`', isRefpage, fp)
-            self.writeTag('Extension Type', self.typeToStr(), isRefpage, fp)
+            if self.conventions.write_extension_type:
+                self.writeTag('Extension Type', self.typeToStr(), isRefpage, fp)
 
-        self.writeTag('Registered Extension Number', self.number, isRefpage, fp)
-        self.writeTag('Revision', self.revision, isRefpage, fp)
+        if self.conventions.write_extension_number:
+            self.writeTag('Registered Extension Number', self.number, isRefpage, fp)
+        if self.conventions.write_extension_revision:
+            self.writeTag('Revision', self.revision, isRefpage, fp)
 
         if self.conventions.xml_api_name in self.ratified.split(','):
             ratstatus = 'Ratified'
@@ -285,7 +288,7 @@ class Extension:
                   dependencyMarkup(self.depends) +
                   '--', file=fp)
         else:
-            # Do not bother specifying the base Vulkan 1.0 API redundantly
+            # Do not bother specifying the base API redundantly
             True
 
         if self.provisional == 'true' and self.conventions.provisional_extension_warning:
@@ -358,10 +361,10 @@ class Extension:
                 if handle.startswith('gitlab:'):
                     prettyHandle = 'icon:gitlab[alt=GitLab, role="red"]' + handle.replace('gitlab:@', '')
                 elif handle.startswith('@'):
-                    issuePlaceholderText = '[' + self.name + '] ' + handle
-                    issuePlaceholderText += '%0A*Here describe the issue or question you have about the ' + self.name + ' extension*'
-                    trackerLink = 'link:++https://github.com/KhronosGroup/Vulkan-Docs/issues/new?body=' + issuePlaceholderText + '++'
-                    prettyHandle = trackerLink + '[icon:github[alt=GitHub,role="black"]' + handle[1:] + ',window=_blank,opts=nofollow]'
+                    issuePlaceholderText = f'[{self.name}]{handle}'
+                    issuePlaceholderText += f'%0A*Here describe the issue or question you have about the {self.name} extension*'
+                    trackerLink = f'link:++https://github.com/KhronosGroup/Vulkan-Docs/issues/new?body={issuePlaceholderText}++'
+                    prettyHandle = f'{trackerLink}[icon:github[alt=GitHub,role="black"]{handle[1:]},window=_blank,opts=nofollow]'
                 else:
                     prettyHandle = handle
 
@@ -643,15 +646,21 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
             self.logMsg('diag', 'beginFeature: ignoring non-extension feature', self.featureName)
             return
 
-        # These attributes must exist
         name = self.featureName
-        number = self.getAttrib(interface, 'number')
-        ext_type = self.getAttrib(interface, 'type')
-        revision = self.getSpecVersion(interface, name)
+
+        # These attributes may be required to exist, depending on the API
+        number = self.getAttrib(interface, 'number',
+                    self.conventions.write_extension_number)
+        ext_type = self.getAttrib(interface, 'type',
+                    self.conventions.write_extension_type)
+        if self.conventions.write_extension_revision:
+            revision = self.getSpecVersion(interface, name)
+        else:
+            revision = None
 
         # These attributes are optional
         OPTIONAL = False
-        depends = self.getAttrib(interface, 'depends', OPTIONAL)    # TODO should default to VK_VERSION_1_0?
+        depends = self.getAttrib(interface, 'depends', OPTIONAL)    # TODO should default to base API version 1.0?
         contact = self.getAttrib(interface, 'contact', OPTIONAL)
         promotedTo = self.getAttrib(interface, 'promotedto', OPTIONAL)
         deprecatedBy = self.getAttrib(interface, 'deprecatedby', OPTIONAL)
@@ -714,6 +723,7 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
     def getSpecVersion(self, elem, extname, default=None):
         """Determine the extension revision from the EXTENSION_NAME_SPEC_VERSION
         enumerant.
+        This only makes sense for Vulkan.
 
         - elem - <extension> element to query
         - extname - extension name from the <extension> 'name' attribute

@@ -206,70 +206,6 @@ def makeGenOpts(args):
             emitExtensions    = emitExtensionsPat)
         ]
 
-    # Platform extensions, in their own header files
-    # Each element of the platforms[] array defines information for
-    # generating a single platform:
-    #   [0] is the generated header file name
-    #   [1] is the set of platform extensions to generate
-    #   [2] is additional extensions whose interfaces should be considered,
-    #   but suppressed in the output, to avoid duplicate definitions of
-    #   dependent types like VkDisplayKHR and VkSurfaceKHR which come from
-    #   non-platform extensions.
-
-    # Track all platform extensions, for exclusion from vulkan_core.h
-    allPlatformExtensions = []
-
-    # # Extensions suppressed for all platforms.
-    # # Covers common WSI extension types.
-    # commonSuppressExtensions = [ 'VK_KHR_display', 'VK_KHR_swapchain' ]
-    #
-    # platforms = [
-    #     [ 'vulkan_android.h',     [ 'VK_KHR_android_surface',
-    #                                 'VK_ANDROID_external_memory_android_hardware_buffer'
-    #                                                               ], commonSuppressExtensions ],
-    #     [ 'vulkan_fuchsia.h',     [ 'VK_FUCHSIA_imagepipe_surface'], commonSuppressExtensions ],
-    #     [ 'vulkan_ios.h',         [ 'VK_MVK_ios_surface'          ], commonSuppressExtensions ],
-    #     [ 'vulkan_macos.h',       [ 'VK_MVK_macos_surface'        ], commonSuppressExtensions ],
-    #     [ 'vulkan_vi.h',          [ 'VK_NN_vi_surface'            ], commonSuppressExtensions ],
-    #     [ 'vulkan_wayland.h',     [ 'VK_KHR_wayland_surface'      ], commonSuppressExtensions ],
-    #     [ 'vulkan_win32.h',       [ 'VK_.*_win32(|_.*)'           ], commonSuppressExtensions + [ 'VK_KHR_external_semaphore', 'VK_KHR_external_memory_capabilities', 'VK_KHR_external_fence', 'VK_KHR_external_fence_capabilities', 'VK_NV_external_memory_capabilities' ] ],
-    #     [ 'vulkan_xcb.h',         [ 'VK_KHR_xcb_surface'          ], commonSuppressExtensions ],
-    #     [ 'vulkan_xlib.h',        [ 'VK_KHR_xlib_surface'         ], commonSuppressExtensions ],
-    #     [ 'vulkan_xlib_xrandr.h', [ 'VK_EXT_acquire_xlib_display' ], commonSuppressExtensions ],
-    # ]
-    #
-    # for platform in platforms:
-    #     headername = platform[0]
-    #
-    #     allPlatformExtensions += platform[1]
-    #
-    #     addPlatformExtensionsRE = makeREstring(platform[1] + platform[2])
-    #     emitPlatformExtensionsRE = makeREstring(platform[1])
-    #
-    #     opts = CGeneratorOptions(
-    #         filename          = headername,
-    #         directory         = directory,
-    #         apiname           = 'vulkan',
-    #         profile           = None,
-    #         versions          = featuresPat,
-    #         emitversions      = None,
-    #         defaultExtensions = None,
-    #         addExtensions     = addPlatformExtensionsRE,
-    #         removeExtensions  = None,
-    #         emitExtensions    = emitPlatformExtensionsRE,
-    #         prefixText        = prefixStrings + clPrefixStrings,
-    #         genFuncPointers   = True,
-    #         protectFile       = protectFile,
-    #         protectFeature    = False,
-    #         protectProto      = '#ifndef',
-    #         protectProtoStr   = 'VK_NO_PROTOTYPES',
-    #         apicall           = 'VKAPI_ATTR ',
-    #         apientry          = 'VKAPI_CALL ',
-    #         apientryp         = 'VKAPI_PTR *',
-    #         alignFuncParam    = 0)
-    #
-    #     genOpts[headername] = [ COutputGenerator, opts ]
-
     # Header for core API + extensions.
     # To generate just the core API,
     # change to 'defaultExtensions = None' below.
@@ -278,8 +214,8 @@ def makeGenOpts(args):
     # It removes all platform extensions (from the platform headers options
     # constructed above) as well as any explicitly specified removals.
 
-    removeExtensionsPat = makeREstring(
-        allPlatformExtensions + removeExtensions, None, strings_are_regex=True)
+    removeExtensionsPat = makeREstring(removeExtensions, None,
+        strings_are_regex=True)
 
     genOpts['cl.h'] = [
           COutputGenerator,
