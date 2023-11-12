@@ -20,6 +20,7 @@ interception layers (Layer ICDs) for OpenCL.
 [cols="1,1,3",options="header",]
 |====
 | *Date*     | *Version* | *Description*
+| 2023-08-23 | 1.1.0     | Deinitialization
 | 2020-11-04 | 1.0.0     | First assigned version.
 |====
 
@@ -30,9 +31,10 @@ Brice Videau, Argonne National Laboratory
 [[cl_loader_layers-new-procedures-and-functions]]
 === New Procedures and Functions
 
-A layer needs to implement and expose those two new entry points in
-a shared library. If one or both of those are missing, the loader will
-discard the layer.
+A layer needs to implement and expose *clGetLayerInfo* and *clInitLayer*
+in a shared library. If one or both of those are missing, the loader will
+discard the layer. From version 1.1.0 of the API the layer must also implement
+and expose *clDeinitLayer*.
 
 [source,opencl]
 ----
@@ -45,6 +47,8 @@ cl_int clInitLayer(cl_uint                 num_entries,
                    const cl_icd_dispatch  *target_dispatch,
                    cl_uint                *num_entries_ret,
                    const cl_icd_dispatch **layer_dispatch_ret);
+
+cl_int clDeinitLayer(void);
 ----
 
 [[cl_loader_layers-new-api-types]]
@@ -72,12 +76,13 @@ Accepted as _param_name_ to the function *clGetLayerInfo*:
 === New API Tokens
 
 Returned by *clGetLayerInfo* when supplied *CL_LAYER_API_VERSION*
-and the corresponding layer implements version 1.0.0 of the layer
-API:
+and the corresponding layer implements version 1.0.0 or 1.1.0 of
+the layer API respectively:
 
 [source,opencl]
 ----
 #define CL_LAYER_API_VERSION_100 100
+#define CL_LAYER_API_VERSION_110 110
 ----
 
 [[cl_loader_layers-new-environment-variables]]
@@ -172,6 +177,24 @@ Otherwise, it returns one of the following errors.
   * *CL_INVALID_VALUE* if _num_entries_ is insufficient for the layer or if
     _target_dispatch_ is a `NULL` value, or _num_entries_ret_ is a `NULL`
     value, or _layer_dispatch_ret_ is a `NULL` value.
+
+==== Layer Deinitialization
+
+[open,refpage='clDenitLayer',desc='Deinitialize an OpenCL layer',type='protos']
+Deinitialization of a Layer, which should allow subsequent reinitialization
+through *clInitLayer*, can be achieved with the function:
+[source,opencl]
+
+----
+cl_int clDeinitLayer(void);
+----
+
+[NOTE]
+====
+*clDeinitLayer* is new in API version 1.1.0
+====
+
+*clDeinitLayer* returns *CL_SUCCESS* if the function is executed successfully.
 
 [[cl_loader_layers-source-code]]
 === Source Code
