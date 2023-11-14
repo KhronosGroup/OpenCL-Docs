@@ -1,0 +1,333 @@
+ifdef::cl_khr_subgroup_non_uniform_arithmetic[]
+endif::cl_khr_subgroup_non_uniform_arithmetic[]
+
+[[cl_khr_subgroup_non_uniform_arithmetic]]
+=== Non-Uniform Arithmetic
+
+`cl_khr_subgroup_non_uniform_arithmetic` adds the ability to use some
+sub-group functions within non-uniform flow control, including additional
+scan and reduction operators.
+
+
+==== Add a new Section 6.15.X - Non Uniform Sub-group Scan and Reduction Built-in Functions
+
+
+===== Arithmetic Operations
+
+The table below describes the OpenCL C programming language built-in
+functions that perform simple arithmetic operations across work items in a
+sub-group.
+These functions need not be encountered by all work items in a sub-group
+executing the kernel.
+For the functions below, the generic type name `gentype` may be one of the
+supported built-in scalar data types `char`, `uchar`, `short`, `ushort`,
+`int`, `uint`, `long`, `ulong`, `float`, `double` (if double precision is
+supported), or `half` (if half precision is supported).
+
+[cols="3a,2",options="header",]
+|====
+| *Function* | *Description*
+|[source,opencl_c]
+----
+gentype sub_group_non_uniform_reduce_add(
+    gentype value )
+gentype sub_group_non_uniform_reduce_min(
+    gentype value )
+gentype sub_group_non_uniform_reduce_max(
+    gentype value )
+gentype sub_group_non_uniform_reduce_mul(
+    gentype value )
+----
+  | Returns the summation, multiplication, minimum, or maximum of _value_
+    for all active work items in the sub-group.
+
+    Note: This behavior is the same as the *add*, *min*, and *max* reduction
+    built-in functions from `cl_khr_subgroups` and OpenCL 2.1, except these
+    functions support additional types and need not be encountered by all
+    work items in the sub-group executing the kernel.
+|[source,opencl_c]
+----
+gentype sub_group_non_uniform_scan_inclusive_add(
+    gentype value )
+gentype sub_group_non_uniform_scan_inclusive_min(
+    gentype value )
+gentype sub_group_non_uniform_scan_inclusive_max(
+    gentype value )
+gentype sub_group_non_uniform_scan_inclusive_mul(
+    gentype value )
+----
+  | Returns the result of an inclusive scan operation, which is the
+    summation, multiplication, minimum, or maximum of _value_ for all active
+    work items in the sub-group with a sub-group local ID less than or equal
+    to this work item's sub-group local ID.
+
+    Note: This behavior is the same as the *add*, *min*, and *max* inclusive
+    scan built-in functions from `cl_khr_subgroups` and OpenCL 2.1, except
+    these functions support additional types and need not be encountered by
+    all work items in the sub-group executing the kernel.
+|[source,opencl_c]
+----
+gentype sub_group_non_uniform_scan_exclusive_add(
+    gentype value )
+gentype sub_group_non_uniform_scan_exclusive_min(
+    gentype value )
+gentype sub_group_non_uniform_scan_exclusive_max(
+    gentype value )
+gentype sub_group_non_uniform_scan_exclusive_mul(
+    gentype value )
+----
+  | Returns the result of an exclusive scan operation, which is the
+    summation, multiplication, minimum, or maximum of _value_ for all active
+    work items in the sub-group with a sub-group local ID less than this
+    work item's sub-group local ID.
+
+    If there is no active work item in the sub-group with a sub-group local
+    ID less than this work item's sub-group local ID then an identity value
+    `I` is returned.
+    For *add*, the identity value is `0`.
+    For *min*, the identity value is the largest representable value for
+    integer types, or `+INF` for floating-point types.
+    For *max*, the identity value is the minimum representable value for
+    integer types, or `-INF` for floating-point types.
+    For *mul*, the identity value is `1`.
+
+    Note: This behavior is the same as the *add*, *min*, and *max* exclusive
+    scan built-in functions from `cl_khr_subgroups` and OpenCL 2.1, except
+    these functions support additional types and need not be encountered by
+    all work items in the sub-group executing the kernel.
+|====
+
+Note: The order of floating-point operations is not guaranteed for the
+sub-group scan and reduction built-in functions that operate on
+floating-point types, and the order of operations may additionally be
+non-deterministic for a given sub-group.
+
+
+===== Bitwise Operations
+
+The table below describes the OpenCL C programming language built-in
+functions that perform simple bitwise integer operations across work items
+in a sub-group.
+These functions need not be encountered by all work items in a sub-group
+executing the kernel.
+For the functions below, the generic type name `gentype` may be one of the
+supported built-in scalar data types `char`, `uchar`, `short`, `ushort`,
+`int`, `uint`, `long`, and `ulong`.
+
+[cols="3a,2",options="header",]
+|====
+| *Function* | *Description*
+|[source,opencl_c]
+----
+gentype sub_group_non_uniform_reduce_and(
+    gentype value )
+gentype sub_group_non_uniform_reduce_or(
+    gentype value )
+gentype sub_group_non_uniform_reduce_xor(
+    gentype value )
+----
+  | Returns the bitwise *and*, *or*, or *xor* of _value_ for all active work
+    items in the sub-group.
+|[source,opencl_c]
+----
+gentype sub_group_non_uniform_scan_inclusive_and(
+    gentype value )
+gentype sub_group_non_uniform_scan_inclusive_or(
+    gentype value )
+gentype sub_group_non_uniform_scan_inclusive_xor(
+    gentype value )
+----
+  | Returns the result of an inclusive scan operation, which is the bitwise
+    *and*, *or*, or *xor* of _value_ for all active work items in the
+    sub-group with a sub-group local ID less than or equal to this work
+    item's sub-group local ID.
+|[source,opencl_c]
+----
+gentype sub_group_non_uniform_scan_exclusive_and(
+    gentype value )
+gentype sub_group_non_uniform_scan_exclusive_or(
+    gentype value )
+gentype sub_group_non_uniform_scan_exclusive_xor(
+    gentype value )
+----
+  | Returns the result of an exclusive scan operation, which is the bitwise
+    *and*, *or*, or *xor* of _value_ for all active work items in the
+    sub-group with a sub-group local ID less than this work item's sub-group
+    local ID.
+
+    If there is no active work item in the sub-group with a sub-group local
+    ID less than this work item's sub-group local ID then an identity value
+    `I` is returned.
+    For *and*, the identity value is `~0` (all bits set).
+    For *or* and *xor*, the identity value is `0`.
+|====
+
+
+===== Logical Operations
+
+The table below describes the OpenCL C programming language built-in
+functions that perform simple logical operations across work items in a
+sub-group.
+These functions need not be encountered by all work items in a sub-group
+executing the kernel.
+For these functions, a non-zero _predicate_ argument or return value is
+logically `true` and a zero _predicate_ argument or return value is
+logically `false`.
+
+[cols="2a,1",options="header",]
+|====
+| *Function* | *Description*
+|[source,opencl_c]
+----
+int sub_group_non_uniform_reduce_logical_and(
+    int predicate )
+int sub_group_non_uniform_reduce_logical_or(
+    int predicate )
+int sub_group_non_uniform_reduce_logical_xor(
+    int predicate )
+----
+  | Returns the logical *and*, *or*, or *xor* of _predicate_ for all active
+    work items in the sub-group.
+|[source,opencl_c]
+----
+int sub_group_non_uniform_scan_inclusive_logical_and(
+    int predicate )
+int sub_group_non_uniform_scan_inclusive_logical_or(
+    int predicate )
+int sub_group_non_uniform_scan_inclusive_logical_xor(
+    int predicate )
+----
+  | Returns the result of an inclusive scan operation, which is the logical
+    *and*, *or*, or *xor* of _predicate_ for all active work items in the
+    sub-group with a sub-group local ID less than or equal to this work
+    item's sub-group local ID.
+|[source,opencl_c]
+----
+int sub_group_non_uniform_scan_exclusive_logical_and(
+    int predicate )
+int sub_group_non_uniform_scan_exclusive_logical_or(
+    int predicate )
+int sub_group_non_uniform_scan_exclusive_logical_xor(
+    int predicate )
+----
+  | Returns the result of an exclusive scan operation, which is the logical
+    *and*, *or*, or *xor* of _predicate_ for all active work items in the
+    sub-group with a sub-group local ID less than this work item's sub-group
+    local ID.
+
+    If there is no active work item in the sub-group with a sub-group local
+    ID less than this work item's sub-group local ID then an identity value
+    `I` is returned.
+    For *and*, the identity value is `true` (non-zero).
+    For *or* and *xor*, the identity value is `false` (zero).
+|====
+
+
+[[extended-sub-groups-mapping]]
+=== Function Mapping and Capabilities
+
+This section describes a possible mapping between OpenCL built-in functions
+and SPIR-V instructions and required SPIR-V capabilities.
+
+This section is informational and non-normative.
+
+// Note: the Unicode "zero with space" (&#8203;) causes long function names to break much more sensibly.
+
+[cols="1,1,1",options="header"]
+|====
+| *OpenCL C Function* | *SPIR-V BuiltIn or Instruction* | *Enabling SPIR-V Capability*
+3+| For `cl_khr_subgroup_non_uniform_arithmetic`:
+
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;add`
+        | *OpGroupNonUniformIAdd*, *OpGroupNonUniformFAdd*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;mul`
+        | *OpGroupNonUniformIMul*, *OpGroupNonUniformFMul*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;min`
+        | *OpGroupNonUniformSMin*, *OpGroupNonUniformUMin*, *OpGroupNonUniformFMin*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;max`
+        | *OpGroupNonUniformSMax*, *OpGroupNonUniformUMax*, *OpGroupNonUniformFMax*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;and`
+        | *OpGroupNonUniformBitwiseAnd*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;or`
+        | *OpGroupNonUniformBitwiseOr*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;xor`
+        | *OpGroupNonUniformBitwiseXor*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;logical_&#8203;and`
+        | *OpGroupNonUniformLogicalAnd*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;logical_&#8203;or`
+        | *OpGroupNonUniformLogicalOr*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;logical_&#8203;xor`
+        | *OpGroupNonUniformLogicalXor*
+            | *GroupNonUniformArithmetic*
+
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;add`
+        | *OpGroupNonUniformIAdd*, *OpGroupNonUniformFAdd*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;mul`
+        | *OpGroupNonUniformIMul*, *OpGroupNonUniformFMul*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;min`
+        | *OpGroupNonUniformSMin*, *OpGroupNonUniformUMin*, *OpGroupNonUniformFMin*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;max`
+        | *OpGroupNonUniformSMax*, *OpGroupNonUniformUMax*, *OpGroupNonUniformFMax*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;and`
+        | *OpGroupNonUniformBitwiseAnd*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;or`
+        | *OpGroupNonUniformBitwiseOr*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;xor`
+        | *OpGroupNonUniformBitwiseXor*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;logical_&#8203;and`
+        | *OpGroupNonUniformLogicalAnd*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;logical_&#8203;or`
+        | *OpGroupNonUniformLogicalOr*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;logical_&#8203;xor`
+        | *OpGroupNonUniformLogicalXor*
+            | *GroupNonUniformArithmetic*
+
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;exclusive_&#8203;add`
+        | *OpGroupNonUniformIAdd*, *OpGroupNonUniformFAdd*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;exclusive_&#8203;mul`
+        | *OpGroupNonUniformIMul*, *OpGroupNonUniformFMul*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;exclusive_&#8203;min`
+        | *OpGroupNonUniformSMin*, *OpGroupNonUniformUMin*, *OpGroupNonUniformFMin*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;max`
+        | *OpGroupNonUniformSMax*, *OpGroupNonUniformUMax*, *OpGroupNonUniformFMax*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;and`
+        | *OpGroupNonUniformBitwiseAnd*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;or`
+        | *OpGroupNonUniformBitwiseOr*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;xor`
+        | *OpGroupNonUniformBitwiseXor*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;logical_&#8203;and`
+        | *OpGroupNonUniformLogicalAnd*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;logical_&#8203;or`
+        | *OpGroupNonUniformLogicalOr*
+            | *GroupNonUniformArithmetic*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;logical_&#8203;xor`
+        | *OpGroupNonUniformLogicalXor*
+            | *GroupNonUniformArithmetic*
+|====

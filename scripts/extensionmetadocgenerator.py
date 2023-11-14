@@ -288,8 +288,9 @@ class Extension:
                   dependencyMarkup(self.depends) +
                   '--', file=fp)
         else:
-            # Do not bother specifying the base API redundantly
-            True
+            # Do not specify the base API redundantly, but put something
+            # here to avoid formatting trouble.
+            self.writeTag(None, 'None', isRefpage, fp)
 
         if self.provisional == 'true' and self.conventions.provisional_extension_warning:
             write('  * *This is a _provisional_ extension and must: be used with caution.', file=fp)

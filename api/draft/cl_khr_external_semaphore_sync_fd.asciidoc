@@ -1,0 +1,54 @@
+ifdef::cl_khr_external_semaphore_sync_fd[]
+endif::cl_khr_external_semaphore_sync_fd[]
+
+=== Modifications to Existing APIs Added by This Spec
+
+=== Add to the "Descriptions of External Semaphore Handle Types" section
+
+==== File Descriptor Handle Types
+
+The `<<cl_khr_external_semaphore_sync_fd>>` extension extends
+{cl_external_semaphore_handle_type_khr_TYPE} to support the following new
+types of handles, and adds as a property that may be specified when creating
+a semaphore from an external handle:
+
+  * {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} specifies a POSIX file descriptor
+    handle to a Linux Sync File or Android Fence object.
+    It can be used with any native API accepting a valid sync file or fence
+    as input.
+    It owns a reference to the underlying synchronization primitive
+    associated with the file descriptor.
+    Implementations which support importing this handle type must accept any
+    type of sync or fence FD supported by the native system they are running
+    on.
+
+The special value -1 for fd is treated like a valid sync file descriptor
+referring to an object that has already signaled.
+The import operation will succeed and the semaphore will have a temporarily
+imported payload as if a valid file descriptor had been provided.
+
+Note: This special behavior for importing an invalid sync file descriptor
+allows easier interoperability with other system APIs which use the
+convention that an invalid sync file descriptor represents work that has
+already completed and does not need to be waited for.
+It is consistent with the option for implementations to return a -1 file
+descriptor when exporting a {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} from a
+{cl_semaphore_khr_TYPE} which is signaled.
+
+Transference and permanence properties for handle types added by
+`<<cl_khr_external_semaphore_sync_fd>>`:
+
+.Transference and Permanence Properties for `cl_khr_external_semaphore_sync_fd` handles
+[width="100%",cols="60%,<20%,<20%",options="header"]
+|====
+| *Handle Type* | *Transference* | *Permanence*
+| {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR}
+  | Copy
+    | Temporary
+|====
+
+For these extensions, importing a semaphore payload from a file descriptor
+transfers ownership of the file descriptor from the application to the
+OpenCL implementation.
+The application must not perform any operations on the file descriptor after
+a successful import.

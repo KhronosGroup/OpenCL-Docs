@@ -1,0 +1,49 @@
+ifdef::cl_khr_external_semaphore_win32[]
+endif::cl_khr_external_semaphore_win32[]
+
+=== Modifications to Existing APIs Added by This Spec
+
+=== Add to the "Descriptions of External Semaphore Handle Types" section
+
+==== NT Handle Types
+
+The `<<cl_khr_external_semaphore_win32>>` extension extends
+{cl_external_semaphore_handle_type_khr_TYPE} to support the following new
+types of handles, and adds as a property that may be specified when creating
+a semaphore from an external handle:
+
+  * {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR} specifies an NT handle that has
+    only limited valid usage outside of OpenCL and other compatible APIs.
+    It must be compatible with the functions `DuplicateHandle`,
+    `CloseHandle`, `CompareObjectHandles`, `GetHandleInformation`, and
+    `SetHandleInformation`.
+    It owns a reference to the underlying synchronization primitive
+    represented by its semaphore object.
+  * {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR} specifies a global share
+    handle that has only limited valid usage outside of OpenCL and other
+    compatible APIs.
+    It is not compatible with any native APIs.
+    It does not own a reference to the underlying synchronization primitive
+    represented by its semaphore object, and will therefore become invalid
+    when all semaphore objects associated with it are destroyed.
+
+Transference and permanence properties for handle types added by
+`<<cl_khr_external_semaphore_win32>>`:
+
+.Transference and Permanence Properties for `cl_khr_external_semaphore_win32` handles
+[width="100%",cols="60%,<20%,<20%",options="header"]
+|====
+| *Handle Type* | *Transference* | *Permanence*
+| {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR}
+  | Reference
+    | Temporary, Permanent
+| {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR}
+  | Reference
+    | Temporary, Permanent
+|====
+
+For these extensions, importing a semaphore payload from Windows handles
+does not transfer ownership of the handle to the OpenCL implementation.
+For handle types defined as NT handles, the application must release
+ownership using the CloseHandle system call when the handle is no longer
+needed.

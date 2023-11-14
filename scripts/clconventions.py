@@ -180,14 +180,17 @@ class OpenCLConventions(ConventionsBase):
            - name - extension name
 
            Must implement."""
-        return f'{name}{self.file_suffix}'
+
+        # Normally this would use self.file_suffix, but the OpenCL spec
+        # currently uses a variety of suffixing conventions.
+        return f'{name}.asciidoc'
 
     def extension_include_string(self, name):
         """Return format string for include:: line for an extension appendix
            file.
             - name - extension name"""
 
-        return 'include::{{chapters}}/{}[]'.format(
+        return 'include::{{apispec}}/{}[]'.format(
                 self.extension_file_path(name))
 
     @property

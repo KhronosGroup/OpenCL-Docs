@@ -1,0 +1,101 @@
+ifdef::cl_khr_subgroup_non_uniform_vote[]
+endif::cl_khr_subgroup_non_uniform_vote[]
+
+[[cl_khr_subgroup_non_uniform_vote]]
+=== Votes and Elections
+
+`cl_khr_subgroup_non_uniform_vote` adds the ability to elect a single work
+item from a sub-group to perform a task and to hold votes among work items
+in a sub-group.
+
+
+==== Add a new Section 6.15.X - Sub-group Vote and Elect Built-in Functions
+
+The table below describes the OpenCL C programming language built-in
+functions to elect a single work item in a sub-group to perform a task and
+to collectively vote to determine a boolean condition for the sub-group.
+These functions need not be encountered by all work items in a sub-group
+executing the kernel.
+For the functions below, the generic type name `gentype` may be the one of
+the supported built-in scalar data types `char`, `uchar`, `short`, `ushort`,
+`int`, `uint`, `long`, `ulong`, `float`, `double` (if double precision is
+supported), or `half` (if half precision is supported).
+
+[cols="1a,1",options="header",]
+|====
+| *Function* | *Description*
+|[source,opencl_c]
+----
+int sub_group_elect()
+----
+  | Elects a single work item in the sub-group to perform a task.
+
+    This function will return true (nonzero) for the active work item in the
+    sub-group with the smallest sub-group local ID, and false (zero) for all
+    other active work items in the sub-group.
+|[source,opencl_c]
+----
+int sub_group_non_uniform_all(
+    int predicate )
+----
+  | Examines _predicate_ for all active work items in the sub-group and
+    returns a non-zero value if _predicate_ is non-zero for all active work
+    items in the sub-group and zero otherwise.
+
+    Note: This behavior is the same as `sub_group_all` from
+    `cl_khr_subgroups` and OpenCL 2.1, except this function need not be
+    encountered by all work items in the sub-group executing the kernel.
+|[source,opencl_c]
+----
+int sub_group_non_uniform_any(
+    int predicate )
+----
+  | Examines _predicate_ for all active work items in the sub-group and
+    returns a non-zero value if _predicate_ is non-zero for any active work
+    item in the sub-group and zero otherwise.
+
+    Note: This behavior is the same as `sub_group_any` from
+    `cl_khr_subgroups` and OpenCL 2.1, except this function need not be
+    encountered by all work items in the sub-group executing the kernel.
+|[source,opencl_c]
+----
+int sub_group_non_uniform_all_equal(
+    gentype value )
+----
+  | Examines _value_ for all active work items in the sub-group and returns
+    a non-zero value if _value_ is equivalent for all active invocations in
+    the sub-group and zero otherwise.
+
+    Integer types use a bitwise test for equality. Floating-point types use
+    an ordered floating-point test for equality.
+|====
+
+
+[[extended-sub-groups-mapping]]
+=== Function Mapping and Capabilities
+
+This section describes a possible mapping between OpenCL built-in functions
+and SPIR-V instructions and required SPIR-V capabilities.
+
+This section is informational and non-normative.
+
+// Note: the Unicode "zero with space" (&#8203;) causes long function names to break much more sensibly.
+
+[cols="1,1,1",options="header"]
+|====
+| *OpenCL C Function* | *SPIR-V BuiltIn or Instruction* | *Enabling SPIR-V Capability*
+3+| For `cl_khr_subgroup_non_uniform_vote`:
+
+| `sub_&#8203;group_&#8203;elect`
+        | *OpGroupNonUniformElect*
+            | *GroupNonUniform*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;all`
+        | *OpGroupNonUniformAll*
+            | *GroupNonUniformVote*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;any`
+        | *OpGroupNonUniformAny*
+            | *GroupNonUniformVote*
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;all_&#8203;equal`
+        | *OpGroupNonUniformAllEqual*
+            | *GroupNonUniformVote*
+|====
