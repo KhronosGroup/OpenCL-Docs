@@ -1,0 +1,164 @@
+ifdef::cl_khr_subgroup_clustered_reduce[]
+endif::cl_khr_subgroup_clustered_reduce[]
+
+[[cl_khr_subgroup_clustered_reduce]]
+=== Clustered Reductions
+
+`cl_khr_subgroup_clustered_reduce` adds support for clustered reductions
+that operate on a subset of work items in the sub-group.
+
+==== Add a new Section 6.15.X - Sub-group Clustered Reduction Built-in Functions
+
+This section describes arithmetic operations that are performed on a subset
+of work items in a sub-group, referred to as a cluster.
+A cluster is described by a specified cluster size.
+Work items in a sub-group are assigned to clusters such that for cluster
+size _n_, the _n_ work items in the sub-group with the smallest sub-group
+local IDs are assigned to the first cluster, then the _n_ remaining work
+items with the smallest sub-group local IDs are assigned to the next
+cluster, and so on.
+Behavior is undefined if the specified cluster size is not an integer
+constant expression, is not a power-of-two, or is greater than the maximum
+size of a sub-group within the dispatch.
+
+
+===== Arithmetic Operations
+
+The table below describes the OpenCL C programming language built-in
+functions that perform simple arithmetic operations on a cluster of work
+items in a sub-group.
+These functions need not be encountered by all work items in a sub-group
+executing the kernel.
+For the functions below, the generic type name `gentype` may be one of the
+supported built-in scalar data types `char`, `uchar`, `short`, `ushort`,
+`int`, `uint`, `long`, `ulong`, `float`, `double` (if double precision is
+supported), or `half` (if half precision is supported).
+
+[cols="1a,1",options="header",]
+|====
+| *Function* | *Description*
+|[source,opencl_c]
+----
+gentype sub_group_clustered_reduce_add(
+    gentype value, uint clustersize )
+gentype sub_group_clustered_reduce_mul(
+    gentype value, uint clustersize )
+gentype sub_group_clustered_reduce_min(
+    gentype value, uint clustersize )
+gentype sub_group_clustered_reduce_max(
+    gentype value, uint clustersize )
+----
+  | Returns the summation, multiplication, minimum, or maximum of _value_
+    for all active work items in the sub-group within a cluster of the
+    specified _clustersize_.
+|====
+
+Note: The order of floating-point operations is not guaranteed for the
+sub-group clustered reduction built-in functions that operate on
+floating-point types, and the order of operations may additionally be
+non-deterministic for a given sub-group.
+
+
+===== Bitwise Operations
+
+The table below describes the OpenCL C programming language built-in
+functions to perform simple bitwise integer operations across a cluster of
+work items in a sub-group.
+These functions need not be encountered by all work items in a sub-group
+executing the kernel.
+For the functions below, the generic type name `gentype` may be the one of
+the supported built-in scalar data types `char`, `uchar`, `short`, `ushort`,
+`int`, `uint`, `long`, or `ulong`.
+
+[cols="1a,1",options="header",]
+|====
+| *Function* | *Description*
+|[source,opencl_c]
+----
+gentype sub_group_clustered_reduce_and(
+    gentype value, uint clustersize )
+gentype sub_group_clustered_reduce_or(
+    gentype value, uint clustersize )
+gentype sub_group_clustered_reduce_xor(
+    gentype value, uint clustersize )
+----
+  | Returns the bitwise *and*, *or*, or *xor* of _value_ for all active work
+    items in the sub-group within a cluster of the specified _clustersize_.
+|====
+
+
+===== Logical Operations
+
+The table below describes the OpenCL C programming language built-in
+functions to perform simple logical operations across a cluster of work
+items in a sub-group.
+These functions need not be encountered by all work items in a sub-group
+executing the kernel.
+For these functions, a non-zero _predicate_ argument or return value is
+logically `true` and a zero _predicate_ argument or return value is
+logically `false`.
+
+[cols="3a,2",options="header",]
+|====
+| *Function* | *Description*
+|[source,opencl_c]
+----
+int sub_group_clustered_reduce_logical_and(
+    int predicate, uint clustersize )
+int sub_group_clustered_reduce_logical_or(
+    int predicate, uint clustersize )
+int sub_group_clustered_reduce_logical_xor(
+    int predicate, uint clustersize )
+----
+  | Returns the logical *and*, *or*, or *xor* of _predicate_ for all active
+    work items in the sub-group within a cluster of the specified
+    _clustersize_.
+|====
+
+
+[[extended-sub-groups-mapping]]
+=== Function Mapping and Capabilities
+
+This section describes a possible mapping between OpenCL built-in functions
+and SPIR-V instructions and required SPIR-V capabilities.
+
+This section is informational and non-normative.
+
+// Note: the Unicode "zero with space" (&#8203;) causes long function names to break much more sensibly.
+
+[cols="1,1,1",options="header"]
+|====
+| *OpenCL C Function* | *SPIR-V BuiltIn or Instruction* | *Enabling SPIR-V Capability*
+3+| For `cl_khr_subgroup_clustered_reduce`:
+
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;add`
+        | *OpGroupNonUniformIAdd*, *OpGroupNonUniformFAdd*
+            | *GroupNonUniformClustered*
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;mul`
+        | *OpGroupNonUniformIMul*, *OpGroupNonUniformFMul*
+            | *GroupNonUniformClustered*
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;min`
+        | *OpGroupNonUniformSMin*, *OpGroupNonUniformUMin*, *OpGroupNonUniformFMin*
+            | *GroupNonUniformClustered*
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;max`
+        | *OpGroupNonUniformSMax*, *OpGroupNonUniformUMax*, *OpGroupNonUniformFMax*
+            | *GroupNonUniformClustered*
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;and`
+        | *OpGroupNonUniformBitwiseAnd*
+            | *GroupNonUniformClustered*
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;or`
+        | *OpGroupNonUniformBitwiseOr*
+            | *GroupNonUniformClustered*
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;xor`
+        | *OpGroupNonUniformBitwiseXor*
+            | *GroupNonUniformClustered*
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;logical_&#8203;and`
+        | *OpGroupNonUniformLogicalAnd*
+            | *GroupNonUniformClustered*
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;logical_&#8203;or`
+        | *OpGroupNonUniformLogicalOr*
+            | *GroupNonUniformClustered*
+| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;logical_&#8203;xor`
+        | *OpGroupNonUniformLogicalXor*
+            | *GroupNonUniformClustered*
+|====

@@ -1,0 +1,271 @@
+DONE except for TODO / possible OpenCL C extension appendix, and perhaps
+SPIR-V interaction at the end, as of 2023-10-26
+
+OK> // Copyright 2020-2023 The Khronos Group. This work is licensed under a
+OK> // Creative Commons Attribution 4.0 International License; see
+OK> // http://creativecommons.org/licenses/by/4.0/
+OK>
+OK> [[cl_khr_integer_dot_product]]
+OK> == Integer dot product
+
+OK> This extension adds support for SPIR-V instructions and OpenCL C built-in
+OK> functions to compute the dot product of vectors of integers.
+
+OK> === General Information
+OK>
+OK> ==== Name Strings
+OK>
+OK> `cl_khr_integer_dot_product`
+OK>
+OK> ==== Version History
+
+OK> [cols="1,1,3",options="header",]
+OK> |====
+OK> | *Date*     | *Version* | *Description*
+OK> | 2021-06-23 | 2.0.0     | All 8-bit support is mandatory, added 8-bit acceleration properties.
+OK> | 2021-06-17 | 1.0.0     | Initial version.
+OK> |====
+
+OK> ==== Dependencies
+OK>
+OK> This extension is written against the OpenCL Specification Version 3.0.6,
+OK> and OpenCL C Specification Version 3.0.6 and OpenCL Environment Specification
+OK> Version 3.0.6.
+OK>
+OK> This extension requires OpenCL 1.0.
+
+OK> ==== Contributors
+OK>
+OK> Kévin Petit, Arm Ltd. +
+OK> Jeremy Kemp, Imagination Technologies +
+OK> Ben Ashbaugh, Intel +
+OK> Ruihao Zhang, Qualcomm +
+OK> Stuart Brady, Arm Ltd +
+OK> Balaji Calidas, Qualcomm +
+OK> Ayal Zaks, Intel +
+
+OK> === New API Enums
+OK>
+OK> Accepted value for the _param_name_ parameter to {clGetDeviceInfo}:
+OK>
+OK> [source,opencl]
+OK> ----
+OK>
+OK> CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR      (1 << 0)
+OK> CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR             (1 << 1)
+OK>
+OK> CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR              0x1073
+OK>
+OK> CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR           0x1074
+OK> CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR  0x1075
+OK> ----
+
+TODO Probably want an OpenCL C extension appendix, or include this in the API appendix?
+
+=== New OpenCL C Functions
+
+This extension defines a number of new functions that operate on vectors
+of integers. The exact function overloads available depend on the features
+supported by the target device.
+
+[source,opencl_c]
+----
+uint dot(uchar4 a, uchar4 b);
+int dot(char4 a, char4 b);
+int dot(uchar4 a, char4 b);
+int dot(char4 a, uchar4 b);
+
+uint dot_acc_sat(uchar4 a, uchar4 b, uint acc);
+int dot_acc_sat(char4 a, char4 b, int acc);
+int dot_acc_sat(uchar4 a, char4 b, int acc);
+int dot_acc_sat(char4 a, uchar4 b, int acc);
+
+uint dot_4x8packed_uu_uint(uint a, uint b);
+int dot_4x8packed_ss_int(uint a, uint b);
+int dot_4x8packed_us_int(uint a, uint b);
+int dot_4x8packed_su_int(uint a, uint b);
+
+uint dot_acc_sat_4x8packed_uu_uint(uint a, uint b, uint acc);
+int dot_acc_sat_4x8packed_ss_int(uint a, uint b, int acc);
+int dot_acc_sat_4x8packed_us_int(uint a, uint b, int acc);
+int dot_acc_sat_4x8packed_su_int(uint a, uint b, int acc);
+----
+
+OK> === Modifications to the OpenCL API Specification
+OK>
+OK> (Modify Section 4.2, *Querying Devices*) ::
+OK> +
+OK> --
+OK>
+OK> (Add the following to Table 4.3, _Device Queries_) ::
+OK> +
+OK> --
+OK>
+OK> [cols="2,2,4",options="header"]
+OK> |====
+OK> | Device Info
+OK> | Return Type
+OK> | Description
+OK>
+OK> | {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR}
+OK> | {cl_device_integer_dot_product_capabilities_khr_type}
+OK> | Returns the integer dot product capabilities supported by the device. +
+OK>  +
+OK> {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR} is always set
+OK>   indicating that all implementations that support `cl_khr_integer_dot_product`
+OK>   must support dot product built-in functions and, when SPIR-V is supported,
+OK>   SPIR-V instructions that take four-component vectors of 8-bit integers packed
+OK>   into 32-bit integers as input. +
+OK> {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR} is set when dot product
+OK>   built-in functions and, when SPIR-V is supported, SPIR-V instructions that
+OK>   take four-component of 8-bit elements as input are supported. +
+OK>   NOTE: {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR} must be set in version
+OK>   2.x of the extension.
+OK>
+OK>
+OK> | {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR}
+OK> | {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
+OK> | Returns a structure describing the exact 8-bit dot product combinations
+OK>   that are <<integer-dot-product-acceleration-properties,accelerated>> on the device. +
+OK>   Each member is {CL_TRUE} if the combination it corresponds to is accelerated,
+OK>   {CL_FALSE} otherwise. +
+OK>   NOTE: {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR} is missing
+OK>   before version 2.0 of the extension.
+OK>
+OK> | {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR}
+OK> | {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
+OK> | Returns a structure describing the exact 4x8-bit packed dot product combinations
+OK>   that are <<integer-dot-product-acceleration-properties,accelerated>> on the device. +
+OK>   Each member is {CL_TRUE} if the combination it corresponds to is accelerated,
+OK>   {CL_FALSE} otherwise. +
+OK>   NOTE: {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR} is missing
+OK>   before version 2.0 of the extension.
+OK> |====
+
+OK> --
+OK> OpenCL 3 devices must report the following feature macros via
+OK> {CL_DEVICE_OPENCL_C_FEATURES} when the corresponding bit is set in the bitfield
+OK> returned for {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR}:
+OK>
+OK> [cols="1,1",options="header"]
+OK> |====
+OK> | Feature bit
+OK> | Feature macro
+OK>
+OK> | {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR}
+OK> | `__opencl_c_integer_dot_product_input_4x8bit_packed`
+OK>
+OK> | {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR}
+OK> | `__opencl_c_integer_dot_product_input_4x8bit`
+OK>
+OK> |====
+OK>
+OK> [[integer-dot-product-acceleration-properties]]
+OK> The {cl_device_integer_dot_product_acceleration_properties_khr_TYPE} structure
+OK> describes the exact dot product operations that are accelerated on the device:
+OK>
+OK> include::{generated}/api/structs/cl_device_integer_dot_product_acceleration_properties_khr.txt[]
+OK>
+OK>  * _signed_accelerated_ is {CL_TRUE} when signed dot product operations are
+OK>    accelerated, {CL_FALSE} otherwise.
+OK>  * _unsigned_accelerated_ is {CL_TRUE} when unsigned dot product operations
+OK>    are accelerated, {CL_FALSE} otherwise.
+OK>  * _mixed_signedness_accelerated_ is {CL_TRUE} when mixed signedness dot
+OK>    product operations are accelerated, {CL_FALSE} otherwise.
+OK>  * _accumulating_saturating_signed_accelerated_ is {CL_TRUE} when accumulating
+OK>    saturating signed dot product operations are accelerated, {CL_FALSE}
+OK>    otherwise.
+OK>  * _accumulating_saturating_unsigned_accelerated_ is {CL_TRUE} when accumulating
+OK>    saturating unsigned dot product operations are accelerated, {CL_FALSE}
+OK>    otherwise.
+OK>  * _accumulating_saturating_mixed_signedness_accelerated_ is {CL_TRUE} when
+OK>    accumulating saturating mixed signedness dot product operations are
+OK>    accelerated, {CL_FALSE} otherwise.
+OK>
+OK> A dot product operation is deemed accelerated if its implementation provides
+OK> a performance advantage over application-provided code composed from elementary
+OK> instructions and/or other dot product instructions, either because the
+OK> implementation uses optimized machine code sequences whose generation from
+OK> application-provided code cannot be guaranteed or because it uses hardware
+OK> features that cannot otherwise be targeted from application-provided code.
+OK> --
+OK>
+OK> --
+OK> --
+
+OK> === Modifications to the OpenCL C Specification
+OK>
+OK> (Modify section 6.13.3, *Integer Functions*) ::
+OK> +
+OK> --
+OK>
+OK> The following built-in functions and preprocessor definitions are added:
+OK>
+OK> [source,opencl_c]
+OK> ----
+OK> #define cl_khr_integer_dot_product 1
+OK>
+
+NOTE: Linkage between API macro and C language feature macro is not done
+yet.
+
+OK> if (CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR) {
+OK>     #define __opencl_c_integer_dot_product_input_4x8bit_packed 1
+OK>
+OK>     uint dot_4x8packed_uu_uint(uint a, uint b);
+OK>     int dot_4x8packed_ss_int(uint a, uint b);
+OK>     int dot_4x8packed_us_int(uint a, uint b);
+OK>     int dot_4x8packed_su_int(uint a, uint b);
+OK>
+OK>     uint dot_acc_sat_4x8packed_uu_uint(uint a, uint b, uint acc);
+OK>     int dot_acc_sat_4x8packed_ss_int(uint a, uint b, int acc);
+OK>     int dot_acc_sat_4x8packed_us_int(uint a, uint b, int acc);
+OK>     int dot_acc_sat_4x8packed_su_int(uint a, uint b, int acc);
+OK> }
+OK>
+OK> if (CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR) {
+OK>     #define __opencl_c_integer_dot_product_input_4x8bit 1
+OK>
+OK>     uint dot(uchar4 a, uchar4 b);
+OK>     int dot(char4 a, char4 b);
+OK>     int dot(uchar4 a, char4 b);
+OK>     int dot(char4 a, uchar4 b);
+OK>
+OK>     uint dot_acc_sat(uchar4 a, uchar4 b, uint acc);
+OK>     int dot_acc_sat(char4 a, char4 b, int acc);
+OK>     int dot_acc_sat(uchar4 a, char4 b, int acc);
+OK>     int dot_acc_sat(char4 a, uchar4 b, int acc);
+OK> }
+OK> ----
+OK>
+OK>
+OK> * `dot` returns the dot product of the two input vectors `a` and `b`. The
+OK> components of `a` and `b` are sign- or zero-extended to the width of the
+OK> destination type and the vectors with extended components are multiplied
+OK> component-wise. All the components of the resulting vectors are added
+OK> together to form the final result.
+OK>
+OK> * `dot_acc_sat` returns the saturating addition of the dot product of the two
+OK> input vectors `a` and `b` and the accumulator `acc`:
+OK>
+OK> ----
+OK> product = dot(a,b);
+OK> result = add_sat(product, acc);
+OK> ----
+OK>
+OK> * `dot_*_4x8packed_XY_R` returns the dot product of the two vectors packed
+OK> into `a` and `b` (lowest component in least significant byte). The components
+OK> are unpacked, sign- or zero-extended to the width of the destination type before
+OK> the multiplications and additions. `X` represents the signedness of the components
+OK> of `a`, `Y` that of the components of `b`. `R` is the return type.
+OK> --
+
+=== Modifications to the OpenCL SPIR-V Environment Specification
+
+See OpenCL SPIR-V Environment Specification.
+
+=== Interactions with Other Extensions
+
+If `cl_khr_il_program` is supported then the SPIR-V environment specification
+modifications described above apply.
+

@@ -8,6 +8,8 @@
 # used in generation.
 
 from enum import Enum
+import abc
+import re
 
 # Type categories that respond "False" to isStructAlwaysValid
 # basetype is home to typedefs like ..Bool32
@@ -21,13 +23,21 @@ CATEGORIES_REQUIRING_VALIDATION = set(('handle',
 TYPES_KNOWN_ALWAYS_VALID = set(('char',
                                 'float',
                                 'int8_t', 'uint8_t',
+                                'int16_t', 'uint16_t',
                                 'int32_t', 'uint32_t',
                                 'int64_t', 'uint64_t',
                                 'size_t',
-                                'uintptr_t',
+                                'intptr_t', 'uintptr_t',
                                 'int',
                                 ))
 
+# Split an extension name into vendor ID and name portions
+EXT_NAME_DECOMPOSE_RE = re.compile(r'(?P<prefix>[A-Za-z]+)_(?P<vendor>[A-Za-z]+)_(?P<name>[\w_]+)')
+
+# Match an API version name.
+# Match object includes API prefix, major, and minor version numbers.
+# This could be refined further for specific APIs.
+API_VERSION_NAME_RE = re.compile(r'(?P<apivariant>[A-Za-z]+)_VERSION_(?P<major>[0-9]+)_(?P<minor>[0-9]+)')
 
 class ProseListFormats(Enum):
     """A connective, possibly with a quantifier."""
@@ -42,7 +52,7 @@ class ProseListFormats(Enum):
             return cls.OR
         if s == 'and':
             return cls.AND
-        return None
+        raise RuntimeError("Unrecognized string connective: " + s)
 
     @property
     def connective(self):
@@ -63,18 +73,37 @@ class ProseListFormats(Enum):
         return ''
 
 
-class ConventionsBase:
+class ConventionsBase(abc.ABC):
     """WG-specific conventions."""
 
     def __init__(self):
         self._command_prefix = None
         self._type_prefix = None
 
+    def formatVersionOrExtension(self, name):
+        """Mark up an API version or extension name as a link in the spec."""
+
+        # Is this a version name?
+        match = API_VERSION_NAME_RE.match(name)
+        if match is not None:
+            return self.formatVersion(name,
+                match.group('apivariant'),
+                match.group('major'),
+                match.group('minor'))
+        else:
+            # If not, assumed to be an extension name. Might be worth checking.
+            return self.formatExtension(name)
+
+    def formatVersion(self, name, apivariant, major, minor):
+        """Mark up an API version name as a link in the spec."""
+        return '`<<{}>>`'.format(name)
+
     def formatExtension(self, name):
-        """Mark up an extension name as a link the spec."""
-        return '`apiext:{}`'.format(name)
+        """Mark up an extension name as a link in the spec."""
+        return '`<<{}>>`'.format(name)
 
     @property
+    @abc.abstractmethod
     def null(self):
         """Preferred spelling of NULL."""
         raise NotImplementedError
@@ -112,6 +141,38 @@ class ConventionsBase:
         """
         return 'code:'
 
+    @property
+    @abc.abstractmethod
+    def structtype_member_name(self):
+        """Return name of the structure type member.
+
+        Must implement.
+        """
+        raise NotImplementedError()
+
+    @property
+    @abc.abstractmethod
+    def nextpointer_member_name(self):
+        """Return name of the structure pointer chain member.
+
+        Must implement.
+        """
+        raise NotImplementedError()
+
+    @property
+    @abc.abstractmethod
+    def xml_api_name(self):
+        """Return the name used in the default API XML registry for the default API"""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def generate_structure_type_from_name(self, structname):
+        """Generate a structure type name, like XR_TYPE_CREATE_INSTANCE_INFO.
+
+        Must implement.
+        """
+        raise NotImplementedError()
+
     def makeStructName(self, name):
         """Prepend the appropriate format macro for a structure to a structure type name.
 
@@ -139,9 +200,9 @@ class ConventionsBase:
         Optionally adds a quantifier (like 'any') before a list of 2 or more,
         if specified by fmt.
 
-        Don't edit these defaults, override self.makeProseList().
+        Do not edit these defaults, override self.makeProseList().
         """
-        assert(serial_comma)  # didn't implement what we didn't need
+        assert(serial_comma)  # did not implement what we did not need
         if isinstance(fmt, str):
             fmt = ProseListFormats.from_string(fmt)
 
@@ -166,10 +227,12 @@ class ConventionsBase:
         return ''.join(parts)
 
     @property
+    @abc.abstractmethod
     def file_suffix(self):
         """Return suffix of generated Asciidoctor files"""
         raise NotImplementedError
 
+    @abc.abstractmethod
     def api_name(self, spectype=None):
         """Return API or specification name for citations in ref pages.
 
@@ -206,6 +269,7 @@ class ConventionsBase:
         return self._type_prefix
 
     @property
+    @abc.abstractmethod
     def api_prefix(self):
         """Return API token prefix.
 
@@ -213,6 +277,42 @@ class ConventionsBase:
 
         Must implement."""
         raise NotImplementedError
+
+    @property
+    def extension_name_prefix(self):
+        """Return extension name prefix.
+
+        Typically two uppercase letters followed by an underscore.
+
+        Assumed to be the same as api_prefix, but some APIs use different
+        case convntions."""
+
+        return self.api_prefix
+
+    @property
+    def write_contacts(self):
+        """Return whether contact list should be written to extension appendices"""
+        return False
+
+    @property
+    def write_extension_type(self):
+        """Return whether extension type should be written to extension appendices"""
+        return True
+
+    @property
+    def write_extension_number(self):
+        """Return whether extension number should be written to extension appendices"""
+        return True
+
+    @property
+    def write_extension_revision(self):
+        """Return whether extension revision number should be written to extension appendices"""
+        return True
+
+    @property
+    def write_refpage_include(self):
+        """Return whether refpage include should be written to extension appendices"""
+        return True
 
     @property
     def api_version_prefix(self):
@@ -329,24 +429,43 @@ class ConventionsBase:
            documentation includes."""
         return False
 
+    @abc.abstractmethod
+    def extension_file_path(self, name):
+        """Return file path to an extension appendix relative to a directory
+           containing all such appendices.
+           - name - extension name
 
-    def extension_include_string(self, ext):
-        """Return format string for include:: line for an extension appendix
-           file. ext is an object with the following members:
-            - name - extension string string
-            - vendor - vendor portion of name
-            - barename - remainder of name
-
-        Must implement."""
+           Must implement."""
         raise NotImplementedError
+
+    def extension_include_string(self, name):
+        """Return format string for include:: line for an extension appendix
+           file.
+            - name - extension name"""
+
+        return 'include::{{appendices}}/{}[]'.format(
+                self.extension_file_path(name))
 
     @property
-    def refpage_generated_include_path(self):
-        """Return path relative to the generated reference pages, to the
-           generated API include files.
+    def provisional_extension_warning(self):
+        """Return True if a warning should be included in extension
+           appendices for provisional extensions."""
+        return True
 
-        Must implement."""
-        raise NotImplementedError
+    @property
+    def generated_include_path(self):
+        """Return path relative to the generated reference pages, to the
+           generated API include files."""
+
+        return '{generated}'
+
+    @property
+    def include_extension_appendix_in_refpage(self):
+        """Return True if generating extension refpages by embedding
+           extension appendix content (default), False otherwise
+           (OpenXR)."""
+
+        return True
 
     def valid_flag_bit(self, bitpos):
         """Return True if bitpos is an allowed numeric bit position for
@@ -356,3 +475,41 @@ class ConventionsBase:
            or 64 bits), and may depend on assumptions about compiler
            handling of sign bits in enumerated types, as well."""
         return True
+
+    @property
+    def duplicate_aliased_structs(self):
+        """
+        Should aliased structs have the original struct definition listed in the
+        generated docs snippet?
+        """
+        return False
+
+    @property
+    def protectProtoComment(self):
+        """Return True if generated #endif should have a comment matching
+           the protection symbol used in the opening #ifdef/#ifndef."""
+        return False
+
+    @property
+    def extra_refpage_headers(self):
+        """Return any extra headers (preceding the title) for generated
+           reference pages."""
+        return ''
+
+    @property
+    def extra_refpage_body(self):
+        """Return any extra text (following the title) for generated
+           reference pages."""
+        return ''
+
+    def is_api_version_name(self, name):
+        """Return True if name is an API version name."""
+
+        return API_VERSION_NAME_RE.match(name) is not None
+
+    @property
+    def docgen_language(self):
+        """Return the language to be used in docgenerator [source]
+           blocks."""
+
+        return 'c++'

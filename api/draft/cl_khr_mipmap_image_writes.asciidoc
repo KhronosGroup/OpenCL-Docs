@@ -1,0 +1,198 @@
+ifdef::cl_khr_mipmap_image_writes[]
+endif::cl_khr_mipmap_image_writes[]
+
+=== Additions to Chapter 6 of the OpenCL 2.0 Specification
+
+==== Additions to Section 6.13.14 - Image Read, Write And Query Functions
+
+The image read and write functions described in _sections 6.13.14.2_,
+_6.13.14.3_ and _6.13.14.4_ read from and write to mip-level 0 if the image
+argument is a mip-mapped image.
+
+The following new built-in functions are added to _section 6.13.14.4_.
+
+[cols="1a,1",options="header",]
+|====
+|*Function* |*Description*
+|[source,opencl_c]
+----
+void write_imagef(
+    write_only image2d_t image,
+    int2 coord,
+    int lod,
+    float4 color)
+
+void write_imagei(
+    write_only image2d_t image,
+    int2 coord,
+    int lod,
+    int4 color)
+
+void write_imageui(
+    write_only image2d_t image,
+    int2 coord,
+    int lod,
+    uint4 color)
+
+void write_imagef(
+    write_only image2d_depth_t image,
+    int2 coord,
+    int lod,
+    float depth)
+----
+  | Write _color_ value to location specified by _coord.xy_ in the mip-level
+    specified by _lod_ in the 2D image object specified by _image_.
+    Appropriate data format conversion to the specified image format is done
+    before writing the color value.
+    _coord.x_ and _coord.y_ are considered to be unnormalized coordinates
+    and must be in the range 0 .. image width of mip-level specified by
+    _lod_ - 1, and 0 .. image height of mip-level specified by _lod_ - 1.
+
+    The behavior of *write_imagef*, *write_imagei* and *write_imageui* if
+    (_x_, _y_) coordinate values are not in the range (0 .. image width of
+    the mip-level specified by _lod_ - 1, 0 .. image height of the mip-level
+    specified by _lod_ - 1) or _lod_ value exceeds the (number of mip-levels
+    in the image - 1) is undefined.
+|[source,opencl_c]
+----
+void write_imagef(
+    write_only image1d_t image,
+    int coord,
+    int lod,
+    float4 color)
+
+void write_imagei(
+    write_only image1d_t image,
+    int coord,
+    int lod,
+    int4 color)
+
+void write_imageui(
+    write_only image1d_t image,
+    int coord,
+    int lod,
+    uint4 color)
+----
+  | Write _color_ value to location specified by _coord_ in the mip-level
+    specified by _lod_ in the 1D image object specified by _image_.
+    Appropriate data format conversion to the specified image format is done
+    before writing the color value.
+    _coord_ is considered to be unnormalized coordinates and must be in the
+    range 0 .. image width of the mip-level specified by _lod_ - 1.
+
+    The behavior of *write_imagef*, *write_imagei* and *write_imageui* if
+    coordinate value is not in the range (0 .. image width of the mip-level
+    specified by _lod_ - 1) or _lod_ value exceeds the (number of mip-levels
+    in the image - 1), is undefined.
+|[source,opencl_c]
+----
+void write_imagef(
+    write_only image1d_array_t image,
+    int2 coord,
+    int lod,
+    float4 color)
+
+void write_imagei(
+    write_only image1d_array_t image,
+    int2 coord,
+    int lod,
+    int4 color)
+
+void write_imageui(
+    write_only image1d_array_t image,
+    int2 coord,
+    int lod,
+    uint4 color)
+----
+  | Write _color_ value to location specified by _coord.x_ in the 1D image
+    identified by _coord.y_ and mip-level _lod_ in the 1D image array
+    specified by _image_.
+    Appropriate data format conversion to the specified image format is done
+    before writing the color value.
+    _coord.x_ and _coord.y_ are considered to be unnormalized coordinates
+    and must be in the range 0 .. image width of the mip-level specified by
+    _lod_ - 1 and 0 .. image number of layers - 1.
+
+    The behavior of *write_imagef*, *write_imagei* and *write_imageui* if
+    (_x_, _y_) coordinate values are not in the range (0 .. image width of
+    the mip-level specified by _lod_ - 1, 0 .. image number of layers - 1),
+    respectively or _lod_ value exceeds the (number of mip-levels in the
+    image - 1), is undefined.
+|[source,opencl_c]
+----
+void write_imagef(
+    write_only image2d_array_t image,
+    int4 coord,
+    int lod,
+    float4 color)
+
+void write_imagei(
+    write_only image2d_array_t image,
+    int4 coord,
+    int lod,
+    int4 color)
+
+void write_imageui(
+    write_only image2d_array_t image,
+    int4 coord,
+    int lod,
+    uint4 color)
+
+void write_imagef(
+    write_only image2d_array_depth_t image,
+    int4 coord,
+    int lod,
+    float depth)
+----
+  | Write _color_ value to location specified by _coord.xy_ in the 2D image
+    identified by _coord.z_ and mip-level _lod_ in the 2D image array
+    specified by _image_.
+    Appropriate data format conversion to the specified image format is done
+    before writing the color value.
+    _coord.x_, _coord.y_ and _coord.z_ are considered to be unnormalized
+    coordinates and must be in the range 0 .. image width of the mip-level
+    specified by _lod_ - 1, 0 .. image height - 1 specified by _lod_ - 1 and
+    0 .. image number of layers - 1.
+
+    The behavior of *write_imagef*, *write_imagei* and *write_imageui* if
+    (_x_, _y, z_) coordinate values are not in the range (0 .. image width
+    of the mip-level specified by _lod_ - 1, 0 .. image height of the
+    mip-level specified by _lod_ - 1, 0 .. image number of layers - 1),
+    respectively or _lod_ value exceeds the (number of mip-levels in the
+    image - 1), is undefined.
+|[source,opencl_c]
+----
+void write_imagef(
+    write_only image3d_t image,
+    int4 coord,
+    int lod,
+    float4 color)
+
+void write_imagei(
+    write_only image3d_t image,
+    int4 coord,
+    int lod,
+    int4 color)
+
+void write_imageui(
+    write_only image3d_t image,
+    int4 coord,
+    int lod,
+    uint4 color)
+----
+  | Write color value to location specified by _coord.xyz_ and mip-level
+    _lod_ in the 3D image object specified by _image_.
+    Appropriate data format conversion to the specified image format is done
+    before writing the color value.
+    _coord.x_, _coord.y_ and _coord.z_ are considered to be unnormalized
+    coordinates and must be in the range 0 .. image width - 1 specified by
+    _lod_ - 1, 0 .. image height - 1 specified by _lod_ - 1 and 0 .. image
+    depth - 1 specified by _lod_ - 1.
+
+    The behavior of *write_imagef*, *write_imagei* and *write_imageui* if
+    (_x_, _y, z_) coordinate values are not in the range (0 .. image width
+    of the mip-level specified by _lod_ - 1, 0 .. image height of the
+    mip-level specified by _lod_ - 1, 0 .. image depth - 1), respectively or
+    _lod_ value exceeds the (number of mip-levels in the image - 1), is
+    undefined.
+|====

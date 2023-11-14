@@ -1,0 +1,352 @@
+ifdef::cl_khr_subgroup_ballot[]
+endif::cl_khr_subgroup_ballot[]
+
+[[cl_khr_subgroup_ballot]]
+=== Ballots
+
+`cl_khr_subgroup_ballot` adds the ability to collect and operate on ballots
+from work items in a sub-group.
+
+
+==== Add a new Section 6.15.X - Sub-group Ballot Built-in Functions
+
+The table below describes the OpenCL C programming language built-in
+functions to allow work items in a sub-group to collect and operate on
+ballots from work items in the sub-group.
+These functions need not be encountered by all work items in a sub-group
+executing the kernel.
+
+For the `sub_group_non_uniform_broadcast` and `sub_group_broadcast_first`
+functions, the generic type name `gentype` may be one of the supported
+built-in scalar data types `char`, `uchar`, `short`, `ushort`, `int`,
+`uint`, `long`, `ulong`, `float`, `double` (if double precision is
+supported), or `half` (if half precision is supported).
+
+For the `sub_group_non_uniform_broadcast` function, the generic type name
+`gentype` may additionally be one of the supported built-in vector data
+types `char__n__`, `uchar__n__`, `short__n__`, `ushort__n__`, `int__n__`,
+`uint__n__`, `long__n__`, `ulong__n__`, `float__n__`, `double__n__` (if
+double precision is supported), or `half__n__` (if half precision is
+supported).
+
+[cols="1a,1",options="header",]
+|====
+| *Function* | *Description*
+|[source,opencl_c]
+----
+gentype sub_group_non_uniform_broadcast(
+    gentype value,
+    uint index )
+----
+  | Returns _value_ for the work item with sub-group local ID equal to
+    _index_.
+
+    Behavior is undefined when the value of _index_ is not equivalent for
+    all active work items in the sub-group.
+
+    The return value is undefined if the work item with sub-group local ID
+    equal to _index_ is inactive or if _index_ is greater than or equal to
+    the size of the sub-group.
+|[source,opencl_c]
+----
+gentype sub_group_broadcast_first(
+    gentype value )
+----
+    | Returns _value_ for the work item with the smallest sub-group local ID
+      among active work items in the sub-group.
+|[source,opencl_c]
+----
+uint4 sub_group_ballot(
+    int predicate )
+----
+  | Returns a bitfield combining the _predicate_ values from all work items
+    in the sub-group.
+    Bit zero of the first vector component represents the sub-group local ID
+    zero, with higher-order bits and subsequent vector components
+    representing, in order, increasing sub-group local IDs.
+    The representative bit in the bitfield is set if the work item is active
+    and the _predicate_ is non-zero, and is unset otherwise.
+|[source,opencl_c]
+----
+int sub_group_inverse_ballot(
+    uint4 value )
+----
+  | Returns the predicate value for this work item in the sub-group from the
+    bitfield _value_ representing predicate values from all work items in
+    the sub-group.
+    The predicate return value will be non-zero if the bit in the bitfield
+    _value_ for this work item is set, and zero otherwise.
+
+    Behavior is undefined when _value_ is not equivalent for all active work
+    items in the sub-group.
+
+    This is a specialized function that may perform better than the
+    equivalent `sub_group_ballot_bit_extract` on some implementations.
+|[source,opencl_c]
+----
+int sub_group_ballot_bit_extract(
+    uint4 value,
+    uint index )
+----
+  | Returns the predicate value for the work item with sub-group local ID
+    equal to _index_ from the bitfield _value_ representing predicate values
+    from all work items in the sub-group.
+    The predicate return value will be non-zero if the bit in the bitfield
+    _value_ for the work item with sub-group local ID equal to _index_ is
+    set, and zero otherwise.
+
+    The predicate return value is undefined if the work item with sub-group
+    local ID equal to _index_ is greater than or equal to the size of the
+    sub-group.
+|[source,opencl_c]
+----
+uint sub_group_ballot_bit_count(
+    uint4 value )
+----
+  | Returns the number of bits that are set in the bitfield _value_, only
+    considering the bits in _value_ that represent predicate values
+    corresponding to sub-group local IDs less than the maximum sub-group
+    size within the dispatch (as returned by `get_max_sub_group_size`).
+|[source,opencl_c]
+----
+uint sub_group_ballot_inclusive_scan(
+    uint4 value )
+----
+  | Returns the number of bits that are set in the bitfield _value_, only
+    considering the bits in _value_ representing work items with a sub-group
+    local ID less than or equal to this work item's sub-group local ID.
+|[source,opencl_c]
+----
+uint sub_group_ballot_exclusive_scan(
+    uint4 value )
+----
+  | Returns the number of bits that are set in the bitfield _value_, only
+    considering the bits in _value_ representing work items with a sub-group
+    local ID less than this work item's sub-group local ID.
+|[source,opencl_c]
+----
+uint sub_group_ballot_find_lsb(
+    uint4 value )
+----
+  | Returns the smallest sub-group local ID with a bit set in the bitfield
+    _value_, only considering the bits in _value_ that represent predicate
+    values corresponding to sub-group local IDs less than the maximum
+    sub-group size within the dispatch (as returned by
+    `get_max_sub_group_size`).
+    If no bits representing predicate values from all work items in the
+    sub-group are set in the bitfield _value_ then the return value is
+    undefined.
+|[source,opencl_c]
+----
+uint sub_group_ballot_find_msb(
+    uint4 value )
+----
+  | Returns the largest sub-group local ID with a bit set in the bitfield
+    _value_, only considering the bits in _value_ that represent predicate
+    values corresponding to sub-group local IDs less than the maximum
+    sub-group size within the dispatch (as returned by
+    `get_max_sub_group_size`).
+    If no bits representing predicate values from all work items in the
+    sub-group are set in the bitfield _value_ then the return value is
+    undefined.
+|[source,opencl_c]
+----
+uint4 get_sub_group_eq_mask()
+----
+  | Generates a bitmask where the bit is set in the bitmask if the bit index
+    equals the sub-group local ID and unset otherwise.
+    Bit zero of the first vector component represents the sub-group local ID
+    zero, with higher-order bits and subsequent vector components
+    representing, in order, increasing sub-group local IDs.
+|[source,opencl_c]
+----
+uint4 get_sub_group_ge_mask()
+----
+  | Generates a bitmask where the bit is set in the bitmask if the bit index
+    is greater than or equal to the sub-group local ID and less than the
+    maximum sub-group size, and unset otherwise.
+    Bit zero of the first vector component represents the sub-group local ID
+    zero, with higher-order bits and subsequent vector components
+    representing, in order, increasing sub-group local IDs.
+|[source,opencl_c]
+----
+uint4 get_sub_group_gt_mask()
+----
+  | Generates a bitmask where the bit is set in the bitmask if the bit index
+    is greater than the sub-group local ID and less than the maximum
+    sub-group size, and unset otherwise.
+    Bit zero of the first vector component represents the sub-group local ID
+    zero, with higher-order bits and subsequent vector components
+    representing, in order, increasing sub-group local IDs.
+|[source,opencl_c]
+----
+uint4 get_sub_group_le_mask()
+----
+  | Generates a bitmask where the bit is set in the bitmask if the bit index
+    is less than or equal to the sub-group local ID and unset otherwise.
+    Bit zero of the first vector component represents the sub-group local ID
+    zero, with higher-order bits and subsequent vector components
+    representing, in order, increasing sub-group local IDs.
+|[source,opencl_c]
+----
+uint4 get_sub_group_lt_mask()
+----
+  | Generates a bitmask where the bit is set in the bitmask if the bit index
+    is less than the sub-group local ID and unset otherwise.
+    Bit zero of the first vector component represents the sub-group local ID
+    zero, with higher-order bits and subsequent vector components
+    representing, in order, increasing sub-group local IDs.
+|====
+
+
+[[extended-sub-groups-mapping]]
+=== Function Mapping and Capabilities
+
+This section describes a possible mapping between OpenCL built-in functions
+and SPIR-V instructions and required SPIR-V capabilities.
+
+This section is informational and non-normative.
+
+// Note: the Unicode "zero with space" (&#8203;) causes long function names to break much more sensibly.
+
+[cols="1,1,1",options="header"]
+|====
+| *OpenCL C Function* | *SPIR-V BuiltIn or Instruction* | *Enabling SPIR-V Capability*
+
+//@ TODO: Note: this section belongs with cl_khr_subgroups, not with cl_khr_subgroup_ballot
+3+| For OpenCL 2.1 or `cl_khr_subgroups`:
+
+| `get_&#8203;sub_&#8203;group_&#8203;size`
+       | *SubgroupSize*
+            | *Kernel*
+| `get_&#8203;max_&#8203;sub_&#8203;group_&#8203;size`
+       | *SubgroupMaxSize*
+            | *Kernel*
+| `get_&#8203;num_&#8203;sub_&#8203;groups`
+        | *NumSubgroups*
+            | *Kernel*
+| `get_&#8203;enqueued_&#8203;num_&#8203;sub_&#8203;groups`
+        | *NumEnqueuedSubgroups*
+            | *Kernel*
+| `get_&#8203;sub_&#8203;group_&#8203;id`
+        | *SubgroupId*
+            | *Kernel*
+| `get_&#8203;sub_&#8203;group_&#8203;local_&#8203;id`
+        | *SubgroupLocalInvocationId*
+            | *Kernel*
+
+| `sub_&#8203;group_&#8203;barrier`
+        | *OpControlBarrier*
+            | None Needed
+
+| `sub_&#8203;group_&#8203;all`
+        | *OpGroupAll*
+            | *Groups*
+| `sub_&#8203;group_&#8203;any`
+        | *OpGroupAny*
+            | *Groups*
+
+| `sub_&#8203;group_&#8203;broadcast`
+        | *OpGroupBroadcast*
+            | *Groups*
+
+| `sub_&#8203;group_&#8203;reduce_&#8203;add`
+        | *OpGroupIAdd*, *OpGroupFAdd*
+            | *Groups*
+| `sub_&#8203;group_&#8203;reduce_&#8203;min`
+        | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
+            | *Groups*
+| `sub_&#8203;group_&#8203;reduce_&#8203;max`
+        | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
+            | *Groups*
+
+| `sub_&#8203;group_&#8203;scan_&#8203;exclusive_&#8203;add`
+        | *OpGroupIAdd*, *OpGroupFAdd*
+            | *Groups*
+| `sub_&#8203;group_&#8203;scan_&#8203;exclusive_&#8203;min`
+        | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
+            | *Groups*
+| `sub_&#8203;group_&#8203;scan_&#8203;exclusive_&#8203;max`
+        | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
+            | *Groups*
+
+| `sub_&#8203;group_&#8203;scan_&#8203;inclusive_&#8203;add`
+        | *OpGroupIAdd*, *OpGroupFAdd*
+            | *Groups*
+| `sub_&#8203;group_&#8203;scan_&#8203;inclusive_&#8203;min`
+        | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
+            | *Groups*
+| `sub_&#8203;group_&#8203;scan_&#8203;inclusive_&#8203;max`
+        | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
+            | *Groups*
+
+| `sub_&#8203;group_&#8203;reserve_&#8203;read_&#8203;pipe`
+        | *OpGroupReserveReadPipePackets*
+            | *Pipes*
+| `sub_&#8203;group_&#8203;reserve_&#8203;write_&#8203;pipe`
+        | *OpGroupReserveReadWritePackets*
+            | *Pipes*
+| `sub_&#8203;group_&#8203;commit_&#8203;read_&#8203;pipe`
+        | *OpGroupCommitReadPipe*
+            | *Pipes*
+| `sub_&#8203;group_&#8203;commit_&#8203;write_&#8203;pipe`
+        | *OpGroupCommitWritePipe*
+            | *Pipes*
+
+| `get_&#8203;kernel_&#8203;sub_&#8203;group_&#8203;count_&#8203;for_&#8203;ndrange`
+        | *OpGetKernelNDrangeSubGroupCount*
+            | *DeviceEnqueue*
+| `get_&#8203;kernel_&#8203;max_&#8203;sub_&#8203;group_&#8203;size_&#8203;for_&#8203;ndrange`
+        | *OpGetKernelNDrangeMaxSubGroupSize*
+            | *DeviceEnqueue*
+
+3+| For `cl_khr_subgroup_ballot`:
+
+| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;broadcast`
+        | *OpGroupNonUniformBroadcast*
+            | *GroupNonUniformBallot*
+| `sub_&#8203;group_&#8203;broadcast_&#8203;first`
+        | *OpGroupNonUniformBroadcastFirst*
+            | *GroupNonUniformBallot*
+
+| `sub_&#8203;group_&#8203;ballot`
+        | *OpGroupNonUniformBallot*
+            | *GroupNonUniformBallot*
+| `sub_&#8203;group_&#8203;inverse_&#8203;ballot`
+        | *OpGroupNonUniformInverseBallot*
+            | *GroupNonUniformBallot*
+| `sub_&#8203;group_&#8203;ballot_&#8203;bit_&#8203;extract`
+        | *OpGroupNonUniformBallotBitExtract*
+            | *GroupNonUniformBallot*
+| `sub_&#8203;group_&#8203;ballot_&#8203;bit_&#8203;count`
+        | *OpGroupNonUniformBallotBitCount*
+            | *GroupNonUniformBallot*
+| `sub_&#8203;group_&#8203;ballot_&#8203;inclusive_&#8203;scan`
+        | *OpGroupNonUniformBallotBitCount*
+            | *GroupNonUniformBallot*
+| `sub_&#8203;group_&#8203;ballot_&#8203;exclusive_&#8203;scan`
+        | *OpGroupNonUniformBallotBitCount*
+            | *GroupNonUniformBallot*
+| `sub_&#8203;group_&#8203;ballot_&#8203;find_&#8203;lsb`
+        | *OpGroupNonUniformBallotFindLSB*
+            | *GroupNonUniformBallot*
+| `sub_&#8203;group_&#8203;ballot_&#8203;find_&#8203;msb`
+        | *OpGroupNonUniformBallotFindMSB*
+            | *GroupNonUniformBallot*
+
+| `get_&#8203;sub_&#8203;group_&#8203;eq_&#8203;mask`
+        | *SubgroupEqMask*
+            | *GroupNonUniformBallot*
+| `get_&#8203;sub_&#8203;group_&#8203;ge_&#8203;mask`
+        | *SubgroupGeMask*
+            | *GroupNonUniformBallot*
+| `get_&#8203;sub_&#8203;group_&#8203;gt_&#8203;mask`
+        | *SubgroupGtMask*
+            | *GroupNonUniformBallot*
+| `get_&#8203;sub_&#8203;group_&#8203;le_&#8203;mask`
+        | *SubgroupLeMask*
+            | *GroupNonUniformBallot*
+| `get_&#8203;sub_&#8203;group_&#8203;lt_&#8203;mask`
+        | *SubgroupLtMask*
+            | *GroupNonUniformBallot*
+|====

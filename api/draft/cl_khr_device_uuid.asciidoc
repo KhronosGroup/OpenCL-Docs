@@ -1,0 +1,72 @@
+ifdef::cl_khr_device_uuid[]
+endif::cl_khr_device_uuid[]
+
+=== Additions to Chapter 4 of the OpenCL 3.0 API Specification
+
+Add to Table 5 - OpenCL Device Queries:
+
+[caption="Table 5. "]
+.List of supported param_names by {clGetDeviceInfo}
+[width="100%",cols="<33%,<17%,<50%",options="header"]
+|====
+| *Device Info* | *Return Type* | *Description*
+| {CL_DEVICE_UUID_KHR}
+  | {cl_uchar_TYPE}[{CL_UUID_SIZE_KHR}]
+    | Returns a universally unique identifier (UUID) for the device.
+
+      Device UUIDs must be immutable for a given device across processes,
+      driver APIs, driver versions, and system reboots.
+| {CL_DRIVER_UUID_KHR}
+  | {cl_uchar_TYPE}[{CL_UUID_SIZE_KHR}]
+    | Returns a universally unique identifier (UUID) for the software driver
+      for the device.
+| {CL_DEVICE_LUID_VALID_KHR}
+  | {cl_bool_TYPE}
+    | Returns {CL_TRUE} if the device has a valid LUID and {CL_FALSE}
+      otherwise.
+| {CL_DEVICE_LUID_KHR}
+  | {cl_uchar_TYPE}[{CL_LUID_SIZE_KHR}]
+    | Returns a locally unique identifier (LUID) for the device.
+
+      It is not an error to query {CL_DEVICE_LUID_KHR} when
+      {CL_DEVICE_LUID_VALID_KHR} returns {CL_FALSE}, but in this case the
+      returned LUID value is undefined.
+
+      When {CL_DEVICE_LUID_VALID_KHR} returns {CL_TRUE}, and the OpenCL
+      device is running on the Windows operating system, the returned LUID
+      value can be cast to an `LUID` object and must be equal to the locally
+      unique identifier of an `IDXGIAdapter1` object that corresponds to the
+      OpenCL device.
+| {CL_DEVICE_NODE_MASK_KHR}
+  | {cl_uint_TYPE}
+    | Returns a node mask for the device.
+
+      It is not an error to query {CL_DEVICE_NODE_MASK_KHR} when
+      {CL_DEVICE_LUID_VALID_KHR} returns {CL_FALSE}, but in this case the
+      returned node mask is undefined.
+
+      When {CL_DEVICE_LUID_VALID_KHR} returns {CL_TRUE}, the returned node
+      mask must contain exactly one bit.
+      If the OpenCL device is running on an operating system that supports
+      the Direct3D 12 API and the OpenCL device corresponds to an individual
+      device in a linked device adapter, the returned node mask identifies
+      the Direct3D 12 node corresponding to the OpenCL device.
+      Otherwise, the returned node mask must be `1`.
+|====
+
+[NOTE]
+.Note
+====
+While {CL_DEVICE_UUID_KHR} is specified to remain consistent across driver
+versions and system reboots, it is not intended to be usable as a
+serializable persistent identifier for a device.
+It may change when a device is physically added to, removed from, or moved
+to a different connector in a system while that system is powered down.
+Further, there is no reasonable way to verify with conformance testing that
+a given device retains the same UUID in a given system across all driver
+versions supported in that system.
+While implementations should make every effort to report consistent device
+UUIDs across driver versions, applications should avoid relying on the
+persistence of this value for uses other than identifying compatible devices
+for external object sharing purposes.
+====

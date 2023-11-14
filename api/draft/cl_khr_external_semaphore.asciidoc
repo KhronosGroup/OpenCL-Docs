@@ -1,0 +1,223 @@
+ifdef::cl_khr_external_semaphore[]
+endif::cl_khr_external_semaphore[]
+
+=== Modifications to Existing APIs Added by This Spec
+
+Following new enums are added to the list of supported _param_names_ by
+{clGetPlatformInfo}:
+
+.List of supported param_names by {clGetPlatformInfo}
+[width="100%",cols="<33%,<17%,<50%",options="header"]
+|====
+| *Platform Info* | *Return Type* | *Description*
+| {CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR}
+  | {cl_external_semaphore_handle_type_khr_TYPE}[]
+    | Returns the list of importable external semaphore handle types
+      supported by all devices in _platform_.
+      This size of this query may be 0 if no importable external semaphore
+      handle types are supported by all devices in _platform_.
+| {CL_PLATFORM_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR}
+  | {cl_external_semaphore_handle_type_khr_TYPE}[]
+    | Returns the list of exportable external semaphore handle types
+      supported by all devices in the platform.
+
+      This size of this query may be 0 if no exportable external semaphore
+      handle types are supported by all devices in _platform_.
+|====
+
+{clGetPlatformInfo} when called with _param_name_
+{CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR} returns a common list of
+external semaphore handle types supported for importing by all devices in
+the platform.
+
+{clGetPlatformInfo} when called with _param_name_
+{CL_PLATFORM_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR} returns a common list of
+external semaphore handle types supported for exporting by all devices in
+the platform.
+
+Following new enums are added to the list of supported _param_names_ by
+{clGetDeviceInfo}:
+
+.List of supported param_names by {clGetDeviceInfo}
+[width="100%",cols="<33%,<17%,<50%",options="header"]
+|====
+| *Device Info* | *Return Type* | *Description*
+| {CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR}
+  | {cl_external_semaphore_handle_type_khr_TYPE}[]
+    | Returns the list of importable external semaphore handle types
+      supported by _device_.
+      This size of this query may be 0 indicating that the device does not
+      support importing semaphores.
+| {CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR}
+  | {cl_external_semaphore_handle_type_khr_TYPE}[]
+    | Returns the list of exportable external semaphore handle types
+      supported by _device_.
+
+      This size of this query may be 0 indicating that the device does not
+      support exporting semaphores.
+|====
+
+{clGetDeviceInfo} when called with _param_name_
+{CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR} returns a list of external
+semaphore handle types supported for importing.
+
+{clGetDeviceInfo} when called with _param_name_
+{CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR} returns a list of external
+semaphore handle types supported for exporting.
+
+One of the above two queries {CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR}
+and {CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR} must return a non-empty
+list indicating support for at least one of the valid semaphore handles
+types either for import or for export or both.
+
+Following new properties are added to the list of possible supported
+properties by {clCreateSemaphoreWithPropertiesKHR}:
+
+.List of supported semaphore creation properties by {clCreateSemaphoreWithPropertiesKHR}
+[width="100%",cols="<33%,<17%,<50%",options="header"]
+|====
+| *Semaphore Property* | *Property Value* | *Description*
+| {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR}
+  | {cl_external_semaphore_handle_type_khr_TYPE}[]
+    | Specifies the list of semaphore handle type properties terminated with
+      {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR} that can be used to
+      export the semaphore being created.
+|====
+
+Add to the list of error conditions for
+{clCreateSemaphoreWithPropertiesKHR}:
+
+  * {CL_INVALID_DEVICE} if one or more devices identified by properties
+    {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} can not import the requested
+    external semaphore handle type.
+
+Add to the list of supported _param_names_ by {clGetSemaphoreInfoKHR}:
+
+.List of supported param_names by {clGetSemaphoreInfoKHR}
+[width="100%",cols="<33%,<17%,<50%",options="header"]
+|====
+| *Semaphore Info* | *Return Type* | *Description*
+| {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR}
+  | {cl_external_semaphore_handle_type_khr_TYPE}[]
+    | Returns the list of external semaphore handle types that may be used
+      for exporting.
+      The size of this query may be 0 indicating that this semaphore does
+      not support any handle types for exporting.
+|====
+
+
+=== Exporting Semaphore External Handles
+
+[open,refpage='clGetSemaphoreHandleForTypeKHR',desc='Export external handle from a semaphore',type='protos']
+--
+To export an external handle from a semaphore, call the function
+
+include::{generated}/api/protos/clGetSemaphoreHandleForTypeKHR.txt[]
+
+  * _sema_object_ specifies a valid semaphore object with exportable
+    properties.
+  * _device_ specifies a valid device for which a semaphore handle is being
+    requested.
+  * _handle_type_ specifies the type of semaphore handle that should be
+    returned for this exportable _sema_object_, and must be one of the
+    values specified when _sema_object_ was created.
+  * _handle_size_ specifies the size of memory pointed by _handle_ptr_.
+  * _handle_ptr_ is a pointer to memory where the exported external handle
+    is returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _handle_size_ret_ returns the actual size in bytes for the external
+    handle.
+    If _handle_size_ret_ is `NULL`, it is ignored.
+
+// refError
+
+{clGetSemaphoreHandleForTypeKHR} returns {CL_SUCCESS} if the semaphore
+handle is queried successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_SEMAPHORE_KHR}
+  ** if _sema_object_ is not a valid semaphore
+// This is redundant with the error below.
+  ** if _sema_object_ is not exportable
+  * {CL_INVALID_DEVICE}
+  ** if _device_ is not a valid device, or
+  ** if _sema_object_ belongs to a context that is not associated with
+     _device_, or
+  ** if _sema_object_ can not be shared with _device_.
+  * {CL_INVALID_VALUE} if the requested external semaphore handle type was
+    not specified when _sema_object_ was created.
+  * {CL_INVALID_VALUE} if _handle_size_ is less than the size needed to
+    store the returned handle.
+// I don't think this can happen.  This would have been checked when the semaphore was created.
+//    ** if CL_SEMAPHORE_HANDLE_*_KHR is specified as one of the _sema_props_ and
+//    the property CL_SEMAPHORE_HANDLE_*_KHR does not identify a valid external
+//    memory handle poperty reported by
+//    {CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR} or
+//   {CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR} queries.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+
+=== Importing Semaphore External Handles
+
+Applications can import a semaphore payload into an existing semaphore using
+an external semaphore handle.
+The effects of the import operation will be either temporary or permanent,
+as specified by the application.
+If the import is temporary, the implementation must restore the semaphore to
+its prior permanent state after submitting the next semaphore wait
+operation.
+Performing a subsequent temporary import on a semaphore before performing a
+semaphore wait has no effect on this requirement; the next wait submitted on
+the semaphore must still restore its last permanent state.
+A permanent payload import behaves as if the target semaphore was destroyed,
+and a new semaphore was created with the same handle but the imported
+payload.
+Because importing a semaphore payload temporarily or permanently detaches
+the existing payload from a semaphore, similar usage restrictions to those
+applied to {clReleaseSemaphoreKHR} are applied to any command that imports a
+semaphore payload.
+Which of these import types is used is referred to as the import operation's
+permanence.
+Each handle type supports either one or both types of permanence.
+
+The implementation must perform the import operation by either referencing
+or copying the payload referred to by the specified external semaphore
+handle, depending on the handle's type.
+The import method used is referred to as the handle type's transference.
+When using handle types with reference transference, importing a payload to
+a semaphore adds the semaphore to the set of all semaphores sharing that
+payload.
+This set includes the semaphore from which the payload was exported.
+Semaphore signaling and waiting operations performed on any semaphore in the
+set must behave as if the set were a single semaphore.
+Importing a payload using handle types with copy transference creates a
+duplicate copy of the payload at the time of import, but makes no further
+reference to it.
+Semaphore signaling and waiting operations performed on the target of copy
+imports must not affect any other semaphore or payload.
+
+Export operations have the same transference as the specified handle type's
+import operations.
+Additionally, exporting a semaphore payload to a handle with copy
+transference has the same side effects on the source semaphore's payload as
+executing a semaphore wait operation.
+If the semaphore was using a temporarily imported payload, the semaphore's
+prior permanent payload will be restored.
+
+Please refer to handle specific specifications for more details on
+transference and permanence requirements specific to handle type.
+
+
+=== Descriptions of External Semaphore Handle Types
+
+This section describes the external semaphore handle types that are added by
+related extensions.
+
+Applications can import the same semaphore payload into multiple OpenCL
+contexts, into the same context from which it was exported, and multiple
+times into a given OpenCL context.
+In all cases, each import operation must create a distinct semaphore object.
