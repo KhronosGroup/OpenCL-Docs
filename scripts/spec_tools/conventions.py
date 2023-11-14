@@ -32,12 +32,12 @@ TYPES_KNOWN_ALWAYS_VALID = set(('char',
                                 ))
 
 # Split an extension name into vendor ID and name portions
-EXT_NAME_DECOMPOSE_RE = re.compile(r'[A-Z]+_(?P<vendor>[A-Z]+)_(?P<name>[\w_]+)')
+EXT_NAME_DECOMPOSE_RE = re.compile(r'(?P<prefix>[A-Za-z]+)_(?P<vendor>[A-Za-z]+)_(?P<name>[\w_]+)')
 
 # Match an API version name.
+# Match object includes API prefix, major, and minor version numbers.
 # This could be refined further for specific APIs.
-API_VERSION_NAME_RE = re.compile(r'[A-Z]+_VERSION_[0-9]')
-
+API_VERSION_NAME_RE = re.compile(r'(?P<apivariant>[A-Za-z]+)_VERSION_(?P<major>[0-9]+)_(?P<minor>[0-9]+)')
 
 class ProseListFormats(Enum):
     """A connective, possibly with a quantifier."""
@@ -79,6 +79,24 @@ class ConventionsBase(abc.ABC):
     def __init__(self):
         self._command_prefix = None
         self._type_prefix = None
+
+    def formatVersionOrExtension(self, name):
+        """Mark up an API version or extension name as a link in the spec."""
+
+        # Is this a version name?
+        match = API_VERSION_NAME_RE.match(name)
+        if match is not None:
+            return self.formatVersion(name,
+                match.group('apivariant'),
+                match.group('major'),
+                match.group('minor'))
+        else:
+            # If not, assumed to be an extension name. Might be worth checking.
+            return self.formatExtension(name)
+
+    def formatVersion(self, name, apivariant, major, minor):
+        """Mark up an API version name as a link in the spec."""
+        return '`<<{}>>`'.format(name)
 
     def formatExtension(self, name):
         """Mark up an extension name as a link in the spec."""

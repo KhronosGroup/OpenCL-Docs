@@ -18,6 +18,10 @@ class OpenCLConventions(ConventionsBase):
         """Preferred spelling of NULL."""
         return '`NULL`'
 
+    def formatVersion(self, name, apivariant, major, minor):
+        """Mark up an API version name as a link in the spec."""
+        return f'`<<versions-{major}-{minor}, OpenCL {major}.{minor}>>`'
+
     def formatExtension(self, name):
         """Mark up a name as an extension for the spec."""
         return '`<<{}>>`'.format(name)
