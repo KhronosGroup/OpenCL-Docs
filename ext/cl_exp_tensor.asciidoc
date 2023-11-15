@@ -26,7 +26,7 @@ which can utilize tensors as input, output and temporary storage.
 [cols="1,1,3",options="header",]
 |====
 | *Date*     | *Version* | *Description*
-| 2023-10-XX | 0.1.0     | First assigned version.
+| 2023-11-XX | 0.1.0     | First assigned version.
 |====
 
 ==== Dependencies
@@ -43,10 +43,57 @@ Ben Ashbaugh, Intel. +
 
 === Overview
 
+The new tensor object enables applications to describe N-dimensional
+arrays whose memory layout is abstract to applications. The goal and
+intent of this extension is to give leverage for:
+
+* implementations to have freedom of placement data of the tensors for
+  improving performance of the kernels which use them. This extension
+  should be designed so it allows implementations to determine optimal
+  memory layouts for the tensors based on their use cases for
+  increasing performance - for example, by analyzing kernels’ access
+  patterns - or, in case of built-in kernels, by inspecting tensor
+  arguments they operate on.
+
+* reduce details and boilerplate needed for porting performant
+  applications by being less dependent on platform or device specifics
+  on the memory layout / data arrangements which matters for
+  performance. Such specifics may include:
+
+** alignment of data (e.g. for avoiding misaligned memory accesses)
+
+** arrangement of data required by kernels (column-major vs row-major
+   for matrix multiplication, NHWC vs NCHW for neural network
+   convolution)
+
+** arrangement of the data into tiles (or “packing”) for improving
+   cache and TLB hits
+
+** arrangement of data into specific tiles in order to exploit complex
+   HW operations such as matrix multiplications (Intel AMX, AMD matrix
+   cores).
+
+** arrangement of data into rows separated by a stride in order to
+   avoid back conflicts in GPUs.
+
+The tensor data type is deemed to be effective with command buffers
+and built-in kernels - including kernels to be provided by defined
+built-in kernel (cl_khr_defined_builtin_kernels) extension under work.
 
 === Modifications to OpenCL
 
-==== New OpenCL Functions
+==== New Section: 5.x Tensor Objects
+
+A tensor object stores a N-dimensional array of elements. The memory
+layout of the tensor is opaque to the application. When a tensor
+object is created it initially does not have storage where the
+elements of the tensor are stored into. A storage is bind to a tensor
+by creating a memory buffer with CL_MEM_BIND_TO_BUFFER. Tensor objects
+without storage can be set as kernel arguments for kernels which
+accepts them. Kernels which have tensor arguments must have a storage
+assigned to them prior enqueuing the kernels for execution.
+
+==== New OpenCL Functions added to Tensor Objects section
 
 To create a tensor use:
 
@@ -108,29 +155,32 @@ following error values returned in errcode_ret:
 * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
   required by the OpenCL implementation on the host.
 
-.Tensor element types
-[cols="1,2",stripes=odd]
+.Tensor element types. The API type indicates the corresponding type for copying elements from an host allocation / buffer object to tensor or vice versa.
+[cols="1,1,1",stripes=even]
 [#TensorDtypes]
 |===
-| *Tensor element data type* | *Description*
+| *Tensor element data type* | *Description* | *API type*
 
-| CL_TENSOR_BOOL       | 1-bit signedless integer.
-| CL_TENSOR_INT8       | 8-bit signed integer.
-| CL_TENSOR_INT16      | 16-bit signed integer.
-| CL_TENSOR_INT32      | 32-bit signed integer.
-| CL_TENSOR_INT64      | 64-bit signed integer.
-| CL_TENSOR_UINT8      | 8-bit unsigned integer.
-| CL_TENSOR_UINT16     | 16-bit unsigned integer.
-| CL_TENSOR_UINT32     | 32-bit unsigned integer.
-| CL_TENSOR_UINT64     | 64-bit unsigned integer.
-| CL_TENSOR_HALF       | Half precision floating-point.
-| CL_TENSOR_BFLOAT16   | 16-bit brain floating-point.
-| CL_TENSOR_FLOAT      | Single precision floating-point.
-| CL_TENSOR_DOUBLE     | Double precision floating-point.
-| CL_TENSOR_COMPLEX64  | 64-bit complex floating point with
-  32-bit real and imaginary part.
-| CL_TENSOR_COMPLEX128 | 128-bit complex floating point with
-  64-bit real and imaginary part.
+| CL_TENSOR_BOOL | 1-bit signedless integer.  |
+cl_uchar. footnote:[only LSB bit is considered when writing data to
+tensor. When reading data from tensor the boolean value will be
+written as 0 or 1. The boolean values in the tensor may be packed densenly]
+| CL_TENSOR_INT8       | 8-bit signed integer.            | cl_char.
+| CL_TENSOR_INT16      | 16-bit signed integer.           | cl_short.
+| CL_TENSOR_INT32      | 32-bit signed integer.           | cl_int.
+| CL_TENSOR_INT64      | 64-bit signed integer.           | cl_long.
+| CL_TENSOR_UINT8      | 8-bit unsigned integer.          | cl_uchar.
+| CL_TENSOR_UINT16     | 16-bit unsigned integer.         | cl_ushort.
+| CL_TENSOR_UINT32     | 32-bit unsigned integer.         | cl_uint.
+| CL_TENSOR_UINT64     | 64-bit unsigned integer.         | cl_ulong.
+| CL_TENSOR_HALF       | Half precision floating-point.   | cl_half.
+| CL_TENSOR_BFLOAT16   | 16-bit brain floating-point.     | cl_ushort
+| CL_TENSOR_FLOAT      | Single precision floating-point. | cl_float.
+| CL_TENSOR_DOUBLE     | Double precision floating-point. | cl_double.
+| CL_TENSOR_COMPLEX64  | 64-bit complex floating-point with
+  32-bit real and imaginary part. | cl_float2
+| CL_TENSOR_COMPLEX128 | 128-bit complex floating-point with
+  64-bit real and imaginary part. | cl_double2
 |===
 
 To retain a tensor object, call the function
@@ -234,8 +284,9 @@ clGetTensorInfo call returns:
 count.
 |===
 
-The following functions are for reading from a tensor to host memory / buffer object or to write to a
-tensor object from host memory / buffer object.
+The following functions are for reading from a tensor to host memory /
+buffer object or to write to a tensor object from host memory / buffer
+object.
 
 [source,c]
 ----
@@ -243,6 +294,10 @@ cl_int clEnqueueTranslateFromTensor(
   cl_command_queue command_queue,
   cl_tensor tensor,
   cl_bool blocking_command,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
   cl_mem buffer,
   void* host_ptr,
   cl_uint num_events_in_wait_list,
@@ -256,6 +311,10 @@ cl_int clEnqueueTranslateToTensor(
   cl_command_queue command_queue,
   cl_tensor tensor,
   cl_bool blocking_command,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
   cl_mem buffer,
   const void* host_ptr,
   cl_uint num_events_in_wait_list,
@@ -271,6 +330,24 @@ cl_int clEnqueueTranslateToTensor(
 
 * _blocking_command_ indicate if the read and write operations are
   blocking or non-blocking (see below).
+
+* _tensor_origin_ defines the offset coordinates in _tensor_ for start of
+  the regions to read / write tensor data. The length of the array
+  must be at least rank the the _tensor_.
+
+* _mem_origin_ defines the offset coordinates in the memory region
+  pointed by _buffer_ or _host_ptr_ expressed in elements of _tensor_
+  data type. The length of the array must be at least rank the the
+  _tensor_.
+
+* _region_ defines the region being read or written expressed in in
+  elements of _tensor_ data type. The length of the array must be at
+  least rank the the _tensor_. If _region_ is NULL then _tensor_'s
+  shape will be used as the region.
+
+* _mem_pitch_ defines the length of each dimension in elements to be
+  used for the memory region of _buffer_ or _host_ptr_. The length of
+  the array must be at least the rank of _tensor_ minus one.
 
 * _buffer_ and _host_ptr_ refer to a valid buffer object / host
   allocation where data is to be read into or to be written from.
@@ -304,38 +381,59 @@ implementation-defined, opaque memory layout. The
 storage to buffer object / host allocation.
 
 The elements of buffer object / host allocation are mapped to tensor
-coordinates as follows:
+coordinates and vice versa as follows in pseudo C code:
 
+[source,c]
 ----
-tensor.element(i0, i1, ..., i<N-2>, i<N-1>) == (tensor.dtype)buffer_or_host_ptr[
-  i0 * tensor.shape[1] * tensor.shape[2] * ... * tensor.shape[N-1] +
-  i1 * tensor.shape[2] * tensor.shape[3] * ... * tensor.shape[N-1] +
+tensor_element(
+  tensor_origin[0] + i[0],
+  tensor_origin[1] + i[1],
+  ...,
+  tensor_origin[N-2] + i[N-2],
+  tensor_origin[N-2] + i[N-1]) ==
+((TENSOR_DATATYPE *)buffer_or_host_ptr)[
+  (mem_origin[0] + i[0]) * pitch(0) +
+  (mem_origin[1] + i[1]) * pitch(1) +
   ... +
-  i<N-2> * tensor.shape[i(N-1)] +
-  i<N-1>]
+  (mem_origin[N-2] + i[N-2]) * pitch(N-2) +
+  (mem_origin[N-1] + i[N-1])];
 ----
 
-Where `iX` is a tensor coordinate index with inclusive range of
-`0..<shape[X]-1>`. The `tensor.element()` represents an abstract
-function that accesses a tensor element in its storage at given
-coordinate. The method how the coordinates translate to tensor storage
-addresses is unspecified.
+Where the `N` is tensor rank, the `i[X]` is a tensor coordinate with
+inclusive range of `0..<region[X]-1>` and the `pitch` is computed as
+follows in pseudo C code:
+
+[source,c]
+----
+size_t pitch(size_t dim) {
+  size_t pitch = 1;
+  for (size_t i = dim; i < tensor_rank - 1; i++)
+    pitch *= mem_pitch != NULL ? mem_pitch[i] : region[i + 1];
+  return pitch;
+}
+----
+
+For `dim` in `0..(tensor_rank()-1)`. The `tensor_element()` represents
+an abstract function that accesses a tensor element in its storage at
+given coordinate. The method how the coordinates translate to tensor
+storage addresses is unspecified.
 
 // TODO: add clEnqueueCopyTensor
 
 // TODO: add clEnqueueFillTensor?
 
-// TODO: add command buffer variants for clEnqueue{copy,read,write}Tensor.
-
+TODO: add command buffer variants for clEnqueue*Tensor.
 
 ==== Add New Buffer Property in Section 5.2.1
 
 [cols="2,1,2",stripes=odd]
 |===
 | CL_MEM_COMMAND_BUFFER_TEMPORARY | cl_bool
-
 a| This property can be set if *cl_khr_command_buffer* extension is
 supported.
+
+NOTE: This property temporarily lives here and will be moved to
+a separate extension proposal.
 
 If the value is true, create a "temporary" buffer object that only can
 be used on commands recorded in command buffers. Non-recording
@@ -366,10 +464,11 @@ queried with clGetTensorInfo().
 
 Memory layout of the tensor in the created memory buffer is
 implementation-defined and opaque to the applications and it may
-change at unspecified points. Implementation may store auxiliary data
-in the memory buffer for the tensor. Therefore, writing data into the
-memory buffer directly using the cl_mem handle leads to undefined
-behavior.
+change at unspecified points.  Implementation may use non-contiguous
+allocations to store the tensor data and implementation may store
+auxiliary data within the allocations.  Therefore, reading from or
+writing to the memory buffer directly using the cl_mem handle leads to
+undefined behavior.
 
 If the tensor is already bound to a buffer object,
 clCreateBufferWithProperties call returns CL_TENSOR_BOUND_TO_BUFFER
@@ -410,10 +509,8 @@ cl_kernel create_matmul_kernel(
   // A hypothetical matmul kernel signature in pseudo OpenCL C for
   // illustrative purposes:
   //
-  //   kernel void matmul(
-  //     global read_only tensor_t,
-  //     global read_only tensor_t,
-  //     global write_only tensor_t);
+  //   kernel void matmul(global read_only tensor_t, global read_only tensor_t,
+  //                      global write_only tensor_t);
 
   cl_kernel matmul_kernel = /* Omitted. */;
   clSetKernelArg(matmul_kernel, 0, sizeof(cl_tensor), &lhs);
@@ -428,10 +525,8 @@ cl_kernel create_add_kernel(
   // A hypothetical add kernel signature in pseudo OpenCL C for illustrative
   // purposes:
   //
-  // kernel void add(
-  //     global read_only tensor_t,
-  //     global read_only tensor_t,
-  //     global write_only tensor_t);
+  // kernel void add(global read_only tensor_t, global read_only tensor_t,
+  //                 global write_only tensor_t);
 
   cl_tensor add_kernel = /* Omitted. */;
   clSetKernelArg(add_kernel, 0, sizeof(cl_tensor), &lhs);
@@ -446,6 +541,7 @@ An example usage of tensors on a command queue:
 ----
 constexpr size_t b = 64, m = 100, n = 200, k = 50;
 
+cl_int err;
 cl_tensor in0 = clCreateTensor(ctx, nullptr, 3, {b, m, k}, CL_TENSOR_FLOAT, err);
 cl_tensor in1 = clCreateTensor(ctx, nullptr, 3, {b, k, n}, CL_TENSOR_FLOAT, err);
 cl_tensor in2 = clCreateTensor(ctx, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err);
@@ -455,11 +551,11 @@ cl_tensor out = clCreateTensor(ctx, nullptr, 3, {b, m, n}, CL_TENSOR_FLOAT, err)
 cl_kernel matmul_kernel = create_matmul_kernel(ctx, device_span, in0, in1, t0);
 cl_kernel add_kernel = create_add_kernel(ctx, device_span, t0, in2, out);
 
-// Allocate storage for the tensors. The buffer size must be set to zero
-// when the buffer is bound to a tensor. OpenCL implementation may
-// determine optimal data layout and the storage needed for it, based
-// on the tensor's uses (matmul kernel in this sample) so far.
-cl_int err;
+// Allocate storage for the tensors. The buffer size must be set to
+// zero when the buffer is bound to a tensor. OpenCL implementation
+// may determine optimal data layout and the storage needed for it,
+// based on the tensor's uses (the 'matmul' and 'add' kernels in this
+// sample) so far.
 cl_mem in0_mem = clCreateBufferWithProperties(
   ctx, {CL_MEM_BIND_TO_TENSOR, in0, 0}, CL_MEM_READ_ONLY,
   0 /* must be zero for CL_MEM_BIND_TO_TENSOR. */, nullptr, &err);
@@ -482,20 +578,19 @@ std::vector<float> out_data(b * m * n);
 
 // Copies data into in0 tensor while possibly rearranging the data to the
 // optimal data layout.
-clEnqueueWriteTensor(
-  cmd_q, in0, false, nullptr, nullptr, {b, m, k}, nullptr, in0_data.data(),
-  0, nullptr, nullptr);
-
-clEnqueueWriteTensor(
-  cmd_q, in1, false, nullptr, nullptr, {b, k, n}, nullptr, in1_data.data(),
-  0, nullptr, nullptr);
+clEnqueueTranslateToTensor(
+  cmd_q, in0, false, {0, 0, 0}, {0, 0, 0}, {b, m, k},
+  nullptr, nullptr, nullptr, in0_data.data(), 0, nullptr, nullptr);
+clEnqueueTranslateToTensor(
+  cmd_q, in1, false, {0, 0, 0}, {0, 0, 0}, {b, k, n},
+  nullptr, nullptr, nullptr, in1_data.data(), 0, nullptr, nullptr);
 clEnqueueNDRangeKernel(
-  cmd_q, matmul_kernel, 0, nullptr, nullptr, nullptr, 0, nullptr, nullptr);
+  cmd_q, matmul_kernel, 3, matmul_grid, nullptr, nullptr, 0, nullptr, nullptr);
 clEnqueueNDRangeKernel(
-  cmd_q, add_kernel, 0, nullptr, nullptr, nullptr, 0, nullptr, nullptr);
-clEnqueueReadTensor(
-  cmd_q, out, false, nullptr, nullptr, {b, m, n}, nullptr, out_data.data(),
-  0, nullptr, nullptr);
+  cmd_q, add_kernel, 3, add_grid, nullptr, nullptr, 0, nullptr, nullptr);
+clEnqueueTranslateFromTensor(
+  cmd_q, out, false,  {0, 0, 0}, {0, 0, 0}, {b, m, n},
+  nullptr, nullptr, nullptr, out_data.data(), 0, nullptr, nullptr);
 ----
 
 An example use of tensors in a command buffer when cl_khr_command_buffer
@@ -545,21 +640,21 @@ cl_command_buffer_khr cb =
   clCreateCommandBufferKHR(num_queues, queue_list, nullptr, &err);
 
 cl_sync_point_khr in0_syncp, in1_syncp, matmul_syncp, add_syncp;
-clCommandWriteTensorKHR(
-  cmd_b, cmd_q, in0, false, nullptr, nullptr, {b, m, k}, nullptr,
-  in0_data.data(), 0, nullptr, &in0_syncp);
-clCommandWriteTensorKHR(
-  cmd_b, cmd_q, in1, false, nullptr, nullptr, {b, k, m}, nullptr,
-  in1_data.data(), 0, nullptr, &in1_syncp);
+clCommandTranslateToTensorKHR(
+  cmd_b, cmd_q, in0, {0, 0, 0}, {0, 0, 0}, {b, m, k},
+  nullptr, nullptr, nullptr, in0_data.data(), 0, nullptr, &in0_syncp);
+clCommandTranslateToTensorKHR(
+  cmd_b, cmd_q, in1, {0, 0, 0}, {0, 0, 0}, {b, k, m},
+  nullptr, nullptr, nullptr, in1_data.data(), 0, nullptr, &in1_syncp);
 clCommandNDRangeKernelKHR(
-  cmd_b, cmd_q, nullptr, matmul_kernel, 0, nullptr, nullptr, nullptr,
+  cmd_b, cmd_q, nullptr, matmul_kernel, 3, matmul_grid, nullptr, nullptr,
   2, {in0_syncp, in2_syncp}, &matmul_syncp, nullptr);
 clCommandNDRangeKernelKHR(
-  cmd_b, cmd_q, nullptr, add_kernel, 0, nullptr, nullptr, nullptr,
+  cmd_b, cmd_q, nullptr, add_kernel, 3, add_grid, nullptr, nullptr,
   1, {matmul_syncp}, &add_syncp, nullptr);
-clCommandReadTensorKHR(
-  cmd_b, cmd_q, out,  false, nullptr, nullptr, {b, k, m}, nullptr,
-  out_data.data(), 1, {add_syncp}, nullptr);
+clCommandTranslateFromTensorKHR(
+  cmd_b, cmd_q, out, {0, 0, 0}, {0, 0, 0}, {b, k, m},
+  nullptr, nullptr, nullptr, out_data.data(), 1, {add_syncp}, nullptr);
 
 // Finalize the command buffer. At this point the OpenCL
 // implementation may reserve enough storage for all the tensor
@@ -571,14 +666,23 @@ clFinalizeCommandBufferKHR(cmd_b);
 // Temporary tensors used in a command buffer can't be read or written
 // into. A hypothetical reason is that the finalized command buffer
 // might not use some of the tensor.
-assert(clEnqueueReadTensor(..., t0, ...) == CL_INVALID_OPERATION);
+assert(clEnqueueTranslateFromTensor(..., t0, ...) == CL_INVALID_OPERATION);
 ----
 
 === Open Questions ===
 
 . Should we have support for tensors with undefined shape and tensors
   with unknown / symbolic dimension sizes like in ONNX?
-
++
+--
 // https://onnx.ai/onnx/repo-docs/ShapeInference.html
-
 *UNRESOLVED*
+--
+
+. Should we define OpenCL C language features for accessing tensors?
++
+--
+*RESOLVED*: OpenCL C support for tensors can be introduced later in a
+            separate extension. Built-in kernels may benefit from this
+            extension.
+--
