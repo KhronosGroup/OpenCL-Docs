@@ -44,18 +44,18 @@ Ben Ashbaugh, Intel. +
 === Overview
 
 The new tensor object enables applications to describe N-dimensional
-arrays whose memory layout is abstract to applications. The goal and
-intent of this extension is to give leverage for:
+arrays whose memory layout is opaque to applications. The goals
+of this extension are the following:
 
-* implementations to have freedom of placement data of the tensors for
+* Enable implementations to have freedom of placement data of the tensors for
   improving performance of the kernels which use them. This extension
-  should be designed so it allows implementations to determine optimal
+  is designed such it allows implementations to determine optimal
   memory layouts for the tensors based on their use cases for
-  increasing performance - for example, by analyzing kernels’ access
-  patterns - or, in case of built-in kernels, by inspecting tensor
+  increased performance, by means of, for example, analyzing kernels’ access
+  patterns or, in case of built-in kernels, by inspecting the tensor
   arguments they operate on.
 
-* reduce details and boilerplate needed for porting performant
+* Reduce details and boilerplate needed for performance portable implementation of
   applications by being less dependent on platform or device specifics
   on the memory layout / data arrangements which matters for
   performance. Such specifics may include:
@@ -74,23 +74,23 @@ intent of this extension is to give leverage for:
    cores).
 
 ** arrangement of data into rows separated by a stride in order to
-   avoid back conflicts in GPUs.
+   avoid bank conflicts in GPUs.
 
-The tensor data type is deemed to be effective with command buffers
-and built-in kernels - including kernels to be provided by defined
-built-in kernel (cl_khr_defined_builtin_kernels) extension under work.
+The tensor data type is designed to be efficiently used together with command buffers (cl_khr_command_buffers)
+and built-in kernels, including kernels to be provided by the Defined
+Built-in Kernels (cl_khr_defined_builtin_kernels) extension that is being prepared together with this extension.
 
 === Modifications to OpenCL
 
 ==== New Section: 5.x Tensor Objects
 
-A tensor object stores a N-dimensional array of elements. The memory
+A tensor object stores an N-dimensional array of elements. The memory
 layout of the tensor is opaque to the application. When a tensor
-object is created it initially does not have storage where the
-elements of the tensor are stored into. A storage is bind to a tensor
+object is created it is initially not associated to any storage for the tensor elements.
+ A storage is bound to a tensor
 by creating a memory buffer with CL_MEM_BIND_TO_BUFFER. Tensor objects
 without storage can be set as kernel arguments for kernels which
-accepts them. Kernels which have tensor arguments must have a storage
+accepts them. Kernels which have tensor arguments must have storage
 assigned to them prior enqueuing the kernels for execution.
 
 ==== New OpenCL Functions added to Tensor Objects section
@@ -684,5 +684,5 @@ assert(clEnqueueTranslateFromTensor(..., t0, ...) == CL_INVALID_OPERATION);
 --
 *RESOLVED*: OpenCL C support for tensors can be introduced later in a
             separate extension. Built-in kernels may benefit from this
-            extension.
+            extension as it is.
 --
