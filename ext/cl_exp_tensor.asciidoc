@@ -347,7 +347,9 @@ cl_int clEnqueueTranslateToTensor(
 
 * _mem_pitch_ defines the length of each dimension in elements to be
   used for the memory region of _buffer_ or _host_ptr_. The length of
-  the array must be at least the rank of _tensor_ minus one.
+  the array must be at least the rank of _tensor_ minus one. if
+  _mem_pitch_ is NULL or _mem_pitch_[i] is zero, _mem_pitch_[i] is
+  computed as _region_[i + 1].
 
 * _buffer_ and _host_ptr_ refer to a valid buffer object / host
   allocation where data is to be read into or to be written from.
@@ -408,7 +410,8 @@ follows in pseudo C code:
 size_t pitch(size_t dim) {
   size_t pitch = 1;
   for (size_t i = dim; i < tensor_rank - 1; i++)
-    pitch *= mem_pitch != NULL ? mem_pitch[i] : region[i + 1];
+    pitch *=
+      (mem_pitch != NULL || mem_pitch[i] == 0) ? mem_pitch[i] : region[i + 1];
   return pitch;
 }
 ----
@@ -418,11 +421,131 @@ an abstract function that accesses a tensor element in its storage at
 given coordinate. The method how the coordinates translate to tensor
 storage addresses is unspecified.
 
+*clEnqueueTranslateFsomTensor* and *clEnqueueTranslateToTensor*
+returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:
+
+* CL_INVALID_COMMAND_QUEUE if _command_queue_ is not a valid host
+  command-queue.
+
+* CL_INVALID_CONTEXT if the context associated with _command_queue_
+  and buffer are not the same or if the context associated with
+  _command_queue_ and events in _event_wait_list_ are not the same.
+
+* CL_INVALID_MEM_OBJECT if _buffer_ is not a valid buffer object.
+
+* CL_INVALID_VALUE if _tensor_origin_ or _mem_origin_ is NULL.
+
+* CL_INVALID_VALUE if the region being read or written specified by
+  (_mem_origin_, _region_, _mem_pitch_) is out of bounds.
+
+* CL_INVALID_VALUE if any _region_ array element is 0.
+
+* CL_INVALID_VALUE if _mem_pitch_ is not NULL and _mem_pitch_[i] is
+  not 0 and _mem_pitch_[i] is less than _region_[i].
+
+* CL_INVALID_VALUE if _buffer_ and _host_ptr_ both are NULL or non-NULL.
+
+* CL_INVALID_EVENT_WAIT_LIST if _event_wait_list_ is NULL and
+  _num_events_in_wait_list_ > 0, or _event_wait_list_ is not NULL and
+  _num_events_in_wait_list_ is 0, or if event objects in
+  _event_wait_list_ are not valid events.
+
+* CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST if the read and write
+  operations are blocking and the execution status of any of the
+  events in _event_wait_list_ is a negative integer value.
+
+* CL_MEM_OBJECT_ALLOCATION_FAILURE if there is a failure to allocate
+  memory for data store associated with memory object the _tensor_ is
+  bound to.
+
+* CL_OUT_OF_RESOURCES if there is a failure to allocate resources
+  required by the OpenCL implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+  required by the OpenCL implementation on the host.
+
 // TODO: add clEnqueueCopyTensor
 
 // TODO: add clEnqueueFillTensor?
 
-TODO: add command buffer variants for clEnqueue*Tensor.
+If *cl_khr_command_buffer* is is supported, then the following command
+buffer counterparts of the *clEnqueueTranslateFromTensor* and
+*clEnqueueTranslateToTensor* commands are available.
+
+[source,c]
+----
+cl_int clCommandTranslateFromTensorKHR(
+  cl_command_buffer_khr command_buffer,
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  void* host_ptr,
+  cl_uint num_sync_points_in_wait_list,
+  const cl_sync_point_khr* sync_point_wait_list,
+  cl_sync_point_khr* sync_point,
+  cl_mutable_command_khr* mutable_handle);
+----
+
+[source,c]
+----
+cl_int clCommandTranslateToTensorKHR(
+  cl_command_buffer_khr command_buffer,
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  const void* host_ptr,
+  cl_uint num_sync_points_in_wait_list,
+  const cl_sync_point_khr* sync_point_wait_list,
+  cl_sync_point_khr* sync_point,
+  cl_mutable_command_khr* mutable_handle);
+----
+
+* _command_buffer_ refers to valid command-buffer object.
+
+* For _command_queue_, _tensor_, _tensor_origin_, _mem_origin_,
+  _region_, _mem_pitch_, _buffer_ and _host_ptr_ parameters refer to
+  *clEnqueueTranslateFromTensor*.
+
+* For _num_sync_points_in_wait_list_, _sync_point_wait_list_,
+  _sync_point_, _mutable_handle_ parameters refer to
+  *clCommandCopyBufferKHR*.
+
+*clCommandTranslateFromTensorKHR* and *clCommandTranslateFromTensorKHR*
+returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:
+
+* CL_INVALID_COMMAND_QUEUE if _command_queue_ is not NULL.
+
+* CL_INVALID_COMMAND_BUFFER_KHR if _command_buffer_ is not a valid
+  command-buffer.
+
+* CL_INVALID_CONTEXT if the context associated with _command_queue_
+  and _command_buffer_ is not the same.
+
+* CL_INVALID_OPERATION if _command_buffer_ has been finalized.
+
+* CL_INVALID_VALUE if _mutable_handle_ is not NULL.
+
+* CL_INVALID_SYNC_POINT_WAIT_LIST_KHR if _sync_point_wait_list_ is
+  NULL and _num_sync_points_in_wait_list_ is > 0, or
+  _sync_point_wait_list_ is not NULL and _num_sync_points_in_wait_list_ is
+  0, or if synchronization-point objects in _sync_point_wait_list_ are
+  not valid synchronization-points.
+
+* CL_OUT_OF_RESOURCES if there is a failure to allocate resources
+  required by the OpenCL implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+  required by the OpenCL implementation on the host.
 
 ==== Add New Buffer Property in Section 5.2.1
 
@@ -580,17 +703,17 @@ std::vector<float> out_data(b * m * n);
 // optimal data layout.
 clEnqueueTranslateToTensor(
   cmd_q, in0, false, {0, 0, 0}, {0, 0, 0}, {b, m, k},
-  nullptr, nullptr, nullptr, in0_data.data(), 0, nullptr, nullptr);
+  nullptr, nullptr, in0_data.data(), 0, nullptr, nullptr);
 clEnqueueTranslateToTensor(
   cmd_q, in1, false, {0, 0, 0}, {0, 0, 0}, {b, k, n},
-  nullptr, nullptr, nullptr, in1_data.data(), 0, nullptr, nullptr);
+  nullptr, nullptr, in1_data.data(), 0, nullptr, nullptr);
 clEnqueueNDRangeKernel(
   cmd_q, matmul_kernel, 3, matmul_grid, nullptr, nullptr, 0, nullptr, nullptr);
 clEnqueueNDRangeKernel(
   cmd_q, add_kernel, 3, add_grid, nullptr, nullptr, 0, nullptr, nullptr);
 clEnqueueTranslateFromTensor(
   cmd_q, out, false,  {0, 0, 0}, {0, 0, 0}, {b, m, n},
-  nullptr, nullptr, nullptr, out_data.data(), 0, nullptr, nullptr);
+  nullptr, nullptr, out_data.data(), 0, nullptr, nullptr);
 ----
 
 An example use of tensors in a command buffer when cl_khr_command_buffer
@@ -642,10 +765,10 @@ cl_command_buffer_khr cb =
 cl_sync_point_khr in0_syncp, in1_syncp, matmul_syncp, add_syncp;
 clCommandTranslateToTensorKHR(
   cmd_b, cmd_q, in0, {0, 0, 0}, {0, 0, 0}, {b, m, k},
-  nullptr, nullptr, nullptr, in0_data.data(), 0, nullptr, &in0_syncp);
+  nullptr, nullptr, in0_data.data(), 0, nullptr, &in0_syncp);
 clCommandTranslateToTensorKHR(
   cmd_b, cmd_q, in1, {0, 0, 0}, {0, 0, 0}, {b, k, m},
-  nullptr, nullptr, nullptr, in1_data.data(), 0, nullptr, &in1_syncp);
+  nullptr, nullptr, in1_data.data(), 0, nullptr, &in1_syncp);
 clCommandNDRangeKernelKHR(
   cmd_b, cmd_q, nullptr, matmul_kernel, 3, matmul_grid, nullptr, nullptr,
   2, {in0_syncp, in2_syncp}, &matmul_syncp, nullptr);
@@ -654,7 +777,7 @@ clCommandNDRangeKernelKHR(
   1, {matmul_syncp}, &add_syncp, nullptr);
 clCommandTranslateFromTensorKHR(
   cmd_b, cmd_q, out, {0, 0, 0}, {0, 0, 0}, {b, k, m},
-  nullptr, nullptr, nullptr, out_data.data(), 1, {add_syncp}, nullptr);
+  nullptr, nullptr, out_data.data(), 1, {add_syncp}, nullptr);
 
 // Finalize the command buffer. At this point the OpenCL
 // implementation may reserve enough storage for all the tensor

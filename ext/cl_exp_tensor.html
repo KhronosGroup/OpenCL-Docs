@@ -507,22 +507,22 @@ Ben Ashbaugh, Intel.<br></p>
 <h3 id="_overview">Overview</h3>
 <div class="paragraph">
 <p>The new tensor object enables applications to describe N-dimensional
-arrays whose memory layout is abstract to applications. The goal and
-intent of this extension is to give leverage for:</p>
+arrays whose memory layout is opaque to applications. The goals
+of this extension are the following:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>implementations to have freedom of placement data of the tensors for
+<p>Enable implementations to have freedom of placement data of the tensors for
 improving performance of the kernels which use them. This extension
-should be designed so it allows implementations to determine optimal
+is designed such it allows implementations to determine optimal
 memory layouts for the tensors based on their use cases for
-increasing performance - for example, by analyzing kernels’ access
-patterns - or, in case of built-in kernels, by inspecting tensor
+increased performance, by means of, for example, analyzing kernels’ access
+patterns or, in case of built-in kernels, by inspecting the tensor
 arguments they operate on.</p>
 </li>
 <li>
-<p>reduce details and boilerplate needed for porting performant
+<p>Reduce details and boilerplate needed for performance portable implementation of
 applications by being less dependent on platform or device specifics
 on the memory layout / data arrangements which matters for
 performance. Such specifics may include:</p>
@@ -547,7 +547,7 @@ cores).</p>
 </li>
 <li>
 <p>arrangement of data into rows separated by a stride in order to
-avoid back conflicts in GPUs.</p>
+avoid bank conflicts in GPUs.</p>
 </li>
 </ul>
 </div>
@@ -555,9 +555,9 @@ avoid back conflicts in GPUs.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>The tensor data type is deemed to be effective with command buffers
-and built-in kernels - including kernels to be provided by defined
-built-in kernel (cl_khr_defined_builtin_kernels) extension under work.</p>
+<p>The tensor data type is designed to be efficiently used together with command buffers (cl_khr_command_buffers)
+and built-in kernels, including kernels to be provided by the Defined
+Built-in Kernels (cl_khr_defined_builtin_kernels) extension that is being prepared together with this extension.</p>
 </div>
 </div>
 <div class="sect2">
@@ -565,13 +565,13 @@ built-in kernel (cl_khr_defined_builtin_kernels) extension under work.</p>
 <div class="sect3">
 <h4 id="_new_section_5_x_tensor_objects">New Section: 5.x Tensor Objects</h4>
 <div class="paragraph">
-<p>A tensor object stores a N-dimensional array of elements. The memory
+<p>A tensor object stores an N-dimensional array of elements. The memory
 layout of the tensor is opaque to the application. When a tensor
-object is created it initially does not have storage where the
-elements of the tensor are stored into. A storage is bind to a tensor
+object is created it is initially not associated to any storage for the tensor elements.
+ A storage is bound to a tensor
 by creating a memory buffer with CL_MEM_BIND_TO_BUFFER. Tensor objects
 without storage can be set as kernel arguments for kernels which
-accepts them. Kernels which have tensor arguments must have a storage
+accepts them. Kernels which have tensor arguments must have storage
 assigned to them prior enqueuing the kernels for execution.</p>
 </div>
 </div>
@@ -1005,7 +1005,9 @@ shape will be used as the region.</p>
 <li>
 <p><em>mem_pitch</em> defines the length of each dimension in elements to be
 used for the memory region of <em>buffer</em> or <em>host_ptr</em>. The length of
-the array must be at least the rank of <em>tensor</em> minus one.</p>
+the array must be at least the rank of <em>tensor</em> minus one. if
+<em>mem_pitch</em> is NULL or <em>mem_pitch</em>[i] is zero, <em>mem_pitch</em>[i] is
+computed as <em>region</em>[i + 1].</p>
 </li>
 <li>
 <p><em>buffer</em> and <em>host_ptr</em> refer to a valid buffer object / host
@@ -1074,7 +1076,8 @@ follows in pseudo C code:</p>
 <pre class="highlight"><code class="language-c" data-lang="c">size_t pitch(size_t dim) {
   size_t pitch = 1;
   for (size_t i = dim; i &lt; tensor_rank - 1; i++)
-    pitch *= mem_pitch != NULL ? mem_pitch[i] : region[i + 1];
+    pitch *=
+      (mem_pitch != NULL || mem_pitch[i] == 0) ? mem_pitch[i] : region[i + 1];
   return pitch;
 }</code></pre>
 </div>
@@ -1086,7 +1089,165 @@ given coordinate. The method how the coordinates translate to tensor
 storage addresses is unspecified.</p>
 </div>
 <div class="paragraph">
-<p>TODO: add command buffer variants for clEnqueue*Tensor.</p>
+<p><strong>clEnqueueTranslateFsomTensor</strong> and <strong>clEnqueueTranslateToTensor</strong>
+returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>CL_INVALID_COMMAND_QUEUE if <em>command_queue</em> is not a valid host
+command-queue.</p>
+</li>
+<li>
+<p>CL_INVALID_CONTEXT if the context associated with <em>command_queue</em>
+and buffer are not the same or if the context associated with
+<em>command_queue</em> and events in <em>event_wait_list</em> are not the same.</p>
+</li>
+<li>
+<p>CL_INVALID_MEM_OBJECT if <em>buffer</em> is not a valid buffer object.</p>
+</li>
+<li>
+<p>CL_INVALID_VALUE if <em>tensor_origin</em> or <em>mem_origin</em> is NULL.</p>
+</li>
+<li>
+<p>CL_INVALID_VALUE if the region being read or written specified by
+(<em>mem_origin</em>, <em>region</em>, <em>mem_pitch</em>) is out of bounds.</p>
+</li>
+<li>
+<p>CL_INVALID_VALUE if any <em>region</em> array element is 0.</p>
+</li>
+<li>
+<p>CL_INVALID_VALUE if <em>mem_pitch</em> is not NULL and <em>mem_pitch</em>[i] is
+not 0 and <em>mem_pitch</em>[i] is less than <em>region</em>[i].</p>
+</li>
+<li>
+<p>CL_INVALID_VALUE if <em>buffer</em> and <em>host_ptr</em> both are NULL or non-NULL.</p>
+</li>
+<li>
+<p>CL_INVALID_EVENT_WAIT_LIST if <em>event_wait_list</em> is NULL and
+<em>num_events_in_wait_list</em> &gt; 0, or <em>event_wait_list</em> is not NULL and
+<em>num_events_in_wait_list</em> is 0, or if event objects in
+<em>event_wait_list</em> are not valid events.</p>
+</li>
+<li>
+<p>CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST if the read and write
+operations are blocking and the execution status of any of the
+events in <em>event_wait_list</em> is a negative integer value.</p>
+</li>
+<li>
+<p>CL_MEM_OBJECT_ALLOCATION_FAILURE if there is a failure to allocate
+memory for data store associated with memory object the <em>tensor</em> is
+bound to.</p>
+</li>
+<li>
+<p>CL_OUT_OF_RESOURCES if there is a failure to allocate resources
+required by the OpenCL implementation on the device.</p>
+</li>
+<li>
+<p>CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+required by the OpenCL implementation on the host.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If <strong>cl_khr_command_buffer</strong> is is supported, then the following command
+buffer counterparts of the <strong>clEnqueueTranslateFromTensor</strong> and
+<strong>clEnqueueTranslateToTensor</strong> commands are available.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-c" data-lang="c">cl_int clCommandTranslateFromTensorKHR(
+  cl_command_buffer_khr command_buffer,
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  void* host_ptr,
+  cl_uint num_sync_points_in_wait_list,
+  const cl_sync_point_khr* sync_point_wait_list,
+  cl_sync_point_khr* sync_point,
+  cl_mutable_command_khr* mutable_handle);</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-c" data-lang="c">cl_int clCommandTranslateToTensorKHR(
+  cl_command_buffer_khr command_buffer,
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  const void* host_ptr,
+  cl_uint num_sync_points_in_wait_list,
+  const cl_sync_point_khr* sync_point_wait_list,
+  cl_sync_point_khr* sync_point,
+  cl_mutable_command_khr* mutable_handle);</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>command_buffer</em> refers to valid command-buffer object.</p>
+</li>
+<li>
+<p>For <em>command_queue</em>, <em>tensor</em>, <em>tensor_origin</em>, <em>mem_origin</em>,
+<em>region</em>, <em>mem_pitch</em>, <em>buffer</em> and <em>host_ptr</em> parameters refer to
+<strong>clEnqueueTranslateFromTensor</strong>.</p>
+</li>
+<li>
+<p>For <em>num_sync_points_in_wait_list</em>, <em>sync_point_wait_list</em>,
+<em>sync_point</em>, <em>mutable_handle</em> parameters refer to
+<strong>clCommandCopyBufferKHR</strong>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>clCommandTranslateFromTensorKHR</strong> and <strong>clCommandTranslateFromTensorKHR</strong>
+returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>CL_INVALID_COMMAND_QUEUE if <em>command_queue</em> is not NULL.</p>
+</li>
+<li>
+<p>CL_INVALID_COMMAND_BUFFER_KHR if <em>command_buffer</em> is not a valid
+command-buffer.</p>
+</li>
+<li>
+<p>CL_INVALID_CONTEXT if the context associated with <em>command_queue</em>
+and <em>command_buffer</em> is not the same.</p>
+</li>
+<li>
+<p>CL_INVALID_OPERATION if <em>command_buffer</em> has been finalized.</p>
+</li>
+<li>
+<p>CL_INVALID_VALUE if <em>mutable_handle</em> is not NULL.</p>
+</li>
+<li>
+<p>CL_INVALID_SYNC_POINT_WAIT_LIST_KHR if <em>sync_point_wait_list</em> is
+NULL and <em>num_sync_points_in_wait_list</em> is &gt; 0, or
+<em>sync_point_wait_list</em> is not NULL and <em>num_sync_points_in_wait_list</em> is
+0, or if synchronization-point objects in <em>sync_point_wait_list</em> are
+not valid synchronization-points.</p>
+</li>
+<li>
+<p>CL_OUT_OF_RESOURCES if there is a failure to allocate resources
+required by the OpenCL implementation on the device.</p>
+</li>
+<li>
+<p>CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+required by the OpenCL implementation on the host.</p>
+</li>
+</ul>
 </div>
 </div>
 <div class="sect3">
@@ -1299,17 +1460,17 @@ std::vector&lt;float&gt; out_data(b * m * n);
 // optimal data layout.
 clEnqueueTranslateToTensor(
   cmd_q, in0, false, {0, 0, 0}, {0, 0, 0}, {b, m, k},
-  nullptr, nullptr, nullptr, in0_data.data(), 0, nullptr, nullptr);
+  nullptr, nullptr, in0_data.data(), 0, nullptr, nullptr);
 clEnqueueTranslateToTensor(
   cmd_q, in1, false, {0, 0, 0}, {0, 0, 0}, {b, k, n},
-  nullptr, nullptr, nullptr, in1_data.data(), 0, nullptr, nullptr);
+  nullptr, nullptr, in1_data.data(), 0, nullptr, nullptr);
 clEnqueueNDRangeKernel(
   cmd_q, matmul_kernel, 3, matmul_grid, nullptr, nullptr, 0, nullptr, nullptr);
 clEnqueueNDRangeKernel(
   cmd_q, add_kernel, 3, add_grid, nullptr, nullptr, 0, nullptr, nullptr);
 clEnqueueTranslateFromTensor(
   cmd_q, out, false,  {0, 0, 0}, {0, 0, 0}, {b, m, n},
-  nullptr, nullptr, nullptr, out_data.data(), 0, nullptr, nullptr);</code></pre>
+  nullptr, nullptr, out_data.data(), 0, nullptr, nullptr);</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1362,10 +1523,10 @@ cl_command_buffer_khr cb =
 cl_sync_point_khr in0_syncp, in1_syncp, matmul_syncp, add_syncp;
 clCommandTranslateToTensorKHR(
   cmd_b, cmd_q, in0, {0, 0, 0}, {0, 0, 0}, {b, m, k},
-  nullptr, nullptr, nullptr, in0_data.data(), 0, nullptr, &amp;in0_syncp);
+  nullptr, nullptr, in0_data.data(), 0, nullptr, &amp;in0_syncp);
 clCommandTranslateToTensorKHR(
   cmd_b, cmd_q, in1, {0, 0, 0}, {0, 0, 0}, {b, k, m},
-  nullptr, nullptr, nullptr, in1_data.data(), 0, nullptr, &amp;in1_syncp);
+  nullptr, nullptr, in1_data.data(), 0, nullptr, &amp;in1_syncp);
 clCommandNDRangeKernelKHR(
   cmd_b, cmd_q, nullptr, matmul_kernel, 3, matmul_grid, nullptr, nullptr,
   2, {in0_syncp, in2_syncp}, &amp;matmul_syncp, nullptr);
@@ -1374,7 +1535,7 @@ clCommandNDRangeKernelKHR(
   1, {matmul_syncp}, &amp;add_syncp, nullptr);
 clCommandTranslateFromTensorKHR(
   cmd_b, cmd_q, out, {0, 0, 0}, {0, 0, 0}, {b, k, m},
-  nullptr, nullptr, nullptr, out_data.data(), 1, {add_syncp}, nullptr);
+  nullptr, nullptr, out_data.data(), 1, {add_syncp}, nullptr);
 
 // Finalize the command buffer. At this point the OpenCL
 // implementation may reserve enough storage for all the tensor
@@ -1412,7 +1573,7 @@ with unknown / symbolic dimension sizes like in ONNX?</p>
 <div class="paragraph">
 <p><strong>RESOLVED</strong>: OpenCL C support for tensors can be introduced later in a
             separate extension. Built-in kernels may benefit from this
-            extension.</p>
+            extension as it is.</p>
 </div>
 </div>
 </div>
@@ -1431,7 +1592,7 @@ with unknown / symbolic dimension sizes like in ONNX?</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-11-15 11:19:22 +0200
+Last updated 2023-11-16 17:25:21 +0200
 </div>
 </div>
 </body>
