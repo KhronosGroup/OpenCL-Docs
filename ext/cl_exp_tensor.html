@@ -939,7 +939,7 @@ object.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">cl_int clEnqueueTranslateFromTensor(
+<pre class="highlight"><code class="language-c" data-lang="c">cl_int clEnqueueImportFromTensor(
   cl_command_queue command_queue,
   cl_tensor tensor,
   cl_bool blocking_command,
@@ -956,7 +956,7 @@ object.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">cl_int clEnqueueTranslateToTensor(
+<pre class="highlight"><code class="language-c" data-lang="c">cl_int clEnqueueExportToTensor(
   cl_command_queue command_queue,
   cl_tensor tensor,
   cl_bool blocking_command,
@@ -1040,10 +1040,10 @@ must not refer to an element of the <em>event_wait_list</em> array.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>The <strong>clEnqueueTranslateToTensor</strong> function copies contents of the buffer
+<p>The <strong>clEnqueueExportToTensor</strong> function copies contents of the buffer
 object / host allocation to tensor&#8217;s storage in
 implementation-defined, opaque memory layout. The
-<strong>clEnqueueTranslateFromTensor</strong> function copies data from tensor&#8217;s
+<strong>clEnqueueImportFromTensor</strong> function copies data from tensor&#8217;s
 storage to buffer object / host allocation.</p>
 </div>
 <div class="paragraph">
@@ -1089,7 +1089,7 @@ given coordinate. The method how the coordinates translate to tensor
 storage addresses is unspecified.</p>
 </div>
 <div class="paragraph">
-<p><strong>clEnqueueTranslateFsomTensor</strong> and <strong>clEnqueueTranslateToTensor</strong>
+<p><strong>clEnqueueImportFromTensor</strong> and <strong>clEnqueueExportToTensor</strong>
 returns CL_SUCCESS if the function is executed
 successfully. Otherwise, it returns one of the following errors:</p>
 </div>
@@ -1151,13 +1151,13 @@ required by the OpenCL implementation on the host.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>If <strong>cl_khr_command_buffer</strong> is is supported, then the following command
-buffer counterparts of the <strong>clEnqueueTranslateFromTensor</strong> and
-<strong>clEnqueueTranslateToTensor</strong> commands are available.</p>
+<p>If <strong>cl_khr_command_buffer</strong> is supported, then the following command
+buffer counterparts of the <strong>clEnqueueImportFromTensor</strong> and
+<strong>clEnqueueExportToTensor</strong> commands are available.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">cl_int clCommandTranslateFromTensorKHR(
+<pre class="highlight"><code class="language-c" data-lang="c">cl_int clCommandImportFromTensorKHR(
   cl_command_buffer_khr command_buffer,
   cl_command_queue command_queue,
   cl_tensor tensor,
@@ -1175,7 +1175,7 @@ buffer counterparts of the <strong>clEnqueueTranslateFromTensor</strong> and
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-c" data-lang="c">cl_int clCommandTranslateToTensorKHR(
+<pre class="highlight"><code class="language-c" data-lang="c">cl_int clCommandExportToTensorKHR(
   cl_command_buffer_khr command_buffer,
   cl_command_queue command_queue,
   cl_tensor tensor,
@@ -1199,7 +1199,7 @@ buffer counterparts of the <strong>clEnqueueTranslateFromTensor</strong> and
 <li>
 <p>For <em>command_queue</em>, <em>tensor</em>, <em>tensor_origin</em>, <em>mem_origin</em>,
 <em>region</em>, <em>mem_pitch</em>, <em>buffer</em> and <em>host_ptr</em> parameters refer to
-<strong>clEnqueueTranslateFromTensor</strong>.</p>
+<strong>clEnqueueImportFromTensor</strong>.</p>
 </li>
 <li>
 <p>For <em>num_sync_points_in_wait_list</em>, <em>sync_point_wait_list</em>,
@@ -1209,7 +1209,7 @@ buffer counterparts of the <strong>clEnqueueTranslateFromTensor</strong> and
 </ul>
 </div>
 <div class="paragraph">
-<p><strong>clCommandTranslateFromTensorKHR</strong> and <strong>clCommandTranslateFromTensorKHR</strong>
+<p><strong>clCommandImportFromTensorKHR</strong> and <strong>clCommandImportFromTensorKHR</strong>
 returns CL_SUCCESS if the function is executed
 successfully. Otherwise, it returns one of the following errors:</p>
 </div>
@@ -1458,17 +1458,17 @@ std::vector&lt;float&gt; out_data(b * m * n);
 
 // Copies data into in0 tensor while possibly rearranging the data to the
 // optimal data layout.
-clEnqueueTranslateToTensor(
+clEnqueueExportToTensor(
   cmd_q, in0, false, {0, 0, 0}, {0, 0, 0}, {b, m, k},
   nullptr, nullptr, in0_data.data(), 0, nullptr, nullptr);
-clEnqueueTranslateToTensor(
+clEnqueueExportToTensor(
   cmd_q, in1, false, {0, 0, 0}, {0, 0, 0}, {b, k, n},
   nullptr, nullptr, in1_data.data(), 0, nullptr, nullptr);
 clEnqueueNDRangeKernel(
   cmd_q, matmul_kernel, 3, matmul_grid, nullptr, nullptr, 0, nullptr, nullptr);
 clEnqueueNDRangeKernel(
   cmd_q, add_kernel, 3, add_grid, nullptr, nullptr, 0, nullptr, nullptr);
-clEnqueueTranslateFromTensor(
+clEnqueueImportFromTensor(
   cmd_q, out, false,  {0, 0, 0}, {0, 0, 0}, {b, m, n},
   nullptr, nullptr, out_data.data(), 0, nullptr, nullptr);</code></pre>
 </div>
@@ -1521,10 +1521,10 @@ cl_command_buffer_khr cb =
   clCreateCommandBufferKHR(num_queues, queue_list, nullptr, &amp;err);
 
 cl_sync_point_khr in0_syncp, in1_syncp, matmul_syncp, add_syncp;
-clCommandTranslateToTensorKHR(
+clCommandExportToTensorKHR(
   cmd_b, cmd_q, in0, {0, 0, 0}, {0, 0, 0}, {b, m, k},
   nullptr, nullptr, in0_data.data(), 0, nullptr, &amp;in0_syncp);
-clCommandTranslateToTensorKHR(
+clCommandExportToTensorKHR(
   cmd_b, cmd_q, in1, {0, 0, 0}, {0, 0, 0}, {b, k, m},
   nullptr, nullptr, in1_data.data(), 0, nullptr, &amp;in1_syncp);
 clCommandNDRangeKernelKHR(
@@ -1533,7 +1533,7 @@ clCommandNDRangeKernelKHR(
 clCommandNDRangeKernelKHR(
   cmd_b, cmd_q, nullptr, add_kernel, 3, add_grid, nullptr, nullptr,
   1, {matmul_syncp}, &amp;add_syncp, nullptr);
-clCommandTranslateFromTensorKHR(
+clCommandImportFromTensorKHR(
   cmd_b, cmd_q, out, {0, 0, 0}, {0, 0, 0}, {b, k, m},
   nullptr, nullptr, out_data.data(), 1, {add_syncp}, nullptr);
 
@@ -1547,7 +1547,7 @@ clFinalizeCommandBufferKHR(cmd_b);
 // Temporary tensors used in a command buffer can't be read or written
 // into. A hypothetical reason is that the finalized command buffer
 // might not use some of the tensor.
-assert(clEnqueueTranslateFromTensor(..., t0, ...) == CL_INVALID_OPERATION);</code></pre>
+assert(clEnqueueImportFromTensor(..., t0, ...) == CL_INVALID_OPERATION);</code></pre>
 </div>
 </div>
 </div>
@@ -1592,7 +1592,7 @@ with unknown / symbolic dimension sizes like in ONNX?</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-11-16 17:25:21 +0200
+Last updated 2023-11-17 12:20:18 +0200
 </div>
 </div>
 </body>

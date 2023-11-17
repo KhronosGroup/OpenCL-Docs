@@ -290,7 +290,7 @@ object.
 
 [source,c]
 ----
-cl_int clEnqueueTranslateFromTensor(
+cl_int clEnqueueImportFromTensor(
   cl_command_queue command_queue,
   cl_tensor tensor,
   cl_bool blocking_command,
@@ -307,7 +307,7 @@ cl_int clEnqueueTranslateFromTensor(
 
 [source,c]
 ----
-cl_int clEnqueueTranslateToTensor(
+cl_int clEnqueueExportToTensor(
   cl_command_queue command_queue,
   cl_tensor tensor,
   cl_bool blocking_command,
@@ -376,10 +376,10 @@ cl_int clEnqueueTranslateToTensor(
   complete. If _event_wait_list_ and _event_ are not NULL, _event_
   must not refer to an element of the _event_wait_list_ array.
 
-The *clEnqueueTranslateToTensor* function copies contents of the buffer
+The *clEnqueueExportToTensor* function copies contents of the buffer
 object / host allocation to tensor's storage in
 implementation-defined, opaque memory layout. The
-*clEnqueueTranslateFromTensor* function copies data from tensor's
+*clEnqueueImportFromTensor* function copies data from tensor's
 storage to buffer object / host allocation.
 
 The elements of buffer object / host allocation are mapped to tensor
@@ -421,7 +421,7 @@ an abstract function that accesses a tensor element in its storage at
 given coordinate. The method how the coordinates translate to tensor
 storage addresses is unspecified.
 
-*clEnqueueTranslateFsomTensor* and *clEnqueueTranslateToTensor*
+*clEnqueueImportFromTensor* and *clEnqueueExportToTensor*
 returns CL_SUCCESS if the function is executed
 successfully. Otherwise, it returns one of the following errors:
 
@@ -469,13 +469,13 @@ successfully. Otherwise, it returns one of the following errors:
 
 // TODO: add clEnqueueFillTensor?
 
-If *cl_khr_command_buffer* is is supported, then the following command
-buffer counterparts of the *clEnqueueTranslateFromTensor* and
-*clEnqueueTranslateToTensor* commands are available.
+If *cl_khr_command_buffer* is supported, then the following command
+buffer counterparts of the *clEnqueueImportFromTensor* and
+*clEnqueueExportToTensor* commands are available.
 
 [source,c]
 ----
-cl_int clCommandTranslateFromTensorKHR(
+cl_int clCommandImportFromTensorKHR(
   cl_command_buffer_khr command_buffer,
   cl_command_queue command_queue,
   cl_tensor tensor,
@@ -493,7 +493,7 @@ cl_int clCommandTranslateFromTensorKHR(
 
 [source,c]
 ----
-cl_int clCommandTranslateToTensorKHR(
+cl_int clCommandExportToTensorKHR(
   cl_command_buffer_khr command_buffer,
   cl_command_queue command_queue,
   cl_tensor tensor,
@@ -513,13 +513,13 @@ cl_int clCommandTranslateToTensorKHR(
 
 * For _command_queue_, _tensor_, _tensor_origin_, _mem_origin_,
   _region_, _mem_pitch_, _buffer_ and _host_ptr_ parameters refer to
-  *clEnqueueTranslateFromTensor*.
+  *clEnqueueImportFromTensor*.
 
 * For _num_sync_points_in_wait_list_, _sync_point_wait_list_,
   _sync_point_, _mutable_handle_ parameters refer to
   *clCommandCopyBufferKHR*.
 
-*clCommandTranslateFromTensorKHR* and *clCommandTranslateFromTensorKHR*
+*clCommandImportFromTensorKHR* and *clCommandImportFromTensorKHR*
 returns CL_SUCCESS if the function is executed
 successfully. Otherwise, it returns one of the following errors:
 
@@ -701,17 +701,17 @@ std::vector<float> out_data(b * m * n);
 
 // Copies data into in0 tensor while possibly rearranging the data to the
 // optimal data layout.
-clEnqueueTranslateToTensor(
+clEnqueueExportToTensor(
   cmd_q, in0, false, {0, 0, 0}, {0, 0, 0}, {b, m, k},
   nullptr, nullptr, in0_data.data(), 0, nullptr, nullptr);
-clEnqueueTranslateToTensor(
+clEnqueueExportToTensor(
   cmd_q, in1, false, {0, 0, 0}, {0, 0, 0}, {b, k, n},
   nullptr, nullptr, in1_data.data(), 0, nullptr, nullptr);
 clEnqueueNDRangeKernel(
   cmd_q, matmul_kernel, 3, matmul_grid, nullptr, nullptr, 0, nullptr, nullptr);
 clEnqueueNDRangeKernel(
   cmd_q, add_kernel, 3, add_grid, nullptr, nullptr, 0, nullptr, nullptr);
-clEnqueueTranslateFromTensor(
+clEnqueueImportFromTensor(
   cmd_q, out, false,  {0, 0, 0}, {0, 0, 0}, {b, m, n},
   nullptr, nullptr, out_data.data(), 0, nullptr, nullptr);
 ----
@@ -763,10 +763,10 @@ cl_command_buffer_khr cb =
   clCreateCommandBufferKHR(num_queues, queue_list, nullptr, &err);
 
 cl_sync_point_khr in0_syncp, in1_syncp, matmul_syncp, add_syncp;
-clCommandTranslateToTensorKHR(
+clCommandExportToTensorKHR(
   cmd_b, cmd_q, in0, {0, 0, 0}, {0, 0, 0}, {b, m, k},
   nullptr, nullptr, in0_data.data(), 0, nullptr, &in0_syncp);
-clCommandTranslateToTensorKHR(
+clCommandExportToTensorKHR(
   cmd_b, cmd_q, in1, {0, 0, 0}, {0, 0, 0}, {b, k, m},
   nullptr, nullptr, in1_data.data(), 0, nullptr, &in1_syncp);
 clCommandNDRangeKernelKHR(
@@ -775,7 +775,7 @@ clCommandNDRangeKernelKHR(
 clCommandNDRangeKernelKHR(
   cmd_b, cmd_q, nullptr, add_kernel, 3, add_grid, nullptr, nullptr,
   1, {matmul_syncp}, &add_syncp, nullptr);
-clCommandTranslateFromTensorKHR(
+clCommandImportFromTensorKHR(
   cmd_b, cmd_q, out, {0, 0, 0}, {0, 0, 0}, {b, k, m},
   nullptr, nullptr, out_data.data(), 1, {add_syncp}, nullptr);
 
@@ -789,7 +789,7 @@ clFinalizeCommandBufferKHR(cmd_b);
 // Temporary tensors used in a command buffer can't be read or written
 // into. A hypothetical reason is that the finalized command buffer
 // might not use some of the tensor.
-assert(clEnqueueTranslateFromTensor(..., t0, ...) == CL_INVALID_OPERATION);
+assert(clEnqueueImportFromTensor(..., t0, ...) == CL_INVALID_OPERATION);
 ----
 
 === Open Questions ===
