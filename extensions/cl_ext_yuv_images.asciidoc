@@ -1,0 +1,495 @@
+// Copyright 2018-2021 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+include::{generated}/api/api-dictionary-no-links.asciidoc[]
+:source-highlighter: coderay
+
+= cl_ext_yuv_images
+:R: pass:q,r[^(R)^]
+Khronos{R} OpenCL Working Group
+
+<<<<
+
+== Name Strings
+
+`cl_ext_yuv_images`
+
+== Contact
+
+Please see the *Issues* list in the Khronos *OpenCL-Docs* repository: +
+https://github.com/KhronosGroup/OpenCL-Docs
+
+== Contributors
+
+Kevin Petit, Arm Ltd. +
+
+== Notice
+
+include::../copyrights.txt[]
+
+== Status
+
+Draft spec, NOT APPROVED!!
+
+== Version
+
+Built On: {docdate} +
+Version: 0.1.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification Version 3.0.9.
+
+This extension requires OpenCL 3.0.
+
+This extension requires cl_ext_image_requirements_info.
+
+== Overview
+
+This extension adds support for YUV image formats.
+
+TODO expand on formats, features, etc
+
+== New API Enums
+
+Additional values to `cl_channel_order`:
+
+[source,c]
+----
+CL_Y_U_V_444_EXT 0x10C4
+CL_YUVA_444_EXT  0x10C5
+CL_Y_U_V_422_EXT 0x10C6
+CL_Y_UV_422_EXT  0x10C7
+CL_Y_U_V_420_EXT 0x10C8
+CL_Y_V_U_420_EXT 0x10C9
+CL_Y_UV_420_EXT  0x10CA
+CL_Y_VU_420_EXT  0x10CB
+CL_YUV_420_EXT   0x10CC
+CL_YUYV_422_EXT  0x10CD
+CL_VYUY_422_EXT  0x10CE
+
+CL_Y_EXT  0x10AC
+CL_U_EXT  0x10AD
+CL_V_EXT  0x10AE
+CL_UV_EXT 0x10AF
+----
+
+Additional values to `cl_channel_type`:
+
+[source,c]
+----
+CL_UNORM_INT10X6_EXT 0x10E1
+CL_UNORM_INT10_EXT   0x10E2
+----
+
+Additional values to `cl_map_flags`:
+[source,c]
+----
+CL_MAP_PLANE_BIT_0_EXT 32
+CL_MAP_PLANE_BIT_1_EXT 33
+
+CL_MAP_PLANE_EXT(X) ((X & 0x3) << CL_MAP_PLANE_BIT_0_EXT)
+----
+
+Accepted value for the _param_name_ parameter to *clGetImageInfo*:
+
+[source,c]
+----
+CL_IMAGE_NUM_PLANES_EXT        0x111B
+CL_IMAGE_ELEMENT_SIZE_BITS_EXT 0x111C
+----
+
+== OpenCL C changes
+
+New `__opencl_c_yuva_vector_components` feature macro.
+
+Vector component addressing and swizzles extended to include `.yuva`.
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 5.3.1.1, *Image Format Descriptor*) ::
++
+--
+Add the following to Table 16 _List of supported Image Channel Order Values_:
+[cols="1,2",options="header"]
+|====
+| Image Channel Order
+| Description
+
+| {CL_Y_U_V_444_EXT}
+| Three-channel, three-plane YUV image formats. The first channel represents a
+  `Y` luminance component. The second channel represents a `U` blue chrominance
+  component. The third channel represents a `V` red chrominance component. The
+  chrominance channels are not subsampled.
+
+| {CL_YUVA_444_EXT}
+| Four-channel, single-plane YUV image formats. The first channel represents a
+  `Y` luminance component. The second channel represents a `U` blue chrominance
+  component. The third channel represents a `V` red chrominance component. The
+  fourth channel represents an `ALPHA` component. The chrominance channels are
+  not subsampled.
+
+| {CL_Y_U_V_422_EXT}
+| Three-channel, three-plane YUV image formats. The first channel represents a
+  `Y` luminance component. The second channel represents a `U` blue chrominance
+  component. The third channel represents a `V` red chrominance component. The
+  chrominance channels are subsampled 4:2:2.
+
+| {CL_Y_UV_422_EXT}
+| Three-channel, two-plane YUV image formats. The first channel represents a
+  `Y` luminance component. The second channel represents a `U` blue chrominance
+  component. The third channel represents a `V` red chrominance component. The
+  chrominance channels are subsampled 4:2:2.
+
+| {CL_Y_U_V_420_EXT}
+| Three-channel, three-plane YUV image formats. The first channel represents a
+  `Y` luminance component. The second channel represents a `U` blue chrominance
+  component. The third channel represents a `V` red chrominance component. The
+  chrominance channels are subsampled 4:2:0.
+
+| {CL_Y_V_U_420_EXT}
+| Three-channel, three-plane YUV image formats. The first channel represents a
+  `Y` luminance component. The second channel represents a `V` blue chrominance
+  component. The third channel represents a `U` red chrominance component. The
+  chrominance channels are subsampled 4:2:0.
+
+| {CL_Y_UV_420_EXT}
+| Three-channel, two-plane YUV image formats. The first channel represents a
+  `Y` luminance component. The second channel represents a `U` blue chrominance
+  component. The third channel represents a `V` red chrominance component. The
+  chrominance channels are subsampled 4:2:0.
+
+| {CL_Y_VU_420_EXT}
+| Three-channel, two-plane YUV image formats. The first channel represents a
+  `Y` luminance component. The second channel represents a `V` blue chrominance
+  component. The third channel represents a `U` red chrominance component. The
+  chrominance channels are subsampled 4:2:0.
+
+| {CL_YUV_420_EXT}
+| Three-channel, single-plane YUV image formats. The first channel represents a
+  `Y` luminance component. The second channel represents a `U` blue chrominance
+  component. The third channel represents a `V` red chrominance component. The
+  chrominance channels are subsampled 4:2:0.
+
+| {CL_YUYV_422_EXT}
+| Three-channel, single-plane YUV image formats. The first channel represents a
+  `Y` luminance component. The second channel represents a `U` blue chrominance
+  component. The third channel represents a `V` red chrominance component. The
+  chrominance channels are subsampled 4:2:2. The first luminance value is laid
+  out first in memory.
+
+| {CL_VYUY_422_EXT}
+| Three-channel, single-plane YUV image formats. The first channel represents a
+  `V` red chrominance component. The second channel represents a `Y` luminance
+  component. The third channel represents a `U` blue chrominance component. The
+  chrominance channels are subsampled 4:2:2. The first luminance value is laid
+  out second in memory.
+
+| {CL_Y_EXT}
+| Same semantics as {CL_R} when creating a new image. Selects the `Y` plane of
+  a planar YUV image when creating an image from another planar YUV image.
+
+| {CL_U_EXT}
+| Same semantics as {CL_R} when creating a new image. Selects the `U` plane of
+  a planar YUV image when creating an image from another planar YUV image.
+
+| {CL_V_EXT}
+| Same semantics as {CL_R} when creating a new image. Selects the `V` plane of
+  a planar YUV image when creating an image from another planar YUV image.
+
+| {CL_UV_EXT}
+| Same semantics as {CL_RG} when creating a new image. Selects the `UV` plane of
+  a planar YUV image when creating an image from another planar YUV image. The
+  relative ordering of the `U` and `V` components in memory is dictated by the
+  source image.
+
+|====
+
+TODO explain chroma subsampling
+TODO should we make chroma siting configurable?
+
+Add the following to Table 17 _List of supported Image Channel Data Types_:
+[cols="1,2",options="header"]
+|====
+| Image Channel Data Type
+| Description
+
+| {CL_UNORM_INT10X6_EXT}
+| Each channel component is a normalized unsigned 10-bit integer value occupying 16 bits of storage. The low-order 6 bits are undefined.
+
+| {CL_UNORM_INT10_EXT}
+| Each channel component is a normalized unsigned 10-bit integer value.
+|====
+--
+
+(Modify Section 5.3.1.2, *Image Descriptor*) ::
++
+--
+Add the following to the image channel order compatibility table:
+[cols="1,4",options="header"]
+|====
+| Image Channel Order in _image_format_
+| Image Channel Order associated with `mem_object`
+
+| {CL_Y_EXT}
+| {CL_Y_U_V_444_EXT}, {CL_Y_U_V_422_EXT}, {CL_Y_UV_422_EXT}, {CL_Y_U_V_420_EXT},
+  {CL_Y_V_U_420_EXT}, {CL_Y_UV_420_EXT}, {CL_Y_VU_420_EXT}
+
+| {CL_U_EXT}
+| {CL_Y_U_V_444_EXT}, {CL_Y_U_V_422_EXT}, {CL_Y_U_V_420_EXT}, {CL_Y_V_U_420_EXT}
+
+| {CL_V_EXT}
+| {CL_Y_U_V_444_EXT}, {CL_Y_U_V_422_EXT}, {CL_Y_U_V_420_EXT}, {CL_Y_V_U_420_EXT}
+
+| {CL_UV_EXT}
+| {CL_Y_UV_422_EXT}, {CL_Y_UV_420_EXT}, {CL_Y_VU_420_EXT}
+|====
+
+When creating a YUV plane image ({CL_Y_EXT}, {CL_U_EXT}, {CL_V_EXT} or {CL_UV_EXT})
+from another YUV image, the new image provides a view of the pixels of the selected plane
+and shares the image data store with `mem_object`.
+ +
+TODO creation of planar image from multiple images or buffers
+
+--
+
+(Modify Section 5.3.3, *Reading, Writing and Copying Image Objects*) ::
++
+--
+Read/Write commands:
+Planes packed in order, aligned to the slice pitch.
+ +
+TODO refine language
+--
+
+(Modify Section 5.3.4, *Filling Image Objects*) ::
++
+--
+Replace the following text:
+--
+Otherwise, the fill color is a four component RGBA floating-point color value if
+the image channel data type is not an unnormalized signed or unsigned integer
+type, is a four component signed integer value if the image channel data type is
+an unnormalized signed integer type and is a four component unsigned integer
+value if the image channel data type is an unnormalized unsigned integer type.
+--
+
+with:
+--
+Otherwise, the fill color is a four component RGBA or YUVA floating-point color
+value if the image channel data type is not an unnormalized signed or unsigned
+integer type, is a four component signed integer value if the image channel data
+type is an unnormalized signed integer type and is a four component unsigned
+integer value if the image channel data type is an unnormalized unsigned integer
+type.
+--
+--
+
+(Modify Section 5.3.5, *Copying between Image and Buffer Objects*) ::
++
+--
+Planes are packed in order in buffers, aligned to the slice pitch as with
+{clEnqueueReadImage} and {clEnqueueWriteImage}.
+--
+
+(Modify Section 5.3.6, *Mapping Image Objects*) ::
++
+--
+When mapping an image with multiple planes, only one plane can be mapped by a
+single map command. The plane to map can be selected using _map_flags_ using
+{CL_MAP_PLANE_BIT_0_EXT} and {CL_MAP_PLANE_BIT_1_EXT} or the {CL_MAP_PLANE_EXT}
+utility macro.
+--
+
+(Modify Section 5.3.7, *Image Object Queries*) ::
++
+--
+Modify existing entries or add new ones in Table 22 _List of supported param_names by *clGetImageInfo*_:
+[cols="2,1,4",options="header"]
+|====
+| Image info
+| Return Type
+| Description
+
+| {CL_IMAGE_NUM_PLANES_EXT}
+| `cl_uint`
+| Returns the number of planes of the image.
+
+| {CL_IMAGE_ELEMENT_SIZE_BITS_EXT}
+| `cl_uint`
+| Return the size of each element of the image memory object given by _image_ in bits.
+
+| {CL_IMAGE_ELEMENT_SIZE}
+| `size_t`
+| When the size of elements is not a integer number of bytes, the size returned is rounded up to the next byte.
+
+|====
+--
+
+(Add Appendix, *Fourcc image format equivalence*) ::
++
+--
+[cols="1,1,1",options="header"]
+|====
+| Channel order
+| Channel data type
+| Equivalent fourcc format
+
+| {CL_Y_UV_420_EXT}
+| {CL_UNORM_INT8}
+| NV12
+
+| {CL_Y_VU_420_EXT}
+| {CL_UNORM_INT8}
+| NV21
+
+| {CL_Y_U_V_420_EXT}
+| {CL_UNORM_INT8}
+| I420 or IYUV
+
+| {CL_Y_V_U_420_EXT}
+| {CL_UNORM_INT8}
+| YV12
+
+
+|====
+
+--
+
+
+== Modifications to the OpenCL C Specification
+
+(Modify Section 6.2.1, *Features*) ::
++
+--
+Add the following feature to Table 1 _Optional features in OpenCL C 3.0 or newer and their predefined macros._:
+
+[cols="1,1",options="header"]
+|====
+| Feature Macro/Name
+| BriefDescription
+
+| `__opencl_c_yuva_vector_components`
+| Addressing vector components using `.yuva` is supported.
+
+|====
+--
+
+(Modify Section 6.3.7, *Vector Components*) ::
++
+--
+If the `cl_ext_yuv_images` extension is supported, the components of vector data
+types can also be addressed as `<vector_data_type>.yuva`. Vector data types with
+two or more components can access `.yu` elements. Vector data types with three
+or more components can access `.yuv` elements. Vector data types with four or
+more components can access `.yuva` elements.
+--
+
+(Modify Section 6.15.15.1, *Samplers*) ::
++
+--
+Add the following text to 6.15.15.1.1 *Determining the border color or value*:
+
+* If the image channel order is {CL_Y_U_V_444_EXT}, {CL_Y_U_V_422_EXT}, {CL_Y_UV_422_EXT},
+  {CL_Y_U_V_420_EXT}, {CL_Y_V_U_420_EXT}, {CL_Y_UV_420_EXT}, {CL_Y_VU_420_EXT},
+  {CL_YUV_420_EXT}, {CL_YUYV_422_EXT}, {CL_VYUY_422_EXT}, {CL_Y_EXT}, {CL_U_EXT},
+  {CL_V_EXT}, {CL_UV_EXT}, the border color is `(0.0f, 0.0f, 0.0f, 1.0f)`.
+
+* If the image channel order is {CL_YUVA_444_EXT}, the border color is `(0.0f, 0.0f, 0.0f, 0.0f)`.
+--
+
+(Modify Section 6.15.15.2, *Built-in Image Read Functions*) ::
++
+--
+`read_imagef` returns floating-point values in the range [0.0, 1.0] for image
+objects with a YUV channel order created with _image_channel_data_type_ set to
+one of the pre-defined packed formats or {CL_UNORM_INT8}, {CL_UNORM_INT10_EXT},
+{CL_UNORM_INT10X6_EXT}, or {CL_UNORM_INT16}.
+
+When `read_imagef` is used with images that have a YUV channel order, the sampler
+used must have an addressing mode of `CLK_ADDRESS_NONE` or `CLK_ADDRESS_CLAMP`;
+otherwise the values returned are undefined.
+--
+
+(Modify Section 6.15.15.3, *Built-in Image Sampler-less Read Functions*) ::
++
+--
+`read_imagef` returns floating-point values in the range [0.0, 1.0] for image
+objects with a YUV channel order created with _image_channel_data_type_ set to
+one of the pre-defined packed formats or {CL_UNORM_INT8}, {CL_UNORM_INT10_EXT},
+{CL_UNORM_INT10X6_EXT}, or {CL_UNORM_INT16}.
+--
+
+(Modify Section 6.15.15.4, *Built-in Image Write Functions*) ::
++
+--
+`write_imagef` can only be used with image objects created with
+_image_channel_data_type_ set to one of the pre-defined packed formats or set
+to {CL_UNORM_INT8}, {CL_UNORM_INT10_EXT}, {CL_UNORM_INT10X6_EXT} or
+{CL_UNORM_INT16}. Appropriate data format conversion will be done to convert
+channel data from a floating-point value to actual data format in which the
+channels are stored.
+--
+
+(Modify Section 6.15.15.7, *Mapping image channels to color values returned by read_image and color values passed to write_image to image channels*) ::
++
+--
+Add the following to the table describing the mappings:
+[cols="1,2",options="header"]
+|====
+| Channel Order
+| `float4` components of channel data
+
+| {CL_Y_EXT}
+| (y, 0.0, 0.0, 1.0)
+
+| {CL_U_EXT}
+| (u, 0.0, 0.0, 1.0)
+
+| {CL_V_EXT}
+| (v, 0.0, 0.0, 1.0)
+
+| {CL_UV_EXT}
+| (0.0, u, v, 1.0)
+
+| {CL_Y_U_V_444_EXT}, {CL_Y_U_V_422_EXT}, {CL_Y_UV_422_EXT}, {CL_Y_U_V_420_EXT},
+  {CL_Y_V_U_420_EXT}, {CL_Y_UV_420_EXT}, {CL_Y_VU_420_EXT}, {CL_YUV_420_EXT},
+  {CL_YUYV_422_EXT}, {CL_VYUY_422_EXT}
+| (y, u, v, 1.0)
+
+| {CL_YUVA_444_EXT}
+| (y, u, v, a)
+|====
+--
+
+== Interactions with Other Extensions
+
+* TODO interaction with unpublished KHR extensions?
+* TODO interaction with cl_ext_image_tiling_control?
+* TODO interaction with DRM modifiers
+
+== Conformance tests
+
+TODO
+
+== Issues
+
+. Should this issue be resolved?
++
+--
+*RESOLVED*: Yes.
+--
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 0.1.0   | 2023-11-23 | Kevin Petit  | *Initial revision*
+|====
