@@ -431,3 +431,23 @@ ICD dispatch table.
 On detecting a `NULL` object it will return one of the an invalid object error
 values (e.g. {CL_INVALID_DEVICE} corresponding to the object in question.
 --
+
+  . How will the ICD loader avoid calling entry points outside of the dispatch
+    table of old implementations, potentially causing segfaults?
++
+--
+RESOLVED: From versions 2.0.0 and above, the loader will be responsible for
+managing dispatch data information per platform. The content of the dispatch
+table is obtained through a dedicated entry point, and missing entry points are
+replaced by stubs that return {CL_INVALID_OPERATION}.
+--
+
+  . How will the ICD loader set the loader managed dispatch information in new
+    objects? Some of these objects may be created by extension functions that
+    the loader is unaware of.
++
+--
+RESOLVED: During initialization, the loader will set the platform dispatch
+information through a new entry point. The implementation will be responsible
+for propagating this information to new objects.
+--
