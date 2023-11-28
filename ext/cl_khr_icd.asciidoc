@@ -65,7 +65,7 @@ may be inferred have been deprecated and may be ignored.
 
 *New in version 2.0.0*, object that are ICD 2 compatible should also contain
 a `dispatch_data` field of type `void *` that the loader is free to modify
-for a platform through the `clSetPlatformDispatchDataKHR` new API entry
+for a platform through the `clIcdSetPlatformDispatchDataKHR` new API entry
 point. In order to distinguish ICD 1 and ICD 2 objects, the pointer to
 `clGetPlatformIDs` in the dispatch structure must be set to
 `CL_ICD2_TAG_KHR`. The vendor driver is responsible for propagating the
@@ -237,7 +237,7 @@ continue on to the next.
 
 *New in version 2.0.0*, the ICD Loader will also query the following
 functions through {clGetExtensionFunctionAddress}:
-{clGetFunctionAddressForPlatformKHR} and {clSetPlatformDispatchDataKHR}.
+{clIcdGetFunctionAddressForPlatformKHR} and {clIcdSetPlatformDispatchDataKHR}.
 If these two functions are present and the pointer to
 `clGetPlatformIDs` in the dispatch structure of a platform is set to
 `CL_ICD2_TAG_KHR` the platform will be deemed ICD 2 compatible and dispatch
@@ -255,12 +255,12 @@ cl_int clIcdGetPlatformIDsKHR(cl_uint num_entries,
                               cl_uint *num_platforms);
 
 /* New in version 2.0.0 */
-void *clGetFunctionAddressForPlatformKHR(cl_platform_id platform,
-                                         const char* func_name);
+void *clIcdGetFunctionAddressForPlatformKHR(cl_platform_id platform,
+                                            const char* func_name);
 
 /* New in version 2.0.0 */
-cl_int clSetPlatformDispatchDataKHR(cl_platform_id platform,
-                                    void *dispatch_data);
+cl_int clIcdSetPlatformDispatchDataKHR(cl_platform_id platform,
+                                       void *dispatch_data);
 ----
 
 [[cl_khr_icd-new-tokens]]
@@ -332,26 +332,28 @@ _platforms_ is not `NULL` or if both _num_platforms_ and _platforms_ are
 
 The entry point of a given platform that is ICD 2 compatible can be obtained
 using the following function:
-include::{generated}/api/protos/clGetFunctionAddressForPlatformKHR.txt[]
+include::{generated}/api/protos/clIcdGetFunctionAddressForPlatformKHR.txt[]
 
 _platform_ refers to the platform ID returned by {clIcdGetPlatformIDsKHR}
 _func_name_ name of an API entry point
 
-{clGetFunctionAddressForPlatformKHR} returns the address of the API entry point
-named by _func_name_. The pointer returned should be cast to a function pointer
-type matching the API entry point as defined in the specification header file.
+{clIcdGetFunctionAddressForPlatformKHR} returns the address of the API entry
+point named by _func_name_. The pointer returned should be cast to a function
+pointer type matching the API entry point as defined in the specification
+header file.
 
 A return value of `NULL` indicates that the specified function does not exist
 for _platform_, or _platform_ is not a valid platform for the implementation.
 
 The `dispatch_data` field of a platform can be set using the following function:
-include::{generated}/api/protos/clSetPlatformDispatchDataKHR.txt[]
+include::{generated}/api/protos/clIcdSetPlatformDispatchDataKHR.txt[]
 
 _platform_ refers to the platform ID returned by {clIcdGetPlatformIDsKHR}
-_dispatch_data_ is the value to set the `dispatch_data` field of the structure to
+_dispatch_data_ is the value to set the `dispatch_data` field of the structure
+to
 
-{clSetPlatformDispatchDataKHR} returns {CL_SUCCESS} if the function is executed
-successfully.
+{clIcdSetPlatformDispatchDataKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
 It returns {CL_INVALID_PLATFORM} if _platform_ is not a valid platform."
 
 Add the following to _table 4.1_:
