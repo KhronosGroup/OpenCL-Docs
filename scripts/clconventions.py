@@ -239,3 +239,12 @@ class OpenCLConventions(ConventionsBase):
         Vulkan, so these checks are not appropriate."""
 
         return True
+
+    def filter_ref(self, name):
+        """Returns True if the reference should be filtered and not included in
+           the reference pages.
+        """
+        # Do not include CL_VERSION_X_Y macro references
+        if name.startswith('CL_VERSION_'):
+            return True
+        return False

@@ -103,13 +103,6 @@ def macroPrefix(name):
     return 'reflink:' + name
 
 
-def filterRef(name):
-    # Do not include CL_VERSION_X_Y macro references
-    if name.startswith('CL_VERSION_'):
-        return True
-    return False
-
-
 def seeAlsoList(apiName, explicitRefs=None, apiAliases=[]):
     """Return an asciidoc string with a list of 'See Also' references for the
     API entity 'apiName', based on the relationship mapping in the api module.
@@ -146,8 +139,8 @@ def seeAlsoList(apiName, explicitRefs=None, apiAliases=[]):
                 if dependency is not None:
                     refs.add(dependency)
 
-    # Remove CL_VERSION_X_Y macro references
-    refs = set([ref for ref in refs if not filterRef(ref)])
+    # Filter references based on API conventions
+    refs = set([ref for ref in refs if not conventions.filter_ref(ref)])
 
     if len(refs) == 0:
         return None
