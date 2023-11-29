@@ -6382,6 +6382,23 @@ The OpenCL C programming language implements the <<table-builtin-async-copy,
 following functions>> that provide asynchronous copies between `global` and
 local memory and a prefetch from `global` memory.
 
+The async copy and wait group events functions are performed by all work-items
+in a work-group and therefore must be encountered by all work-items in a
+work-group executing the kernel with the same argument values, otherwise the
+results are undefined.
+This rule applies to ND-ranges implemented with uniform and non-uniform
+work-groups.
+
+If an async copy or wait group events function is inside a conditional statement
+then all work-items in the work-group must enter the conditional if any
+work-item in the work-group enters the conditional statement and executes the
+async copy or wait group events function.
+
+If an async copy or wait group events function is inside a loop then all
+work-items in the work-group must execute the async copy or wait group events
+function on each iteration of the loop if any work-item executes the async copy
+or wait group events function on that iteration.
+
 We use the generic type name `gentype` to indicate the built-in data types `char`,
 `char__n__`, `uchar`, `uchar__n__`, `short`, `short__n__`,
 `ushort`, `ushort__n__`, `int`, `int__n__`, `uint`,
@@ -6402,13 +6419,6 @@ _n_ is 2, 3 footnote:[{fn-vec3-async-copy}], 4, 8, or 16.
   const {local} gentype *_src_, size_t _num_gentypes_, event_t _event_)
     | Perform an async copy of _num_gentypes_ gentype elements from _src_ to
       _dst_.
-      The async copy is performed by all work-items in a work-group and this
-      built-in function must therefore be encountered by all work-items in a
-      work-group executing the kernel with the same argument values;
-      otherwise the results are undefined.
-      This rule applies to ND-ranges implemented with uniform and
-      non-uniform work-groups.
-
       Returns an event object that can be used by *wait_group_events* to
       wait for the async copy to finish.
       The _event_ argument can also be used to associate the
@@ -6436,12 +6446,6 @@ _n_ is 2, 3 footnote:[{fn-vec3-async-copy}], 4, 8, or 16.
       element read from _src_.
       The _dst_stride_ is the stride in elements for each `gentype` element
       written to _dst_.
-      The async gather is performed by all work-items in a work-group.
-      This built-in function must therefore be encountered by all work-items
-      in a work-group executing the kernel with the same argument values;
-      otherwise the results are undefined.
-      This rule applies to ND-ranges implemented with uniform and
-      non-uniform work-groups
 
       Returns an event object that can be used by *wait_group_events* to
       wait for the async copy to finish.
@@ -6470,12 +6474,6 @@ _n_ is 2, 3 footnote:[{fn-vec3-async-copy}], 4, 8, or 16.
       to complete.
       The event objects specified in _event_list_ will be released after the
       wait is performed.
-
-      This function must be encountered by all work-items in a work-group
-      executing the kernel with the same _num_events_ and event objects
-      specified in _event_list_; otherwise the results are undefined.
-      This rule applies to ND-ranges implemented with uniform and
-      non-uniform work-groups
 | |
 | void **prefetch**(const {global} gentype *_p_, size_t _num_gentypes_)
     | Prefetch `_num_gentypes_ * sizeof(gentype)` bytes into the global
