@@ -428,25 +428,28 @@ include::{generated}/api/version-notes/clSetCommandQueueProperty.asciidoc[]
     changed by {clSetCommandQueueProperty}.  If _old_properties_ is `NULL`, it
     is ignored.
 
-[NOTE]
-====
-Changing the {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE} command-queue property
-will cause the OpenCL implementation to block until all previously queued
-commands in _command_queue_ have completed.  This can be an expensive operation
-and therefore changes to this property should only be done when absolutely
-necessary.
-====
-
 // refError
+
+{clSetCommandQueueProperty} may unconditionally return an error if no
+devices in the context associated with _command_queue_ support modifying
+the properties of a command-queue.
+Support for modifying the properties of a command-queue is required only for
+OpenCL 1.0 devices.
 
 {clSetCommandQueueProperty} returns {CL_SUCCESS} if the function is executed
 successfully.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid command-queue.
+  * {CL_INVALID_OPERATION} if no devices in the context associated with
+    _command_queue_ support modifying the properties of a command-queue.
   * {CL_INVALID_VALUE} if values specified in _properties_ are not valid.
   * {CL_INVALID_QUEUE_PROPERTIES} if values specified in _properties_ are
     valid but are not supported by the device.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 --
 
 
@@ -5672,13 +5675,13 @@ object is deleted.
 This provides a mechanism for an application to be notified when destructors
 for program scope global variables are complete.
 
+// refError
+
 {clSetProgramReleaseCallback} may unconditionally return an error if no
 devices in the context associated with _program_ support destructors for
 program scope global variables.
 Support for constructors and destructors for program scope global variables
 is required only for OpenCL 2.2 devices.
-
-// refError
 
 {clSetProgramReleaseCallback} returns {CL_SUCCESS} if the function is executed
 successfully.
