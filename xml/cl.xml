@@ -232,6 +232,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_feature_capabilities_intel</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_integer_dot_product_capabilities_khr</name>;</type>
         <type category="define">typedef <type>cl_properties</type>    <name>cl_semaphore_properties_khr</name>;</type>
+        <type category="define">typedef <type>cl_properties</type>    <name>cl_semaphore_reimport_properties_khr</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_semaphore_info_khr</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_semaphore_type_khr</name>;</type>
         <type category="define">typedef <type>cl_ulong</type>         <name>cl_semaphore_payload_khr</name>;</type>
@@ -1563,8 +1564,7 @@ server's OpenCL/api-docs repository.
         <enum value="0x10C1"        name="CL_sRGBA"/>
         <enum value="0x10C2"        name="CL_sBGRA"/>
         <enum value="0x10C3"        name="CL_ABGR"/>
-            <unused start="0x10C4" end="0x10CE" comment="Reserved for cl_ext_yuv_images #722"/>
-            <unused start="0x10CF" end="0x10CF" comment="Reserved for cl_channel_order"/>
+            <unused start="0x10C4" end="0x10CF" comment="Reserved for cl_ext_yuv_images #722"/>
         <enum value="0x10D0"        name="CL_SNORM_INT8"/>
         <enum value="0x10D1"        name="CL_SNORM_INT16"/>
         <enum value="0x10D2"        name="CL_UNORM_INT8"/>
@@ -1848,7 +1848,7 @@ server's OpenCL/api-docs repository.
         <enum value="0x2051"        name="CL_MEM_DEVICE_HANDLE_LIST_KHR"/>
         <enum value="0x2052"        name="CL_DEVICE_EXTERNAL_MEMORY_IMPORT_ASSUME_LINEAR_IMAGES_HANDLE_TYPES_KHR"/>
         <enum value="0x2053"        name="CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR"/>
-            <unused start="0x2054" end="0x2054"/>
+        <enum value="0x2054"        name="CL_SEMAPHORE_EXPORTABLE_KHR"/>
         <enum value="0x2055"        name="CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR"/>
         <enum value="0x2056"        name="CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR"/>
         <enum value="0x2057"        name="CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR"/>
@@ -2236,7 +2236,8 @@ server's OpenCL/api-docs repository.
         <enum value="0x4232"        name="CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT"/>
         <enum value="0x4233"        name="CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT"/>
             <unused start="0x4234" end="0x4236" comment="Reserved for cl_ext_image_tiling_control"/>
-            <unused start="0x4237" end="0x423F"/>
+            <unused start="0x4237" end="0x423A" comment="Reserved for cl_ext_image_drm_modifier"/>
+            <unused start="0x423B" end="0x423F"/>
     </enums>
 
     <enums start="0x4240" end="0x424F" name="enums.4240" comment="Reserved for ICD Loader Layers">
@@ -2689,6 +2690,12 @@ server's OpenCL/api-docs repository.
             <param><type>size_t</type>                     <name>handle_size</name></param>
             <param><type>void</type>*                      <name>handle_ptr</name></param>
             <param><type>size_t</type>*                    <name>handle_size_ret</name></param>
+        </command>
+        <command suffix="CL_API_SUFFIX__VERSION_3_0">
+            <proto><type>cl_int</type>                                  <name>clReImportSemaphoreSyncFdKHR</name></proto>
+            <param><type>cl_semaphore_khr</type>                        <name>sema_object</name></param>
+            <param><type>cl_semaphore_reimport_properties_khr*</type>   <name>reimport_props</name></param>
+            <param><type>int</type>                                     <name>fd</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_3_0">
             <proto><type>cl_int</type>                     <name>clEnqueueAcquireExternalMemObjectsKHR</name></proto>
@@ -6985,6 +6992,11 @@ server's OpenCL/api-docs repository.
                 <enum name="CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR"/>
                 <enum name="CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR"/>
             </require>
+            <require comment="cl_semaphore_import_properties_khr">
+            </require>
+            <require comment="cl_semaphore_info_khr">
+                <enum name="CL_SEMAPHORE_EXPORTABLE_KHR"/>
+            </require>
             <require>
                 <command name="clGetSemaphoreHandleForTypeKHR"/>
             </require>
@@ -7009,8 +7021,14 @@ server's OpenCL/api-docs repository.
             <require>
                 <type name="CL/cl.h"/>
             </require>
+            <require>
+                <type name="cl_semaphore_reimport_properties_khr"/>
+            </require>
             <require comment="cl_external_semaphore_handle_type_khr">
                 <enum name="CL_SEMAPHORE_HANDLE_SYNC_FD_KHR"/>
+            </require>
+            <require>
+                <command name="clReImportSemaphoreSyncFdKHR"/>
             </require>
         </extension>
         <extension name="cl_khr_external_semaphore_win32" supported="opencl">
