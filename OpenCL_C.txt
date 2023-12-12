@@ -272,9 +272,10 @@ ifdef::cl_khr_3d_image_writes[]
 ==== 3D Image Writes
 
 The `cl_khr_3d_image_writes` extension was promoted to OpenCL 2.0, and to
-OpenCL 3.0 as the {opencl_c_3d_image_writes} feature. The extension adds
-<<built-in-image-write-functions, Built-in Image Write Functions>> that
-allow a kernel to write to 3D image objects in addition to 2D image objects.
+OpenCL 3.0 as the {opencl_c_3d_image_writes} feature.
+The extension adds <<built-in-image-write-functions, Built-in Image Write
+Functions>> that allow a kernel to write to 3D image objects in addition to
+2D image objects.
 endif::cl_khr_3d_image_writes[]
 
 
@@ -289,18 +290,15 @@ read from and write to pointers to these types.
 endif::cl_khr_byte_addressable_store[]
 
 
-ifdef::cl_khr_global_int32_base_atomics[]
-[[cl_khr_global_int32_base_atomics,cl_khr_global_int32_base_atomics]]
-==== Global 32-Bit Base Atomics
+ifdef::cl_khr_fp64[]
+[[cl_khr_fp64]]
+==== Double-Precision Floating-Point
 
-The `cl_khr_global_int32_base_atomics` extension was promoted to OpenCL C
-1.1, with the supported functions renamed to use the **atomic_** prefix
-rather than the **atom_** prefix.
-The extension provides base atomic functions for {global} variables, as
-described in the <<table-atomic-function-extensions, Atomic Function
-Extensions>> table.
-
-endif::cl_khr_global_int32_base_atomics[]
+The `cl_khr_fp64 extension was promoted to OpenCL C 1.2 as an optional
+feature, and to OpenCL 3.0 as the optional {cl_khr_fp64} feature.
+The extension provides double-precision scalar and vector floating-point
+data types and extends many functions to accept these types.
+endif::cl_khr_fp64[]
 
 
 ifdef::cl_khr_global_int32_extended_atomics[]
@@ -536,12 +534,11 @@ The following table describes the list of built-in scalar data types.
       storage format.
 | `double` footnote:[{fn-double}]
     | A 64-bit floating-point number.
-      The `double` data type must conform to the IEEE 754 double precision
+      The `double` data type must conform to the IEEE 754 double-precision
       storage format.
 
-      <<unified-spec, Requires>> support for OpenCL C 1.2 or newer. In
-      OpenCL C 3.0 it requires support of the {opencl_c_fp64} feature.
-      Also see extension `<<cl_khr_fp64>>`.
+      <<unified-spec, Requires>> support for <<double-precision-support,
+      double-precision>>.
 | `half`
     | A 16-bit floating-point number.
       The `half` data type must conform to the IEEE 754-2008 half precision
@@ -564,12 +561,6 @@ The following table describes the list of built-in scalar data types.
     | The `void` type comprises an empty set of values; it is an incomplete
       type that cannot be completed.
 |====
-
-If the double-precision floating-point extension `<<cl_khr_fp64>>` or the
-{opencl_c_fp64} feature is not supported, implementations may
-implicitly cast double-precision floating-point literals to
-single-precision literals. The use of double-precision literals without
-double-precision support should result in a diagnostic.
 
 Most built-in scalar data types are also declared as appropriate types in
 the OpenCL API (and header files) that can be used by an application.
@@ -601,6 +592,20 @@ application:
 --
 
 
+[[double-precision-support]]
+==== Double-Precision Floating-Point Support
+
+Double-precision floating-point is supported if
+ifdef::cl_khr_fp64[the `<<cl_khr_fp64>>` extension macro is supported, or if]
+OpenCL 1.2 or newer is supported.
+In OpenCL 3.0, it also requires support for the {opencl_c_fp64} feature,
+
+If double-precision is not supported, implementations may
+implicitly cast double-precision floating-point literals to
+single-precision literals. The use of double-precision literals without
+double-precision support should result in a diagnostic.
+
+
 [[the-half-data-type]]
 ==== The `half` Data Type
 
@@ -621,6 +626,8 @@ Conversions from `float` to `half` correctly round the mantissa to 11 bits
 of precision.
 Conversions from `half` to `float` are lossless; all `half` numbers are
 exactly representable as `float` values.
+Conversions from `double` to `half` are correctly rounded.
+Conversions from `half` to `double` are lossless.
 
 The `half` data type can only be used to declare a pointer to a buffer that
 contains `half` values.
@@ -713,9 +720,8 @@ The following table describes the list of built-in vector data types.
 | `double__n__` footnote:[{fn-double-vec}]
     | A vector of _n_ 64-bit floating-point values.
 
-      <<unified-spec, Requires>> support for OpenCL C 1.2 or newer. In
-      OpenCL C 3.0 it requires support of the {opencl_c_fp64} feature.
-      Also see extension `<<cl_khr_fp64>>`.
+      <<unified-spec, Requires>> support for <<double-precision-support,
+      double-precision>>.
 |====
 
 The built-in vector data types are also declared as appropriate types in the
@@ -913,7 +919,7 @@ where _n_ is any value other than 2, 3, 4, 8 and 16, are also reserved.
     | An _n_ {times} _m_ matrix of single precision floating-point values
       stored in column-major order.
 | `double__n__x__m__`
-    | An _n_ {times} _m_ matrix of double precision floating-point values
+    | An _n_ {times} _m_ matrix of double-precision floating-point values
       stored in column-major order.
 | `long double`, `long double__n__`
     | A floating-point scalar and vector type with at least as much
@@ -1592,7 +1598,7 @@ Examples:
 
 [source,opencl_c]
 ----------
-// d only if double precision is supported
+// d only if double-precision is supported
 union { float f; uint u; double d; } u;
 
 u.u = 1;    // u.f contains 2**-149.  u.d is undefined --
@@ -1670,7 +1676,7 @@ short8 j = as_short8(i);
 
 float4 f;
 // Error. Result and operand have different sizes
-double4 g = as_double4(f); // Only if double precision is supported.
+double4 g = as_double4(f); // Only if double-precision is supported.
 
 float4 f;
 // Legal. g.xyz will have same values as f.xyz. g.w is undefined
@@ -3415,7 +3421,7 @@ Advanced Vector Instructions (Intel^{reg}^ AVX) which implements a
 work-items to one thread, running a second work-item in the high half of the
 256-bit AVX register.
 
-As another example, a Power4 machine has two scalar double precision
+As another example, a Power4 machine has two scalar double-precision
 floating-point units with an 6-cycle deep pipe.
 An autovectorizer for the Power4 machine might choose to interleave six
 kernels declared with the `+__attribute__(( vec_type_hint (double2)))+`
@@ -4744,7 +4750,7 @@ identifier of each work-item when this kernel is being executed on a device.
 
 NOTE: The functionality described in the following table <<unified-spec,
 requires>> support for
-ifdef::cl_khr_subgroups[the <<cl_khr_subgroups>> extension macro; or for]
+ifdef::cl_khr_subgroups[the `<<cl_khr_subgroups>>` extension macro; or for]
 OpenCL C 3.0 or newer and the {opencl_c_subgroups} feature.
 
 The following table describes the list of built-in work-item functions that
@@ -5293,7 +5299,7 @@ functions.
 
 [open,refpage='mathConstants',desc='Math Constants',type='freeform',spec='clang',anchor='table-builtin-half-native-math',xrefs='mathFunctions',alias='MAXFLOAT HUGE_VALF INFINITY NAN HUGE_VAL']
 --
-The following symbolic constants are available.
+The following constants are available.
 Their values are of type `float` and are accurate within the precision of a
 single precision floating-point number.
 
@@ -5313,9 +5319,8 @@ single precision floating-point number.
     | A constant expression of type `float` representing a quiet NaN.
 |====
 
-If double precision is supported by the device, e.g. for OpenCL C 3.0 or newer
-the {opencl_c_fp64} feature macro is present, the following symbolic
-constants will also be available:
+If <<double-precision-support, double-precision is supported by the
+device>>, then the following constants are also available:
 
 [cols=",",]
 |====
@@ -5427,12 +5432,11 @@ They are of type `float` and are accurate within the precision of the
 | `M_SQRT1_2_F`   | Value of 1 / {sqrt}2
 |====
 
-If double precision is supported by the device, e.g. for OpenCL C 3.0 or newer
-the {opencl_c_fp64} feature macro is present, then the following macros
-and constants are also available:
+If <<double-precision-support, double-precision is supported by the
+device>>, then the following macros and constants are also available:
 
 The `FP_FAST_FMA` macro indicates whether the *fma*() family of functions
-are fast compared with direct code for double precision floating-point.
+are fast compared with direct code for double-precision floating-point.
 If defined, the `FP_FAST_FMA` macro shall indicate that the *fma*() function
 generally executes about as fast as, or faster than, a multiply and an add
 of `double` operands
@@ -6501,7 +6505,7 @@ in a work-group.
 
 NOTE: The functionality described in the following table <<unified-spec,
 requires>> support for
-ifdef::cl_khr_subgroups[the <<cl_khr_subgroups>> extension macro; or for]
+ifdef::cl_khr_subgroups[the `<<cl_khr_subgroups>>` extension macro; or for]
 OpenCL 3.0 or newer and the {opencl_c_subgroups} feature.
 
 The following table describes built-in functions to synchronize the work-items
@@ -7027,7 +7031,7 @@ The following table lists the enumeration constants:
       <<unified-spec, Requires>> support for OpenCL C 2.0 or newer.
 | `memory_scope_sub_group`
     | <<unified-spec, Requires>> support for
-ifdef::cl_khr_subgroups[the <<cl_khr_subgroups>> extension macro; or for]
+ifdef::cl_khr_subgroups[the `<<cl_khr_subgroups>>` extension macro; or for]
       OpenCL C 3.0 or newer and the {opencl_c_subgroups} feature.
 | `memory_scope_work_group`
     | <<unified-spec, Requires>> support for OpenCL C 2.0 or newer.
@@ -8221,7 +8225,7 @@ endif::cl_khr_global_int32_base_atomics,cl_khr_global_int32_extended_atomics,cl_
     newer and the {opencl_c_atomic_order_seq_cst} feature.
   * Using `memory_scope_sub_group` with any built-in atomic function
     <<unified-spec, requires>> support for
-ifdef::cl_khr_subgroups[the <<cl_khr_subgroups>> extension macro; or for]
+ifdef::cl_khr_subgroups[the `<<cl_khr_subgroups>>` extension macro; or for]
     OpenCL C 3.0 or newer and the {opencl_c_subgroups} feature.
   * Using `memory_scope_device` <<unified-spec, requires>> support for OpenCL
     C 2.0, or OpenCL C 3.0 or newer and the
@@ -8651,11 +8655,10 @@ specifier.
 [NOTE]
 ====
 The conversion specifiers *e,E,g,G,a,A* convert a `float` or `half` argument
-that is a scalar type to a `double` only if the `double` data type is
-supported, e.g. for OpenCL C 3.0 or newer the {opencl_c_fp64} feature
-macro is present.
-If the `double` data type is not supported, the argument will be a `float`
-instead of a `double` and the `half` type will be converted to a `float`.
+that is a scalar type to a `double` only if <<double-precision, double
+precision is supported>>.
+Otherwise, the argument will be a `float` instead of a `double` and the
+`half` type will be converted to a `float`.
 ====
 
 *c* The `int` argument is converted to an `unsigned char`, and the resulting
@@ -11364,7 +11367,7 @@ foo(queue_t q, ...)
 --
 NOTE: The functionality described in this section <<unified-spec, requires>>
 support for
-ifdef::cl_khr_subgroups[the <<cl_khr_subgroups>> extension macro; or for]
+ifdef::cl_khr_subgroups[the `<<cl_khr_subgroups>>` extension macro; or for]
 OpenCL C 3.0 or newer and the {opencl_c_subgroups} feature.
 
 The <<table-collective-functions, following table>> describes OpenCL C
@@ -11378,7 +11381,7 @@ footnote:[{fn-half-supported}], `float`, and `double`
 footnote:[{fn-double-supported}].
 
 ifdef::cl_khr_subgroup_extended_types[]
-NOTE: If the <<cl_khr_subgroup_extended_types>> extension is supported,
+NOTE: If the `<<cl_khr_subgroup_extended_types>>` extension is supported,
 the supported `gentype`s also include `char`, `uchar`, `short`, and
 `ushort`.
 For the `sub_group_broadcast` function, `gentype` may additionally be one of
@@ -11461,7 +11464,7 @@ The order of these floating-point operations is also non-deterministic for a giv
 
 NOTE: The functionality described in the following table <<unified-spec,
 requires>> support
-ifdef::cl_khr_subgroups[the <<cl_khr_subgroups>> extension macro; or for]
+ifdef::cl_khr_subgroups[the `<<cl_khr_subgroups>>` extension macro; or for]
 OpenCL C 3.0 or newer and the {opencl_c_subgroups} and {opencl_c_pipes}
 features.
 
@@ -11517,7 +11520,7 @@ groups is implementation-defined.
 
 NOTE: The functionality described in the following table <<unified-spec,
 requires>> support
-ifdef::cl_khr_subgroups[the <<cl_khr_subgroups>> extension macro; or for]
+ifdef::cl_khr_subgroups[the `<<cl_khr_subgroups>>` extension macro; or for]
 OpenCL C 3.0 or newer and the {opencl_c_subgroups} and
 {opencl_c_device_enqueue} features.
 
@@ -11562,7 +11565,7 @@ ifdef::cl_khr_subgroup_ballot[]
 ==== Built-In Sub-group Ballot Functions
 
 NOTE: The functionality described in this section <<unified-spec, requires>>
-support for the <<cl_khr_subgroup_ballot>> extension.
+support for the `<<cl_khr_subgroup_ballot>>` extension.
 
 The <<table-ballot-functions, followingtable>> describes OpenCL C
 programming language built-in functions to allow work items in a sub-group
@@ -11580,7 +11583,7 @@ For the `sub_group_non_uniform_broadcast` function, the generic type name
 `gentype` may additionally be one of the supported built-in vector data
 types `char__n__`, `uchar__n__`, `short__n__`, `ushort__n__`, `int__n__`,
 `uint__n__`, `long__n__`, `ulong__n__`, `float__n__`, `double__n__` (if
-double precision is supported), or `half__n__` (if half precision is
+double-precision is supported), or `half__n__` (if half precision is
 supported).
 
 [[table-ballot-functions]]
@@ -11762,7 +11765,7 @@ ifdef::cl_khr_subgroup_clustered_reduce[]
 ==== Built-In Clustered Reduction Functions for Sub-groups
 
 NOTE: The functionality described in this section <<unified-spec, requires>>
-support for the <<cl_khr_subgroup_clustered_reduce>> extension.
+support for the `<<cl_khr_subgroup_clustered_reduce>>` extension.
 
 This section describes arithmetic operations that are performed on a subset
 of work items in a sub-group, referred to as a cluster.
@@ -12183,7 +12186,7 @@ ifdef::cl_khr_subgroup_rotate[]
 ==== Built-In Sub-group Rotation Functions
 
 NOTE: The functionality described in this section <<unified-spec, requires>>
-support for the <<cl_khr_subgroup_rotate>> extension.
+support for the `<<cl_khr_subgroup_rotate>>` extension.
 
 The <<table-rotate-functions, following table>> describes a specialized
 OpenCL C programming language built-in function that allow work items in a
@@ -12724,7 +12727,7 @@ standards that must be supported by all OpenCL compliant devices.
 This section describes the functionality that must be supported by all
 OpenCL devices for single precision floating-point numbers.
 Currently, only single precision floating-point is a requirement.
-Double precision floating-point is an optional feature.
+Double-precision floating-point is an optional feature.
 
 
 [[rounding-modes-1]]
@@ -12740,7 +12743,7 @@ IEEE 754 defines four possible rounding modes:
   * Round toward zero
 
 _Round to nearest_ _even_ is currently the only rounding mode required by the
-OpenCL specification for single precision and double precision operations and is
+OpenCL specification for single precision and double-precision operations and is
 therefore the default rounding mode
 footnote:[{fn-float-required-rounding-mode}].
 In addition, only static selection of rounding mode is supported.
@@ -13361,14 +13364,14 @@ requires>> support for OpenCL C 2.0 or newer.
       an add both of which are correctly rounded.
 |====
 
-The following table describes the minimum accuracy of double precision
+The following table describes the minimum accuracy of double-precision
 floating-point arithmetic operations given as ULP values.
 The reference value used to compute the ULP value of an arithmetic operation
 is the infinitely precise result.
 0 ulp is used for math functions that do not require rounding.
 
 [[table-ulp-double]]
-.ULP values for double precision built-in math functions
+.ULP values for double-precision built-in math functions
 [cols=",",]
 |====
 | *Function*        | *Min Accuracy - ULP values*
