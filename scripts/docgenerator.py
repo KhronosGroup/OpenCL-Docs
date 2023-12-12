@@ -218,7 +218,7 @@ class DocOutputGenerator(OutputGenerator):
             index_terms.append(basename)
             write('indexterm:[{}]'.format(','.join(index_terms)), file=fp)
 
-        write('[source,opencl]', file=fp)
+        write('[source%unbreakable,opencl]', file=fp)
         write('----', file=fp)
         write(contents, file=fp)
         write('----', file=fp)
@@ -233,7 +233,7 @@ class DocOutputGenerator(OutputGenerator):
             # Asciidoc anchor
             write(self.genOpts.conventions.warning_comment, file=fp)
             write('// Include this no-xref version without cross reference id for multiple includes of same file', file=fp)
-            write('[source,opencl]', file=fp)
+            write('[source,%unbreakable,opencl]', file=fp)
             write('----', file=fp)
             write(contents, file=fp)
             write('----', file=fp)
