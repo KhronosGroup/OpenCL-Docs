@@ -40,9 +40,11 @@ Other related extensions define specific external semaphores that may be importe
 |====
 | *Date*     | *Version* | *Description*
 | 2021-09-10 | 0.9.0     | Initial version (provisional).
+| 2023-11-16 | 0.9.1     | Added CL_SEMAPHORE_EXPORTABLE_KHR.
+| 2023-11-21 | 0.9.2     | Added re-import function call to cl_khr_external_semaphore_sync_fd
 |====
 
-NOTE: This is a preview of an OpenCL provisional extension specification that has been Ratified under the Khronos Intellectual Property Framework. It is being made publicly available prior to being uploaded to the Khronos registry to enable review and feedback from the community. If you have feedback please create an issue on https://github.com/KhronosGroup/OpenCL-Docs/
+include::provisional_notice.asciidoc[]
 
 ==== Dependencies
 
@@ -90,6 +92,13 @@ Vivek Kini, NVIDIA +
 typedef cl_uint cl_external_semaphore_handle_type_khr;
 ----
 
+The `cl_khr_external_semaphore_sync_fd` extension adds:
+
+[source]
+----
+typedef cl_properties cl_semaphore_reimport_properties_khr;
+----
+
 === New API Functions
 
 [source]
@@ -101,6 +110,15 @@ cl_int clGetSemaphoreHandleForTypeKHR(
     size_t handle_size,
     void *handle_ptr,
     size_t *handle_size_ret);
+----
+
+The `cl_khr_external_semaphore_sync_fd` extension adds:
+
+----    
+cl_int clReImportSemaphoreSyncFdKHR(
+    cl_semaphore_khr sema_object,
+    cl_semaphore_reimport_properties_khr *reimport_props,
+    int fd);
 ----
 
 === New API Enums
@@ -127,6 +145,13 @@ Following new attributes can be passed as part of {cl_semaphore_properties_khr_T
 ----
 CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR                                0x203F
 CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR                       0
+----
+
+The following new attribute that can be passed as part of {cl_semaphore_info_khr_TYPE}:
+
+[source]
+----
+CL_SEMAPHORE_EXPORTABLE_KHR                                         0x2054
 ----
 
 External semaphore handle type added by `cl_khr_external_semaphore_dx_fence`:
@@ -234,6 +259,9 @@ Add to the list of supported _param_names_ by {clGetSemaphoreInfoKHR}:
       | Returns the list of external semaphore handle types that may be used for
         exporting. The size of this query may be 0 indicating that this
         semaphore does not support any handle types for exporting.
+| {CL_SEMAPHORE_EXPORTABLE_KHR}
+    | {cl_bool_TYPE}
+        | Returns {CL_TRUE} if the semaphore is exportable and {CL_FALSE} otherwise.
 |====
 
 === Exporting semaphore external handles
@@ -367,6 +395,27 @@ Transference and permanence properties for handle types added by `cl_khr_externa
 
 For these extensions, importing a semaphore payload from a file descriptor transfers ownership of the file descriptor from the application to the OpenCL implementation. The application must not perform any operations on the file descriptor after a successful import.
 
+A handle of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} may be re-imported into an existing semaphore using {clReImportSemaphoreSyncFdKHR}:
+
+include::{generated}/api/protos/clReImportSemaphoreSyncFdKHR.txt[]
+
+_sema_object_ specifies a valid semaphore object with importable properties.
+
+_reimport_props_  Must be `NULL`.  Reserved for future use.
+
+_fd_ external file descriptor handle to import
+
+Calling {clReImportSemaphoreSyncFdKHR} is equivalent to destroying _sema_object_ and re-creating it with the original _sema_props_
+from {clCreateSemaphoreWithPropertiesKHR}, except a handle specified by _fd_ will be imported.
+The semaphore _sema_object_ must have originally imported an external handle of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR}.
+
+* {CL_INVALID_SEMAPHORE_KHR}
+** if _sema_object_ is not a valid semaphore
+* {CL_INVALID_SEMAPHORE_KHR} if a {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} handle was not imported when _sema_object_ was created.
+* {CL_INVALID_VALUE} if _fd_ is invalid.
+* {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources required by the OpenCL implementation on the host.
+* {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required by the OpenCL implementation on the device.
+
 ==== NT Handle Types
 
 The `cl_khr_external_semaphore_dx_fence` extension extends {cl_external_semaphore_handle_type_khr_TYPE} to support the following new types of handles, and adds as a property that may be specified when creating a semaphore from an external handle:
@@ -476,11 +525,11 @@ int fd = getFdForExternalSemaphore();
 // Create clSema of type cl_semaphore_khr usable only on device 1
 // assuming the semaphore was imported from the same device.
 cl_semaphore_properties_khr sema_props[] = {
-    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR, 
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR,
     (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
-    (cl_semaphore_properties_khr)CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR, 
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
     (cl_semaphore_properties_khr)fd,
-    (cl_semaphore_properties_khr)CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR, 
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR,
     (cl_semaphore_properties_khr)devices[1],
     CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR,
     0
@@ -548,9 +597,9 @@ clCreateContext(..., 2, devices, ...);
 
 // Create clSema of type cl_semaphore_khr usable only on device 1
 cl_semaphore_properties_khr sema_props[] = {
-    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR, 
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR,
     (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
-    (cl_semaphore_properties_khr)CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR, 
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,
     (cl_semaphore_properties_khr)CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
     CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR,
     (cl_semaphore_properties_khr)CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR,

@@ -35,45 +35,28 @@ def GetFooter():
 """
 
 def FullNote(name, added_in, deprecated_by):
-    # Five patterns:
-    # (1) always present in OpenCL
-    # (3) in 1.0 but now deprecated
-    # (2) added after 1.0,
-    # (4) added after 1.0 but now deprecated
-    # (5) added by an extension
-    if added_in == "1.0":
-        if deprecated_by == None:
-            return f'\n// Intentionally empty, {name} has always been present.'
-        else:
-            return f'\nIMPORTANT: {{{name}}} is <<unified-spec, deprecated by>> version {deprecated_by}.'
-    elif added_in[0:3] != 'cl_':
-        # Should probably check for '#.#' being an allowed CL version number, but this suffices
-        if deprecated_by == None:
-            return f'\nIMPORTANT: {{{name}}} is <<unified-spec, missing before>> version {added_in}.'
-        else:
-            return f'\nIMPORTANT: {{{name}}} is <<unified-spec, missing before>> version {added_in} and <<unified-spec, deprecated by>> version {deprecated_by}.'
-    else:
-        # added_in assumed to be an OpenCL extension name
-        # Currently does not allow for deprecated extensions
-        return f'\nIMPORTANT: {name} requires {added_in}.'
+    # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
+    # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
+    if added_in == "1.0" and deprecated_by == None:
+        return "\n// Intentionally empty, %s has always been present." % name
+    if added_in != "1.0" and deprecated_by == None:
+        return "\nIMPORTANT: {%s} is {missing_before} version %s." % (name, added_in)
+    if added_in == "1.0" and deprecated_by != None:
+        return "\nIMPORTANT: {%s} is {deprecated_by} version %s." % (name, deprecated_by)
+    if added_in != "1.0" and deprecated_by != None:
+        return "\nIMPORTANT: {%s} is {missing_before} version %s and {deprecated_by} version %s." % (name, added_in, deprecated_by)
 
 def ShortNote(name, added_in, deprecated_by):
-    # Same patterns as FullNote
-    if added_in == "1.0":
-        if deprecated_by == None:
-            return f'// Intentionally empty, {name} has always been present.'
-        else:
-            return f'<<unified-spec, Deprecated by>> version {deprecated_by}.'
-    elif added_in[0:3] != 'cl_':
-        # Should probably check for '#.#' being an allowed CL version number, but this suffices
-        if deprecated_by == None:
-            return f'<<unified-spec, Missing before>> version {added_in}.'
-        else:
-            return f'<<unified-spec, Missing before>> version {added_in} and <<unified-spec, deprecated by>> version {deprecated_by}.'
-    else:
-        # added_in assumed to be an OpenCL extension name
-        # Currently does not allow for deprecated extensions
-        return f'{name} requires {added_in}.'
+    # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
+    # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
+    if added_in == "1.0" and deprecated_by == None:
+        return "// Intentionally empty, %s has always been present." % name
+    if added_in != "1.0" and deprecated_by == None:
+        return "{missing_before} version %s." % added_in
+    if added_in == "1.0" and deprecated_by != None:
+        return "{deprecated_by} version %s." % deprecated_by
+    if added_in != "1.0" and deprecated_by != None:
+        return "{missing_before} version %s and {deprecated_by} version %s." % (added_in, deprecated_by)
 
 # Find feature or extension groups that are parents of a <feature> or
 # <extension> <require> <${entry_type}> tag, and then find all the

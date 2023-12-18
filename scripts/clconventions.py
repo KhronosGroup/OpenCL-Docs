@@ -198,6 +198,17 @@ class OpenCLConventions(ConventionsBase):
                 self.extension_file_path(name))
 
     @property
+    def extra_refpage_headers(self):
+        """Return any extra text to add to refpage headers."""
+        return 'include::{config}/attribs.txt[]\n' + \
+            'include::{config}/opencl.asciidoc[]\n' + \
+            'include::{config}/version-full-links.asciidoc[]\n' + \
+            'include::{generated}/api/api-dictionary-no-links.asciidoc[]\n' + \
+            'include::{cspec}/feature-dictionary.asciidoc[]\n' + \
+            'include::{apispec}/footnotes.asciidoc[]\n' + \
+            'include::{cspec}/footnotes.asciidoc[]\n'
+
+    @property
     def extension_index_prefixes(self):
         """Return a list of extension prefixes used to group extension refpages."""
         return ['cl_khr', 'cl_ext', 'cl']
@@ -230,16 +241,6 @@ class OpenCLConventions(ConventionsBase):
         Vulkan, so these checks are not appropriate."""
 
         return True
-
-    @property
-    def extra_refpage_headers(self):
-        """Return any extra text to add to refpage headers."""
-        return 'include::{config}/attribs.txt[]\n' + \
-            'include::{config}/opencl.asciidoc[]\n' + \
-            'include::{apispec}/footnotes.asciidoc[]\n' + \
-            'include::{cspec}/footnotes.asciidoc[]\n' + \
-            'include::{cspec}/feature-dictionary.asciidoc[]\n' + \
-            'include::{generated}/api/api-dictionary-no-links.asciidoc[]'
 
     @property
     def extra_refpage_body(self):
