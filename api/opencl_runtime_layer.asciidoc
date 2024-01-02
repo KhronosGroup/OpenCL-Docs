@@ -110,6 +110,55 @@ include::{generated}/api/version-notes/CL_QUEUE_SIZE.asciidoc[]
 
         If {CL_QUEUE_SIZE} is not specified, the device queue is created with
         {CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE} as the size of the queue.
+
+ifdef::cl_khr_priority_hints[]
+| {CL_QUEUE_PRIORITY_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_QUEUE_PRIORITY_KHR.asciidoc[]
+  | {cl_queue_priority_khr_TYPE}
+      | Specifies a priority hint for command queues belonging to the same
+        OpenCL context.
+
+        NOTE: Refer to the user guide associated with each implementation
+        supporting this extension for its priority behavior guarantees, if
+        any.
+
+        {CL_QUEUE_PRIORITY_HIGH_KHR_anchor} - Indicates command queues
+        should have high priority.
+
+        {CL_QUEUE_PRIORITY_MED_KHR_anchor} - Indicates command queues should
+        have medium priority.
+
+        {CL_QUEUE_PRIORITY_LOW_KHR_anchor} - Indicates command queues should
+        have low priority.
+
+        If {CL_QUEUE_PRIORITY_KHR} is not specified, the default priority
+        {CL_QUEUE_PRIORITY_MED_KHR} is used.
+endif::cl_khr_priority_hints[]
+
+ifdef::cl_khr_throttle_hints[]
+| {CL_QUEUE_THROTTLE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_QUEUE_THROTTLE_KHR.asciidoc[]
+  | {cl_queue_throttle_khr_TYPE}
+      | Specifies a throttle hint for a command queue.
+
+        NOTE: Refer to the user guide associated with each implementation
+        supporting this extension for its throttling behavior guarantees, if
+        any.
+
+        {CL_QUEUE_THROTTLE_HIGH_KHR_anchor} - Indicates the queue should
+        execute at full throttle, which may consume more energy.
+
+        {CL_QUEUE_THROTTLE_MED_KHR_anchor} - Indicates normal throttling
+        behavior.
+
+        {CL_QUEUE_THROTTLE_LOW_KHR_anchor} - Indicates the queue should
+        execute at low throttle, optimized for lowest energy consumption.
+
+        If {CL_QUEUE_THROTTLE_KHR} is not specified, the default priority
+        {CL_QUEUE_THROTTLE_MED_KHR} is used.
+endif::cl_khr_throttle_hints[]
 |====
 
 // refError
@@ -126,6 +175,16 @@ returned in _errcode_ret_:
   * {CL_INVALID_VALUE} if values specified in _properties_ are not valid.
   * {CL_INVALID_QUEUE_PROPERTIES} if values specified in _properties_ are
     valid but are not supported by the device.
+ifdef::cl_khr_priority_hints[]
+  * {CL_INVALID_QUEUE_PROPERTIES} if the `<<cl_khr_priority_hints>>`
+    extension is supported, the {CL_QUEUE_PRIORITY_KHR} property is
+    specified, and the queue is a {CL_QUEUE_ON_DEVICE}.
+endif::cl_khr_priority_hints[]
+ifdef::cl_khr_throttle_hints[]
+  * {CL_INVALID_QUEUE_PROPERTIES} if the `<<cl_khr_throttle_hints>>`
+    extension is supported, the {CL_QUEUE_THROTTLE_KHR} property is
+    specified, and the queue is a {CL_QUEUE_ON_DEVICE}.
+endif::cl_khr_throttle_hints[]
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -1636,6 +1695,74 @@ include::{generated}/api/version-notes/CL_MAP_WRITE_INVALIDATE_REGION.asciidoc[]
 --
 
 
+ifdef::cl_khr_gl_sharing[]
+=== Creating OpenCL Buffer Objects From OpenGL Buffer Objects
+
+[open,refpage='clCreateFromGLBuffer',desc='Create OpenCL buffer object from an OpenGL buffer object',type='protos']
+--
+To create an OpenCL buffer object from an OpenGL buffer object, call the
+function
+
+include::{generated}/api/protos/clCreateFromGLBuffer.txt[]
+include::{generated}/api/version-notes/clCreateFromGLBuffer.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from an OpenGL context.
+  * _flags_ is a bit-field that is used to specify usage information.
+    Refer to the <<memory-flags-table, Memory Flags>> table for a
+    description of _flags_.
+    Only the {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_WRITE}
+    flags specified in that table can be used.
+  * _bufobj_ is the name of an OpenGL buffer object.
+    The data store of the OpenGL buffer object must have have been
+    previously created by calling `glBufferData`, although its contents need
+    not be initialized.
+    The size of the data store will be used to determine the size of the
+    OpenCL buffer object.
+  * _errcode_ret_ will return an appropriate error code as described below.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+The size of the OpenGL buffer object data store at the time
+{clCreateFromGLBuffer} is called will be used as the size of buffer object
+returned by {clCreateFromGLBuffer}.
+If the state of an OpenGL buffer object is modified through the OpenGL API
+(e.g. `glBufferData`) while there exists a corresponding OpenCL buffer
+object, subsequent use of the OpenCL buffer object will result in undefined
+behavior.
+
+The {clRetainMemObject} and {clReleaseMemObject} functions can be used to
+retain and release the buffer object.
+
+The OpenCL buffer object created using {clCreateFromGLBuffer} can also be
+used to create an OpenCL 1D image buffer object.
+
+NOTE: Refer to the <<lifetime-of-shared-opencl-opengl-memory-objects,
+Lifetime of Shared OpenCL/OpenGL Memory Objects>> and
+<<acquiring-shared-opencl-opengl-memory-objects, Acquiring, Releasing, and
+Synchronizing Access to Shared OpenCL/OpenGL Memory Objects>> sections for
+more information.
+
+// refError
+
+{clCreateFromGLBuffer} returns a valid non-zero OpenCL buffer object and
+_errcode_ret_ is set to {CL_SUCCESS} if the buffer object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context or was not
+    created from an OpenGL context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
+  * {CL_INVALID_GL_OBJECT} if _bufobj_ is not an OpenGL buffer object or is a
+    OpenGL buffer object but does not have an existing data store or the
+    size of the buffer is 0.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_gl_sharing[]
+
+
 == Image Objects
 
 An _image_ object is used to store a one-, two- or three-dimensional
@@ -1709,6 +1836,32 @@ If the {CL_MEM_HOST_WRITE_ONLY}, {CL_MEM_HOST_READ_ONLY} or
 {CL_MEM_HOST_NO_ACCESS} values are not specified in _flags_, they are
 inherited from the corresponding memory access qualifiers associated with
 __mem_object__.
+
+ifdef::cl_khr_mipmap_image[]
+*Mipmap Images*
+
+A mipmapped 1D image, 1D image array, 2D image, 2D image array or 3D image
+is created by specifying _num_mip_levels_ to be a value greater than one in
+_image_desc_.
+The dimensions of a mipmapped image can be a power of two or a non-power of
+two.
+Each successively smaller mipmap level is half the size of the previous
+level, rounded down to the nearest integer.
+
+The following restrictions apply when mipmapped images are created with
+{clCreateImage}:
+
+// TODO The actual errors returned from clCreateImage are not specified by
+// the cl_khr_mipmap_image extension
+
+  * {CL_MEM_USE_HOST_PTR} or {CL_MEM_COPY_HOST_PTR} cannot be specified if a
+    mipmapped image is created.
+  * The _host_ptr_ argument to {clCreateImage} must be a `NULL` value.
+  * Mip-mapped images cannot be created for {CL_MEM_OBJECT_IMAGE1D_BUFFER}
+    images, depth images or multi-sampled (i.e. msaa) images.
+endif::cl_khr_mipmap_image[]
+
+*Image Data in Host Memory*
 
 For a 3D image or 2D image array, the image data specified by _host_ptr_ is
 stored as a linear sequence of adjacent 2D image slices or 2D images
@@ -2091,7 +2244,23 @@ include::{generated}/api/version-notes/CL_RG.asciidoc[]
 | {CL_Rx_anchor}
 
 include::{generated}/api/version-notes/CL_Rx.asciidoc[]
-  | A two channel image format, where the first channel represents a `RED` component and the second channel is ignored.
+  | A two channel image format, where the first channel represents a `RED`
+    component and the second channel is ignored.
+
+ifdef::cl_khr_gl_depth_images[]
+| {CL_DEPTH_STENCIL_anchor}
+
+include::{generated}/api/version-notes/CL_DEPTH_STENCIL.asciidoc[]
+  | A two channel image format, where the first channel represents
+    a `DEPTH` component and the second channel represents
+    a stencil component.
+    This format can only be used if the image channel data type is
+    {CL_UNORM_INT24} or {CL_FLOAT}.
+
+    See <<restrictions-on-depth-stencil-images, Restrictions on
+    Depth/Stencil Images>>.
+endif::cl_khr_gl_depth_images[]
+
 | {CL_RGB_anchor}
 
 include::{generated}/api/version-notes/CL_RGB.asciidoc[]
@@ -2189,6 +2358,14 @@ include::{generated}/api/version-notes/CL_UNSIGNED_INT8.asciidoc[]
 
 include::{generated}/api/version-notes/CL_UNSIGNED_INT16.asciidoc[]
   | Each channel component is an unnormalized unsigned 16-bit integer value
+
+ifdef::cl_khr_gl_depth_images[]
+| {CL_UNORM_INT24_anchor}
+
+include::{generated}/api/version-notes/CL_UNORM_INT24.asciidoc[]
+  | Each channel component is a normalized unsigned 24-bit integer value
+endif::cl_khr_gl_depth_images[]
+
 | {CL_UNSIGNED_INT32_anchor}
 
 include::{generated}/api/version-notes/CL_UNSIGNED_INT32.asciidoc[]
@@ -2337,7 +2514,14 @@ endif::cl_khr_external_memory[]
     _image_height_ for a 2D image array or a 3D image, must be {geq} the
     image row pitch for a 1D image array, and must be a multiple of the
     image row pitch.
-  * _num_mip_levels_ and _num_samples_ must be 0.
+  * _num_mip_levels_ must be
+ifndef::cl_khr_mipmap_image[0.]
+ifdef::cl_khr_mipmap_image[]
+    0 unless the `<<cl_khr_mipmap_image>>` extension is supported, in which
+    case it must be a value greater than 1 specifying the number of mipmap
+    levels in the image.
+endif::cl_khr_mipmap_image[]
+  * _num_samples_ must be 0.
   * _mem_object_ may refer to a valid buffer or image memory object.
     `mem_object` can be a buffer memory object if `image_type` is
     {CL_MEM_OBJECT_IMAGE1D_BUFFER} or
@@ -2384,10 +2568,8 @@ Restrictions are:
 
   * All of the values specified in _image_desc_ must match the image descriptor
     information associated with `mem_object`, except for `mem_object`.
-
   * The image channel data type specified in _image_format_ must match the
     image channel data type associated with `mem_object`.
-
   * The image channel order specified in _image_format_ must be compatible
     with the image channel order associated with `mem_object`.
     Compatible image channel orders
@@ -2546,6 +2728,15 @@ is:
   | {CL_DEPTH} footnote:[{fn-depth-image-requirements}]
       | {CL_UNORM_INT16} +
         {CL_FLOAT}
+ifdef::cl_khr_gl_depth_images[]
+| 1
+  | {CL_DEPTH_STENCIL}
+      | {CL_UNORM_INT24} +
+        {CL_FLOAT}
+
+        See <<restrictions-on-depth-stencil-images, Restrictions on
+        Depth/Stencil Images>>.
+endif::cl_khr_gl_depth_images[]
 | 2
   | {CL_RG}
       | {CL_UNORM_INT8} +
@@ -2724,6 +2915,11 @@ include::{generated}/api/version-notes/clEnqueueWriteImage.asciidoc[]
     _region_[2] must be 1.
     If _image_ is a 1D image array object, _region_[2] must be 1.
     The values in _region_ cannot be 0.
+ifdef::cl_khr_mipmap_image[]
+    If _image_ is a mipmapped image, the mip level to read or write is
+    determined from _origin_ as described in <<image-mipmap-access,
+    Specifying Mipmap Levels to Image Operations>>
+endif::cl_khr_mipmap_image[]
   * _row_pitch_ in {clEnqueueReadImage} and _input_row_pitch_ in
     {clEnqueueWriteImage} is the length of each row in bytes.
     This value must be greater than or equal to the element size in bytes
@@ -2840,6 +3036,11 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_khr_mipmap_image[]
+  * {CL_INVALID_MIP_LEVEL} if the `<<cl_khr_mipmap_image>>` extension is
+    supported, and the mip level specified in _origin_ is not a valid level
+    for _image_,
+endif::cl_khr_mipmap_image[]
 
 [NOTE]
 ====
@@ -2905,6 +3106,11 @@ include::{generated}/api/version-notes/clEnqueueCopyImage.asciidoc[]
     image index in the 1D image array.
     If _src_image_ is a 2D image array object, _src_origin_[2] describes the
     image index in the 2D image array.
+ifdef::cl_khr_mipmap_image[]
+    If _src_image_ is a mipmapped image, the mip level to read is determined
+    from _src_origin_ as described in <<image-mipmap-access, Specifying
+    Mipmap Levels to Image Operations>>
+endif::cl_khr_mipmap_image[]
   * _dst_origin_ defines the (_x_, _y_, _z_) offset in pixels in the 1D, 2D or
     3D image, the (_x_, _y_) offset and the image index in the 2D image array or
     the (_x_) offset and the image index in the 1D image array.
@@ -2916,6 +3122,11 @@ include::{generated}/api/version-notes/clEnqueueCopyImage.asciidoc[]
     image index in the 1D image array.
     If _dst_image_ is a 2D image array object, _dst_origin_[2] describes the
     image index in the 2D image array.
+ifdef::cl_khr_mipmap_image[]
+    If _dst_image_ is a mipmapped image, the mip level to write is
+    determined from _dst_origin_ as described in <<image-mipmap-access,
+    Specifying Mipmap Levels to Image Operations>>
+endif::cl_khr_mipmap_image[]
   * _region_ defines the (_width_, _height_, _depth_) in pixels of the 1D, 2D or
     3D rectangle, the (_width_, _height_) in pixels of the 2D rectangle and the
     number of images of a 2D image array or the (_width_) in pixels of the 1D
@@ -2998,6 +3209,11 @@ Otherwise, it returns one of the following errors:
     <<device-queries-table,Device Queries>> table is {CL_FALSE}).
   * {CL_MEM_COPY_OVERLAP} if _src_image_ and _dst_image_ are the same image
     object and the source and destination regions overlap.
+ifdef::cl_khr_mipmap_image[]
+  * {CL_INVALID_MIP_LEVEL} if the `<<cl_khr_mipmap_image>>` extension is
+    supported, and the mip level specified in _src_origin_ or _dst_origin_
+    is not a valid level for the corresponding _src_image_ or _dst_image_,
+endif::cl_khr_mipmap_image[]
 --
 
 
@@ -3040,6 +3256,11 @@ include::{generated}/api/version-notes/clEnqueueFillImage.asciidoc[]
     in the 1D image array.
     If _image_ is a 2D image array object, _origin_[2] describes the image index
     in the 2D image array.
+ifdef::cl_khr_mipmap_image[]
+    If _image_ is a mipmapped image, the mip level to fill is determined
+    from _origin_ as described in <<image-mipmap-access, Specifying Mipmap
+    Levels to Image Operations>>
+endif::cl_khr_mipmap_image[]
   * _region_ defines the (_width_, _height_, _depth_) in pixels of the 1D, 2D or
     3D rectangle, the (_width_, _height_) in pixels of the 2D rectangle and the
     number of images of a 2D image array or the (_width_) in pixels of the 1D
@@ -3109,6 +3330,11 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_khr_mipmap_image[]
+  * {CL_INVALID_MIP_LEVEL} if the `<<cl_khr_mipmap_image>>` extension is
+    supported, and the mip level specified in _origin_ is not a valid level
+    for _image_,
+endif::cl_khr_mipmap_image[]
 --
 
 
@@ -3138,6 +3364,11 @@ include::{generated}/api/version-notes/clEnqueueCopyImageToBuffer.asciidoc[]
     image index in the 1D image array.
     If _src_image_ is a 2D image array object, _src_origin_[2] describes the
     image index in the 2D image array.
+ifdef::cl_khr_mipmap_image[]
+    If _src_image_ is a mipmapped image, the mip level to read is determined
+    from _src_origin_ as described in <<image-mipmap-access, Specifying
+    Mipmap Levels to Image Operations>>
+endif::cl_khr_mipmap_image[]
   * _region_ defines the (_width_, _height_, _depth_) in pixels of the 1D, 2D or
     3D rectangle, the (_width_, _height_) in pixels of the 2D rectangle and the
     number of images of a 2D image array or the (_width_) in pixels of the 1D
@@ -3226,6 +3457,11 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_khr_mipmap_image[]
+  * {CL_INVALID_MIP_LEVEL} if the `<<cl_khr_mipmap_image>>` extension is
+    supported, and the mip level specified in _src_origin_ is not a valid
+    level for _src_image_,
+endif::cl_khr_mipmap_image[]
 --
 
 
@@ -3255,6 +3491,11 @@ include::{generated}/api/version-notes/clEnqueueCopyBufferToImage.asciidoc[]
     image index in the 1D image array.
     If _dst_image_ is a 2D image array object, _dst_origin_[2] describes the
     image index in the 2D image array.
+ifdef::cl_khr_mipmap_image[]
+    If _dst_image_ is a mipmapped image, the mip level to write is
+    determined from _dst_origin_ as described in <<image-mipmap-access,
+    Specifying Mipmap Levels to Image Operations>>
+endif::cl_khr_mipmap_image[]
   * _region_ defines the (_width_, _height_, _depth_) in pixels of the 1D, 2D or
     3D rectangle, the (_width_, _height_) in pixels of the 2D rectangle and the
     number of images of a 2D image array or the (_width_) in pixels of the 1D
@@ -3343,6 +3584,11 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_khr_mipmap_image[]
+  * {CL_INVALID_MIP_LEVEL} if the `<<cl_khr_mipmap_image>>` extension is
+    supported, and the mip level specified in _dst_origin_ is not a valid
+    level for _dst_image_,
+endif::cl_khr_mipmap_image[]
 --
 
 
@@ -3511,6 +3757,33 @@ Objects>>.
 --
 
 
+ifdef::cl_khr_mipmap_image[]
+[[image-mipmap-access]]
+=== Specifying Mipmap Levels to Image Operations
+
+When the `<<cl_khr_mipmap_image>>` extension is supported, the
+{clEnqueueReadImage}, {clEnqueueWriteImage}, {clEnqueueMapImage},
+{clEnqueueCopyImage}, {clEnqueueCopyImageToBuffer},
+{clEnqueueCopyBufferToImage}, and {clEnqueueFillImage} functions described
+above can operate on mipmapped images.
+
+The mipmap image level(s) to access for each command are determined from the
+_origin_ parameter when accessing a single _image_ (non-copy functions), or
+from the _src_origin_ and _dst_origin_ parameters when accessing two
+_src_image_ and _dst_image_ images (copy functions). The logic below applies
+to each of these parameters, with _image_ and _origin_ replaced by
+_src_image_ and _src_origin_, or _dst_image_ and _dst_origin_ as
+appropriate:
+
+  * If _image_ is a 1D image, _origin_[1] specifies the mip level to use.
+  * If _image_ is a 1D image array, _origin_[2] specifies the mip level to
+    use.
+  * If _image_ is a 2D image, _origin_[2] specifies the mip level to use.
+  * If _image_ is a 2D image array or a 3D image, _origin_[3] specifies the
+    mip level to use.
+endif::cl_khr_mipmap_image[]
+
+
 [[image-object-queries]]
 === Image Object Queries
 
@@ -3643,6 +3916,350 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 --
+
+
+ifdef::cl_khr_gl_sharing[]
+=== Creating OpenCL Image Objects From OpenGL Textures
+
+[open,refpage='clCreateFromGLTexture',desc='Create OpenCL image object from an OpenGL texture object',type='protos']
+--
+To create an OpenCL image object from an OpenGL texture object, call the
+function
+
+include::{generated}/api/protos/clCreateFromGLTexture.txt[]
+include::{generated}/api/version-notes/clCreateFromGLTexture.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from an OpenGL context.
+  * _flags_ is a bit-field that is used to specify usage information.
+    Refer to the <<memory-flags-table, Memory Flags>> table for a
+    description of _flags_.
+    Only the {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_WRITE}
+    flags specified in that table can be used.
+   * _texture_target_ must be one of `GL_TEXTURE_1D`, `GL_TEXTURE_1D_ARRAY`,
+    `GL_TEXTURE_BUFFER`, `GL_TEXTURE_2D`, `GL_TEXTURE_2D_ARRAY`,
+    `GL_TEXTURE_3D`, `GL_TEXTURE_CUBE_MAP_POSITIVE_X`,
+    `GL_TEXTURE_CUBE_MAP_POSITIVE_Y`, `GL_TEXTURE_CUBE_MAP_POSITIVE_Z`,
+    `GL_TEXTURE_CUBE_MAP_NEGATIVE_X`, `GL_TEXTURE_CUBE_MAP_NEGATIVE_Y`,
+    `GL_TEXTURE_CUBE_MAP_NEGATIVE_Z`.
+    `GL_TEXTURE_RECTANGLE` or the equivalent `GL_TEXTURE_RECTANGLE_ARB` may
+    be specified if an OpenGL implementation supporting rectangular textures
+    is supported.
+ifdef::cl_khr_gl_msaa_sharing[]
+    `GL_TEXTURE_2D_MULTISAMPLE` and `GL_TEXTURE_2D_MULTISAMPLE_ARRAY` may be
+    specified if an OpenGL implementation supporting multi-sample
+    two-dimensional textures is supported, and the
+    `<<cl_khr_gl_msaa_sharing>>` extension is supported.
+    Refer to the <<restrictions-on-msaa-images, Restrictions on Multi-Sample
+    Images>> section for more information on multi-sample images.
+endif::cl_khr_gl_msaa_sharing[]
+    _texture_target_ is used only to define the image type of _texture_.
+    No reference to a bound OpenGL texture object is made or implied by this
+    parameter.
+  * _miplevel_ is the mipmap level to be used.
+    If _texture_target_ is `GL_TEXTURE_BUFFER`, _miplevel_ must be 0.
+    Note: Implementations may return {CL_INVALID_OPERATION} for miplevel
+    values > 0.
+  * _texture_ is the name of an OpenGL 1D, 2D, 3D, 1D array, 2D array,
+    cubemap, rectangle or buffer texture object.
+    The texture object must be a complete texture as per OpenGL rules on
+    texture completeness.
+    The _texture_ format and dimensions defined by OpenGL for the specified
+    _miplevel_ of the texture will be used to create the OpenCL image memory
+    object.
+    Only OpenGL texture objects with an internal format that maps to an
+    appropriate <<image-channel-order-table, Image Channel Order>> and
+    <<image-channel-data-types-table, Image Channel Data Type>> may be used
+    to create the OpenCL image memory object.
+  * _errcode_ret_ will return an appropriate error code as described below.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+{clCreateFromGLTexture} may create any of the following:
+
+  * an OpenCL 2D image object from an OpenGL 2D texture object or a single
+    face of an OpenGL cubemap texture object,
+  * an OpenCL 2D image array object from an OpenGL 2D texture array object,
+  * an OpenCL 2D multi-sample image object from an OpenGL 2D multi-sample
+    texture.
+  * an OpenCL 2D multi-sample array image object from an OpenGL 2D
+    multi-sample texture.
+  * an OpenCL 1D image object from an OpenGL 1D texture object,
+  * an OpenCL 1D image buffer object from an OpenGL texture buffer object,
+  * an OpenCL 1D image array object from an OpenGL 1D texture array object,
+  * an OpenCL 3D image object from an OpenGL 3D texture object.
+
+ifdef::cl_khr_mipmap_image[]
+If both the `<<cl_khr_mipmap_image>>` and `<<cl_khr_gl_sharing>>` extensions
+are supported by the OpenCL device, {clCreateFromGLTexture} may also be used
+to create a mipmapped OpenCL image from a mipmapped OpenGL texture by
+specify a negative value for _miplevel_.
+In this case, then an OpenCL mipmapped image object is created from a
+mipmapped OpenGL texture object, instead of an OpenCL image object for a
+specific miplevel of the OpenGL texture.
+
+NOTE: For a detailed description of how the level of detail is computed,
+please refer to the "`Scale Factor and Level-of-Detail`" section of the
+OpenGL 4.6 Specification.
+endif::cl_khr_mipmap_image[]
+
+If the state of an OpenGL texture object is modified through the OpenGL API
+(e.g. `glTexImage2D`, `glTexImage3D` or the values of the texture parameters
+`GL_TEXTURE_BASE_LEVEL` or `GL_TEXTURE_MAX_LEVEL` are modified) while there
+exists a corresponding OpenCL image object, subsequent use of the OpenCL
+image object will result in undefined behavior.
+
+The {clRetainMemObject} and {clReleaseMemObject} functions can be used to
+retain and release the image objects.
+
+NOTE: Refer to the <<lifetime-of-shared-opencl-opengl-memory-objects,
+Lifetime of Shared OpenCL/OpenGL Memory Objects>> and
+<<acquiring-shared-opencl-opengl-memory-objects, Acquiring, Releasing, and
+Synchronizing Access to Shared OpenCL/OpenGL Memory Objects>> sections for
+more information.
+
+// refError
+
+{clCreateFromGLTexture} returns a valid non-zero OpenCL image object and
+_errcode_ret_ is set to {CL_SUCCESS} if the image object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context or was not
+    created from an OpenGL context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid or if
+    value specified in _texture_target_ is not one of the values specified
+    in the description of _texture_target_.
+  * {CL_INVALID_MIP_LEVEL} if _miplevel_ is less than the value of
+    _level~base~_ (for OpenGL implementations) or zero (for OpenGL ES
+    implementations); or greater than the value of _q_ (for both OpenGL and
+    OpenGL ES).
+    _level~base~_ and _q_ are defined for the texture in _section 3.8.10_
+    (Texture Completeness) of the OpenGL 2.1 Specification and _section
+    3.7.10_ of the OpenGL ES 2.0 Specification.
+  * {CL_INVALID_MIP_LEVEL} if _miplevel_ is greather than zero and the
+    OpenGL implementation does not support creating from non-zero mipmap
+    levels.
+  * {CL_INVALID_GL_OBJECT} if _texture_ is not an OpenGL texture object
+    whose type matches _texture_target_, if the specified _miplevel_ of
+    _texture_ is not defined, or if the width or height of the specified
+    _miplevel_ is zero or if the OpenGL texture object is incomplete.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the OpenGL texture internal
+    format does not map to a supported OpenCL image format.
+  * {CL_INVALID_OPERATION} if _texture_ is an OpenGL texture object created
+    with a border width value greater than zero.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+
+==== List Of OpenGL and Corresponding OpenCL Image Formats
+
+The table below describes the list of OpenGL texture internal formats and
+the corresponding OpenCL image formats.
+If an OpenGL texture object with an internal format from the table below is
+successfully created by OpenGL, then there is guaranteed to be a mapping to
+one of the corresponding OpenCL image format(s) in that table.
+Texture objects created with other OpenGL internal formats may (but are not
+guaranteed to) have a mapping to an OpenCL image format; if such mappings
+exist, they are guaranteed to preserve all color components, data types, and
+at least the number of bits/component actually allocated by OpenGL for that
+format.
+
+[[mapping-of-gl-image-formats-table]]
+.OpenGL internal formats and corresponding OpenCL internal formats
+[cols=",",options="header",]
+|====
+| OpenGL internal format                    | OpenCL Image Format (Channel Order, Channel Data Type)
+| `GL_RGBA8`                                | {CL_RGBA}, {CL_UNORM_INT8} or +
+                                              {CL_BGRA}, {CL_UNORM_INT8}
+| `GL_SRGB8_ALPHA8`                         | {CL_sRGBA}, {CL_UNORM_INT8}
+| `GL_RGBA`, `GL_UNSIGNED_INT_8_8_8_8_REV`  | {CL_RGBA}, {CL_UNORM_INT8}
+| `GL_BGRA`, `GL_UNSIGNED_INT_8_8_8_8_REV`  | {CL_BGRA}, {CL_UNORM_INT8}
+| |
+| `GL_RGBA8I`, `GL_RGBA8I_EXT`              | {CL_RGBA}, {CL_SIGNED_INT8}
+| `GL_RGBA16I`, `GL_RGBA16I_EXT`            | {CL_RGBA}, {CL_SIGNED_INT16}
+| `GL_RGBA32I`, `GL_RGBA32I_EXT`            | {CL_RGBA}, {CL_SIGNED_INT32}
+| |
+| `GL_RGBA8UI`, `GL_RGBA8UI_EXT`            | {CL_RGBA}, {CL_UNSIGNED_INT8}
+| `GL_RGBA16UI`, `GL_RGBA16UI_EXT`          | {CL_RGBA}, {CL_UNSIGNED_INT16}
+| `GL_RGBA32UI`, `GL_RGBA32UI_EXT`          | {CL_RGBA}, {CL_UNSIGNED_INT32}
+| |
+| `GL_RGBA8_SNORM`                          | {CL_RGBA}, {CL_SNORM_INT8}
+| `GL_RGBA16`                               | {CL_RGBA}, {CL_UNORM_INT16}
+| `GL_RGBA16_SNORM`                         | {CL_RGBA}, {CL_SNORM_INT16}
+| `GL_RGBA16F`, `GL_RGBA16F_ARB`            | {CL_RGBA}, {CL_HALF_FLOAT}
+| `GL_RGBA32F`, `GL_RGBA32F_ARB`            | {CL_RGBA}, {CL_FLOAT}
+| |
+| `GL_R8`                                   | {CL_R}, {CL_UNORM_INT8}
+| `GL_R8_SNORM`                             | {CL_R}, {CL_SNORM_INT8}
+| `GL_R16`                                  | {CL_R}, {CL_UNORM_INT16}
+| `GL_R16_SNORM`                            | {CL_R}, {CL_SNORM_INT16}
+| `GL_R16F`                                 | {CL_R}, {CL_HALF_FLOAT}
+| `GL_R32F`                                 | {CL_R}, {CL_FLOAT}
+| |
+| `GL_R8I`                                  | {CL_R}, {CL_SIGNED_INT8}
+| `GL_R16I`                                 | {CL_R}, {CL_SIGNED_INT16}
+| `GL_R32I`                                 | {CL_R}, {CL_SIGNED_INT32}
+| `GL_R8UI`                                 | {CL_R}, {CL_UNSIGNED_INT8}
+| `GL_R16UI`                                | {CL_R}, {CL_UNSIGNED_INT16}
+| `GL_R32UI`                                | {CL_R}, {CL_UNSIGNED_INT32}
+| |
+| `GL_RG8`                                  | {CL_RG}, {CL_UNORM_INT8}
+| `GL_RG8_SNORM`                            | {CL_RG}, {CL_SNORM_INT8}
+| `GL_RG16`                                 | {CL_RG}, {CL_UNORM_INT16}
+| `GL_RG16_SNORM`                           | {CL_RG}, {CL_SNORM_INT16}
+| `GL_RG16F`                                | {CL_RG}, {CL_HALF_FLOAT}
+| `GL_RG32F`                                | {CL_RG}, {CL_FLOAT}
+| |
+| `GL_RG8I`                                 | {CL_RG}, {CL_SIGNED_INT8}
+| `GL_RG16I`                                | {CL_RG}, {CL_SIGNED_INT16}
+| `GL_RG32I`                                | {CL_RG}, {CL_SIGNED_INT32}
+| `GL_RG8UI`                                | {CL_RG}, {CL_UNSIGNED_INT8}
+| `GL_RG16UI`                               | {CL_RG}, {CL_UNSIGNED_INT16}
+| `GL_RG32UI`                               | {CL_RG}, {CL_UNSIGNED_INT32}
+ifdef::cl_khr_gl_depth_images[]
+| `GL_DEPTH_COMPONENT32F`                   | {CL_DEPTH}, {CL_FLOAT}
+| `GL_DEPTH_COMPONENT16`                    | {CL_DEPTH}, {CL_UNORM_INT16}
+| `GL_DEPTH24_STENCIL8`                     | {CL_DEPTH_STENCIL}, {CL_UNORM_INT24}
+| `GL_DEPTH32F_STENCIL8`                    | {CL_DEPTH_STENCIL}, {CL_FLOAT}
+endif::cl_khr_gl_depth_images[]
+|====
+
+
+ifdef::cl_khr_gl_depth_images[]
+[[restrictions-on-depth-stencil-images]]
+===== Restrictions on Depth/Stencil Images
+
+Depth images with an image channel order of {CL_DEPTH_STENCIL} can only be
+created using the {clCreateFromGLTexture} API, and only when the
+`<<cl_khr_gl_depth_images>>` extension is supported.
+
+For the image format given by channel order of {CL_DEPTH_STENCIL} and
+channel data type of {CL_UNORM_INT24}, the depth is stored as an unsigned
+normalized 24-bit value.
+
+For the image format given by channel order of {CL_DEPTH_STENCIL} and
+channel data type of {CL_FLOAT}, each pixel is two 32-bit values.
+The depth is stored as a single precision floating-point value followed by
+the stencil which is stored as a 8-bit integer value.
+
+Such images appear in the <<minimum-list-of-supported-image-formats,]
+Minimum List of Supported Image Formats>>, but only require read support,
+not write support.
+
+The stencil value cannot be read or written using the *read_imagef* and
+*write_imagef* built-in functions in an OpenCL kernel.
+
+Depth image objects with an image channel order of {CL_DEPTH_STENCIL} cannot
+be used as arguments to {clEnqueueReadImage}, {clEnqueueWriteImage},
+{clEnqueueCopyImage}, {clEnqueueCopyImageToBuffer},
+{clEnqueueCopyBufferToImage}, {clEnqueueMapImage}, and {clEnqueueFillImage}.
+Such use will return a {CL_INVALID_OPERATION} error.
+endif::cl_khr_gl_depth_images[]
+
+
+ifdef::cl_khr_gl_msaa_sharing[]
+[[restrictions-on-msaa-images]]
+===== Restrictions on Multi-Sample Images
+
+The formats described in the <<image-channel-order-table, Image Channel
+Order Values>> and <<image-channel-data-types-table, Image Channel Data
+Types>> tables of the OpenCL 3.0 specification, specification and the
+additional formats described in the <<min-supported-image-formats-2.0,
+Minimum list of supported image formats for reading or writing>> table also
+support OpenCL images created from a OpenGL multi-sampled color or depth
+texture.
+
+Multi-sample OpenCL image objects can only be read from a kernel.
+Multi-sample OpenCL image objects cannot be used as arguments to
+{clEnqueueReadImage}, {clEnqueueWriteImage}, {clEnqueueCopyImage},
+{clEnqueueCopyImageToBuffer}, {clEnqueueCopyBufferToImage},
+{clEnqueueMapImage}, and {clEnqueueFillImage}.
+Such use will return a {CL_INVALID_OPERATION} error.
+endif::cl_khr_gl_msaa_sharing[]
+
+
+=== Creating OpenCL Image Objects From OpenGL Renderbuffers
+
+[open,refpage='clCreateFromGLRenderbuffer',desc='Create OpenCL 2D image object from an OpenGL renderbuffer',type='protos']
+--
+To create an OpenCL 2D image object from an OpenGL renderbuffer object, call
+the function
+
+include::{generated}/api/protos/clCreateFromGLRenderbuffer.txt[]
+include::{generated}/api/version-notes/clCreateFromGLRenderbuffer.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from an OpenGL context.
+  * _flags_ is a bit-field that is used to specify usage information.
+    Refer to the <<memory-flags-table, Memory Flags>> table for a
+    description of _flags_.
+    Only the {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_WRITE}
+    flags specified in that table can be used.
+  * _renderbuffer_ is the name of an OpenGL renderbuffer object.
+    The renderbuffer storage must be specified before the image object can
+    be created.
+    The _renderbuffer_ format and dimensions defined by OpenGL will be used
+    to create the 2D image object.
+    Only OpenGL renderbuffers with an internal format that maps to an
+    appropriate <<image-channel-order-table, Image Channel Order>> and
+    <<image-channel-data-types-table, Image Channel Data Type>> may be used
+    to create the 2D image object.
+  * _errcode_ret_ will return an appropriate error code as described below.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+If the state of an OpenGL renderbuffer object is modified through the OpenGL
+API (i.e. changes to the dimensions or format used to represent pixels of
+the OpenGL renderbuffer using appropriate OpenGL API calls such as
+`glRenderbufferStorage`) while there exists a corresponding OpenCL image
+object, subsequent use of the OpenCL image object will result in undefined
+behavior.
+
+The {clRetainMemObject} and {clReleaseMemObject} functions can be used to
+retain and release the image objects.
+
+The <<mapping-of-gl-image-formats-table, OpenGL internal formats and
+corresponding OpenCL internal formats>> table describes the list of OpenGL
+renderbuffer internal formats and the corresponding OpenCL image formats.
+If an OpenGL renderbuffer object with an internal format from the table is
+successfully created by OpenGL, then there is guaranteed to be a mapping to
+one of the corresponding OpenCL image format(s) in that table.
+Renderbuffer objects created with other OpenGL internal formats may (but are
+not guaranteed to) have a mapping to an OpenCL image format; if such
+mappings exist, they are guaranteed to preserve all color components, data
+types, and at least the number of bits/component actually allocated by
+OpenGL for that format.
+
+NOTE: Refer to the <<lifetime-of-shared-opencl-opengl-memory-objects,
+Lifetime of Shared OpenCL/OpenGL Memory Objects>> and
+<<acquiring-shared-opencl-opengl-memory-objects, Acquiring, Releasing, and
+Synchronizing Access to Shared OpenCL/OpenGL Memory Objects>> sections for
+more information.
+
+// refError
+
+{clCreateFromGLRenderbuffer} returns a valid non-zero OpenCL image object
+and _errcode_ret_ is set to {CL_SUCCESS} if the image object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context or was not
+    created from an OpenGL context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
+  * {CL_INVALID_GL_OBJECT} if _renderbuffer_ is not an OpenGL renderbuffer
+    object, or if the width or height of _renderbuffer_ is zero.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the OpenGL renderbuffer internal
+    format does not map to a supported OpenCL image format.
+  * {CL_INVALID_OPERATION} if _renderbuffer_ is a multi-sample OpenGL
+    renderbuffer object.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_gl_sharing[]
 
 
 == Pipes
@@ -4679,6 +5296,376 @@ Otherwise, it returns one of the following errors:
 --
 
 
+ifdef::cl_khr_gl_sharing[]
+=== Querying OpenGL Object Information From an OpenCL Memory Object
+
+[open,refpage='clGetGLObjectInfo',desc='Query OpenGL object and object type used to create an OpenCL memory object',type='protos']
+--
+To query the OpenGL object and object type used to create an OpenCL memory
+object, call the function
+
+include::{generated}/api/protos/clGetGLObjectInfo.txt[]
+include::{generated}/api/version-notes/clGetGLObjectInfo.asciidoc[]
+
+  * _memobj_ is the memory object to query.
+  * _gl_object_type_ returns the type of OpenGL object attached to _memobj_
+    and can be {CL_GL_OBJECT_BUFFER}, {CL_GL_OBJECT_TEXTURE2D},
+    {CL_GL_OBJECT_TEXTURE3D}, {CL_GL_OBJECT_TEXTURE2D_ARRAY},
+    {CL_GL_OBJECT_TEXTURE1D}, {CL_GL_OBJECT_TEXTURE1D_ARRAY},
+    {CL_GL_OBJECT_TEXTURE_BUFFER}, or {CL_GL_OBJECT_RENDERBUFFER}.
+    If _gl_object_type_ is `NULL`, it is ignored
+  * _gl_object_name_ returns the OpenGL object name used to create _memobj_.
+    If _gl_object_name_ is `NULL`, it is ignored.
+
+// refError
+
+{clGetGLObjectInfo} returns {CL_SUCCESS} if the call was executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_MEM_OBJECT} if _memobj_ is not a valid OpenCL memory object.
+  * {CL_INVALID_GL_OBJECT} if there is no OpenGL object associated with
+    _memobj_.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clGetGLTextureInfo',desc='Query additional information about the OpenGL texture object associated with an OpenCL memory object',type='protos']
+--
+To query additional information about the OpenGL texture object associated
+with an OpenCL memory object, call the function
+
+include::{generated}/api/protos/clGetGLTextureInfo.txt[]
+include::{generated}/api/version-notes/clGetGLTextureInfo.asciidoc[]
+
+  * _memobj_ is the memory object to query.
+  * _param_name_ specifies what additional information about the OpenGL
+    texture object associated with _memobj_ to query.
+    The list of supported _param_name_ types and the information returned in
+    _param_value_ by {clGetGLTextureInfo} is described in the table below.
+  * _param_value_ is a pointer to memory where the result being queried is
+    returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ is used to specify the size in bytes of memory
+    pointed to by _param_value_.
+    This size must be >= size of return type as described in the table
+    below.
+  * _param_value_size_ret_ returns the actual size in bytes of data copied
+    to _param_value_.
+    If _param_value_size_ret_ is `NULL`, it is ignored.
+
+[[gl-texture-info-queries-table]]
+.OpenGL texture info that may be queried with {clGetGLTextureInfo}
+[cols=",,",options="header",]
+|====
+| {cl_gl_texture_info} | Return Type | Info. Returned in _param_value_
+| {CL_GL_TEXTURE_TARGET_anchor}
+
+include::{generated}/api/version-notes/CL_GL_TEXTURE_TARGET.asciidoc[]
+  | `GLenum`
+    | The _texture_target_ argument specified in {clCreateFromGLTexture}.
+| {CL_GL_MIPMAP_LEVEL_anchor}
+
+include::{generated}/api/version-notes/CL_GL_MIPMAP_LEVEL.asciidoc[]
+  | `GLint`
+    | The _miplevel_ argument specified in {clCreateFromGLTexture}.
+ifdef::cl_khr_gl_msaa_sharing[]
+| {CL_GL_NUM_SAMPLES}
+
+include::{generated}/api/version-notes/CL_GL_NUM_SAMPLES.asciidoc[]
+  | `GLsizei`
+    | The _samples_ argument passed to `glTexImage2DMultisample` or
+      `glTexImage3DMultisample`.
+
+      If _image_ is not a MSAA texture, 1 is returned.
+endif::cl_khr_gl_msaa_sharing[]
+|====
+
+// refError
+
+{clGetGLTextureInfo} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_MEM_OBJECT} if _memobj_ is not a valid OpenCL memory object.
+  * {CL_INVALID_GL_OBJECT} if there is no OpenGL texture object associated
+    with _memobj_.
+  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
+    specified by _param_value_size_ is less than the size of the return type
+    as described in the table above and _param_value_ is not `NULL`, or if
+    _param_value_ and _param_value_size_ret_ are `NULL`.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_gl_sharing[]
+
+
+ifdef::cl_khr_gl_sharing[]
+[[acquiring-shared-opencl-opengl-memory-objects]]
+== Acquiring, Releasing, and Synchronizing Access to Shared OpenCL/OpenGL Memory Objects
+
+[open,refpage='clEnqueueAcquireGLObjects',desc='Acquire OpenCL memory objects created from OpenGL objects',type='protos']
+--
+To acquire OpenCL memory objects that have been created from OpenGL objects,
+call the function
+
+include::{generated}/api/protos/clEnqueueAcquireGLObjects.txt[]
+include::{generated}/api/version-notes/clEnqueueAcquireGLObjects.asciidoc[]
+
+  * _command_queue_ is a valid command-queue.
+    All devices used to create the OpenCL context associated with
+    _command_queue_ must support acquiring shared OpenCL/OpenGL objects.
+    This constraint is enforced at context creation time.
+  * _num_objects_ is the number of memory objects to be acquired in
+    _mem_objects_.
+  * _mem_objects_ is a pointer to a list of OpenCL memory objects that
+    correspond to OpenGL objects.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need
+    to complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not
+    wait on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+  * _event_ returns an event object that identifies this command and can be
+    used to query wait for this command to complete.
+    If _event_ is `NULL` or the enqueue is unsuccessful, no event will be
+    created and therefore it will not be possible to query the status of
+    this command or to wait for this command to complete.
+    If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
+    to an element of the _event_wait_list_ array.
+
+ifdef::cl_khr_gl_event[]
+If an OpenGL context is bound to the current thread, then any OpenGL
+commands which
+
+  . affect or access the contents of a memory object listed in the
+    _mem_objects_ list, and
+  . were issued on that OpenGL context prior to the call to
+    {clEnqueueAcquireGLObjects}
+
+will complete before execution of any OpenCL commands following the
+{clEnqueueAcquireGLObjects} which affect or access any of those memory
+objects.
+If a non-`NULL` _event_ object is returned, it will report completion only
+after completion of such OpenGL commands.
+endif::cl_khr_gl_event[]
+
+These objects need to be acquired before they can be used by any OpenCL
+commands queued to a command-queue or the behaviour is undefined.
+The OpenGL objects are acquired by the OpenCL context associated with
+_command_queue_ and can therefore be used by all command-queues associated
+with the OpenCL context.
+
+// refError
+
+{clEnqueueAcquireGLObjects} returns {CL_SUCCESS} if the function is executed
+successfully.
+If _num_objects_ is 0 and _mem_objects_ is `NULL` the function does nothing
+and returns {CL_SUCCESS}.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_objects_ is zero and _mem_objects_ is not a
+    `NULL` value or if _num_objects_ > 0 and _mem_objects_ is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if memory objects in _mem_objects_ are not valid
+    OpenCL memory objects.
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
+    command-queue.
+  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ was not
+    created from an OpenGL context
+  * {CL_INVALID_GL_OBJECT} if memory objects in _mem_objects_ have not been
+    created from an OpenGL object(s).
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
+    are not valid events.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clEnqueueReleaseGLObjects',desc='Release OpenCL memory objects created from OpenGL objects',type='protos']
+--
+To release OpenCL memory objects that have been created from OpenGL objects,
+call the function
+
+include::{generated}/api/protos/clEnqueueReleaseGLObjects.txt[]
+include::{generated}/api/version-notes/clEnqueueReleaseGLObjects.asciidoc[]
+
+  * _num_objects_ is the number of memory objects to be released in
+    _mem_objects_.
+  * _mem_objects_ is a pointer to a list of OpenCL memory objects that
+    correspond to OpenGL objects.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need
+    to complete before this command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not
+    wait on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+  * _event_ returns an event object that identifies this command and can be
+    used to query or wait for this command to complete.
+    If _event_ is `NULL` or the enqueue is unsuccessful, no event will be
+    created and therefore it will not be possible to query the status of
+    this command or to wait for this command to complete.
+    If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
+    to an element of the _event_wait_list_ array.
+
+ifdef::cl_khr_gl_event[]
+If an OpenGL context is bound to the current thread, then then any OpenGL
+commands which
+
+  . affect or access the contents of the memory objects listed in the
+    _mem_objects_ list, and
+  . are issued on that context after the call to {clEnqueueReleaseGLObjects}
+
+will not execute until after execution of any OpenCL commands preceding the
+
+{clEnqueueReleaseGLObjects} which affect or access any of those memory
+objects.
+If a non-`NULL` _event_ object is returned, it will report completion before
+execution of such OpenGL commands.
+endif::cl_khr_gl_event[]
+
+These objects need to be released before they can be used by OpenGL.
+The OpenGL objects are released by the OpenCL context associated with
+_command_queue_.
+
+// refError
+
+{clEnqueueReleaseGLObjects} returns {CL_SUCCESS} if the function is executed
+successfully.
+If _num_objects_ is 0 and _mem_objects_ is `NULL` the function does nothing
+and returns {CL_SUCCESS}.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_objects_ is zero and _mem_objects_ is not a
+    `NULL` value or if _num_objects_ > 0 and _mem_objects_ is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if memory objects in _mem_objects_ are not valid
+    OpenCL memory objects.
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
+    command-queue.
+  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ was not
+    created from an OpenGL context
+  * {CL_INVALID_GL_OBJECT} if memory objects in _mem_objects_ have not been
+    created from an OpenGL object(s).
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
+    are not valid events.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+
+=== Synchronizing Access to Shared OpenGL/OpenCL Memory Objects
+
+In order to ensure data integrity, the application is responsible for
+synchronizing access to shared OpenCL/OpenGL objects by their respective
+APIs.
+Failure to provide such synchronization may result in race conditions and
+other undefined behavior including non-portability between implementations.
+
+ifdef::cl_khr_gl_event[]
+Prior to calling {clEnqueueAcquireGLObjects}, the application must ensure
+that any pending OpenGL operations which access the objects specified in
+_mem_objects_ have completed.
+
+If the `<<cl_khr_gl_event>>` extension is supported, then the OpenCL
+implementation will ensure that any such pending OpenGL operations are
+complete for an OpenGL context bound to the same thread as the OpenCL
+context.
+This is referred to as _implicit synchronization_.
+
+If the `<<cl_khr_gl_event>>` extension is supported and the OpenGL context
+in question supports fence sync objects, completion of OpenGL commands may
+also be determined by placing a GL fence command after those commands using
+`glFenceSync`, creating an event from the resulting GL sync object using
+{clCreateEventFromGLsyncKHR}, and determining completion of that event
+object via {clEnqueueAcquireGLObjects}.
+This method may be considerably more efficient than calling `glFinish`, and
+is referred to as _explicit synchronization_.
+Explicit synchronization is most useful when an OpenGL context bound to
+another thread is accessing the memory objects.
+endif::cl_khr_gl_event[]
+
+If the `<<cl_khr_gl_event>>` extension is not supported, completion of
+OpenGL commands may be determined by issuing and waiting for completion of a
+`glFinish` command on all OpenGL contexts with pending references to these
+objects.
+Some implementations may offer other efficient synchronization methods.
+If such methods exist they will be described in platform-specific
+documentation.
+
+Note that no synchronization method other than `glFinish` is portable
+between all OpenGL implementations and all OpenCL implementations.
+While this is the only way to ensure completion that is portable to all
+platforms, `glFinish` is an expensive operation and its use should be
+avoided if the `<<cl_khr_gl_event>>` extension is supported on a platform.
+
+Similarly, after calling {clEnqueueReleaseGLObjects}, the application is
+responsible for ensuring that any pending OpenCL operations which access the
+objects specified in _mem_objects_ have completed prior to executing
+subsequent OpenGL commands which reference these objects.
+This may be accomplished portably by calling {clWaitForEvents} with the
+event object returned by *clEnqueueReleaseGLObjects,* or by calling
+{clFinish}.
+As above, some implementations may offer more efficient methods.
+
+The application is responsible for maintaining the proper order of
+operations if the OpenCL and OpenGL contexts are in separate threads.
+
+If an OpenGL context is bound to a thread other than the one in which
+{clEnqueueReleaseGLObjects} is called, changes to any of the objects in
+_mem_objects_ may not be visible to that context without additional steps
+being taken by the application.
+For an OpenGL 3.1 (or later) context, the requirements are described in
+Appendix D ("`Shared Objects and Multiple Contexts`") of the OpenGL 3.1
+Specification.
+For prior versions of OpenGL, the requirements are implementation-dependent.
+
+Attempting to access the data store of an OpenGL object after it has been
+acquired by OpenCL and before it has been released will result in undefined
+behavior.
+Similarly, attempting to access a shared OpenCL/OpenGL object from OpenCL
+before it has been acquired by the OpenCL command-queue, or after it has
+been released, will result in undefined behavior.
+
+
+[[event-command-types-for-shared-opencl-opencl-memory-objects]]
+=== Event Command Types for Shared OpenCL/OpenGL Memory Objects
+
+The following table describes the event command types for the OpenCL
+commands to acquire and release OpenCL memory objects that have been created
+from OpenGL objects:
+
+.List of supported event command types
+[width="100%",cols="2,3",options="header"]
+|====
+| *Events Created By* | *Event Command Type*
+| {clEnqueueAcquireGLObjects}
+    | {CL_COMMAND_ACQUIRE_GL_OBJECTS_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_ACQUIRE_GL_OBJECTS.asciidoc[]
+| {clEnqueueReleaseGLObjects}
+    | {CL_COMMAND_RELEASE_GL_OBJECTS_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_RELEASE_GL_OBJECTS.asciidoc[]
+|====
+endif::cl_khr_gl_sharing[]
+
+
 == Shared Virtual Memory
 
 NOTE: Shared virtual memory is <<unified-spec, missing before>> version 2.0.
@@ -5474,11 +6461,13 @@ include::{generated}/api/version-notes/clCreateSamplerWithProperties.asciidoc[]
     desired value.
     The list is terminated with 0.
     The list of supported properties is described in the
-    <<sampler-properties-table,Sampler Properties>> table.
+    <<sampler-properties-table, Sampler Properties>> table.
     If a supported property and its value is not specified in
     _sampler_properties_, its default value will be used.
     _sampler_properties_ can be `NULL` in which case the default values for
     supported sampler properties will be used.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
 
 [[sampler-properties-table]]
 .List of supported sampler creation properties by {clCreateSamplerWithProperties}
@@ -5535,9 +6524,51 @@ include::{generated}/api/version-notes/CL_SAMPLER_FILTER_MODE.asciidoc[]
         four image elements nearest to the image coordinate.
 
         The default value is {CL_FILTER_NEAREST}.
+ifdef::cl_khr_mipmap_image[]
+| {CL_SAMPLER_MIP_FILTER_MODE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_SAMPLER_MIP_FILTER_MODE_KHR.asciidoc[]
+  | {cl_filter_mode_TYPE}
+      | Specifies the mipmap filter used when sampling from a mipmapped
+        image.
+        The available filter are:
+
+        {CL_FILTER_NEAREST} - Use the nearest mipmap level to the image
+        coordinate.
+
+        {CL_FILTER_LINEAR} - Use a weighted average of the two mipmap levels
+        nearest to the image coordinate.
+
+        The default is {CL_FILTER_NEAREST}.
+| {CL_SAMPLER_LOD_MIN_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_SAMPLER_LOD_MIN_KHR.asciidoc[]
+  | {cl_float_TYPE}
+      | Specifies the minimum value to which the computed level of detail
+        _lambda_ is clamped when sampling from a mipmapped image.
+
+        The default is `0.0f`.
+| {CL_SAMPLER_LOD_MAX_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_SAMPLER_LOD_MAX_KHR.asciidoc[]
+  | {cl_float_TYPE}
+      | Specifies the maximum value to which the computed level of detail
+        _lambda_ is clamped when sampling from a mipmapped image.
+
+        The default is `MAXFLOAT`.
+endif::cl_khr_mipmap_image[]
 |====
-  * _errcode_ret_ will return an appropriate error code.
-    If _errcode_ret_ is `NULL`, no error code is returned.
+
+ifdef::cl_khr_mipmap_image[]
+NOTE: When the `<<cl_khr_mipmap_image>>` extension is supported, the sampler
+properties {CL_SAMPLER_MIP_FILTER_MODE_KHR}, {CL_SAMPLER_LOD_MIN_KHR} and
+{CL_SAMPLER_LOD_MAX_KHR} cannot be specified with any samplers initialized
+in the OpenCL program source.
+Only the default values for these properties will be used.
+To create a sampler with specific values for these properties, a sampler
+object must be created with {clCreateSamplerWithProperties} and passed as an
+argument to a kernel.
+endif::cl_khr_mipmap_image[]
 
 // refError
 
@@ -5826,7 +6857,7 @@ returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
 --
 
-[open,refpage='clCreateProgramWithIL',desc='Creates a program object for a context, and loads the IL into the program object.',type='protos']
+[open,refpage='clCreateProgramWithIL',desc='Creates a program object for a context, and loads the IL into the program object.',type='protos',alias='clCreateProgramWithILKHR']
 --
 To create a program object for a context and load code in an intermediate
 language into that object, call the function
@@ -5834,11 +6865,17 @@ language into that object, call the function
 include::{generated}/api/protos/clCreateProgramWithIL.txt[]
 include::{generated}/api/version-notes/clCreateProgramWithIL.asciidoc[]
 
-Also see `<<cl_khr_il_program>>`.
+ifdef::cl_khr_il_program[]
+or the equivalent
+
+include::{generated}/api/protos/clCreateProgramWithILKHR.txt[]
+include::{generated}/api/version-notes/clCreateProgramWithILKHR.asciidoc[]
+endif::cl_khr_il_program[]
 
   * _context_ must be a valid OpenCL context.
-  * _il_ is a pointer to a _length_-byte block of memory containing SPIR-V or an
+  * _il_ is a pointer to a block of memory containing SPIR-V or an
     implementation-defined intermediate language.
+  * _length_ is the length of the block pointed to by _il_.
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
@@ -5859,9 +6896,9 @@ returned in _errcode_ret_:
   * {CL_INVALID_OPERATION} if no devices in _context_ support intermediate
     language programs.
   * {CL_INVALID_VALUE} if _il_ is `NULL` or if _length_ is zero.
-  * {CL_INVALID_VALUE} if the _length_-byte memory pointed to by _il_ does not
-    contain well-formed intermediate language input that can be consumed by
-    the OpenCL runtime.
+  * {CL_INVALID_VALUE} if the _length_-byte block of memory pointed to by
+    _il_ does not contain well-formed intermediate language input that can
+    be consumed by the OpenCL runtime.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -6267,6 +7304,7 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_BUILD_OPTIONS} if the build options specified by _options_ are
     invalid.
   * {CL_COMPILER_NOT_AVAILABLE} if _program_ is created with
+ifdef::cl_khr_il_program[{clCreateProgramWithILKHR},]
     {clCreateProgramWithSource} or {clCreateProgramWithIL} and a compiler is
     not available, i.e. {CL_DEVICE_COMPILER_AVAILABLE} specified in the
     <<device-queries-table,Device Queries>> table is set to {CL_FALSE}.
@@ -6329,7 +7367,7 @@ include::{generated}/api/version-notes/clCompileProgram.asciidoc[]
     executable.
     If _options_ is a `NULL` pointer then it will have the same result as the
     empty string.
-    Certain options are ignored when program is created with IL.
+    Certain options are ignored when _program_ is created with IL.
     The list of supported options is as described in <<compiler-options,
     Compiler Options>>.
   * _num_input_headers_ specifies the number of programs that describe headers
@@ -6452,8 +7490,9 @@ Otherwise, it returns one of the following errors:
     the compile has completed.
   * {CL_INVALID_OPERATION} if there are kernel objects attached to _program_.
   * {CL_INVALID_OPERATION} if _program_ has no source or IL available, i.e. it
-    has not been created with {clCreateProgramWithSource} or
-    {clCreateProgramWithIL}.
+    has not been created with
+ifdef::cl_khr_il_program[{clCreateProgramWithILKHR},]
+    {clCreateProgramWithSource} or {clCreateProgramWithIL}.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -7049,10 +8088,11 @@ include::{generated}/api/version-notes/CL_PROGRAM_SOURCE.asciidoc[]
         The concatenation strips any nulls in the original source strings.
 
         If _program_ is created using {clCreateProgramWithBinary},
-        {clCreateProgramWithIL} or {clCreateProgramWithBuiltInKernels}, a
-        null string or the appropriate program source code is returned
-        depending on whether or not the program source code is stored in the
-        binary.
+        {clCreateProgramWithIL},
+ifdef::cl_khr_il_program[{clCreateProgramWithILKHR},]
+        or {clCreateProgramWithBuiltInKernels}, a null string or the
+        appropriate program source code is returned depending on whether or
+        not the program source code is stored in the binary.
 
         The actual number of characters that represents the program source
         code including the null terminator is returned in
@@ -7061,15 +8101,20 @@ include::{generated}/api/version-notes/CL_PROGRAM_SOURCE.asciidoc[]
 
 include::{generated}/api/version-notes/CL_PROGRAM_IL.asciidoc[]
 
-Also see `<<cl_khr_il_program>>`.
+ifdef::cl_khr_il_program[]
+{CL_PROGRAM_IL_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_PROGRAM_IL_KHR.asciidoc[]
+ifdef::cl_khr_il_program[]
   | {char_TYPE}[]
       | Returns the program IL for programs created with
+ifdef::cl_khr_il_program[{clCreateProgramWithILKHR} or]
         {clCreateProgramWithIL}.
 
         If _program_ is created with {clCreateProgramWithSource},
         {clCreateProgramWithBinary} or {clCreateProgramWithBuiltInKernels}
         the memory pointed to by param_value will be unchanged and
-        param_value_size_retwill be set to 0.
+        _param_value_size_ret_ will be set to 0.
 | {CL_PROGRAM_BINARY_SIZES_anchor}
 
 include::{generated}/api/version-notes/CL_PROGRAM_BINARY_SIZES.asciidoc[]
@@ -7500,6 +8545,7 @@ Otherwise, it returns one of the following errors:
 --
 
 
+[[setting-kernel-arguments]]
 === Setting Kernel Arguments
 
 To execute a kernel, the kernel arguments must be set.
@@ -7570,6 +8616,18 @@ pointer to the sampler object.
 If the argument is of type _queue_t_, the _arg_value_ entry must be a
 pointer to the device queue object.
 
+ifdef::cl_khr_gl_msaa_sharing[]
+If the `<<cl_khr_gl_msaa_sharing>>` extension is supported, then:
+If the argument is a multi-sample 2D image, the _arg_value_ entry must be a
+pointer to a multi-sample image object.
+If the argument is a multi-sample 2D depth image, the _arg_value_ entry must
+be a pointer to a multisample depth image object.
+If the argument is a multi-sample 2D image array, the _arg_value_ entry must
+be a pointer to a multi-sample image array object.
+If the argument is a multi-sample 2D depth image array, the _arg_value_
+entry must be a pointer to a multi-sample depth image array object.
+endif::cl_khr_gl_msaa_sharing[]
+
 If the argument is declared to be a pointer of a built-in scalar or vector
 type, or a user defined structure type in the global or constant address
 space, the memory object specified as argument value must be a buffer object
@@ -7631,6 +8689,13 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_ARG_VALUE} if _arg_value_ specified is not a valid value.
   * {CL_INVALID_MEM_OBJECT} for an argument declared to be a memory object
     when the specified _arg_value_ is not a valid memory object.
+ifdef::cl_khr_gl_msaa_sharing[]
+  * {CL_INVALID_MEM_OBJECT} for an argument declared to be a multi-sample
+    image, multi-sample image array, multi-sample depth image or a
+    multi-sample depth image array when the specified _arg_value_ does not
+    follow the rules described above for a depth memory object or memory
+    array object argument.
+endif::cl_khr_gl_msaa_sharing[]
   * {CL_INVALID_SAMPLER} for an argument declared to be of type _sampler_t_
     when the specified _arg_value_ is not a valid sampler object.
   * {CL_INVALID_DEVICE_QUEUE} for an argument declared to be of type _queue_t_
@@ -8394,6 +9459,87 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
 --
 
+ifdef::cl_khr_suggested_local_work_size[]
+[open,refpage='clGetKernelSuggestedLocalWorkSizeKHR',desc='Query suggested local work size for a kernel object',type='protos']
+--
+To query a suggested local work size for a kernel object, call the function
+
+include::{generated}/api/protos/clGetKernelSuggestedLocalWorkSizeKHR.txt[]
+include::{generated}/api/version-notes/clGetKernelSuggestedLocalWorkSizeKHR.asciidoc[]
+
+  * _command_queue_ specifies the command-queue and device for the query.
+  * _kernel_ specifies the kernel object and kernel arguments for the query.
+    The OpenCL context associated with _kernel_ and _command_queue_ must the
+    same.
+  * _work_dim_ specifies the number of work dimensions in the input global
+    work offset and global work size, and the output suggested local work
+    size.
+  * _global_work_offset_ can be used to specify an array of at least
+    _work_dim_ global ID offset values for the query.
+    This is optional and may be `NULL` to indicate there is no global ID
+    offset.
+  * _global_work_size_ is an array of at least _work_dim_ values describing
+    the global work size for the query.
+  * _suggested_local_work_size_ is an output array of at least _work_dim_
+    values that will contain the result of the query.
+
+The returned suggested local work size is expected to match the local work
+size that would be chosen if the specified kernel object, with the same
+kernel arguments, were enqueued into the specified command-queue with the
+specified global work size, specified global work offset, and with a `NULL`
+local work size.
+
+// refError
+
+{clGetKernelSuggestedLocalWorkSizeKHR} returns {CL_SUCCESS} if the query
+executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
+    command-queue.
+  * {CL_INVALID_KERNEL} if _kernel_ is not a valid kernel object.
+  * {CL_INVALID_CONTEXT} if the context associated with _kernel_ is not the
+    same as the context associated with _command_queue_.
+  * {CL_INVALID_PROGRAM_EXECUTABLE} if there is no successfully built
+    program executable available for _kernel_ for the device associated with
+    _command_queue_.
+  * {CL_INVALID_KERNEL_ARGS} if all argument values for _kernel_ have not
+    been set.
+  * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if a sub-buffer object is set as an
+    argument to _kernel_ and the offset specified when the sub-buffer object
+    was created is not aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} for the
+    device associated with _command_queue_.
+  * {CL_INVALID_IMAGE_SIZE} if an image object is set as an argument to
+    _kernel_ and the image dimensions are not supported by device associated
+    with _command_queue_.
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if an image object is set as an argument
+    to _kernel_ and the image format is not supported by the device
+    associated with _command_queue_.
+  * {CL_INVALID_OPERATION} if an SVM pointer is set as an argument to
+    _kernel_ and the device associated with _command_queue_ does not support
+    SVM or the required SVM capabilities for the SVM pointer.
+  * {CL_INVALID_WORK_DIMENSION} if _work_dim_ is not a valid value (i.e. a
+    value between 1 and {CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS}).
+  * {CL_INVALID_GLOBAL_WORK_SIZE} if _global_work_size_ is NULL or if any of
+    the values specified in _global_work_size_ are 0.
+  * {CL_INVALID_GLOBAL_WORK_SIZE} if any of the values specified in
+    _global_work_size_ exceed the maximum value representable by `size_t` on
+    the device associated with _command_queue_.
+  * {CL_INVALID_GLOBAL_OFFSET} if the value specified in _global_work_size_
+    plus the corresponding value in _global_work_offset_ for dimension
+    exceeds the maximum value representable by `size_t` on the device
+    associated with _command_queue_.
+  * {CL_INVALID_VALUE} if _suggested_local_work_size_ is NULL.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+
+NOTE: These error conditions are consistent with error conditions for
+{clEnqueueNDRangeKernel}.
+--
+endif::cl_khr_suggested_local_work_size[]
+
 
 == Executing Kernels
 
@@ -8866,6 +10012,16 @@ The user registered callback function specified when context is created can
 be used to report appropriate error information.
 ====
 
+ifdef::cl_khr_gl_event[]
+If the `<<cl_khr_gl_event>>` extension is supported, event objects created
+with {clCreateEventFromGLsyncKHR} can also be used to reflect the status of
+an OpenGL sync object.
+The sync object in turn refers to a fence command executing in an OpenGL
+command stream.
+This provides another method of coordinating sharing of buffers and images
+between OpenGL and OpenCL.
+endif::cl_khr_gl_event[]
+
 [open,refpage='clCreateUserEvent',desc='Creates a user event object.',type='protos']
 --
 To create a user event object, call the function
@@ -9236,6 +10392,17 @@ ifdef::cl_khr_command_buffer[]
 include::{generated}/api/version-notes/CL_COMMAND_COMMAND_BUFFER_KHR.asciidoc[]
 endif::cl_khr_command_buffer[]
 
+ifdef::cl_khr_gl_event[]
+| {clCreateEventFromGLsyncKHR}
+| {CL_COMMAND_GL_FENCE_SYNC_OBJECT_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_GL_FENCE_SYNC_OBJECT_KHR.asciidoc[]
+
+
+Add {CL_COMMAND_GL_FENCE_SYNC_OBJECT_KHR} to the valid _param_value_ values
+returned by {clGetEventInfo} for _param_name_ {CL_EVENT_COMMAND_TYPE} (in
+the third row and third column of _table 5.22_).
+endif::cl_khr_gl_event[]
 |====
 
 Using {clGetEventInfo} to determine if a command identified by _event_ has
@@ -9420,6 +10587,70 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 --
+
+
+ifdef::cl_khr_gl_event[]
+=== 5.11.1 Linking Event Objects to OpenGL Synchronization Objects
+
+An event object may be created by linking to an OpenGL *sync object*.
+Completion of such an event object is equivalent to waiting for completion
+of the fence command associated with the linked GL sync object.
+
+[open,refpage='clCreateEventFromGLsyncKHR',desc='Create OpenCL event object linked to an OpenGL sync object',type='protos']
+--
+To create an OpenCL event object linked to an OpenGL sync object, call the
+function
+
+include::{generated}/api/protos/clCreateEventFromGLsyncKHR.txt[]
+include::{generated}/api/version-notes/clCreateEventFromGLsyncKHR.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from an OpenGL context or
+    share group, using the `<<cl_khr_gl_sharing>>` extension.
+  * _sync_ is the name of a sync object in the GL share group associated
+    with _context_.
+
+// refError
+
+{clCreateEventFromGLsyncKHR} returns a valid OpenCL event object and
+_errcode_ret_ is set to {CL_SUCCESS} if the event object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context, or was not
+    created from a GL context.
+  * {CL_INVALID_GL_OBJECT} if _sync_ is not the name of a sync object in the
+    GL share group associated with _context_.
+
+The parameters of an event object linked to a GL sync object will return the
+following values when queried with {clGetEventInfo}:
+
+  * The {CL_EVENT_COMMAND_QUEUE} of a linked event is `NULL`, because the
+    event is not associated with any OpenCL command-queue.
+  * The {CL_EVENT_COMMAND_TYPE} of a linked event is
+    {CL_COMMAND_GL_FENCE_SYNC_OBJECT_KHR}, indicating that the event is
+    associated with a GL sync object, rather than an OpenCL command.
+  * The {CL_EVENT_COMMAND_EXECUTION_STATUS} of a linked event is either
+    {CL_SUBMITTED}, indicating that the fence command associated with the
+    sync object has not yet completed, or {CL_COMPLETE}, indicating that the
+    fence command has completed.
+
+{clCreateEventFromGLsyncKHR} performs an implicit {clRetainEvent} on the
+returned event object.
+Creating a linked event object also places a reference on the linked GL sync
+object.
+When the event object is deleted, the reference will be removed from the GL
+sync object.
+
+Events returned from {clCreateEventFromGLsyncKHR} can be used in the
+_event_wait_list_ argument to {clEnqueueAcquireGLObjects} and CL APIs that
+take a {cl_event} as an argument but do not enqueue commands.
+Passing such events to any other CL API that enqueues commands will generate
+a {CL_INVALID_EVENT} error.
+--
+
+endif::cl_khr_gl_event[]
+
 
 
 [[markers-barriers-waiting-for-events]]
@@ -9693,10 +10924,6 @@ include::{generated}/api/version-notes/clCreateSemaphoreWithPropertiesKHR.asciid
 
   * _context_ identifies a valid OpenCL context that the created
     {cl_semaphore_khr_TYPE} will belong to.
-
-// TODO: Do we want the same "all devices in the context" behavior if
-// CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR is not specified?
-
   * _sema_props_ specifies additional semaphore properties in the form list
     of <property_name, property_value> pairs terminated with 0.
     {CL_SEMAPHORE_TYPE_KHR} must be part of the list of properties specified
@@ -9719,6 +10946,7 @@ properties by {cl_semaphore_properties_khr_TYPE} that can be passed to
       | Specifies the list of OpenCL devices (terminated with
         {CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR}) to associate with the
         semaphore.
+        Only a single device is permitted in the list.
 
 ifdef::cl_khr_external_semaphore[]
 | {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR_anchor}
@@ -9735,6 +10963,8 @@ If {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} is not specified as part of
 _sema_props_, the semaphore object created by
 {clCreateSemaphoreWithPropertiesKHR} is by default accessible to all devices
 in the _context_.
+For a multi-device context {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} must be
+specified in _sema_props_.
 
 // refError
 
@@ -9752,9 +10982,11 @@ returned in _errcode_ret_:
     supported property name, if the value specified for a supported property
     name is not valid, or if the same property name is specified more than
     once.
+    Additionally, if _context_ is a multiple device context and _sema_props_
+    does not specify {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR}.
   * {CL_INVALID_DEVICE} if {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} is
-    specified as part of _sema_props_, but it does not identify a valid
-    device; or if a device identified by
+    specified as part of _sema_props_, but it does not identify exactly one
+    valid device; or if a device identified by
     {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} is not one of the devices within
     _context_.
   * {CL_INVALID_VALUE}
@@ -9982,6 +11214,44 @@ Importing a semaphore payload from a file descriptor transfers ownership of
 the file descriptor from the application to the OpenCL implementation.
 The application must not perform any operations on the file descriptor after
 a successful import.
+
+ifdef::cl_khr_external_semaphore_sync_fd[]
+[open,refpage='clReImportSemaphoreSyncFdKHR',desc='Re-import sync fd handle into an existing semaphore',type='protos']
+--
+To re-imported a handle of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} into an
+existing semaphore, call the function:
+
+include::{generated}/api/protos/clReImportSemaphoreSyncFdKHR.txt[]
+
+  * _sema_object_ specifies a valid semaphore object with importable
+    properties.
+  * _reimport_props_ must be `NULL`, and is reserved for future use.
+  * _fd_ specifies an external file descriptor handle to import
+
+Calling {clReImportSemaphoreSyncFdKHR} is equivalent to destroying
+_sema_object_ and re-creating it with the original _sema_props_ from
+{clCreateSemaphoreWithPropertiesKHR}, except a handle specified by _fd_ will
+be imported.
+The semaphore _sema_object_ must have originally imported an external handle
+of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR}.
+
+// refError
+
+{clGetSemaphoreHandleForTypeKHR} returns {CL_SUCCESS} if the semaphore
+handle is re-imported successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_SEMAPHORE_KHR}
+  ** if _sema_object_ is not a valid semaphore
+  * {CL_INVALID_SEMAPHORE_KHR} if a {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} handle
+    was not imported when _sema_object_ was created.
+  * {CL_INVALID_VALUE} if _fd_ is invalid.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+--
+endif::cl_khr_external_semaphore_sync_fd[]
 
 endif::cl_khr_external_semaphore_opaque_fd,cl_khr_external_semaphore_sync_fd[]
 
@@ -10338,15 +11608,17 @@ include::{generated}/api/version-notes/clGetSemaphoreInfoKHR.asciidoc[]
 
   * _sema_object_ specifies the semaphore object being queried.
   * _param_name_ is a constant that specifies the semaphore information to
-    query, and must be one of the values shown in
-    <<cl_khr_semaphore_info-table>>.
+    query, and must be one of the values shown in the
+    <<cl_khr_semaphore_info-table, Semaphore Queries>> table.
   * _param_value_ is a pointer to memory where the result of the query is
-    returned as described in <<cl_khr_semaphore_info-table>>.
+    returned as described in the <<cl_khr_semaphore_info-table, Semaphore
+    Queries>> table.
     If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ specifies the size in bytes of memory pointed to
     _param_value_.
     This size must be greater than or equal to the size of the return type
-    described in table <<cl_khr_semaphore_info-table>>.
+    described in the <<cl_khr_semaphore_info-table, Semaphore Queries>>
+    table.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_value_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -10390,6 +11662,10 @@ ifdef::cl_khr_external_semaphore[]
         for exporting.
         The size of this query may be 0 indicating that this semaphore does
         not support any handle types for exporting.
+| {CL_SEMAPHORE_EXPORTABLE_KHR}
+  | {cl_bool_TYPE}[]
+      | Returns {CL_TRUE} if the semaphore is exportable and {CL_FALSE}
+        otherwise.
 endif::cl_khr_external_semaphore[]
 |====
 
@@ -10402,11 +11678,11 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_SEMAPHORE_KHR}
   ** if _sema_object_ is not a valid semaphore
   * {CL_INVALID_VALUE}
-  ** if _param_name_ is not one of the attribute defined in table
-     <<cl_khr_semaphore_info-table>>, or
+  ** if _param_name_ is not one of the attribute defined in the
+     <<cl_khr_semaphore_info-table, Semaphore Queries>> table or
   ** if _param_value_size_ is less than the size of Return Type of the
      corresponding _param_name_ attribute as defined in the
-     <<cl_khr_semaphore_info-table, supported _param_name_ table>>
+     <<cl_khr_semaphore_info-table, Semaphore Queries>> table.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -12057,3 +13333,122 @@ Otherwise, it returns one of the following errors:
 --
 
 endif::cl_khr_command_buffer[]
+
+
+ifdef::cl_khr_gl_sharing[]
+[[querying-devices-that-support-sharing-with-opengl]]
+== Querying Devices that Support Sharing with OpenGL
+
+OpenCL device(s) corresponding to an OpenGL context may be queried.
+Such a device may not always exist (for example, if an OpenGL context is
+specified on a GPU not supporting OpenCL command-queues, but which does
+support shared OpenCL/OpenGL memory objects), and if it does exist, may
+change over time.
+When such a device does exist, acquiring and releasing shared OpenCL/OpenGL
+memory objects may be faster on a command-queue corresponding to this device
+than on command-queues corresponding to other devices available to an OpenCL
+context.
+
+[open,refpage='clGetGLContextInfoKHR',desc='Query OpenCL device corresponding to an OpenGL context',type='protos']
+--
+To query the OpenCL device corresponding to an OpenGL context, call the
+function
+
+include::{generated}/api/protos/clGetGLContextInfoKHR.txt[]
+
+  * _properties_ points to an property list whose format and valid contents
+    are identical to the _properties_ argument of {clCreateContext}.
+    _properties_ must identify a single valid GL context or GL share group
+    object.
+  * _param_name_ is a constant that specifies the device types to query, and
+    must be one of the values shown in the <<gl-context-info-table,
+    Supported Device Types>> table below.
+  * _param_value_ is a pointer to memory where the result of the query is
+    returned, as described in the <<gl-context-info-table, Supported Device
+    Types>> table.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    described in the table below.
+  * _param_value_size_ret_ returns the actual size in bytes of data being
+    queried by _param_value_.
+    If _param_value_size_ret_ is `NULL`, it is ignored.
+
+[[gl-context-info-table]]
+.Supported Device Types for {clGetGLContextInfoKHR}
+[cols="2,1,2",options="header",]
+|====
+| param_name | Return Type | Information returned in param_value
+| {CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR.asciidoc[]
+  | {cl_device_id_TYPE}
+    | Return the OpenCL device currently associated with the specified
+      OpenGL context.
+| {CL_DEVICES_FOR_GL_CONTEXT_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICES_FOR_GL_CONTEXT_KHR.asciidoc[]
+  | {cl_device_id_TYPE}[]
+    | Return all OpenCL devices which may be associated with the specified
+      OpenGL context.
+|====
+
+// refError
+
+{clGetGLContextInfoKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+If no device(s) exist corresponding to _param_name_, the call will not fail,
+but the value of _param_value_size_ret_ will be zero.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a context was specified by
+    any of the following means:
++
+--
+* A context was specified for an EGL-based OpenGL ES or OpenGL
+  implementation by setting the properties {CL_GL_CONTEXT_KHR} and
+  {CL_EGL_DISPLAY_KHR}.
+* A context was specified for a GLX-based OpenGL implementation by setting
+  the properties {CL_GL_CONTEXT_KHR} and {CL_GLX_DISPLAY_KHR}.
+* A context was specified for a WGL-based OpenGL implementation by setting
+  the properties {CL_GL_CONTEXT_KHR} and {CL_WGL_HDC_KHR}.
+--
++
+    and any of the following conditions hold:
+  ** The specified display and context properties do not identify a valid
+     OpenGL or OpenGL ES context.
+  ** The specified context does not support buffer and renderbuffer objects.
+  ** The specified context is not compatible with the OpenCL context being
+     created (for example, it exists in a physically distinct address space,
+     such as another hardware device; or it does not support sharing data
+     with OpenCL due to implementation restrictions).
+  * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a share group was specified
+    for a CGL-based OpenGL implementation by setting the property
+    {CL_CGL_SHAREGROUP_KHR}, and the specified share group does not identify
+    a valid CGL share group object.
+  * {CL_INVALID_OPERATION} if a context was specified as described above and
+    any of the following conditions hold:
+  ** A context or share group object was specified for one of CGL, EGL, GLX,
+     or WGL and the OpenGL implementation does not support that
+     window-system binding API.
+  ** More than one of the properties {CL_CGL_SHAREGROUP_KHR},
+     {CL_EGL_DISPLAY_KHR}, {CL_GLX_DISPLAY_KHR}, and {CL_WGL_HDC_KHR} is set
+     to a non-default value.
+  ** Both of the properties {CL_CGL_SHAREGROUP_KHR} and {CL_GL_CONTEXT_KHR}
+     are set to non-default values.
+  ** Any of the devices specified in the <devices> argument cannot support
+     OpenCL objects which share the data store of an OpenGL object.
+  * {CL_INVALID_VALUE} if an property name other than those specified in
+    _table 4.5_ is specified in _properties_.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the values listed in
+    the <<gl-context-info-table, GL context information that can be
+    queried with_ {clGetGLContextInfoKHR}>> table, or if the size in bytes
+    specified by _param_value_size_ is less than the size of the return type
+    shown in the table and _param_value_ is not a `NULL` value
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_gl_sharing[]
