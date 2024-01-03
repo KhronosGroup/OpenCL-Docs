@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*- #
 # frozen_string_literal: true
-# Copyright (c) 2011-2023 The Khronos Group, Inc.
+# Copyright (c) 2011-2024 The Khronos Group, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 #puts "Loading rouge_opencl extensions for source code highlighting..."
