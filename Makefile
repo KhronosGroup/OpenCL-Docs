@@ -201,11 +201,14 @@ pdf: apipdf envpdf extpdf extensionspdf cxxpdf cpdf icdinstpdf
 # There is some complexity to try and avoid short virtual targets like
 # 'html' causing specs to *always* be regenerated.
 
+apisrc:
+	echo APISPECSRC = $(APISPECSRC)
+
 src:
-	@echo APISPECSRC = $(APISPECSRC)
-	@echo CSPECSRC	 = $(CSPECSRC)
-	@echo ENVSPECSRC = $(ENVSPECSRC)
-	@echo EXTSPECSRC = $(EXTSPECSRC)
+	echo APISPECSRC = $(APISPECSRC)
+	echo CSPECSRC	= $(CSPECSRC)
+	echo ENVSPECSRC = $(ENVSPECSRC)
+	echo EXTSPECSRC = $(EXTSPECSRC)
 
 # API spec
 
