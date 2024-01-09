@@ -25,7 +25,7 @@ Sharing of objects across multiple command-queues will require the
 application to perform appropriate synchronization.
 This is described in <<shared-opencl-objects, Shared OpenCL Objects>>
 
-[open,refpage='clCreateCommandQueueWithProperties',desc='Create a host or device command-queue on a specific device.',type='protos']
+[open,refpage='clCreateCommandQueueWithProperties',desc='Create a host or device command-queue on a specific device.',type='protos',alias='clCreateCommandQueueWithPropertiesKHR']
 --
 To create a host or device command-queue on a specific device, call the
 function
@@ -33,13 +33,18 @@ function
 include::{generated}/api/protos/clCreateCommandQueueWithProperties.txt[]
 include::{generated}/api/version-notes/clCreateCommandQueueWithProperties.asciidoc[]
 
-Also see `<<cl_khr_create_command_queue>>`.
+ifdef::cl_khr_create_command_queue[]
+or the equivalent
+
+include::{generated}/api/protos/clCreateCommandQueueWithPropertiesKHR.txt[]
+include::{generated}/api/version-notes/clCreateCommandQueueWithPropertiesKHR.asciidoc[]
+endif::cl_khr_create_command_queue[]
 
   * _context_ must be a valid OpenCL context.
   * _device_ must be a device or sub-device associated with _context_.
     It can either be in the list of devices and sub-devices specified when
-    _context_ is created using {clCreateContext} or be a root device with the
-    same device type as specified when _context_ is created using
+    _context_ is created using {clCreateContext} or be a root device with
+    the same device type as specified when _context_ is created using
     {clCreateContextFromType}.
   * _properties_ specifies a list of properties for the command-queue and their
     corresponding values.
@@ -64,6 +69,10 @@ Also see `<<cl_khr_create_command_queue>>`.
 
 include::{generated}/api/version-notes/CL_QUEUE_PROPERTIES.asciidoc[]
   | {cl_command_queue_properties_TYPE}
+
+ifdef::cl_khr_create_command_queue[]
+or {cl_bitfield_TYPE} if the `<<cl_khr_create_command_queue>>` extension is supported
+endif::cl_khr_create_command_queue[]
       | This is a bitfield and can be set to a combination of the following
         values:
 
@@ -72,12 +81,14 @@ include::{generated}/api/version-notes/CL_QUEUE_PROPERTIES.asciidoc[]
         out-of-order.
         If set, the commands in the command-queue are executed out-of-order.
         Otherwise, commands are executed in-order.
+
 include::{generated}/api/version-notes/CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE.asciidoc[]
 
         {CL_QUEUE_PROFILING_ENABLE_anchor} - Enable or disable profiling of commands
         in the command-queue.
         If set, the profiling of commands is enabled.
         Otherwise profiling of commands is disabled.
+
 include::{generated}/api/version-notes/CL_QUEUE_PROFILING_ENABLE.asciidoc[]
 
         {CL_QUEUE_ON_DEVICE_anchor} - Indicates that this is a device queue.
@@ -85,12 +96,14 @@ include::{generated}/api/version-notes/CL_QUEUE_PROFILING_ENABLE.asciidoc[]
         {CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE}
         footnote:[{fn-out-of-order-device-queue}]
         must also be set.
+
 include::{generated}/api/version-notes/CL_QUEUE_ON_DEVICE.asciidoc[]
 
         {CL_QUEUE_ON_DEVICE_DEFAULT_anchor}
         footnote:[{fn-default-device-queue}] -
         indicates that this is the default device queue.
         This can only be used with {CL_QUEUE_ON_DEVICE}.
+
 include::{generated}/api/version-notes/CL_QUEUE_ON_DEVICE_DEFAULT.asciidoc[]
 
         If {CL_QUEUE_PROPERTIES} is not specified an in-order host command-queue
@@ -170,8 +183,8 @@ Otherwise, it returns a `NULL` value with one of the following error values
 returned in _errcode_ret_:
 
   * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
-  * {CL_INVALID_DEVICE} if _device_ is not a valid device or is not associated
-    with _context_.
+  * {CL_INVALID_DEVICE} if _device_ is not a valid device or is not
+    associated with _context_.
   * {CL_INVALID_VALUE} if values specified in _properties_ are not valid.
   * {CL_INVALID_QUEUE_PROPERTIES} if values specified in _properties_ are
     valid but are not supported by the device.
@@ -185,8 +198,8 @@ ifdef::cl_khr_throttle_hints[]
     extension is supported, the {CL_QUEUE_THROTTLE_KHR} property is
     specified, and the queue is a {CL_QUEUE_ON_DEVICE}.
 endif::cl_khr_throttle_hints[]
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 --
@@ -1695,6 +1708,120 @@ include::{generated}/api/version-notes/CL_MAP_WRITE_INVALIDATE_REGION.asciidoc[]
 --
 
 
+ifdef::cl_khr_d3d10_sharing[]
+=== Creating OpenCL Buffer Objects From Direct3D 10 Buffer Resources
+
+[open,refpage='clCreateFromD3D10BufferKHR',desc='Create OpenCL buffer object from a Direct3D 10 buffer',type='protos']
+--
+To create an OpenCL buffer object from a Direct3D 10 buffer, call the
+function
+
+include::{generated}/api/protos/clCreateFromD3D10BufferKHR.txt[]
+include::{generated}/api/version-notes/clCreateFromD3D10BufferKHR.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from a Direct3D 10 device.
+  * _flags_ is a bit-field that is used to specify usage information.
+    Refer to the <<memory-flags-table, List of supported memory flag
+    values>> table for a description of _flags_.
+    Only the {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_WRITE}
+    flags specified in that table can be used.
+  * _resource_ is a pointer to the Direct3D 10 buffer to share.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+The size of the returned OpenCL buffer object is the same as the size of
+_resource_.
+This call will increment the internal Direct3D 10 reference count on
+_resource_.
+The internal Direct3D 10 reference count on _resource_ will be decremented when
+the OpenCL reference count on the returned OpenCL memory object drops to
+zero.
+
+NOTE: Refer to the <<lifetime-of-shared-opencl-direct3d-memory-objects,
+Lifetime of Shared Direct3D Memory Objects>> and
+<<acquiring-shared-opencl-opengl-memory-objects, Acquiring, Releasing, and
+Synchronizing Access to Shared OpenCL/OpenGL Memory Objects>> sections for
+more information.
+
+// refError
+
+{clCreateFromD3D10BufferKHR} returns a valid non-zero OpenCL buffer object
+and _errcode_ret_ is set to {CL_SUCCESS} if the buffer object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
+  * {CL_INVALID_D3D10_RESOURCE_KHR} if _resource_ is not a Direct3D 10
+    buffer resource, if _resource_ was created with the D3D10_USAGE flag
+    D3D10_USAGE_IMMUTABLE, if a {cl_mem_TYPE} from _resource_ has already
+    been created using {clCreateFromD3D10BufferKHR}, or if _context_ was not
+    created against the same Direct3D 10 device from which _resource_ was
+    created.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_d3d10_sharing[]
+
+
+ifdef::cl_khr_d3d11_sharing[]
+=== Creating OpenCL Buffer Objects From Direct3D 11 Buffer Resources
+
+[open,refpage='clCreateFromD3D11BufferKHR',desc='Create OpenCL buffer object from a Direct3D 11 buffer',type='protos']
+--
+To create an OpenCL buffer object from a Direct3D 11 buffer, call the
+function
+
+include::{generated}/api/protos/clCreateFromD3D11BufferKHR.txt[]
+include::{generated}/api/version-notes/clCreateFromD3D11BufferKHR.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from a Direct3D 11 device.
+  * _flags_ is a bit-field that is used to specify usage information.
+    Refer to the <<memory-flags-table, List of supported memory flag
+    values>> table for a description of _flags_.
+    Only the {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_WRITE}
+    flags specified in that table can be used.
+  * _resource_ is a pointer to the Direct3D 11 buffer to share.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+The size of the returned OpenCL buffer object is the same as the size of
+_resource_.
+This call will increment the internal Direct3D 11 reference count on
+_resource_.
+The internal Direct3D 11 reference count on _resource_ will be decremented when
+the OpenCL reference count on the returned OpenCL memory object drops to
+zero.
+
+NOTE: Refer to the <<lifetime-of-shared-opencl-direct3d-memory-objects,
+Lifetime of Shared Direct3D Memory Objects>> and
+<<acquiring-shared-opencl-opengl-memory-objects, Acquiring, Releasing, and
+Synchronizing Access to Shared OpenCL/OpenGL Memory Objects>> sections for
+more information.
+
+// refError
+
+{clCreateFromD3D11BufferKHR} returns a valid non-zero OpenCL buffer object
+and _errcode_ret_ is set to {CL_SUCCESS} if the buffer object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
+  * {CL_INVALID_D3D11_RESOURCE_KHR} if _resource_ is not a Direct3D 11
+    buffer resource, if _resource_ was created with the D3D11_USAGE flag
+    D3D11_USAGE_IMMUTABLE, if a {cl_mem_TYPE} from _resource_ has already
+    been created using {clCreateFromD3D11BufferKHR}, or if _context_ was not
+    created against the same Direct3D 11 device from which _resource_ was
+    created.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_d3d11_sharing[]
+
+
 ifdef::cl_khr_gl_sharing[]
 === Creating OpenCL Buffer Objects From OpenGL Buffer Objects
 
@@ -2571,11 +2698,16 @@ Restrictions are:
   * The image channel data type specified in _image_format_ must match the
     image channel data type associated with `mem_object`.
   * The image channel order specified in _image_format_ must be compatible
-    with the image channel order associated with `mem_object`.
-    Compatible image channel orders
-    footnote:[{fn-compatible-image-channel-orders}] are:
-+
---
+    with the image channel order associated with `mem_object`, as described
+    in the <<compatibile-image-channel-orders-table, Compatible Image
+    Channel Orders>> table.
+
+NOTE: The image channel order compatibility constraint allows creation of a
+sRGB view of the image from a linear RGB view or vice-versa, i.e. the pixels
+stored in the image can be accessed as linear RGB or sRGB values.
+
+[[compatibile-image-channel-orders-table]]
+.Compatible Image Channel Orders
 [width="100%",cols="<50%,<50%",options="header"]
 |====
 | Image Channel Order in _image_format_:
@@ -2599,7 +2731,6 @@ Restrictions are:
 | {CL_DEPTH}
   | {CL_R}
 |====
---
 
 [NOTE]
 ====
@@ -2843,7 +2974,7 @@ the same kernel instance is:
 --
 
 [[image-format-mapping]]
-==== Image Format Mapping to Opencl Kernel Language Image Access Qualifiers
+==== Image Format Mapping to OpenCL Kernel Language Image Access Qualifiers
 
 Image arguments to kernels may have the `read_only`, `write_only` or
 `read_write` qualifier.
@@ -2873,6 +3004,234 @@ parameter and any other image parameter.
 | `read_write`
   | {CL_MEM_KERNEL_READ_AND_WRITE}
 |====
+
+
+
+=== Mapping to External Image Formats
+
+OpenCL image objects can be created which share storage with image objects
+in external APIs such as DirectX and OpenGL when the corresponding OpenCL
+extensions are supported.
+When creating such OpenCL images, there are restrictions on the allowed
+formats.
+The tables in this section list, for each such external API, the supported
+image formats in that API and the corresponding OpenCL image format.
+
+
+ifdef::cl_khr_dx9_media_sharing[]
+==== Image Formats for DirectX 9 Media Surface Sharing
+
+When the `<<cl_khr_dx9_media_sharing>>` extension is supported, image
+objects sharing storage with Direct3D 9 surfaces can be created.
+This section describes the Direct3D 9 surface formats that are supported
+when the adapter type is one of the Direct 3D lineage.
+Using a Direct3D 9 surface format not listed here is an error.
+To extend the use of this extension to support media adapters beyond DirectX
+9 tables similar to the ones in this section will need to be defined for the
+surface formats supported by the new media adapter.
+All implementations that support this extension are required to support the
+NV12 surface format.
+The other surface formats supported are the same surface formats that the
+adapter you are sharing with supports as long as they are listed in the
+<<fourcc-image-formats-table, YUV FourCC Codes and Corresponding OpenCL
+Image Formats>> or <<d3d9-image-formats-table, Direct3D 9 Formats and
+Corresponding OpenCL Image Formats>> tables.
+
+[[fourcc-image-formats-table]]
+.YUV FourCC Codes and Corresponding OpenCL Image Formats
+[cols=",",options="header",]
+|====
+| *FOUR CC Code*                   | *CL Image Format* (Channel Order, Channel Data Type)*
+| FOURCC('N','V','1','2'), Plane 0 | {CL_R}, {CL_UNORM_INT8}
+| FOURCC('N','V','1','2'), Plane 1 | {CL_RG}, {CL_UNORM_INT8}
+| FOURCC('Y','V','1','2'), Plane 0 | {CL_R}, {CL_UNORM_INT8}
+| FOURCC('Y','V','1','2'), Plane 1 | {CL_R}, {CL_UNORM_INT8}
+| FOURCC('Y','V','1','2'), Plane 2 | {CL_R}, {CL_UNORM_INT8}
+|====
+
+In the <<fourcc-image-formats-table, YUV FourCC Codes and Corresponding
+OpenCL Image Formats>> table, NV12 Plane 0 corresponds to the luminance (Y)
+channel and Plane 1 corresponds to the UV channels. The YV12 Plane 0
+corresponds to the Y channel, Plane 1 corresponds to the V channel and Plane
+2 corresponds to the U channel.
+Note that the YUV formats map to {CL_R} and {CL_RG} but do not perform any
+YUV to RGB conversion, and vice-versa.
+
+[[d3d9-image-formats-table]]
+.Direct3D 9 Formats and Corresponding OpenCL Image Formats
+[cols=",",options="header",]
+|====
+| Direct3D 9 Format      | CL Image Format (Channel Order, Channel Data Type)
+| `D3DFMT_R32F`          | {CL_R}, {CL_FLOAT}
+| `D3DFMT_R16F`          | {CL_R}, {CL_HALF_FLOAT}
+| `D3DFMT_L16`           | {CL_R}, {CL_UNORM_INT16}
+| `D3DFMT_A8`            | {CL_A}, {CL_UNORM_INT8}
+| `D3DFMT_L8`            | {CL_R}, {CL_UNORM_INT8}
+| |
+| `D3DFMT_G32R32F`       | {CL_RG}, {CL_FLOAT}
+| `D3DFMT_G16R16F`       | {CL_RG}, {CL_HALF_FLOAT}
+| `D3DFMT_G16R16`        | {CL_RG}, {CL_UNORM_INT16}
+| `D3DFMT_A8L8`          | {CL_RG}, {CL_UNORM_INT8}
+| |
+| `D3DFMT_A32B32G32R32F` | {CL_RGBA}, {CL_FLOAT}
+| `D3DFMT_A16B16G16R16F` | {CL_RGBA}, {CL_HALF_FLOAT}
+| `D3DFMT_A16B16G16R16`  | {CL_RGBA}, {CL_UNORM_INT16}
+| `D3DFMT_A8B8G8R8`      | {CL_RGBA}, {CL_UNORM_INT8}
+| `D3DFMT_X8B8G8R8`      | {CL_RGBA}, {CL_UNORM_INT8}
+| `D3DFMT_A8R8G8B8`      | {CL_BGRA}, {CL_UNORM_INT8}
+| `D3DFMT_X8R8G8B8`      | {CL_BGRA}, {CL_UNORM_INT8}
+|====
+
+NOTE: The Direct3D 9 format names in the table above seem to imply that the order
+of the color channels are switched relative to OpenCL, but this is not the
+case.
+For example, the layout of channels for each pixel for
+`D3DFMT_A32FB32FG32FR32F` is the same as {CL_RGBA}, {CL_FLOAT}.
+endif::cl_khr_dx9_media_sharing[]
+
+
+ifdef::cl_khr_d3d10_sharing,cl_khr_d3d11_sharing[]
+==== Image Formats for Direct3D Texture Sharing
+
+When the `<<cl_khr_d3d10_sharing>>` or `<<cl_khr_d3d11_sharing>>` extensions
+are supported, image objects sharing storage with Direct3D 10 and Direct3D
+11 textures, respectively, can be created.
+The <<dxgi-image-formats-table, DXGI Formats and Corresponding OpenCL Image
+Formats>> table describes the supported DirectX Graphics Infrastructure
+(DXGI) texture formats.
+
+[[dxgi-image-formats-table]]
+.DXGI Formats and Corresponding OpenCL Image Formats
+[cols=",",options="header",]
+|====
+| *DXGI format*                    | *CL image format* *(channel order, channel data type)*
+
+| `DXGI_FORMAT_R32G32B32A32_FLOAT` | {CL_RGBA}, {CL_FLOAT}
+| `DXGI_FORMAT_R32G32B32A32_UINT`  | {CL_RGBA}, {CL_UNSIGNED_INT32}
+| `DXGI_FORMAT_R32G32B32A32_SINT`  | {CL_RGBA}, {CL_SIGNED_INT32}
+|                                  |
+| `DXGI_FORMAT_R16G16B16A16_FLOAT` | {CL_RGBA}, {CL_HALF_FLOAT}
+| `DXGI_FORMAT_R16G16B16A16_UNORM` | {CL_RGBA}, {CL_UNORM_INT16}
+| `DXGI_FORMAT_R16G16B16A16_UINT`  | {CL_RGBA}, {CL_UNSIGNED_INT16}
+| `DXGI_FORMAT_R16G16B16A16_SNORM` | {CL_RGBA}, {CL_SNORM_INT16}
+| `DXGI_FORMAT_R16G16B16A16_SINT`  | {CL_RGBA}, {CL_SIGNED_INT16}
+|                                  |
+| `DXGI_FORMAT_B8G8R8A8_UNORM`     | {CL_BGRA}, {CL_UNORM_INT8}
+| `DXGI_FORMAT_R8G8B8A8_UNORM`     | {CL_RGBA}, {CL_UNORM_INT8}
+| `DXGI_FORMAT_R8G8B8A8_UINT`      | {CL_RGBA}, {CL_UNSIGNED_INT8}
+| `DXGI_FORMAT_R8G8B8A8_SNORM`     | {CL_RGBA}, {CL_SNORM_INT8}
+| `DXGI_FORMAT_R8G8B8A8_SINT`      | {CL_RGBA}, {CL_SIGNED_INT8}
+|                                  |
+| `DXGI_FORMAT_R32G32_FLOAT`       | {CL_RG}, {CL_FLOAT}
+| `DXGI_FORMAT_R32G32_UINT`        | {CL_RG}, {CL_UNSIGNED_INT32}
+| `DXGI_FORMAT_R32G32_SINT`        | {CL_RG}, {CL_SIGNED_INT32}
+|                                  |
+| `DXGI_FORMAT_R16G16_FLOAT`       | {CL_RG}, {CL_HALF_FLOAT}
+| `DXGI_FORMAT_R16G16_UNORM`       | {CL_RG}, {CL_UNORM_INT16}
+| `DXGI_FORMAT_R16G16_UINT`        | {CL_RG}, {CL_UNSIGNED_INT16}
+| `DXGI_FORMAT_R16G16_SNORM`       | {CL_RG}, {CL_SNORM_INT16}
+| `DXGI_FORMAT_R16G16_SINT`        | {CL_RG}, {CL_SIGNED_INT16}
+|                                  |
+| `DXGI_FORMAT_R8G8_UNORM`         | {CL_RG}, {CL_UNORM_INT8}
+| `DXGI_FORMAT_R8G8_UINT`          | {CL_RG}, {CL_UNSIGNED_INT8}
+| `DXGI_FORMAT_R8G8_SNORM`         | {CL_RG}, {CL_SNORM_INT8}
+| `DXGI_FORMAT_R8G8_SINT`          | {CL_RG}, {CL_SIGNED_INT8}
+|                                  |
+| `DXGI_FORMAT_R32_FLOAT`          | {CL_R}, {CL_FLOAT}
+| `DXGI_FORMAT_R32_UINT`           | {CL_R}, {CL_UNSIGNED_INT32}
+| `DXGI_FORMAT_R32_SINT`           | {CL_R}, {CL_SIGNED_INT32}
+|                                  |
+| `DXGI_FORMAT_R16_FLOAT`          | {CL_R}, {CL_HALF_FLOAT}
+| `DXGI_FORMAT_R16_UNORM`          | {CL_R}, {CL_UNORM_INT16}
+| `DXGI_FORMAT_R16_UINT`           | {CL_R}, {CL_UNSIGNED_INT16}
+| `DXGI_FORMAT_R16_SNORM`          | {CL_R}, {CL_SNORM_INT16}
+| `DXGI_FORMAT_R16_SINT`           | {CL_R}, {CL_SIGNED_INT16}
+|                                  |
+| `DXGI_FORMAT_R8_UNORM`           | {CL_R}, {CL_UNORM_INT8}
+| `DXGI_FORMAT_R8_UINT`            | {CL_R}, {CL_UNSIGNED_INT8}
+| `DXGI_FORMAT_R8_SNORM`           | {CL_R}, {CL_SNORM_INT8}
+| `DXGI_FORMAT_R8_SINT`            | {CL_R}, {CL_SIGNED_INT8}
+|====
+endif::cl_khr_d3d10_sharing,cl_khr_d3d11_sharing[]
+
+
+ifdef::cl_khr_gl_sharing[]
+==== Image Formats for OpenGL Texture and Renderbuffer Sharing
+
+When the `<<cl_khr_gl_sharing>>` extension is supported, image objects
+sharing storage with OpenGL texture and renderbuffer objects can be created.
+The <<opengl-image-formats-table, OpenGL Internal Formats and Corresponding
+OpenCL Internal Formats>> table describes the supported OpenGL image
+formats.
+If an OpenGL texture or renderbuffer object with an internal format from the
+table is successfully created by OpenGL, then there is guaranteed to be a
+mapping to one of the corresponding OpenCL image format(s) in the table.
+Texture and renderbuffer objects created with other OpenGL internal formats
+may (but are not guaranteed to) have a mapping to an OpenCL image format.
+If such mappings exist, they are guaranteed to preserve all color
+components, data types, and at least the number of bits/component actually
+allocated by OpenGL for that format.
+
+[[opengl-image-formats-table]]
+.OpenGL Internal Formats and Corresponding OpenCL Internal Formats
+[cols=",",options="header",]
+|====
+| OpenGL internal format                    | OpenCL Image Format (Channel Order, Channel Data Type)
+| `GL_RGBA8`                                | {CL_RGBA}, {CL_UNORM_INT8} or +
+                                              {CL_BGRA}, {CL_UNORM_INT8}
+| `GL_SRGB8_ALPHA8`                         | {CL_sRGBA}, {CL_UNORM_INT8}
+| `GL_RGBA`, `GL_UNSIGNED_INT_8_8_8_8_REV`  | {CL_RGBA}, {CL_UNORM_INT8}
+| `GL_BGRA`, `GL_UNSIGNED_INT_8_8_8_8_REV`  | {CL_BGRA}, {CL_UNORM_INT8}
+| |
+| `GL_RGBA8I`, `GL_RGBA8I_EXT`              | {CL_RGBA}, {CL_SIGNED_INT8}
+| `GL_RGBA16I`, `GL_RGBA16I_EXT`            | {CL_RGBA}, {CL_SIGNED_INT16}
+| `GL_RGBA32I`, `GL_RGBA32I_EXT`            | {CL_RGBA}, {CL_SIGNED_INT32}
+| |
+| `GL_RGBA8UI`, `GL_RGBA8UI_EXT`            | {CL_RGBA}, {CL_UNSIGNED_INT8}
+| `GL_RGBA16UI`, `GL_RGBA16UI_EXT`          | {CL_RGBA}, {CL_UNSIGNED_INT16}
+| `GL_RGBA32UI`, `GL_RGBA32UI_EXT`          | {CL_RGBA}, {CL_UNSIGNED_INT32}
+| |
+| `GL_RGBA8_SNORM`                          | {CL_RGBA}, {CL_SNORM_INT8}
+| `GL_RGBA16`                               | {CL_RGBA}, {CL_UNORM_INT16}
+| `GL_RGBA16_SNORM`                         | {CL_RGBA}, {CL_SNORM_INT16}
+| `GL_RGBA16F`, `GL_RGBA16F_ARB`            | {CL_RGBA}, {CL_HALF_FLOAT}
+| `GL_RGBA32F`, `GL_RGBA32F_ARB`            | {CL_RGBA}, {CL_FLOAT}
+| |
+| `GL_R8`                                   | {CL_R}, {CL_UNORM_INT8}
+| `GL_R8_SNORM`                             | {CL_R}, {CL_SNORM_INT8}
+| `GL_R16`                                  | {CL_R}, {CL_UNORM_INT16}
+| `GL_R16_SNORM`                            | {CL_R}, {CL_SNORM_INT16}
+| `GL_R16F`                                 | {CL_R}, {CL_HALF_FLOAT}
+| `GL_R32F`                                 | {CL_R}, {CL_FLOAT}
+| |
+| `GL_R8I`                                  | {CL_R}, {CL_SIGNED_INT8}
+| `GL_R16I`                                 | {CL_R}, {CL_SIGNED_INT16}
+| `GL_R32I`                                 | {CL_R}, {CL_SIGNED_INT32}
+| `GL_R8UI`                                 | {CL_R}, {CL_UNSIGNED_INT8}
+| `GL_R16UI`                                | {CL_R}, {CL_UNSIGNED_INT16}
+| `GL_R32UI`                                | {CL_R}, {CL_UNSIGNED_INT32}
+| |
+| `GL_RG8`                                  | {CL_RG}, {CL_UNORM_INT8}
+| `GL_RG8_SNORM`                            | {CL_RG}, {CL_SNORM_INT8}
+| `GL_RG16`                                 | {CL_RG}, {CL_UNORM_INT16}
+| `GL_RG16_SNORM`                           | {CL_RG}, {CL_SNORM_INT16}
+| `GL_RG16F`                                | {CL_RG}, {CL_HALF_FLOAT}
+| `GL_RG32F`                                | {CL_RG}, {CL_FLOAT}
+| |
+| `GL_RG8I`                                 | {CL_RG}, {CL_SIGNED_INT8}
+| `GL_RG16I`                                | {CL_RG}, {CL_SIGNED_INT16}
+| `GL_RG32I`                                | {CL_RG}, {CL_SIGNED_INT32}
+| `GL_RG8UI`                                | {CL_RG}, {CL_UNSIGNED_INT8}
+| `GL_RG16UI`                               | {CL_RG}, {CL_UNSIGNED_INT16}
+| `GL_RG32UI`                               | {CL_RG}, {CL_UNSIGNED_INT32}
+ifdef::cl_khr_gl_depth_images[]
+| `GL_DEPTH_COMPONENT32F`                   | {CL_DEPTH}, {CL_FLOAT}
+| `GL_DEPTH_COMPONENT16`                    | {CL_DEPTH}, {CL_UNORM_INT16}
+| `GL_DEPTH24_STENCIL8`                     | {CL_DEPTH_STENCIL}, {CL_UNORM_INT24}
+| `GL_DEPTH32F_STENCIL8`                    | {CL_DEPTH_STENCIL}, {CL_FLOAT}
+endif::cl_khr_gl_depth_images[]
+|====
+endif::cl_khr_gl_sharing[]
 
 
 === Reading, Writing and Copying Image Objects
@@ -3898,6 +4257,36 @@ include::{generated}/api/version-notes/CL_IMAGE_NUM_MIP_LEVELS.asciidoc[]
 include::{generated}/api/version-notes/CL_IMAGE_NUM_SAMPLES.asciidoc[]
   | {cl_uint_TYPE}
       | Return `num_samples` associated with _image_.
+
+ifdef::cl_khr_dx9_media_sharing[]
+| {CL_IMAGE_DX9_MEDIA_PLANE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_DX9_MEDIA_PLANE_KHR.asciidoc[]
+  | {cl_uint_TYPE}
+    | If _image_ was created using {clCreateFromDX9MediaSurfaceKHR},
+      returns the _plane_ argument specified when _image_ was created.
+endif::cl_khr_dx9_media_sharing[]
+
+ifdef::cl_khr_d3d10_sharing[]
+| {CL_IMAGE_D3D10_SUBRESOURCE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_D3D10_SUBRESOURCE_KHR.asciidoc[]
+  | {cl_uint_TYPE}
+    | If _image_ was created using {clCreateFromD3D10Texture2DKHR}, or
+      {clCreateFromD3D10Texture3DKHR}, returns the _subresource_ argument
+      specified when _image_ was created.
+endif::cl_khr_d3d10_sharing[]
+
+ifdef::cl_khr_d3d11_sharing[]
+| {CL_IMAGE_D3D11_SUBRESOURCE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_D3D11_SUBRESOURCE_KHR.asciidoc[]
+  | {cl_uint_TYPE}
+    | If _image_ was created using {clCreateFromD3D11Texture2DKHR}, or
+      {clCreateFromD3D11Texture3DKHR}, returns the _subresource_ argument
+      specified when _image_ was created.
+endif::cl_khr_d3d11_sharing[]
+
 |====
 
 // refError
@@ -3915,11 +4304,487 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+
+ifdef::cl_khr_dx9_media_sharing[]
+The following errors may be returned if the `<<cl_khr_dx9_media_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_DX9_MEDIA_SURFACE_KHR} if _param_name_ is
+    {CL_IMAGE_DX9_MEDIA_PLANE_KHR} and _image_ was not created by calling
+    {clCreateFromDX9MediaSurfaceKHR}.
+endif::cl_khr_dx9_media_sharing[]
+
+ifdef::cl_khr_d3d10_sharing[]
+The following errors may be returned if the `<<cl_khr_d3d10_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_D3D10_RESOURCE_KHR} if _param_name_ is
+    {CL_IMAGE_D3D10_SUBRESOURCE_KHR} and _image_ was not created by the
+    function {clCreateFromD3D10Texture2DKHR}, or
+    {clCreateFromD3D10Texture3DKHR}.
+endif::cl_khr_d3d10_sharing[]
+
+ifdef::cl_khr_d3d11_sharing[]
+The following errors may be returned if the `<<cl_khr_d3d11_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_D3D11_RESOURCE_KHR} if _param_name_ is
+    {CL_IMAGE_D3D11_SUBRESOURCE_KHR} and _image_ was not created by the
+    function {clCreateFromD3D11Texture2DKHR}, or
+    {clCreateFromD3D11Texture3DKHR}.
+endif::cl_khr_d3d11_sharing[]
+
 --
 
 
+ifdef::cl_khr_dx9_media_sharing[]
+=== Creating OpenCL Image Objects from DirectX 9 Media Resources
+
+[open,refpage='clCreateFromDX9MediaSurfaceKHR',desc='Create OpenCL image object from a media surface',type='protos']
+--
+To create an OpenCL image object from a media surface, call the function
+
+include::{generated}/api/protos/clCreateFromDX9MediaSurfaceKHR.txt[]
+include::{generated}/api/version-notes/clCreateFromDX9MediaSurfaceKHR.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from a media adapter.
+  * _flags_ is a bit-field that is used to specify usage information.
+    Refer to the <<memory-flags-table, List of supported memory flag
+    values>> table for a description of _flags_.
+    Only the {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_WRITE}
+    flags specified in that table can be used.
+  * _adapter_type_ is a value from enumeration of supported adapters
+    described in the <<dx9-media-adapter-types,
+    cl_dx9_media_adapter_type_khr values>> table.
+    The type of _surface_info_ is determined by the adapter type.
+    The implementation does not need to support all adapter types.
+    This approach provides flexibility to support additional adapter types
+    in the future.
+    Supported adapter types are {CL_ADAPTER_D3D9_KHR},
+    {CL_ADAPTER_D3D9EX_KHR} and {CL_ADAPTER_DXVA_KHR}.
+  * _surface_info_ is a pointer to one of the structures defined in the
+    _adapter_type_ description above, passed in as a `void *`.
+    If _adapter_type_ is {CL_ADAPTER_D3D9_KHR}, {CL_ADAPTER_D3D9EX_KHR} and
+    {CL_ADAPTER_DXVA_KHR}, _surface_info_ points to a
+    <<cl_dx9_surface_info_khr>> structure describing the surface.
+  * _plane_ is the plane of resource to share for planar surface formats.
+    For planar formats, we use the plane parameter to obtain a handle to
+    thie specific plane (Y, U or V for example).
+    For non-planar formats used by media, _plane_ must be 0.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+The width and height of the returned OpenCL 2D image object are determined
+by the width and height of the _plane_ of the resource
+(_surface_info_->_resource_).
+The channel type and order of the returned image object is determined by the
+format and plane of the resource, and are described in the
+<<fourcc-image-formats-table, YUV FourCC Codes and Corresponding OpenCL
+Image Formats>> and <<d3d9-image-formats-table, Direct3D 9 Formats and
+Corresponding OpenCL Image Formats>> tables.
+
+This call will increment the internal media surface count on the resource.
+The internal media surface reference count on the resource will be
+decremented when the OpenCL reference count on the returned OpenCL memory
+object drops to zero.
+
+// refError
+
+{clCreateFromDX9MediaSurfaceKHR} returns a valid non-zero 2D image object
+and _errcode_ret_ is set to {CL_SUCCESS} if the 2D image object is created
+successfully.
+Otherwise it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid or if
+    _plane_ is not a valid plane of _resource_ specified in _surface_info_.
+  * {CL_INVALID_DX9_MEDIA_SURFACE_KHR} if _resource_ specified in
+    _surface_info_ is not a valid resource or is not associated with
+    _adapter_type_ (e.g., _adapter_type_ is set to {CL_ADAPTER_D3D9_KHR} and
+    _resource_ is not a Direct3D 9 surface created in D3DPOOL_DEFAULT).
+  * {CL_INVALID_DX9_MEDIA_SURFACE_KHR} if _shared_handle_ specified in
+    _surface_info_ is not `NULL` or a valid handle value.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the texture format of _resource_
+    is not listed in the <<fourcc-image-formats-table, YUV FourCC Codes and
+    Corresponding OpenCL Image Formats>> or <<d3d9-image-formats-table,
+    Direct3D 9 Formats and Corresponding OpenCL Image Formats>> tables.
+  * {CL_INVALID_OPERATION} if there are no devices in _context_ that support
+    _adapter_type_.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='cl_dx9_surface_info_khr',desc='Structure describing a DX surface',type='structs']
+--
+The {cl_dx9_surface_info_khr_TYPE} structure is passed to
+{clCreateFromDX9MediaSurfaceKHR} to describe a DX9 surface, and is defined
+as:
+
+include::{generated}/api/structs/cl_dx9_surface_info_khr.txt[]
+
+  * _resource_ is a pointer to a `IDirect3DSurface9` surface interface.
+  * _shared_handle_ is a `HANDLE` to the resource.
+
+For DX9 surfaces, we need both the handle to the resource and the resource
+itself to have a sufficient amount of information to eliminate a copy of the
+surface for sharing in cases where this is possible.
+Elimination of the copy is driver dependent.
+_shared_handle_ may be `NULL` and this may result in sub-optimal
+performance.
+--
+endif::cl_khr_dx9_media_sharing[]
+
+
+ifdef::cl_khr_d3d10_sharing[]
+=== Creating OpenCL Image Objects From Direct3D 10 Textures and Resources
+
+[open,refpage='clCreateFromD3D10Texture2DKHR',desc='Create OpenCL 2D image object from a Direct3D 10 2D texture',type='protos']
+--
+To create an OpenCL 2D image object from a subresource of a Direct3D 10 2D
+texture, call the function
+
+include::{generated}/api/protos/clCreateFromD3D10Texture2DKHR.txt[]
+include::{generated}/api/version-notes/clCreateFromD3D10Texture2DKHR.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from a Direct3D 10 device.
+  * _flags_ is a bit-field that is used to specify usage information.
+    Refer to the <<memory-flags-table, List of supported memory flag
+    values>> table for a description of _flags_.
+    Only the {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_WRITE}
+    flags specified in that table can be used.
+  * _resource_ is a pointer to the Direct3D 10 2D texture to share.
+  * _subresource_ is the subresource of _resource_ to share.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+The width and height of the returned OpenCL 2D image object are determined
+by the width and height of subresource _subresource_ of _resource_.
+The channel type and order of the returned OpenCL 2D image object is
+determined by the format of _resource_ and the <<dxgi-image-formats-table,
+DXGI Formats and Corresponding OpenCL Image Formats>> table.
+
+This call will increment the internal Direct3D 10 reference count on
+_resource_.
+The internal Direct3D 10 reference count on _resource_ will be decremented
+when the OpenCL reference count on the returned OpenCL memory object drops
+to zero.
+
+NOTE: Refer to the <<lifetime-of-shared-opencl-direct3d-memory-objects,
+Lifetime of Shared Direct3D Memory Objects>> and
+<<acquiring-shared-opencl-opengl-memory-objects, Acquiring, Releasing, and
+Synchronizing Access to Shared OpenCL/OpenGL Memory Objects>> sections for
+more information.
+
+// refError
+
+{clCreateFromD3D10Texture2DKHR} returns a valid non-zero OpenCL image object
+and _errcode_ret_ is set to {CL_SUCCESS} if the image object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid or if
+    _subresource_ is not a valid subresource index for _resource_.
+  * {CL_INVALID_D3D10_RESOURCE_KHR} if _resource_ is not a Direct3D 10
+    texture resource, if _resource_ was created with the D3D10_USAGE flag
+    D3D10_USAGE_IMMUTABLE, if _resource_ is a multisampled texture, if a
+    {cl_mem_TYPE} from subresource _subresource_ of _resource_ has already
+    been created using {clCreateFromD3D10Texture2DKHR}, or if _context_ was
+    not created against the same Direct3D 10 device from which _resource_
+    was created.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the Direct3D 10 texture format
+    of _resource_ is not listed in the <<dxgi-image-formats-table, DXGI
+    Formats and Corresponding OpenCL Image Formats>> table or if the
+    Direct3D 10 texture format of _resource_ does not map to a supported
+    OpenCL image format.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clCreateFromD3D10Texture3DKHR',desc='Create OpenCL 3D image object from a Direct3D 10 3D texture',type='protos']
+--
+To create an OpenCL 3D image object from a subresource of a Direct3D 10 3D
+texture, call the function
+
+include::{generated}/api/protos/clCreateFromD3D10Texture3DKHR.txt[]
+include::{generated}/api/version-notes/clCreateFromD3D10Texture3DKHR.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from a Direct3D 10 device.
+  * _flags_ is a bit-field that is used to specify usage information.
+    Refer to the <<memory-flags-table, List of supported memory flag
+    values>> table for a description of _flags_.
+    Only the {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_WRITE}
+    flags specified in that table can be used.
+  * _resource_ is a pointer to the Direct3D 10 3D texture to share.
+  * _subresource_ is the subresource of _resource_ to share.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+The width, height and depth of the returned OpenCL 3D image object are
+determined by the width, height and depth of subresource _subresource_ of
+_resource_.
+The channel type and order of the returned OpenCL 3D image object is
+determined by the format of _resource_ and the <<dxgi-image-formats-table,
+DXGI Formats and Corresponding OpenCL Image Formats>> table.
+
+This call will increment the internal Direct3D 10 reference count on
+_resource_.
+The internal Direct3D 10 reference count on _resource_ will be decremented when
+the OpenCL reference count on the returned OpenCL memory object drops to
+zero.
+
+NOTE: Refer to the <<lifetime-of-shared-opencl-direct3d-memory-objects,
+Lifetime of Shared Direct3D Memory Objects>> and
+<<acquiring-shared-opencl-opengl-memory-objects, Acquiring, Releasing, and
+Synchronizing Access to Shared OpenCL/OpenGL Memory Objects>> sections for
+more information.
+
+// refError
+
+{clCreateFromD3D10Texture3DKHR} returns a valid non-zero OpenCL image object
+and _errcode_ret_ is set to {CL_SUCCESS} if the image object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid or if
+    _subresource_ is not a valid subresource index for _resource_.
+  * {CL_INVALID_D3D10_RESOURCE_KHR} if _resource_ is not a Direct3D 10
+    texture resource, if _resource_ was created with the D3D10_USAGE flag
+    D3D10_USAGE_IMMUTABLE, if _resource_ is a multisampled texture, if a
+    {cl_mem_TYPE} from subresource _subresource_ of _resource_ has already
+    been created using {clCreateFromD3D10Texture3DKHR}, or if _context_ was
+    not created against the same Direct3D 10 device from which _resource_
+    was created.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the Direct3D 10 texture format
+    of _resource_ is not listed in the <<dxgi-image-formats-table, DXGI
+    Formats and Corresponding OpenCL Image Formats>> table or if the
+    Direct3D 10 texture format of _resource_ does not map to a supported
+    OpenCL image format.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_d3d10_sharing[]
+
+
+ifdef::cl_khr_d3d11_sharing[]
+=== Creating OpenCL Image Objects From Direct3D 11 Textures and Resources
+
+[open,refpage='clCreateFromD3D11Texture2DKHR',desc='Create OpenCL 2D image object from a Direct3D 11 2D texture',type='protos']
+--
+To create an OpenCL 2D image object from a subresource of a Direct3D 11 2D
+texture, call the function
+
+include::{generated}/api/protos/clCreateFromD3D11Texture2DKHR.txt[]
+include::{generated}/api/version-notes/clCreateFromD3D11Texture2DKHR.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from a Direct3D 11 device.
+  * _flags_ is a bit-field that is used to specify usage information.
+    Refer to the <<memory-flags-table, List of supported memory flag
+    values>> table for a description of _flags_.
+    Only the {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_WRITE}
+    flags specified in that table can be used.
+  * _resource_ is a pointer to the Direct3D 11 2D texture to share.
+  * _subresource_ is the subresource of _resource_ to share.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+The width and height of the returned OpenCL 2D image object are determined
+by the width and height of subresource _subresource_ of _resource_.
+The channel type and order of the returned OpenCL 2D image object is
+determined by the format of _resource_ and the <<dxgi-image-formats-table,
+DXGI Formats and Corresponding OpenCL Image Formats>> table.
+
+This call will increment the internal Direct3D 11 reference count on
+_resource_.
+The internal Direct3D 11 reference count on _resource_ will be decremented when
+the OpenCL reference count on the returned OpenCL memory object drops to
+zero.
+
+NOTE: Refer to the <<lifetime-of-shared-opencl-direct3d-memory-objects,
+Lifetime of Shared Direct3D Memory Objects>> and
+<<acquiring-shared-opencl-opengl-memory-objects, Acquiring, Releasing, and
+Synchronizing Access to Shared OpenCL/OpenGL Memory Objects>> sections for
+more information.
+
+// refError
+
+{clCreateFromD3D11Texture2DKHR} returns a valid non-zero OpenCL image object
+and _errcode_ret_ is set to {CL_SUCCESS} if the image object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid or if
+    _subresource_ is not a valid subresource index for _resource_.
+  * {CL_INVALID_D3D11_RESOURCE_KHR} if _resource_ is not a Direct3D 11
+    texture resource, if _resource_ was created with the D3D11_USAGE flag
+    D3D11_USAGE_IMMUTABLE, if _resource_ is a multisampled texture, if a
+    {cl_mem_TYPE} from subresource _subresource_ of _resource_ has already
+    been created using {clCreateFromD3D11Texture2DKHR}, or if _context_ was
+    not created against the same Direct3D 11 device from which _resource_
+    was created.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the Direct3D 11 texture format
+    of _resource_ is not listed in the <<dxgi-image-formats-table, DXGI
+    Formats and Corresponding OpenCL Image Formats>> table or if the
+    Direct3D 11 texture format of _resource_ does not map to a supported
+    OpenCL image format.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clCreateFromD3D11Texture3DKHR',desc='Create OpenCL 3D image object from a Direct3D 11 3D texture',type='protos']
+--
+To create an OpenCL 3D image object from a subresource of a Direct3D 11 3D
+texture, call the function
+
+include::{generated}/api/protos/clCreateFromD3D11Texture3DKHR.txt[]
+include::{generated}/api/version-notes/clCreateFromD3D11Texture3DKHR.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from a Direct3D 11 device.
+  * _flags_ is a bit-field that is used to specify usage information.
+    Refer to the <<memory-flags-table, List of supported memory flag
+    values>> table for a description of _flags_.
+    Only the {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_WRITE}
+    flags specified in that table can be used.
+  * _resource_ is a pointer to the Direct3D 11 3D texture to share.
+  * _subresource_ is the subresource of _resource_ to share.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+The width, height and depth of the returned OpenCL 3D image object are
+determined by the width, height and depth of subresource _subresource_ of
+_resource_.
+The channel type and order of the returned OpenCL 3D image object is
+determined by the format of _resource_ and the <<dxgi-image-formats-table,
+DXGI Formats and Corresponding OpenCL Image Formats>> table.
+
+This call will increment the internal Direct3D 11 reference count on
+_resource_.
+The internal Direct3D 11 reference count on _resource_ will be decremented when
+the OpenCL reference count on the returned OpenCL memory object drops to
+zero.
+
+NOTE: Refer to the <<lifetime-of-shared-opencl-direct3d-memory-objects,
+Lifetime of Shared Direct3D Memory Objects>> and
+<<acquiring-shared-opencl-opengl-memory-objects, Acquiring, Releasing, and
+Synchronizing Access to Shared OpenCL/OpenGL Memory Objects>> sections for
+more information.
+
+// refError
+
+{clCreateFromD3D11Texture3DKHR} returns a valid non-zero OpenCL image object
+and _errcode_ret_ is set to {CL_SUCCESS} if the image object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid or if
+    _subresource_ is not a valid subresource index for _resource_.
+  * {CL_INVALID_D3D11_RESOURCE_KHR} if _resource_ is not a Direct3D 11
+    texture resource, if _resource_ was created with the D3D11_USAGE flag
+    D3D11_USAGE_IMMUTABLE, if _resource_ is a multisampled texture, if a
+    {cl_mem_TYPE} from subresource _subresource_ of _resource_ has already
+    been created using {clCreateFromD3D11Texture3DKHR}, or if _context_ was
+    not created against the same Direct3D 11 device from which _resource_
+    was created.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the Direct3D 11 texture format
+    of _resource_ is not listed in the <<dxgi-image-formats-table, DXGI
+    Formats and Corresponding OpenCL Image Formats>> table or if the
+    Direct3D 11 texture format of _resource_ does not map to a supported
+    OpenCL image format.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_d3d11_sharing[]
+
+
+ifdef::cl_khr_egl_image[]
+=== Creating OpenCL Image Objects From EGL Images
+
+[open,refpage='clCreateFromEGLImageKHR',desc='Create cl_mem target from EGLImage source',type='protos']
+--
+To create an `EGLImage` target of type {cl_mem} from the `EGLImage` source
+provided as _image_, call the function
+
+include::{generated}/api/protos/clCreateFromEGLImageKHR.txt[]
+include::{generated}/api/version-notes/clCreateFromEGLImageKHR.asciidoc[]
+
+  * _display_ should be of type `EGLDisplay`, cast into the type
+    {CLeglDisplayKHR}.
+  * _image_ should be of type `EGLImageKHR`, cast into the type
+    {CLeglImageKHR_TYPE}.
+    Assuming no errors are generated in this function, the resulting image
+    object will be an `EGLImage` target of the specified `EGLImage` _image_.
+    The resulting {cl_mem} is an image object which may be used normally by
+    all OpenCL operations.
+    This maps to an `image2d_t` type in OpenCL kernel code.
+  * _flags_ is a bit-field that is used to specify usage information about
+    the memory object being created.
+    Refer to the <<memory-flags-table, Memory Flags>> table for a
+    description of _flags_.
+    Accepted values in _flags_ are described below.
+  * _properties_ specifies a list of property names and their corresponding
+    values.
+    Each property name is immediately followed by the corresponding desired
+    value.
+    The list is terminated with 0.
+    No properties are currently supported with this version of the
+    extension.
+    _properties_ can be `NULL`.
+
+Accepted for _flags_ are {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and
+CL_MEM_READ_WRITE.
+If OpenCL 1.2 is supported, _flags_ also accepts {CL_MEM_HOST_WRITE_ONLY},
+{CL_MEM_HOST_READ_ONLY}, and {CL_MEM_HOST_NO_ACCESS}.
+
+`<<cl_khr_egl_image>>` only requires support for {CL_MEM_READ_ONLY}, and for
+CL_MEM_HOST_NO_ACCESS if OpenCL 1.2 or later is supported.
+For OpenCL 1.1, a {CL_INVALID_OPERATION} will be returned for images which
+do not support host mapping.
+
+If the value passed in _flags_ is not supported by the OpenCL
+implementation, it will return {CL_INVALID_VALUE}.
+The accepted _flags_ may be dependent upon the texture format used.
+
+// refError
+
+{clCreateFromEGLImageKHR} returns a valid non-zero OpenCL image object and
+_errcode_ret_ is set to {CL_SUCCESS} if the image object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid OpenCL context.
+  * {CL_INVALID_VALUE} if _properties_ contains invalid values, if _display_
+    is not a valid display object or if _flags_ are not in the set defined
+    above.
+  * {CL_INVALID_EGL_OBJECT_KHR} if _image_ is not a valid `EGLImage` object.
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if the OpenCL implementation is not able
+    to create a {cl_mem} compatible with the provided {CLeglImageKHR_TYPE}
+    for an implementation-dependent reason (this could be caused by, but not
+    limited to, reasons such as unsupported texture formats, etc).
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_INVALID_OPERATION} if there are no devices in _context_ that support
+    images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in table 4.3 is
+    {CL_FALSE}) or if the flags passed are not supported for that image
+    type.
+--
+endif::cl_khr_egl_image[]
+
+
 ifdef::cl_khr_gl_sharing[]
-=== Creating OpenCL Image Objects From OpenGL Textures
+=== Creating OpenCL Image Objects From OpenGL Textures and Renderbuffers
 
 [open,refpage='clCreateFromGLTexture',desc='Create OpenCL image object from an OpenGL texture object',type='protos']
 --
@@ -4043,8 +4908,9 @@ returned in _errcode_ret_:
     whose type matches _texture_target_, if the specified _miplevel_ of
     _texture_ is not defined, or if the width or height of the specified
     _miplevel_ is zero or if the OpenGL texture object is incomplete.
-  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the OpenGL texture internal
-    format does not map to a supported OpenCL image format.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the internal format of _texture_
+    is not listed in the <<opengl-image-formats-table, OpenGL
+    Internal Formats and Corresponding OpenCL Internal Formats>> table.
   * {CL_INVALID_OPERATION} if _texture_ is an OpenGL texture object created
     with a border width value greater than zero.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
@@ -4054,83 +4920,9 @@ returned in _errcode_ret_:
 --
 
 
-==== List Of OpenGL and Corresponding OpenCL Image Formats
-
-The table below describes the list of OpenGL texture internal formats and
-the corresponding OpenCL image formats.
-If an OpenGL texture object with an internal format from the table below is
-successfully created by OpenGL, then there is guaranteed to be a mapping to
-one of the corresponding OpenCL image format(s) in that table.
-Texture objects created with other OpenGL internal formats may (but are not
-guaranteed to) have a mapping to an OpenCL image format; if such mappings
-exist, they are guaranteed to preserve all color components, data types, and
-at least the number of bits/component actually allocated by OpenGL for that
-format.
-
-[[mapping-of-gl-image-formats-table]]
-.OpenGL internal formats and corresponding OpenCL internal formats
-[cols=",",options="header",]
-|====
-| OpenGL internal format                    | OpenCL Image Format (Channel Order, Channel Data Type)
-| `GL_RGBA8`                                | {CL_RGBA}, {CL_UNORM_INT8} or +
-                                              {CL_BGRA}, {CL_UNORM_INT8}
-| `GL_SRGB8_ALPHA8`                         | {CL_sRGBA}, {CL_UNORM_INT8}
-| `GL_RGBA`, `GL_UNSIGNED_INT_8_8_8_8_REV`  | {CL_RGBA}, {CL_UNORM_INT8}
-| `GL_BGRA`, `GL_UNSIGNED_INT_8_8_8_8_REV`  | {CL_BGRA}, {CL_UNORM_INT8}
-| |
-| `GL_RGBA8I`, `GL_RGBA8I_EXT`              | {CL_RGBA}, {CL_SIGNED_INT8}
-| `GL_RGBA16I`, `GL_RGBA16I_EXT`            | {CL_RGBA}, {CL_SIGNED_INT16}
-| `GL_RGBA32I`, `GL_RGBA32I_EXT`            | {CL_RGBA}, {CL_SIGNED_INT32}
-| |
-| `GL_RGBA8UI`, `GL_RGBA8UI_EXT`            | {CL_RGBA}, {CL_UNSIGNED_INT8}
-| `GL_RGBA16UI`, `GL_RGBA16UI_EXT`          | {CL_RGBA}, {CL_UNSIGNED_INT16}
-| `GL_RGBA32UI`, `GL_RGBA32UI_EXT`          | {CL_RGBA}, {CL_UNSIGNED_INT32}
-| |
-| `GL_RGBA8_SNORM`                          | {CL_RGBA}, {CL_SNORM_INT8}
-| `GL_RGBA16`                               | {CL_RGBA}, {CL_UNORM_INT16}
-| `GL_RGBA16_SNORM`                         | {CL_RGBA}, {CL_SNORM_INT16}
-| `GL_RGBA16F`, `GL_RGBA16F_ARB`            | {CL_RGBA}, {CL_HALF_FLOAT}
-| `GL_RGBA32F`, `GL_RGBA32F_ARB`            | {CL_RGBA}, {CL_FLOAT}
-| |
-| `GL_R8`                                   | {CL_R}, {CL_UNORM_INT8}
-| `GL_R8_SNORM`                             | {CL_R}, {CL_SNORM_INT8}
-| `GL_R16`                                  | {CL_R}, {CL_UNORM_INT16}
-| `GL_R16_SNORM`                            | {CL_R}, {CL_SNORM_INT16}
-| `GL_R16F`                                 | {CL_R}, {CL_HALF_FLOAT}
-| `GL_R32F`                                 | {CL_R}, {CL_FLOAT}
-| |
-| `GL_R8I`                                  | {CL_R}, {CL_SIGNED_INT8}
-| `GL_R16I`                                 | {CL_R}, {CL_SIGNED_INT16}
-| `GL_R32I`                                 | {CL_R}, {CL_SIGNED_INT32}
-| `GL_R8UI`                                 | {CL_R}, {CL_UNSIGNED_INT8}
-| `GL_R16UI`                                | {CL_R}, {CL_UNSIGNED_INT16}
-| `GL_R32UI`                                | {CL_R}, {CL_UNSIGNED_INT32}
-| |
-| `GL_RG8`                                  | {CL_RG}, {CL_UNORM_INT8}
-| `GL_RG8_SNORM`                            | {CL_RG}, {CL_SNORM_INT8}
-| `GL_RG16`                                 | {CL_RG}, {CL_UNORM_INT16}
-| `GL_RG16_SNORM`                           | {CL_RG}, {CL_SNORM_INT16}
-| `GL_RG16F`                                | {CL_RG}, {CL_HALF_FLOAT}
-| `GL_RG32F`                                | {CL_RG}, {CL_FLOAT}
-| |
-| `GL_RG8I`                                 | {CL_RG}, {CL_SIGNED_INT8}
-| `GL_RG16I`                                | {CL_RG}, {CL_SIGNED_INT16}
-| `GL_RG32I`                                | {CL_RG}, {CL_SIGNED_INT32}
-| `GL_RG8UI`                                | {CL_RG}, {CL_UNSIGNED_INT8}
-| `GL_RG16UI`                               | {CL_RG}, {CL_UNSIGNED_INT16}
-| `GL_RG32UI`                               | {CL_RG}, {CL_UNSIGNED_INT32}
-ifdef::cl_khr_gl_depth_images[]
-| `GL_DEPTH_COMPONENT32F`                   | {CL_DEPTH}, {CL_FLOAT}
-| `GL_DEPTH_COMPONENT16`                    | {CL_DEPTH}, {CL_UNORM_INT16}
-| `GL_DEPTH24_STENCIL8`                     | {CL_DEPTH_STENCIL}, {CL_UNORM_INT24}
-| `GL_DEPTH32F_STENCIL8`                    | {CL_DEPTH_STENCIL}, {CL_FLOAT}
-endif::cl_khr_gl_depth_images[]
-|====
-
-
 ifdef::cl_khr_gl_depth_images[]
 [[restrictions-on-depth-stencil-images]]
-===== Restrictions on Depth/Stencil Images
+==== Restrictions on Depth/Stencil Images
 
 Depth images with an image channel order of {CL_DEPTH_STENCIL} can only be
 created using the {clCreateFromGLTexture} API, and only when the
@@ -4162,7 +4954,7 @@ endif::cl_khr_gl_depth_images[]
 
 ifdef::cl_khr_gl_msaa_sharing[]
 [[restrictions-on-msaa-images]]
-===== Restrictions on Multi-Sample Images
+==== Restrictions on Multi-Sample Images
 
 The formats described in the <<image-channel-order-table, Image Channel
 Order Values>> and <<image-channel-data-types-table, Image Channel Data
@@ -4180,8 +4972,6 @@ Multi-sample OpenCL image objects cannot be used as arguments to
 Such use will return a {CL_INVALID_OPERATION} error.
 endif::cl_khr_gl_msaa_sharing[]
 
-
-=== Creating OpenCL Image Objects From OpenGL Renderbuffers
 
 [open,refpage='clCreateFromGLRenderbuffer',desc='Create OpenCL 2D image object from an OpenGL renderbuffer',type='protos']
 --
@@ -4219,9 +5009,9 @@ behavior.
 The {clRetainMemObject} and {clReleaseMemObject} functions can be used to
 retain and release the image objects.
 
-The <<mapping-of-gl-image-formats-table, OpenGL internal formats and
-corresponding OpenCL internal formats>> table describes the list of OpenGL
-renderbuffer internal formats and the corresponding OpenCL image formats.
+The <<opengl-image-formats-table, OpenGL Internal Formats and
+Corresponding OpenCL Internal Formats>> table describes the list of OpenGL
+renderbuffer internal formats and the Corresponding OpenCL Image Formats.
 If an OpenGL renderbuffer object with an internal format from the table is
 successfully created by OpenGL, then there is guaranteed to be a mapping to
 one of the corresponding OpenCL image format(s) in that table.
@@ -4250,8 +5040,9 @@ returned in _errcode_ret_:
   * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
   * {CL_INVALID_GL_OBJECT} if _renderbuffer_ is not an OpenGL renderbuffer
     object, or if the width or height of _renderbuffer_ is zero.
-  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the OpenGL renderbuffer internal
-    format does not map to a supported OpenCL image format.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the internal format of
+    _renderbuffer_ is not listed in the <<opengl-image-formats-table, OpenGL
+    Internal Formats and Corresponding OpenCL Internal Formats>> table.
   * {CL_INVALID_OPERATION} if _renderbuffer_ is a multi-sample OpenGL
     renderbuffer object.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
@@ -5276,6 +6067,44 @@ include::{generated}/api/version-notes/CL_MEM_PROPERTIES.asciidoc[]
         {clCreateImageWithProperties} was `NULL`, the implementation
         must return _param_value_size_ret_ equal to 0, indicating that
         there are no properties to be returned.
+
+ifdef::cl_khr_dx9_media_sharing[]
+|  {CL_MEM_DX9_MEDIA_ADAPTER_TYPE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_DX9_MEDIA_ADAPTER_TYPE_KHR.asciidoc[]
+  |  {cl_dx9_media_adapter_type_khr_TYPE}
+    | If _memobj_ was created using {clCreateFromDX9MediaSurfaceKHR},
+      returns the _adapter_type_ argument specified when _memobj_ was
+      created.
+|  {CL_MEM_DX9_MEDIA_SURFACE_INFO_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_DX9_MEDIA_SURFACE_INFO_KHR.asciidoc[]
+  |  {cl_dx9_surface_info_khr_TYPE}
+    | If _memobj_ was created using {clCreateFromDX9MediaSurfaceKHR},
+      returns the _surface_info_ argument specified when _memobj_ was
+      created.
+endif::cl_khr_dx9_media_sharing[]
+
+ifdef::cl_khr_d3d10_sharing[]
+| {CL_MEM_D3D10_RESOURCE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_D3D10_RESOURCE_KHR.asciidoc[]
+  | `ID3D10Resource *`
+    | If _memobj_ was created using {clCreateFromD3D10BufferKHR},
+      {clCreateFromD3D10Texture2DKHR}, or {clCreateFromD3D10Texture3DKHR},
+      returns the _resource_ argument specified when _memobj_ was created.
+endif::cl_khr_d3d10_sharing[]
+
+ifdef::cl_khr_d3d11_sharing[]
+| {CL_MEM_D3D11_RESOURCE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_D3D11_RESOURCE_KHR.asciidoc[]
+  | `ID3D11Resource *`
+    | If _memobj_ was created using {clCreateFromD3D11BufferKHR},
+      {clCreateFromD3D11Texture2DKHR}, or {clCreateFromD3D11Texture3DKHR},
+      returns the _resource_ argument specified when _memobj_ was created.
+endif::cl_khr_d3d11_sharing[]
+
 |====
 
 // refError
@@ -5293,7 +6122,64 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+
+ifdef::cl_khr_dx9_media_sharing[]
+The following errors may be returned if the `<<cl_khr_dx9_media_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_DX9_MEDIA_SURFACE_KHR} if _param_name_ is
+    {CL_MEM_DX9_MEDIA_SURFACE_INFO_KHR} and _memobj_ was not created by
+    calling {clCreateFromDX9MediaSurfaceKHR} from a Direct3D9 surface.
+endif::cl_khr_dx9_media_sharing[]
+
+ifdef::cl_khr_d3d10_sharing[]
+The following errors may be returned if the `<<cl_khr_d3d10_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_D3D10_RESOURCE_KHR} if _param_name_ is
+    {CL_MEM_D3D10_RESOURCE_KHR} and _memobj_ was not created by calling
+    {clCreateFromD3D10BufferKHR}, {clCreateFromD3D10Texture2DKHR}, or
+    {clCreateFromD3D10Texture3DKHR}.
+endif::cl_khr_d3d10_sharing[]
+
+ifdef::cl_khr_d3d11_sharing[]
+The following errors may be returned if the `<<cl_khr_d3d11_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_D3D11_RESOURCE_KHR} if _param_name_ is
+    {CL_MEM_D3D11_RESOURCE_KHR} and _memobj_ was not created by calling
+    {clCreateFromD3D11BufferKHR}, {clCreateFromD3D11Texture2DKHR}, or
+    {clCreateFromD3D11Texture3DKHR}.
+endif::cl_khr_d3d11_sharing[]
+
 --
+
+
+ifdef::cl_khr_dx9_media_sharing[]
+=== Querying Media Surface Properties of Memory Objects Created From DirectX 9 Media Surfaces
+
+Properties of media surface objects may be queried using {clGetMemObjectInfo}
+and {clGetImageInfo} with _param_name_ {CL_MEM_DX9_MEDIA_ADAPTER_TYPE_KHR},
+{CL_MEM_DX9_MEDIA_SURFACE_INFO_KHR} and {CL_IMAGE_DX9_MEDIA_PLANE_KHR}.
+endif::cl_khr_dx9_media_sharing[]
+
+
+ifdef::cl_khr_d3d10_sharing[]
+=== Querying Direct3D Properties of Memory Objects Created From Direct3D 10 Resources  // next to 5.5.7 Querying OpenGL Object Information From an OpenCL Memory Object
+
+Properties of Direct3D 10 objects may be queried using {clGetMemObjectInfo}
+and {clGetImageInfo} with _param_name_ {CL_MEM_D3D10_RESOURCE_KHR} and
+{CL_IMAGE_D3D10_SUBRESOURCE_KHR} respectively.
+endif::cl_khr_d3d10_sharing[]
+
+
+ifdef::cl_khr_d3d11_sharing[]
+=== Querying Direct3D Properties of Memory Objects Created From Direct3D 11 Resources
+
+Properties of Direct3D 11 objects may be queried using {clGetMemObjectInfo}
+and {clGetImageInfo} with _param_name_ {CL_MEM_D3D11_RESOURCE_KHR} and
+{CL_IMAGE_D3D11_SUBRESOURCE_KHR} respectively.
+endif::cl_khr_d3d11_sharing[]
 
 
 ifdef::cl_khr_gl_sharing[]
@@ -5404,9 +6290,667 @@ Otherwise, it returns one of the following errors:
 endif::cl_khr_gl_sharing[]
 
 
+ifdef::cl_khr_dx9_media_sharing[]
+=== Sharing Memory Objects Created From Media Surfaces Between a Media Adapter and OpenCL
+
+[open,refpage='clEnqueueAcquireDX9MediaSurfacesKHR',desc='Acquire OpenCL memory objects created from a media surface',type='protos']
+--
+To acquire OpenCL memory objects that have been created from a media
+surface, call the function
+
+include::{generated}/api/protos/clEnqueueAcquireDX9MediaSurfacesKHR.txt[]
+include::{generated}/api/version-notes/clEnqueueAcquireDX9MediaSurfacesKHR.asciidoc[]
+
+  * _command_queue_ is a valid command-queue.
+  * _num_objects_ is the number of memory objects to be acquired in
+    _mem_objects_.
+  * _mem_objects_ is a pointer to a list of OpenCL memory objects that were
+    created from media surfaces.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need
+    to complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not
+    wait on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+  * _event_ returns an event object that identifies this command and can be
+    used to query or wait for this command to complete.
+    If _event_ is `NULL` or the enqueue is unsuccessful, no event will be
+    created and therefore it will not be possible to query the status of
+    this command or to wait for this command to complete.
+    If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
+    to an element of the _event_wait_list_ array.
+
+The media surfaces are acquired by the OpenCL context associated with
+_command_queue_ and can therefore be used by all command-queues associated
+with the OpenCL context.
+
+OpenCL memory objects created from media surfaces must be acquired before
+they can be used by any OpenCL commands queued to a command-queue.
+If an OpenCL memory object created from a media surface is used while it is
+not currently acquired by OpenCL, the call attempting to use that OpenCL
+memory object will return {CL_DX9_MEDIA_SURFACE_NOT_ACQUIRED_KHR}.
+
+If {CL_CONTEXT_INTEROP_USER_SYNC} is not specified as {CL_TRUE} during
+context creation, {clEnqueueAcquireDX9MediaSurfacesKHR} provides the
+synchronization guarantee that any media adapter API calls involving the
+interop device(s) used in the OpenCL context made before
+{clEnqueueAcquireDX9MediaSurfacesKHR} is called will complete executing
+before _event_ reports completion and before the execution of any subsequent
+OpenCL work issued in _command_queue_ begins.
+If the context was created with properties specifying
+{CL_CONTEXT_INTEROP_USER_SYNC} as {CL_TRUE}, the user is responsible for
+guaranteeing that any media adapter API calls involving the interop
+device(s) used in the OpenCL context made before
+{clEnqueueAcquireDX9MediaSurfacesKHR} is called have completed before
+calling {clEnqueueAcquireDX9MediaSurfacesKHR} *.*
+
+// refError
+
+{clEnqueueAcquireDX9MediaSurfacesKHR} returns {CL_SUCCESS} if the function
+is executed successfully.
+If _num_objects_ is 0 and _mem_objects_ is `NULL` then the function does
+nothing and returns {CL_SUCCESS}.
+Otherwise it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_objects_ is zero and _mem_objects_ is not a
+    `NULL` value or if _num_objects_ > 0 and _mem_objects_ is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if memory objects in _mem_objects_ are not valid
+    OpenCL memory objects or if memory objects in _mem_objects_ have not
+    been created from media surfaces.
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
+    command-queue.
+  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ was not
+    created from a device that can share the media surface referenced by
+    _mem_objects_.
+  * {CL_DX9_MEDIA_SURFACE_ALREADY_ACQUIRED_KHR} if memory objects in
+    _mem_objects_ have previously been acquired using
+    {clEnqueueAcquireDX9MediaSurfacesKHR} but have not been released using
+    {clEnqueueReleaseDX9MediaSurfacesKHR}.
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
+    are not valid events.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clEnqueueReleaseDX9MediaSurfacesKHR',desc='Release OpenCL memory objects created from a media surface',type='protos']
+--
+To release OpenCL memory objects that have been created from media surfaces,
+call the function
+
+include::{generated}/api/protos/clEnqueueReleaseDX9MediaSurfacesKHR.txt[]
+include::{generated}/api/version-notes/clEnqueueReleaseDX9MediaSurfacesKHR.asciidoc[]
+
+  * _num_objects_ is the number of memory objects to be released in
+    _mem_objects_.
+  * _mem_objects_ is a pointer to a list of OpenCL memory objects that were
+    created from media surfaces.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need
+    to complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not
+    wait on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+  * _event_ returns an event object that identifies this command and can be
+    used to query or wait for this command to complete.
+    If _event_ is `NULL` or the enqueue is unsuccessful, no event will be
+    created and therefore it will not be possible to query the status of
+    this command or to wait for this command to complete.
+    If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
+    to an element of the _event_wait_list_ array.
+
+The media surfaces are released by the OpenCL context associated with
+_command_queue_.
+
+OpenCL memory objects created from media surfaces which have been acquired
+by OpenCL must be released by OpenCL before they may be accessed by the
+media adapter API.
+Accessing a media surface while its corresponding OpenCL memory object is
+acquired is in error and will result in undefined behavior, including but
+not limited to possible OpenCL errors, data corruption, and program
+termination.
+
+If {CL_CONTEXT_INTEROP_USER_SYNC} is not specified as {CL_TRUE} during
+context creation, {clEnqueueReleaseDX9MediaSurfacesKHR} provides the
+synchronization guarantee that any calls to media adapter APIs involving the
+interop device(s) used in the OpenCL context made after the call to
+{clEnqueueReleaseDX9MediaSurfacesKHR} will not start executing until after
+all events in _event_wait_list_ are complete and all work already submitted
+to _command_queue_ completes execution.
+If the context was created with properties specifying
+{CL_CONTEXT_INTEROP_USER_SYNC} as {CL_TRUE}, the user is responsible for
+guaranteeing that any media adapter API calls involving the interop
+device(s) used in the OpenCL context made after
+{clEnqueueReleaseDX9MediaSurfacesKHR} will not start executing until after
+event returned by {clEnqueueReleaseDX9MediaSurfacesKHR} reports completion.
+
+// refError
+
+{clEnqueueReleaseDX9MediaSurfacesKHR} returns {CL_SUCCESS} if the function
+is executed successfully.
+If _num_objects_ is 0 and <__mem_objects__> is `NULL` the function does
+nothing and returns {CL_SUCCESS}.
+Otherwise it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_objects_ is zero and _mem_objects_ is not a
+    `NULL` value or if _num_objects_ > 0 and _mem_objects_ is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if memory objects in _mem_objects_ are not valid
+    OpenCL memory objects or if memory objects in _mem_objects_ have not
+    been created from valid media surfaces.
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
+    command-queue.
+  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ was not
+    created from a media object.
+  * {CL_DX9_MEDIA_SURFACE_NOT_ACQUIRED_KHR} if memory objects in
+    _mem_objects_ have not previously been acquired using
+    {clEnqueueAcquireDX9MediaSurfacesKHR}, or have been released using
+    {clEnqueueReleaseDX9MediaSurfacesKHR} since the last time that they were
+    acquired.
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    __num_events_in_wait_list__> is 0, or if event objects in
+    _event_wait_list_ are not valid events.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_dx9_media_sharing[]
+
+
+ifdef::cl_khr_d3d10_sharing[]
+=== Sharing Memory Objects Created From Direct3D 10 Resources Between Direct3D 10 and OpenCL Contexts  // next to 5.6 Acquiring, Release, and Synchronizing ... CL/GL Memory Objects
+
+[open,refpage='clEnqueueAcquireD3D10ObjectsKHR',desc='Acquire OpenCL memory objects created from Direct3D 10 resources',type='protos']
+--
+To acquire OpenCL memory objects that have been created from Direct3D 10
+resources, call the function
+
+include::{generated}/api/protos/clEnqueueAcquireD3D10ObjectsKHR.txt[]
+include::{generated}/api/version-notes/clEnqueueAcquireD3D10ObjectsKHR.asciidoc[]
+
+  * _command_queue_ is a valid command-queue.
+  * _num_objects_ is the number of memory objects to be acquired in
+    _mem_objects_.
+  * _mem_objects_ is a pointer to a list of OpenCL memory objects that were
+    created from Direct3D 10 resources.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need
+    to complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not
+    wait on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+  * _event_ returns an event object that identifies this command and can be
+    used to query or wait for this command to complete.
+    If _event_ is `NULL` or the enqueue is unsuccessful, no event will be
+    created and therefore it will not be possible to query the status of
+    this command or to wait for this command to complete.
+    If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
+    to an element of the _event_wait_list_ array.
+
+The Direct3D 10 objects are acquired by the OpenCL context associated with
+_command_queue_ and can therefore be used by all command-queues associated
+with the OpenCL context.
+
+OpenCL memory objects created from Direct3D 10 resources must be acquired
+before they can be used by any OpenCL commands queued to a command-queue.
+If an OpenCL memory object created from a Direct3D 10 resource is used while
+it is not currently acquired by OpenCL, the behavior is undefined.
+Implementations may fail the execution of commands attempting to use that
+OpenCL memory object and set their associated event's execution status to
+{CL_D3D10_RESOURCE_NOT_ACQUIRED_KHR}.
+
+If {CL_CONTEXT_INTEROP_USER_SYNC} is not specified as {CL_TRUE} during
+context creation, {clEnqueueAcquireD3D10ObjectsKHR} provides the
+synchronization guarantee that any Direct3D 10 calls involving the interop
+device(s) used in the OpenCL context made before
+{clEnqueueAcquireD3D10ObjectsKHR} is called will complete executing before
+_event_ reports completion and before the execution of any subsequent OpenCL
+work issued in _command_queue_ begins.
+If the context was created with properties specifying
+{CL_CONTEXT_INTEROP_USER_SYNC} as {CL_TRUE}, the user is responsible for
+guaranteeing that any Direct3D 10 calls involving the interop device(s) used
+in the OpenCL context made before {clEnqueueAcquireD3D10ObjectsKHR} is
+called have completed before calling {clEnqueueAcquireD3D10ObjectsKHR}.
+
+// refError
+
+{clEnqueueAcquireD3D10ObjectsKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+If _num_objects_ is 0 and _mem_objects_ is `NULL` then the function does
+nothing and returns {CL_SUCCESS}.
+Otherwise it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_objects_ is zero and _mem_objects_ is not a
+    `NULL` value or if _num_objects_ > 0 and _mem_objects_ is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if memory objects in _mem_objects_ are not valid
+    OpenCL memory objects or if memory objects in _mem_objects_ have not
+    been created from Direct3D 10 resources.
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
+    command-queue.
+  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ was not
+    created from an Direct3D 10 context.
+  * {CL_D3D10_RESOURCE_ALREADY_ACQUIRED_KHR} if memory objects in
+    _mem_objects_ have previously been acquired using
+    {clEnqueueAcquireD3D10ObjectsKHR} but have not been released using
+    {clEnqueueReleaseD3D10ObjectsKHR}.
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
+    are not valid events.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clEnqueueReleaseD3D10ObjectsKHR',desc='Release OpenCL memory objects created from Direct3D 10 resources',type='protos']
+--
+To release OpenCL memory objects that have been created from Direct3D 10
+resources, call the function
+
+include::{generated}/api/protos/clEnqueueReleaseD3D10ObjectsKHR.txt[]
+include::{generated}/api/version-notes/clEnqueueReleaseD3D10ObjectsKHR.asciidoc[]
+
+  * _num_objects_ is the number of memory objects to be released in
+    _mem_objects_.
+  * _mem_objects_ is a pointer to a list of OpenCL memory objects that were
+    created from Direct3D 10 resources.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need
+    to complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not
+    wait on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+  * _event_ returns an event object that identifies this command and can be
+    used to query or wait for this command to complete.
+    If _event_ is `NULL` or the enqueue is unsuccessful, no event will be
+    created and therefore it will not be possible to query the status of
+    this command or to wait for this command to complete.
+    If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
+    to an element of the _event_wait_list_ array.
+
+The Direct3D 10 objects are released by the OpenCL context associated with
+_command_queue_.
+
+OpenCL memory objects created from Direct3D 10 resources which have been
+acquired by OpenCL must be released by OpenCL before they may be accessed by
+Direct3D 10.
+Accessing a Direct3D 10 resource while its corresponding OpenCL memory
+object is acquired is in error and will result in undefined behavior,
+including but not limited to possible OpenCL errors, data corruption, and
+program termination.
+
+If {CL_CONTEXT_INTEROP_USER_SYNC} is not specified as {CL_TRUE} during
+context creation, {clEnqueueReleaseD3D10ObjectsKHR} provides the
+synchronization guarantee that any calls to Direct3D 10 calls involving the
+interop device(s) used in the OpenCL context made after the call to
+{clEnqueueReleaseD3D10ObjectsKHR} will not start executing until after all
+events in _event_wait_list_ are complete and all work already submitted to
+_command_queue_ completes execution.
+If the context was created with properties specifying
+{CL_CONTEXT_INTEROP_USER_SYNC} as {CL_TRUE}, the user is responsible for
+guaranteeing that any Direct3D 10 calls involving the interop device(s) used
+in the OpenCL context made after {clEnqueueReleaseD3D10ObjectsKHR} will not
+start executing until after event returned by
+{clEnqueueReleaseD3D10ObjectsKHR} reports completion.
+
+// refError
+
+{clEnqueueReleaseD3D10ObjectsKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+If _num_objects_ is 0 and _mem_objects_ is `NULL` the function does nothing
+and returns {CL_SUCCESS}.
+Otherwise it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_objects_ is zero and _mem_objects_ is not a
+    `NULL` value or if _num_objects_ > 0 and _mem_objects_ is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if memory objects in _mem_objects_ are not valid
+    OpenCL memory objects or if memory objects in _mem_objects_ have not
+    been created from Direct3D 10 resources.
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
+    command-queue.
+  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ was not
+    created from a Direct3D 10 device.
+  * {CL_D3D10_RESOURCE_NOT_ACQUIRED_KHR} if memory objects in _mem_objects_
+    have not previously been acquired using
+    {clEnqueueAcquireD3D10ObjectsKHR}, or have been released using
+    {clEnqueueReleaseD3D10ObjectsKHR} since the last time that they were
+    acquired.
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    __num_events_in_wait_list__> is 0, or if event objects in
+    _event_wait_list_ are not valid events.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_d3d10_sharing[]
+
+
+ifdef::cl_khr_d3d11_sharing[]
+=== Sharing Memory Objects Created From Direct3D 11 Resources Between Direct3D 11 and OpenCL Contexts
+
+[open,refpage='clEnqueueAcquireD3D11ObjectsKHR',desc='Acquire OpenCL memory objects created from Direct3D 11 resources',type='protos']
+--
+To acquire OpenCL memory objects that have been created from Direct3D 11
+resources, call the function
+
+include::{generated}/api/protos/clEnqueueAcquireD3D11ObjectsKHR.txt[]
+include::{generated}/api/version-notes/clEnqueueAcquireD3D11ObjectsKHR.asciidoc[]
+
+  * _command_queue_ is a valid command-queue.
+  * _num_objects_ is the number of memory objects to be acquired in
+    _mem_objects_.
+  * _mem_objects_ is a pointer to a list of OpenCL memory objects that were
+    created from Direct3D 11 resources.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need
+    to complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not
+    wait on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+  * _event_ returns an event object that identifies this command and can be
+    used to query or wait for this command to complete.
+    If _event_ is `NULL` or the enqueue is unsuccessful, no event will be
+    created and therefore it will not be possible to query the status of
+    this command or to wait for this command to complete.
+    If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
+    to an element of the _event_wait_list_ array.
+
+The Direct3D 11 objects are acquired by the OpenCL context associated with
+_command_queue_ and can therefore be used by all command-queues associated
+with the OpenCL context.
+
+OpenCL memory objects created from Direct3D 11 resources must be acquired
+before they can be used by any OpenCL commands queued to a command-queue.
+If an OpenCL memory object created from a Direct3D 11 resource is used while
+it is not currently acquired by OpenCL, the behavior is undefined.
+Implementations may fail the execution of commands attempting to use that
+OpenCL memory object and set their associated event's execution status to
+{CL_D3D11_RESOURCE_NOT_ACQUIRED_KHR}.
+
+If {CL_CONTEXT_INTEROP_USER_SYNC} is not specified as {CL_TRUE} during
+context creation, {clEnqueueAcquireD3D11ObjectsKHR} provides the
+synchronization guarantee that any Direct3D 11 calls involving the interop
+device(s) used in the OpenCL context made before
+{clEnqueueAcquireD3D11ObjectsKHR} is called will complete executing before
+_event_ reports completion and before the execution of any subsequent OpenCL
+work issued in _command_queue_ begins.
+If the context was created with properties specifying
+{CL_CONTEXT_INTEROP_USER_SYNC} as {CL_TRUE}, the user is responsible for
+guaranteeing that any Direct3D 11 calls involving the interop device(s) used
+in the OpenCL context made before {clEnqueueAcquireD3D11ObjectsKHR} is
+called have completed before calling {clEnqueueAcquireD3D11ObjectsKHR}.
+
+// refError
+
+{clEnqueueAcquireD3D11ObjectsKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+If _num_objects_ is 0 and _mem_objects_ is `NULL` then the function does
+nothing and returns {CL_SUCCESS}.
+Otherwise it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_objects_ is zero and _mem_objects_ is not a
+    `NULL` value or if _num_objects_ > 0 and _mem_objects_ is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if memory objects in _mem_objects_ are not valid
+    OpenCL memory objects or if memory objects in _mem_objects_ have not
+    been created from Direct3D 11 resources.
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
+    command-queue.
+  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ was not
+    created from an Direct3D 11 context.
+  * {CL_D3D11_RESOURCE_ALREADY_ACQUIRED_KHR} if memory objects in
+    _mem_objects_ have previously been acquired using
+    {clEnqueueAcquireD3D11ObjectsKHR} but have not been released using
+    {clEnqueueReleaseD3D11ObjectsKHR}.
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
+    are not valid events.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clEnqueueReleaseD3D11ObjectsKHR',desc='Release OpenCL memory objects created from Direct3D 11 resources',type='protos']
+--
+To release OpenCL memory objects that have been created from Direct3D 11
+resources, call the function
+
+include::{generated}/api/protos/clEnqueueReleaseD3D11ObjectsKHR.txt[]
+include::{generated}/api/version-notes/clEnqueueReleaseD3D11ObjectsKHR.asciidoc[]
+
+  * _num_objects_ is the number of memory objects to be released in
+    _mem_objects_.
+  * _mem_objects_ is a pointer to a list of OpenCL memory objects that were
+    created from Direct3D 11 resources.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need
+    to complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not
+    wait on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+  * _event_ returns an event object that identifies this command and can be
+    used to query or wait for this command to complete.
+    If _event_ is `NULL` or the enqueue is unsuccessful, no event will be
+    created and therefore it will not be possible to query the status of
+    this command or to wait for this command to complete.
+    If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
+    to an element of the _event_wait_list_ array.
+
+The Direct3D 11 objects are released by the OpenCL context associated with
+_command_queue_.
+
+OpenCL memory objects created from Direct3D 11 resources which have been
+acquired by OpenCL must be released by OpenCL before they may be accessed by
+Direct3D 11.
+Accessing a Direct3D 11 resource while its corresponding OpenCL memory
+object is acquired is in error and will result in undefined behavior,
+including but not limited to possible OpenCL errors, data corruption, and
+program termination.
+
+If {CL_CONTEXT_INTEROP_USER_SYNC} is not specified as {CL_TRUE} during
+context creation, {clEnqueueReleaseD3D11ObjectsKHR} provides the
+synchronization guarantee that any calls to Direct3D 11 calls involving the
+interop device(s) used in the OpenCL context made after the call to
+{clEnqueueReleaseD3D11ObjectsKHR} will not start executing until after all
+events in _event_wait_list_ are complete and all work already submitted to
+_command_queue_ completes execution.
+If the context was created with properties specifying
+{CL_CONTEXT_INTEROP_USER_SYNC} as {CL_TRUE}, the user is responsible for
+guaranteeing that any Direct3D 11 calls involving the interop device(s) used
+in the OpenCL context made after {clEnqueueReleaseD3D11ObjectsKHR} will not
+start executing until after event returned by
+{clEnqueueReleaseD3D11ObjectsKHR} reports completion.
+
+// refError
+
+{clEnqueueReleaseD3D11ObjectsKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+If _num_objects_ is 0 and _mem_objects_ is `NULL` the function does nothing
+and returns {CL_SUCCESS}.
+Otherwise it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_objects_ is zero and _mem_objects_ is not a
+    `NULL` value or if _num_objects_ > 0 and _mem_objects_ is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if memory objects in _mem_objects_ are not valid
+    OpenCL memory objects or if memory objects in _mem_objects_ have not
+    been created from Direct3D 11 resources.
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
+    command-queue.
+  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ was not
+    created from a Direct3D 11 device.
+  * {CL_D3D11_RESOURCE_NOT_ACQUIRED_KHR} if memory objects in _mem_objects_
+    have not previously been acquired using
+    {clEnqueueAcquireD3D11ObjectsKHR}, or have been released using
+    {clEnqueueReleaseD3D11ObjectsKHR} since the last time that they were
+    acquired.
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    __num_events_in_wait_list__> is 0, or if event objects in
+    _event_wait_list_ are not valid events.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_d3d11_sharing[]
+
+
+ifdef::cl_khr_egl_image[]
+=== Sharing Memory Objects Created From EGL Resources Between EGL and OpenCL Contexts
+
+[open,refpage='clEnqueueAcquireEGLObjectsKHR',desc='Acquire OpenCL memory objects created from EGL resources',type='protos']
+--
+To acquire OpenCL memory objects that have been created from EGL resources,
+call the function
+
+include::{generated}/api/protos/clEnqueueAcquireEGLObjectsKHR.txt[]
+include::{generated}/api/version-notes/clEnqueueAcquireEGLObjectsKHR.asciidoc[]
+
+  * _command_queue_ is a valid command-queue.
+  * _num_objects_ is the number of memory objects to be acquired in
+    _mem_objects_.
+  * _mem_objects_ is a pointer to a list of OpenCL memory objects that were
+    created from EGL resources, within the context associate with
+    command_queue.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need
+    to complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not
+    wait on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+  * _event_ returns an event object that identifies this command and can be
+    used to query or wait for this command to complete.
+    If _event_ is `NULL` or the enqueue is unsuccessful, no event will be
+    created and therefore it will not be possible to query the status of
+    this command or to wait for this command to complete.
+    If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
+    to an element of the _event_wait_list_ array.
+
+The EGL objects are acquired by the OpenCL context associated with
+_command_queue_ and can therefore be used by all command-queues associated
+with the OpenCL context.
+
+OpenCL memory objects created from EGL resources must be acquired before
+they can be used by any OpenCL commands queued to a command-queue.
+If an OpenCL memory object created from a EGL resource is used while it is
+not currently acquired by OpenCL, the behavior is undefined.
+Implementations may fail the execution of commands attempting to use that
+OpenCL memory object and set their associated event's execution status to
+{CL_EGL_RESOURCE_NOT_ACQUIRED_KHR}.
+
+// refError
+
+{clEnqueueAcquireEGLObjectsKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+If _num_objects_ is 0 and _mem_objects_ is `NULL` then the function does
+nothing and returns {CL_SUCCESS}.
+Otherwise it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_objects_ is zero and _mem_objects_ is not a
+    `NULL` value or if num_objects > 0 and mem_objects is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if memory objects in _mem_objects_ are not valid
+    OpenCL memory objects in the context associated with _command_queue_.
+  * {CL_INVALID_EGL_OBJECT_KHR} if memory objects in _mem_objects_ have not
+    been created from EGL resources.
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
+    command-queue.
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
+    are not valid events.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clEnqueueReleaseEGLObjectsKHR',desc='Release OpenCL memory objects created from EGL resources',type='protos']
+--
+To release OpenCL memory objects that have been created from EGL resources,
+call the function
+
+include::{generated}/api/protos/clEnqueueReleaseEGLObjectsKHR.txt[]
+include::{generated}/api/version-notes/clEnqueueReleaseEGLObjectsKHR.asciidoc[]
+
+  * _command_queue_ is a valid command-queue.
+  * _num_objects_ is the number of memory objects to be acquired in
+    _mem_objects_.
+  * _mem_objects_ is a pointer to a list of OpenCL memory objects that were
+    created from EGL resources, within the context associate with
+    command_queue.
+  * _event_wait_list_ and _num_events_in_wait_list_ specify events that need
+    to complete before this particular command can be executed.
+    If _event_wait_list_ is `NULL`, then this particular command does not
+    wait on any event to complete.
+    If _event_wait_list_ is `NULL`, _num_events_in_wait_list_ must be 0.
+    If _event_wait_list_ is not `NULL`, the list of events pointed to by
+    _event_wait_list_ must be valid and _num_events_in_wait_list_ must be
+    greater than 0.
+    The events specified in _event_wait_list_ act as synchronization points.
+  * _event_ returns an event object that identifies this command and can be
+    used to query or wait for this command to complete.
+    If _event_ is `NULL` or the enqueue is unsuccessful, no event will be
+    created and therefore it will not be possible to query the status of
+    this command or to wait for this command to complete.
+    If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
+    to an element of the _event_wait_list_ array.
+
+The EGL objects are released by the OpenCL context associated with
+<command_queue>.
+
+OpenCL memory objects created from EGL resources which have been acquired by
+OpenCL must be released by OpenCL before they may be accessed by EGL or by
+EGL client APIs.
+Accessing a EGL resource while its corresponding OpenCL memory object is
+acquired is in error and will result in undefined behavior, including but
+not limited to possible OpenCL errors, data corruption, and program
+termination.
+
+// refError
+
+{clEnqueueReleaseEGLObjectsKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+If _num_objects_ is 0 and _mem_objects_ is `NULL` then the function does
+nothing and returns {CL_SUCCESS}.
+Otherwise it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _num_objects_ is zero and _mem_objects_ is not a
+    `NULL` value or if num_objects > 0 and mem_objects is `NULL`.
+  * {CL_INVALID_MEM_OBJECT} if memory objects in _mem_objects_ are not valid
+    OpenCL memory objects in the context associated with _command_queue_.
+  * {CL_INVALID_EGL_OBJECT_KHR} if memory objects in _mem_objects_ have not
+    been created from EGL resources.
+  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
+    command-queue.
+  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
+    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
+    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
+    are not valid events.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_egl_image[]
+
+
 ifdef::cl_khr_gl_sharing[]
 [[acquiring-shared-opencl-opengl-memory-objects]]
-== Acquiring, Releasing, and Synchronizing Access to Shared OpenCL/OpenGL Memory Objects
+=== Acquiring, Releasing, and Synchronizing Access to Shared OpenCL/OpenGL Memory Objects
 
 [open,refpage='clEnqueueAcquireGLObjects',desc='Acquire OpenCL memory objects created from OpenGL objects',type='protos']
 --
@@ -5569,62 +7113,105 @@ Otherwise, it returns one of the following errors:
 --
 
 
-=== Synchronizing Access to Shared OpenGL/OpenCL Memory Objects
+// The following section is quite ugly and duplicative, and potentially
+// could be simplified.
+// The problem is that there are a large number of scenarios being
+// described:
+//   * Using either EGL or another OpenGL binding API via the egl_image or
+//     gl_sharing extensions
+//   * Using either OpenGL or OpenGL ES, or potentially another EGL client API
+//   * Attempting to synchronize via either EGL or OpenGL/OpenGL ES fence
+//     sync objects, via the egl_event or gl_event extensions
 
-In order to ensure data integrity, the application is responsible for
-synchronizing access to shared OpenCL/OpenGL objects by their respective
-APIs.
+ifdef::cl_khr_egl_image,cl_khr_gl_sharing[]
+==== Synchronizing Access to Memory Objects Shared with EGL or OpenGL
+
+When sharing objects such as EGL images (if the `<<cl_khr_egl_image>>`
+extension is supported) or OpenGL buffers, textures, and renderbuffers (if
+the `<<cl_khr_gl_sharing>>` extension is supported), in order to ensure data
+integrity, the application is responsible for synchronizing access to shared
+memory objects through the other API with which such objects are shared.
+
 Failure to provide such synchronization may result in race conditions and
 other undefined behavior including non-portability between implementations.
 
-ifdef::cl_khr_gl_event[]
-Prior to calling {clEnqueueAcquireGLObjects}, the application must ensure
-that any pending OpenGL operations which access the objects specified in
-_mem_objects_ have completed.
+Prior to acquiring objects shared with the other API via an appropriate
+{clEnqueueAcquire}*** call, the application must ensure that any pending
+operations in that API which accesses the objects specified in _mem_objects_
+have completed.
 
-If the `<<cl_khr_gl_event>>` extension is supported, then the OpenCL
-implementation will ensure that any such pending OpenGL operations are
-complete for an OpenGL context bound to the same thread as the OpenCL
-context.
-This is referred to as _implicit synchronization_.
+Depending on the application and the implementation, there are two
+extensions which may be used to synchronize with other APIs:
 
-If the `<<cl_khr_gl_event>>` extension is supported and the OpenGL context
-in question supports fence sync objects, completion of OpenGL commands may
-also be determined by placing a GL fence command after those commands using
-`glFenceSync`, creating an event from the resulting GL sync object using
-{clCreateEventFromGLsyncKHR}, and determining completion of that event
-object via {clEnqueueAcquireGLObjects}.
-This method may be considerably more efficient than calling `glFinish`, and
-is referred to as _explicit synchronization_.
-Explicit synchronization is most useful when an OpenGL context bound to
-another thread is accessing the memory objects.
-endif::cl_khr_gl_event[]
+
+ifdef::cl_khr_egl_image[]
+===== Synchronization With EGL and EGL Client APIs
+
+When sharing with an EGL context via the `<<cl_khr_egl_image>>` extension,
+if the `<<cl_khr_egl_event>>` extension is supported, and the EGL context in
+question supports fence sync objects, _explicit synchronization_ with EGL or
+EGL client APIs can be achieved as described in the
+<<explicit-sync-using-egl-fences, Explicit Synchronization Using EGL Fence
+Sync Objects>> section.
+
+If the `<<cl_khr_egl_event>>` extension is not supported, completion of EGL
+client API commands may be determined by issuing and waiting for completion
+of commands such as `glFinish` or `vgFinish` on all client API contexts with
+pending references to these objects.
+endif::cl_khr_egl_image[]
+
+
+ifdef::cl_khr_gl_sharing[]
+===== Synchronization with OpenGL
+
+When sharing with an OpenGL context via the `<<cl_khr_gl_sharing>>`
+extension, the OpenCL implementation will ensure that any such pending
+OpenGL operations are complete for an OpenGL context bound to the same
+thread as the OpenCL context. This is referred to as _implicit
+synchronization_.
+
+If the `<<cl_khr_gl_event>>` extension is supported, and the OpenGL context
+in question supports fence sync objects, _explicit synchronization_ with
+OpenGL can be achieved as described in the <<explicit-sync-using-gl-fences,
+Explicit Synchronization Using OpenGL Fence Sync Objects>> section.
 
 If the `<<cl_khr_gl_event>>` extension is not supported, completion of
 OpenGL commands may be determined by issuing and waiting for completion of a
 `glFinish` command on all OpenGL contexts with pending references to these
 objects.
-Some implementations may offer other efficient synchronization methods.
-If such methods exist they will be described in platform-specific
+endif::cl_khr_gl_sharing[]
+
+
+===== General Considerations for Synchronization With Other APIs
+
+Some implementations may offer other efficient synchronization methods. If
+such methods exist they will be described in platform-specific
 documentation.
 
 Note that no synchronization method other than `glFinish` is portable
 between all OpenGL implementations and all OpenCL implementations.
 While this is the only way to ensure completion that is portable to all
 platforms, `glFinish` is an expensive operation and its use should be
-avoided if the `<<cl_khr_gl_event>>` extension is supported on a platform.
+avoided if the `<<cl_khr_egl_event>>` or `<<cl_khr_gl_event>>` extensions
+are supported on a platform.
 
-Similarly, after calling {clEnqueueReleaseGLObjects}, the application is
-responsible for ensuring that any pending OpenCL operations which access the
-objects specified in _mem_objects_ have completed prior to executing
-subsequent OpenGL commands which reference these objects.
+
+===== Synchronizing OpenCL Operations With Other APIs
+
+After releasing a shared memory object via an appropriate
+{clEnqueueRelease}*** call, the application is responsible for ensuring that
+any pending OpenCL operations which access the objects specified in
+_mem_objects_ have completed prior to executing subsequent commands in the
+other API which reference these objects.
+
 This may be accomplished portably by calling {clWaitForEvents} with the
 event object returned by *clEnqueueReleaseGLObjects,* or by calling
 {clFinish}.
 As above, some implementations may offer more efficient methods.
 
 The application is responsible for maintaining the proper order of
-operations if the OpenCL and OpenGL contexts are in separate threads.
+operations if the OpenCL context and the other API context are in separate
+threads.
 
 If an OpenGL context is bound to a thread other than the one in which
 {clEnqueueReleaseGLObjects} is called, changes to any of the objects in
@@ -5642,28 +7229,7 @@ Similarly, attempting to access a shared OpenCL/OpenGL object from OpenCL
 before it has been acquired by the OpenCL command-queue, or after it has
 been released, will result in undefined behavior.
 
-
-[[event-command-types-for-shared-opencl-opencl-memory-objects]]
-=== Event Command Types for Shared OpenCL/OpenGL Memory Objects
-
-The following table describes the event command types for the OpenCL
-commands to acquire and release OpenCL memory objects that have been created
-from OpenGL objects:
-
-.List of supported event command types
-[width="100%",cols="2,3",options="header"]
-|====
-| *Events Created By* | *Event Command Type*
-| {clEnqueueAcquireGLObjects}
-    | {CL_COMMAND_ACQUIRE_GL_OBJECTS_anchor}
-
-include::{generated}/api/version-notes/CL_COMMAND_ACQUIRE_GL_OBJECTS.asciidoc[]
-| {clEnqueueReleaseGLObjects}
-    | {CL_COMMAND_RELEASE_GL_OBJECTS_anchor}
-
-include::{generated}/api/version-notes/CL_COMMAND_RELEASE_GL_OBJECTS.asciidoc[]
-|====
-endif::cl_khr_gl_sharing[]
+endif::cl_khr_egl_image,cl_khr_gl_sharing[]
 
 
 == Shared Virtual Memory
@@ -9951,26 +11517,6 @@ qualifier counts as one image.
 [[event-objects]]
 == Event Objects
 
-// Check: Is this list of event object APIs really necessary?
-
-//Event objects can be used to refer to a kernel-instance command
-//({clEnqueueNDRangeKernel}, {clEnqueueTask}, {clEnqueueNativeKernel}), read,
-//write, map and copy commands on memory objects (
-//{clEnqueueReadBuffer}, {clEnqueueWriteBuffer},
-//{clEnqueueMapBuffer}, {clEnqueueUnmapMemObject},
-//{clEnqueueReadBufferRect}, {clEnqueueWriteBufferRect},
-//{clEnqueueReadImage}, {clEnqueueWriteImage}, {clEnqueueMapImage},
-//{clEnqueueCopyBuffer}, {clEnqueueCopyImage},
-//{clEnqueueCopyBufferRect},
-//{clEnqueueCopyBufferToImage}, {clEnqueueCopyImageToBuffer}),
-//ifdef::cl_khr_command_buffer[{clEnqueueCommandBufferKHR}]
-//{clEnqueueSVMMemcpy}, {clEnqueueSVMMemFill},
-//{clEnqueueSVMMap}, {clEnqueueSVMUnmap}, {clEnqueueSVMFree}, {clEnqueueMarker},
-//{clEnqueueMarkerWithWaitList}, {clEnqueueWaitForEvents}, {clEnqueueBarrier},
-//{clEnqueueBarrierWithWaitList},  (refer to
-//<<markers-barriers-waiting-for-events,Markers, Barriers and Waiting for
-//Events>>) or user events.
-
 An event object can be used to track the execution status of a command.
 The API calls that enqueue commands to a command-queue create a new event
 object that is returned in the _event_ argument.
@@ -10012,15 +11558,8 @@ The user registered callback function specified when context is created can
 be used to report appropriate error information.
 ====
 
-ifdef::cl_khr_gl_event[]
-If the `<<cl_khr_gl_event>>` extension is supported, event objects created
-with {clCreateEventFromGLsyncKHR} can also be used to reflect the status of
-an OpenGL sync object.
-The sync object in turn refers to a fence command executing in an OpenGL
-command stream.
-This provides another method of coordinating sharing of buffers and images
-between OpenGL and OpenCL.
-endif::cl_khr_gl_event[]
+
+=== Creating, Waiting for, and Releasing Event Objects
 
 [open,refpage='clCreateUserEvent',desc='Creates a user event object.',type='protos']
 --
@@ -10231,153 +11770,152 @@ include::{generated}/api/version-notes/CL_EVENT_REFERENCE_COUNT.asciidoc[]
 .List of supported event command types
 [width="100%",cols="2,3",options="header"]
 |====
-| *Events Created By*
-| *Event Command Type*
+| *Events Created By* | *Event Command Type*
 
 | {clEnqueueNDRangeKernel}
-| {CL_COMMAND_NDRANGE_KERNEL_anchor}
+  | {CL_COMMAND_NDRANGE_KERNEL_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_NDRANGE_KERNEL.asciidoc[]
 
 | {clEnqueueTask}
-| {CL_COMMAND_TASK_anchor}
+  | {CL_COMMAND_TASK_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_TASK.asciidoc[]
 
 | {clEnqueueNativeKernel}
-| {CL_COMMAND_NATIVE_KERNEL_anchor}
+  | {CL_COMMAND_NATIVE_KERNEL_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_NATIVE_KERNEL.asciidoc[]
 
 | {clEnqueueReadBuffer}
-| {CL_COMMAND_READ_BUFFER_anchor}
+  | {CL_COMMAND_READ_BUFFER_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_READ_BUFFER.asciidoc[]
 
 | {clEnqueueWriteBuffer}
-| {CL_COMMAND_WRITE_BUFFER_anchor}
+  | {CL_COMMAND_WRITE_BUFFER_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_WRITE_BUFFER.asciidoc[]
 
 | {clEnqueueCopyBuffer}
-| {CL_COMMAND_COPY_BUFFER_anchor}
+  | {CL_COMMAND_COPY_BUFFER_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_COPY_BUFFER.asciidoc[]
 
 | {clEnqueueReadImage}
-| {CL_COMMAND_READ_IMAGE_anchor}
+  | {CL_COMMAND_READ_IMAGE_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_READ_IMAGE.asciidoc[]
 
 | {clEnqueueWriteImage}
-| {CL_COMMAND_WRITE_IMAGE_anchor}
+  | {CL_COMMAND_WRITE_IMAGE_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_WRITE_IMAGE.asciidoc[]
 
 | {clEnqueueCopyImage}
-| {CL_COMMAND_COPY_IMAGE_anchor}
+  | {CL_COMMAND_COPY_IMAGE_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_COPY_IMAGE.asciidoc[]
 
 | {clEnqueueCopyBufferToImage}
-| {CL_COMMAND_COPY_BUFFER_TO_IMAGE_anchor}
+  | {CL_COMMAND_COPY_BUFFER_TO_IMAGE_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_COPY_BUFFER_TO_IMAGE.asciidoc[]
 
 | {clEnqueueCopyImageToBuffer}
-| {CL_COMMAND_COPY_IMAGE_TO_BUFFER_anchor}
+  | {CL_COMMAND_COPY_IMAGE_TO_BUFFER_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_COPY_IMAGE_TO_BUFFER.asciidoc[]
 
 | {clEnqueueMapBuffer}
-| {CL_COMMAND_MAP_BUFFER_anchor}
+  | {CL_COMMAND_MAP_BUFFER_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_MAP_BUFFER.asciidoc[]
 
 | {clEnqueueMapImage}
-| {CL_COMMAND_MAP_IMAGE_anchor}
+  | {CL_COMMAND_MAP_IMAGE_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_MAP_IMAGE.asciidoc[]
 
 | {clEnqueueUnmapMemObject}
-| {CL_COMMAND_UNMAP_MEM_OBJECT_anchor}
+  | {CL_COMMAND_UNMAP_MEM_OBJECT_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_UNMAP_MEM_OBJECT.asciidoc[]
 
 | {clEnqueueMarker}, +
   {clEnqueueMarkerWithWaitList}
-| {CL_COMMAND_MARKER_anchor}
+  | {CL_COMMAND_MARKER_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_MARKER.asciidoc[]
 
 | {clEnqueueReadBufferRect}
-| {CL_COMMAND_READ_BUFFER_RECT_anchor}
+  | {CL_COMMAND_READ_BUFFER_RECT_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_READ_BUFFER_RECT.asciidoc[]
 
 | {clEnqueueWriteBufferRect}
-| {CL_COMMAND_WRITE_BUFFER_RECT_anchor}
+  | {CL_COMMAND_WRITE_BUFFER_RECT_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_WRITE_BUFFER_RECT.asciidoc[]
 
 | {clEnqueueCopyBufferRect}
-| {CL_COMMAND_COPY_BUFFER_RECT_anchor}
+  | {CL_COMMAND_COPY_BUFFER_RECT_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_COPY_BUFFER_RECT.asciidoc[]
 
 | {clCreateUserEvent}
-| {CL_COMMAND_USER_anchor}
+  | {CL_COMMAND_USER_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_USER.asciidoc[]
 
 | {clEnqueueBarrier}, +
   {clEnqueueBarrierWithWaitList}
-| {CL_COMMAND_BARRIER_anchor}
+  | {CL_COMMAND_BARRIER_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_BARRIER.asciidoc[]
 
 | {clEnqueueMigrateMemObjects}
-| {CL_COMMAND_MIGRATE_MEM_OBJECTS_anchor}
+  | {CL_COMMAND_MIGRATE_MEM_OBJECTS_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_MIGRATE_MEM_OBJECTS.asciidoc[]
 
 | {clEnqueueFillBuffer}
-| {CL_COMMAND_FILL_BUFFER_anchor}
+  | {CL_COMMAND_FILL_BUFFER_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_FILL_BUFFER.asciidoc[]
 
 | {clEnqueueFillImage}
-| {CL_COMMAND_FILL_IMAGE_anchor}
+  | {CL_COMMAND_FILL_IMAGE_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_FILL_IMAGE.asciidoc[]
 
 | {clEnqueueSVMFree}
-| {CL_COMMAND_SVM_FREE_anchor}
+  | {CL_COMMAND_SVM_FREE_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_SVM_FREE.asciidoc[]
 
 | {clEnqueueSVMMemcpy}
-| {CL_COMMAND_SVM_MEMCPY_anchor}
+  | {CL_COMMAND_SVM_MEMCPY_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_SVM_MEMCPY.asciidoc[]
 
 | {clEnqueueSVMMemFill}
-| {CL_COMMAND_SVM_MEMFILL_anchor}
+  | {CL_COMMAND_SVM_MEMFILL_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_SVM_MEMFILL.asciidoc[]
 
 | {clEnqueueSVMMap}
-| {CL_COMMAND_SVM_MAP_anchor}
+  | {CL_COMMAND_SVM_MAP_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_SVM_MAP.asciidoc[]
 
 | {clEnqueueSVMUnmap}
-| {CL_COMMAND_SVM_UNMAP_anchor}
+  | {CL_COMMAND_SVM_UNMAP_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_SVM_UNMAP.asciidoc[]
 
 | {clEnqueueSVMMigrateMem}
-| {CL_COMMAND_SVM_MIGRATE_MEM_anchor}
+  | {CL_COMMAND_SVM_MIGRATE_MEM_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_SVM_MIGRATE_MEM.asciidoc[]
 
@@ -10387,22 +11925,83 @@ event command type for {clEnqueueSVMMigrateMem}.
 
 ifdef::cl_khr_command_buffer[]
 | {clEnqueueCommandBufferKHR}
-| {CL_COMMAND_COMMAND_BUFFER_KHR_anchor}
+  | {CL_COMMAND_COMMAND_BUFFER_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_COMMAND_BUFFER_KHR.asciidoc[]
 endif::cl_khr_command_buffer[]
 
+ifdef::cl_khr_dx9_media_sharing[]
+| {clEnqueueAcquireDX9MediaSurfacesKHR}
+  | {CL_COMMAND_ACQUIRE_DX9_MEDIA_SURFACES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_ACQUIRE_DX9_MEDIA_SURFACES_KHR.asciidoc[]
+
+| {clEnqueueReleaseDX9MediaSurfacesKHR}
+  | {CL_COMMAND_RELEASE_DX9_MEDIA_SURFACES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_RELEASE_DX9_MEDIA_SURFACES_KHR.asciidoc[]
+endif::cl_khr_dx9_media_sharing[]
+
+ifdef::cl_khr_d3d10_sharing[]
+| {clEnqueueAcquireD3D10ObjectsKHR}
+  | {CL_COMMAND_ACQUIRE_D3D10_OBJECTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_ACQUIRE_D3D10_OBJECTS_KHR.asciidoc[]
+
+| {clEnqueueReleaseD3D10ObjectsKHR}
+  | {CL_COMMAND_RELEASE_D3D10_OBJECTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_RELEASE_D3D10_OBJECTS_KHR.asciidoc[]
+endif::cl_khr_d3d10_sharing[]
+
+ifdef::cl_khr_d3d11_sharing[]
+| {clEnqueueAcquireD3D11ObjectsKHR}
+  | {CL_COMMAND_ACQUIRE_D3D11_OBJECTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_ACQUIRE_D3D11_OBJECTS_KHR.asciidoc[]
+
+| {clEnqueueReleaseD3D11ObjectsKHR}
+  | {CL_COMMAND_RELEASE_D3D11_OBJECTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_RELEASE_D3D11_OBJECTS_KHR.asciidoc[]
+endif::cl_khr_d3d11_sharing[]
+
+ifdef::cl_khr_egl_image[]
+| {clEnqueueAcquireEGLObjectsKHR}
+    | {CL_COMMAND_ACQUIRE_EGL_OBJECTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_ACQUIRE_EGL_OBJECTS_KHR.asciidoc[]
+| {clEnqueueReleaseEGLObjectsKHR}
+    | {CL_COMMAND_RELEASE_EGL_OBJECTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_RELEASE_EGL_OBJECTS_KHR.asciidoc[]
+endif::cl_khr_egl_image[]
+
+ifdef::cl_khr_egl_event[]
+| {clCreateEventFromEGLSyncKHR}
+  | {CL_COMMAND_EGL_FENCE_SYNC_OBJECT_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_EGL_FENCE_SYNC_OBJECT_KHR.asciidoc[]
+endif::cl_khr_egl_event[]
+
+ifdef::cl_khr_gl_sharing[]
+| {clEnqueueAcquireGLObjects}
+  | {CL_COMMAND_ACQUIRE_GL_OBJECTS_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_ACQUIRE_GL_OBJECTS.asciidoc[]
+| {clEnqueueReleaseGLObjects}
+  | {CL_COMMAND_RELEASE_GL_OBJECTS_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_RELEASE_GL_OBJECTS.asciidoc[]
+endif::cl_khr_gl_sharing[]
+
 ifdef::cl_khr_gl_event[]
 | {clCreateEventFromGLsyncKHR}
-| {CL_COMMAND_GL_FENCE_SYNC_OBJECT_KHR_anchor}
+  | {CL_COMMAND_GL_FENCE_SYNC_OBJECT_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_COMMAND_GL_FENCE_SYNC_OBJECT_KHR.asciidoc[]
-
-
-Add {CL_COMMAND_GL_FENCE_SYNC_OBJECT_KHR} to the valid _param_value_ values
-returned by {clGetEventInfo} for _param_name_ {CL_EVENT_COMMAND_TYPE} (in
-the third row and third column of _table 5.22_).
 endif::cl_khr_gl_event[]
+
 |====
 
 Using {clGetEventInfo} to determine if a command identified by _event_ has
@@ -10589,17 +12188,103 @@ Otherwise, it returns one of the following errors:
 --
 
 
-ifdef::cl_khr_gl_event[]
-=== 5.11.1 Linking Event Objects to OpenGL Synchronization Objects
+ifdef::cl_khr_egl_event[]
+==== Linking Event Objects to EGL Fence Sync Objects
 
-An event object may be created by linking to an OpenGL *sync object*.
+An event object may be created by linking to an EGL *fence sync object*.
+
+[open,refpage='clCreateEventFromEGLSyncKHR',desc='Link OpenCL event object to an EGL sync object',type='protos']
+--
+To create an OpenCL event object linked to an EGL fence sync object, call
+the function
+
+include::{generated}/api/protos/clCreateEventFromEGLSyncKHR.txt[]
+include::{generated}/api/version-notes/clCreateEventFromEGLSyncKHR.asciidoc[]
+
+  * _context_ is a valid OpenCL context created from an OpenGL context or
+    share group, using the `<<cl_khr_gl_sharing>>` extension.
+  * _sync_ is the name of a sync object of type `EGL_SYNC_FENCE_KHR` created
+    with respect to `EGLDisplay` _display_.
+
 Completion of such an event object is equivalent to waiting for completion
-of the fence command associated with the linked GL sync object.
+of the fence command associated with the linked EGL sync object.
+
+The parameters of an event object linked to an EGL sync object will return
+the following values when queried with {clGetEventInfo}:
+
+  * The {CL_EVENT_COMMAND_QUEUE} of a linked event is `NULL`, because the
+    event is not associated with any OpenCL command-queue.
+  * The {CL_EVENT_COMMAND_TYPE} of a linked event is
+    {CL_COMMAND_EGL_FENCE_SYNC_OBJECT_KHR}, indicating that the event is
+    associated with a EGL sync object, rather than an OpenCL command.
+  * The {CL_EVENT_COMMAND_EXECUTION_STATUS} of a linked event is either
+    {CL_SUBMITTED}, indicating that the fence command associated with the
+    sync object has not yet completed, or {CL_COMPLETE}, indicating that the
+    fence command has completed.
+
+{clCreateEventFromEGLSyncKHR} performs an implicit {clRetainEvent} on the
+returned event object.
+Creating a linked event object also places a reference on the linked EGL
+sync object.
+When the event object is deleted, the reference will be removed from the EGL
+sync object.
+
+Events returned from {clCreateEventFromEGLSyncKHR} may only be consumed by
+{clEnqueueAcquire}*** commands.
+Passing such events to any other CL API that enqueues commands will generate
+a {CL_INVALID_EVENT} error.
+
+// refError
+
+{clCreateEventFromEGLSyncKHR} returns a valid OpenCL event object and
+_errcode_ret_ is set to {CL_SUCCESS} if the event object is created
+successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+  * {CL_INVALID_CONTEXT} if _context_ is not a valid context, or was not
+    created from a GL context.
+  * {CL_INVALID_EGL_OBJECT_KHR} if _sync_ is not a valid EGLSyncKHR object
+    of type `EGL_SYNC_FENCE_KHR` created with respect to `EGLDisplay`
+    _display_.
+--
+
+
+[[explicit-sync-using-egl-fences]]
+===== Explicit Synchronization Using EGL Fence Sync Objects
+
+If the `<<cl_khr_egl_event>>` extension is supported, event objects created
+with {clCreateEventFromEGLsyncKHR} provide another method of coordinating
+sharing between EGL / EGL client API objects, and OpenCL.
+
+Completion of EGL and EGL client API commands may be determined by
+
+  * placing an EGL fence command after commands using `eglCreateSyncKHR`;
+  * creating an event from the resulting EGL sync object using
+    {clCreateEventFromEGLSyncKHR}; and
+  * determining completion of that event object via
+    {clEnqueueAcquireGLObjects}.
+
+This method may be considerably more efficient than calling operations like
+`glFinish`, and is referred to as _explicit synchronization_.
+The application is responsible for ensuring the command stream associated
+with the EGL fence is flushed to ensure the CL queue is submitted to the
+device.
+Explicit synchronization is most useful when an EGL client API context bound
+to another thread is accessing the memory objects.
+
+endif::cl_khr_egl_event[]
+
+
+ifdef::cl_khr_gl_event[]
+==== Linking Event Objects to OpenGL Fence Sync Objects
+
+An event object may be created by linking to an OpenGL *fence sync object*.
 
 [open,refpage='clCreateEventFromGLsyncKHR',desc='Create OpenCL event object linked to an OpenGL sync object',type='protos']
 --
-To create an OpenCL event object linked to an OpenGL sync object, call the
-function
+To create an OpenCL event object linked to an OpenGL fence sync object, call
+the function
 
 include::{generated}/api/protos/clCreateEventFromGLsyncKHR.txt[]
 include::{generated}/api/version-notes/clCreateEventFromGLsyncKHR.asciidoc[]
@@ -10608,6 +12293,9 @@ include::{generated}/api/version-notes/clCreateEventFromGLsyncKHR.asciidoc[]
     share group, using the `<<cl_khr_gl_sharing>>` extension.
   * _sync_ is the name of a sync object in the GL share group associated
     with _context_.
+
+Completion of such an event object is equivalent to waiting for completion
+of the fence command associated with the linked GL sync object.
 
 // refError
 
@@ -10649,8 +12337,31 @@ Passing such events to any other CL API that enqueues commands will generate
 a {CL_INVALID_EVENT} error.
 --
 
-endif::cl_khr_gl_event[]
 
+[[explicit-sync-using-opengl-fences]]
+===== Explicit Synchronization Using OpenGL Fence Sync Objects
+
+If the `<<cl_khr_gl_event>>` extension is supported, event objects created
+with {clCreateEventFromGLsyncKHR} provide another method of coordinating
+sharing of buffers and images between OpenGL and OpenCL.
+
+Completion of OpenGL commands may be determined by
+
+  * placing an OpenGL fence command after commands using `glFenceSync`;
+  * creating an event from the resulting OpenGL sync object using
+    {clCreateEventFromGLSyncKHR}; and
+  * determining completion of that event object via
+    {clEnqueueAcquireGLObjects}.
+
+This method may be considerably more efficient than calling `glFinish`, and
+is referred to as _explicit synchronization_.
+Explicit synchronization is most useful when an OpenGL context bound to
+another thread is accessing the memory objects.
+
+Explicit synchronization is most useful when an OpenGL context bound to
+another thread is accessing the memory objects.
+
+endif::cl_khr_gl_event[]
 
 
 [[markers-barriers-waiting-for-events]]
@@ -13276,17 +14987,20 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_KHR.asciidoc[]
 
         {CL_COMMAND_BUFFER_STATE_RECORDING_KHR_anchor} is returned when
         _command_buffer_ has not been finalized.
+
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_RECORDING_KHR.asciidoc[]
 
         {CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR_anchor} is returned when
         _command_buffer_ has been finalized and there is not a <<pending,
         Pending>> instance of _command_buffer_ awaiting completion on a
         command_queue.
+
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR.asciidoc[]
 
         {CL_COMMAND_BUFFER_STATE_PENDING_KHR_anchor} is returned when an
         instance of _command_buffer_ has been enqueued for execution but not
         yet completed.
+
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_PENDING_KHR.asciidoc[]
 
 | {CL_COMMAND_BUFFER_PROPERTIES_ARRAY_KHR_anchor}
@@ -13402,20 +15116,10 @@ If no device(s) exist corresponding to _param_name_, the call will not fail,
 but the value of _param_value_size_ret_ will be zero.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a context was specified by
-    any of the following means:
-+
---
-* A context was specified for an EGL-based OpenGL ES or OpenGL
-  implementation by setting the properties {CL_GL_CONTEXT_KHR} and
-  {CL_EGL_DISPLAY_KHR}.
-* A context was specified for a GLX-based OpenGL implementation by setting
-  the properties {CL_GL_CONTEXT_KHR} and {CL_GLX_DISPLAY_KHR}.
-* A context was specified for a WGL-based OpenGL implementation by setting
-  the properties {CL_GL_CONTEXT_KHR} and {CL_WGL_HDC_KHR}.
---
-+
-    and any of the following conditions hold:
+  * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a context was specified for
+    an OpenGL or OpenGL ES implementation using the EGL, GLX, or WGL binding
+    APIs, as <<specifying-gl-context, described for `clCreateContext`>>; and
+    any of the following conditions hold:
   ** The specified display and context properties do not identify a valid
      OpenGL or OpenGL ES context.
   ** The specified context does not support buffer and renderbuffer objects.

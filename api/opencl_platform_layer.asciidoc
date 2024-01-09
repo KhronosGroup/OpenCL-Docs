@@ -165,7 +165,8 @@ or
 
 include::{generated}/api/version-notes/CL_PLATFORM_NUMERIC_VERSION_KHR.asciidoc[]
 endif::cl_khr_extended_versioning[]
-  | {cl_version_TYPE} +
+  | {cl_version_TYPE}
+
 ifdef::cl_khr_extended_versioning[or {cl_version_khr_TYPE}]
       | Returns the detailed (major, minor, patch) version supported by the
         platform. The major and minor version numbers returned must match
@@ -201,7 +202,8 @@ or
 
 include::{generated}/api/version-notes/CL_PLATFORM_EXTENSIONS_WITH_VERSION_KHR.asciidoc[]
 endif::cl_khr_extended_versioning[]
-  | {cl_name_version_TYPE}[] +
+  | {cl_name_version_TYPE}[]
+
 ifdef::cl_khr_extended_versioning[or {cl_name_version_khr_TYPE}[]]
       | Returns an array of description (name and version) structures that lists
         all the extensions supported by the platform. The same extension name
@@ -617,6 +619,8 @@ include::{generated}/api/version-notes/CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS.ascii
 include::{generated}/api/version-notes/CL_DEVICE_IL_VERSION.asciidoc[]
 
 ifdef::cl_khr_il_program[]
+or
+
 {CL_DEVICE_IL_VERSION_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_IL_VERSION_KHR.asciidoc[]
@@ -649,6 +653,7 @@ or
 include::{generated}/api/version-notes/CL_DEVICE_ILS_WITH_VERSION_KHR.asciidoc[]
 endif::cl_khr_extended_versioning[]
   | {cl_name_version_TYPE}[]
+
 ifdef::cl_khr_extended_versioning[or {cl_name_version_khr_TYPE}[]]
       | Returns an array of descriptions (name and version) for all supported
         intermediate languages.
@@ -1134,6 +1139,7 @@ or
 include::{generated}/api/version-notes/CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR.asciidoc[]
 endif::cl_khr_extended_versioning[]
   | {cl_name_version_TYPE}[]
+
 ifdef::cl_khr_extended_versioning[or {cl_name_version_khr_TYPE}[]]
       | Returns an array of descriptions for the built-in kernels supported by
         the device.
@@ -1200,7 +1206,8 @@ or
 
 include::{generated}/api/version-notes/CL_DEVICE_NUMERIC_VERSION_KHR.asciidoc[]
 endif::cl_khr_extended_versioning[]
-  | {cl_version_TYPE} +
+  | {cl_version_TYPE}
+
 ifdef::cl_khr_extended_versioning[or {cl_version_khr_TYPE}]
       | Returns the detailed (major, minor, patch) version supported by the
         device.
@@ -1355,6 +1362,7 @@ or
 include::{generated}/api/version-notes/CL_DEVICE_EXTENSIONS_WITH_VERSION_KHR.asciidoc[]
 endif::cl_khr_extended_versioning[]
   | {cl_name_version_TYPE}[]
+
 ifdef::cl_khr_extended_versioning[or {cl_name_version_khr_TYPE}[]]
       | Returns an array of description (name and version) structures. The same
         extension name must not be reported more than once. The list of
@@ -2090,6 +2098,336 @@ Otherwise, it returns one of the following errors:
 --
 
 
+ifdef::cl_khr_dx9_media_sharing[]
+=== Sharing DirectX9 Media Surfaces With OpenCL Images
+
+This section discusses OpenCL functions that allow applications to use media
+surfaces as OpenCL memory objects.
+This allows efficient sharing of data between OpenCL and media surface APIs.
+The OpenCL API may be used to execute kernels that read and/or write memory
+objects that are also media surfaces.
+An OpenCL image object may be created from a media surface.
+OpenCL memory objects may be created from media surfaces if and only if the
+OpenCL context has been created from a media adapter.
+
+
+==== Querying OpenCL Devices Corresponding to Media Adapters
+
+Media adapters are an abstraction associated with devices that provide media
+capabilities.
+Adapters with associated OpenCL devices can enable media surface sharing
+between the two.
+
+
+[open,refpage='clGetDeviceIDsFromDX9MediaAdapterKHR',desc='Query media adapter for any associated OpenCL devices',type='protos']
+--
+To query a media adapter for any associated OpenCL devices, call the
+function
+
+include::{generated}/api/protos/clGetDeviceIDsFromDX9MediaAdapterKHR.txt[]
+include::{generated}/api/version-notes/clGetDeviceIDsFromDX9MediaAdapterKHR.asciidoc[]
+
+  * _platform_ refers to the platform ID returned by {clGetPlatformIDs}.
+  * _num_media_adapters_ specifies the number of media adapters.
+  * _media_adapters_type_ is an array of _num_media_adapters_ entries.
+    Each entry specifies the type of media adapter and must be one of the
+    values described in the <<dx9-media-adapter-types, media adapter type
+    table>> below.
+  * _media_adapters_ is an array of _num_media_adapters_ entries.
+    Each entry specifies the actual adapter whose type is specified by
+    _media_adapter_type_.
+    The _media_adapters_ must be one of the types described in the
+    <<dx9-media-adapter-types, cl_dx9_media_adapter_type_khr values>>
+    table.
+  * _media_adapter_set_ specifies the set of adapters to return and must be
+    one of the values described in the <<dx9-media-adapter-sets,
+    cl_dx9_media_adapter_set_khr values>> table.
+  * _num_entries_ is the number of {cl_device_id_TYPE} entries that can be
+    added to _devices_.
+    If _devices_ is not `NULL`, the _num_entries_ must be greater than zero.
+  * _devices_ returns a list of OpenCL devices found that support the list
+    of media adapters specified.
+    The {cl_device_id_TYPE} values returned in _devices_ can be used to
+    identify a specific OpenCL device.
+    If _devices_ argument is `NULL`, this argument is ignored.
+    The number of OpenCL devices returned is the minimum of the value
+    specified by _num_entries_ or the number of OpenCL devices whose type
+    matches _device_type_.
+  * _num_devices_ returns the number of OpenCL devices.
+    If _num_devices_ is `NULL`, this argument is ignored.
+
+[[dx9-media-adapter-types]]
+.DirectX 9 object types that may be used by {clGetDeviceIDsFromDX9MediaAdapterKHR}
+[cols=",",options="header",]
+|====
+| {cl_dx9_media_adapter_type_khr_TYPE} | *Type of Media Adapter*
+| {CL_ADAPTER_D3D9_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_ADAPTER_D3D9_KHR.asciidoc[]
+  | `IDirect3DDevice9 *`
+| {CL_ADAPTER_D3D9EX_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_ADAPTER_D3D9EX_KHR.asciidoc[]
+  | `IDirect3DDevice9Ex *`
+| {CL_ADAPTER_DXVA_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_ADAPTER_DXVA_KHR.asciidoc[]
+  | `IDXVAHD_Device *`
+|====
+
+[[dx9-media-adapter-sets]]
+.Sets of devices queriable using {clGetDeviceIDsFromDX9MediaAdapterKHR}
+[cols=",",options="header",]
+|====
+| {cl_dx9_media_adapter_set_khr_TYPE}              | *Description*
+| {CL_PREFERRED_DEVICES_FOR_DX9_MEDIA_ADAPTER_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_PREFERRED_DEVICES_FOR_DX9_MEDIA_ADAPTER_KHR.asciidoc[]
+    | The preferred OpenCL devices associated with the media adapter.
+| {CL_ALL_DEVICES_FOR_DX9_MEDIA_ADAPTER_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_ALL_DEVICES_FOR_DX9_MEDIA_ADAPTER_KHR.asciidoc[]
+    | All OpenCL devices that may interoperate with the media adapter
+|====
+
+// refError
+
+{clGetDeviceIDsFromDX9MediaAdapterKHR} returns {CL_SUCCESS} if the function
+is executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_PLATFORM} if _platform_ is not a valid platform.
+  * {CL_INVALID_VALUE} if _num_media_adapters_ is zero or if
+    _media_adapters_type_ is `NULL` or if _media_adapters_ is `NULL`.
+  * {CL_INVALID_VALUE} if any of the entries in _media_adapters_type_ or
+    _media_adapters_ is not a valid value.
+  * {CL_INVALID_VALUE} if _media_adapter_set_ is not a valid value.
+  * {CL_INVALID_VALUE} if _num_entries_ is equal to zero and _devices_ is
+    not `NULL` or if both _num_devices_ and _devices_ are `NULL`.
+  * {CL_DEVICE_NOT_FOUND} if no OpenCL devices that correspond to adapters
+    specified in _media_adapters_ and _media_adapters_type_ were found.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_dx9_media_sharing[]
+
+
+ifdef::cl_khr_d3d10_sharing[]
+=== Sharing Direct3D 10 Resources with OpenCL Memory Objects
+
+This section discusses OpenCL functions that allow applications to use
+Direct3D 10 resources as OpenCL memory objects.
+This allows efficient sharing of data between OpenCL and Direct3D 10.
+The OpenCL API may be used to execute kernels that read and/or write memory
+objects that are also Direct3D 10 resources.
+An OpenCL image object may be created from a Direct3D 10 texture resource.
+An OpenCL buffer object may be created from a Direct3D 10 buffer resource.
+OpenCL memory objects may be created from Direct3D 10 objects if and only if
+the OpenCL context has been created from a Direct3D 10 device.
+
+==== Querying OpenCL Devices Corresponding to Direct3D 10 Devices
+
+The OpenCL devices corresponding to a Direct3D 10 device may be queried.
+The OpenCL devices corresponding to a DXGI adapter may also be queried.
+The OpenCL devices corresponding to a Direct3D 10 device will be a subset of
+the OpenCL devices corresponding to the DXGI adapter against which the
+Direct3D 10 device was created.
+
+[open,refpage='clGetDeviceIDsFromD3D10KHR',desc='Query OpenCL devices corresponding to a Direct3D 10 or DXGI device',type='protos']
+--
+To query OpenCL devices corresponding to a Direct3D 10 device or a DXGI
+device, call the function
+
+include::{generated}/api/protos/clGetDeviceIDsFromD3D10KHR.txt[]
+include::{generated}/api/version-notes/clGetDeviceIDsFromD3D10KHR.asciidoc[]
+
+  * _platform_ refers to the platform ID returned by {clGetPlatformIDs}.
+  * _d3d_device_source_ specifies the type of _d3d_object_, and must be one
+    of the values shown in the <<d3d10-device-object-types-table, Direct3D
+    10 object types that may be used by {clGetDeviceIDsFromD3D10KHR}>>
+    table.
+  * _d3d_object_ specifies the object whose corresponding OpenCL devices are
+    being queried.
+    The type of _d3d_object_ must be as specified in the
+    <<d3d10-device-object-types-table, Direct3D 10 object types that may be
+    used by {clGetDeviceIDsFromD3D10KHR}>> table.
+  * _d3d_device_set_ specifies the set of devices to return, and must be one
+    of the values shown in the <<d3d10-device-sets-table, Sets of devices
+    queriable using {clGetDeviceIDsFromD3D10KHR}>> table.
+  * _num_entries_ is the number of {cl_device_id_TYPE} entries that can be
+    added to _devices_.
+    If _devices_ is not `NULL` then _num_entries_ must be greater than zero.
+  * _devices_ returns a list of OpenCL devices found.
+    The {cl_device_id_TYPE} values returned in _devices_ can be used to
+    identify a specific OpenCL device.
+    If _devices_ is `NULL`, this argument is ignored.
+    The number of OpenCL devices returned is the minimum of the value
+    specified by _num_entries_ and the number of OpenCL devices
+    corresponding to _d3d_object_.
+  * _num_devices_ returns the number of OpenCL devices available that
+    correspond to _d3d_object_.
+    If _num_devices_ is `NULL`, this argument is ignored.
+
+[[d3d10-device-object-types-table]]
+.Direct3D 10 object types that may be used by {clGetDeviceIDsFromD3D10KHR}
+[cols=",",options="header",]
+|====
+| {cl_d3d10_device_source_khr_TYPE} | *Type of* _d3d_object_
+| {CL_D3D10_DEVICE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_D3D10_DEVICE_KHR.asciidoc[]
+  | `ID3D10Device *`
+| {CL_D3D10_DXGI_ADAPTER_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_D3D10_DXGI_ADAPTER_KHR.asciidoc[]
+  | `IDXGIAdapter *`
+|====
+
+[[d3d10-device-sets-table]]
+.Sets of devices queriable using {clGetDeviceIDsFromD3D10KHR}
+[cols=",",options="header",]
+|====
+| {cl_d3d10_device_set_khr_TYPE} | *Devices returned in* _devices_
+| {CL_PREFERRED_DEVICES_FOR_D3D10_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_PREFERRED_DEVICES_FOR_D3D10_KHR.asciidoc[]
+  | The preferred OpenCL devices associated with the specified Direct3D
+    object.
+| {CL_ALL_DEVICES_FOR_D3D10_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_ALL_DEVICES_FOR_D3D10_KHR.asciidoc[]
+  | All OpenCL devices which may interoperate with the specified Direct3D
+    object.
+    Performance of sharing data on these devices may be considerably less
+    than on the preferred devices.
+|====
+
+// refError
+
+{clGetDeviceIDsFromD3D10KHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+Otherwise it may return
+
+  * {CL_INVALID_PLATFORM} if _platform_ is not a valid platform.
+  * {CL_INVALID_VALUE} if _d3d_device_source_ is not a valid value,
+    _d3d_device_set_ is not a valid value, _num_entries_ is equal to zero
+    and _devices_ is not `NULL`, or if both _num_devices_ and _devices_ are
+    `NULL`.
+  * {CL_DEVICE_NOT_FOUND} if no OpenCL devices that correspond to
+    _d3d_object_ were found.
+--
+endif::cl_khr_d3d10_sharing[]
+
+
+ifdef::cl_khr_d3d11_sharing[]
+=== Sharing Direct3D 11 Resources with OpenCL Memory Objects
+
+This section discusses OpenCL functions that allow applications to use
+Direct3D 11 resources as OpenCL memory objects.
+This allows efficient sharing of data between OpenCL and Direct3D 11.
+The OpenCL API may be used to execute kernels that read and/or write memory
+objects that are also Direct3D 11 resources.
+An OpenCL image object may be created from a Direct3D 11 texture resource.
+An OpenCL buffer object may be created from a Direct3D 11 buffer resource.
+OpenCL memory objects may be created from Direct3D 11 objects if and only if
+the OpenCL context has been created from a Direct3D 11 device.
+
+==== Querying OpenCL Devices Corresponding to Direct3D 11 Devices
+
+The OpenCL devices corresponding to a Direct3D 11 device may be queried.
+The OpenCL devices corresponding to a DXGI adapter may also be queried.
+The OpenCL devices corresponding to a Direct3D 11 device will be a subset of
+the OpenCL devices corresponding to the DXGI adapter against which the
+Direct3D 11 device was created.
+
+[open,refpage='clGetDeviceIDsFromD3D11KHR',desc='Query OpenCL devices corresponding to a Direct3D 11 or DXGI device',type='protos']
+--
+To query OpenCL devices corresponding to a Direct3D 11 device or a DXGI
+device, call the function
+
+include::{generated}/api/protos/clGetDeviceIDsFromD3D11KHR.txt[]
+include::{generated}/api/version-notes/clGetDeviceIDsFromD3D11KHR.asciidoc[]
+
+  * _platform_ refers to the platform ID returned by {clGetPlatformIDs}.
+  * _d3d_device_source_ specifies the type of _d3d_object_, and must be one
+    of the values shown in the <<d3d11-device-object-types-table, Direct3D
+    11 object types that may be used by {clGetDeviceIDsFromD3D11KHR}>>
+    table.
+  * _d3d_object_ specifies the object whose corresponding OpenCL devices are
+    being queried.
+    The type of _d3d_object_ must be as specified in the
+    <<d3d11-device-object-types-table, Direct3D 11 object types that may be
+    used by {clGetDeviceIDsFromD3D11KHR}>> table.
+  * _d3d_device_set_ specifies the set of devices to return, and must be one
+    of the values shown in the <<d3d11-device-sets-table, Sets of devices
+    queriable using {clGetDeviceIDsFromD3D11KHR}>> table.
+  * _num_entries_ is the number of {cl_device_id_TYPE} entries that can be
+    added to _devices_.
+    If _devices_ is not `NULL` then _num_entries_ must be greater than zero.
+  * _devices_ returns a list of OpenCL devices found.
+    The {cl_device_id_TYPE} values returned in _devices_ can be used to
+    identify a specific OpenCL device.
+    If _devices_ is `NULL`, this argument is ignored.
+    The number of OpenCL devices returned is the minimum of the value
+    specified by _num_entries_ and the number of OpenCL devices
+    corresponding to _d3d_object_.
+  * _num_devices_ returns the number of OpenCL devices available that
+    correspond to _d3d_object_.
+    If _num_devices_ is `NULL`, this argument is ignored.
+
+[[d3d11-device-object-types-table]]
+.Direct3D 11 object types that may be used by {clGetDeviceIDsFromD3D11KHR}
+[cols=",",options="header",]
+|====
+| {cl_d3d11_device_source_khr_TYPE} | *Type of* _d3d_object_
+| {CL_D3D11_DEVICE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_D3D11_DEVICE_KHR.asciidoc[]
+  | `ID3D11Device *`
+| {CL_D3D11_DXGI_ADAPTER_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_D3D11_DXGI_ADAPTER_KHR.asciidoc[]
+  | `IDXGIAdapter *`
+|====
+
+[[d3d11-device-sets-table]]
+.Sets of devices queriable using {clGetDeviceIDsFromD3D11KHR}
+[cols=",",options="header",]
+|====
+| {cl_d3d11_device_set_khr_TYPE} | *Devices returned in* _devices_
+| {CL_PREFERRED_DEVICES_FOR_D3D11_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_PREFERRED_DEVICES_FOR_D3D11_KHR.asciidoc[]
+  | The preferred OpenCL devices associated with the specified Direct3D
+    object.
+| {CL_ALL_DEVICES_FOR_D3D11_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_ALL_DEVICES_FOR_D3D11_KHR.asciidoc[]
+  | All OpenCL devices which may interoperate with the specified Direct3D
+    object.
+    Performance of sharing data on these devices may be considerably less
+    than on the preferred devices.
+|====
+
+// refError
+
+{clGetDeviceIDsFromD3D11KHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+Otherwise it may return
+
+  * {CL_INVALID_PLATFORM} if _platform_ is not a valid platform.
+  * {CL_INVALID_VALUE} if _d3d_device_source_ is not a valid value,
+    _d3d_device_set_ is not a valid value, _num_entries_ is equal to zero
+    and _devices_ is not `NULL`, or if both _num_devices_ and _devices_ are
+    `NULL`.
+  * {CL_DEVICE_NOT_FOUND} if no OpenCL devices that correspond to
+    _d3d_object_ were found.
+--
+endif::cl_khr_d3d11_sharing[]
+
+
 == Partitioning a Device
 
 NOTE: Partitioning devices is <<unified-spec, missing before>> version 1.2.
@@ -2397,12 +2735,51 @@ include::{generated}/api/version-notes/CL_CONTEXT_INTEROP_USER_SYNC.asciidoc[]
         on using this flag.
 
         Defaults to {CL_FALSE} if not specified.
+
+ifdef::cl_khr_dx9_media_sharing[]
+| {CL_CONTEXT_ADAPTER_D3D9_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_CONTEXT_ADAPTER_D3D9_KHR.asciidoc[]
+  | `IDirect3DDevice9 *`
+    | Specifies an `IDirect3DDevice9` to use for D3D9 interop.
+| {CL_CONTEXT_ADAPTER_D3D9EX_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_CONTEXT_ADAPTER_D3D9EX_KHR.asciidoc[]
+  | `IDirect3DDeviceEx*`
+    | Specifies an `IDirect3DDevice9Ex` to use for D3D9 interop.
+| {CL_CONTEXT_ADAPTER_DXVA_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_CONTEXT_ADAPTER_DXVA_KHR.asciidoc[]
+  | `IDXVAHD_Device *`
+    | Specifies an `IDXVAHD_Device` to use for DXVA interop.
+endif::cl_khr_dx9_media_sharing[]
+
+ifdef::cl_khr_d3d10_sharing[]
+| {CL_CONTEXT_D3D10_DEVICE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_CONTEXT_D3D10_DEVICE_KHR.asciidoc[]
+  | `ID3D10Device *`
+    | Specifies the `ID3D10Device *` to use for Direct3D 10 interoperability.
+
+      The default value is `NULL`.
+endif::cl_khr_d3d10_sharing[]
+
+ifdef::cl_khr_d3d11_sharing[]
+| {CL_CONTEXT_D3D11_DEVICE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_CONTEXT_D3D11_DEVICE_KHR.asciidoc[]
+  | `ID3D11Device *`
+    | Specifies the `ID3D11Device *` to use for Direct3D 11 interoperability.
+
+      The default value is `NULL`.
+endif::cl_khr_d3d11_sharing[]
+
 ifdef::cl_khr_gl_sharing[]
 | {CL_GL_CONTEXT_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_GL_CONTEXT_KHR.asciidoc[]
   | OpenGL context handle
-    | OpenGL context to associated the OpenCL context with
+    | OpenGL context to associate the OpenCL context with
 
       Defaults to 0 if not specified.
 | {CL_CGL_SHAREGROUP_KHR_anchor}
@@ -2466,6 +2843,7 @@ Some of the properties specified in the <<context-properties-table, Context
 Properties>> table control sharing of OpenCL memory objects with OpenGL
 buffer, texture, and renderbuffer objects.
 
+[[specifying-gl-context]]
 Depending on the platform-specific API used to bind OpenGL contexts to the
 window system, the following properties may be set to identify an OpenGL
 context:
@@ -2519,19 +2897,11 @@ returned in _errcode_ret_:
   * {CL_INVALID_PLATFORM} if _properties_ is `NULL` and no platform could be
     selected, or if the platform value specified in _properties_ is not a
     valid platform.
-  * {CL_INVALID_PROPERTY} if context property name in _properties_ is not a
-    supported property name, if the value specified for a supported property
-    name is not valid, or if the same property name is specified more than
-    once.
+  * {CL_INVALID_PROPERTY} if a context property name in _properties_ is not
+    a supported property name, if the value specified for a supported
+    property name is not valid, or if the same property name is specified
+    more than once.
     This error code is <<unified-spec, missing before>> version 1.1.
-ifdef::cl_khr_terminate_context[]
-  * {CL_INVALID_PROPERTY} if the `<<cl_khr_terminate_context>>` extension is
-    supported and {CL_CONTEXT_TERMINATE_KHR} is set to {CL_TRUE} in
-    _properties_, but not all of the devices associated with the context
-    support the ability to support context termination (i.e.
-    {CL_DEVICE_TERMINATE_CAPABILITY_CONTEXT_KHR} is set for
-    {CL_DEVICE_TERMINATE_CAPABILITY_KHR}).
-endif::cl_khr_terminate_context[]
   * {CL_INVALID_VALUE} if _devices_ is `NULL`.
   * {CL_INVALID_VALUE} if _num_devices_ is equal to zero.
   * {CL_INVALID_VALUE} if _pfn_notify_ is `NULL` but _user_data_ is not
@@ -2544,24 +2914,52 @@ endif::cl_khr_terminate_context[]
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 
-ifdef::cl_khr_gl_sharing[]
-Addtionally, the following errors may be returned if the
-`<<cl_khr_gl_sharing>>` extension is supported:
+ifdef::cl_khr_dx9_media_sharing[]
+The following errors may be returned if the `<<cl_khr_dx9_media_sharing>>`
+extension is supported:
 
-  * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a context
-    was specified by any of the following means:
-+
---
-* A context was specified for an EGL-based OpenGL ES or OpenGL
-  implementation by setting the properties {CL_GL_CONTEXT_KHR} and
-  {CL_EGL_DISPLAY_KHR}.
-* A context was specified for a GLX-based OpenGL implementation by setting
-  the properties {CL_GL_CONTEXT_KHR} and {CL_GLX_DISPLAY_KHR}.
-* A context was specified for a WGL-based OpenGL implementation by setting
-  the properties {CL_GL_CONTEXT_KHR} and {CL_WGL_HDC_KHR}
---
-+
-    and any of the following conditions hold:
+  * {CL_INVALID_DX9_MEDIA_ADAPTER_KHR} if any of the values of the
+    properties {CL_CONTEXT_ADAPTER_D3D9_KHR},
+    {CL_CONTEXT_ADAPTER_D3D9EX_KHR} or {CL_CONTEXT_ADAPTER_DXVA_KHR} is
+    non-`NULL` and does not specify a valid media adapter with which the
+    _cl_device_ids_ against which this context is to be created may
+    interoperate.
+endif::cl_khr_dx9_media_sharing[]
+
+ifdef::cl_khr_d3d10_sharing[]
+The following errors may be returned if the `<<cl_khr_d3d10_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_D3D10_DEVICE_KHR} if the value of the property
+    {CL_CONTEXT_D3D10_DEVICE_KHR} is non-`NULL` and does not specify a valid
+    Direct3D 10 device with which the _cl_device_ids_ against which this
+    context is to be created may interoperate.
+  * {CL_INVALID_OPERATION} if Direct3D 10 interoperability is specified by
+    setting {CL_INVALID_D3D10_DEVICE_KHR} to a non-`NULL` value, and
+    interoperability with another graphics API is also specified.
+endif::cl_khr_d3d10_sharing[]
+
+ifdef::cl_khr_d3d11_sharing[]
+The following errors may be returned if the `<<cl_khr_d3d11_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_D3D11_DEVICE_KHR} if the value of the property
+    {CL_CONTEXT_D3D11_DEVICE_KHR} is non-`NULL` and does not specify a valid
+    Direct3D 11 device with which the _cl_device_ids_ against which this
+    context is to be created may interoperate.
+  * {CL_INVALID_OPERATION} if Direct3D 11 interoperability is specified by
+    setting {CL_INVALID_D3D11_DEVICE_KHR} to a non-`NULL` value, and
+    interoperability with another graphics API is also specified.
+endif::cl_khr_d3d11_sharing[]
+
+ifdef::cl_khr_gl_sharing[]
+The following errors may be returned if the `<<cl_khr_gl_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a context was specified for
+    an OpenGL or OpenGL ES implementation using the EGL, GLX, or WGL binding
+    APIs, as <<specifying-gl-context, described above>>; and any of the
+    following conditions hold:
   ** The specified display and context properties do not identify a valid
      OpenGL or OpenGL ES context.
   ** The specified context does not support buffer and renderbuffer objects.
@@ -2569,7 +2967,6 @@ Addtionally, the following errors may be returned if the
      created (for example, it exists in a physically distinct address space,
      such as another hardware device; or it does not support sharing data
      with OpenCL due to implementation restrictions).
-
   * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a share group was specified
     for a CGL-based OpenGL implementation by setting the property
     {CL_CGL_SHAREGROUP_KHR}, and the specified share group does not identify
@@ -2590,6 +2987,18 @@ Addtionally, the following errors may be returned if the
     the properties defined by the `<<cl_khr_gl_sharing>>` extension are
     defined in _properties_.
 endif::cl_khr_gl_sharing[]
+
+ifdef::cl_khr_terminate_context[]
+The following errors may be returned if the `<<cl_khr_terminate_context>>`
+extension is supported:
+
+  * {CL_INVALID_PROPERTY} if the `<<cl_khr_terminate_context>>` extension is
+    supported and {CL_CONTEXT_TERMINATE_KHR} is set to {CL_TRUE} in
+    _properties_, but not all of the devices associated with the context
+    support the ability to support context termination (i.e.
+    {CL_DEVICE_TERMINATE_CAPABILITY_CONTEXT_KHR} is set for
+    {CL_DEVICE_TERMINATE_CAPABILITY_KHR}).
+endif::cl_khr_terminate_context[]
 
 [NOTE]
 ====
@@ -2643,10 +3052,10 @@ returned in _errcode_ret_:
   * {CL_INVALID_PLATFORM} if _properties_ is `NULL` and no platform could be
     selected, or if the platform value specified in _properties_ is not a
     valid platform.
-  * {CL_INVALID_PROPERTY} if context property name in _properties_ is not a
-    supported property name, if the value specified for a supported property
-    name is not valid, or if the same property name is specified more than
-    once.
+  * {CL_INVALID_PROPERTY} if a context property name in _properties_ is not
+    a supported property name, if the value specified for a supported
+    property name is not valid, or if the same property name is specified
+    more than once.
     This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_INVALID_VALUE} if _pfn_notify_ is `NULL` but _user_data_ is not
     `NULL`.
@@ -2660,24 +3069,52 @@ returned in _errcode_ret_:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 
-ifdef::cl_khr_gl_sharing[]
-Addtionally, the following errors may be returned if the
-`<<cl_khr_gl_sharing>>` extension is supported:
+ifdef::cl_khr_dx9_media_sharing[]
+The following errors may be returned if the `<<cl_khr_dx9_media_sharing>>`
+extension is supported:
 
-  * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a context
-    was specified by any of the following means:
-+
---
-* A context was specified for an EGL-based OpenGL ES or OpenGL
-  implementation by setting the properties {CL_GL_CONTEXT_KHR} and
-  {CL_EGL_DISPLAY_KHR}.
-* A context was specified for a GLX-based OpenGL implementation by setting
-  the properties {CL_GL_CONTEXT_KHR} and {CL_GLX_DISPLAY_KHR}.
-* A context was specified for a WGL-based OpenGL implementation by setting
-  the properties {CL_GL_CONTEXT_KHR} and {CL_WGL_HDC_KHR}
---
-+
-    and any of the following conditions hold:
+  * {CL_INVALID_DX9_MEDIA_ADAPTER_KHR} if any of the values of the
+    properties {CL_CONTEXT_ADAPTER_D3D9_KHR},
+    {CL_CONTEXT_ADAPTER_D3D9EX_KHR} or {CL_CONTEXT_ADAPTER_DXVA_KHR} is
+    non-`NULL` and does not specify a valid media adapter with which the
+    _cl_device_ids_ against which this context is to be created may
+    interoperate.
+endif::cl_khr_dx9_media_sharing[]
+
+ifdef::cl_khr_d3d10_sharing[]
+The following errors may be returned if the `<<cl_khr_d3d10_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_D3D10_DEVICE_KHR} if the value of the property
+    {CL_CONTEXT_D3D10_DEVICE_KHR} is non-`NULL` and does not specify a valid
+    Direct3D 10 device with which the _cl_device_ids_ against which this
+    context is to be created may interoperate.
+  * {CL_INVALID_OPERATION} if Direct3D 10 interoperability is specified by
+    setting {CL_INVALID_D3D10_DEVICE_KHR} to a non-`NULL` value, and
+    interoperability with another graphics API is also specified.
+endif::cl_khr_d3d10_sharing[]
+
+ifdef::cl_khr_d3d11_sharing[]
+The following errors may be returned if the `<<cl_khr_d3d11_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_D3D11_DEVICE_KHR} if the value of the property
+    {CL_CONTEXT_D3D11_DEVICE_KHR} is non-`NULL` and does not specify a valid
+    Direct3D 11 device with which the _cl_device_ids_ against which this
+    context is to be created may interoperate.
+  * {CL_INVALID_OPERATION} if Direct3D 11 interoperability is specified by
+    setting {CL_INVALID_D3D11_DEVICE_KHR} to a non-`NULL` value, and
+    interoperability with another graphics API is also specified.
+endif::cl_khr_d3d11_sharing[]
+
+ifdef::cl_khr_gl_sharing[]
+The following errors may be returned if the `<<cl_khr_gl_sharing>>`
+extension is supported:
+
+  * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a context was specified for
+    an OpenGL or OpenGL ES implementation using the EGL, GLX, or WGL binding
+    APIs, as <<specifying-gl-context, described for `clCreateContext`>>; and
+    any of the following conditions hold:
   ** The specified display and context properties do not identify a valid
      OpenGL or OpenGL ES context.
   ** The specified context does not support buffer and renderbuffer objects.
@@ -2685,7 +3122,6 @@ Addtionally, the following errors may be returned if the
      created (for example, it exists in a physically distinct address space,
      such as another hardware device; or it does not support sharing data
      with OpenCL due to implementation restrictions).
-
   * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a share group was specified
     for a CGL-based OpenGL implementation by setting the property
     {CL_CGL_SHAREGROUP_KHR}, and the specified share group does not identify
@@ -2901,6 +3337,31 @@ include::{generated}/api/version-notes/CL_CONTEXT_PROPERTIES.asciidoc[]
         {clCreateContextFromType} used to create _context_ was `NULL`, the
         implementation must return _param_value_size_ret_ equal to 0,
         indicating that there are no properties to be returned.
+
+ifdef::cl_khr_d3d10_sharing[]
+| {CL_CONTEXT_D3D10_PREFER_SHARED_RESOURCES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_CONTEXT_D3D10_PREFER_SHARED_RESOURCES_KHR.asciidoc[]
+  | {cl_bool_TYPE}
+    | Returns {CL_TRUE} if Direct3D 10 resources created as shared by
+      setting _MiscFlags_ to include `D3D10_RESOURCE_MISC_SHARED` will
+      perform faster when shared with OpenCL, compared with resources which
+      have not set this flag.
+      Otherwise returns {CL_FALSE}.
+endif::cl_khr_d3d10_sharing[]
+
+ifdef::cl_khr_d3d11_sharing[]
+| {CL_CONTEXT_D3D11_PREFER_SHARED_RESOURCES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_CONTEXT_D3D11_PREFER_SHARED_RESOURCES_KHR.asciidoc[]
+  | {cl_bool_TYPE}
+    | Returns {CL_TRUE} if Direct3D 11 resources created as shared by
+      setting _MiscFlags_ to include `D3D11_RESOURCE_MISC_SHARED` will
+      perform faster when shared with OpenCL, compared with resources which
+      have not set this flag.
+      Otherwise returns {CL_FALSE}.
+endif::cl_khr_d3d11_sharing[]
+
 |====
 
 // refError

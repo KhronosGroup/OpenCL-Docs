@@ -55,6 +55,81 @@ include::{generated}/meta/{refprefix}cl_khr_d3d10_sharing.txt[]
   ** {CL_D3D10_RESOURCE_ALREADY_ACQUIRED_KHR}
   ** {CL_D3D10_RESOURCE_NOT_ACQUIRED_KHR}
 
+
+=== Issues
+
+  . Should this extension be KHR or EXT?
++
+--
+*PROPOSED*: KHR.
+If this extension is to be approved by Khronos then it should be KHR,
+otherwise EXT.
+Not all platforms can support this extension, but that is also true of
+OpenGL interop.
+
+*RESOLVED*: KHR.
+--
+
+  . Requiring SharedHandle on ID3D10Resource
++
+--
+Requiring this can largely simplify things at the DDI level and make some
+implementations faster.
+However, the DirectX spec only defines the shared handle for a subset of the
+resources we would like to support:
+
+  * `D3D10_RESOURCE_MISC_SHARED` - Enables the sharing of resource data
+    between two or more Direct3D devices.
+    The only resources that can be shared are 2D non-mipmapped textures.
+
+*PROPOSED*: A: Add wording to the spec about some implementations needing
+the resource setup as shared:
+
+Some implementations may require the resource to be shared on the D3D10 side
+of the API.
+
+If we do that, do we need another enum to describe this failure case?
+
+*PROPOSED*: B: Require that all implementations support both shared and
+non-shared resources.
+The restrictions prohibiting multisample textures and the flag
+D3D10_USAGE_IMMUTABLE guarantee software access to all shareable resources.
+
+*RESOLVED*: Require that implementations support both
+D3D10_RESOURCE_MISC_SHARED being set and not set.
+Add the query for {CL_CONTEXT_D3D10_PREFER_SHARED_RESOURCES_KHR} to
+determine on a per-context basis which method will be faster.
+--
+
+  . Texture1D support
++
+--
+There is not a matching CL type, so do we want to support this and map to
+buffer or Texture2D?
+
+*RESOLVED*: We will not add support for ID3D10Texture1D objects unless a
+corresponding OpenCL 1D Image type is created.
+--
+
+  . CL/D3D10 queries
++
+--
+The GL interop has {clGetGLObjectInfo} and {clGetGLTextureInfo}.
+It is unclear if these are needed on the D3D10 interop side since the D3D10
+spec makes these queries trivial on the D3D10 object itself.
+Also, not all of the semantics of the GL call map across.
+
+*PROPOSED*: Add the {clGetMemObjectInfo} and {clGetImageInfo} parameter
+names {CL_MEM_D3D10_RESOURCE_KHR} and {CL_IMAGE_D3D10_SUBRESOURCE_KHR} to
+query the D3D10 resource from which a {cl_mem_TYPE} was created.
+From this data, any D3D10 side information may be queried using the D3D10
+API.
+
+*RESOLVED*: We will use {clGetMemObjectInfo} and {clGetImageInfo} to access
+this information.
+--
+
+
 === Version History
 
   * Revision 1.0.0, 2020-04-21

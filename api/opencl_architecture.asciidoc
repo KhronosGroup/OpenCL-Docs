@@ -990,6 +990,55 @@ explicitly manage association of memory objects with devices in order to
 improve performance.
 
 
+ifdef::cl_khr_d3d10_sharing,cl_khr_d3d11_sharing[]
+[[lifetime-of-shared-opencl-direct3d-memory-objects]]
+=== Lifetime of Shared Direct3D Memory Objects
+
+This section refers to similar Direct3D 10 and Direct3D 11 objects and
+concepts such as _resources_, _reference counts_, and _devices_.
+
+Sharing is accomplished by creating an OpenCL context via the context create
+parameters {CL_CONTEXT_D3D10_DEVICE_KHR} (for Direct3D 10, if the
+`<<cl_khr_d3d10_sharing>>` extension is supported) or
+{CL_CONTEXT_D3D11_DEVICE_KHR} (for Direct3D 11, if the
+`<<cl_khr_d3d11_sharing>>` extension is supported.
+
+An OpenCL memory object created from a Direct3D resource remains valid as
+long as the corresponding Direct3D resource has not been deleted.
+If the Direct3D resource is deleted through the Direct3D API, subsequent use
+of the OpenCL memory object will result in undefined behavior, including but
+not limited to possible OpenCL errors, data corruption, and program
+termination.
+
+The successful creation of a {cl_context_TYPE} against a Direct3D device
+will increment the internal Direct3D reference count on the specified
+device.
+The internal Direct3D reference count on that Direct3D device will be
+decremented when the OpenCL reference count on the returned OpenCL context
+drops to zero.
+
+The OpenCL context and corresponding command-queues are dependent on the
+existence of the Direct3D device from which the OpenCL context was created.
+If the Direct3D device is deleted through the Direct3D API, subsequent use
+of the OpenCL context will result in undefined behavior, including but not
+limited to possible OpenCL errors, data corruption, and program termination.
+endif::cl_khr_d3d10_sharing,cl_khr_d3d11_sharing[]
+
+
+ifdef::cl_khr_egl_image[]
+==== Lifetime of Shared EGLImage Objects
+
+An OpenCL memory object created from an EGL `EGLImage` object remains valid
+according to the lifetime behavior as described in the `EGL_KHR_image_base`
+extension.
+
+Any `EGLImage` siblings exist in any client API context
+
+For OpenCL this means that while the application retains a reference on the
+{cl_mem_TYPE} (the EGL sibling), the image remains valid.
+endif::cl_khr_egl_image[]
+
+
 ifdef::cl_khr_gl_sharing[]
 [[lifetime-of-shared-opencl-opengl-memory-objects]]
 === Lifetime of Shared OpenCL/OpenGL Memory Objects
@@ -1011,7 +1060,6 @@ are destroyed, any use of the OpenCL context or command-queue(s) will result
 in undefined behavior, which may include program termination.
 Applications should destroy the OpenCL command-queue(s) and OpenCL context
 before destroying the corresponding OpenGL share group or contexts
-
 endif::cl_khr_gl_sharing[]
 
 
