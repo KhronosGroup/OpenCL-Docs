@@ -202,17 +202,22 @@ pdf: apipdf envpdf extpdf extensionspdf cxxpdf cpdf icdinstpdf
 # 'html' causing specs to *always* be regenerated.
 
 src:
-	@echo APISPECSRC = $(APISPECSRC)
-	@echo CSPECSRC	 = $(CSPECSRC)
-	@echo ENVSPECSRC = $(ENVSPECSRC)
-	@echo EXTSPECSRC = $(EXTSPECSRC)
+	@echo APISPECSRC	= $(APISPECSRC)
+	@echo CSPECSRC		= $(CSPECSRC)
+	@echo ENVSPECSRC	= $(ENVSPECSRC)
+	@echo EXTSPECSRC	= $(EXTSPECSRC)
+	@echo CEXTDOCSRC	= $(CEXTDOCSRC)
+	@echo CXX4OPENCLDOCSRC	= $(CXX4OPENCLDOCSRC)
+	@echo CXXSPECSRC	= $(CXXSPECSRC)
+	@echo EXTENSIONSSPECSRC = $(EXTENSIONSSPECSRC)
+	@echo ICDINSTSPECSRC	= $(ICDINSTSPECSRC)
 
 # API spec
 
 # Top-level spec source file
 APISPEC = OpenCL_API
 APISPECSRC = $(APISPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(APISPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e "s#{generated}#$(GENERATED)#" | xargs echo)
+    $(shell scripts/find_adoc_deps $(APISPEC).txt $(GENERATED))
 
 apihtml: $(HTMLDIR)/$(APISPEC).html $(APISPECSRC)
 
@@ -232,7 +237,7 @@ $(PDFDIR)/$(APISPEC).pdf: $(APISPECSRC)
 # Top-level spec source file
 ENVSPEC = OpenCL_Env
 ENVSPECSRC = $(ENVSPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(ENVSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e "s#{generated}#$(GENERATED)#" | xargs echo)
+    $(shell scripts/find_adoc_deps $(ENVSPEC).txt $(GENERATED))
 
 envhtml: $(HTMLDIR)/$(ENVSPEC).html $(ENVSPECSRC)
 
@@ -250,7 +255,7 @@ $(PDFDIR)/$(ENVSPEC).pdf: $(ENVSPECSRC)
 # Extensions spec
 EXTSPEC = OpenCL_Ext
 EXTSPECSRC = $(EXTSPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(EXTSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e "s#{generated}#$(GENERATED)#" | xargs echo)
+    $(shell scripts/find_adoc_deps $(EXTSPEC).txt $(GENERATED))
 
 exthtml: $(HTMLDIR)/$(EXTSPEC).html $(EXTSPECSRC)
 
@@ -269,7 +274,7 @@ $(PDFDIR)/$(EXTSPEC).pdf: $(EXTSPECSRC)
 EXTDIR = extensions
 EXTENSIONSSPEC = extensions
 EXTENSIONSSPECSRC = $(EXTDIR)/$(EXTENSIONSSPEC).txt \
-    $(shell grep ^include:: $(EXTDIR)/$(EXTENSIONSSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e "s#{generated}#$(GENERATED)#" | xargs echo)
+    $(shell scripts/find_adoc_deps $(EXTDIR)/$(EXTENSIONSSPEC).txt $(GENERATED))
 
 # Included extension documents
 EXTDOCS := $(notdir $(wildcard $(EXTDIR)/[A-Za-z]*.asciidoc))
@@ -300,7 +305,7 @@ $(PDFDIR)/$(EXTENSIONSSPEC).pdf: $(EXTENSIONSSPECSRC) $(GENDEPENDS)
 # Language Extensions spec
 CEXTDOC = OpenCL_LangExt
 CEXTDOCSRC = $(CEXTDOC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(CEXTDOC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e "s#{generated}#$(GENERATED)#" | xargs echo)
+    $(shell scripts/find_adoc_deps $(CEXTDOC).txt $(GENERATED))
 
 cexthtml: $(HTMLDIR)/$(CEXTDOC).html $(CEXTDOCSRC)
 
@@ -318,7 +323,7 @@ $(PDFDIR)/$(CEXTDOC).pdf: $(CEXTDOCSRC)
 # C++ (cxx) spec
 CXXSPEC = OpenCL_Cxx
 CXXSPECSRC = $(CXXSPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(CXXSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e "s#{generated}#$(GENERATED)#" | xargs echo)
+    $(shell scripts/find_adoc_deps $(CXXSPEC).txt $(GENERATED))
 
 cxxhtml: $(HTMLDIR)/$(CXXSPEC).html $(CXXSPECSRC)
 
@@ -336,7 +341,7 @@ $(PDFDIR)/$(CXXSPEC).pdf: $(CXXSPECSRC)
 # C spec
 CSPEC = OpenCL_C
 CSPECSRC = $(CSPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(CSPEC).txt   | sed -e 's/^include:://' -e 's/\[\]/ /' -e "s#{generated}#$(GENERATED)#" | xargs echo)
+    $(shell scripts/find_adoc_deps $(CSPEC).txt   $(GENERATED))
 
 chtml: $(HTMLDIR)/$(CSPEC).html $(CSPECSRC)
 
@@ -354,7 +359,7 @@ $(PDFDIR)/$(CSPEC).pdf: $(CSPECSRC)
 # C++ for OpenCL doc
 CXX4OPENCLDOC = CXX_for_OpenCL
 CXX4OPENCLDOCSRC = $(CXX4OPENCLDOC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(CXX4OPENCLDOC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e "s#{generated}#$(GENERATED)#" | xargs echo)
+    $(shell scripts/find_adoc_deps $(CXX4OPENCLDOC).txt $(GENERATED))
 
 cxx4openclhtml: $(HTMLDIR)/$(CXX4OPENCLDOC).html $(CXX4OPENCLDOCSRC)
 
@@ -372,7 +377,7 @@ $(PDFDIR)/$(CXX4OPENCLDOC).pdf: $(CXX4OPENCLDOCSRC)
 # ICD installation guidelines
 ICDINSTSPEC = OpenCL_ICD_Installation
 ICDINSTSPECSRC = $(ICDINSTSPEC).txt \
-    $(shell grep ^include:: $(ICDINSTSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e "s#{generated}#$(GENERATED)#" | xargs echo)
+    $(shell scripts/find_adoc_deps $(ICDINSTSPEC).txt $(GENERATED))
 
 icdinsthtml: $(HTMLDIR)/$(ICDINSTSPEC).html $(ICDINSTSPECSRC)
 
