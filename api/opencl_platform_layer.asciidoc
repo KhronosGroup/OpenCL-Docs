@@ -208,6 +208,7 @@ ifdef::cl_khr_extended_versioning[or {cl_name_version_khr_TYPE}[]]
         all the extensions supported by the platform. The same extension name
         must not be reported more than once. The list of extensions reported
         must match the list reported via {CL_PLATFORM_EXTENSIONS}.
+
 | {CL_PLATFORM_HOST_TIMER_RESOLUTION_anchor}
 
 include::{generated}/api/version-notes/CL_PLATFORM_HOST_TIMER_RESOLUTION.asciidoc[]
@@ -219,6 +220,39 @@ include::{generated}/api/version-notes/CL_PLATFORM_HOST_TIMER_RESOLUTION.asciido
         platforms supporting OpenCL 2.1 or 2.2.
         This value must be 0 for devices that do not support device and
         host timer synchronization.
+
+ifdef::cl_khr_command_buffer_multi_device[]
+| {CL_PLATFORM_COMMAND_BUFFER_CAPABILITIES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_PLATFORM_COMMAND_BUFFER_CAPABILITIES_KHR.asciidoc[]
+  | {cl_platform_command_buffer_capabilities_khr_TYPE}
+    | Describes platform command-buffer capabilities, encoded as bits in a
+      bitfield.
+      Supported capabilities are:
+
+      {CL_COMMAND_BUFFER_PLATFORM_UNIVERSAL_SYNC_KHR_anchor} - Platform
+      supports the ability to synchronize all commands in a command-buffer
+      using sync-points, irrespective of the queue the individual commands
+      are recorded to.
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_PLATFORM_UNIVERSAL_SYNC_KHR.asciidoc[]
+
+      {CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR_anchor} - Platform
+      supports the ability to create a deep copy of an existing
+      command-buffer with the commands explicitly remapped to different,
+      potentially <<compatible, incompatible>>, queues.
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR.asciidoc[]
+
+      {CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR_anchor} - Platform
+      supports the ability to create a remapped command-buffer where the
+      mapping of commands to queues is done by the OpenCL runtime in a way
+      it determines as optimal.
+      If {CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR} is reported,
+      {CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR} must also be reported.
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR.asciidoc[]
+endif::cl_khr_command_buffer_multi_device[]
 
 ifdef::cl_khr_external_memory[]
 | {CL_PLATFORM_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR_anchor}
@@ -1653,57 +1687,6 @@ include::{generated}/api/version-notes/CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASS
       | Returns the latest version of the conformance test suite that this device
         has fully passed in accordance with the official conformance process.
 
-ifdef::cl_khr_integer_dot_product[]
-| {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR.asciidoc[]
-  | {cl_device_integer_dot_product_capabilities_khr_type}
-      | Returns the integer dot product capabilities supported by the
-        device.
-
-        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR} is always
-        set, indicating that all implementations that support
-        `<<cl_khr_integer_dot_product>>` must support dot product built-in
-        functions and, when SPIR-V is supported, SPIR-V instructions that
-        take four-component vectors of 8-bit integers packed into 32-bit
-        integers as input.
-
-        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR} is set when dot
-        product built-in functions and, when SPIR-V is supported, SPIR-V
-        instructions that take four-component of 8-bit elements as input are
-        supported.
-        NOTE: {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR}
-        must be set in version 2.x of the extension.
-
-| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR.asciidoc[]
-
-  | {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
-      | Returns a structure describing the exact 8-bit dot product
-        combinations that are <<integer-dot-product-acceleration-properties,
-        accelerated>> on the device.
-        Each member is {CL_TRUE} if the combination it corresponds to is
-        accelerated, {CL_FALSE} otherwise.
-        NOTE:
-        {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR} is
-        missing before version 2.0 of the extension.
-
-| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR.asciidoc[]
-
-  | {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
-      | Returns a structure describing the exact 4x8-bit packed dot product
-        combinations that are <<integer-dot-product-acceleration-properties,
-        accelerated>> on the device.
-        Each member is {CL_TRUE} if the combination it corresponds to is
-        accelerated, {CL_FALSE} otherwise.
-        NOTE:
-        {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR}
-        is missing before version 2.0 of the extension.
-endif::cl_khr_integer_dot_product[]
-
 ifdef::cl_khr_command_buffer[]
 | {CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR_anchor}
 
@@ -1713,18 +1696,37 @@ include::{generated}/api/version-notes/CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR
       | Describes device command-buffer capabilities, encoded as bits in a bitfield.
         Supported capabilities are:
 
-        {CL_COMMAND_BUFFER_CAPABILITY_KERNEL_PRINTF_KHR} Device supports the ability
-        to record commands that execute kernels which contain printf calls.
+        {CL_COMMAND_BUFFER_CAPABILITY_KERNEL_PRINTF_KHR_anchor} Device
+        supports the ability to record commands that execute kernels which
+        contain printf calls.
 
-        {CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR} Device supports the
-        ability to record commands that execute kernels which contain device-side
-        kernel-enqueue calls.
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_CAPABILITY_KERNEL_PRINTF_KHR.asciidoc[]
 
-        {CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR} Device supports the
-        command-buffers having a <<pending_count, Pending Count>> that exceeds 1.
+        {CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR_anchor} Device
+        supports the ability to record commands that execute kernels which
+        contain device-side kernel-enqueue calls.
 
-        {CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR} Device supports the ability
-        to record command-buffers to out-of-order command-queues.
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR.asciidoc[]
+
+        {CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR_anchor} Device
+        supports the command-buffers having a <<pending_count, Pending
+        Count>> that exceeds 1.
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR.asciidoc[]
+
+        {CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR_anchor} Device
+        supports the ability to record command-buffers to out-of-order
+        command-queues.
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR.asciidoc[]
+
+ifdef::cl_khr_command_buffer_multi_device[]
+        {CL_COMMAND_BUFFER_CAPABILITY_MULTIPLE_QUEUE_KHR_anchor} Device
+        supports the ability to record commands to more than one
+        command-queue associated with _device_ in a single command-buffer.
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_CAPABILITY_MULTIPLE_QUEUE_KHR.asciidoc[]
+endif::cl_khr_command_buffer_multi_device[]
 
 | {CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR_anchor}
 
@@ -1737,6 +1739,68 @@ include::{generated}/api/version-notes/CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_P
         in addition to this base requirement and still be compatible with
         command-buffer execution.
 endif::cl_khr_command_buffer[]
+
+ifdef::cl_khr_command_buffer_multi_device[]
+| {CL_DEVICE_COMMAND_BUFFER_NUM_SYNC_DEVICES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_COMMAND_BUFFER_NUM_SYNC_DEVICES_KHR.asciidoc[]
+  | {cl_uint_TYPE}
+    | Return the number of root devices listed in
+      {CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR} that _device_ can use
+      device-side synchronization with.
+
+| {CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR.asciidoc[]
+  | {cl_device_id_TYPE}[]
+    | Return the list of root devices _device_ can use device-side
+      synchronization with.
+      A device should list itself only if it has native support for
+      synchronizing commands.
+      Sub-devices are not listed to avoid non-deterministic results as
+      sub-devices are created.
+      Instead if a root device is listed, then any of its partitioned
+      sub-devices can also be natively synchronized with.
+endif::cl_khr_command_buffer_multi_device[]
+
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+| {CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR.asciidoc[]
+  | {cl_mutable_dispatch_fields_khr_TYPE}
+    | Describes device mutable-dispatch capabilities, encoded as bits in a
+      bitfield.
+      Supported capabilities are:
+
+      {CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR_anchor} - Device supports the
+      ability to modify the _global_work_offset_ of kernel execution after
+      command recording.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR.asciidoc[]
+
+      {CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR_anchor} - Device supports the
+      ability to modify the _global_work_size_ of kernel execution after
+      command recording.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR.asciidoc[]
+
+      {CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR_anchor} - Device supports the
+      ability to modify the _local_work_size_ of kernel execution after
+      command recording.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR.asciidoc[]
+
+      {CL_MUTABLE_DISPATCH_ARGUMENTS_KHR_anchor} - Device supports the
+      ability to modify arguments set on a kernel after command recording.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ARGUMENTS_KHR.asciidoc[]
+
+      {CL_MUTABLE_DISPATCH_EXEC_INFO_KHR_anchor} - Device supports the
+      ability to modify execution information set on a kernel after command
+      recording.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_EXEC_INFO_KHR.asciidoc[]
+endif::cl_khr_command_buffer_mutable_dispatch[]
 
 ifdef::cl_khr_device_uuid[]
 | {CL_DEVICE_UUID_KHR_anchor}
@@ -1830,6 +1894,69 @@ include::{generated}/api/version-notes/CL_DEVICE_EXTERNAL_MEMORY_IMPORT_ASSUME_L
         is implementation defined.
 endif::cl_khr_external_memory[]
 
+ifdef::cl_khr_integer_dot_product[]
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR.asciidoc[]
+  | {cl_device_integer_dot_product_capabilities_khr_type}
+      | Returns the integer dot product capabilities supported by the
+        device.
+
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR} is always
+        set, indicating that all implementations that support
+        `<<cl_khr_integer_dot_product>>` must support dot product built-in
+        functions and, when SPIR-V is supported, SPIR-V instructions that
+        take four-component vectors of 8-bit integers packed into 32-bit
+        integers as input.
+
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR} is set when dot
+        product built-in functions and, when SPIR-V is supported, SPIR-V
+        instructions that take four-component of 8-bit elements as input are
+        supported.
+        NOTE: {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR}
+        must be set in version 2.x of the extension.
+
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR.asciidoc[]
+
+  | {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
+      | Returns a structure describing the exact 8-bit dot product
+        combinations that are <<integer-dot-product-acceleration-properties,
+        accelerated>> on the device.
+        Each member is {CL_TRUE} if the combination it corresponds to is
+        accelerated, {CL_FALSE} otherwise.
+        NOTE:
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR} is
+        missing before version 2.0 of the extension.
+
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR.asciidoc[]
+
+  | {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
+      | Returns a structure describing the exact 4x8-bit packed dot product
+        combinations that are <<integer-dot-product-acceleration-properties,
+        accelerated>> on the device.
+        Each member is {CL_TRUE} if the combination it corresponds to is
+        accelerated, {CL_FALSE} otherwise.
+        NOTE:
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR}
+        is missing before version 2.0 of the extension.
+endif::cl_khr_integer_dot_product[]
+
+ifdef::cl_khr_pci_bus_info[]
+| {CL_DEVICE_PCI_BUS_INFO_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_PCI_BUS_INFO_KHR.asciidoc[]
+  | {cl_device_pci_bus_info_khr_TYPE}
+    | Returns PCI bus information for the device.
+
+      The PCI bus information is returned as a single structure that
+      includes the PCI bus domain, the PCI bus identifier, the PCI device
+      identifier, and the PCI device function identifier.
+endif::cl_khr_pci_bus_info[]
+
 ifdef::cl_khr_semaphore[]
 | {CL_DEVICE_SEMAPHORE_TYPES_KHR_anchor}
 
@@ -1863,17 +1990,16 @@ include::{generated}/api/version-notes/CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_K
       support exporting semaphores.
 endif::cl_khr_external_semaphore[]
 
-ifdef::cl_khr_pci_bus_info[]
-| {CL_DEVICE_PCI_BUS_INFO_KHR_anchor}
+ifdef::cl_khr_spir[]
+| {CL_DEVICE_SPIR_VERSIONS_anchor}
 
-include::{generated}/api/version-notes/CL_DEVICE_PCI_BUS_INFO_KHR.asciidoc[]
-  | {cl_device_pci_bus_info_khr_TYPE}
-    | Returns PCI bus information for the device.
+include::{generated}/api/version-notes/CL_DEVICE_SPIR_VERSIONS.asciidoc[]
+  | {char_TYPE}[]
+    | A space separated list of SPIR versions supported by the device.
 
-      The PCI bus information is returned as a single structure that
-      includes the PCI bus domain, the PCI bus identifier, the PCI device
-      identifier, and the PCI device function identifier.
-endif::cl_khr_pci_bus_info[]
+      For example, returning `"1.2"` in this query implies that SPIR version
+      1.2 is supported by the implementation.
+endif::cl_khr_spir[]
 
 ifdef::cl_khr_subgroup_named_barrier[]
 | {CL_DEVICE_MAX_NAMED_BARRIER_COUNT_KHR_anchor}
@@ -2159,7 +2285,7 @@ include::{generated}/api/version-notes/clGetDeviceIDsFromDX9MediaAdapterKHR.asci
 .DirectX 9 object types that may be used by {clGetDeviceIDsFromDX9MediaAdapterKHR}
 [cols=",",options="header",]
 |====
-| {cl_dx9_media_adapter_type_khr_TYPE} | *Type of Media Adapter*
+| {cl_dx9_media_adapter_type_khr_TYPE} | Type of Media Adapter
 | {CL_ADAPTER_D3D9_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_ADAPTER_D3D9_KHR.asciidoc[]
@@ -2178,7 +2304,7 @@ include::{generated}/api/version-notes/CL_ADAPTER_DXVA_KHR.asciidoc[]
 .Sets of devices queriable using {clGetDeviceIDsFromDX9MediaAdapterKHR}
 [cols=",",options="header",]
 |====
-| {cl_dx9_media_adapter_set_khr_TYPE}              | *Description*
+| {cl_dx9_media_adapter_set_khr_TYPE} | Description
 | {CL_PREFERRED_DEVICES_FOR_DX9_MEDIA_ADAPTER_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_PREFERRED_DEVICES_FOR_DX9_MEDIA_ADAPTER_KHR.asciidoc[]
@@ -2273,7 +2399,7 @@ include::{generated}/api/version-notes/clGetDeviceIDsFromD3D10KHR.asciidoc[]
 .Direct3D 10 object types that may be used by {clGetDeviceIDsFromD3D10KHR}
 [cols=",",options="header",]
 |====
-| {cl_d3d10_device_source_khr_TYPE} | *Type of* _d3d_object_
+| {cl_d3d10_device_source_khr_TYPE} | Type of _d3d_object_
 | {CL_D3D10_DEVICE_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_D3D10_DEVICE_KHR.asciidoc[]
@@ -2288,7 +2414,7 @@ include::{generated}/api/version-notes/CL_D3D10_DXGI_ADAPTER_KHR.asciidoc[]
 .Sets of devices queriable using {clGetDeviceIDsFromD3D10KHR}
 [cols=",",options="header",]
 |====
-| {cl_d3d10_device_set_khr_TYPE} | *Devices returned in* _devices_
+| {cl_d3d10_device_set_khr_TYPE} | Devices returned in _devices_
 | {CL_PREFERRED_DEVICES_FOR_D3D10_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_PREFERRED_DEVICES_FOR_D3D10_KHR.asciidoc[]
@@ -2380,7 +2506,7 @@ include::{generated}/api/version-notes/clGetDeviceIDsFromD3D11KHR.asciidoc[]
 .Direct3D 11 object types that may be used by {clGetDeviceIDsFromD3D11KHR}
 [cols=",",options="header",]
 |====
-| {cl_d3d11_device_source_khr_TYPE} | *Type of* _d3d_object_
+| {cl_d3d11_device_source_khr_TYPE} | Type of _d3d_object_
 | {CL_D3D11_DEVICE_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_D3D11_DEVICE_KHR.asciidoc[]
@@ -2395,7 +2521,7 @@ include::{generated}/api/version-notes/CL_D3D11_DXGI_ADAPTER_KHR.asciidoc[]
 .Sets of devices queriable using {clGetDeviceIDsFromD3D11KHR}
 [cols=",",options="header",]
 |====
-| {cl_d3d11_device_set_khr_TYPE} | *Devices returned in* _devices_
+| {cl_d3d11_device_set_khr_TYPE} | Devices returned in _devices_
 | {CL_PREFERRED_DEVICES_FOR_D3D11_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_PREFERRED_DEVICES_FOR_D3D11_KHR.asciidoc[]

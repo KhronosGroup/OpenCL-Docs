@@ -588,6 +588,7 @@ model.
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
 | Property | Property Value | Description
+
 ifdef::cl_khr_external_memory[]
 | {CL_MEM_DEVICE_HANDLE_LIST_KHR_anchor}
 
@@ -3040,7 +3041,7 @@ Corresponding OpenCL Image Formats>> tables.
 .YUV FourCC Codes and Corresponding OpenCL Image Formats
 [cols=",",options="header",]
 |====
-| *FOUR CC Code*                   | *CL Image Format* (Channel Order, Channel Data Type)*
+| FOUR CC Code                     | CL Image Format (Channel Order, Channel Data Type)
 | FOURCC('N','V','1','2'), Plane 0 | {CL_R}, {CL_UNORM_INT8}
 | FOURCC('N','V','1','2'), Plane 1 | {CL_RG}, {CL_UNORM_INT8}
 | FOURCC('Y','V','1','2'), Plane 0 | {CL_R}, {CL_UNORM_INT8}
@@ -3103,7 +3104,7 @@ Formats>> table describes the supported DirectX Graphics Infrastructure
 .DXGI Formats and Corresponding OpenCL Image Formats
 [cols=",",options="header",]
 |====
-| *DXGI format*                    | *CL image format* *(channel order, channel data type)*
+| DXGI Format                      | CL Image Format (Channel Order, Channel Data Type)
 
 | `DXGI_FORMAT_R32G32B32A32_FLOAT` | {CL_RGBA}, {CL_FLOAT}
 | `DXGI_FORMAT_R32G32B32A32_UINT`  | {CL_RGBA}, {CL_UNSIGNED_INT32}
@@ -6257,7 +6258,7 @@ include::{generated}/api/version-notes/CL_GL_MIPMAP_LEVEL.asciidoc[]
   | `GLint`
     | The _miplevel_ argument specified in {clCreateFromGLTexture}.
 ifdef::cl_khr_gl_msaa_sharing[]
-| {CL_GL_NUM_SAMPLES}
+| {CL_GL_NUM_SAMPLES_anchor}
 
 include::{generated}/api/version-notes/CL_GL_NUM_SAMPLES.asciidoc[]
   | `GLsizei`
@@ -7433,7 +7434,7 @@ Otherwise, like *malloc*, it returns a `NULL` pointer value.
     values in the <<svm-flags-table,SVM Memory Flags>> table.
   * {CL_MEM_SVM_FINE_GRAIN_BUFFER} or {CL_MEM_SVM_ATOMICS} is specified in
     _flags_ and these are not supported by at least one device in _context_.
-  * The values specified in _flags_ are not valid, i.e. don't match those
+  * The values specified in _flags_ are not valid, i.e. do not match those
     defined in the <<svm-flags-table,SVM Memory Flags>> table.
   * _size_ is 0 or > {CL_DEVICE_MAX_MEM_ALLOC_SIZE} value for any device in
     _context_.
@@ -8491,6 +8492,17 @@ include::{generated}/api/version-notes/clCreateProgramWithBinary.asciidoc[]
     for that device is given by _binaries_[i] and the length of this
     corresponding binary is given by _lengths_[i].
     _lengths_[i] cannot be zero and _binaries_[i] cannot be a `NULL` pointer.
+  * _binary_status_ returns whether the program binary for each device specified
+    in _device_list_ was loaded successfully or not.
+    It is an array of _num_devices_ entries and returns {CL_SUCCESS} in
+    _binary_status_[i] if binary was successfully loaded for device specified by
+    _device_list_[i]; otherwise returns {CL_INVALID_VALUE} if _lengths_[i] is zero
+    or if _binaries_[i] is a `NULL` value or {CL_INVALID_BINARY} in
+    _binary_status_[i] if program binary is not a valid binary for the specified
+    device.
+    If _binary_status_ is `NULL`, it is ignored.
+  * _errcode_ret_ will return an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
 
 The devices associated with the program object will be the list of devices
 specified by _device_list_.
@@ -8512,18 +8524,6 @@ The program binary can consist of either or both:
   * Implementation-specific intermediate representation (IR) which will be
     converted to the device-specific code.
 
-  * _binary_status_ returns whether the program binary for each device specified
-    in _device_list_ was loaded successfully or not.
-    It is an array of _num_devices_ entries and returns {CL_SUCCESS} in
-    _binary_status_[i] if binary was successfully loaded for device specified by
-    _device_list_[i]; otherwise returns {CL_INVALID_VALUE} if _lengths_[i] is zero
-    or if _binaries_[i] is a `NULL` value or {CL_INVALID_BINARY} in
-    _binary_status_[i] if program binary is not a valid binary for the specified
-    device.
-    If _binary_status_ is `NULL`, it is ignored.
-  * _errcode_ret_ will return an appropriate error code.
-    If _errcode_ret_ is `NULL`, no error code is returned.
-
 OpenCL allows applications to create a program object using the program
 source or binary and build appropriate program executables.
 This can be very useful as it allows applications to load program source and
@@ -8532,6 +8532,14 @@ instance for appropriate OpenCL devices in the system.
 These executables can now be queried and cached by the application.
 The cached executables can be read and loaded by the application, which can
 help significantly reduce the application initialization time.
+
+ifdef::cl_khr_spir[]
+If the `<<cl_khr_spir>>` extension is supported, {clCreateProgramWithBinary}
+can be used to load a SPIR binary.
+Once a program object has been created from a SPIR binary, {clBuildProgram}
+can be called to build a program executable or {clCompileProgram} can be
+called to compile the SPIR binary.
+endif::cl_khr_spir[]
 
 // refError
 
@@ -9055,9 +9063,14 @@ Otherwise, it returns one of the following errors:
     the compile has completed.
   * {CL_INVALID_OPERATION} if there are kernel objects attached to _program_.
   * {CL_INVALID_OPERATION} if _program_ has no source or IL available, i.e. it
-    has not been created with
-ifdef::cl_khr_il_program[{clCreateProgramWithILKHR},]
-    {clCreateProgramWithSource} or {clCreateProgramWithIL}.
+    has not been created with one of
+  ** {clCreateProgramWithIL}
+ifdef::cl_khr_il_program[or {clCreateProgramWithILKHR}]
+ifdef::cl_khr_spir[]
+  ** {clCreateProgramWithBinary} where `-x spir` is present in _options_,
+     if the `<<cl_khr_spir>>` extension is supported.
+endif::cl_khr_spir[]
+  ** {clCreateProgramWithSource}
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -9368,7 +9381,7 @@ rules/specifications for math functions.
     IEEE 754 arithmetic specifies the distinct behavior of `+0.0` and `-0.0`
     values, which then prohibits simplification of expressions such as `x
     {plus} 0.0` or `0.0 * x` (even with `-cl-finite-math-only`).
-    This option implies that the sign of a zero result isn't significant.
+    This option implies that the sign of a zero result is not significant.
 
 `-cl-unsafe-math-optimizations` ::
     Allow optimizations for floating-point arithmetic that (a) assume that
@@ -9535,6 +9548,32 @@ The linker may apply these options to all compiled program objects
 specified to {clLinkProgram}.
 The linker may apply these options only to libraries which were created
 with the option `-enable-link-options`.
+
+
+ifdef::cl_khr_spir[]
+[[spir-compilation-options]]
+==== SPIR Compilation Options
+
+If the `<<cl_khr_spir>>` extension is supported, the compile option
+
+`-x spir`
+
+must be specified to indicate that the binary is in SPIR format, and the
+compile option
+
+`-spir-std`
+
+must be used to specify the version of the SPIR specification that describes
+the format and meaning of the binary.
+
+For example, if the binary is as described in SPIR version 1.2, then
+
+`-spir-std=1.2`
+
+must be specified.
+Failing to specify these compile options may result in
+implementation-defined behavior.
+endif::cl_khr_spir[]
 
 
 === Unloading the OpenCL Compiler
@@ -9907,6 +9946,22 @@ include::{generated}/api/version-notes/CL_PROGRAM_BINARY_TYPE.asciidoc[]
         This is the case when the specified _program_ object was linked by
         {clLinkProgram} without the `-create-library` link option, or when an
         executable binary was built using {clBuildProgram}.
+
+ifdef::cl_khr_spir[]
+        {CL_PROGRAM_BINARY_TYPE_INTERMEDIATE_anchor} -- An intermediate
+        (non-source) representation for the program is loaded as a binary.
+        The program must be further processed with {clCompileProgram} or
+        {clBuildProgram}.
+
+        If processed with {clCompileProgram}, the result will be a binary of
+        type {CL_PROGRAM_BINARY_TYPE_COMPILED_OBJECT} or
+        {CL_PROGRAM_BINARY_TYPE_LIBRARY}.
+        If processed with {clBuildProgram}, the result will be a binary of
+        type {CL_PROGRAM_BINARY_TYPE_EXECUTABLE}.
+
+include::{generated}/api/version-notes/CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE.asciidoc[]
+endif::cl_khr_spir[]
+
 | {CL_PROGRAM_BUILD_GLOBAL_VARIABLE_TOTAL_SIZE_anchor}
 
 include::{generated}/api/version-notes/CL_PROGRAM_BUILD_GLOBAL_VARIABLE_TOTAL_SIZE.asciidoc[]
@@ -10931,9 +10986,17 @@ include::{generated}/api/version-notes/clGetKernelArgInfo.asciidoc[]
     If _param_value_size_ret_ is `NULL`, it is ignored.
 
 Kernel argument information is only available if the program object
-associated with _kernel_ is created with {clCreateProgramWithSource} and the
-program executable was built with the `-cl-kernel-arg-info option` specified
-in options argument to {clBuildProgram} or {clCompileProgram}.
+associated with _kernel_:
+
+ifdef::cl_khr_spir[]
+  * is created with {clCreateProgramWithBinary} and the program executable
+    is built with the `-cl-kernel-arg-info` and `-x spir` options specified
+    in the _options_ argument to {clBuildProgram} or {clCompileProgram}, if
+    the `<<cl_khr_spir>>` extension is supported; or,
+endif::cl_khr_spir[]
+  * is created with {clCreateProgramWithSource} and the program executable
+    is built with the `-cl-kernel-arg-info option` specified in the
+    _options_ argument to {clBuildProgram} or {clCompileProgram},
 
 [[kernel-argument-info-table]]
 .List of supported param_names by {clGetKernelArgInfo}
@@ -11724,6 +11787,13 @@ include::{generated}/api/version-notes/CL_EVENT_COMMAND_QUEUE.asciidoc[]
   | {cl_command_queue_TYPE}
       | Return the command-queue associated with _event_.
         For user event objects, a `NULL` value is returned.
+
+ifdef::cl_khr_command_buffer_multi_device[]
+        If the `<<cl_khr_command_buffer_multi_device>>` extension is
+        supported, for events returned by a command-buffer enqueue operation
+        to multiple command-queues, `NULL` is returned.
+endif::cl_khr_command_buffer_multi_device[]
+
 | {CL_EVENT_CONTEXT_anchor}
 
 include::{generated}/api/version-notes/CL_EVENT_CONTEXT.asciidoc[]
@@ -11743,21 +11813,40 @@ include::{generated}/api/version-notes/CL_EVENT_COMMAND_EXECUTION_STATUS.asciido
       | Return the execution status of the command identified by event.
         Valid values are:
 
-        {CL_QUEUED} (command has been enqueued in the command-queue),
+        {CL_QUEUED} - Command has been enqueued in the command-queue.
 
-        {CL_SUBMITTED} (enqueued command has been submitted by the host to the
-        device associated with the command-queue),
+        {CL_SUBMITTED} - Enqueued command has been submitted by the host to the
+        device associated with the command-queue.
 
-        {CL_RUNNING} (device is currently executing this command),
+        {CL_RUNNING} - Device is currently executing this command.
 
-        {CL_COMPLETE} (the command has completed), or
+        {CL_COMPLETE} - The command has completed.
 
-        Error code given by a negative integer value. (command was
+        Or an error code given by a negative integer value (command was
         abnormally terminated - this may be caused by a bad memory access
         etc.).
         These error codes come from the same set of error codes that are
         returned from the platform or runtime API calls as return values or
-        errcode_ret values.
+        *errcode_ret* values.
+
+ifdef::cl_khr_command_buffer_multi_device[]
+        If the `<<cl_khr_command_buffer_multi_device>>` extension is
+        supported, for events returned by a command-buffer enqueue operation
+        to multiple command-queues the semantics of execution status is as
+        follows:
+
+        {CL_QUEUED} - Command-buffer has been enqueued across the
+        command-queues.
+
+        {CL_SUBMITTED} - Commands from the command-buffer have been
+        submitted by the host to any device associated with one of the
+        command-queues.
+
+        {CL_RUNNING} - Any command from the command-buffer has started
+        execution on a device.
+
+        {CL_COMPLETE} - All commands have completed on all devices.
+endif::cl_khr_command_buffer_multi_device[]
 | {CL_EVENT_REFERENCE_COUNT_anchor} footnote:[{fn-reference-count-usage}]
 
 include::{generated}/api/version-notes/CL_EVENT_REFERENCE_COUNT.asciidoc[]
@@ -11769,7 +11858,7 @@ include::{generated}/api/version-notes/CL_EVENT_REFERENCE_COUNT.asciidoc[]
 .List of supported event command types
 [width="100%",cols="2,3",options="header"]
 |====
-| *Events Created By* | *Event Command Type*
+| Events Created By | Event Command Type
 
 | {clEnqueueNDRangeKernel}
   | {CL_COMMAND_NDRANGE_KERNEL_anchor}
@@ -12647,11 +12736,11 @@ properties by {cl_semaphore_properties_khr_TYPE} that can be passed to
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
 | Semaphore Property | Property Value | Description
-| {CL_SEMAPHORE_TYPE_KHR}
+| {CL_SEMAPHORE_TYPE_KHR_anchor}
   | {cl_semaphore_type_khr_TYPE}
       | Specifies the type of semaphore to create.
         This property is always required.
-| {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR}
+| {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR_anchor}
   | {cl_device_id_TYPE}[]
       | Specifies the list of OpenCL devices (terminated with
         {CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR}) to associate with the
@@ -12901,7 +12990,7 @@ endif::cl_khr_external_semaphore_sync_fd[]
 .Transference and Permanence Properties for File Descriptor Handles
 [width="100%",cols="60%,<20%,<20%",options="header"]
 |====
-| *Handle Type* | *Transference* | *Permanence*
+| Handle Type | Transference | Permanence
 
 ifdef::cl_khr_external_semaphore_opaque_fd[]
 | {CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR_anchor}
@@ -13029,7 +13118,7 @@ endif::cl_khr_external_semaphore_win32[]
 .Transference and Permanence Properties for NT Handle Types
 [width="100%",cols="60%,<20%,<20%",options="header"]
 |====
-| *Handle Type* | *Transference* | *Permanence*
+| Handle Type | Transference | Permanence
 
 ifdef::cl_khr_external_semaphore_dx_fence[]
 | {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR_anchor}
@@ -13338,13 +13427,13 @@ include::{generated}/api/version-notes/clGetSemaphoreInfoKHR.asciidoc[]
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
 | Semaphore Info | Return Type | Description
-| {CL_SEMAPHORE_CONTEXT_KHR}
+| {CL_SEMAPHORE_CONTEXT_KHR_anchor}
   | {cl_context_TYPE}
       | Returns the context specified when the semaphore is created.
-| {CL_SEMAPHORE_REFERENCE_COUNT_KHR} footnote:[{fn-reference-count-usage}]
+| {CL_SEMAPHORE_REFERENCE_COUNT_KHR_anchor} footnote:[{fn-reference-count-usage}]
   | {cl_uint_TYPE}
       | Returns the semaphore reference count.
-| {CL_SEMAPHORE_PROPERTIES_KHR}
+| {CL_SEMAPHORE_PROPERTIES_KHR_anchor}
   | {cl_semaphore_properties_khr_TYPE}[]
       | Return the properties argument specified in
         {clCreateSemaphoreWithPropertiesKHR}.
@@ -13352,27 +13441,27 @@ include::{generated}/api/version-notes/clGetSemaphoreInfoKHR.asciidoc[]
         The implementation must return the values specified in the
         properties argument in the same order and without including
         additional properties.
-| {CL_SEMAPHORE_TYPE_KHR}
+| {CL_SEMAPHORE_TYPE_KHR_anchor}
   | {cl_semaphore_type_khr_TYPE}
       | Returns the semaphore type.
-| {CL_SEMAPHORE_PAYLOAD_KHR}
+| {CL_SEMAPHORE_PAYLOAD_KHR_anchor}
   | {cl_semaphore_payload_khr_TYPE}
       | Returns the semaphore payload value.
         For semaphores of type {CL_SEMAPHORE_TYPE_BINARY_KHR} the payload
         value returned will be `0` if the semaphore is in an un-signaled
         state, and `1` if it is in a signaled state.
-| {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR}
+| {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR_anchor}
   | {cl_device_id_TYPE}[]
       | Returns the list of OpenCL devices the semaphore is associated with.
 
 ifdef::cl_khr_external_semaphore[]
-| {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR}
+| {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR_anchor}
   | {cl_external_semaphore_handle_type_khr_TYPE}[]
       | Returns the list of external semaphore handle types that may be used
         for exporting.
         The size of this query may be 0 indicating that this semaphore does
         not support any handle types for exporting.
-| {CL_SEMAPHORE_EXPORTABLE_KHR}
+| {CL_SEMAPHORE_EXPORTABLE_KHR_anchor}
   | {cl_bool_TYPE}[]
       | Returns {CL_TRUE} if the semaphore is exportable and {CL_FALSE}
         otherwise.
@@ -13508,6 +13597,14 @@ include::{generated}/api/version-notes/CL_PROFILING_COMMAND_QUEUED.asciidoc[]
       | A 64-bit value that describes the current device time counter in
         nanoseconds when the command identified by event is enqueued in a
         command-queue by the host.
+
+ifdef::cl_khr_command_buffer_multi_device[]
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    for events returned by a command-buffer enqueue operation to multiple
+    command-queues, the host time when the command-buffer has been enqueued
+    across the command-queues is used.
+endif::cl_khr_command_buffer_multi_device[]
+
 | {CL_PROFILING_COMMAND_SUBMIT_anchor}
 
 include::{generated}/api/version-notes/CL_PROFILING_COMMAND_SUBMIT.asciidoc[]
@@ -13516,6 +13613,14 @@ include::{generated}/api/version-notes/CL_PROFILING_COMMAND_SUBMIT.asciidoc[]
         nanoseconds when the command identified by event that has been
         enqueued is submitted by the host to the device associated with the
         command-queue.
+
+ifdef::cl_khr_command_buffer_multi_device[]
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    for events returned by a command-buffer enqueue operation to multiple
+    command-queues, the host time is used when command-buffer commands have
+    been submitted to any command-queue.
+endif::cl_khr_command_buffer_multi_device[]
+
 | {CL_PROFILING_COMMAND_START_anchor}
 
 include::{generated}/api/version-notes/CL_PROFILING_COMMAND_START.asciidoc[]
@@ -13523,6 +13628,14 @@ include::{generated}/api/version-notes/CL_PROFILING_COMMAND_START.asciidoc[]
       | A 64-bit value that describes the current device time counter in
         nanoseconds when the command identified by event starts execution on
         the device.
+
+ifdef::cl_khr_command_buffer_multi_device[]
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    for events returned by a command-buffer enqueue operation to multiple
+    command-queues, the host time is used when any device starts executing a
+    command-buffer command.
+endif::cl_khr_command_buffer_multi_device[]
+
 | {CL_PROFILING_COMMAND_END_anchor}
 
 include::{generated}/api/version-notes/CL_PROFILING_COMMAND_END.asciidoc[]
@@ -13530,6 +13643,14 @@ include::{generated}/api/version-notes/CL_PROFILING_COMMAND_END.asciidoc[]
       | A 64-bit value that describes the current device time counter in
         nanoseconds when the command identified by event has finished
         execution on the device.
+
+ifdef::cl_khr_command_buffer_multi_device[]
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    for events returned by a command-buffer enqueue operation to multiple
+    command-queues, the host time is used when the last command-buffer
+    command finishes execution on any device.
+endif::cl_khr_command_buffer_multi_device[]
+
 | {CL_PROFILING_COMMAND_COMPLETE_anchor}
 
 include::{generated}/api/version-notes/CL_PROFILING_COMMAND_COMPLETE.asciidoc[]
@@ -13538,6 +13659,14 @@ include::{generated}/api/version-notes/CL_PROFILING_COMMAND_COMPLETE.asciidoc[]
         nanoseconds when the command identified by event and any child
         commands enqueued by this command on the device have finished
         execution.
+
+ifdef::cl_khr_command_buffer_multi_device[]
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    for events returned by a command-buffer enqueue operation to multiple
+    command-queues, the host time is used when the command-buffer has
+    completed execution across all command-queues.
+endif::cl_khr_command_buffer_multi_device[]
+
 |====
 
 The unsigned 64-bit values returned can be used to measure the time in
@@ -13548,6 +13677,18 @@ frequency and power states.
 The {CL_DEVICE_PROFILING_TIMER_RESOLUTION} specifies the resolution of the
 timer i.e. the number of nanoseconds elapsed before the timer is
 incremented.
+
+ifdef::cl_khr_command_buffer_multi_device[]
+[NOTE]
+====
+If the `<<cl_khr_command_buffer_multi_device>>` extension is supported, and
+if no reliable device timer sources are available to inform the host side,
+or parallel runtime scheduling makes it impossible to identify a first/last
+command, then an implementation may fallback to reporting
+{CL_PROFILING_COMMAND_SUBMIT} and {CL_PROFILING_COMMAND_COMPLETE} for
+{CL_PROFILING_COMMAND_START} and {CL_PROFILING_COMMAND_END} respectively.
+====
+endif::cl_khr_command_buffer_multi_device[]
 
 // refError
 
@@ -13562,6 +13703,13 @@ Otherwise, it returns one of the following errors:
     Prior to OpenCL 3.0, implementations may return
     {CL_PROFILING_INFO_NOT_AVAILABLE} for an event created by
     {clEnqueueSvmFree}.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    and if _event_ was created from a call to {clEnqueueCommandBufferKHR},
+    {CL_PROFILING_INFO_NOT_AVAILABLE} is returned if all the queues passed
+    do not have {CL_QUEUE_PROFILING_ENABLE} set.
+endif::cl_khr_command_buffer_multi_device[]
   * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
     specified by _param_value_size_ is < size of return type as described in
     the <<event-profiling-info-table,Event Profiling Queries>> table and
@@ -13715,6 +13863,46 @@ usage>>.
 ====
 
 
+ifdef::cl_khr_command_buffer_multi_device[]
+=== Command-Buffers and Multiple Devices
+
+If the `<<cl_khr_command_buffer_multi_device>>` extension is supported, a
+command-buffer can contain commands recorded to the queues of different
+devices if a vendor provides support for inter-device
+{cl_sync_point_khr_TYPE} synchronization.
+This feature is reported either through
+{CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR}, which informs the user what
+devices can synchronize with each other natively on the device-side, or
+through {CL_COMMAND_BUFFER_PLATFORM_UNIVERSAL_SYNC_KHR}, which allows
+synchronization between all devices in a platform, falling back to host-side
+synchronization when device-side synchronization is not available.
+These two mechanisms are referred to as **device-side sync** and **universal
+sync** respectively.
+
+If these mechanisms do not report that more than one device can be used in a
+command-buffer, it will still be possible to perform multiple queue
+recording in a command-buffer if the
+{CL_COMMAND_BUFFER_CAPABILITY_MULTIPLE_QUEUE_KHR} capability is reported for
+a device.
+However, with this capability all the queues commands are recorded to must
+target the same device.
+
+Commands recorded to different command-queues in the same command-buffer may
+be executed concurrently to each other unless synchronized explicitly with
+sync-points.
+Ordering of other commands submitted to the same command-queues as used to
+enqueue a command-buffer is the responsibility of the programmer.
+A command-buffer enqueue spanning multiple queues can return an event to use
+for synchronization, which will complete once all commands in the
+command-buffer have completed.
+If ordering restrictions are required, this event (or command-queue
+barriers) may be used by the user to synchronize the command-buffer enqueue
+with regular commands, or another command-buffer enqueue.
+
+endif::cl_khr_command_buffer_multi_device[]
+
+
+
 === Command-Buffer Lifecycle
 
 A command-buffer is always in one of the following states:
@@ -13756,7 +13944,7 @@ If the command-buffer was created with
 Pending Count greater than 1.
 
 
-=== Creating Command Buffer Objects
+=== Creating Command-Buffer Objects
 
 [open,refpage='clCreateCommandBufferKHR',desc='Create a command-buffer',type='protos']
 --
@@ -13767,11 +13955,12 @@ include::{generated}/api/protos/clCreateCommandBufferKHR.txt[]
 include::{generated}/api/version-notes/clCreateCommandBufferKHR.asciidoc[]
 
   * _num_queues_ is the number of command-queues listed in _queues_.
-    This extension only supports a single command-queue, so this **must** be
-    one.
-  * _queues_ is a pointer to a command-queue that the command-buffer
-    commands will be recorded to.
-    _queues_ must be a non-`NULL` value.
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is not
+    supported, this **must** be one.
+  * _queues_ is a pointer to a list of command-queues that the
+    command-buffer commands will be recorded to.
+    _queues_ must be a non-`NULL` value and the length of the list equal to
+    _num_queues_.
   * _properties_ specifies a list of properties for the command-buffer and
     their corresponding values.
     Each property name is immediately followed by the corresponding desired
@@ -13787,7 +13976,7 @@ include::{generated}/api/version-notes/clCreateCommandBufferKHR.asciidoc[]
 .{clCreateCommandBufferKHR} properties
 [cols=",,",options="header",]
 |====
-| *Recording Properties* | *Property Value* | *Description*
+| Recording Properties | Property Value | Description
 
 | {CL_COMMAND_BUFFER_FLAGS_KHR_anchor}
 
@@ -13800,12 +13989,67 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_FLAGS_KHR.asciidoc[]
         execution.
         If set, devices must support
         {CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR}.
+
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR.asciidoc[]
+
+ifdef::cl_khr_command_buffer_multi_device[]
+      {CL_COMMAND_BUFFER_DEVICE_SIDE_SYNC_KHR_anchor} - All commands in the
+      command-buffer must use native synchronization, as reported by
+      {CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR}.
+      This can be used as a safeguard for performant applications that do not
+      want to accidentally fallback to host synchronization when passing
+      multiple queues.
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_DEVICE_SIDE_SYNC_KHR.asciidoc[]
+
+endif::cl_khr_command_buffer_multi_device[]
+
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+      {CL_COMMAND_BUFFER_MUTABLE_KHR} - Enables modification of the
+      command-buffer, by default command-buffers are immutable.
+      If set, commands in the command-buffer may be updated via
+      {clUpdateMutableCommandsKHR}.
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_MUTABLE_KHR.asciidoc[]
+endif::cl_khr_command_buffer_mutable_dispatch[]
 
         The default value of this property is `0`.
 |====
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
+
+ifdef::cl_khr_command_buffer_multi_device[]
+.Summary of command-buffer creation configurations, for the `<<cl_khr_command_buffer_multi_device>>` extension
+[width="100%",options="header"]
+|====
+| All Devices Associated With `Queues` can Device-side Sync | Platform Supports Universal Sync | Condition | Result
+.3+| Yes
+.3+| Yes or No
+| Any device does not support the multi-queue capability, and has more than
+  one queue targeting it
+| Error - {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR}
+| User sets {CL_COMMAND_BUFFER_DEVICE_SIDE_SYNC_KHR} flag
+| OK
+| Otherwise
+| OK
+
+.3+| No
+.3+| Yes
+| Any device does not support the multi-queue capability, and has more than
+  one queue targeting it
+| Error - {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR}
+| User sets {CL_COMMAND_BUFFER_DEVICE_SIDE_SYNC_KHR} flag
+| Error - {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR}
+| Otherwise
+| OK - May be performance implications when synchronizing commands between
+  devices without device-side sync support.
+
+| No
+| No
+| Always
+| Error - {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR}
+|====
+endif::cl_khr_command_buffer_multi_device[]
 
 [NOTE]
 ====
@@ -13836,7 +14080,7 @@ returned in _errcode_ret_:
     specified by {CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR}.
   * {CL_INVALID_CONTEXT} if all the command-queues in _queues_ do not have
     the same OpenCL context.
-  * {CL_INVALID_VALUE} if _num_queues_ is not one.
+  * {CL_INVALID_VALUE} if _num_queues_ is zero.
   * {CL_INVALID_VALUE} if _queues_ is `NULL`.
   * {CL_INVALID_VALUE} if values specified in _properties_ are not valid, or
     if the same property name is specified more than once.
@@ -13847,6 +14091,24 @@ returned in _errcode_ret_:
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+
+ifdef::cl_khr_command_buffer_multi_device[]
+If the `<<cl_khr_command_buffer_multi_device>>` extension is supported:
+
+  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if _queues_ includes more than one
+    command-queue associated with a device that does not support capability
+    {CL_COMMAND_BUFFER_CAPABILITY_MULTIPLE_QUEUE_KHR}.
+  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the
+    {CL_COMMAND_BUFFER_DEVICE_SIDE_SYNC_KHR} flag is set, and any device
+    associated with a command-queue in _queues_ cannot natively synchronize
+    with the other devices associated with _queues_ as reported by
+    {CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR}.
+  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the platform does not support the
+    {CL_COMMAND_BUFFER_PLATFORM_UNIVERSAL_SYNC_KHR} capability, and any
+    device associated with a command-queue in _queues_ cannot natively
+    synchronize with the other devices associated with _queues_ as reported
+    by {CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR}.
+endif::cl_khr_command_buffer_multi_device[]
 --
 
 [open,refpage='clRetainCommandBufferKHR',desc='Increment a command-buffer\'s reference count',type='protos']
@@ -13902,7 +14164,7 @@ Otherwise, it returns one of the following errors:
 --
 
 
-=== Enqueuing a Command Buffer
+=== Enqueuing a Command-Buffer
 
 [open,refpage='clFinalizeCommandBufferKHR',desc='Finalize command recording for a command-buffer',type='protos']
 --
@@ -14015,7 +14277,7 @@ execution was successfully queued, or one of the errors below:
 --
 
 
-=== Recording Commands to a Command Buffer
+=== Recording Commands to a Command-Buffer
 
 [open,refpage='clCommandBarrierWithWaitListKHR',desc='Record a barrier operation to a command-queue',type='protos']
 --
@@ -14104,10 +14366,17 @@ include::{generated}/api/protos/clCommandCopyBufferKHR.txt[]
 include::{generated}/api/version-notes/clCommandCopyBufferKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single command-queue is supported,
-    and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _src_buffer_, _dst_buffer_, _src_offset_, _dst_offset_, _size_ refer
     to {clEnqueueCopyBuffer}.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -14145,7 +14414,14 @@ Otherwise, it returns the errors defined by {clEnqueueCopyBuffer} except:
 
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
@@ -14177,10 +14453,17 @@ include::{generated}/api/protos/clCommandCopyBufferRectKHR.txt[]
 include::{generated}/api/version-notes/clCommandCopyBufferRectKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single command-queue is supported,
-    and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _src_origin_, _dst_origin_, _region_, _src_row_pitch_,
     _src_slice_pitch_, _dst_row_pitch_, _dst_slice_pitch_ refer to
     {clEnqueueCopyBufferRect}.
@@ -14236,7 +14519,14 @@ except:
 
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
@@ -14268,10 +14558,17 @@ include::{generated}/api/protos/clCommandCopyBufferToImageKHR.txt[]
 include::{generated}/api/version-notes/clCommandCopyBufferToImageKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single command-queue is supported,
-    and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _src_buffer_, _dst_image_, _src_offset_, _dst_origin_, _region_ refer to
     {clEnqueueCopyBufferToImage}
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -14310,7 +14607,14 @@ except:
 
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
@@ -14341,10 +14645,17 @@ include::{generated}/api/protos/clCommandCopyImageKHR.txt[]
 include::{generated}/api/version-notes/clCommandCopyImageKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single command-queue is supported,
-    and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _src_image_, _dst_image_, _src_origin_, _dst_origin_, _region_ refer to
     {clEnqueueCopyImage}.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -14390,7 +14701,14 @@ Otherwise, it returns the errors defined by {clEnqueueCopyImage} except:
 
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
@@ -14422,10 +14740,17 @@ include::{generated}/api/protos/clCommandCopyImageToBufferKHR.txt[]
 include::{generated}/api/version-notes/clCommandCopyImageToBufferKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single command-queue is supported,
-    and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _src_image_, _dst_buffer_, _src_origin_, _region_, _dst_offset_ refer to
     {clEnqueueCopyImageToBuffer}.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -14464,7 +14789,14 @@ except:
 
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
@@ -14504,10 +14836,17 @@ value specified when _buffer_ is created is ignored by
 ====
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single command-queue is supported,
-    and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _buffer_, _pattern_, _pattern_size_, _offset_, _size_ refer to
     {clEnqueueFillBuffer}.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -14545,7 +14884,14 @@ Otherwise, it returns the errors defined by {clEnqueueFillBuffer} except:
 
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
@@ -14584,10 +14930,17 @@ value specified when image is created is ignored by {clCommandFillImageKHR}.
 ====
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single command-queue is supported,
-    and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _image_, _fill_color_, _origin_, _region_ refer to {clEnqueueFillImage}.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
     synchronization-points that need to complete before this particular
@@ -14624,7 +14977,14 @@ Otherwise, it returns the errors defined by {clEnqueueFillImage} except:
 
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
@@ -14655,17 +15015,32 @@ include::{generated}/api/protos/clCommandNDRangeKernelKHR.txt[]
 include::{generated}/api/version-notes/clCommandNDRangeKernelKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single command-queue is supported,
-    and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _properties_ specifies a list of properties for the kernel command and
     their corresponding values.
     Each property name is immediately followed by the corresponding desired
     value.
     The list is terminated with 0.
-    If no properties are required, _properties_ may be `NULL`.
-    This extension does not define any properties.
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+    If a supported property and its value is not specified in _properties_, its
+    default value will be used.
+    _properties_ may be `NULL`, in which case the default values for supported
+    properties will be used.
+    The `<<cl_khr_command_buffer>>` extension does not define any
+    properties, but supported properties defined by extensions are defined
+    in the <<ndrange-kernel-properties-table, List of supported properties
+    by {clCommandNDRangeKernelKHR}>> table.
+endif::cl_khr_command_buffer_mutable_dispatch[]
   * _kernel_ is a valid kernel object which **must** have its arguments set.
     Any changes to _kernel_ after calling {clCommandNDRangeKernelKHR}, such
     as with {clSetKernelArg} or {clSetKernelExecInfo}, have no effect on the
@@ -14700,7 +15075,92 @@ after the function returns.
     `NULL`, the _sync_point_ argument should not refer to an element of the
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
-    This parameter is unused, and **must** be `NULL`.
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+    If the `<<cl_khr_command_buffer_mutable_dispatch>>` extension is
+    supported, and _mutable_handle_ is not `NULL`, it can be used in the
+    {cl_mutable_dispatch_config_khr_TYPE} struct to update the command
+    configuration between recordings.
+    The lifetime of this handle is tied to the parent command-buffer, such
+    that freeing the command-buffer will also free this handle.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+ifndef::cl_khr_command_buffer_mutable_dispatch[]
+    If the `<<cl_khr_command_buffer_mutable_dispatch>>` extension is not
+    supported, this parameter is unused, and **must** be `NULL`.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+
+[[ndrange-kernel-properties-table]]
+.List of supported properties by {clCommandNDRangeKernelKHR}
+[cols=",,",options="header",]
+|====
+| Recording Properties | Property Value | Description
+
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+| {CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR.asciidoc[]
+  | {cl_mutable_dispatch_fields_khr_TYPE}
+    | This is a bitfield and can be set to a combination of the following
+      values:
+
+      {CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR_anchor} determines whether the
+      _global_work_offset_ of kernel execution can be modified after
+      recording.
+      If set, the _global_work_offset_ of the kernel execution can be
+      changed with {clUpdateMutableCommandsKHR} using the
+      {cl_mutable_dispatch_config_khr_TYPE} field of the _mutable_config_
+      parameter.
+      Otherwise, the _global_work_offset_ cannot be modified.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR.asciidoc[]
+
+      {CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR_anchor} determines whether the
+      _global_work_size_ of kernel execution can be modified after
+      recording.
+      If set, the _global_work_size_ of the kernel execution can be changed
+      with {clUpdateMutableCommandsKHR} using the
+      {cl_mutable_dispatch_config_khr_TYPE} field of the _mutable_config_
+      parameter.
+      Otherwise, the _global_work_size_ cannot be modified.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR.asciidoc[]
+
+      {CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR_anchor} determines whether the
+      _local_work_size_ of kernel execution can be modified after recording.
+      If set, the _local_work_size_ of the kernel execution can be changed
+      with {clUpdateMutableCommandsKHR} using the
+      {cl_mutable_dispatch_config_khr_TYPE} field of the _mutable_config_
+      parameter.
+      Otherwise, the _local_work_size_ cannot be modified.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR.asciidoc[]
+
+      {CL_MUTABLE_DISPATCH_ARGUMENTS_KHR_anchor} determines whether the
+      kernel arguments set on _kernel_ can be updated between executions.
+      If set, the kernel arguments normally set with {clSetKernelArg} and
+      {clSetKernelArgSVMPointer} can be changed with
+      {clUpdateMutableCommandsKHR} using the
+      {cl_mutable_dispatch_config_khr_TYPE} field of the _mutable_config_
+      parameter.
+      Otherwise, the kernel arguments cannot be modified between executions.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ARGUMENTS_KHR.asciidoc[]
+
+      {CL_MUTABLE_DISPATCH_EXEC_INFO_KHR_anchor} determines whether the
+      information passed to _kernel_ can be updated between executions.
+      If set, the execution information of the kernel can be changed with
+      {clUpdateMutableCommandsKHR} using the
+      {cl_mutable_dispatch_config_khr_TYPE} field of the _mutable_config_
+      parameter.
+      Otherwise, the kernel execution information cannot be modified.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_EXEC_INFO_KHR.asciidoc[]
+
+      If {CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR_anchor} is not specified
+      then it defaults to the value returned by the
+      {CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR} device query.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+
+|====
 
 [NOTE]
 ====
@@ -14732,7 +15192,14 @@ Otherwise, it returns the errors defined by {clEnqueueNDRangeKernel} except:
 
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
@@ -14753,13 +15220,26 @@ New errors:
     command-buffer.
   * {CL_INVALID_VALUE} if values specified in _properties_ are not valid
   * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
-  * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+  * {CL_INVALID_VALUE} if the `<<cl_khr_command_buffer_mutable_dispatch>>`
+    extension is not supported and _mutable_handle_ is not `NULL`.
   * {CL_INVALID_OPERATION} if the device associated with _command_queue_
     does not support {CL_COMMAND_BUFFER_CAPABILITY_KERNEL_PRINTF_KHR} and
     _kernel_ contains a printf call.
   * {CL_INVALID_OPERATION} if the device associated with _command_queue_
     does not support {CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR}
     and _kernel_ contains a kernel-enqueue call.
+
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+If the `<<cl_khr_command_buffer_mutable_dispatch>>` extension is supported:
+
+  * {CL_INVALID_OPERATION} if the requested
+    {CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR} properties are not reported
+    by {CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR} for the device
+    associated with _command_queue_.
+    If _command_queue_ is `NULL`, the device associated with
+    _command_buffer_ must report support for these properties.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+
 --
 
 [open,refpage='clCommandSVMMemcpyKHR',desc='Record a command to do an SVM memcpy operation',type='protos']
@@ -14770,10 +15250,17 @@ include::{generated}/api/protos/clCommandSVMMemcpyKHR.txt[]
 include::{generated}/api/version-notes/clCommandSVMMemcpyKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single command-queue is supported,
-    and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _dst_ptr_ is the pointer to a host (if the device supports system SVM)
     or SVM memory allocation where data is copied to.
   * _src_ptr_ is the pointer to a host (if the device supports system SVM)
@@ -14814,7 +15301,14 @@ Otherwise, it returns the errors defined by {clEnqueueSVMMemcpy} except:
 
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
@@ -14846,10 +15340,17 @@ include::{generated}/api/protos/clCommandSVMMemFillKHR.txt[]
 include::{generated}/api/version-notes/clCommandSVMMemFillKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single command-queue is supported,
-    and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _svm_ptr_ is a pointer to a (if the device supports system SVM)
     or SVM memory region that will be filled with _pattern_.
     It must be aligned to _pattern_size_ bytes.
@@ -14906,7 +15407,14 @@ successfully. Otherwise, it returns the errors defined by
 
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
@@ -14928,6 +15436,369 @@ New errors:
   * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
   * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
 --
+
+
+ifdef::cl_khr_command_buffer_multi_device[]
+=== Remapping Command-Buffers
+
+If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+platforms reporting the {CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR}
+capability support generating a deep copy of a command-buffer with its
+commands remapped to a list of command-queues that are potentially
+<<compatible, incompatible>> with the queues used to create the
+command-buffer.
+That is, the remapped command-buffer can execute on queues that differ in
+terms of properties and/or associated device from the original
+command-buffer queues.
+
+This functionality is invoked through a new synchronous entry-point
+{clRemapCommandBufferKHR} which takes a list of queues to which the commands
+should now target.
+It then returns a command-buffer containing the same commands as the
+original, with the same command dependencies, but targeting different
+queues.
+A list of command handles may also be passed to the entry-point, which
+allows handles to the equivalent commands in the remapped command-buffer to
+be returned by an output parameter.
+
+Device properties restrict remapping possibilities, as existing commands can
+have a configuration which is not supported by another device, and so
+remapping may fail with an error relating to this incompatibility.
+Examples of command configurations which can introduce incompatibilities
+when trying to map to a new device are:
+
+  * Program language features used in a kernel not supported by the new
+    device.
+  * ND-Range configuration, e.g exceeds new the device max work-group size.
+  * Misalignment of sub-buffers based on minimum alignment of new device.
+
+In additional to this functionality, platforms reporting
+{CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR} allow the user to create a
+remapped command-buffer where the mapping of queues to commands is
+determined by the OpenCL runtime in a way it determines as optimal.
+This is particularly useful in hot plugging environments where devices may
+appear and disappear during runtime.
+
+[open,refpage='clRemapCommandBufferKHR',desc='Create copy of a command-buffer remapped to specified command-queues',type='protos']
+--
+To create a deep copy of the input command-buffer with the copied commands
+remapped to target the passed command-queues, call the function
+
+include::{generated}/api/protos/clRemapCommandBufferKHR.txt[]
+include::{generated}/api/version-notes/clRemapCommandBufferKHR.asciidoc[]
+
+  * _command_buffer_ specifies the command-buffer to create a remapped deep
+    copy of.
+  * _automatic_ indicates if the remapping is done explicitly by the user,
+    or automatically by the OpenCL runtime.
+    If _automatic_ is {CL_FALSE}, then each element of _queues_ will replace
+    the queue used on _command_buffer_ creation at the same index.
+    If {CL_TRUE} and {CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR} is
+    supported, then the OpenCL runtime will decide in a way it determines
+    optimal which of the elements in _queues_ each command in the returned
+    command-buffer will be associated with.
+  * _num_queues_ is the number of command-queues listed in _queues_, must
+    not be 0.
+  * _queues_ is a pointer to an ordered list of command-queues for the
+    returned command-buffer to target, must be a non-`NULL` value.
+  * _num_handles_ is the number of command handles passed in both _handles_
+    and _handles_ret_ lists, may be 0.
+  * _handles_ is an ordered list of handles belonging to _command_buffer_ to
+    create remapped copies of, may be `NULL`.
+  * _handles_ret_ returns an ordered list of handles where each handle is
+    equivalent to the handle at the same index in _handles_, but belonging
+    to the returned command-buffer.
+  * _errcode_ret_ returns an appropriate error code.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+The returned command-buffer has the same state as the input command-buffer,
+unless the input command-buffer is in the <<pending, Pending>> state, in
+which case the returned command-buffer has state <<executable, Executable>>.
+
+// refError
+
+{clRemapCommandBufferKHR} returns a valid command-buffer with _errcode_ret_
+set to {CL_SUCCESS} if the command-buffer is created successfully.
+Otherwise, it returns a `NULL` value without setting _handles_ret_, and with
+one of the following error values returned in _errcode_ret_:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_VALUE} if _num_queues_ is 0, or if _queues_ is `NULL`.
+  * {CL_INVALID_VALUE} if _automatic_ is {CL_FALSE} and _num_queues_ is not
+    equal to the number of queues used on creation of _command_buffer_.
+  * {CL_INVALID_VALUE} if _handles_ or _handles_ret_ is `NULL` and
+    _num_handles_ is > 0, or either _handles_ or _handles_ret_ is not `NULL`
+    and _num_handles_ is 0.
+  * {CL_INVALID_VALUE} if any handle in _handles_ is not a valid command
+    handle belonging to _command_buffer_.
+  * {CL_INVALID_COMMAND_QUEUE} if any command-queue in _queues_ is not a
+    valid command-queue.
+  * {CL_INVALID_CONTEXT} if _command_buffer_ and all the command-queues in
+    _queues_ do not have the same OpenCL context.
+  * {CL_INVALID_OPERATION} if the platform does not support the
+    {CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR} flag.
+  * {CL_INVALID_OPERATION} if the platform does not support the
+    {CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR} flag and _automatic_ is
+    {CL_TRUE}.
+  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if such an error would be returned
+    by passing _queues_ to {clCreateCommandBufferKHR}.
+  * Any error relating to device support that can be returned by a command
+    recording entry-point may also be returned.
+    As a command in _command_buffer_ can have a configuration that is not
+    supported by a device that is associated with the queue in _queues_ the
+    command is being remapped to.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_command_buffer_multi_device[]
+
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+[[mutable-commands]]
+=== Mutable Commands:
+
+A generic {cl_mutable_command_khr_TYPE} handle is called a _mutable-command_
+object as it can be returned from any command recording entry-point in the
+`<<cl_khr_command_buffer>>` family of extensions.
+The mutable-command handles returned by {clCommandNDRangeKernelKHR} in
+particular are referred to as _mutable-dispatch_ objects, and can be
+modified through the fields of {cl_mutable_dispatch_config_khr_TYPE}.
+
+Mutable-command handles are updated between enqueues using entry-point
+{clUpdateMutableCommandsKHR}.
+To enable performant usage, all aspects of mutation are encapsulated inside
+a single {cl_mutable_base_config_khr_TYPE} parameter.
+This means that the runtime has access to all the information about how the
+command-buffer will change, allowing the command-buffer to be rebuilt as
+efficiently as possible.
+Any modifications to the arguments or execution info of a mutable-dispatch
+handle using {cl_mutable_dispatch_arg_khr_TYPE} or
+{cl_mutable_dispatch_exec_info_khr_TYPE} have no affect on the original
+kernel object used when the command was recorded, and only influence the
+{clCommandNDRangeKernelKHR} command associated with the mutable-dispatch.
+
+[[mutable-dispatch-kernel-argument-safe-usage]]
+[NOTE]
+====
+The base `<<cl_khr_command_buffer>>` extension
+<<command-buffer-kernel-argument-ref-counting, notes>> that a command-buffer
+does not update the reference count of objects set as arguments on kernels
+recorded into the command-buffer.
+
+The implications for applications using {clUpdateMutableCommandsKHR} is that
+it is safe to delete objects used as kernel command arguments, if all the
+kernel commands using that object as an argument have had their arguments
+replaced with a different object.
+====
+
+To facilitate performant usage for pipelined work flows, where applications
+repeatedly call command-buffer update then enqueue, implementations may
+defer some of the work to allow {clUpdateMutableCommandsKHR} to return
+immediately.
+Deferring any recompilation until {clEnqueueCommandBufferKHR} avoids
+blocking in host code and keeps device occupancy high.
+This is only possible with a command-buffer created with the
+{CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} flag, as without this the enqueued
+command-buffer must complete before any modification occurs.
+
+[open,refpage='clUpdateMutableCommandsKHR',desc='Modify configuration of mutable-command handles to update behavior for future enqueues',type='protos']
+--
+To modify the configuration of mutable-command handles returned during
+_command_buffer_ recording, updating the behavior of those commands in
+future enqueues of _command_buffer_, call the function
+
+include::{generated}/api/protos/clUpdateMutableCommandsKHR.txt[]
+include::{generated}/api/version-notes/clUpdateMutableCommandsKHR.asciidoc[]
+
+  * _command_buffer_ refers to a valid command-buffer object.
+  * _mutable_config_ is a pointer to a {cl_mutable_base_config_khr_TYPE}
+    structure defining updates to make to mutable-commands.
+
+// refError
+
+{clUpdateMutableCommandsKHR} returns {CL_SUCCESS} if all the mutable-command
+objects were updated successfully.
+Otherwise, none of the updates to mutable-command objects are preserved and
+one of the errors below is returned:
+
+  * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
+    command-buffer.
+  * {CL_INVALID_OPERATION} if _command_buffer_ has not been finalized.
+  * {CL_INVALID_OPERATION} if _command_buffer_ was not created with the
+    {CL_COMMAND_BUFFER_MUTABLE_KHR} flag.
+  * {CL_INVALID_VALUE} if the _type_ member of _mutable_config_ is not
+    {CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR}.
+  * {CL_INVALID_VALUE} if the _mutable_dispatch_list_ member of
+    _mutable_config_ is `NULL` and _num_mutable_dispatch_ > 0, or
+    _mutable_dispatch_list_ is not `NULL` and _num_mutable_dispatch_ is 0.
+  * {CL_INVALID_VALUE} if the _next_ member of _mutable_config_ is not
+    `NULL` and any iteration of the structure pointer chain does not contain
+    valid _type_ and _next_ members.
+  * {CL_INVALID_VALUE} if _mutable_config_ is `NULL`, or if both _next_ and
+    _mutable_dispatch_list_ members of _mutable_config_ are `NULL`.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+
+Using this function when _command_buffer_ is in the <<pending, pending>>
+state and not created with the {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} flag
+causes undefined behavior.
+
+[NOTE]
+====
+Performant usage is to call {clUpdateMutableCommandsKHR} only when the
+desired state of all commands is known, rather than iteratively updating
+each command individually.
+====
+
+If the _mutable_dispatch_list_ member of _mutable_config_ is non-`NULL`,
+then errors defined by {clEnqueueNDRangeKernel}, {clSetKernelExecInfo},
+{clSetKernelArg}, and {clSetKernelArgSVMPointer} are returned by
+{clUpdateMutableCommandsKHR} if any of the array elements are set to an
+invalid value.
+Additionally, the following errors are returned if any
+{cl_mutable_dispatch_config_khr_TYPE} element of the array violates the
+defined conditions:
+
+  * {CL_INVALID_MUTABLE_COMMAND_KHR} if _command_ is not a valid mutable
+    command object, or created from _command_buffer_.
+  * {CL_INVALID_VALUE} if _type_ is not
+    {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}.
+  * {CL_INVALID_OPERATION} if values of _local_work_size_ and/or
+    _global_work_size_ result in an increase to the number of work-groups in
+    the ND-range.
+  * {CL_INVALID_OPERATION} if the values of _local_work_size_ and/or
+    _global_work_size_ result in a change to work-group uniformity.
+  * {CL_INVALID_OPERATION} if the _work_dim_ is different from the
+    _work_dim_ set on _command_ recording.
+  * {CL_INVALID_OPERATION} if the {CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR}
+    property was not set on _command_ recording and _global_work_offset_ is
+    not `NULL`.
+  * {CL_INVALID_OPERATION} if the {CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR}
+    property was not set on _command_ recording and _global_work_size_ is
+    not `NULL`.
+  * {CL_INVALID_OPERATION} if the {CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR}
+    property was not set on _command_ recording and _local_work_size_ is not
+    `NULL`.
+  * {CL_INVALID_OPERATION} if the {CL_MUTABLE_DISPATCH_ARGUMENTS_KHR}
+    property was not set on _command_ recording and _num_args_ or
+    _num_svm_args_ is non-zero.
+  * {CL_INVALID_OPERATION} if the {CL_MUTABLE_DISPATCH_EXEC_INFO_KHR}
+    property was not set on _command_ recording and _num_exec_infos_ is
+    non-zero.
+  * {CL_INVALID_VALUE} if _arg_list_ is `NULL` and _num_args_ > 0, or
+    _arg_list_ is not `NULL` and _num_args_ is 0.
+  * {CL_INVALID_VALUE} if _arg_svm_list_ is `NULL` and _num_svm_args_ > 0,
+    or _arg_svm_list_ is not `NULL` and _num_svm_args_ is 0.
+  * {CL_INVALID_VALUE} if _exec_info_list_ is `NULL` and _num_exec_infos_ >
+    0, or _exec_info_list_ is not `NULL` and _num_exec_infos_ is 0.
+--
+
+[open,refpage='cl_mutable_base_config_khr',desc='DESC',type='structs']
+--
+The {cl_mutable_base_config_khr_TYPE} structure is TODO Add fuller
+description here and is defined as:
+
+include::{generated}/api/structs/cl_mutable_base_config_khr.txt[]
+
+  * _type_ is the type of this structure, and must be
+    {CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR}
+  * _next_ is `NULL` or a pointer to an extending structure.
+  * _num_mutable_dispatch_ is the number of mutable-dispatch objects to
+    configure in this enqueue of the command-buffer.
+  * _mutable_dispatch_list_ is an array containing _num_mutable_dispatch_
+    elements describing the configurations of mutable kernel execution
+    commands in the command-buffer.
+    For a description of struct members making up each array element see
+    {cl_mutable_dispatch_config_khr_TYPE}.
+--
+
+[open,refpage='cl_mutable_dispatch_config_khr',desc='Set kernel configuration of a mutable clCommandNDRangeKernelKHR command',type='structs']
+--
+The {cl_mutable_dispatch_arg_khr_TYPE} structure is passed to
+{clUpdateMutableCommandsKHR} to set the kernel configuration of a mutable
+{clCommandNDRangeKernelKHR} command, and is defined as:
+
+include::{generated}/api/structs/cl_mutable_dispatch_config_khr.txt[]
+
+  * _type_ is the type of this structure, and must be
+    {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}.
+  * _next_ is `NULL` or a pointer to an extending structure.
+  * _command_ is a mutable-command object returned by
+    {clCommandNDRangeKernelKHR} representing a kernel execution as part of a
+    command-buffer.
+  * _num_args_ is the number of kernel arguments being changed.
+  * _num_svm_args_ is the number of SVM kernel arguments being changed.
+  * _num_exec_infos_ is the number of kernel execution info objects to set
+    for this dispatch.
+  * _work_dim_ is the number of dimensions used to specify the global
+    work-items and work-items in the work-group.
+    See {clEnqueueNDRangeKernel} for valid usage.
+  * _arg_list_ is an array describing the new kernel arguments for this
+    enqueue.
+    It must contain _num_args_ array elements, each of which encapsulates
+    parameters passed to {clSetKernelArg}.
+    See {clSetKernelArg} for usage of {cl_mutable_dispatch_arg_khr_TYPE}
+    members.
+  * _arg_svm_list_ is an array describing the new SVM kernel arguments for
+    this enqueue.
+    It must contain _num_svm_args_ array elements, each of which
+    encapsulates parameters passed to {clSetKernelArgSVMPointer}.
+    See {clSetKernelArgSVMPointer} for usage of
+    {cl_mutable_dispatch_arg_khr_TYPE} members, `arg_size` is ignored.
+  * _exec_info_list_ is an array containing _num_exec_infos_ elements
+    specifying the list of execution info objects use for this
+    command-buffer enqueue.
+    See {clSetKernelExecInfo} for usage of
+    {cl_mutable_dispatch_exec_info_khr_TYPE} members.
+  * _global_work_offset_ can be used to specify an array of _work_dim_
+    unsigned values that describe the offset used to calculate the global ID
+    of a work-item.
+    If _global_work_offset_ is `NULL` then the global offset of the dispatch
+    is not changed.
+    See {clEnqueueNDRangeKernel} for valid usage.
+  * _global_work_size_ points to an array of _work_dim_ unsigned values that
+    describe the number of global work-items in _work_dim_ dimensions that
+    will execute the kernel function.
+    If _global_work_size_ is `NULL` then the number of global work-items in
+    the dispatch is not changed.
+    See {clEnqueueNDRangeKernel} for valid usage.
+  * _local_work_size_ points to an array of _work_dim_ unsigned values that
+    describe the number of work-items that make up a work-group that will
+    execute the kernel.
+    If _local_work_size_ is `NULL` then the number of local work-items in
+    the dispatch is not changed.
+    See {clEnqueueNDRangeKernel} for valid usage.
+--
+
+[open,refpage='cl_mutable_dispatch_arg_khr',desc='Set kernel arguments normally passed using clSetKernelArg and clSetKernelArg',type='structs']
+--
+The {cl_mutable_dispatch_arg_khr_TYPE} structure sets kernel arguments
+normally passed using {clSetKernelArg} and {clSetKernelArgSVMPointer}, and
+is defined as:
+
+include::{generated}/api/structs/cl_mutable_dispatch_arg_khr.txt[]
+--
+
+[open,refpage='cl_mutable_dispatch_exec_info_khr',desc='Specify kernel execution info',type='protos']
+--
+The {cl_mutable_dispatch_exec_info_khr_TYPE} structure sets kernel execution
+info normally passed using {clSetKernelExecInfo}, and is defined as:
+
+include::{generated}/api/structs/cl_mutable_dispatch_exec_info_khr.txt[]
+
+[NOTE]
+====
+_param_name_ is of type {cl_uint_TYPE} rather than
+{cl_kernel_exec_info_TYPE} so that the extension can be implemented on
+OpenCL 1.2 where the {cl_kernel_exec_info_TYPE} typedef is unavailable.
+====
+--
+endif::cl_khr_command_buffer_mutable_dispatch[]
+
 
 === Command-Buffer Queries
 
@@ -15044,6 +15915,166 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 --
+
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+[open,refpage='clGetMutableCommandInfoKHR',desc='Query information about a mutable command object',type='protos']
+--
+To query information about a mutable command object, call the function
+
+include::{generated}/api/protos/clGetMutableCommandInfoKHR.txt[]
+include::{generated}/api/version-notes/clGetMutableCommandInfoKHR.asciidoc[]
+
+  * _command_ specifies the mutable-command object being queried.
+  * _param_name_ specifies the information to query.
+    The list of supported _param_name_ types and the information returned in
+    _param_value_ by {clGetMutableCommandInfoKHR} is described in the
+    <<mutable-command-object-queries, Mutable Command Object Queries>>
+    table.
+  * _param_value_size_ is used to specify the size in bytes of memory
+    pointed to by _param_value_.
+    This size must be {geq} size of return type as described in the
+    <<mutable-command-object-queries, Mutable Command Object Queries>>
+    table.
+  * _param_value_ is a pointer to memory where the appropriate result being
+    queried is returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ret_ returns the actual size in bytes of data being
+    queried by _param_name_.
+    If _param_value_size_ret_ is `NULL`, it is ignored.
+
+[[mutable-command-object-queries]]
+._Mutable Command Object Queries_
+[width="100%",cols="<33%,<17%,<50%",options="header"]
+|====
+| Mutable Command Info | Return Type | Description
+| {CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR.asciidoc[]
+  | {cl_command_queue_TYPE}
+    | Return the command-queue associated with _command_.
+      If `NULL` was passed as the queue when _command_ was recorded, then
+      the queue associated with the command-buffer that _command_ belongs to
+      is returned.
+| {CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR.asciidoc[]
+  | {cl_command_buffer_khr_TYPE}
+    | Return the command-buffer associated with _command_.
+| {CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR.asciidoc[]
+  | {cl_command_type_TYPE}
+    | Return the command-type associated with _command_.
+
+      The list of supported event command types defined by {clGetEventInfo}
+      is used with the matching command.
+| {CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR.asciidoc[]
+  | {cl_ndrange_kernel_command_properties_khr_TYPE}[]
+    | Return the properties argument specified on _command_ recording with
+      {clCommandNDRangeKernelKHR}.
+
+      If the properties argument specified on creation of _command_ was not
+      `NULL`, the implementation must return the values specified in the
+      properties argument in the same order and without including additional
+      properties.
+
+      If the properties argument specified on creation of _command_ was
+      `NULL`, or _command_ was not recorded from a
+      {clCommandNDRangeKernelKHR} command, the implementation must return
+      _param_value_size_ret_ equal to 0, indicating that there are no
+      properties to be returned.
+| {CL_MUTABLE_DISPATCH_KERNEL_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_KERNEL_KHR.asciidoc[]
+  | {cl_kernel_TYPE}
+    | Return the kernel associated with _command_ when recorded with
+      {clCommandNDRangeKernelKHR}.
+
+      If _command_ was not recorded from a {clCommandNDRangeKernelKHR}
+      command, the implementation must return _param_value_size_ret_ equal
+      to 0, indicating that the value returned in _param_value_ is not
+      valid.
+| {CL_MUTABLE_DISPATCH_DIMENSIONS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_DIMENSIONS_KHR.asciidoc[]
+  | {cl_uint_TYPE}
+    | Return the number of work-item dimensions specified when _command_ was
+      created.
+
+      If _command_ was not recorded from a {clCommandNDRangeKernelKHR}
+      command, the implementation must return _param_value_size_ret_ equal
+      to 0, indicating that the value returned in _param_value_ is not
+      valid.
+| {CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR.asciidoc[]
+  | {size_t_TYPE}[]
+    | Return the global work-item offset set on _command_ creation, or from
+      the most recent update via {clUpdateMutableCommandsKHR} where this
+      value was modified.
+      The output array contains _work_dim_ values, where _work_dim_ is
+      returned by the query {CL_MUTABLE_DISPATCH_DIMENSIONS_KHR}.
+      If a global work-item offset was not set, zero is returned for each
+      element in the array.
+
+      If _command_ was not recorded from a {clCommandNDRangeKernelKHR}
+      command, the implementation must return _param_value_size_ret_ equal
+      to 0, indicating that the value returned in _param_value_ is not
+      valid.
+| {CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR.asciidoc[]
+  | {size_t_TYPE}[]
+    | Return the global work-item size set on _command_ creation, or from
+      the most recent update via {clUpdateMutableCommandsKHR} where this
+      value was modified.
+      The output array contains _work_dim_ values, where _work_dim_ is
+      returned by the query {CL_MUTABLE_DISPATCH_DIMENSIONS_KHR}.
+      If a global work-item size was not set, zero is returned for each
+      element in the array.
+
+      If _command_ was not recorded from a {clCommandNDRangeKernelKHR}
+      command, the implementation must return _param_value_size_ret_ equal
+      to 0, indicating that the value returned in _param_value_ is not
+      valid.
+| {CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR.asciidoc[]
+  | {size_t_TYPE}[]
+    | Return the local work-item size set on _command_ creation, or from the
+      most recent update via {clUpdateMutableCommandsKHR} where this value
+      was modified.
+      The output array contains _work_dim_ values, where _work_dim_ is
+      returned by the query {CL_MUTABLE_DISPATCH_DIMENSIONS_KHR}.
+      If a local work-item size was not set, zero is returned for each
+      element in the array.
+
+      If _command_ was not recorded from a {clCommandNDRangeKernelKHR}
+      command, the implementation must return _param_value_size_ret_ equal
+      to 0, indicating that the value returned in _param_value_ is not
+      valid.
+|====
+
+// refError
+
+{clGetMutableCommandInfoKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
+    specified by _param_value_size_ is < size of return type as described in
+    the <<mutable-command-object-queries, Mutable Command Object Queries>>
+    table and _param_value_ is not `NULL`.
+  * {CL_INVALID_MUTABLE_COMMAND_KHR} if _command_ is not a valid mutable
+    command object.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_khr_command_buffer_mutable_dispatch[]
 
 endif::cl_khr_command_buffer[]
 

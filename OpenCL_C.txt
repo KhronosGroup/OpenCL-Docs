@@ -489,6 +489,18 @@ write>> functions operating on these images.
 endif::cl_khr_mipmap_image_writes[]
 
 
+ifdef::cl_khr_select_fprounding_mode[]
+[[cl_khr_select_fprounding_mode,cl_khr_select_fprounding_mode]]
+==== Select Floating-Point Rounding Mode
+
+The `cl_khr_select_fprounding_mode` extension allows <<select-rounding-mode,
+specifying the floating-point rounding mode>> for an instruction or group of
+instructions in the program source by use of a *#pragma*.
+
+The extension was deprecated in OpenCL 1.1 and its use is not recommended.
+endif::cl_khr_select_fprounding_mode[]
+
+
 ifdef::cl_khr_srgb_image_writes[]
 [[cl_khr_srgb_image_writes,cl_khr_srgb_image_writes]]
 ==== sRGB Image Write Functions
@@ -1707,6 +1719,7 @@ rounding mode and conversions to floating-point type
 footnote:[{fn-float-conversion-rounding}] use the default rounding mode.
 The only default floating-point rounding mode supported is round to nearest
 even i.e the default rounding mode will be `_rte` for floating-point types.
+
 
 [[out-of-range-behavior]]
 ==== Out-of-Range Behavior and Saturated Conversions
@@ -5567,7 +5580,6 @@ device>>, then the following constants are also available:
 
 [open,refpage='fpMacros',desc='Floating-Point Macros And Pragmas',type='freeform',spec='clang',anchor='floating-point-macros-and-pragmas',xrefs='integerMacros',alias='FP_CONTRACT FP_FAST_FMAF FP_FAST_FMA macroLimits']
 --
-
 The `FP_CONTRACT` pragma can be used to allow (if the state is on) or
 disallow (if the state is off) the implementation to contract expressions.
 Each pragma can occur either outside external declarations or preceding all
@@ -14444,6 +14456,79 @@ footnote:[{fn-float-required-rounding-mode}].
 In addition, only static selection of rounding mode is supported.
 Dynamically reconfiguring the rounding modes as specified by the IEEE 754
 spec is unsupported.
+
+ifdef::cl_khr_select_fprounding_mode[]
+[open,refpage='SELECT_ROUNDING_MODE',desc='Select rounding mode for a group of instructions',type='freeform',spec='clang',anchor='select-rounding-mode-macro',xrefs='fpMacros']
+--
+[[select-rounding-mode]]
+
+If the `<<cl_khr_select_fprounding_mode>>` extension macro is supported, the
+floating-point rounding mode may be specified using the following *#pragma*
+in the OpenCL program source:
+
+[source,opencl_c]
+----
+#pragma OPENCL SELECT_ROUNDING_MODE <rounding-mode>
+----
+
+The _<rounding-mode>_ may be one of the following values:
+
+  * *rte* - round to nearest even
+  * *rtz* - round to zero
+  * *rtp* - round to positive infinity
+  * *rtn* - round to negative infinity
+
+If this extensions is supported then the OpenCL implementation must support
+all four rounding modes for single precision floating-point.
+
+The *#pragma* sets the rounding mode for all instructions that operate on
+floating-point types (scalar or vector types) or produce floating-point
+values that follow this pragma in the program source until the next
+*#pragma*.
+Note that the rounding mode specified for a block of code is known at
+compile time.
+When inside a compound statement, the pragma takes effect from its
+occurrence until another *#pragma* is encountered (including within a nested
+compound statement), or until the end of the compound statement; at the end
+of a compound statement the state for the pragma is restored to its
+condition just before the compound statement.
+Except where otherwise documented, the callee functions do not inherit the
+rounding mode of the caller function.
+
+If this extension is enabled, the `\\__ROUNDING_MODE__` preprocessor symbol
+shall be defined to be one of the following according to the current
+rounding mode:
+
+[source,opencl_c]
+----
+#define __ROUNDING_MODE__ rte
+#define __ROUNDING_MODE__ rtz
+#define __ROUNDING_MODE__ rtp
+#define __ROUNDING_MODE__ rtz
+----
+
+This is intended to enable remapping `foo()` to `foo_rte()` by the
+preprocessor by using:
+
+[source,opencl_c]
+----
+#define foo foo ## __ROUNDING_MODE__
+----
+
+The default rounding mode is round to nearest even.
+The <<math-functions, Built-in Math Functions>>, <<common-functions, Common
+Functions>>, and <<geometric-functions, Geometric Functions>> are
+implemented with the round to nearest even rounding mode.
+Various built-in conversions and the *vstore_half* and *vstorea_half*
+built-in functions that do not specify a rounding mode inherit the current
+rounding mode.
+Conversions from floating-point to integer type always use `rtz` mode,
+except where the user specifically asks for another rounding mode.
+
+NOTE: The `<<cl_khr_select_fprounding_mode>>` extension was deprecated in
+OpenCL 1.1, and its use is not recommended.
+--
+endif::cl_khr_select_fprounding_mode[]
 
 
 [[inf-nan-and-denormalized-numbers]]
