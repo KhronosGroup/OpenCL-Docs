@@ -20,6 +20,7 @@ commands between command-buffer enqueues.
 |====
 | *Date*     | *Version* | *Description*
 | 2022-08-31 | 0.9.0     | First assigned version (provisional).
+| 2023-01-15 | 0.9.1     | Change {clUpdateMutableCommandsKHR} API to pass configs as an array rather than linked list  (provisional).
 |====
 
 include::provisional_notice.asciidoc[]
@@ -61,30 +62,14 @@ without having to re-record the entire command sequence in a new command-buffer.
 
 === Interactions with Other Extensions
 
-The {cl_command_buffer_structure_type_khr_TYPE} type has been added to this
-extension for the purpose of allowing expansion of mutable functionality in
-future extensions layered on top of `cl_khr_command_buffer_mutable_dispatch`.
-Any parameter that is a structure containing a `void* next` member *must* have
-a value of `next` that is either `NULL`, or is a pointer to a valid structure
-defined by `cl_khr_command_buffer_mutable_dispatch` or an extension layered on
-top. To be a valid structure in the pointer chain the first member of the
-structure *must* be a {cl_command_buffer_structure_type_khr_TYPE} identifier for the
-structure being iterated through, and the second member a `void* next` pointer
-to the next structure in the chain.
+The {clUpdateMutableCommandsKHR} entry-point has been designed for the purpose
+of allowing expansion of mutable functionality in future extensions layered on
+top of `cl_khr_command_buffer_mutable_dispatch`.
 
-[NOTE]
-====
-This approach is based on structure pointer chains in Vulkan, for more details
-see the "Valid Usage for Structure Pointer Chains" section of the Vulkan
-specification.
-====
-
-This is designed so that another extension layered on
-`cl_khr_command_buffer_mutable_dispatch` could allow modification of commands
-recorded to a command-buffer other than kernel execution commands. As all
-command recording entry-points return a {cl_mutable_command_khr_TYPE} handle, and
-aspects like which {cl_mem_TYPE} object a command uses could also be updated between
-enqueues of the command-buffer.
+A new extension can define its own structure type to specify the update
+configuration it requires, with a matching {cl_update_config_type_khr_TYPE}
+value. This new structure type can then be passed as an array element to
+{clUpdateMutableCommandsKHR} to perform the update.
 
 === New Types
 
@@ -102,7 +87,7 @@ typedef cl_bitfield cl_mutable_dispatch_fields_khr;
 typedef cl_uint cl_mutable_command_info_khr;
 
 // Identifies the type of a structure to allow structure pointer chains
-typedef cl_uint cl_command_buffer_structure_type_khr;
+typedef cl_uint cl_update_config_type_khr;
 ----
 
 Struct type for setting kernel arguments normally passed using {clSetKernelArg}
@@ -126,11 +111,6 @@ Struct type passed to {clUpdateMutableCommandsKHR} for setting the kernel
 configuration of a mutable {clCommandNDRangeKernelKHR} command:
 
 include::{generated}/api/structs/cl_mutable_dispatch_config_khr.txt[]
-
-_type_ Type of this structure, must be
-{CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}.
-
-_next_ Is `NULL` or a pointer to an extending structure.
 
 _command_ A mutable-command object returned by {clCommandNDRangeKernelKHR}
 representing a kernel execution as part of a command-buffer.
@@ -179,30 +159,6 @@ describe the number of work-items that make up a work-group that will execute
 the kernel. If _local_work_size_ is `NULL` then the number of local work-items
 in the dispatch is not changed. See {clEnqueueNDRangeKernel} for valid usage.
 
-[[cl_mutable_base_config_khr]]
-[source,opencl]
-----
-typedef struct _cl_mutable_base_config_khr {
-    cl_command_buffer_structure_type_khr type,
-    const void* next,
-    cl_uint num_mutable_dispatch,
-    const cl_mutable_dispatch_config_khr* mutable_dispatch_list
-} cl_mutable_base_config_khr;
-----
-
-_type_ Type of this structure, must be
-{CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR}
-
-_next_ Is `NULL` or a pointer to an extending structure.
-
-_num_mutable_dispatch_ Is the number of mutable-dispatch objects to configure
-in this enqueue of the command-buffer.
-
-_mutable_dispatch_list_ Is an array containing _num_mutable_dispatch_ elements
-describing the configurations of mutable kernel execution commands in the
-command-buffer. For a description of struct members making up each array
-element see {cl_mutable_dispatch_config_khr_TYPE}.
-
 === New API Functions
 
 Mutable-handle entry points from <<mutable-commands, Section 5.X.5>>:
@@ -210,7 +166,9 @@ Mutable-handle entry points from <<mutable-commands, Section 5.X.5>>:
 ----
 cl_int clUpdateMutableCommandsKHR(
     cl_command_buffer_khr command_buffer,
-    const cl_mutable_base_config_khr* mutable_config);
+    cl_uint num_configs,
+    const cl_update_config_type_khr* config_types,
+    const void** configs);
 
 cl_int clGetMutableCommandInfoKHR(
     cl_mutable_command_khr command,
@@ -258,14 +216,12 @@ CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR                0x12AD
 CL_COMMAND_BUFFER_MUTABLE_KHR                    (0x1 << 1)
 ----
 
-Enum values for {cl_command_buffer_structure_type_khr_TYPE} allowing the structure
-types used for mutating commands between enqueues to be extended by future
-extensions built on top of `cl_khr_command_buffer_mutable_dispatch`. Based on
-structure pointer chains in Vulkan.
+Enum values for {cl_update_config_type_khr_TYPE} allowing the elements of the void
+pointer array used for mutating commands between enqueues to be reinterpreted
+as the correct struct type.
 [source,opencl]
 ----
-CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR          0
-CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR      1
+CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR      0
 ----
 
 === Modifications to section 4.2 of the OpenCL API Specification
@@ -432,8 +388,7 @@ _mutable-dispatch_ objects, and can be modified through the fields of
 
 Mutable-command handles are updated between enqueues using entry-point
 {clUpdateMutableCommandsKHR}. To enable performant usage, all aspects of
-mutation are encapsulated inside a single
-{cl_mutable_base_config_khr_TYPE} parameter. This means
+mutation can be passed in a single call using an array. This means
 that the runtime has access to all the information about how the command-buffer
 will change, allowing the command-buffer to be rebuilt as efficiently as
 possible. Any modifications to the arguments or execution info of a mutable-dispatch
@@ -485,9 +440,14 @@ individually.
 
 _command_buffer_ Refers to a valid command-buffer object.
 
-_mutable_config_ Is a pointer to a
-{cl_mutable_base_config_khr_TYPE} structure defining
-updates to make to mutable-commands.
+_num_configs_  Number of elements in the _config_types_ and _config_ arrays.
+
+_config_types_ An array of length _num_configs_ with the type of each config in
+_configs_.
+
+_configs_ An array of length _num_configs_ containing structs which define how a
+mutable-command handle in _command_buffer_ is to be updated, each of which is
+interpreted using _config_types_ at each index.
 
 {clUpdateMutableCommandsKHR} returns {CL_SUCCESS} if all the mutable-command
 objects were updated successfully. Otherwise, none of the updates to
@@ -501,19 +461,11 @@ mutable-command objects are preserved and one of the errors below is returned:
 * {CL_INVALID_OPERATION} if _command_buffer_ was not created with the
   {CL_COMMAND_BUFFER_MUTABLE_KHR} flag.
 
-* {CL_INVALID_VALUE} if the _type_ member of _mutable_config_ is not
-  {CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR}.
+* {CL_INVALID_VALUE} if _config_types_ is `NULL` and _num_configs_ > 0, or
+  _config_types_ is not `NULL` and _num_configs_ is 0.
 
-* {CL_INVALID_VALUE} if the _mutable_dispatch_list_ member of _mutable_config_
-  is `NULL` and _num_mutable_dispatch_ > 0, or _mutable_dispatch_list_ is not
-  `NULL` and _num_mutable_dispatch_ is 0.
-
-* {CL_INVALID_VALUE} if the _next_ member of _mutable_config_ is not `NULL` and
-  any iteration of the structure pointer chain does not contain valid _type_
-  and _next_ members.
-
-* {CL_INVALID_VALUE} if _mutable_config_ is `NULL`, or if both _next_ and
-  _mutable_dispatch_list_ members of _mutable_config_ are `NULL`.
+* {CL_INVALID_VALUE} if _configs_ is `NULL` and _num_configs_ > 0, or
+  _configs_ is not `NULL` and _num_configs_ is 0.
 
 * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required by
   the OpenCL implementation on the device.
@@ -521,19 +473,16 @@ mutable-command objects are preserved and one of the errors below is returned:
 * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources required by
   the OpenCL implementation on the host.
 
-If the _mutable_dispatch_list_ member of _mutable_config_ is non-`NULL`, then
-errors defined by {clEnqueueNDRangeKernel}, {clSetKernelExecInfo},
-{clSetKernelArg}, and {clSetKernelArgSVMPointer} are returned by
-{clUpdateMutableCommandsKHR} if any of the array elements are set to an invalid
-value. Additionally, the following errors are returned if any
-{cl_mutable_dispatch_config_khr_TYPE} element of
-the array violates the defined conditions:
+If _configs_ is non-`NULL`, then for any {cl_mutable_dispatch_config_khr_TYPE}
+element of the array the errors defined by {clEnqueueNDRangeKernel},
+{clSetKernelExecInfo}, {clSetKernelArg}, and {clSetKernelArgSVMPointer} are
+returned by {clUpdateMutableCommandsKHR} if any of the struct elements are set
+to an invalid value. Additionally, the following errors are returned if any
+{cl_mutable_dispatch_config_khr_TYPE} element of the array violates the defined
+conditions:
 
 * {CL_INVALID_MUTABLE_COMMAND_KHR} if _command_ is not a valid mutable
   command object, or created from _command_buffer_.
-
-* {CL_INVALID_VALUE} if _type_ is not
-  {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}.
 
 * {CL_INVALID_OPERATION} if values of _local_work_size_ and/or
   _global_work_size_ result in an increase to the number of work-groups in the
@@ -859,8 +808,6 @@ command-buffer submissions.
         cl_mutable_dispatch_arg_khr arg_2{2, sizeof(cl_mem), &output_buffer};
         cl_mutable_dispatch_arg_khr args[] = {arg_0, arg_1, arg_2};
         cl_mutable_dispatch_config_khr dispatch_config{
-            CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR,
-            nullptr,
             command_handle,
             3 /* num_args */,
             0 /* num_svm_arg */,
@@ -872,12 +819,15 @@ command-buffer submissions.
             nullptr /* global_work_offset */,
             nullptr /* global_work_size */,
             nullptr /* local_work_size */};
-        cl_mutable_base_config_khr mutable_config{
-            CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR, nullptr, 1,
-            &dispatch_config};
 
         // Update the command buffer with the mutable configuration
-        error = clUpdateMutableCommandsKHR(command_buffer, &mutable_config);
+        cl_uint num_configs = 1;
+        cl_update_config_type_khr config_types[1] = {
+            CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR
+        };
+        void* configs[1] = {&dispatch_config};
+        error = clUpdateMutableCommandsKHR(command_buffer, num_configs,
+                                           config_types, configs);
         CL_CHECK(error);
       }
 
