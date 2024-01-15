@@ -15620,7 +15620,7 @@ endif::cl_khr_command_buffer_multi_device[]
 
 ifdef::cl_khr_command_buffer_mutable_dispatch[]
 [[mutable-commands]]
-=== Mutable Commands:
+=== Mutable Commands
 
 A generic {cl_mutable_command_khr_TYPE} handle is called a _mutable-command_
 object as it can be returned from any command recording entry-point in the
@@ -15631,11 +15631,10 @@ modified through the fields of {cl_mutable_dispatch_config_khr_TYPE}.
 
 Mutable-command handles are updated between enqueues using entry-point
 {clUpdateMutableCommandsKHR}.
-To enable performant usage, all aspects of mutation are encapsulated inside
-a single {cl_mutable_base_config_khr_TYPE} parameter.
-This means that the runtime has access to all the information about how the
-command-buffer will change, allowing the command-buffer to be rebuilt as
-efficiently as possible.
+To enable performant usage, all aspects of mutation can be passed in a single
+call using an array. This means that the runtime has access to all the
+information about how the command-buffer will change, allowing the
+command-buffer to be rebuilt as efficiently as possible.
 Any modifications to the arguments or execution info of a mutable-dispatch
 handle using {cl_mutable_dispatch_arg_khr_TYPE} or
 {cl_mutable_dispatch_exec_info_khr_TYPE} have no affect on the original
@@ -15676,8 +15675,13 @@ include::{generated}/api/protos/clUpdateMutableCommandsKHR.txt[]
 include::{generated}/api/version-notes/clUpdateMutableCommandsKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _mutable_config_ is a pointer to a {cl_mutable_base_config_khr_TYPE}
-    structure defining updates to make to mutable-commands.
+  * _num_configs_  Number of elements in the _config_types_ and _config_ arrays.
+  * _config_types_ An array of length _num_configs_ with each element identifying
+    the type of each config in _configs_ at the same array index.
+  * _configs_ An array of length _num_configs_ containing structs which define how a
+    mutable-command handle in _command_buffer_ is to be updated, each of which is
+    interpreted using _config_types_ at the same index with the mapping defined
+    in the <<update-config-mapping, Mutable Command Update Structs>> section.
 
 // refError
 
@@ -15691,16 +15695,13 @@ one of the errors below is returned:
   * {CL_INVALID_OPERATION} if _command_buffer_ has not been finalized.
   * {CL_INVALID_OPERATION} if _command_buffer_ was not created with the
     {CL_COMMAND_BUFFER_MUTABLE_KHR} flag.
-  * {CL_INVALID_VALUE} if the _type_ member of _mutable_config_ is not
-    {CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR}.
-  * {CL_INVALID_VALUE} if the _mutable_dispatch_list_ member of
-    _mutable_config_ is `NULL` and _num_mutable_dispatch_ > 0, or
-    _mutable_dispatch_list_ is not `NULL` and _num_mutable_dispatch_ is 0.
-  * {CL_INVALID_VALUE} if the _next_ member of _mutable_config_ is not
-    `NULL` and any iteration of the structure pointer chain does not contain
-    valid _type_ and _next_ members.
-  * {CL_INVALID_VALUE} if _mutable_config_ is `NULL`, or if both _next_ and
-    _mutable_dispatch_list_ members of _mutable_config_ are `NULL`.
+  * {CL_INVALID_VALUE} if _config_types_ is `NULL` and _num_configs_ > 0, or
+    _config_types_ is not `NULL` and _num_configs_ is 0.
+  * {CL_INVALID_VALUE} if _configs_ is `NULL` and _num_configs_ > 0, or
+    _configs_ is not `NULL` and _num_configs_ is 0.
+  * {CL_INVALID_VALUE} if any element of _config_types_ is not a valid
+    {cl_command_buffer_update_type_khr_TYPE} enum.
+  * {CL_INVALID_VALUE} if any element of _configs_ is NULL.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -15726,19 +15727,17 @@ parameters are updated so that the new number of work-groups exceeds the
 number when the ND-range command was recorded, the behavior is undefined.
 ====
 
-If the _mutable_dispatch_list_ member of _mutable_config_ is non-`NULL`,
-then errors defined by {clEnqueueNDRangeKernel}, {clSetKernelExecInfo},
-{clSetKernelArg}, and {clSetKernelArgSVMPointer} are returned by
-{clUpdateMutableCommandsKHR} if any of the array elements are set to an
-invalid value.
-Additionally, the following errors are returned if any
-{cl_mutable_dispatch_config_khr_TYPE} element of the array violates the
-defined conditions:
+If _configs_ is non-`NULL`, then for any {cl_mutable_dispatch_config_khr_TYPE}
+element of the array the errors defined by {clEnqueueNDRangeKernel},
+{clSetKernelExecInfo}, {clSetKernelArg}, and {clSetKernelArgSVMPointer} are
+returned by {clUpdateMutableCommandsKHR} if any of the struct elements are set
+to an invalid value. Additionally, the following errors are returned if any
+{cl_mutable_dispatch_config_khr_TYPE} element of the array violates the defined
+conditions:
 
   * {CL_INVALID_MUTABLE_COMMAND_KHR} if _command_ is not a valid mutable
-    command object, or created from _command_buffer_.
-  * {CL_INVALID_VALUE} if _type_ is not
-    {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}.
+    command object returned from {clCommandNDRangeKernelKHR}, or created from
+   _command_buffer_.
   * {CL_INVALID_OPERATION} if the values of _local_work_size_ and/or
     _global_work_size_ result in a change to work-group uniformity.
   * {CL_INVALID_OPERATION} if the _work_dim_ is different from the
@@ -15766,24 +15765,25 @@ defined conditions:
     0, or _exec_info_list_ is not `NULL` and _num_exec_infos_ is 0.
 --
 
-[open,refpage='cl_mutable_base_config_khr',desc='DESC',type='structs']
---
-The {cl_mutable_base_config_khr_TYPE} structure encapsulates all aspects of
-mutation and is defined as:
+[[mutable-commands-update-structs]]
+==== Mutable Command Update Structs
 
-include::{generated}/api/structs/cl_mutable_base_config_khr.txt[]
+The following table defines the mapping of
+{cl_command_buffer_update_type_khr_TYPE} values to the structs they define
+reinterpreting a void pointer as when passed to {clUpdateMutableCommandsKHR}.
 
-  * _type_ is the type of this structure, and must be
-    {CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR_anchor}
-  * _next_ is `NULL` or a pointer to an extending structure.
-  * _num_mutable_dispatch_ is the number of mutable-dispatch objects to
-    configure in this enqueue of the command-buffer.
-  * _mutable_dispatch_list_ is an array containing _num_mutable_dispatch_
-    elements describing the configurations of mutable kernel execution
-    commands in the command-buffer.
-    For a description of struct members making up each array element see
-    {cl_mutable_dispatch_config_khr_TYPE}.
---
+[[update-config-mapping]]
+[cols=",,",options="header",]
+|====
+| Enum Value | Struct Type | Entry Point
+
+| {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR_anchor}
+| {cl_mutable_dispatch_config_khr_TYPE}
+| {clCommandNDRangeKernelKHR}
+
+|====
+
+==== Kernel Command Update Structs
 
 [open,refpage='cl_mutable_dispatch_config_khr',desc='Set kernel configuration of a mutable clCommandNDRangeKernelKHR command',type='structs']
 --
@@ -15793,9 +15793,6 @@ The {cl_mutable_dispatch_arg_khr_TYPE} structure is passed to
 
 include::{generated}/api/structs/cl_mutable_dispatch_config_khr.txt[]
 
-  * _type_ is the type of this structure, and must be
-    {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR_anchor}.
-  * _next_ is `NULL` or a pointer to an extending structure.
   * _command_ is a mutable-command object returned by
     {clCommandNDRangeKernelKHR} representing a kernel execution as part of a
     command-buffer.
