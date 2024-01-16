@@ -1,0 +1,366 @@
+// Copyright 2018-2024 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[cl_khr_command_buffer_mutable_memory_commands]]
+== Command Buffers - Mutable Memory Commands (Provisional)
+
+This extension enables users to modify the configuration memory commands
+between command-buffer enqueues.
+
+=== General Information
+
+==== Name Strings
+
+`cl_khr_command_buffer_mutable_memory_commands`
+
+==== Version History
+
+[cols="1,1,3",options="header",]
+|====
+| *Date*     | *Version* | *Description*
+| 2023-11-21 | 0.9.0     | First assigned version (provisional).
+|====
+
+==== Dependencies
+
+This extension requires the `cl_khr_command_buffer_mutable_dispatch` extension
+version 0.9.0.
+
+==== Contributors
+
+Ewan Crawford, Codeplay Software Ltd. +
+Kenneth Benzie, Codeplay Software Ltd. +
+Jack Frankland, Codeplay Software Ltd. +
+Ben Ashbaugh, Intel. +
+Balaji Calidas, Qualcomm Technologies Inc. +
+Sreelakshmi Haridas Maruthur, Qualcomm Technologies Inc. +
+Kevin Petit, Arm Ltd. +
+
+==== Status
+
+Draft spec, NOT APPROVED!!
+
+=== Overview
+
+The `cl_khr_command_buffer` extension separates command construction from
+enqueue by providing a mechanism to record an immutable set of commands which
+can then be repeatedly enqueued. Another extension layered on top,
+`cl_khr_command_buffer_mutable_dispatch` allows ND-Range kernel execution
+commands recorded to a command-buffer to be modified between command-buffer
+enqueues by providing a command-buffer update API {clUpdateMutableCommandsKHR}.
+
+`cl_khr_command_buffer_mutable_memory_commands` builds on
+`cl_khr_command_buffer_mutable_dispatch` to use the {clUpdateMutableCommandsKHR}
+entry-point for enabling mutability of _memory-commands_ recorded to a
+command-buffer, those commands taking a {cl_mem_TYPE} or SVM pointer argument.
+
+=== New API Types
+
+[[cl_mutable_copy_buffer_command_config_khr]]
+include::{generated}/api/structs/cl_mutable_copy_buffer_command_config_khr.txt[]
+
+_command_ A mutable-command object returned by {clCommandCopyBufferKHR}.
+
+_src_buffer_, _dst_buffer_, _src_offset_, _dst_offset_, _size_ as specified by
+the associated {clCommandCopyBufferKHR} parameters.
+
+[[cl_mutable_copy_buffer_rect_command_config_khr]]
+include::{generated}/api/structs/cl_mutable_copy_buffer_rect_command_config_khr.txt[]
+
+_command_ A mutable-command object returned by {clCommandCopyBufferRectKHR}.
+
+_src_buffer_, _dst_buffer_, _src_origin_, _dst_origin_, _region_, _src_row_pitch_,
+_src_slice_pitch_, _dst_row_pitch_, _dst_slice_pitch_ as specified by the
+associated {clCommandCopyBufferRectKHR} parameters.
+
+[[cl_mutable_copy_buffer_to_image_command_config_khr]]
+include::{generated}/api/structs/cl_mutable_copy_buffer_to_image_command_config_khr.txt[]
+
+_command_ A mutable-command object returned by {clCommandCopyBufferToImageKHR}.
+
+_src_buffer_, _dst_image_, _src_offset_, _dst_origin_, _region_ as specified by the
+associated {clCommandCopyBufferToImageKHR} parameters.
+
+[[cl_mutable_copy_image_command_config_khr]]
+include::{generated}/api/structs/cl_mutable_copy_image_command_config_khr.txt[]
+
+_command_ A mutable-command object returned by {clCommandCopyImageKHR}.
+
+_src_image_, _dst_image_, _src_origin_, _dst_origin_, _region_ as specified by the
+associated {clCommandCopyImageKHR} parameters.
+
+[[cl_mutable_copy_image_to_buffer_command_config_khr]]
+include::{generated}/api/structs/cl_mutable_copy_image_to_buffer_command_config_khr.txt[]
+
+_command_ A mutable-command object returned by {clCommandCopyImageToBufferKHR}.
+
+_src_image_, _dst_buffer_, _src_origin_, _region_, _dst_offset_ as specified by the
+associated {clCommandCopyImageToBufferKHR} parameters.
+
+[[cl_mutable_fill_buffer_command_config_khr]]
+include::{generated}/api/structs/cl_mutable_fill_buffer_command_config_khr.txt[]
+
+_command_ A mutable-command object returned by {clCommandFillBufferKHR}.
+
+_buffer_, _pattern_, _pattern_size_, _offset_, _size_ as specified by the
+associated {clCommandFillBufferKHR} parameters.
+
+[[cl_mutable_fill_image_command_config_khr]]
+include::{generated}/api/structs/cl_mutable_fill_image_command_config_khr.txt[]
+
+_command_ A mutable-command object returned by {clCommandFillImageKHR}.
+
+_image_, _fill_color_, _origin_, _region_ as specified by the associated
+{clCommandFillImageKHR} parameters.
+
+[[cl_mutable_svm_memcpy_command_config_khr]]
+include::{generated}/api/structs/cl_mutable_svm_memcpy_command_config_khr.txt[]
+
+_command_ A mutable-command object returned by {clCommandSVMMemcpyKHR}.
+
+_dst_ptr_, _src_ptr_, _size_ as specified by the associated {clCommandSVMMemcpyKHR}
+parameters.
+
+[[cl_mutable_svm_memfill_command_config_khr]]
+include::{generated}/api/structs/cl_mutable_svm_memfill_command_config_khr.txt[]
+
+_command_ A mutable-command object returned by {clCommandSVMMemFillKHR}.
+
+_svm_ptr_, _pattern_, _pattern_size_, _size_ as specified by the associated
+{clCommandSVMMemFillKHR} parameters.
+
+=== New API Enums
+
+Enums for querying device command-buffer capabilities with
+{clGetDeviceInfo}, see <<command-buffer-queries, device queries table>>:
+
+[source,c]
+----
+// Bits for cl_device_command_buffer_capabilities_khr bitfield
+CL_COMMAND_BUFFER_CAPABILITY_MUTABLE_MEM_COMMANDS_KHR         (0x1 << 5)
+----
+
+Structure pointer chain enum values for {cl_update_config_type_khr_TYPE}:
+[source,c]
+----
+CL_STRUCTURE_TYPE_MUTABLE_COPY_BUFFER_COMMAND_CONFIG_KHR          1
+CL_STRUCTURE_TYPE_MUTABLE_COPY_BUFFER_RECT_COMMAND_CONFIG_KHR     2
+CL_STRUCTURE_TYPE_MUTABLE_COPY_BUFFER_TO_IMAGE_COMMAND_CONFIG_KHR 3
+CL_STRUCTURE_TYPE_MUTABLE_COPY_BUFFER_TO_IMAGE_COMMAND_CONFIG_KHR 4
+CL_STRUCTURE_TYPE_MUTABLE_COPY_IMAGE_TO_BUFFER_COMMAND_CONFIG_KHR 5
+CL_STRUCTURE_TYPE_MUTABLE_FILL_BUFFER_COMMAND_CONFIG_KHR          6
+CL_STRUCTURE_TYPE_MUTABLE_FILL_IMAGE_COMMAND_CONFIG_KHR           7
+CL_STRUCTURE_TYPE_MUTABLE_SVM_MEMCPY_COMMAND_CONFIG_KHR           8
+CL_STRUCTURE_TYPE_MUTABLE_SVM_MEMFILL_COMMAND_CONFIG_KHR          9
+----
+
+Bits for {cl_command_buffer_flags_khr_TYPE} bitfield:
+[source,c]
+----
+CL_MUTABLE_MEM_COMMANDS_ENABLE_KHR                      (0x1 << 3)
+----
+
+=== Modifications to section 4.2 of the OpenCL API Specification
+
+Additional wording to _description_ column of *Table 5*, _Device Queries_, of
+section 4.2 under the {CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR} row:
+[cols="1,1,4",options="header"]
+|====
+| cl_device_info
+| Return Type
+| Description
+
+| {CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR}
+| {cl_device_command_buffer_capabilities_khr_TYPE}
+| {CL_COMMAND_BUFFER_CAPABILITY_MUTABLE_MEM_COMMANDS_KHR} Device supports the
+  ability to modify the {cl_mem_TYPE} arguments to commands operating on memory
+  objects between command-buffer invocations.
+|====
+
+=== Modifications to Section 5.X - Command Buffers of OpenCL API specification
+
+==== Additional Section 5.X.1 Introduction Text
+
+Further mutability for modifying _memory-commands_ recorded to a
+command-buffer is also possible, defined as those commands taking a
+{cl_mem_TYPE} or SVM pointer argument.
+
+The struct types defined by this extension for each memory-command type
+can be used in {clUpdateMutableCommandsKHR} to update the command
+configuration.
+
+The {CL_MUTABLE_MEM_COMMANDS_ENABLE_KHR} flag must be set on command-buffer
+creation to enable this functionality, in combination with
+{CL_COMMAND_BUFFER_MUTABLE_KHR} which is requires to use the
+{clUpdateMutableCommandsKHR} entry-point.
+
+==== clCreateCommandBufferKHR Modifications
+
+The function {clCreateCommandBufferKHR} function has an additional property
+bit defined:
+
+.*clCreateCommandBufferKHR* properties
+[cols=",,",options="header",]
+|====
+| *Recording Properties*
+| *Property Value*
+| *Description*
+
+| {CL_COMMAND_BUFFER_FLAGS_KHR}
+| {cl_command_buffer_flags_khr_TYPE}
+| {CL_MUTABLE_MEM_COMMANDS_ENABLE_KHR} - Enable or disable modification of
+  command-buffer memory-commands between enqueues. If set, the modification of
+  the memory-commands in the command-buffer is enabled,
+  otherwise it is disabled.
+|====
+
+==== Memory-Command Modifications
+
+The descriptions of command recording entry-points that operate on {cl_mem_TYPE}
+or SVM pointer arguments are modified as described in this section. These
+changes apply to all of {clCommandCopyBufferKHR}, {clCommandCopyBufferRectKHR},
+{clCommandCopyBufferToImageKHR}, {clCommandCopyImageKHR},
+{clCommandCopyImageToBufferKHR}, {clCommandFillBufferKHR},
+{clCommandFillImageKHR}, {clCommandSVMMemcpyKHR}, and {clCommandSVMMemFillKHR}.
+
+===== Parameter Update
+
+Parameter description of _mutable_handle_ is changed to:
+
+_mutable_handle_ Returns a handle to the command that can be used to modify the
+command between enqueues of _command_buffer_. _mutable_handle_ may be `NULL`. The
+lifetime of this handle is tied to the parent command-buffer, such that freeing
+the command-buffer will also free this handle.
+
+===== Error Updates
+
+The error condition
+
+* {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
+
+Is replaced with
+
+* {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL` and _command_buffer_
+  was not created with property {CL_MUTABLE_MEM_COMMANDS_ENABLE_KHR}.
+
+==== clUpdateMutableCommandsKHR Modifications
+
+===== Error Updates
+
+The function {clUpdateMutableCommandsKHR} has the following additions to its
+error definitions:
+
+For any memory-command structs in the _configs_ array, then the errors defined by
+the associated command-buffer command creation entry-point are returned if a
+struct element is set to an invlaid value. Additionally, if the _command_ element
+of the struct is not a valid mutable command object returned from the matching
+memory-command entry-point then {CL_INVALID_MUTABLE_COMMAND_KHR} is returned.
+{CL_INVALID_MUTABLE_COMMAND_KHR} is also returned if _command_ was not created
+from _command_buffer_.
+
+=== Sample
+
+[source,cpp]
+----
+  #define CL_CHECK(ERROR)                             \
+    if (ERROR) {                                      \
+      std::cerr << "OpenCL error: " << ERROR << "\n"; \
+      return ERROR;                                   \
+    }
+
+  int main() {
+    cl_platform_id platform;
+    CL_CHECK(clGetPlatformIDs(1, &platform, nullptr));
+    cl_device_id device;
+    CL_CHECK(clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, nullptr));
+
+    cl_int error;
+    cl_context context =
+        clCreateContext(nullptr, 1, &device, nullptr, nullptr, &error);
+    CL_CHECK(error);
+
+    cl_command_queue command_queue =
+      clCreateCommandQueue(context, device, 0, &error);
+    CL_CHECK(error);
+
+    size_t num_bytes = 128;
+    cl_mem bufferA =
+        clCreateBuffer(context, CL_MEM_READ_WRITE, num_bytes, nullptr, &error);
+    CL_CHECK(error);
+
+    // Populate bufferA with data
+
+    cl_mem bufferB =
+        clCreateBuffer(context, CL_MEM_READ_WRITE, num_bytes, nullptr, &error);
+    CL_CHECK(error);
+
+    // Populate bufferB with data
+
+    cl_mem bufferC =
+        clCreateBuffer(context, CL_MEM_READ_WRITE, num_bytes, nullptr, &error);
+    CL_CHECK(eror);
+
+    cl_command_buffer_properties_khr properties[3] = {
+       CL_COMMAND_BUFFER_FLAGS_KHR,
+       CL_COMMAND_BUFFER_MUTABLE_KHR | CL_MUTABLE_MEM_COMMANDS_ENABLE_KHR,
+       0
+    };
+
+    cl_command_buffer_khr command_buffer =
+        clCreateCommandBufferKHR(1, &command_queue, properties, &error);
+    CL_CHECK(error)
+
+    cl_mutable_command_khr copy_command_handle;
+    CL_CHECK(clCommandCopyBufferKHR(
+               command_buffer,
+               command_queue,
+               bufferA,
+               bufferC,
+               0,
+               0,
+               num_bytes,
+               0,
+               nullptr,
+               nullptr,
+               &copy_command_handle);
+
+    CL_CHECK(clFinalizeCommandBufferKHR(command_buffer));
+    CL_CHECK(clEnqueueCommandBufferKHR(0, nullptr, command_buffer, 0, nullptr,
+                                       nullptr));
+
+    cl_mutable_copy_buffer_command_config_khr buffer_copy_config = {
+      copy_command_handle,  // command
+      bufferB,              // src_buffer
+      bufferC,              // dst_buffer
+      0,                    // src_offset
+      0,                    // dst_offset
+      num_bytes             // size
+    };
+
+    cl_uint num_configs = 1;
+    cl_update_config_type_khr config_types[1] = {
+       CL_STRUCTURE_TYPE_MUTABLE_COPY_BUFFER_COMMAND_CONFIG_KHR
+    };
+    void* configs[1] = {&buffer_copy_config};
+    CL_CHECK(clUpdateMutableCommandsKHR(command_buffer, num_configs,
+                                        config_types, configs));
+    CL_CHECK(clEnqueueCommandBufferKHR(command_buffer, 0, nullptr, nullptr));
+    CL_CHECK(clFinish(command_queue));
+
+    CL_CHECK(clReleaseCommandBufferKHR(command_buffer));
+    CL_CHECK(clReleaseCommandQueue(command_queue));
+    CL_CHECK(clReleaseContext(context));
+
+    CL_CHECK(clReleaseMemObject(bufferA));
+    CL_CHECK(clReleaseMemObject(bufferB));
+    CL_CHECK(clReleaseMemObject(bufferC));
+
+    return 0;
+  }
+----
+
+=== Conformance tests
+
+TODO - OpenCL-CTS Github issue with CTS plan once API design has been agreed.
+
