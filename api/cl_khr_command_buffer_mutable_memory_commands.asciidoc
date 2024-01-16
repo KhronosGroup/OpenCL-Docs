@@ -1,0 +1,177 @@
+// Copyright 2018-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_command_buffer_mutable_memory_commands.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2024-03-28
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+  - Ewan Crawford, Codeplay Software Ltd.
+  - Kenneth Benzie, Codeplay Software Ltd.
+  - Jack Frankland, Codeplay Software Ltd.
+  - Ben Ashbaugh, Intel.
+  - Balaji Calidas, Qualcomm Technologies Inc.
+  - Sreelakshmi Haridas Maruthur, Qualcomm Technologies Inc.
+  - Kevin Petit, Arm Ltd.
+
+=== Description
+
+The <<cl_khr_command_buffer>> extension separates command construction from
+enqueue by providing a mechanism to record an immutable set of commands which
+can then be repeatedly enqueued. Another extension layered on top,
+<<cl_khr_command_buffer_mutable_dispatch>> allows ND-Range kernel execution
+commands recorded to a command-buffer to be modified between command-buffer
+enqueues by providing a command-buffer update API {clUpdateMutableCommandsKHR}.
+
+`cl_khr_command_buffer_mutable_memory_commands` builds on
+<<cl_khr_command_buffer_mutable_dispatch>> to use the {clUpdateMutableCommandsKHR}
+entry-point for enabling mutability of _memory-commands_ recorded to a
+command-buffer, those commands taking a {cl_mem_TYPE} or SVM pointer argument.
+
+=== New Structures
+
+  * {cl_mutable_copy_buffer_command_config_khr_TYPE}
+  * {cl_mutable_copy_buffer_rect_command_config_khr_TYPE}
+  * {cl_mutable_copy_buffer_to_image_command_config_khr_TYPE}
+  * {cl_mutable_copy_image_command_config_khr_TYPE}
+  * {cl_mutable_copy_image_to_buffer_command_config_khr_TYPE}
+  * {cl_mutable_fill_buffer_command_config_khr_TYPE}
+  * {cl_mutable_fill_image_command_config_khr_TYPE}
+  * {cl_mutable_svm_memcpy_command_config_khr_TYPE}
+  * {cl_mutable_svm_memfill_command_config_khr_TYPE}
+
+=== New Enums
+
+  * {cl_device_command_buffer_capabilities_khr_TYPE}
+  ** {CL_COMMAND_BUFFER_CAPABILITY_MUTABLE_MEM_COMMANDS_KHR}
+  * {cl_command_buffer_flags_khr_TYPE}
+  ** {CL_MUTABLE_MEM_COMMANDS_ENABLE_KHR}
+  * {cl_command_buffer_update_type_khr_TYPE}
+  ** {CL_STRUCTURE_TYPE_MUTABLE_COPY_BUFFER_COMMAND_CONFIG_KHR}
+  ** {CL_STRUCTURE_TYPE_MUTABLE_COPY_IMAGE_COMMAND_CONFIG_KHR}
+  ** {CL_STRUCTURE_TYPE_MUTABLE_COPY_BUFFER_RECT_COMMAND_CONFIG_KHR}
+  ** {CL_STRUCTURE_TYPE_MUTABLE_COPY_BUFFER_TO_IMAGE_COMMAND_CONFIG_KHR}
+  ** {CL_STRUCTURE_TYPE_MUTABLE_COPY_BUFFER_TO_IMAGE_COMMAND_CONFIG_KHR}
+  ** {CL_STRUCTURE_TYPE_MUTABLE_COPY_IMAGE_TO_BUFFER_COMMAND_CONFIG_KHR}
+  ** {CL_STRUCTURE_TYPE_MUTABLE_FILL_BUFFER_COMMAND_CONFIG_KHR}
+  ** {CL_STRUCTURE_TYPE_MUTABLE_FILL_IMAGE_COMMAND_CONFIG_KHR}
+  ** {CL_STRUCTURE_TYPE_MUTABLE_SVM_MEMCPY_COMMAND_CONFIG_KHR}
+  ** {CL_STRUCTURE_TYPE_MUTABLE_SVM_MEMFILL_COMMAND_CONFIG_KHR}
+
+=== Sample Code
+
+==== Sample Application Updating the Arguments to a Copy Buffer Command Between Command-buffer Submissions
+
+[source,cpp]
+----
+  #define CL_CHECK(ERROR)                             \
+    if (ERROR) {                                      \
+      std::cerr << "OpenCL error: " << ERROR << "\n"; \
+      return ERROR;                                   \
+    }
+
+  int main() {
+    cl_platform_id platform;
+    CL_CHECK(clGetPlatformIDs(1, &platform, nullptr));
+    cl_device_id device;
+    CL_CHECK(clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, nullptr));
+
+    cl_int error;
+    cl_context context =
+        clCreateContext(nullptr, 1, &device, nullptr, nullptr, &error);
+    CL_CHECK(error);
+
+    cl_command_queue command_queue =
+      clCreateCommandQueue(context, device, 0, &error);
+    CL_CHECK(error);
+
+    size_t num_bytes = 128;
+    cl_mem bufferA =
+        clCreateBuffer(context, CL_MEM_READ_WRITE, num_bytes, nullptr, &error);
+    CL_CHECK(error);
+
+    // Populate bufferA with data
+
+    cl_mem bufferB =
+        clCreateBuffer(context, CL_MEM_READ_WRITE, num_bytes, nullptr, &error);
+    CL_CHECK(error);
+
+    // Populate bufferB with data
+
+    cl_mem bufferC =
+        clCreateBuffer(context, CL_MEM_READ_WRITE, num_bytes, nullptr, &error);
+    CL_CHECK(eror);
+
+    cl_command_buffer_properties_khr properties[3] = {
+       CL_COMMAND_BUFFER_FLAGS_KHR,
+       CL_COMMAND_BUFFER_MUTABLE_KHR | CL_MUTABLE_MEM_COMMANDS_ENABLE_KHR,
+       0
+    };
+
+    cl_command_buffer_khr command_buffer =
+        clCreateCommandBufferKHR(1, &command_queue, properties, &error);
+    CL_CHECK(error)
+
+    cl_mutable_command_khr copy_command_handle;
+    CL_CHECK(clCommandCopyBufferKHR(
+               command_buffer,
+               command_queue,
+               bufferA,
+               bufferC,
+               0,
+               0,
+               num_bytes,
+               0,
+               nullptr,
+               nullptr,
+               &copy_command_handle);
+
+    CL_CHECK(clFinalizeCommandBufferKHR(command_buffer));
+    CL_CHECK(clEnqueueCommandBufferKHR(0, nullptr, command_buffer, 0, nullptr,
+                                       nullptr));
+
+    cl_mutable_copy_buffer_command_config_khr buffer_copy_config = {
+      copy_command_handle,  // command
+      bufferB,              // src_buffer
+      bufferC,              // dst_buffer
+      0,                    // src_offset
+      0,                    // dst_offset
+      num_bytes             // size
+    };
+
+    cl_uint num_configs = 1;
+    cl_update_config_type_khr config_types[1] = {
+       CL_STRUCTURE_TYPE_MUTABLE_COPY_BUFFER_COMMAND_CONFIG_KHR
+    };
+    void* configs[1] = {&buffer_copy_config};
+    CL_CHECK(clUpdateMutableCommandsKHR(command_buffer, num_configs,
+                                        config_types, configs));
+    CL_CHECK(clEnqueueCommandBufferKHR(command_buffer, 0, nullptr, nullptr));
+    CL_CHECK(clFinish(command_queue));
+
+    CL_CHECK(clReleaseCommandBufferKHR(command_buffer));
+    CL_CHECK(clReleaseCommandQueue(command_queue));
+    CL_CHECK(clReleaseContext(context));
+
+    CL_CHECK(clReleaseMemObject(bufferA));
+    CL_CHECK(clReleaseMemObject(bufferB));
+    CL_CHECK(clReleaseMemObject(bufferC));
+
+    return 0;
+  }
+----
+
+=== Conformance tests
+
+TODO - OpenCL-CTS Github issue with CTS plan once API design has been agreed.
+
+include::provisional_notice.asciidoc[]
+
+=== Version History
+
+  * Revision 0.9.0, 2024-03-28
+  ** First assigned version (provisional).
