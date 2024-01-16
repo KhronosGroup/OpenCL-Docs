@@ -2349,6 +2349,10 @@ include::{generated}/api/version-notes/CL_R.asciidoc[]
 | {CL_DEPTH_anchor}
 
 include::{generated}/api/version-notes/CL_DEPTH.asciidoc[]
+
+ifdef::cl_khr_depth_images[]
+Also supported if the `<<cl_khr_depth_images>>` extension is supported.
+endif::cl_khr_depth_images[]
   | A single channel image format where the single channel represents a `DEPTH` component.
 | {CL_LUMINANCE_anchor}
 
@@ -2444,6 +2448,10 @@ include::{generated}/api/version-notes/CL_UNORM_INT8.asciidoc[]
 | {CL_UNORM_INT16_anchor}
 
 include::{generated}/api/version-notes/CL_UNORM_INT16.asciidoc[]
+
+ifdef::cl_khr_depth_images[]
+Also supported if the `<<cl_khr_depth_images>>` extension is supported.
+endif::cl_khr_depth_images[]
   | Each channel component is a normalized unsigned 16-bit integer value
 | {CL_UNORM_SHORT_565_anchor}
 
@@ -2504,6 +2512,10 @@ include::{generated}/api/version-notes/CL_HALF_FLOAT.asciidoc[]
 | {CL_FLOAT_anchor}
 
 include::{generated}/api/version-notes/CL_FLOAT.asciidoc[]
+
+ifdef::cl_khr_depth_images[]
+Also supported if the `<<cl_khr_depth_images>>` extension is supported.
+endif::cl_khr_depth_images[]
   | Each channel component is a single precision floating-point value
 |====
 
@@ -2857,6 +2869,10 @@ is:
         {CL_FLOAT}
 | 1
   | {CL_DEPTH} footnote:[{fn-depth-image-requirements}]
+
+ifdef::cl_khr_depth_images[]
+Also supported if the `<<cl_khr_depth_images>>` extension is supported.
+endif::cl_khr_depth_images[]
       | {CL_UNORM_INT16} +
         {CL_FLOAT}
 ifdef::cl_khr_gl_depth_images[]
@@ -3602,8 +3618,8 @@ include::{generated}/api/version-notes/clEnqueueFillImage.asciidoc[]
     _image_ channel data type is an unnormalized signed integer type and is a
     four component unsigned integer value if the _image_ channel data type is an
     unnormalized unsigned integer type.
-    The fill color will be converted to the appropriate image channel format and
-    order associated with _image_.
+    The fill color will be converted to the appropriate image channel format
+    and order associated with _image_.
   * _origin_ defines the (_x_, _y_, _z_) offset in pixels in the 1D, 2D or 3D
     image, the (_x_, _y_) offset and the image index in the 2D image array or
     the (_x_) offset and the image index in the 1D image array.
@@ -4338,7 +4354,7 @@ endif::cl_khr_d3d11_sharing[]
 
 
 ifdef::cl_khr_dx9_media_sharing[]
-=== Creating OpenCL Image Objects from DirectX 9 Media Resources
+=== Creating OpenCL Image Objects From DirectX 9 Media Resources
 
 [open,refpage='clCreateFromDX9MediaSurfaceKHR',desc='Create OpenCL image object from a media surface',type='protos']
 --
@@ -6165,7 +6181,7 @@ endif::cl_khr_dx9_media_sharing[]
 
 
 ifdef::cl_khr_d3d10_sharing[]
-=== Querying Direct3D Properties of Memory Objects Created From Direct3D 10 Resources  // next to 5.5.7 Querying OpenGL Object Information From an OpenCL Memory Object
+=== Querying Direct3D Properties of Memory Objects Created From Direct3D 10 Resources
 
 Properties of Direct3D 10 objects may be queried using {clGetMemObjectInfo}
 and {clGetImageInfo} with _param_name_ {CL_MEM_D3D10_RESOURCE_KHR} and
@@ -6463,7 +6479,7 @@ endif::cl_khr_dx9_media_sharing[]
 
 
 ifdef::cl_khr_d3d10_sharing[]
-=== Sharing Memory Objects Created From Direct3D 10 Resources Between Direct3D 10 and OpenCL Contexts  // next to 5.6 Acquiring, Release, and Synchronizing ... CL/GL Memory Objects
+=== Sharing Memory Objects Created From Direct3D 10 Resources Between Direct3D 10 and OpenCL Contexts
 
 [open,refpage='clEnqueueAcquireD3D10ObjectsKHR',desc='Acquire OpenCL memory objects created from Direct3D 10 resources',type='protos']
 --
@@ -7124,7 +7140,7 @@ Otherwise, it returns one of the following errors:
 //     sync objects, via the egl_event or gl_event extensions
 
 ifdef::cl_khr_egl_image,cl_khr_gl_sharing[]
-==== Synchronizing Access to Memory Objects Shared with EGL or OpenGL
+==== Synchronizing Access to Memory Objects Shared With EGL or OpenGL
 
 When sharing objects such as EGL images (if the `<<cl_khr_egl_image>>`
 extension is supported) or OpenGL buffers, textures, and renderbuffers (if
@@ -7162,7 +7178,7 @@ endif::cl_khr_egl_image[]
 
 
 ifdef::cl_khr_gl_sharing[]
-===== Synchronization with OpenGL
+===== Synchronization With OpenGL
 
 When sharing with an OpenGL context via the `<<cl_khr_gl_sharing>>`
 extension, the OpenCL implementation will ensure that any such pending
@@ -10309,13 +10325,18 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_ARG_VALUE} if _arg_value_ specified is not a valid value.
   * {CL_INVALID_MEM_OBJECT} for an argument declared to be a memory object
     when the specified _arg_value_ is not a valid memory object.
+ifdef::cl_khr_depth_images,cl_khr_gl_msaa_sharing[]
+  * {CL_INVALID_MEM_OBJECT} for an argument declared to be a
+ifdef::cl_khr_depth_images[]
+    depth image, depth image array,
+endif::cl_khr_depth_images[]
 ifdef::cl_khr_gl_msaa_sharing[]
-  * {CL_INVALID_MEM_OBJECT} for an argument declared to be a multi-sample
-    image, multi-sample image array, multi-sample depth image or a
-    multi-sample depth image array when the specified _arg_value_ does not
-    follow the rules described above for a depth memory object or memory
-    array object argument.
+    multi-sample image, multi-sample image array, multi-sample depth image,
+    or a multi-sample depth image array
 endif::cl_khr_gl_msaa_sharing[]
+    when the specified _arg_value_ does not follow the rules described above
+    for a depth memory object or memory array object argument.
+endif::cl_khr_depth_images,cl_khr_gl_msaa_sharing[]
   * {CL_INVALID_SAMPLER} for an argument declared to be of type _sampler_t_
     when the specified _arg_value_ is not a valid sampler object.
   * {CL_INVALID_DEVICE_QUEUE} for an argument declared to be of type _queue_t_
@@ -16081,7 +16102,7 @@ endif::cl_khr_command_buffer[]
 
 ifdef::cl_khr_gl_sharing[]
 [[querying-devices-that-support-sharing-with-opengl]]
-== Querying Devices that Support Sharing with OpenGL
+== Querying Devices That Support Sharing With OpenGL
 
 OpenCL device(s) corresponding to an OpenGL context may be queried.
 Such a device may not always exist (for example, if an OpenGL context is
