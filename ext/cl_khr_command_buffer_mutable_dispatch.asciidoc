@@ -20,6 +20,7 @@ commands between command-buffer enqueues.
 |====
 | *Date*     | *Version* | *Description*
 | 2022-08-31 | 0.9.0     | First assigned version (provisional).
+| 2023-11-07 | 0.9.1     | Add type cl_mutable_dispatch_asserts_khr and its possible values (provisional).
 |====
 
 include::provisional_notice.asciidoc[]
@@ -103,6 +104,9 @@ typedef cl_uint cl_mutable_command_info_khr;
 
 // Identifies the type of a structure to allow structure pointer chains
 typedef cl_uint cl_command_buffer_structure_type_khr;
+
+// Bitfield covering certain asserts by the user to the implementation, enabling possible optimizations 
+typedef cl_bitfield cl_mutable_dispatch_asserts_khr;
 ----
 
 Struct type for setting kernel arguments normally passed using {clSetKernelArg}
@@ -233,8 +237,12 @@ CL_INVALID_MUTABLE_COMMAND_KHR                     -1141
 // Accepted values for the param_name parameter to clGetDeviceInfo
 CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR        0x12B0
 
+/* cl_command_buffer_properties_khr */
+CL_COMMAND_BUFFER_MUTABLE_DISPATCH_ASSERTS_KHR	   0x12B7
+
 // Property to cl_ndrange_kernel_command_properties_khr
 CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR           0x12B1
+CL_MUTABLE_DISPATCH_ASSERTS_KHR                    0x12B8
 
 // Bits for cl_mutable_dispatch_fields_khr bitfield
 CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR              (0x1 << 0)
@@ -256,6 +264,9 @@ CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR                0x12AD
 
 // Bits for cl_command_buffer_flags_khr
 CL_COMMAND_BUFFER_MUTABLE_KHR                    (0x1 << 1)
+
+// Bits for cl_mutable_dispatch_asserts_khr bitfield
+CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR	(0x1 << 0)
 ----
 
 Enum values for {cl_command_buffer_structure_type_khr_TYPE} allowing the structure
@@ -323,7 +334,35 @@ description of property values.
 | {CL_COMMAND_BUFFER_MUTABLE_KHR} - Enables modification of the
   command-buffer, by default command-buffers are immutable. If set,
   commands in the command-buffer may be updated via {clUpdateMutableCommandsKHR}.
+  
 |====
+
+Add a {CL_COMMAND_BUFFER_ASSERTS_KHR} property to the
+<<commandbuffer-properties, clCreateCommandBufferKHR properties>> table.
+
+[cols=",,",options="header",]
+|====
+| *Recording Properties*
+| *Property Value*
+| *Description*
+
+| {CL_COMMAND_BUFFER_ASSERTS_KHR}
+| {cl_mutable_dispatch_asserts_khr_TYPE}
+| This is a bitfield and can be set to a combination of the following values:
+
+  {CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR}
+  An assertion by the user that the number of work-groups of any ND-range kernel recorded in this command
+  buffer will not be updated beyond the number defined when the ND-range kernel was recorded.
+  If the user's update to the values of _local_work_size_ and/or _global_work_size_ result in an increase
+  in the number of work-groups in the ND-range over the number specified when the ND-range kernel was
+  recorded, the behavior is undefined.
+
+|====
+
+===== Additional Errors
+
+* {CL_INVALID_VALUE} if _properties_ has a {CL_COMMAND_BUFFER_ASSERTS_KHR} property with
+  {CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR}, but _local_work_size_ is `NULL`. 
 
 ==== Modifications to clCommandNDRangeKernelKHR
 
@@ -394,6 +433,16 @@ in the table below.
   If {CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR} is not specified then it
   defaults to the value returned by the
   {CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR} device query.
+
+| {CL_MUTABLE_DISPATCH_ASSERTS_KHR}
+| {cl_mutable_dispatch_asserts_khr_TYPE}
+| This is a bitfield and can be set to a combination of the following values:
+
+  {CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR}
+  An assertion by the user that the number of work-groups of this ND-range kernel will not be updated beyond
+  the number defined when the ND-range kernel was recorded. The number of work-groups is
+  defined as the product for each _i_ from _0_ to _work_dim - 1_ of
+  _ceil(global_work_size[i]/local_work_size[i])_.
 |====
 
 ===== Mutable Handle Parameter
@@ -419,6 +468,11 @@ Is replaced with
   {CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR} for the device associated with
   _command_queue_. If _command_queue_ is `NULL`, the device associated with
   _command_buffer_ must report support for these properties.
+  
+The following error condition is added:
+
+* {CL_INVALID_VALUE} if _properties_ has a {CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR} property with
+  {CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR}, but _local_work_size_ is `NULL`.
 
 [[mutable-commands]]
 ==== New Section in the OpenCL API specification 5.X.5 - Mutable Commands:
@@ -483,6 +537,14 @@ state of all commands is known, rather than iteratively updating each command
 individually.
 ====
 
+[NOTE]
+====
+If the command buffer has been created with {CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR}, or
+the updated ND-range command has been recorded with this flag, and the ND-range parameters are updated so
+that the new number of work-groups exceeds the number when the ND-range command was recorded, the behavior
+is undefined.  
+====
+
 _command_buffer_ Refers to a valid command-buffer object.
 
 _mutable_config_ Is a pointer to a
@@ -534,10 +596,6 @@ the array violates the defined conditions:
 
 * {CL_INVALID_VALUE} if _type_ is not
   {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}.
-
-* {CL_INVALID_OPERATION} if values of _local_work_size_ and/or
-  _global_work_size_ result in an increase to the number of work-groups in the
-  ND-range.
 
 * {CL_INVALID_OPERATION} if the values of _local_work_size_ and/or
   _global_work_size_ result in a change to work-group uniformity.
@@ -949,13 +1007,3 @@ non-trivial deep copying of the underlying objects contained in the
 command-buffer. As a result of this new entry-point being an additive change to
 the specification it is omitted, and if its functionality has demand later, it
 may be a introduced as a stand alone extension.
---
-
-. Introduce a `CL_MUTABLE_DISPATCH_ADDITIONAL_WORK_GROUPS_KHR` capability to
-  allow the number of work-groups in kernel execution to be increased during
-  update.
-+
---
-*Resolved*: Can be included in the final release of the extension if there is
-implementation coverage.
---
