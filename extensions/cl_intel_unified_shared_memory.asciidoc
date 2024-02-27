@@ -1260,6 +1260,24 @@ This would be a fairly straightforward addition if it is useful.
 Note that there is no similar SVM "rect" memcpy.
 --
 
+. Should there be an upper limit on the size of an allocation using *clHostMemAllocINTEL*?
+If so, what should the upper limit be?
++
+--
+*UNRESOLVED*:
+The upper limit is currently defined by `CL_DEVICE_MAX_MEM_ALLOC_SIZE` and if the allocation size exceeds this value then *clHostMemAllocINTEL* returns `CL_INVALID_BUFFER_SIZE`.
+
+This behavior is consistent with *clSVMAlloc* (although *clSVMAlloc* does not return an error code it is specified to return a `NULL` pointer in this case) and *clCreateBuffer*.
+However, because *clHostMemAllocINTEL* is intended to allocate host memory, some implementations are able to support larger allocation sizes using *clHostMemAllocINTEL*.
+
+Possible resolutions:
+
+* Add a new query representing the maximum host memory allocation size supported by the device, e.g. `CL_DEVICE_MAX_HOST_MEM_ALLOC_SIZE_INTEL`.
+For some devices, this query will return the same value as `CL_DEVICE_MAX_MEM_ALLOC_SIZE`, but for other devices this query will return a larger value.
+* Relax the error behavior so implementations may return `CL_INVALID_BUFFER_SIZE`, but they would not be required to return an error if they support larger allocation sizes.
+* Do nothing and keep the existing error behavior.
+--
+
 == Revision History
 
 [cols="5,15,15,70"]
