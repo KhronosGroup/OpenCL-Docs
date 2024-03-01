@@ -8852,17 +8852,11 @@ include::{generated}/api/version-notes/clSetEventCallback.asciidoc[]
   * _event_ is a valid event object.
   * _command_exec_callback_type_ specifies the command execution status for
     which the callback is registered.
-    The command execution callback values for which a callback can be registered
-    are: {CL_SUBMITTED}, {CL_RUNNING}, or
-    {CL_COMPLETE} footnote:[{fn-event-callback-complete}].
-    There is no guarantee that the callback functions registered for various
-    execution status values for an event will be called in the exact order that
-    the execution status of a command changes.
-    Furthermore, it should be noted that receiving a call back for an event with
-    a status other than {CL_COMPLETE}, in no way implies that the memory model or
-    execution model as defined by the OpenCL specification has changed.
-    For example, it is not valid to assume that a corresponding memory transfer
-    has completed unless the event is in a state {CL_COMPLETE}.
+    The command execution status types for which a callback can be registered
+    are {CL_SUBMITTED}, {CL_RUNNING}, or {CL_COMPLETE}.
+    The callback function registered for a _command_exec_callback_type_ value of
+    {CL_COMPLETE} will be called when the command has completed successfully or
+    is abnormally terminated.
   * _pfn_event_notify_ is the event callback function that can be registered by
     the application.
     This callback function may be called asynchronously by the OpenCL
@@ -8884,19 +8878,28 @@ include::{generated}/api/version-notes/clSetEventCallback.asciidoc[]
     called.
     _user_data_ can be `NULL`.
 
-The registered callback function will be called when the execution status of
-command associated with _event_ changes to an execution status equal to or
-past the status specified by _command_exec_status_.
-
 Each call to {clSetEventCallback} registers the specified user callback
 function on a callback stack associated with _event_.
 The order in which the registered user callback functions are called is
 undefined.
 
+The registered callback function will be called when the execution status of the
+command associated with _event_ changes to an execution status equal to or past
+the status specified by _command_exec_status_, or for the execution status
+{CL_COMPLETE}, if the command is abnormally terminated.
+There is no guarantee that the callback functions registered for various command
+execution status values for an event will be called in the exact order that the
+execution status of a command changes.
+Furthermore, it should be noted that calling a callback for an event execution
+status other than {CL_COMPLETE} in no way implies that the memory model or
+execution model as defined by the OpenCL specification has changed. For example,
+it is not valid to assume that a corresponding memory transfer has completed
+unless the event is in the state {CL_COMPLETE}.
+
 All callbacks registered for an event object must be called before the event
 object is destroyed.
-Callbacks should return promptly.
 
+Callbacks should return promptly.
 Behavior is undefined when calling expensive system routines, OpenCL APIs to
 create contexts or command-queues, or blocking OpenCL APIs in an event callback.
 Rather than calling a blocking OpenCL API in an event callback, applications
