@@ -442,7 +442,7 @@ MANSOURCES   = $(filter-out $(REFPATH)/apispec.txt $(REFPATH)/footer.txt $(wildc
 # Should pass in $(EXTOPTIONS) to determine which pages to generate.
 # For now, all core and extension ref pages are extracted by genRef.py.
 ## Temporary - eventually should be all spec asciidoctor source files
-SPECFILES = $(wildcard api/*.asciidoc) OpenCL_API.txt OpenCL_C.txt
+SPECFILES = $(wildcard api/[A-Za-z]*.asciidoc) $(wildcard c/[A-Za-z]*.asciidoc) OpenCL_API.txt OpenCL_C.txt
 GENREF = $(SCRIPTS)/genRef.py
 LOGFILE = $(REFPATH)/refpage.log
 
@@ -456,7 +456,7 @@ $(REFPATH)/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(PYAPIMAP)
 	(cat $(MANDIR)/rewritehead ; \
 	 echo ; echo "# Aliases hard-coded in refpage markup" ; \
 	 sort < $(REFPATH)/rewritebody) > $(REFPATH)/.htaccess
-	$(CP) $(MANDIR)/static/*.txt $(REFPATH)
+	echo $(CP) $(MANDIR)/static/*.txt $(REFPATH)
 
 # These targets are HTML5 ref pages
 #
