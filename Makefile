@@ -182,7 +182,7 @@ src:
 # Top-level spec source file
 APISPEC = OpenCL_API
 APISPECSRC = $(APISPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(APISPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+    $(shell grep ^include:: $(APISPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e 's/\r//g' | xargs echo)
 
 apihtml: $(HTMLDIR)/$(APISPEC).html $(APISPECSRC)
 
@@ -202,7 +202,7 @@ $(PDFDIR)/$(APISPEC).pdf: $(APISPECSRC)
 # Top-level spec source file
 ENVSPEC = OpenCL_Env
 ENVSPECSRC = $(ENVSPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(ENVSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+    $(shell grep ^include:: $(ENVSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e 's/\r//g' | xargs echo)
 
 envhtml: $(HTMLDIR)/$(ENVSPEC).html $(ENVSPECSRC)
 
@@ -220,7 +220,7 @@ $(PDFDIR)/$(ENVSPEC).pdf: $(ENVSPECSRC)
 # Extensions spec
 EXTSPEC = OpenCL_Ext
 EXTSPECSRC = $(EXTSPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(EXTSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+    $(shell grep ^include:: $(EXTSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e 's/\r//g' | xargs echo)
 
 exthtml: $(HTMLDIR)/$(EXTSPEC).html $(EXTSPECSRC)
 
@@ -239,7 +239,7 @@ $(PDFDIR)/$(EXTSPEC).pdf: $(EXTSPECSRC)
 EXTDIR = extensions
 EXTENSIONSSPEC = extensions
 EXTENSIONSSPECSRC = $(EXTDIR)/$(EXTENSIONSSPEC).txt ${GENDEPENDS} \
-    $(shell grep ^include:: $(EXTDIR)/$(EXTENSIONSSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+    $(shell grep ^include:: $(EXTDIR)/$(EXTENSIONSSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e 's/\r//g' | xargs echo)
 
 # Included extension documents
 EXTENSIONS := $(notdir $(wildcard $(EXTDIR)/[A-Za-z]*.asciidoc))
@@ -270,7 +270,7 @@ $(PDFDIR)/$(EXTENSIONSSPEC).pdf: $(EXTENSIONSSPECSRC) $(GENDEPENDS)
 # Language Extensions spec
 CEXTDOC = OpenCL_LangExt
 CEXTDOCSRC = $(CEXTDOC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(CEXTDOC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+    $(shell grep ^include:: $(CEXTDOC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e 's/\r//g' | xargs echo)
 
 cexthtml: $(HTMLDIR)/$(CEXTDOC).html $(CEXTDOCSRC)
 
@@ -288,7 +288,7 @@ $(PDFDIR)/$(CEXTDOC).pdf: $(CEXTDOCSRC)
 # C++ (cxx) spec
 CXXSPEC = OpenCL_Cxx
 CXXSPECSRC = $(CXXSPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(CXXSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+    $(shell grep ^include:: $(CXXSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e 's/\r//g' | xargs echo)
 
 cxxhtml: $(HTMLDIR)/$(CXXSPEC).html $(CXXSPECSRC)
 
@@ -306,7 +306,7 @@ $(PDFDIR)/$(CXXSPEC).pdf: $(CXXSPECSRC)
 # C spec
 CSPEC = OpenCL_C
 CSPECSRC = $(CSPEC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(CSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+    $(shell grep ^include:: $(CSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e 's/\r//g' | xargs echo)
 
 chtml: $(HTMLDIR)/$(CSPEC).html $(CSPECSRC)
 
@@ -324,7 +324,7 @@ $(PDFDIR)/$(CSPEC).pdf: $(CSPECSRC)
 # C++ for OpenCL doc
 CXX4OPENCLDOC = CXX_for_OpenCL
 CXX4OPENCLDOCSRC = $(CXX4OPENCLDOC).txt $(GENDEPENDS) \
-    $(shell grep ^include:: $(CXX4OPENCLDOC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+    $(shell grep ^include:: $(CXX4OPENCLDOC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e 's/\r//g' | xargs echo)
 
 cxx4openclhtml: $(HTMLDIR)/$(CXX4OPENCLDOC).html $(CXX4OPENCLDOCSRC)
 
@@ -342,7 +342,7 @@ $(PDFDIR)/$(CXX4OPENCLDOC).pdf: $(CXX4OPENCLDOCSRC)
 # ICD installation guidelines
 ICDINSTSPEC = OpenCL_ICD_Installation
 ICDINSTSPECSRC = $(ICDINSTSPEC).txt \
-    $(shell grep ^include:: $(ICDINSTSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
+    $(shell grep ^include:: $(ICDINSTSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' -e 's/\r//g' | xargs echo)
 
 icdinsthtml: $(HTMLDIR)/$(ICDINSTSPEC).html $(ICDINSTSPECSRC)
 
