@@ -273,7 +273,7 @@ $(PDFDIR)/$(EXTSPEC).pdf: $(EXTSPECSRC)
 # Individual extensions spec(s)
 EXTDIR = extensions
 EXTENSIONSSPEC = extensions
-EXTENSIONSSPECSRC = $(EXTDIR)/$(EXTENSIONSSPEC).txt \
+EXTENSIONSSPECSRC = $(EXTDIR)/$(EXTENSIONSSPEC).txt ${GENDEPENDS} \
     $(shell scripts/find_adoc_deps $(EXTDIR)/$(EXTENSIONSSPEC).txt $(GENERATED))
 
 # Included extension documents
