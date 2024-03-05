@@ -238,7 +238,7 @@ $(PDFDIR)/$(EXTSPEC).pdf: $(EXTSPECSRC)
 # Individual extensions spec(s)
 EXTDIR = extensions
 EXTENSIONSSPEC = extensions
-EXTENSIONSSPECSRC = $(EXTDIR)/$(EXTENSIONSSPEC).txt \
+EXTENSIONSSPECSRC = $(EXTDIR)/$(EXTENSIONSSPEC).txt ${GENDEPENDS} \
     $(shell grep ^include:: $(EXTDIR)/$(EXTENSIONSSPEC).txt | sed -e 's/^include:://' -e 's/\[\]/ /' | xargs echo)
 
 # Included extension documents
