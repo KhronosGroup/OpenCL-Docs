@@ -142,6 +142,48 @@ build is very fast, even for the whole Specification, but PDF builds may
 take several minutes.
 
 
+[[building-extensions]]
+== Building With Extensions Included
+
+Invoking 'make' with no extra arguments will build the OpenCL API and OpenCL
+C Language specifications with only the core APIs and functionality
+included.
+To build versions of these specifications with extension language included,
+you should use the `makeSpec` script.
+`makeSpec` is a Python script accepting the following arguments:
+
+  * -spec _variant_ - _variant_ is `core`, `khr`, or `all`, building
+    specifications with only core, core + all khr extensions and core + all
+    extensions, respectively.
+    At present, `all` is equivalent to `khr` as only `khr` extensions are
+    included in the specification source.
+  * -ext _name_ - add the specified extension _name_ and its dependencies to
+    the build.
+  * -clean - clean generated files before building.
+  * -registry _path_ - use specified API XML instead of the default
+    `xml/cl.xml`.
+  * -v - verbose, print actions before executing them.
+  * -n - dry-run, print actions instead of executing them.
+  * Unrecognized options are passed on to `make`, so must be valid Makefile
+    targets or `make` options such as `-j`.
+
+Any other options reported by `makeSpec --help` are not yet functional, and
+should not be used.
+
+For example, to build with all `khr` extensions, you could use
+
+[source,sh]
+----
+$ makeSpec -clean -spec khr -j html refpages
+----
+
+`makeSpec` is a wrapper which constructs options and invokes `make`
+when building with extensions included, which only affects building the API
+(including reference pages) and C language specifications.
+`makeSpec` determines extension dependencies from the metadata in the
+specified registry XML path.
+
+
 [[refpage-install]]
 == Reference Page Installation
 
@@ -688,6 +730,7 @@ by Khronos.
 [[history]]
 == Revision History
 
+  * 2024-04-07 - Add `makeSpec` instructions.
   * 2023-11-05 - Add hexapdf, remove ghostscript
   * 2020-03-13 - Updated package versions to match Travis build.
   * 2019-06-20 - Add directions for publishing OpenCL 2.2 reference pages,

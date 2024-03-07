@@ -13,6 +13,7 @@ EXTS := $(sort $(EXTENSIONS))
 EXTOPTIONS := $(foreach ext,$(EXTS),-extension $(ext))
 
 QUIET	    ?=
+VERYQUIET   ?= @
 ASCIIDOCTOR ?= asciidoctor
 RM	    = rm -f
 RMRF	    = rm -rf
@@ -49,7 +50,7 @@ VERBOSE =
 # NOTEOPTS   sets options controlling which NOTEs are generated
 # ATTRIBOPTS sets the api revision and enables KaTeX generation
 # ADOCOPTS   options for asciidoc->HTML5 output (book document type)
-# ADOCMANOPTS options for asciidoc->HTML5 output (manpage document type)
+# ADOCREFOPTS options for asciidoc->HTML5 output (manpage document type)
 # Currently unused in CL spec
 NOTEOPTS     = -a editing-notes
 # Spell out RFC2822 format as not all date commands support -R
@@ -119,13 +120,14 @@ ADOCOPTS	      = -d book $(ADOCCOMMONOPTS)
 
 # Asciidoctor options to build refpages
 #
-# ADOCMANOPTS *must* be placed after ADOCOPTS in the command line, so
+# ADOCREFOPTS *must* be placed after ADOCOPTS in the command line, so
 # that it can override spec attribute values.
 #
 # cross-file-links makes custom macros link to other refpages
 # refprefix includes the refpage (not spec) extension metadata.
 # isrefpage is for refpage-specific content
-ADOCMANOPTS	      = -a cross-file-links -a refprefix='refpage.' -a isrefpage -d manpage $(ADOCCOMMONOPTS)
+ADOCREFOPTS	      =  -a cross-file-links -a refprefix='refpage.' \
+			 -a isrefpage -d manpage
 
 # ADOCHTMLOPTS relies on the relative runtime path from the output HTML
 # file to the katex scripts being set with KATEXDIR. This is overridden
@@ -451,7 +453,8 @@ $(REFPATH)/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(PYAPIMAP)
 	$(QUIET)$(MKDIR) $(REFPATH)
 	$(PYTHON) $(GENREF) -genpath $(GENERATED) -basedir $(REFPATH) \
 	    -rewrite $(REFPATH)/rewritebody -toc $(REFPATH)/tocbody \
-	    -log $(LOGFILE) $(SPECFILES)
+	    -log $(LOGFILE) -extpath $(CURDIR)/api \
+	    $(EXTOPTIONS) $(SPECFILES)
 	cat $(MANDIR)/tochead $(REFPATH)/tocbody $(MANDIR)/toctail > $(REFPATH)/toc.html
 	(cat $(MANDIR)/rewritehead ; \
 	 echo ; echo "# Aliases hard-coded in refpage markup" ; \
@@ -464,8 +467,15 @@ $(REFPATH)/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(PYAPIMAP)
 # actual list of man page sources isn't known until after
 # $(REFPATH)/apispec.txt is generated. $(GENDEPENDS) is generated before
 # running the recursive make, so it doesn't trigger twice
+# $(SUBMAKEOPTIONS) suppresses the redundant "Entering / leaving"
+# messages make normally prints out, similarly to suppressing make
+# command output logging in the individual refpage actions below.
+SUBMAKEOPTIONS = --no-print-directory
 manhtmlpages: $(REFPATH)/apispec.txt $(GENDEPENDS)
-	$(MAKE) -e buildmanpages
+	$(QUIET) echo "manhtmlpages: building HTML refpages with these options:"
+	$(QUIET) echo $(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) \
+	    $(ADOCREFOPTS) -o REFPAGE.html REFPAGE.adoc
+	$(MAKE) $(SUBMAKEOPTIONS) -e buildmanpages
 	$(CP) $(MANDIR)/*.html $(MANDIR)/*.css $(MANDIR)/*.gif $(MANHTMLDIR)
 	$(CP) $(REFPATH)/.htaccess $(REFPATH)/*.html $(MANHTMLDIR)
 
@@ -474,14 +484,20 @@ MANHTML     = $(MANSOURCES:$(REFPATH)/%.txt=$(MANHTMLDIR)/%.html)
 
 buildmanpages: $(MANHTML)
 
+# The refpage build process normally generates far too much output, so
+# use VERYQUIET instead of QUIET
 $(MANHTMLDIR)/%.html: KATEXDIR = ../../katex
 $(MANHTMLDIR)/%.html: $(REFPATH)/%.txt $(MANCOPYRIGHT) $(GENDEPENDS) $(KATEXINST)
-	$(QUIET)$(MKDIR) $(MANHTMLDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCHTMLOPTS) $(ADOCMANOPTS) -o $@ $<
+	$(VERYQUIET)echo "Building $@ from $< using default options"
+	$(VERYQUIET)$(MKDIR) $(MANHTMLDIR)
+	$(VERYQUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) \
+	    $(ADOCREFOPTS) -o $@ $<
 
 $(MANHTMLDIR)/intro.html: $(REFPATH)/intro.txt $(MANCOPYRIGHT)
-	$(QUIET)$(MKDIR) $(MANHTMLDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCHTMLOPTS) $(ADOCMANOPTS) -o $@ $<
+	$(VERYQUIET)echo "Building $@ from $< using default options"
+	$(VERYQUIET)$(MKDIR) $(MANHTMLDIR)
+	$(VERYQUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) \
+	    $(ADOCREFOPTS) -o $@ $<
 
 # Targets generated from the XML and registry processing scripts
 #   apimap.py - Python encoding of the registry

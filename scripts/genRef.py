@@ -223,7 +223,7 @@ def refPageShell(pageName, pageDesc, fp, head_content = None, sections=None, tai
     """Generate body of a reference page.
 
     - pageName - string name of the page
-    - pageDesc - string short description of the page
+    - pageDesc - string short description of the page, or empty string
     - fp - file to write to
     - head_content - text to include before the sections
     - sections - iterable returning (title,body) for each section.
@@ -245,6 +245,7 @@ def refPageShell(pageName, pageDesc, fp, head_content = None, sections=None, tai
           conventions.extra_refpage_body,
           '',
           sep='\n', file=fp)
+
     if pageDesc.strip() == '':
         pageDesc = 'NO SHORT DESCRIPTION PROVIDED'
         logWarn('refPageHead: no short description provided for', pageName)
@@ -838,11 +839,8 @@ def genExtension(baseDir, extpath, name, info):
     declares = []
     elem = info.elem
 
-    # Type of extension (instance, device, etc.)
-    ext_type = elem.get('type')
-
     # Autogenerate interfaces from <extension> entry
-    for required in elem.find('require'):
+    for required in elem.findall('require'):
         req_name = required.get('name')
         if not req_name:
             # This is not what we are looking for
@@ -898,7 +896,7 @@ def genExtension(baseDir, extpath, name, info):
     sections = None
 
     refPageShell(name,
-                 "{} extension".format(ext_type),
+                 conventions.extension_short_description(elem),
                  fp,
                  appbody,
                  sections=sections,

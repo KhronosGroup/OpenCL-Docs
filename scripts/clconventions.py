@@ -99,6 +99,11 @@ class OpenCLConventions(ConventionsBase):
         """Return extension name prefix"""
         return 'cl_'
 
+    def extension_short_description(self, elem):
+        """Return a short description of an extension for use in refpages."""
+
+        return 'OpenCL extension'
+
     @property
     def write_contacts(self):
         """Return whether contact list should be written to extension appendices"""
