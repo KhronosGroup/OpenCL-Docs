@@ -1000,9 +1000,6 @@ if __name__ == '__main__':
         registry = Registry(genOpts = genOpts)
         registry.loadFile(results.registry)
 
-        import pdb
-        pdb.set_trace()
-
         if conventions.write_refpage_include:
             # Only extensions with a supported="..." attribute in this set
             # will be considered for extraction/generation.
