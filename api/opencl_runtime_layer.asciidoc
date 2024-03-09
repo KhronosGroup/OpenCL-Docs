@@ -13248,9 +13248,7 @@ Otherwise, it returns one of the following errors:
   ** if _command_queue_ is not a valid command-queue, or
   ** if the device associated with _command_queue_ is not same as one of the
      devices specified by {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} at the time
-     of creating one or more of _sema_objects_, or
-  ** if one or more of _sema_objects_ belong to a context that does not
-     contain a device associated with _command_queue_.
+     of creating one or more of _sema_objects_.
   * {CL_INVALID_VALUE} if _num_sema_objects_ is 0.
   * {CL_INVALID_SEMAPHORE_KHR} if any of the semaphore objects specified by
     _sema_objects_ is not valid.
@@ -14045,6 +14043,25 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_MUTABLE_KHR.asciidoc[]
 endif::cl_khr_command_buffer_mutable_dispatch[]
 
         The default value of this property is `0`.
+
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+| {CL_COMMAND_BUFFER_MUTABLE_DISPATCH_ASSERTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_MUTABLE_DISPATCH_ASSERTS_KHR.asciidoc[]
+  | {cl_mutable_dispatch_asserts_khr_TYPE}
+      | This is a bitfield and can be set to a combination of the following values:
+
+        {CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR_anchor} -
+        An assertion by the user that the number of work-groups of any
+        ND-range kernel recorded in this command buffer will not be updated
+        beyond the number defined when the ND-range kernel was recorded.
+        If the user's update to the values of _local_work_size_ and/or
+        _global_work_size_ result in an increase in the number of
+        work-groups in the ND-range over the number specified when the
+        ND-range kernel was recorded, the behavior is undefined.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR.asciidoc[]
+endif::cl_khr_command_buffer_mutable_dispatch[]
 |====
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
@@ -15126,6 +15143,24 @@ endif::cl_khr_command_buffer_mutable_dispatch[]
 | Recording Properties | Property Value | Description
 
 ifdef::cl_khr_command_buffer_mutable_dispatch[]
+| {CL_MUTABLE_DISPATCH_ASSERTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ASSERTS_KHR.asciidoc[]
+  | {cl_mutable_dispatch_asserts_khr_TYPE}
+    | This is a bitfield and can be set to a combination of the following
+      values:
+
+      {CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR_anchor}
+
+      An assertion by the user that the number of work-groups of this
+      ND-range kernel will not be updated beyond the number defined when the
+      ND-range kernel was recorded.
+      The number of work-groups is defined as the product for each _i_ from
+      _0_ to _work_dim - 1_ of
+      _ceil(global_work_size[i]/local_work_size[i])_.
+
+include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR.asciidoc[]
+
 | {CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR.asciidoc[]
@@ -15190,7 +15225,6 @@ include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_EXEC_INFO_KHR.asciido
       then it defaults to the value returned by the
       {CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR} device query.
 endif::cl_khr_command_buffer_mutable_dispatch[]
-
 |====
 
 [NOTE]
@@ -15269,6 +15303,13 @@ If the `<<cl_khr_command_buffer_mutable_dispatch>>` extension is supported:
     associated with _command_queue_.
     If _command_queue_ is `NULL`, the device associated with
     _command_buffer_ must report support for these properties.
+  * {CL_INVALID_VALUE} if _command_buffer_ was created with the
+    {CL_COMMAND_BUFFER_MUTABLE_DISPATCH_ASSERTS_KHR} property with
+    {CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR} and
+    _local_work_size_ is `NULL`, or if _properties_ includes the
+    {CL_MUTABLE_DISPATCH_ASSERTS_KHR} property with
+    {CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR} and
+    _local_work_size_ is `NULL`.
 endif::cl_khr_command_buffer_mutable_dispatch[]
 
 --
@@ -15685,6 +15726,15 @@ desired state of all commands is known, rather than iteratively updating
 each command individually.
 ====
 
+[NOTE]
+====
+If the command buffer has been created with
+{CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR}, or the updated
+ND-range command has been recorded with this flag, and the ND-range
+parameters are updated so that the new number of work-groups exceeds the
+number when the ND-range command was recorded, the behavior is undefined.
+====
+
 If the _mutable_dispatch_list_ member of _mutable_config_ is non-`NULL`,
 then errors defined by {clEnqueueNDRangeKernel}, {clSetKernelExecInfo},
 {clSetKernelArg}, and {clSetKernelArgSVMPointer} are returned by
@@ -15698,9 +15748,6 @@ defined conditions:
     command object, or created from _command_buffer_.
   * {CL_INVALID_VALUE} if _type_ is not
     {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}.
-  * {CL_INVALID_OPERATION} if values of _local_work_size_ and/or
-    _global_work_size_ result in an increase to the number of work-groups in
-    the ND-range.
   * {CL_INVALID_OPERATION} if the values of _local_work_size_ and/or
     _global_work_size_ result in a change to work-group uniformity.
   * {CL_INVALID_OPERATION} if the _work_dim_ is different from the
