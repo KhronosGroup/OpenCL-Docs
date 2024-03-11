@@ -28,6 +28,7 @@ implementation, the string *cl_khr_icd* will be present in the
 |====
 | *Date*     | *Version* | *Description*
 | 2020-04-21 | 1.0.0     | First assigned version.
+| XXXX-XX-XX | 2.0.0     | Loader managed dispatch.
 |====
 
 [[cl_khr_icd-inferring-vendors-from-function-call-arguments]]
@@ -42,6 +43,8 @@ An object is said to be ICD compatible if it is of the following structure:
 struct _cl_<object>
 {
     struct _cl_icd_dispatch *dispatch;
+    // Since version 2.0.0
+    void *dispatch_data;
     // ... remainder of internal data
 };
 ----
@@ -59,6 +62,14 @@ members can be appended.
 
 Functions which do not have an argument from which the vendor implementation
 may be inferred have been deprecated and may be ignored.
+
+*New in version 2.0.0*, object that are ICD 2 compatible should also contain
+a `dispatch_data` field of type `void *` that the loader is free to modify
+for a platform through the `clIcdSetPlatformDispatchDataKHR` new API entry
+point. In order to distinguish ICD 1 and ICD 2 objects, the pointer to
+`clGetPlatformIDs` in the dispatch structure must be set to
+`CL_ICD2_TAG_KHR`. The vendor driver is responsible for propagating the
+`dispatch_data` value when returning objects to users.
 
 [[cl_khr_icd-icd-data]]
 === ICD Data
@@ -224,6 +235,21 @@ Vendor ICD extension suffix using {clGetPlatformInfo} with the value
 If any of these steps fail, the ICD Loader will ignore the Vendor ICD and
 continue on to the next.
 
+*New in version 2.0.0*, the ICD Loader will also query the following functions
+from the library: {clIcdGetFunctionAddressForPlatformKHR} and
+{clIcdSetPlatformDispatchDataKHR}. If these two functions are present and the
+pointer to `clGetPlatformIDs` in the dispatch structure of a platform is set to
+`CL_ICD2_TAG_KHR` the platform will be deemed ICD 2 compatible and dispatch
+will be managed by the ICD Loader. If the `CL_ICD2_TAG_KHR` tag is present but
+one of the two functions above is missing, the ICD Loader will ignore the
+Vendor ICD and continue on to the next.
+
+For ICD 2 compatible implementations, during initialization, after calling
+{clIcdGetPlatformIDsKHR} to query the available platforms, the ICD Loader
+will, for each platform, query dispatchable entry points using
+{clIcdGetFunctionAddressForPlatformKHR} and then set the platform dispatch
+data using {clIcdSetPlatformDispatchDataKHR}.
+
 [[cl_khr_icd-new-procedures-and-functions]]
 === New Procedures and Functions
 
@@ -232,6 +258,14 @@ continue on to the next.
 cl_int clIcdGetPlatformIDsKHR(cl_uint num_entries,
                               cl_platform_id *platforms,
                               cl_uint *num_platforms);
+
+/* New in version 2.0.0 */
+void *clIcdGetFunctionAddressForPlatformKHR(cl_platform_id platform,
+                                            const char* func_name);
+
+/* New in version 2.0.0 */
+cl_int clIcdSetPlatformDispatchDataKHR(cl_platform_id platform,
+                                       void *dispatch_data);
 ----
 
 [[cl_khr_icd-new-tokens]]
@@ -247,6 +281,13 @@ Returned by {clGetPlatformIDs} when no platforms are found:
 
 ----
 CL_PLATFORM_NOT_FOUND_KHR
+----
+
+*New in version 2.0.0*, Used as a value in the pointer to
+`clGetPlatformIDs` in the dispatch structure.
+
+----
+CL_ICD2_TAG_KHR
 ----
 
 [[cl_khr_icd-additions-to-chapter-4]]
@@ -290,7 +331,35 @@ successfully and there are a non zero number of platforms available.
 It returns {CL_PLATFORM_NOT_FOUND_KHR} if zero platforms are available.
 It returns {CL_INVALID_VALUE} if _num_entries_ is equal to zero and
 _platforms_ is not `NULL` or if both _num_platforms_ and _platforms_ are
-`NULL`."
+`NULL`.
+
+*New in cl_khr_icd version 2.0.0*
+
+The entry point of a given platform that is ICD 2 compatible can be obtained
+using the following function:
+include::{generated}/api/protos/clIcdGetFunctionAddressForPlatformKHR.txt[]
+
+_platform_ refers to the platform ID returned by {clIcdGetPlatformIDsKHR}
+_func_name_ name of an API entry point
+
+{clIcdGetFunctionAddressForPlatformKHR} returns the address of the API entry
+point named by _func_name_. The pointer returned should be cast to a function
+pointer type matching the API entry point as defined in the specification
+header file.
+
+A return value of `NULL` indicates that the specified function does not exist
+for _platform_, or _platform_ is not a valid platform for the implementation.
+
+The `dispatch_data` field of a platform can be set using the following function:
+include::{generated}/api/protos/clIcdSetPlatformDispatchDataKHR.txt[]
+
+_platform_ refers to the platform ID returned by {clIcdGetPlatformIDsKHR}
+_dispatch_data_ is the value to set the `dispatch_data` field of the structure
+to
+
+{clIcdSetPlatformDispatchDataKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+It returns {CL_INVALID_PLATFORM} if _platform_ is not a valid platform."
 
 Add the following to _table 4.1_:
 
@@ -368,4 +437,24 @@ functions without trying to dereference the `NULL` objects for obtaining the
 ICD dispatch table.
 On detecting a `NULL` object it will return one of the an invalid object error
 values (e.g. {CL_INVALID_DEVICE} corresponding to the object in question.
+--
+
+  . How will the ICD loader avoid calling entry points outside of the dispatch
+    table of old implementations, potentially causing segfaults?
++
+--
+RESOLVED: From versions 2.0.0 and above, the loader will be responsible for
+managing dispatch data information per platform. The content of the dispatch
+table is obtained through a dedicated entry point, and missing entry points are
+replaced by stubs that return {CL_INVALID_OPERATION}.
+--
+
+  . How will the ICD loader set the loader managed dispatch information in new
+    objects? Some of these objects may be created by extension functions that
+    the loader is unaware of.
++
+--
+RESOLVED: During initialization, the loader will set the platform dispatch
+information through a new entry point. The implementation will be responsible
+for propagating this information to new objects.
 --
