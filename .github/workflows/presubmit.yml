@@ -1,25 +1,47 @@
 name: Presubmit
+
+permissions:
+  contents: read
+
 on: [push, pull_request]
 
 jobs:
   build:
-    name: Generate all specs
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
+
       - name: Install required packages
         run: |
-          sudo apt-get install -y libpango1.0-dev ghostscript fonts-lyx
-          sudo gem install asciidoctor -v 1.5.8
+          sudo apt-get install -y libpango1.0-dev ghostscript fonts-lyx jing
+          sudo gem install asciidoctor -v 2.0.16
           sudo gem install coderay -v 1.1.1
+          sudo gem install rouge -v 3.19.0
           sudo gem install ttfunk -v 1.5.1
+          sudo gem install hexapdf -v 0.27.0
           sudo gem install asciidoctor-pdf -v 1.5.0
-          sudo MATHEMATICAL_SKIP_STRDUP=1 gem install asciidoctor-mathematical -v 0.2.2
-      - name: Generate all specs
+          sudo gem install asciidoctor-mathematical -v 0.3.5
+
+      - name: List git tag
         run: |
           git describe --tags --dirty
-          make api c env ext cxx4opencl
+
+      - name: Generate all specs
+        run: |
+          make -O -j 5 api c env ext cxx4opencl
+          
+      - name: Generate extension specs
+        run: |
           make extensionshtml
+
+      - name: Generate reference pages
+        run: |
+          make -O -j 5 manhtmlpages
+
+      - name: Validate XML
+        run: |
+          make -C xml validate
