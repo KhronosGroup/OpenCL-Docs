@@ -266,6 +266,10 @@ Add to the list of supported _param_names_ by {clGetSemaphoreInfoKHR}:
 
 === Exporting semaphore external handles
 
+Export operations have the same transference as the specified handle type's import operations. Additionally, exporting a semaphore payload to a handle with copy transference has the same side effects on the source semaphore's payload as executing a semaphore wait operation. 
+
+Please refer to handle specific documentation for more details on transference requirements per handle type.
+
 To export an external handle from a semaphore, call the function
 
 include::{generated}/api/protos/clGetSemaphoreHandleForTypeKHR.txt[]
@@ -308,43 +312,9 @@ Otherwise, it returns one of the following errors:
 
 === Importing semaphore external handles
 
-Applications can import a semaphore payload into an existing semaphore using an
-external semaphore handle. The effects of the import operation will be either
-temporary or permanent, as specified by the application. If the import is
-temporary, the implementation must restore the semaphore to its prior permanent
-state after submitting the next semaphore wait operation. Performing a
-subsequent temporary import on a semaphore before performing a semaphore wait
-has no effect on this requirement; the next wait submitted on the semaphore must
-still restore its last permanent state. A permanent payload import behaves as if
-the target semaphore was destroyed, and a new semaphore was created with the
-same handle but the imported payload. Because importing a semaphore payload
-temporarily or permanently detaches the existing payload from a semaphore,
-similar usage restrictions to those applied to {clReleaseSemaphoreKHR} are
-applied to any command that imports a semaphore payload. Which of these import
-types is used is referred to as the import operation's permanence. Each handle
-type supports either one or both types of permanence.
+Applications can import a semaphore payload by creating a semaphore from an external handle. The implementation must perform the import operation by either referencing or copying the payload referred to by the specified external semaphore handle, depending on the handle's type. When using handle types with reference transference, importing a payload to a semaphore adds the semaphore to the set of all semaphores sharing that payload. This set includes the semaphore from which the payload was exported. Semaphore signaling and waiting operations performed on any semaphore in the set must behave as if the set were a single semaphore. Importing a payload using handle types with copy transference creates a duplicate copy of the payload at the time of import, but makes no further reference to it. Semaphore signaling and waiting operations performed on the target of copy imports must not affect any other semaphore or payload.
 
-The implementation must perform the import operation by either referencing or
-copying the payload referred to by the specified external semaphore handle,
-depending on the handle's type. The import method used is referred to as the
-handle type's transference. When using handle types with reference transference,
-importing a payload to a semaphore adds the semaphore to the set of all
-semaphores sharing that payload. This set includes the semaphore from which the
-payload was exported. Semaphore signaling and waiting operations performed on
-any semaphore in the set must behave as if the set were a single semaphore.
-Importing a payload using handle types with copy transference creates a
-duplicate copy of the payload at the time of import, but makes no further
-reference to it. Semaphore signaling and waiting operations performed on the
-target of copy imports must not affect any other semaphore or payload.
-
-Export operations have the same transference as the specified handle type's
-import operations. Additionally, exporting a semaphore payload to a handle with
-copy transference has the same side effects on the source semaphore's payload as
-executing a semaphore wait operation. If the semaphore was using a temporarily
-imported payload, the semaphore's prior permanent payload will be restored.
-
-Please refer to handle specific specifications for more details on transference and
-permanence requirements specific to handle type.
+Please refer to handle specific documentation for more details on transference requirements per handle type.
 
 === Descriptions of External Semaphore Handle Types
 
@@ -361,15 +331,13 @@ The `cl_khr_external_semaphore_opaque_fd` extension extends {cl_external_semapho
     * {CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR} specifies a POSIX file descriptor handle that has only limited valid usage outside of OpenCL and other compatible APIs. It must be compatible with the POSIX system calls dup, dup2, close, and the non-standard system call dup3. Additionally, it must be transportable over a socket using an SCM_RIGHTS control message. It owns a reference to the underlying synchronization primitive represented by its semaphore object.
 --
 
-Transference and permanence properties for handle types added by `cl_khr_external_semaphore_opaque_fd`:
+Transference properties for handle types added by `cl_khr_external_semaphore_opaque_fd`:
 
-.Transference and Permanence Properties for `cl_khr_external_semaphore_opaque_fd` handles
-[width="100%",cols="60%,<20%,<20%",options="header"]
+.Transference Properties for `cl_khr_external_semaphore_opaque_fd` handles
+[width="100%",cols="60%,<40%",options="header"]
 |====
-| Handle Type | Transference | Permanence
-| {CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR}
-  |  Reference
-      | Temporary, Permanent
+| Handle Type | Transference
+| {CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR}|  Reference
 |====
 
 The `cl_khr_external_semaphore_sync_fd` extension extends {cl_external_semaphore_handle_type_khr_TYPE} to support the following new types of handles, and adds as a property that may be specified when creating a semaphore from an external handle:
@@ -382,15 +350,14 @@ The special value -1 for fd is treated like a valid sync file descriptor referri
 
 Note: This special behavior for importing an invalid sync file descriptor allows easier interoperability with other system APIs which use the convention that an invalid sync file descriptor represents work that has already completed and does not need to be waited for. It is consistent with the option for implementations to return a -1 file descriptor when exporting a {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} from a {cl_semaphore_khr_TYPE} which is signaled.
 
-Transference and permanence properties for handle types added by `cl_khr_external_semaphore_sync_fd`:
+Transference properties for handle types added by `cl_khr_external_semaphore_sync_fd`:
 
-.Transference and Permanence Properties for `cl_khr_external_semaphore_sync_fd` handles
-[width="100%",cols="60%,<20%,<20%",options="header"]
+.Transference Properties for `cl_khr_external_semaphore_sync_fd` handles
+[width="100%",cols="60%,<40%",options="header"]
 |====
-| Handle Type | Transference | Permanence
+| Handle Type | Transference
 | {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR}
   |  Copy
-      | Temporary
 |====
 
 For these extensions, importing a semaphore payload from a file descriptor transfers ownership of the file descriptor from the application to the OpenCL implementation. The application must not perform any operations on the file descriptor after a successful import.
@@ -435,16 +402,15 @@ However, the payload values corresponding to semaphores with type {CL_SEMAPHORE_
 
 
 
-Transference and permanence properties for handle types added by `cl_khr_external_semaphore_dx_fence`:
+Transference properties for handle types added by `cl_khr_external_semaphore_dx_fence`:
 
 --
-.Transference and Permanence Properties for `cl_khr_external_semaphore_dx_fence` handles
-[width="100%",cols="60%,<20%,<20%",options="header"]
+.Transference Properties for `cl_khr_external_semaphore_dx_fence` handles
+[width="100%",cols="60%,<40%",options="header"]
 |====
-| Handle Type | Transference | Permanence
+| Handle Type | Transference
 | {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR}
   |  Reference
-      | Temporary, Permanent
 |====
 --
 
@@ -455,18 +421,16 @@ The `cl_khr_external_semaphore_win32` extension extends {cl_external_semaphore_h
     * {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR} specifies a global share handle that has only limited valid usage outside of OpenCL and other compatible APIs. It is not compatible with any native APIs. It does not own a reference to the underlying synchronization primitive represented by its semaphore object, and will therefore become invalid when all semaphore objects associated with it are destroyed.
 --
 
-Transference and permanence properties for handle types added by `cl_khr_external_semaphore_win32`:
+Transference properties for handle types added by `cl_khr_external_semaphore_win32`:
 
-.Transference and Permanence Properties for `cl_khr_external_semaphore_win32` handles
-[width="100%",cols="60%,<20%,<20%",options="header"]
+.Transference Properties for `cl_khr_external_semaphore_win32` handles
+[width="100%",cols="60%,<40%",options="header"]
 |====
-| Handle Type | Transference | Permanence
+| Handle Type | Transference
 | {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR}
   |  Reference
-      | Temporary, Permanent
 | {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR}
   |  Reference
-      | Temporary, Permanent
 |====
 
 For these extensions, importing a semaphore payload from Windows handles does not transfer ownership of the handle to the OpenCL implementation. For handle types defined as NT handles, the application must release ownership using the CloseHandle system call when the handle is no longer needed.
