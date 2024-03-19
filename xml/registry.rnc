@@ -82,7 +82,7 @@ Types = element types {
 #   api - matches a <feature> api attribute, if present
 #   requires - name of another type definition required by this one
 #   category - if present, 'enum' indicates a matching <enums>
-#       block to generate an enumerated type for, and 'struct'
+#       block to generate an enumerated type for, and 'struct'/'function'
 #       causes special interpretation of the contents of the type
 #       tag including ... TBD ...
 #       Other allowed values are 'include', 'define', 'handle' and 'bitmask',
@@ -122,6 +122,9 @@ Types = element types {
 #       noautovalidity - tag stating that no automatic validity language should be generated
 #       values - comma-separated list of legal values, usually used only for sType enums
 #   <comment> - containing arbitrary text (unused)
+# For types with category 'function', contents should be one <proto> and zero or more <param>
+#   <proto> - contains a single <type> tag, indicating return value of function pointer
+#   <param> - like <param> tag in <command>
 #
 # *** There's a problem here: I'm not sure how to represent the <type>
 # syntax where it may contain arbitrarily interleaved text, <type>, and
@@ -169,7 +172,18 @@ Type = element type {
                 }
             } |
             element comment { text }
-        ) *
+        ) * |
+        (
+            element proto {
+                element type { TypeName }
+            } ,
+            element param {
+                mixed {
+                    element type { TypeName } ? ,
+                    element name { text } ?
+                }
+            } *
+        )
     )
 }
 
