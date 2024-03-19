@@ -1,0 +1,112 @@
+cl_pocl_content_size
+====================
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+:blank: pass:[ +]
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+== Name Strings
+
++cl_pocl_content_size+
+
+== Contact
+
+Pekka Jääskeläinen, TUNI (pekka /dot/ jaaskelainen /at/ tuni /dot/ fi)
+
+https://github.com/pocl/pocl.git
+
+== Contributors
+
+Michal Babej, Tampere University +
+Pekka Jääskeläinen, Tampere University +
+Jan Solanti, Tampere University
+
+== Notice
+
+Copyright (c) 2020-2024 Tampere University
+
+== Status
+
+Final Draft
+
+== Version
+
+[width="40%",cols="25,25"]
+|========================================
+| Version:      | 1.0.0
+| Built On:     | {docdate}
+|========================================
+
+== Dependencies
+
+This extension is written against the OpenCL Specification Version 1.0, Revision 48.
+
+This extension requires OpenCL 1.0 or later.
+
+== Overview
+
+This extension provides a way to to indicate a buffer which will hold
+the number of meaningful bytes in another buffer, after kernel execution.
+
+The implementation can use this as an optimization hint, to internally
+optimize buffer transfers in scenarios with kernels producing dynamic
+data sizes, by not transferring the bytes that were not written to.
+
+== New API Functions
+
+[source,c]
+----
+cl_int CL_API_CALL  clSetContentSizeBufferPoCL (
+    cl_mem  buffer,
+    cl_mem  content_size_buffer);
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 5.2.1, *Creating Buffer Objects*) ::
++
+(Add a new SubSection 5.2.1.1, *Indicating Buffer Has Special Purpose*) :::
++
+
+The function
+
+[source,c]
+----
+cl_int CL_API_CALL  clSetContentSizeBufferPoCL (
+    cl_mem  buffer,
+    cl_mem  content_size_buffer);
+----
+
+is used to indicate that the buffer _content_size_buffer_ will hold the meaningful byte count of the content of buffer _buffer_.
+
+The user is responsible for maintaining the correct meaningful byte count (the implementation does not update the _content_size_buffer_).
+
+_buffer_ is a valid cl_mem object of `CL_MEM_OBJECT_BUFFER` type.
+
+_content_size_buffer_ is a valid cl_mem object of `CL_MEM_OBJECT_BUFFER` type. _content_size_buffer_ must be at least 64bits large. The meaningful byte count is stored as 64bit unsigned integer, little endian.
+
+*clSetContentSizeBufferPoCL* returns `CL_SUCCESS` if the function is executed successfully, otherwise it returns one of the following errors:
+
+* `CL_INVALID_MEM_OBJECT` if _buffer_ or _content_size_buffer_ are not a valid mem objects.
+* `CL_INVALID_VALUE` if _buffer_ or _content_size_buffer_ are not of `CL_MEM_OBJECT_BUFFER` type, or _content_size_buffer_ is too small.
+* `CL_INVALID_CONTEXT` if _buffer_ and _content_size_buffer_ are not in the same context.
+* `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
+* `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host.
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 1.0.0   | 2021-08-27 | Michal Babej | *Initial revision*
+|====

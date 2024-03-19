@@ -1,18 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2013-2020 The Khronos Group Inc.
+# Copyright 2013-2024 The Khronos Group Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
 
 import os
 import re
@@ -42,6 +32,8 @@ class CGeneratorOptions(GeneratorOptions):
                  genEnumBeginEndRange=False,
                  genAliasMacro=False,
                  aliasMacro='',
+                 misracstyle=False,
+                 misracppstyle=False,
                  **kwargs
                  ):
         """Constructor.
@@ -78,7 +70,10 @@ class CGeneratorOptions(GeneratorOptions):
         be generated for enumerated types
         - genAliasMacro - True if the OpenXR alias macro should be generated
         for aliased types (unclear what other circumstances this is useful)
-        - aliasMacro - alias macro to inject when genAliasMacro is True"""
+        - aliasMacro - alias macro to inject when genAliasMacro is True
+        - misracstyle - generate MISRA C-friendly headers
+        - misracppstyle - generate MISRA C++-friendly headers"""
+
         GeneratorOptions.__init__(self, **kwargs)
 
         self.prefixText = prefixText
@@ -125,6 +120,15 @@ class CGeneratorOptions(GeneratorOptions):
 
         self.aliasMacro = aliasMacro
         """alias macro to inject when genAliasMacro is True"""
+
+        self.misracstyle = misracstyle
+        """generate MISRA C-friendly headers"""
+
+        self.misracppstyle = misracppstyle
+        """generate MISRA C++-friendly headers"""
+
+        self.codeGenerator = True
+        """True if this generator makes compilable code"""
 
 
 class COutputGenerator(OutputGenerator):
@@ -387,13 +391,11 @@ class COutputGenerator(OutputGenerator):
             self.appendSection(section, "\n" + body)
 
     def genEnum(self, enuminfo, name, alias):
-        """Generate enumerants.
+        """Generate the C declaration for a constant (a single <enum> value)."""
 
-        <enum> tags may specify their values in several ways, but are usually
-        just integers."""
         OutputGenerator.genEnum(self, enuminfo, name, alias)
-        (_, strVal) = self.enumToValue(enuminfo.elem, False)
-        body = '#define ' + name.ljust(33) + ' ' + strVal
+
+        body = self.buildConstantCDecl(enuminfo, name, alias)
         self.appendSection('enum', body)
 
     def genCmd(self, cmdinfo, name, alias):
@@ -410,3 +412,9 @@ class COutputGenerator(OutputGenerator):
         self.appendSection('command', prefix + decls[0] + '\n')
         if self.genOpts.genFuncPointers:
             self.appendSection('commandPointer', decls[1])
+
+    def misracstyle(self):
+        return self.genOpts.misracstyle;
+
+    def misracppstyle(self):
+        return self.genOpts.misracppstyle;

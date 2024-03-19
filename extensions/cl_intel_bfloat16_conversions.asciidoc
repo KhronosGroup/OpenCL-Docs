@@ -1,0 +1,231 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+
+= cl_intel_bfloat16_conversions
+
+== Name Strings
+
+`cl_intel_bfloat16_conversions`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel +
+Alexey Sotkin, Intel +
+Lukasz Towarek, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2022-2024 Intel Corporation. All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Revision: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL 3.0 C Language specification and the OpenCL SPIR-V Environment specification, V3.0.8.
+
+This extension requires OpenCL 1.0.
+
+== Overview
+
+This extension adds built-in functions to convert between single-precision 32-bit floating-point values and 16-bit `bfloat16` values.
+The 16-bit `bfloat16` format has similar dynamic range as the 32-bit `float` format, albeit with lower precision than the 16-bit `half` format.
+
+Please note that this extension currently does not introduce a `bfloat16` type to OpenCL C and instead the built-in functions convert to or from a `ushort` 16-bit unsigned integer type with a bit pattern that represents a `bfloat16` value.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+None.
+
+== New API Types
+
+None.
+
+== New OpenCL C Functions
+
+[source]
+----
+ushort intel_convert_bfloat16_as_ushort(float source);
+ushort2 intel_convert_bfloat162_as_ushort2(float2 source);
+ushort3 intel_convert_bfloat163_as_ushort3(float3 source);
+ushort4 intel_convert_bfloat164_as_ushort4(float4 source);
+ushort8 intel_convert_bfloat168_as_ushort8(float8 source);
+ushort16 intel_convert_bfloat1616_as_ushort16(float16 source);
+
+float intel_convert_as_bfloat16_float(ushort source);
+float2 intel_convert_as_bfloat162_float2(ushort2 source);
+float3 intel_convert_as_bfloat163_float3(ushort3 source);
+float4 intel_convert_as_bfloat164_float4(ushort4 source);
+float8 intel_convert_as_bfloat168_float8(ushort8 source);
+float16 intel_convert_as_bfloat1616_float16(ushort16 source);
+----
+
+== Modifications to the OpenCL C Specification
+
+=== Add a new Section 6.3.1.X - The `bfloat16` Format
+
+The `bfloat16` format is a floating-point format occupying 16 bits.
+It is a truncated version of the 32-bit IEEE 754 single-precision floating-point format.
+The `bfloat16` format includes one sign bit, eight exponent bits (same as the 32-bit single-precision floating-point format), and 7 mantissa bits (fewer than the 16-bit IEEE 754-2008 half-precision floating-point format).
+This means that a `bfloat16` number may represent numeric values with a similar dynamic range as a 32-bit `float` number, albeit with lower precision than a 16-bit `half` number.
+
+The `cl_intel_bfloat16_conversions` extension does not add `bfloat16` as a supported data type for OpenCL kernels, however the built-in functions added by the extension are able to use and return `bfloat16` data.
+For these built-in functions, the `bfloat16` data is passed to the function or returned from the function by encoding it into a `ushort` 16-bit unsigned integer data type.
+If a future extension adds `bfloat16` as a supported data type for OpenCL kernels, the `bfloat16` data may be reinterpreted and passed to the built-in functions added by `cl_intel_bfloat16_conversions` using the *as_type()* operator.
+
+=== Add a new Section 6.4.X - `bfloat16` Conversions
+
+The `bfloat16` format can be used in explicit conversions using the following suite of functions:
+
+[source]
+----
+// conversions to bfloat16:
+destType intel_convert_bfloat16_as_destType(sourceType)
+destTypen intel_convert_bfloat16n_as_destTypen(sourceTypen)
+
+// conversions from bfloat16:
+destType intel_convert_as_bfloat16_destType(sourceType)
+destTypen intel_convert_as_bfloat16n_destTypen(sourceType)
+----
+
+The number of elements in the source and destination vectors must match.
+
+The only supported rounding mode is implicitly round-to-nearest-even.
+No explicit rounding modes are supported.
+
+Supported scalar and vector data types:
+
+[width="100%",options="header"]
+|====
+| destType | sourceType
+
+| `bfloat16` (as `ushort`)
+  | `float`
+
+| `bfloat162`, `bfloat163`, `bfloat164`, `bfloat168`, `bfloat1616` +
+  (as `ushort2`, `ushort3`, `ushort4`, `ushort8`, `ushort16`)
+  | `float2`, `float3`, `float4`, `float8`, `float16`
+
+| `float`
+  | `bfloat16` (as `ushort`)
+
+| `float2`, `float3`, `float4`, `float8`, `float16`
+  | `bfloat162`, `bfloat163`, `bfloat164`, `bfloat168`, `bfloat1616` +
+    (as `ushort2`, `ushort3`, `ushort4`, `ushort8`, `ushort16`)
+
+|====
+
+== Modifications to the OpenCL SPIR-V Environment Specification
+
+=== Add a new section 5.2.X - `cl_intel_bfloat16_conversions`
+
+If the OpenCL environment supports the extension `cl_intel_bfloat16_conversions` then the environment must accept modules that declare use of the extension `SPV_INTEL_bfloat16_conversion` and that declare the SPIR-V capability *Bfloat16ConversionINTEL*.
+
+For the instructions *OpConvertFToBF16INTEL* and *OpConvertBF16ToFINTEL* added by the extension:
+
+  * Valid types for _Result Type_, _Float Value_, and _Bfloat16 Value_ are Scalars and *OpTypeVectors* with 2, 3, 4, 8, or 16 _Component Count_ components
+
+== Issues
+
+. Should these functions have a special prefix (such as `+__+`) or suffix (such as `+_as_ushort+`) since they do not truly operate on a `bfloat16` type?
++
+--
+*RESOLVED*: Yes, we will use the `+_as_ushort+` nomenclature.
+
+The function name to convert to a `ushort` representing a `bfloat16` value is `intel_convert_bfloat16_as_ushort`.
+
+The function name to convert from a `ushort` representing a `bfloat16` value is `intel_convert_as_bfloat16_float`.
+--
+
+. Should we define a type alias for our `bfloat16` type or use `ushort` (or `short`) directly?
++
+--
+*RESOLVED*: No, we will not define a type alias.
+--
+
+. Should the integer `bfloat16` representation be signed or unsigned?
++
+--
+*RESOLVED*: We will use an unsigned type.
+--
+
+. Should we support vector conversion built-in functions?
++
+--
+*RESOLVED*: Yes, we will support the vector conversion built-in functions for consistency.
+--
+
+. Should we support built-in functions with explicit rounding modes?
++
+--
+*RESOLVED*: No, we will not support the built-in functions with explicit rounding modes for the initial version of this extension.
+
+The only supported rounding mode for the conversion from `float` to `bfloat16` will be the implicit round-to-nearest-even rounding mode.
+
+The conversions from `bfloat16` to `float` are lossless.
+--
+
+. Do we need to support packed conversions?
++
+--
+*RESOLVED*: No, we will not support packed conversions for the initial version of this extension.
+If we decide to add packed conversions we will also need to add them to the SPIR-V extension.
+--
+
+. Do we need to say anything about out-of-range conversions?
++
+--
+*RESOLVED*: No, out-of-range behavior is covered by existing rounding rules.
+--
+
+. How should we name the vector conversion functions?
++
+--
+*RESOLVED*: The name of the vector conversion functions will be `intel_convert_bfloat16__n___as_ushort__n__` and `intel_convert_as_bfloat16__n___float__n__`.
+This is consistent with the naming of the existing conversion functions.
+
+Because `bfloat16` ends with a number this does lead to awkward function names like `intel_convert_bfloat1616_as_ushort16`, but the awkward-ness is preferable to the ambiguity without the vector size suffix.
+
+If we decide to add a true `bfloat16` type we should consider other names that do not end in a number (`bfloat16_t`?).
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Version|Date|Author|Changes
+|0.9.0|2021-09-03|Ben Ashbaugh|*Initial revision*
+|0.9.0|2021-10-01|Ben Ashbaugh|Reduced scope, resolved all open issues.
+|0.9.0|2021-10-19|Ben Ashbaugh|Fixed the names of the vector conversion functions.
+|1.0.0|2022-08-26|Ben Ashbaugh|Updated version.
+|========================================
+
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

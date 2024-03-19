@@ -1,4 +1,4 @@
-// Copyright 2017-2020 The Khronos Group. This work is licensed under a
+// Copyright 2017-2024 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -44,14 +44,18 @@ For all *Atomic Instructions*:
   * Only 32-bit integer types are supported for the _Result Type_ and/or
     type of _Value_.
   * The _Pointer_ operand must be a pointer to the *Function*, *Workgroup*,
-    or *CrossWorkGroup* _Storage Classes_.  Note that an *Atomic Instruction*
+    or *CrossWorkgroup* _Storage Classes_.  Note that an *Atomic Instruction*
     on a pointer to the *Function* _Storage Class_ is valid, but does not
     have defined behavior.
+  * For OpenCL environments that support and declare the *GenericPointer*
+    capability, the _Pointer_ operand may be a pointer to the *Generic* 
+    _Storage Class_, however behavior is still undefined if the *Generic*
+    pointer represents a pointer to the *Function* _Storage Class_.
 
 Recursion is not supported.
 The static function call graph for an entry point must not contain cycles.
 
-Whether irreducible control flow is legal is implementation defined.
+Whether irreducible control flow is legal is implementation-defined.
 
 For the instructions *OpGroupAsyncCopy* and *OpGroupWaitEvents*,
 _Scope_ for _Execution_ must be:
@@ -63,18 +67,18 @@ be one of:
 
   * *Workgroup*
     ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
-       supporting Work Group Collective Functions (where
+       supporting Work-group Collective Functions (where
        {CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT} is {CL_TRUE}).
   * *Subgroup*
     ** For OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices supporting
-       Subgroups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`)
+       Sub-groups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`)
 
 For all other instructions, _Scope_ for _Execution_ must be one of:
 
   * *Workgroup*
   * *Subgroup*
     ** For OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices supporting
-       Subgroups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`)
+       Sub-groups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`)
 
 In an OpenCL 1.2 environment,
 for the *Barrier Instructions* *OpControlBarrier* and *OpMemoryBarrier*, the
@@ -96,7 +100,7 @@ Otherwise, _Scope_ for _Memory_ must be one of:
        {CL_DEVICE_ATOMIC_FENCE_CAPABILITIES}.
   * *Subgroup*
     ** For OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices supporting
-       Subgroups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`).
+       Sub-groups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`).
   * *Invocation*
     ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
        supporting {CL_DEVICE_ATOMIC_SCOPE_WORK_ITEM} in
@@ -119,7 +123,7 @@ And, the memory-order constraint in _Memory Semantics_ must be one of:
 
 In all OpenCL environments, for the *Barrier Instruction* *OpControlBarrier*,
 when the _Scope_ for _Execution_ is *Subgroup*, behavior is undefined unless
-all invocations in the subgroup execute the same dynamic instance of the
+all invocations in the sub-group execute the same dynamic instance of the
 instruction.
 
 In an OpenCL 1.2 environment,
@@ -141,7 +145,7 @@ Otherwise, _Scope_ for _Memory_ must be one of:
        {CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES}.
   * *Subgroup*
     ** For OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices supporting
-       Subgroups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`).
+       Sub-groups (where {CL_DEVICE_MAX_NUM_SUB_GROUPS} is not `0`).
 // From the OpenCL C spec:
 // memory_scope_work_item can only be used with atomic_work_item_fence
 // with flags set to CLK_IMAGE_MEM_FENCE.
@@ -161,9 +165,3 @@ And, the memory-order constraint in _Memory Semantics_ must be one of:
     ** For OpenCL 2.0, OpenCL 2.1, OpenCL 2.2, or OpenCL 3.0 devices
        supporting {CL_DEVICE_ATOMIC_ORDER_SEQ_CST} in
        {CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES}.
-
-For OpenCL environments that support and declare the *GenericPointer*
-capability, the _Pointer_ operand to all *Atomic Instructions* may be
-a pointer to the *Generic* _Storage Class_, however behavior is still
-undefined if the *Generic* pointer represents a pointer to the
-*Function* _Storage Class_.

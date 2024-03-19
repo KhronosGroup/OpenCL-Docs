@@ -1,0 +1,192 @@
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_arm_printf
+:R: pass:q,r[^(R)^]
+
+== Name Strings
+
+`cl_arm_printf`
+
+== Contact
+
+Kevin Petit, Arm (kevin.petit 'at' arm.com)
+
+== Contributors
+
+Scott Moyers, Arm Ltd. +
+Robert Elliott, Arm Ltd. +
+Mats Petersson, Arm Ltd. +
+Vatsalya Prasad, Arm Ltd. +
+Kevin Petit, Arm Ltd. +
+
+== Notice
+
+Copyright (c) 2014-2024 Arm Ltd.
+
+== Status
+
+Shipping.
+
+== Version
+
+Built On: {docdate} +
+Version: 2.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification Version 3.0.10.
+
+This extension requires OpenCL 1.0 (version 1.0.0) or OpenCL 1.2 (version 2.0.0).
+
+== Overview
+
+This extension enables the device-side `printf` built in function for OpenCL C
+versions prior to 1.2 (version 1.0.0 only).
+
+It also extends the `cl_context_properties` enumeration to allow a user defined
+printf callback and/or printf buffer size.
+
+The `printf` built-in function should be used for debugging purposes only and may
+have a significant negative impact on the performance of an OpenCL application.
+
+== New API Enums
+
+Accepted value for the _properties_ parameter to *clCreateContext*:
+
+[source,c]
+----
+CL_PRINTF_CALLBACK_ARM    0x40B0
+CL_PRINTF_BUFFERSIZE_ARM  0x40B1
+----
+
+== New OpenCL C Functions
+
+In version 1.0.0 only:
+
+[source,c]
+----
+int printf( constant char * restrict format, ... );
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 4.4, *Contexts*) ::
++
+--
+
+(Add the following to Table 7, _List of supported context creation parameters by *clCreateContext*_) ::
++
+--
+
+[cols="1,1,4",options="header"]
+|====
+| Context property
+| Property value
+| Description
+
+| `CL_PRINTF_CALLBACK_ARM`
+| `(void)(*callback)(const char *buffer, size_t len, size_t complete, void *user_data)`
+| Specifies a pointer to function to be invoked when printf data is available.
+  Upon invocation the arguments are set to the following values: +
+ +
+- `buffer` is a pointer to a character array of size `len` created by `printf`. +
+- `len` is the number of new characters in `buffer`. +
+- `complete` is set to a non zero value if there is no more data in the device's printf buffer. +
+- `user_data` is the `user_data` parameter specified to *clCreateContext*. +
+
+If this property is not specified, no callback will be registered and any printf output from
+a kernel will be discarded.
+
+| `CL_PRINTF_BUFFERSIZE_ARM`
+| `size_t`
+| Specifies the size of printf buffer allocations to use within the driver.
+A printf buffer is allocated per device per context, within a context the buffer
+will be shared between kernels executing on a device. The implementation is free
+to round up or ignore this value. +
+If this property is not specified an implementation-defined default size will be
+chosen. For OpenCL driver versions prior to OpenCL 1.2 this value will be 1 MiB.
+For driver versions of OpenCL 1.2 or greater this value is defined by the
+`CL_DEVICE_PRINTF_BUFFER_SIZE` value returned by *clGetDeviceInfo*.
+
+|====
+
+--
+--
+
+== Modifications to the OpenCL C Specification
+
+Version 1.0.0 of this extension adds the `printf` built-in function as
+described in 6.15.14 of the OpenCL C specification.
+
+Version 2.0.0 of this extension does not modify the OpenCL C specification.
+
+== Interactions with Other Extensions
+
+None.
+
+== Conformance tests
+
+
+The CTS has been modified to use a callback to gather the data produced by
+`printf` when this extension is supported.
+
+== Issues
+
+None.
+
+== Sample code
+
+Host C code:
+
+[source,c]
+----
+/* Define a printf callback function. */
+void printf_callback( const char *buffer, size_t len, size_t complete, void *user_data )
+{
+    printf( "%.*s", len, buffer );
+}
+
+/* Create a cl_context with a printf_callback and user specified buffer size. */
+cl_context_properties properties[] =
+{
+    /* Enable a printf callback function for this context. */
+    CL_PRINTF_CALLBACK_ARM,   (cl_context_properties) printf_callback,
+
+    /* Request a minimum printf buffer size of 4MiB for devices in the
+       context that support this extension. */
+    CL_PRINTF_BUFFERSIZE_ARM, (cl_context_properties) 0x100000,
+
+    CL_CONTEXT_PLATFORM,      (cl_context_properties) platform,
+    0
+};
+cl_context context = clCreateContext( properties, 1, &device, NULL, NULL, NULL );
+----
+
+Device OpenCL C code:
+
+[source,c]
+----
+// Only required by version 1.0.0 of the extension, version 2.0.0 does not
+// require the following pragma.
+#pragma OPENCL EXTENSION cl_arm_printf : enable
+
+kernel void hello_world( void )
+{
+    printf( "Hello from work item %lu!\n", (ulong) get_global_id(0) );
+}
+----
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 2.0.0   | 2021-12-02 | Kevin Petit  | Transition to asciidoctor, require OpenCL 1.2
+| 1.0.0   | 2014-01-17 | Scott Moyers | *Initial revision*
+|====
+

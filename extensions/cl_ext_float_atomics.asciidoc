@@ -1,0 +1,732 @@
+// Copyright 2018-2024 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+
+ifdef::backend-html5[]
+:CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT: pass:q[`CL_DEVICE_<wbr>SINGLE_<wbr>FP_<wbr>ATOMIC_<wbr>CAPABILITIES_<wbr>EXT`]
+:CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT: pass:q[`CL_DEVICE_<wbr>DOUBLE_<wbr>FP_<wbr>ATOMIC_<wbr>CAPABILITIES_<wbr>EXT`]
+:CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT: pass:q[`CL_DEVICE_<wbr>HALF_<wbr>FP_<wbr>ATOMIC_<wbr>CAPABILITIES_<wbr>EXT`]
+:cl_device_fp_atomic_capabilities_ext_TYPE: pass:q[`cl_device_<wbr>fp_<wbr>atomic_<wbr>capabilities_<wbr>ext`]
+:opencl_c_ext_fp16_global_atomic_load_store: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp16_<wbr>global_<wbr>atomic_<wbr>load_<wbr>store`]
+:opencl_c_ext_fp16_local_atomic_load_store: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp16_<wbr>local_<wbr>atomic_<wbr>load_<wbr>store`]
+:opencl_c_ext_fp16_global_atomic_add: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp16_<wbr>global_<wbr>atomic_<wbr>add`]
+:opencl_c_ext_fp32_global_atomic_add: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp32_<wbr>global_<wbr>atomic_<wbr>add`]
+:opencl_c_ext_fp64_global_atomic_add: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp64_<wbr>global_<wbr>atomic_<wbr>add`]
+:opencl_c_ext_fp16_local_atomic_add: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp16_<wbr>local_<wbr>atomic_<wbr>add`]
+:opencl_c_ext_fp32_local_atomic_add: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp32_<wbr>local_<wbr>atomic_<wbr>add`]
+:opencl_c_ext_fp64_local_atomic_add: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp64_<wbr>local_<wbr>atomic_<wbr>add`]
+:opencl_c_ext_fp16_global_atomic_min_max: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp16_<wbr>global_<wbr>atomic_<wbr>min_<wbr>max`]
+:opencl_c_ext_fp32_global_atomic_min_max: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp32_<wbr>global_<wbr>atomic_<wbr>min_<wbr>max`]
+:opencl_c_ext_fp64_global_atomic_min_max: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp64_<wbr>global_<wbr>atomic_<wbr>min_<wbr>max`]
+:opencl_c_ext_fp16_local_atomic_min_max: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp16_<wbr>local_<wbr>atomic_<wbr>min_<wbr>max`]
+:opencl_c_ext_fp32_local_atomic_min_max: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp32_<wbr>local_<wbr>atomic_<wbr>min_<wbr>max`]
+:opencl_c_ext_fp64_local_atomic_min_max: pass:q[`\__opencl_c_<wbr>ext_<wbr>fp64_<wbr>local_<wbr>atomic_<wbr>min_<wbr>max`]
+endif::[]
+ifndef::backend-html5[]
+:CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT: pass:q[`CL_DEVICE_&#8203;SINGLE_&#8203;FP_&#8203;ATOMIC_&#8203;CAPABILITIES_&#8203;EXT`]
+:CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT: pass:q[`CL_DEVICE_&#8203;DOUBLE_&#8203;FP_&#8203;ATOMIC_&#8203;CAPABILITIES_&#8203;EXT`]
+:CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT: pass:q[`CL_DEVICE_&#8203;HALF_&#8203;FP_&#8203;ATOMIC_&#8203;CAPABILITIES_&#8203;EXT`]
+:cl_device_fp_atomic_capabilities_ext_TYPE: pass:q[`cl_device_&#8203;fp_&#8203;atomic_&#8203;capabilities_&#8203;ext`]
+:opencl_c_ext_fp16_global_atomic_load_store: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp16_&#8203;global_&#8203;atomic_&#8203;load_&#8203;store`]
+:opencl_c_ext_fp16_local_atomic_load_store: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp16_&#8203;local_&#8203;atomic_&#8203;load_&#8203;store`]
+:opencl_c_ext_fp16_global_atomic_add: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp16_&#8203;global_&#8203;atomic_&#8203;add`]
+:opencl_c_ext_fp32_global_atomic_add: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp32_&#8203;global_&#8203;atomic_&#8203;add`]
+:opencl_c_ext_fp64_global_atomic_add: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp64_&#8203;global_&#8203;atomic_&#8203;add`]
+:opencl_c_ext_fp16_local_atomic_add: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp16_&#8203;local_&#8203;atomic_&#8203;add`]
+:opencl_c_ext_fp32_local_atomic_add: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp32_&#8203;local_&#8203;atomic_&#8203;add`]
+:opencl_c_ext_fp64_local_atomic_add: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp64_&#8203;local_&#8203;atomic_&#8203;add`]
+:opencl_c_ext_fp16_global_atomic_min_max: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp16_&#8203;global_&#8203;atomic_&#8203;min_&#8203;max`]
+:opencl_c_ext_fp32_global_atomic_min_max: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp32_&#8203;global_&#8203;atomic_&#8203;min_&#8203;max`]
+:opencl_c_ext_fp64_global_atomic_min_max: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp64_&#8203;global_&#8203;atomic_&#8203;min_&#8203;max`]
+:opencl_c_ext_fp16_local_atomic_min_max: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp16_&#8203;local_&#8203;atomic_&#8203;min_&#8203;max`]
+:opencl_c_ext_fp32_local_atomic_min_max: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp32_&#8203;local_&#8203;atomic_&#8203;min_&#8203;max`]
+:opencl_c_ext_fp64_local_atomic_min_max: pass:q[`\__opencl_c_&#8203;ext_&#8203;fp64_&#8203;local_&#8203;atomic_&#8203;min_&#8203;max`]
+endif::[]
+
+= cl_ext_float_atomics
+:R: pass:q,r[^(R)^]
+Khronos{R} OpenCL Working Group
+
+== Name Strings
+
+`cl_ext_float_atomics`
+
+== Contact
+
+Please see the *Issues* list in the Khronos *OpenCL-Docs* repository: +
+https://github.com/KhronosGroup/OpenCL-Docs
+
+== Contributors
+
+// spell-checker: disable
+Stuart Brady, ARM +
+Sven van Haastregt, ARM +
+Ben Ashbaugh, Intel +
+Alex Paige, Intel +
+Lukasz Towarek, Intel +
+Ruihao Zhang, Qualcomm
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2021-2024 The Khronos Group Inc.
+
+== Status
+
+Final Draft
+
+== Version
+
+Built On: {docdate} +
+Revision: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL API Specification, OpenCL C Specification, and OpenCL SPIR-V Environment Specification Versions 3.0.8.
+
+The functionality added by this extension uses the OpenCL C 2.0 atomic syntax and hence requires OpenCL 2.0 or newer.
+
+This extension interacts with `cl_khr_fp16` by optionally adding the ability to atomically operate on 16-bit floating-point values in memory.
+
+This extension depends on `SPV_EXT_shader_atomic_float_add` and `SPV_EXT_shader_atomic_float_min_max` for implementations that support SPIR-V and floating-point atomic add, min, or max operations.
+
+== Overview
+
+This extension enables programmers to perform atomic operations on floating-point numbers in memory.
+An OpenCL device supporting this extension may support atomic operations on 16-bit half-precision floating-point values (`fp16`), 32-bit single-precision floating-point values (`fp32`), or 64-bit double-precision floating-point values (`fp64`).
+For these types, an OpenCL device may support basic atomic operations (load, store, and exchange), atomic addition and subtraction, and atomic min and max.
+The floating-point numbers may be in global or local memory.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+Accepted value for the _param_name_ parameter to *clGetDeviceInfo* to query the floating-point atomic capabilities of an OpenCL device:
+
+[source]
+----
+#define CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT 0x4231
+#define CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT 0x4232
+#define CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT   0x4233
+----
+
+Bitfield type describing the floating-point atomic capabilities of an OpenCL device.
+Subsequent versions of this extension may add additional floating-point atomic capabilities:
+
+[source]
+----
+typedef cl_bitfield         cl_device_fp_atomic_capabilities_ext;
+
+#define CL_DEVICE_GLOBAL_FP_ATOMIC_LOAD_STORE_EXT       (1 << 0)
+#define CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT              (1 << 1)
+#define CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT          (1 << 2)
+
+/* bits 3 - 15 are currently unused */
+
+#define CL_DEVICE_LOCAL_FP_ATOMIC_LOAD_STORE_EXT        (1 << 16)
+#define CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT               (1 << 17)
+#define CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT           (1 << 18)
+
+/* bits 19 and beyond are currently unused */
+----
+
+== New OpenCL C Feature Names
+
+[source]
+----
+__opencl_c_ext_fp16_global_atomic_load_store
+__opencl_c_ext_fp16_local_atomic_load_store
+__opencl_c_ext_fp16_global_atomic_add
+__opencl_c_ext_fp32_global_atomic_add
+__opencl_c_ext_fp64_global_atomic_add
+__opencl_c_ext_fp16_local_atomic_add
+__opencl_c_ext_fp32_local_atomic_add
+__opencl_c_ext_fp64_local_atomic_add
+__opencl_c_ext_fp16_global_atomic_min_max
+__opencl_c_ext_fp32_global_atomic_min_max
+__opencl_c_ext_fp64_global_atomic_min_max
+__opencl_c_ext_fp16_local_atomic_min_max
+__opencl_c_ext_fp32_local_atomic_min_max
+__opencl_c_ext_fp64_local_atomic_min_max
+----
+
+== New OpenCL C Types
+
+[source]
+----
+atomic_half
+----
+
+== New OpenCL C Functions
+
+Add support for `atomic_half` for the following functions:
+
+[source]
+----
+// atomic_store:
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature.
+void atomic_store(volatile __global A *object, C desired)
+void atomic_store_explicit(volatile __global A *object, C desired, memory_order order)
+void atomic_store_explicit(volatile __global A *object, C desired,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_local_atomic_load_store feature.
+void atomic_store(volatile __local A *object, C desired)
+void atomic_store_explicit(volatile __local A *object, C desired, memory_order order)
+void atomic_store_explicit(volatile __local A *object, C desired,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature
+// and the __opencl_c_ext_fp16_local_atomic_load_store feature.
+void atomic_store(volatile A *object, C desired)
+void atomic_store_explicit(volatile A *object, C desired, memory_order order)
+void atomic_store_explicit(volatile A *object, C desired,
+    memory_order order, memory_scope scope)
+
+// atomic_load:
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature.
+C atomic_load(volatile __global A *object)
+C atomic_load_explicit(volatile __global A *object, memory_order order)
+C atomic_load_explicit(volatile __global A *object,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_local_atomic_load_store feature.
+C atomic_load(volatile __local A *object)
+C atomic_load_explicit(volatile __local A *object, memory_order order)
+C atomic_load_explicit(volatile __local A *object,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature
+// and the __opencl_c_ext_fp16_local_atomic_load_store feature.
+C atomic_load(volatile A *object)
+C atomic_load_explicit(volatile A *object, memory_order order)
+C atomic_load_explicit(volatile A *object,
+    memory_order order, memory_scope scope)
+
+// atomic_exchange:
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature.
+C atomic_exchange(volatile __global A *object, C desired)
+C atomic_exchange_explicit(volatile __global A *object, C desired, memory_order order)
+C atomic_exchange_explicit(volatile __global A *object, C desired,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_local_atomic_load_store feature.
+C atomic_exchange(volatile __local A *object, C desired)
+C atomic_exchange_explicit(volatile __local A *object, C desired, memory_order order)
+C atomic_exchange_explicit(volatile __local A *object, C desired,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature
+// and the __opencl_c_ext_fp16_local_atomic_load_store feature.
+C atomic_exchange(volatile A *object, C desired)
+C atomic_exchange_explicit(volatile A *object, C desired, memory_order order)
+C atomic_exchange_explicit(volatile A *object, C desired,
+    memory_order order, memory_scope scope)
+----
+
+Add support for `atomic_half`, `atomic_float`, and `atomic_double` for the following functions:
+
+[source]
+----
+// atomic_fetch_add / atomic_fetch_sub:
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_add feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_global_atomic_add feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_global_atomic_add feature (for atomic_double).
+C atomic_fetch_add(volatile __global A *object, M operand)
+C atomic_fetch_sub(volatile __global A *object, M operand)
+C atomic_fetch_add_explicit(volatile __global A *object, M operand, memory_order order)
+C atomic_fetch_sub_explicit(volatile __global A *object, M operand, memory_order order)
+C atomic_fetch_add_explicit(volatile __global A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_sub_explicit(volatile __global A *object, M operand,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_local_atomic_add feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_local_atomic_add feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_local_atomic_add feature (for atomic_double).
+C atomic_fetch_add(volatile __local A *object, M operand)
+C atomic_fetch_sub(volatile __local A *object, M operand)
+C atomic_fetch_add_explicit(volatile __local A *object, M operand, memory_order order)
+C atomic_fetch_sub_explicit(volatile __local A *object, M operand, memory_order order)
+C atomic_fetch_add_explicit(volatile __local A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_sub_explicit(volatile __local A *object, M operand,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_add feature
+// and the __opencl_c_ext_fp16_local_atomic_add feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_global_atomic_add feature
+// and the __opencl_c_ext_fp32_local_atomic_add feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_global_atomic_add feature
+// and the __opencl_c_ext_fp64_local_atomic_add feature (for atomic_double).
+C atomic_fetch_add(volatile A *object, M operand)
+C atomic_fetch_sub(volatile A *object, M operand)
+C atomic_fetch_add_explicit(volatile A *object, M operand, memory_order order)
+C atomic_fetch_sub_explicit(volatile A *object, M operand, memory_order order)
+C atomic_fetch_add_explicit(volatile A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_sub_explicit(volatile A *object, M operand,
+    memory_order order, memory_scope scope)
+
+// atomic_fetch_min / atomic_fetch_max:
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_min_max feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_global_atomic_min_max feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_global_atomic_min_max feature (for atomic_double).
+C atomic_fetch_min(volatile __global A *object, M operand)
+C atomic_fetch_max(volatile __global A *object, M operand)
+C atomic_fetch_min_explicit(volatile __global A *object, M operand, memory_order order)
+C atomic_fetch_max_explicit(volatile __global A *object, M operand, memory_order order)
+C atomic_fetch_min_explicit(volatile __global A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_max_explicit(volatile __global A *object, M operand,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_local_atomic_min_max feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_local_atomic_min_max feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_local_atomic_min_max feature (for atomic_double).
+C atomic_fetch_min(volatile __local A *object, M operand)
+C atomic_fetch_max(volatile __local A *object, M operand)
+C atomic_fetch_min_explicit(volatile __local A *object, M operand, memory_order order)
+C atomic_fetch_max_explicit(volatile __local A *object, M operand, memory_order order)
+C atomic_fetch_min_explicit(volatile __local A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_max_explicit(volatile __local A *object, M operand,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_min_max feature
+// and the __opencl_c_ext_fp16_local_atomic_min_max feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_global_atomic_min_max feature
+//and the __opencl_c_ext_fp32_local_atomic_min_max feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_global_atomic_min_max feature
+// and the __opencl_c_ext_fp64_local_atomic_min_max feature (for atomic_double).
+C atomic_fetch_min(volatile A *object, M operand)
+C atomic_fetch_max(volatile A *object, M operand)
+C atomic_fetch_min_explicit(volatile A *object, M operand, memory_order order)
+C atomic_fetch_max_explicit(volatile A *object, M operand, memory_order order)
+C atomic_fetch_min_explicit(volatile A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_max_explicit(volatile A *object, M operand,
+    memory_order order, memory_scope scope)
+----
+
+== Modifications to the OpenCL API Specification
+
+Add to Table 5 - OpenCL Device Queries in Section 4.2 - Querying Devices: ::
++
+--
+[caption="Table 5. "]
+.List of supported param_names by clGetDeviceInfo
+[width="100%",cols="4,3,5",options="header"]
+|====
+| Device Info | Return Type | Description
+| {CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT} +
+  {CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT} +
+  {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} +
+  | {cl_device_fp_atomic_capabilities_ext_TYPE}
+      | Describes the floating-point atomic operations supported by the device.
+        This is a bit-field that describes a combination of the following values:
+
+        `CL_DEVICE_GLOBAL_FP_ATOMIC_LOAD_STORE_EXT` - Can perform floating-point load, store, and exchange atomic operations in global memory. +
+        `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT` - Can perform floating-point addition and subtraction atomic operations in global memory. +
+        `CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT` - Can perform floating-point min and max atomic operations in global memory.
+
+        `CL_DEVICE_LOCAL_FP_ATOMIC_LOAD_STORE_EXT` - Can perform floating-point load, store, and exchange atomic operations in local memory. +
+        `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT` - Can perform floating-point addition and subtraction atomic operations in local memory. +
+        `CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT` - Can perform floating-point min and max atomic operations in local memory.
+        
+        There is no mandated minimum capability.
+|====
+--
+
+== Modifications to the OpenCL C Specification
+
+Add to Table 1 - Optional features in OpenCL C 3.0 or newer and their predefined macros: ::
++
+--
+[caption="Table 1. "]
+.Optional features in OpenCL C 3.0 or newer and their predefined macros
+[cols="1,1",options="header",]
+|====
+| *Feature Macro/Name*
+| *Brief Description*
+
+| {opencl_c_ext_fp16_global_atomic_load_store}, +
+  {opencl_c_ext_fp16_local_atomic_load_store}
+
+| The OpenCL C compiler supports built-in functions to atomically load, store, or exchange 16-bit floating-point values in `+__global+` or `+__local+` memory.
+
+OpenCL C compilers that define the feature macros {opencl_c_ext_fp16_global_atomic_load_store} or {opencl_c_ext_fp16_local_atomic_load_store} must also support the OpenCL extension `cl_khr_fp16`.
+
+Note: built-in functions to atomically load, store, or exchange 32-bit and 64-bit floating-point values are already in OpenCL C 2.0 and newer.
+
+| {opencl_c_ext_fp16_global_atomic_add}, +
+  {opencl_c_ext_fp32_global_atomic_add}, +
+  {opencl_c_ext_fp64_global_atomic_add}, +
+  {opencl_c_ext_fp16_local_atomic_add}, +
+  {opencl_c_ext_fp32_local_atomic_add}, +
+  {opencl_c_ext_fp64_local_atomic_add}
+| The OpenCL C compiler supports built-in functions to atomically add to or subtract from 16-bit, 32-bit, or 64-bit floating-point values in `+__global+` or `+__local+` memory.
+
+OpenCL C compilers that define the feature macros {opencl_c_ext_fp16_global_atomic_add} or {opencl_c_ext_fp16_local_atomic_add} must also support the OpenCL extension `cl_khr_fp16`.
+
+OpenCL C compilers that define the feature macros {opencl_c_ext_fp64_global_atomic_add} or {opencl_c_ext_fp64_local_atomic_add} must also define the feature macro `+__opencl_c_fp64+`.
+
+| {opencl_c_ext_fp16_global_atomic_min_max}, +
+  {opencl_c_ext_fp32_global_atomic_min_max}, +
+  {opencl_c_ext_fp64_global_atomic_min_max}, +
+  {opencl_c_ext_fp16_local_atomic_min_max}, +
+  {opencl_c_ext_fp32_local_atomic_min_max}, +
+  {opencl_c_ext_fp64_local_atomic_min_max}
+| The OpenCL C compiler supports built-in functions to atomically compute the minimum or maximum of a 16-bit, 32-bit, or 64-bit floating-point operand and a value in `+__global+` or `+__local+` memory.
+
+OpenCL C compilers that define the feature macros {opencl_c_ext_fp16_global_atomic_min_max} or {opencl_c_ext_fp16_local_atomic_min_max} must also support the OpenCL extension `cl_khr_fp16`.
+
+OpenCL C compilers that define the feature macros {opencl_c_ext_fp64_global_atomic_min_max} or {opencl_c_ext_fp64_local_atomic_min_max} must also define the feature macro `+__opencl_c_fp64+`.
+
+|====
+--
+
+Add to the list of atomic type names in Section 6.15.12.6 Atomic integer and floating-point types: ::
++
+--
+[none]
+* `atomic_half` ^`*`^
+
+^`*`^ Only if the `cl_khr_fp16` extension is supported and has been enabled.
+--
+
+Add `atomic_half` to the list of atomic types supported by the `atomic_store` functions in section 6.15.12.7.1: ::
++
+--
+[source]
+----
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature.
+void atomic_store(volatile __global A *object, C desired)
+void atomic_store_explicit(volatile __global A *object, C desired, memory_order order)
+void atomic_store_explicit(volatile __global A *object, C desired,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_local_atomic_load_store feature.
+void atomic_store(volatile __local A *object, C desired)
+void atomic_store_explicit(volatile __local A *object, C desired, memory_order order)
+void atomic_store_explicit(volatile __local A *object, C desired,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature
+// and the __opencl_c_ext_fp16_local_atomic_load_store feature.
+void atomic_store(volatile A *object, C desired)
+void atomic_store_explicit(volatile A *object, C desired, memory_order order)
+void atomic_store_explicit(volatile A *object, C desired,
+    memory_order order, memory_scope scope)
+----
+--
+
+Add `atomic_half` to the list of atomic types supported by the `atomic_load` functions in section 6.15.12.7.2: ::
++
+--
+[source]
+----
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature.
+C atomic_load(volatile __global A *object)
+C atomic_load_explicit(volatile __global A *object, memory_order order)
+C atomic_load_explicit(volatile __global A *object,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_local_atomic_load_store feature.
+C atomic_load(volatile __local A *object)
+C atomic_load_explicit(volatile __local A *object, memory_order order)
+C atomic_load_explicit(volatile __local A *object,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature
+// and the __opencl_c_ext_fp16_local_atomic_load_store feature.
+C atomic_load(volatile A *object)
+C atomic_load_explicit(volatile A *object, memory_order order)
+C atomic_load_explicit(volatile A *object,
+    memory_order order, memory_scope scope)
+----
+--
+
+Add `atomic_half` to the list of atomic types supported by the `atomic_exchange` functions in section 6.15.12.7.3: ::
++
+--
+[source]
+----
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature.
+C atomic_exchange(volatile __global A *object, C desired)
+C atomic_exchange_explicit(volatile __global A *object, C desired, memory_order order)
+C atomic_exchange_explicit(volatile __global A *object, C desired,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_local_atomic_load_store feature.
+C atomic_exchange(volatile __local A *object, C desired)
+C atomic_exchange_explicit(volatile __local A *object, C desired, memory_order order)
+C atomic_exchange_explicit(volatile __local A *object, C desired,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_load_store feature
+// and the __opencl_c_ext_fp16_local_atomic_load_store feature.
+C atomic_exchange(volatile A *object, C desired)
+C atomic_exchange_explicit(volatile A *object, C desired, memory_order order)
+C atomic_exchange_explicit(volatile A *object, C desired,
+    memory_order order, memory_scope scope)
+----
+--
+
+Add new floating-point atomic fetch and modify functions for the atomic operations add and sub for the atomic types `atomic_half`, `atomic_float`, and `atomic_double`: ::
++
+--
+[source]
+----
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_add feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_global_atomic_add feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_global_atomic_add feature (for atomic_double).
+C atomic_fetch_add(volatile __global A *object, M operand)
+C atomic_fetch_sub(volatile __global A *object, M operand)
+C atomic_fetch_add_explicit(volatile __global A *object, M operand, memory_order order)
+C atomic_fetch_sub_explicit(volatile __global A *object, M operand, memory_order order)
+C atomic_fetch_add_explicit(volatile __global A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_sub_explicit(volatile __global A *object, M operand,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_local_atomic_add feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_local_atomic_add feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_local_atomic_add feature (for atomic_double).
+C atomic_fetch_add(volatile __local A *object, M operand)
+C atomic_fetch_sub(volatile __local A *object, M operand)
+C atomic_fetch_add_explicit(volatile __local A *object, M operand, memory_order order)
+C atomic_fetch_sub_explicit(volatile __local A *object, M operand, memory_order order)
+C atomic_fetch_add_explicit(volatile __local A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_sub_explicit(volatile __local A *object, M operand,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_add feature
+// and the __opencl_c_ext_fp16_local_atomic_add feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_global_atomic_add feature
+// and the __opencl_c_ext_fp32_local_atomic_add feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_global_atomic_add feature
+// and the __opencl_c_ext_fp64_local_atomic_add feature (for atomic_double).
+C atomic_fetch_add(volatile A *object, M operand)
+C atomic_fetch_sub(volatile A *object, M operand)
+C atomic_fetch_add_explicit(volatile A *object, M operand, memory_order order)
+C atomic_fetch_sub_explicit(volatile A *object, M operand, memory_order order)
+C atomic_fetch_add_explicit(volatile A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_sub_explicit(volatile A *object, M operand,
+    memory_order order, memory_scope scope)
+----
+
+The floating-point atomic add and sub operations may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
+--
+
+Also add new floating-point atomic fetch and modify functions for the atomic operations min and max for the atomic types `atomic_half`, `atomic_float`, and `atomic_double`: ::
++
+--
+[source]
+----
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_min_max feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_global_atomic_min_max feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_global_atomic_min_max feature (for atomic_double).
+C atomic_fetch_min(volatile __global A *object, M operand)
+C atomic_fetch_max(volatile __global A *object, M operand)
+C atomic_fetch_min_explicit(volatile __global A *object, M operand, memory_order order)
+C atomic_fetch_max_explicit(volatile __global A *object, M operand, memory_order order)
+C atomic_fetch_min_explicit(volatile __global A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_max_explicit(volatile __global A *object, M operand,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_local_atomic_min_max feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_local_atomic_min_max feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_local_atomic_min_max feature (for atomic_double).
+C atomic_fetch_min(volatile __local A *object, M operand)
+C atomic_fetch_max(volatile __local A *object, M operand)
+C atomic_fetch_min_explicit(volatile __local A *object, M operand, memory_order order)
+C atomic_fetch_max_explicit(volatile __local A *object, M operand, memory_order order)
+C atomic_fetch_min_explicit(volatile __local A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_max_explicit(volatile __local A *object, M operand,
+    memory_order order, memory_scope scope)
+
+// In addition to the requirements described in the OpenCL C 3.0 specification,
+// requires the __opencl_c_ext_fp16_global_atomic_min_max feature
+// and the __opencl_c_ext_fp16_local_atomic_min_max feature (for atomic_half),
+// requires the __opencl_c_ext_fp32_global_atomic_min_max feature
+// and the __opencl_c_ext_fp32_local_atomic_min_max feature (for atomic_float), or
+// requires the __opencl_c_ext_fp64_global_atomic_min_max feature
+// and the __opencl_c_ext_fp64_local_atomic_min_max feature (for atomic_double).
+C atomic_fetch_min(volatile A *object, M operand)
+C atomic_fetch_max(volatile A *object, M operand)
+C atomic_fetch_min_explicit(volatile A *object, M operand, memory_order order)
+C atomic_fetch_max_explicit(volatile A *object, M operand, memory_order order)
+C atomic_fetch_min_explicit(volatile A *object, M operand,
+    memory_order order, memory_scope scope)
+C atomic_fetch_max_explicit(volatile A *object, M operand,
+    memory_order order, memory_scope scope)
+----
+
+The floating-point atomic min and max operations may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
+
+Additionally, the floating-point atomic min and max operations may behave differently than the `fmin` and `fmax` built-in functions in some cases.
+
+For the floating-point atomic min operation:
+
+* *min*(x, y) = x if x < y and y otherwise,
+* *min*(-0, +0) = *min*(+0, -0) = +0 or -0,
+* *min*(x, qNaN) = *min*(qNaN, x) = x,
+* *min*(qNaN, qNaN) = qNaN,
+* *min*(x, sNaN) = *min*(sNaN, x) = NaN or x, and
+* *min*(NaN, sNaN) = *min*(sNaN, NaN) = NaN
+
+For the floating-point atomic max operation:
+
+* *max*(x, y) = y if x < y and x otherwise,
+* *max*(-0, +0) = *max*(+0, -0) = +0 or -0,
+* *max*(x, qNaN) = *max*(qNaN, x) = x,
+* *max*(qNaN, qNaN) = qNaN,
+* *max*(x, sNaN) = *max*(sNaN, x) = NaN or x, and
+* *max*(NaN, sNaN) = *max*(sNaN, NaN) = NaN
+--
+
+== Modifications to the OpenCL SPIR-V Environment Specification
+
+(Add a new section 5.2.X - `cl_ext_float_atomics`) ::
++
+--
+If the OpenCL environment supports the extension `cl_ext_float_atomics` and the {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} bitfield includes `CL_DEVICE_GLOBAL_FP_ATOMIC_LOAD_STORE_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_LOAD_STORE_EXT`, then for the *Atomic Instructions* *OpAtomicLoad*, *OpAtomicStore*, and *OpAtomicExchange*:
+
+  * 16-bit floating-point types are supported for the _Result Type_ and type of _Value_.
+  * When {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_LOAD_STORE_EXT`, the _Pointer_ operand may be a pointer to the *CrossWorkGroup* _Storage Class_.
+  * When {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_LOCAL_FP_ATOMIC_LOAD_STORE_EXT`, the _Pointer_ operand may be a pointer to the *Workgroup* _Storage Class_.
+  * When {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_LOAD_STORE_EXT` and `CL_DEVICE_LOCAL_FP_ATOMIC_LOAD_STORE_EXT`, and the *GenericPointer* capability is supported and declared, the _Pointer_ operand may be a pointer to the *Generic* _Storage Class_.
+
+If the OpenCL environment supports the extension `cl_ext_float_atomics` and the {CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT}, or {CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT} bitfields include `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT`, then the environment must accept modules that declare use of the extension `SPV_EXT_shader_atomic_float_add`.
+If the OpenCL environment supports the extension `cl_ext_float_atomics` and the {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} bitfield includes `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT`, then the environment must accept modules that declare use of the extensions `SPV_EXT_shader_atomic_float_add` and `SPV_EXT_shader_atomic_float16_add`.
+Additionally:
+
+  * When {CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT`, the *AtomicFloat32AddEXT* capability must be supported.
+  * When {CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT`, the *AtomicFloat64AddEXT* capability must be supported.
+  * When {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT`, the *AtomicFloat16AddEXT* capability must be supported.
+  * For the *Atomic Instruction* *OpAtomicFAddEXT* added by these extensions:
+   ** The instruction may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
+   ** When {CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT}, {CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT}, or {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT`, the _Pointer_ operand may be a pointer to the *CrossWorkGroup* _Storage Class_.
+   ** When {CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT}, {CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT}, or {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT`, the _Pointer_ operand may be a pointer to the *Workgroup* _Storage Class_.
+   ** When {CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT}, {CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT}, or {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_ADD_EXT` and `CL_DEVICE_LOCAL_FP_ATOMIC_ADD_EXT`, and the *GenericPointer* capability is supported and declared, the _Pointer_ operand may be a pointer to the *Generic* _Storage Class_.
+
+If the OpenCL environment supports the extension `cl_ext_float_atomics` and the {CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT}, {CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT}, or {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} bitfields include `CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT`, then the environment must accept modules that declare use of the extension `SPV_EXT_shader_atomic_float_min_max`.
+Additionally:
+
+  * When {CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT`, the *AtomicFloat32MinMaxEXT* capability must be supported.
+  * When {CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT`, the *AtomicFloat64MinMaxEXT* capability must be supported.
+  * When {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT` or `CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT`, the *AtomicFloat16MinMaxEXT* capability must be supported.
+  * For the *Atomic Instructions* *OpAtomicFMinEXT* and *OpAtomicFMaxEXT* added by this extension:
+   ** These instructions may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
+   ** When {CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT}, {CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT}, or {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT`, the _Pointer_ operand may be a pointer to the *CrossWorkGroup* _Storage Class_.
+   ** When {CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT}, {CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT}, or {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT`, the _Pointer_ operand may be a pointer to the *Workgroup* _Storage Class_.
+   ** When {CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT}, {CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT}, or {CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT} includes `CL_DEVICE_GLOBAL_FP_ATOMIC_MIN_MAX_EXT` and `CL_DEVICE_LOCAL_FP_ATOMIC_MIN_MAX_EXT`, and the *GenericPointer* capability is supported and declared, the _Pointer_ operand may be a pointer to the *Generic* _Storage Class_.
+--
+
+== Issues
+
+. Do the enums added by this extension need an `EXT` suffix?
++
+--
+`RESOLVED`: Yes, as per the extension template, enums and APIs added by EXT extensions need an `EXT` suffix.
+--
+
+. Do the OpenCL C built-in functions or types added by this extension need an `ext` prefix or suffix?
++
+--
+`RESOLVED`: No prefix is required for built-in functions added by EXT extensions if the functionality is unlikely to change if it becomes a KHR or core feature.
+--
+
+. Do we need to establish a naming convention for OpenCL C feature and feature test macro names added by extensions?
++
+--
+`RESOLVED`: Yes, we will include a prefix in the name of the feature and feature test macro names for EXT and vendor extensions.
+This gives us the ability to change functionality if it becomes a KHR or core feature.
+Because this is an EXT extension it will use `+__opencl_c_ext_feature_name+` for the OpenCL C feature names it adds.
+--
+
+. Do we need to support the legacy OpenCL C 1.x atomic syntax, or is it sufficient to only support the newer OpenCL C 2.0 atomic syntax?
++
+--
+`RESOLVED`: We will only support the newer OpenCL 2.0 atomic syntax in the initial version of this extension.
+--
+
+. Do we need to document any special floating-point behavior for floating-point atomic add?
++
+--
+`RESOLVED`: Floating-point atomic add may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`, otherwise there is no special behavior.
+--
+
+. Do we need to document any special floating-point behavior for floating-point atomic min and max?
++
+--
+`RESOLVED`: This spec inherits all of the special-case NaN behavior from the SPIR-V atomic min and max spec.
+Additionally, floating-point atomic min and max may be affected by compiler options affecting floating-point behavior, such as `-cl-no-signed-zeros`, `-cl-denorms-are-zero`, and `-cl-finite-math-only`.
+Otherwise, there is no special behavior.
+--
+
+
+== Revision History
+
+[cols="5,15,15,65"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Version|Date|Author|Changes
+|1.0.0|2020-08-12|Ben Ashbaugh|*Final draft.*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

@@ -1,23 +1,11 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: rouge
+:source-language: opencl
+:rouge-style: opencl.spec
+
 = cl_intel_subgroups_short
-
-// This section needs to be after the document title.
-:doctype: book
-:toc2:
-:toc: left
-:encoding: utf-8
-:lang: en
-
-:blank: pass:[ +]
-
-// Set the default source code type in this document to C,
-// for syntax highlighting purposes.
-:language: c
-
-// This is what is needed for C++, since docbook uses c++
-// and everything else uses cpp.  This doesn't work when
-// source blocks are in table cells, though, so don't use
-// C++ unless it is required.
-//:language: {basebackend@docbook:c++:cpp}
 
 == Name Strings
 
@@ -31,6 +19,7 @@ Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
 
 // spell-checker: disable
 Ben Ashbaugh, Intel +
+Eugene Chereshnev, Intel +
 Felix J Degrood, Intel +
 Biju George, Intel +
 Raun M Krisch, Intel +
@@ -40,16 +29,16 @@ Insoo Woo, Intel
 
 == Notice
 
-Copyright (c) 2018-2019 Intel Corporation.  All rights reserved.
+Copyright (c) 2018-2024 Intel Corporation.  All rights reserved.
 
 == Status
 
-Final Draft
+Complete
 
 == Version
 
 Built On: {docdate} +
-Revision: 3
+Revision: 1.1.0
 
 == Dependencies
 
@@ -58,16 +47,16 @@ This extension is written against the OpenCL API Specification Version 2.2 (revi
 
 == Overview
 
-The goal of this extension is to allow programmers to improve the performance of applications operating on 16-bit data types by extending the subgroup functions described in the `cl_intel_subgroups` extension to support 16-bit integer data types (`shorts` and `ushorts`).
+The goal of this extension is to allow programmers to improve the performance of applications operating on 16-bit data types by extending the sub-group functions described in the `cl_intel_subgroups` extension to support 16-bit integer data types (`shorts` and `ushorts`).
 Specifically, the extension:
 
-* Extends the subgroup broadcast function to allow 16-bit integer values to be broadcast from one work item to all other work items in the subgroup.
+* Extends the sub-group broadcast function to allow 16-bit integer values to be broadcast from one work item to all other work items in the sub-group.
 
-* Extends the subgroup scan and reduction functions to operate on 16-bit integer data types.
+* Extends the sub-group scan and reduction functions to operate on 16-bit integer data types.
 
-* Extends the Intel subgroup shuffle functions to allow arbitrarily exchanging 16-bit integer values among work items in the subgroup.
+* Extends the Intel sub-group shuffle functions to allow arbitrarily exchanging 16-bit integer values among work items in the sub-group.
 
-* Extends the Intel subgroup block read and write functions to allow reading and writing 16-bit integer data from images and buffers.
+* Extends the Intel sub-group block read and write functions to allow reading and writing 16-bit integer data from images and buffers.
 
 == New API Functions
 
@@ -79,106 +68,114 @@ None.
 
 == New OpenCL C Functions
 
-Add `short` and `ushort` to the list of supported data types for the subgroup broadcast, scan, and reduction functions: ::
+Add `short` and `ushort` to the list of supported data types for the sub-group broadcast, scan, and reduction functions: ::
 +
 --
-[source]
+[source,opencl_c]
 ----
-short   intel_sub_group_broadcast( short x, uint sub_group_local_id )
-ushort  intel_sub_group_broadcast( ushort x, uint sub_group_local_id )
+short   intel_sub_group_broadcast( short x, uint sub_group_local_id );
+ushort  intel_sub_group_broadcast( ushort x, uint sub_group_local_id );
 
-short   intel_sub_group_reduce_add( short x )
-ushort  intel_sub_group_reduce_add( ushort x )
-short   intel_sub_group_reduce_min( short x )
-ushort  intel_sub_group_reduce_min( ushort x )
-short   intel_sub_group_reduce_max( short x )
-ushort  intel_sub_group_reduce_max( ushort x )
+short   intel_sub_group_reduce_add( short x );
+ushort  intel_sub_group_reduce_add( ushort x );
+short   intel_sub_group_reduce_min( short x );
+ushort  intel_sub_group_reduce_min( ushort x );
+short   intel_sub_group_reduce_max( short x );
+ushort  intel_sub_group_reduce_max( ushort x );
 
-short   intel_sub_group_scan_exclusive_add( short x )
-ushort  intel_sub_group_scan_exclusive_add( ushort x )
-short   intel_sub_group_scan_exclusive_min( short x )
-ushort  intel_sub_group_scan_exclusive_min( ushort x )
-short   intel_sub_group_scan_exclusive_max( short x )
-ushort  intel_sub_group_scan_exclusive_max( ushort x )
+short   intel_sub_group_scan_exclusive_add( short x );
+ushort  intel_sub_group_scan_exclusive_add( ushort x );
+short   intel_sub_group_scan_exclusive_min( short x );
+ushort  intel_sub_group_scan_exclusive_min( ushort x );
+short   intel_sub_group_scan_exclusive_max( short x );
+ushort  intel_sub_group_scan_exclusive_max( ushort x );
 
-short   intel_sub_group_scan_inclusive_add( short x )
-ushort  intel_sub_group_scan_inclusive_add( ushort x )
-short   intel_sub_group_scan_inclusive_min( short x )
-ushort  intel_sub_group_scan_inclusive_min( ushort x )
-short   intel_sub_group_scan_inclusive_max( short x )
-ushort  intel_sub_group_scan_inclusive_max( ushort x )
+short   intel_sub_group_scan_inclusive_add( short x );
+ushort  intel_sub_group_scan_inclusive_add( ushort x );
+short   intel_sub_group_scan_inclusive_min( short x );
+ushort  intel_sub_group_scan_inclusive_min( ushort x );
+short   intel_sub_group_scan_inclusive_max( short x );
+ushort  intel_sub_group_scan_inclusive_max( ushort x );
 ----
 --
 
 Add `short`, `short2`, `short3`, `short4`, `short8`, `short16`, `ushort`, `ushort2`, `ushort3`, `ushort4`, `ushort8`, and `ushort16` to the list of `gentype` data types supported by the `sub_group_shuffle`, `sub_group_shuffle_down`, `sub_group_shuffle_up`, and `sub_group_shuffle_xor` functions: ::
 +
 --
-[source]
+[source,opencl_c]
 ----
-gentype intel_sub_group_shuffle( gentype data, uint c )
+gentype intel_sub_group_shuffle( gentype data, uint c );
 gentype intel_sub_group_shuffle_down(
-                gentype current, gentype next, uint delta )
+                gentype current, gentype next, uint delta );
 gentype intel_sub_group_shuffle_up(
-                gentype previous, gentype current, uint delta )
-gentype intel_sub_group_shuffle_xor( gentype data, uint value )
+                gentype previous, gentype current, uint delta );
+gentype intel_sub_group_shuffle_xor( gentype data, uint value );
 ----
 --
 
-Add `ushort` variants of the subgroup block read and write functions: ::
+Add `ushort` variants of the sub-group block read and write functions: ::
 +
 --
-[source]
+[source,opencl_c]
 ----
-ushort   intel_sub_group_block_read_us( const __global ushort* p )
-ushort2  intel_sub_group_block_read_us2( const __global ushort* p )
-ushort4  intel_sub_group_block_read_us4( const __global ushort* p )
-ushort8  intel_sub_group_block_read_us8( const __global ushort* p )
-ushort   intel_sub_group_block_read_us( image2d_t image, int2 byte_coord )
-ushort2  intel_sub_group_block_read_us2( image2d_t image, int2 byte_coord )
-ushort4  intel_sub_group_block_read_us4( image2d_t image, int2 byte_coord )
-ushort8  intel_sub_group_block_read_us8( image2d_t image, int2 byte_coord )
+ushort   intel_sub_group_block_read_us( const __global ushort* p );
+ushort2  intel_sub_group_block_read_us2( const __global ushort* p );
+ushort4  intel_sub_group_block_read_us4( const __global ushort* p );
+ushort8  intel_sub_group_block_read_us8( const __global ushort* p );
+ushort   intel_sub_group_block_read_us( image2d_t image, int2 byte_coord );
+ushort2  intel_sub_group_block_read_us2( image2d_t image, int2 byte_coord );
+ushort4  intel_sub_group_block_read_us4( image2d_t image, int2 byte_coord );
+ushort8  intel_sub_group_block_read_us8( image2d_t image, int2 byte_coord );
 
-void  intel_sub_group_block_write_us( __global ushort* p, ushort data )
-void  intel_sub_group_block_write_us2( __global ushort* p, ushort2 data )
-void  intel_sub_group_block_write_us4( __global ushort* p, ushort4 data )
-void  intel_sub_group_block_write_us8( __global ushort* p, ushort8 data )
-void  intel_sub_group_block_write_us( image2d_t image, int2 byte_coord, ushort data )
-void  intel_sub_group_block_write_us2( image2d_t image, int2 byte_coord, ushort2 data )
-void  intel_sub_group_block_write_us4( image2d_t image, int2 byte_coord, ushort4 data )
-void  intel_sub_group_block_write_us8( image2d_t image, int2 byte_coord, ushort8 data )
+void  intel_sub_group_block_write_us( __global ushort* p, ushort data );
+void  intel_sub_group_block_write_us2( __global ushort* p, ushort2 data );
+void  intel_sub_group_block_write_us4( __global ushort* p, ushort4 data );
+void  intel_sub_group_block_write_us8( __global ushort* p, ushort8 data );
+void  intel_sub_group_block_write_us( image2d_t image, int2 byte_coord, ushort data );
+void  intel_sub_group_block_write_us2( image2d_t image, int2 byte_coord, ushort2 data );
+void  intel_sub_group_block_write_us4( image2d_t image, int2 byte_coord, ushort4 data );
+void  intel_sub_group_block_write_us8( image2d_t image, int2 byte_coord, ushort8 data );
+
+/* Extension version 1.1 adds the functions: */
+
+ushort16 intel_sub_group_block_read_us16( const __global ushort* p );
+ushort16 intel_sub_group_block_read_us16( image2d_t image, int2 byte_coord );
+
+void  intel_sub_group_block_write_us16( __global ushort* p, ushort16 data );
+void  intel_sub_group_block_write_us16( image2d_t image, int2 byte_coord, ushort16 data );
 ----
 --
 
-For naming consistency, also add suffixed aliases of the `uint` subgroup block read and write functions described in the `cl_intel_subgroups` extension: ::
+For naming consistency, also add suffixed aliases of the `uint` sub-group block read and write functions described in the `cl_intel_subgroups` extension: ::
 +
 --
-[source]
+[source,opencl_c]
 ----
-uint  intel_sub_group_block_read_ui( const __global uint* p )
-uint2 intel_sub_group_block_read_ui2( const __global uint* p )
-uint4 intel_sub_group_block_read_ui4( const __global uint* p )
-uint8 intel_sub_group_block_read_ui8( const __global uint* p )
-uint  intel_sub_group_block_read_ui( image2d_t image, int2 byte_coord )
-uint2 intel_sub_group_block_read_ui2( image2d_t image, int2 byte_coord )
-uint4 intel_sub_group_block_read_ui4( image2d_t image, int2 byte_coord )
-uint8 intel_sub_group_block_read_ui8( image2d_t image, int2 byte_coord )
+uint  intel_sub_group_block_read_ui( const __global uint* p );
+uint2 intel_sub_group_block_read_ui2( const __global uint* p );
+uint4 intel_sub_group_block_read_ui4( const __global uint* p );
+uint8 intel_sub_group_block_read_ui8( const __global uint* p );
+uint  intel_sub_group_block_read_ui( image2d_t image, int2 byte_coord );
+uint2 intel_sub_group_block_read_ui2( image2d_t image, int2 byte_coord );
+uint4 intel_sub_group_block_read_ui4( image2d_t image, int2 byte_coord );
+uint8 intel_sub_group_block_read_ui8( image2d_t image, int2 byte_coord );
 
-void  intel_sub_group_block_write_ui( __global uint* p, uint data )
-void  intel_sub_group_block_write_ui2( __global uint* p, uint2 data )
-void  intel_sub_group_block_write_ui4( __global uint* p, uint4 data )
-void  intel_sub_group_block_write_ui8( __global uint* p, uint8 data )
-void  intel_sub_group_block_write_ui( image2d_t image, int2 byte_coord, uint data )
-void  intel_sub_group_block_write_ui2( image2d_t image, int2 byte_coord, uint2 data )
-void  intel_sub_group_block_write_ui4( image2d_t image, int2 byte_coord, uint4 data )
-void  intel_sub_group_block_write_ui8( image2d_t image, int2 byte_coord, uint8 data )
+void  intel_sub_group_block_write_ui( __global uint* p, uint data );
+void  intel_sub_group_block_write_ui2( __global uint* p, uint2 data );
+void  intel_sub_group_block_write_ui4( __global uint* p, uint4 data );
+void  intel_sub_group_block_write_ui8( __global uint* p, uint8 data );
+void  intel_sub_group_block_write_ui( image2d_t image, int2 byte_coord, uint data );
+void  intel_sub_group_block_write_ui2( image2d_t image, int2 byte_coord, uint2 data );
+void  intel_sub_group_block_write_ui4( image2d_t image, int2 byte_coord, uint4 data );
+void  intel_sub_group_block_write_ui8( image2d_t image, int2 byte_coord, uint8 data );
 ----
 --
 
 == Modifications to the OpenCL C Specification
 
-=== Additions to Section 6.13.15 - "Work Group Functions"
+=== Additions to Section 6.13.15 - "Work-group Functions"
 
-Add `short` and `ushort` to the list of supported data types for the subgroup broadcast, scan, and reduction functions: ::
+Add `short` and `ushort` to the list of supported data types for the sub-group broadcast, scan, and reduction functions: ::
 +
 --
 [cols="2a,1",options="header"]
@@ -186,90 +183,90 @@ Add `short` and `ushort` to the list of supported data types for the subgroup br
 | *Function*
 | *Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 gentype sub_group_broadcast(
           gentype x,
-          uint sub_group_local_id )
+          uint sub_group_local_id );
 
-short    intel_sub_group_broadcast( 
+short   intel_sub_group_broadcast( 
           short x,
-          uint sub_group_local_id )
-ushort   intel_sub_group_broadcast(
+          uint sub_group_local_id );
+ushort  intel_sub_group_broadcast(
           ushort x,
-          uint sub_group_local_id )
+          uint sub_group_local_id );
 ----
 
-| Broadcasts the value of _x_ for work item identified by _sub_group_local_id_ (value returned by  *get_sub_group_local_id*) to all work items in the subgroup.
-_sub_group_local_id_ must be the same value for all work items in the subgroup.
+| Broadcasts the value of _x_ for work item identified by _sub_group_local_id_ (value returned by  *get_sub_group_local_id*) to all work items in the sub-group.
+_sub_group_local_id_ must be the same value for all work items in the sub-group.
 
-|[source,c]
+|[source,opencl_c]
 ----
-gentype sub_group_reduce_add( gentype x )
-gentype sub_group_reduce_min( gentype x )
-gentype sub_group_reduce_max( gentype x )
+gentype sub_group_reduce_add( gentype x );
+gentype sub_group_reduce_min( gentype x );
+gentype sub_group_reduce_max( gentype x );
 
-short    intel_sub_group_reduce_add( short x )
-ushort   intel_sub_group_reduce_add( ushort x )
-short    intel_sub_group_reduce_min( short x )
-ushort   intel_sub_group_reduce_min( ushort x )
-short    intel_sub_group_reduce_max( short x )
-ushort   intel_sub_group_reduce_max( ushort x )
-----
-
-| Returns the result of the specified reduction operation for all values of _x_ specified by work items in a subgroup.
-
-|[source,c]
-----
-gentype sub_group_scan_exclusive_add( gentype x )
-gentype sub_group_scan_exclusive_min( gentype x )
-gentype sub_group_scan_exclusive_max( gentype x )
-
-short    intel_sub_group_scan_exclusive_add( short x )
-ushort   intel_sub_group_scan_exclusive_add( ushort x )
-short    intel_sub_group_scan_exclusive_min( short x )
-ushort   intel_sub_group_scan_exclusive_min( ushort x )
-short    intel_sub_group_scan_exclusive_max( short x )
-ushort   intel_sub_group_scan_exclusive_max( ushort x )
+short   intel_sub_group_reduce_add( short x );
+ushort  intel_sub_group_reduce_add( ushort x );
+short   intel_sub_group_reduce_min( short x );
+ushort  intel_sub_group_reduce_min( ushort x );
+short   intel_sub_group_reduce_max( short x );
+ushort  intel_sub_group_reduce_max( ushort x );
 ----
 
-| Performs the specified exclusive scan operation of all values _x_ specified by work items in a subgroup.
+| Returns the result of the specified reduction operation for all values of _x_ specified by work items in a sub-group.
+
+|[source,opencl_c]
+----
+gentype sub_group_scan_exclusive_add( gentype x );
+gentype sub_group_scan_exclusive_min( gentype x );
+gentype sub_group_scan_exclusive_max( gentype x );
+
+short   intel_sub_group_scan_exclusive_add( short x );
+ushort  intel_sub_group_scan_exclusive_add( ushort x );
+short   intel_sub_group_scan_exclusive_min( short x );
+ushort  intel_sub_group_scan_exclusive_min( ushort x );
+short   intel_sub_group_scan_exclusive_max( short x );
+ushort  intel_sub_group_scan_exclusive_max( ushort x );
+----
+
+| Performs the specified exclusive scan operation of all values _x_ specified by work items in a sub-group.
 The scan results are returned for each work item.
 
-The scan order is defined by increasing subgroup local ID within the subgroup.
+The scan order is defined by increasing sub-group local ID within the sub-group.
 
-|[source,c]
+|[source,opencl_c]
 ----
-gentype sub_group_scan_inclusive_add( gentype x)
-gentype sub_group_scan_inclusive_min( gentype x)
-gentype sub_group_scan_inclusive_max( gentype x)
+gentype sub_group_scan_inclusive_add( gentype x );
+gentype sub_group_scan_inclusive_min( gentype x );
+gentype sub_group_scan_inclusive_max( gentype x );
 
-short    intel_sub_group_scan_inclusive_add( short x )
-ushort   intel_sub_group_scan_inclusive_add( ushort x )
-short    intel_sub_group_scan_inclusive_min( short x )
-ushort   intel_sub_group_scan_inclusive_min( ushort x )
-short    intel_sub_group_scan_inclusive_max( short x )
-ushort   intel_sub_group_scan_inclusive_max( ushort x )
+short   intel_sub_group_scan_inclusive_add( short x );
+ushort  intel_sub_group_scan_inclusive_add( ushort x );
+short   intel_sub_group_scan_inclusive_min( short x );
+ushort  intel_sub_group_scan_inclusive_min( ushort x );
+short   intel_sub_group_scan_inclusive_max( short x );
+ushort  intel_sub_group_scan_inclusive_max( ushort x );
 ----
 
-| Performs the specified inclusive scan operation of all values _x_ specified by work items in a subgroup.
+| Performs the specified inclusive scan operation of all values _x_ specified by work items in a sub-group.
 The scan results are returned for each work item.
 
-The scan order is defined by increasing subgroup local ID within the subgroup.
+The scan order is defined by increasing sub-group local ID within the sub-group.
 
 |====
 --
 
-=== Additions to Section 6.13.X - "Sub Group Shuffle Functions"
+=== Additions to Section 6.13.X - "Sub-group Shuffle Functions"
 
 This section was added by the `cl_intel_subgroups` extension.
 
 Add `short`, `short2`, `short3`, `short4`, `short8`, `short16`, `ushort`, `ushort2`, `ushort3`, `ushort4`, `ushort8`, and `ushort16` to the list of data types supported by the `sub_group_shuffle`, `sub_group_shuffle_down`, `sub_group_shuffle_up`, and `sub_group_shuffle_xor` functions: ::
 +
 --
-The OpenCL C programming language implements the following built-in functions to allow data to be exchanged among work items in a subgroup.
-These built-in functions need not be encountered by all work items in a subgroup executing the kernel, however, data may only be shuffled among work items encountering the subgroup shuffle function.
-Shuffling data from a work item that does not encounter the subgroup shuffle function will produce undefined results.
+The OpenCL C programming language implements the following built-in functions to allow data to be exchanged among work items in a sub-group.
+These built-in functions need not be encountered by all work items in a sub-group executing the kernel, however, data may only be shuffled among work items encountering the sub-group shuffle function.
+Shuffling data from a work item that does not encounter the sub-group shuffle function will produce undefined results.
 For these functions, `gentype` is `float`, `float2`, `float3`, `float4`, `float8`, `float16`, `short`, `short2`, `short3`, `short4`, `short8`, `short16`, `ushort`, `ushort2`, `ushort3`, `ushort4`, `ushort8`, `ushort16`, `int`, `int2`, `int3`, `int4`, `int8`, `int16`, `uint`, `uint2`, `uint3`, `uint4`, `uint8`, `uint16`, `long`, or `ulong`.
 
 If `cl_khr_fp16` is supported, `gentype` also includes `half`.
@@ -277,7 +274,7 @@ If `cl_khr_fp16` is supported, `gentype` also includes `half`.
 If `cl_khr_fp64` or doubles are supported, `gentype` also includes `double`.
 --
 
-=== Modifications to Section 6.13.X "Sub Group Read and Write Functions"
+=== Modifications to Section 6.13.X "Sub-group Read and Write Functions"
 
 This section was added by the `cl_intel_subgroups` extension.
 
@@ -289,113 +286,113 @@ Add suffixed aliases of the previously un-suffixed 32-bit block read and write f
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint  intel_sub_group_block_read(
-        const __global uint* p )
+        const __global uint* p );
 uint2 intel_sub_group_block_read2(
-        const __global uint* p )
+        const __global uint* p );
 uint4 intel_sub_group_block_read4(
-        const __global uint* p )
+        const __global uint* p );
 uint8 intel_sub_group_block_read8(
-        const __global uint* p )
+        const __global uint* p );
 
 uint  intel_sub_group_block_read_ui(
-        const __global uint* p )
+        const __global uint* p );
 uint2 intel_sub_group_block_read_ui2(
-        const __global uint* p )
+        const __global uint* p );
 uint4 intel_sub_group_block_read_ui4(
-        const __global uint* p )
+        const __global uint* p );
 uint8 intel_sub_group_block_read_ui8(
-        const __global uint* p )
+        const __global uint* p );
 ----
 
-| Reads 1, 2, 4, or 8 uints of data for each work item in the subgroup from the specified pointer as a block operation...
+| Reads 1, 2, 4, or 8 uints of data for each work item in the sub-group from the specified pointer as a block operation...
 
-|[source,c]
+|[source,opencl_c]
 ----
 uint  intel_sub_group_block_read(
         image2d_t image,
-        int2 byte_coord )
+        int2 byte_coord );
 uint2 intel_sub_group_block_read2(
         image2d_t image,
-        int2 byte_coord )
+        int2 byte_coord );
 uint4 intel_sub_group_block_read4(
         image2d_t image,
-        int2 byte_coord )
+        int2 byte_coord );
 uint8 intel_sub_group_block_read8(
         image2d_t image,
-        int2 byte_coord )
+        int2 byte_coord );
 
 uint  intel_sub_group_block_read_ui(
         image2d_t image,
-        int2 byte_coord )
+        int2 byte_coord );
 uint2 intel_sub_group_block_read_ui2(
         image2d_t image,
-        int2 byte_coord )
+        int2 byte_coord );
 uint4 intel_sub_group_block_read_ui4(
         image2d_t image,
-        int2 byte_coord )
+        int2 byte_coord );
 uint8 intel_sub_group_block_read_ui8(
         image2d_t image,
-        int2 byte_coord )
+        int2 byte_coord );
 ----
 
-| Reads 1, 2, 4, or 8 uints of data for each work item in the subgroup from the specified image at the specified coordinate as a block operation...
+| Reads 1, 2, 4, or 8 uints of data for each work item in the sub-group from the specified image at the specified coordinate as a block operation...
 
-|[source,c]
-----
-void  intel_sub_group_block_write(
-        __global uint* p, uint data )
-void  intel_sub_group_block_write2(
-        __global uint* p, uint2 data )
-void  intel_sub_group_block_write4(
-        __global uint* p, uint4 data )
-void  intel_sub_group_block_write8(
-        __global uint* p, uint8 data )
-
-void  intel_sub_group_block_write_ui(
-        __global uint* p, uint data )
-void  intel_sub_group_block_write_ui2(
-        __global uint* p, uint2 data )
-void  intel_sub_group_block_write_ui4(
-        __global uint* p, uint4 data )
-void  intel_sub_group_block_write_ui8(
-        __global uint* p, uint8 data )
-----
-
-| Writes 1, 2, 4, or 8 uints of data for each work item in the subgroup to the specified pointer as a block operation...
-
-|[source,c]
+|[source,opencl_c]
 ----
 void  intel_sub_group_block_write(
+        __global uint* p, uint data );
+void  intel_sub_group_block_write2(
+        __global uint* p, uint2 data );
+void  intel_sub_group_block_write4(
+        __global uint* p, uint4 data );
+void  intel_sub_group_block_write8(
+        __global uint* p, uint8 data );
+
+void  intel_sub_group_block_write_ui(
+        __global uint* p, uint data );
+void  intel_sub_group_block_write_ui2(
+        __global uint* p, uint2 data );
+void  intel_sub_group_block_write_ui4(
+        __global uint* p, uint4 data );
+void  intel_sub_group_block_write_ui8(
+        __global uint* p, uint8 data );
+----
+
+| Writes 1, 2, 4, or 8 uints of data for each work item in the sub-group to the specified pointer as a block operation...
+
+|[source,opencl_c]
+----
+void  intel_sub_group_block_write(
         image2d_t image,
-        int2 byte_coord, uint data )
+        int2 byte_coord, uint data );
 void  intel_sub_group_block_write2(
         image2d_t image,
-        int2 byte_coord, uint2 data )
+        int2 byte_coord, uint2 data );
 void  intel_sub_group_block_write4(
         image2d_t image,
-        int2 byte_coord, uint4 data )
+        int2 byte_coord, uint4 data );
 void  intel_sub_group_block_write8(
         image2d_t image,
-        int2 byte_coord, uint8 data )
+        int2 byte_coord, uint8 data );
 
 void  intel_sub_group_block_write_ui(
         image2d_t image,
-        int2 byte_coord, uint data )
+        int2 byte_coord, uint data );
 void  intel_sub_group_block_write_ui2(
         image2d_t image,
-        int2 byte_coord, uint2 data )
+        int2 byte_coord, uint2 data );
 void  intel_sub_group_block_write_ui4(
         image2d_t image,
-        int2 byte_coord, uint4 data )
+        int2 byte_coord, uint4 data );
 void  intel_sub_group_block_write_ui8(
         image2d_t image,
-        int2 byte_coord, uint8 data )
+        int2 byte_coord, uint8 data );
 ----
 
-| Writes 1, 2, 4, or 8 uints of data for each work item in the subgroup to the specified image at the specified coordinate as a block operation...
+| Writes 1, 2, 4, or 8 uints of data for each work item in the sub-group to the specified image at the specified coordinate as a block operation...
 
 |==================================
 --
@@ -408,19 +405,23 @@ Also, add `ushort` variants of the block read and write functions.  In the descr
 |*Function*
 |*Description*
 
-|[source,c]
+|[source,opencl_c]
 ----
-ushort   intel_sub_group_block_read_us(
-          const __global ushort* p )
-ushort2  intel_sub_group_block_read_us2(
-          const __global ushort* p )
-ushort4  intel_sub_group_block_read_us4(
-          const __global ushort* p )
-ushort8  intel_sub_group_block_read_us8(
-          const __global ushort* p )
+ushort  intel_sub_group_block_read_us(
+          const __global ushort* p );
+ushort2 intel_sub_group_block_read_us2(
+          const __global ushort* p );
+ushort4 intel_sub_group_block_read_us4(
+          const __global ushort* p );
+ushort8 intel_sub_group_block_read_us8(
+          const __global ushort* p );
+
+/* For extension version 1.1 or newer: */
+ushort16 intel_sub_group_block_read_us16(
+          const __global ushort* p );
 ----
 
-| Reads 1, 2, 4, or 8 ushorts of data for each work item in the subgroup from the specified pointer as a block operation.
+| Reads 1, 2, 4, or 8 (or 16, for extension version 1.1 or newer) ushorts of data for each work item in the sub-group from the specified pointer as a block operation.
 The data is read strided, so the first value read is:
 
 `p[ sub_group_local_id ]`
@@ -435,23 +436,28 @@ _p_ must be aligned to a 32-bit (4-byte) boundary.
 
 There is no defined out-of-range behavior for these functions.
 
-|[source,c]
+|[source,opencl_c]
 ----
-ushort   intel_sub_group_block_read_us(
+ushort  intel_sub_group_block_read_us(
           image2d_t image,
-          int2 byte_coord )
-ushort2  intel_sub_group_block_read_us2(
+          int2 byte_coord );
+ushort2 intel_sub_group_block_read_us2(
           image2d_t image,
-          int2 byte_coord )
-ushort4  intel_sub_group_block_read_us4(
+          int2 byte_coord );
+ushort4 intel_sub_group_block_read_us4(
           image2d_t image,
-          int2 byte_coord )
-ushort8  intel_sub_group_block_read_us8(
+          int2 byte_coord );
+ushort8 intel_sub_group_block_read_us8(
           image2d_t image,
-          int2 byte_coord )
+          int2 byte_coord );
+
+/* For extension version 1.1 or newer: */
+ushort16 intel_sub_group_block_read_us16(
+          image2d_t image,
+          int2 byte_coord );
 ----
 
-| Reads 1, 2, 4, or 8 ushorts of data for each work item in the subgroup from the specified _image_ at the specified coordinate as a block operation.
+| Reads 1, 2, 4, or 8 (or 16, for extension version 1.1 or newer) ushorts of data for each work item in the sub-group from the specified _image_ at the specified coordinate as a block operation.
 Note that the coordinate is a byte coordinate, not an image element coordinate.
 Also note that the image data is read without format conversion, so each work item may read multiple image elements
 (for images with element size smaller than 16-bits).
@@ -460,19 +466,23 @@ The data is read row-by-row, so the first value read is from the row specified i
 
 Please see the note below describing out-of-bounds behavior for these functions.
 
-|[source,c]
+|[source,opencl_c]
 ----
 void  intel_sub_group_block_write_us(
-        __global ushort* p, ushort data )
+        __global ushort* p, ushort data );
 void  intel_sub_group_block_write_us2(
-        __global ushort* p, ushort2 data )
+        __global ushort* p, ushort2 data );
 void  intel_sub_group_block_write_us4(
-        __global ushort* p, ushort4 data )
+        __global ushort* p, ushort4 data );
 void  intel_sub_group_block_write_us8(
-        __global ushort* p, ushort8 data )
+        __global ushort* p, ushort8 data );
+
+/* For extension version 1.1 or newer: */
+void  intel_sub_group_block_write_us16(
+        __global ushort* p, ushort16 data );
 ----
 
-| Writes 1, 2, 4, or 8 ushorts of data for each work item in the subgroup to the specified pointer as a block operation.
+| Writes 1, 2, 4, or 8 (or 16, for extension version 1.1 or newer) ushorts of data for each work item in the sub-group to the specified pointer as a block operation.
 The data is written strided, so the first value is written to:
 
 `p[ sub_group_local_id ]`
@@ -487,23 +497,29 @@ _p_ must be aligned to a 128-bit (16-byte) boundary.
 
 There is no defined out-of-range behavior for these functions.
 
-|[source,c]
+|[source,opencl_c]
 ----
 void  intel_sub_group_block_write_us(
         image2d_t image,
-        int2 byte_coord, ushort data )
+        int2 byte_coord, ushort data ); 
 void  intel_sub_group_block_write_us2(
         image2d_t image,
-        int2 byte_coord, ushort2 data )
+        int2 byte_coord, ushort2 data );
 void  intel_sub_group_block_write_us4(
         image2d_t image,
-        int2 byte_coord, ushort4 data )
+        int2 byte_coord, ushort4 data );
 void  intel_sub_group_block_write_us8(
         image2d_t image,
-        int2 byte_coord, ushort8 data )
+        int2 byte_coord, ushort8 data );
+
+/* For extension version 1.1 or newer: */
+void  intel_sub_group_block_write_us16(
+        image2d_t image,
+        int2 byte_coord, ushort16 data );
+
 ----
 
-| Writes 1, 2, 4, or 8 ushorts of data for each work item in the subgroup to the specified _image_ at the specified coordinate as a block operation.
+| Writes 1, 2, 4, or 8 (or 16, for extension version 1.1 or newer) ushorts of data for each work item in the sub-group to the specified _image_ at the specified coordinate as a block operation.
 Note that the coordinate is a byte coordinate, not an image element coordinate.
 Unlike the image block read function, which may read from any arbitrary byte offset, the x-component of the byte coordinate for the image block write functions must be a multiple of four;
 in other words, the write must begin at 32-bit boundary.
@@ -533,10 +549,12 @@ None.
 [grid="rows"]
 [options="header"]
 |========================================
-|Rev|Date|Author|Changes
-|1|2016-10-20|Ben Ashbaugh|*First public revision.*
-|2|2018-11-15|Ben Ashbaugh|Conversion to asciidoc.
-|3|2019-09-17|Ben Ashbaugh|Added vec3 types for shuffles and asciidoctor formatting fixes.
+|Version|Date|Author|Changes
+|rev 1|2016-10-20|Ben Ashbaugh|*First public revision.*
+|rev 2|2018-11-15|Ben Ashbaugh|Conversion to asciidoc.
+|rev 3|2019-09-17|Ben Ashbaugh|Added vec3 types for shuffles and asciidoctor formatting fixes.
+|1.0.0|-|-|First assigned version (same as rev 3).
+|1.1.0|2023-04-14|Ben Ashbaugh|Added vec16 types for block reads and writes, switched to formal versioning.
 |========================================
 
 //************************************************************************

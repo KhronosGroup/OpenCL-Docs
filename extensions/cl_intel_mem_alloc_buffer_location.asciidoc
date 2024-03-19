@@ -1,0 +1,174 @@
+cl_intel_mem_alloc_buffer_location
+==================================
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
+
+Name Strings
+------------
+
++cl_intel_mem_alloc_buffer_location+
+
+Contact
+-------
+
+Peter Colberg, Intel (peter 'dot' colberg 'at' intel 'dot' com)
+
+Contributors
+------------
+
+* Sherry Yuan, Intel
+* Michael Kinsner, Intel
+* Joseph Garvey, Intel
+* Ben Ashbaugh, Intel
+* Aditi Kumaraswamy, Intel
+* Peter Colberg, Intel
+* Tanner Young-Schultz, Intel
+* Zibai Wang, Intel
+
+Notice
+------
+
+Copyright (c) 2020-2024 Intel Corporation. All rights reserved.
+
+Status
+------
+
+Final Draft
+
+Version
+-------
+
+[width="40%",cols="25,25"]
+|========================================
+| Last Modified | 2021-12-01
+| Revision      | 1
+|========================================
+
+Dependencies
+------------
+
+This extension is written against the OpenCL Specification Version 1.0, Revision 48.
+
+This extension requires OpenCL 3.0 or later, and/or the cl_intel_create_buffer_with_properties extension if user wish to use this property via extension functions.
+
+Overview
+--------
+
+On some devices, global memory may be partitioned into disjoint regions.  This may be to enable control over specific characteristics such as available bandwidths on memory interfaces, or performance on types of access patterns.
+
+This extension allows a user to explicitly specify the partition/region of global memory in which an allocation should reside, by passing an implementation-defined numerical ID that identifies the region to the allocation function.
+
+*Example Usage*
+
+To pass the property into a buffer allocation:
+
+[source,c]
+----
+cl_mem_properties_intel props[] = {CL_MEM_ALLOC_BUFFER_LOCATION_INTEL, 2, 0};
+
+cl_mem test_mem = clCreateBufferWithPropertiesINTEL(
+      context, props, flags,
+      size, NULL,
+      &status);
+----
+
+To pass the property into a usm allocation:
+
+[source,c]
+----
+cl_mem_properties_intel property[3] = {
+    CL_MEM_ALLOC_BUFFER_LOCATION_INTEL, 2,
+    0};
+void *ptr = clDeviceMemAllocINTEL(context, device, property, size, alignment, &status);
+----
+
+User can query the buffer location of the usm allocation by passing it into *clGetMemAllocInfoINTEL*
+
+[source,c]
+----
+// Should return 2 given the previous allocation.
+clGetMemAllocInfoINTEL(context, ptr, CL_MEM_ALLOC_BUFFER_LOCATION_INTEL, sizeof(cl_uint), param_value, param_value_ret)
+----
+
+
+New API Functions
+-----------------
+
+None.
+
+New API Enums
+-------------
+
+Accepted property for the _properties_ parameter to *clCreateBufferWithPropertiesINTEL*, *clCreateBufferWithProperties*, *clDeviceMemAllocINTEL*, *clSharedMemAllocINTEL*, *clHostMemAllocINTEL* to specify requested global memory type ID.
+
+It can be passed into *clGetMemAllocInfoINTEL* to get the buffer location of allocated usm memory, as well as *clGetMemObjectInfo* to get buffer location of the buffer. If no property was specified, then the ID corresponding to default global memory is returned.
+
+[source,c]
+----
+#define CL_MEM_ALLOC_BUFFER_LOCATION_INTEL    0x419E
+----
+
+Modifications to the OpenCL API Specification
+---------------------------------------------
+
+(Add Table 5.X: *List of supported properties by clCreateBufferWithPropertiesINTEL* to the cl_intel_create_buffer_with_properties extension) ::
++
+
+[cols="1,1,4",options="header",width = "90%"]
+|====
+| cl_mem_properties_intel enum
+| Property value
+| Description
+
+| +CL_MEM_ALLOC_BUFFER_LOCATION_INTEL+
+| +cl_uint+
+| Identifies the ID of global memory partition to which the memory should be allocated. The range of legal values is implementation-defined. If the value is not valid, or the implementation is unable to allocate memory in the requested memory type, an `CL_INVALID_PROPERTY` error will be emitted.
+|====
+
+.List of supported param_names by clGetMemAllocInfoINTEL
+[width="100%",cols="<34%,<33%,<33%",options="header"]
+|====
+| *cl_mem_info_intel* | Return type | Info. returned in _param_value_
+| `CL_MEM_ALLOC_BUFFER_LOCATION_INTEL`
+  | cl_uint
+      | Returns buffer location for the Unified Shared Memory allocation.
+
+        Return the ID of default global memory if no buffer location property were specified.
+|====
+
+Interactions with Other Extensions
+----------------------------------
+
+If `cl_intel_unified_shared_memory` is supported then *clDeviceMemAllocINTEL*, *clSharedMemAllocINTEL*, *clHostMemAllocINTEL*, *clGetMemAllocInfoINTEL* also
+accepts `CL_MEM_ALLOC_BUFFER_LOCATION_INTEL` for _cl_mem_properties_intel_.
+
+If `cl_intel_create_buffer_with_properties` is supported then *clCreateBufferWithPropertiesINTEL* also
+accepts `CL_MEM_ALLOC_BUFFER_LOCATION_INTEL` for _cl_mem_properties_intel_.
+
+Issues
+------
+
+None.
+
+Revision History
+----------------
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1|2021-12-01|Sherry Yuan|*Initial public release*
+|========================================

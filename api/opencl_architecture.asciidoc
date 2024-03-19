@@ -1,4 +1,4 @@
-// Copyright 2017-2020 The Khronos Group. This work is licensed under a
+// Copyright 2017-2024 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -141,7 +141,7 @@ The commands placed into the command-queue fall into one of three types:
     order constraints between commands.
 
 In addition to commands submitted from the host command-queue, a kernel
-running on a device can enqueue commands to a device-side command queue.
+running on a device can enqueue commands to a device-side command-queue.
 This results in _child kernels_ enqueued by a kernel executing on a device
 (the _parent kernel_).
 Regardless of whether the command-queue resides on the host or a device,
@@ -156,8 +156,8 @@ each command passes through six states.
     prerequisites for execution are met.
   . *Ready*: All prerequisites constraining execution of a command have been
     met.
-    The command, or for a kernel-enqueue command the collection of work
-    groups associated with a command, is placed in a device work-pool from
+    The command, or for a kernel-enqueue command the collection of work-groups
+    associated with a command, is placed in a device work-pool from
     which it is scheduled for execution.
   . *Running*: Execution of the command starts.
     For the case of a kernel-enqueue command, one or more work-groups
@@ -193,7 +193,7 @@ Unsuccessful completion results in abnormal termination of the command which
 is indicated by setting the event status to a negative value.
 In this case, the command-queue associated with the abnormally terminated
 command and all other command-queues in the same context may no longer be
-available and their behavior is implementation defined.
+available and their behavior is implementation-defined.
 
 A command submitted to a device will not launch until prerequisites that
 constrain the order of commands have been resolved.
@@ -201,13 +201,13 @@ These prerequisites have three sources:
 
   * They may arise from commands submitted to a command-queue that constrain
     the order in which commands are launched.
-    For example, commands that follow a command queue barrier will not
+    For example, commands that follow a command-queue barrier will not
     launch until all commands prior to the barrier are complete.
   * The second source of prerequisites is dependencies between commands
     expressed through events.
     A command may include an optional list of events.
     The command will wait and not launch until all the events in the list
-    are in the state CL COMPLETE.
+    are in the state {CL_COMPLETE}.
     By this mechanism, event objects define order constraints between
     commands and coordinate execution between the host and one or more
     devices.
@@ -262,13 +262,13 @@ of two modes:
     commands appear to the OpenCL application as if they execute in the same
     order they are enqueued to a command-queue.
   * *Out-of-order Execution*: Commands execute in any order constrained only
-    by explicit synchronization points (e.g. through command queue barriers)
+    by explicit synchronization points (e.g. through command-queue barriers)
     or explicit dependencies on events.
 
 Multiple command-queues can be present within a single context.
 Multiple command-queues execute commands independently.
 Event objects visible to the host program can be used to define
-synchronization points between commands in multiple command queues.
+synchronization points between commands in multiple command-queues.
 If such synchronization points are established between commands in multiple
 command-queues, an implementation must assure that the command-queues
 progress concurrently and correctly account for the dependencies established
@@ -300,13 +300,13 @@ within a work-group.
 The details of this mapping are described in the following section.
 
 
-=== Mapping work-items onto an NDRange
+=== Mapping work-items onto an ND-range
 
-The index space supported by OpenCL is called an NDRange.
-An NDRange is an N-dimensional index space, where N is one, two or three.
-The NDRange is decomposed into work-groups forming blocks that cover the
+The index space supported by OpenCL is called an ND-range.
+An ND-range is an N-dimensional index space, where N is one, two or three.
+The ND-range is decomposed into work-groups forming blocks that cover the
 Index space.
-An NDRange is defined by three integer arrays of length N:
+An ND-range is defined by three integer arrays of length N:
 
   * The extent of the index space (or global size) in each dimension.
   * An offset index F indicating the initial value of the indices in each
@@ -319,7 +319,7 @@ number of elements in that dimension minus one.
 
 Unless a kernel comes from a source that disallows it, e.g. OpenCL C 1.x or
 using `-cl-uniform-work-group-size`, the size of work-groups in
-an NDRange (the local size) need not be the same for all work-groups.
+an ND-range (the local size) need not be the same for all work-groups.
 In this case, any single dimension for which the global size is not
 divisible by the local size will be partitioned into two regions.
 One region will have work-groups that have the same number of work-items as
@@ -341,7 +341,7 @@ range from zero to the size of the work-group in that dimension minus one.
 
 Work-groups are assigned IDs similarly.
 The number of work-groups in each dimension is not directly defined but is
-inferred from the local and global NDRanges provided when a kernel-instance
+inferred from the local and global ND-ranges provided when a kernel-instance
 is enqueued.
 A work-group's ID is an N-dimensional tuple with components in the range 0
 to the ceiling of the global size in that dimension divided by the local
@@ -382,7 +382,7 @@ is computed as:
 * (w~x~, w~y~) = ( (g~x~ - s~x~ - F~x~) / S~x~, (g~y~ - s~y~ - F~y~) / S~y~ )
 
 [[index-space-image]]
-image::images/index_space.jpg[align="center", title="An example of an NDRange index space showing work-items, their global IDs and their mapping onto the pair of work-group and local IDs. In this case, we assume that in each dimension, the size of the work-group evenly divides the global NDRange size (i.e. all work-groups have the same size) and that the offset is equal to zero."]
+image::images/index_space.jpg[align="center", title="An example of an ND-range index space showing work-items, their global IDs and their mapping onto the pair of work-group and local IDs. In this case, we assume that in each dimension, the size of the work-group evenly divides the global ND-range size (i.e. all work-groups have the same size) and that the offset is equal to zero."]
 
 Within a work-group work-items may be divided into sub-groups.
 The mapping of work-items to sub-groups is implementation-defined and may be
@@ -421,8 +421,8 @@ command-queue, executes on a device, and completes.
 
 A kernel object is defined as a function within the program object and a
 collection of arguments connecting the kernel to a set of argument values.
-The host program enqueues a kernel object to the command queue along with
-the NDRange and the work-group decomposition.
+The host program enqueues a kernel object to the command-queue along with
+the ND-range and the work-group decomposition.
 These define a _kernel-instance_.
 In addition, an optional set of events may be defined when the kernel is
 enqueued.
@@ -432,12 +432,12 @@ commands in the queue or to commands in other queues within the same
 context.
 
 A kernel-instance is submitted to a device.
-For an in-order command queue, the kernel instances appear to launch and
+For an in-order command-queue, the kernel instances appear to launch and
 then execute in that same order; where we use the term appear to emphasize
 that when there are no dependencies between commands and hence differences
 in the order that commands execute cannot be observed in a program, an
-implementation can reorder commands even in an in-order command queue.
-For an out of order command-queue, kernel-instances wait to be launched
+implementation can reorder commands even in an in-order command-queue.
+For an out-of-order command-queue, kernel-instances wait to be launched
 until:
 
   * Synchronization commands enqueued prior to the kernel-instance are
@@ -462,7 +462,7 @@ to {CL_COMPLETE}.
 While a command-queue is associated with only one device, a single device
 may be associated with multiple command-queues all feeding into the single
 work-pool.
-A device may also be associated with command queues associated with
+A device may also be associated with command-queues associated with
 different contexts within the same platform, again all feeding into the
 single work-pool.
 The device will pull work-groups from the work-pool and execute them on one
@@ -504,8 +504,8 @@ synchronization within the work-group.
 
 In the absence of synchronization functions (e.g. a barrier), work-items
 within a sub-group may be serialized.
-In the presence of sub -group functions, work-items within a sub -group may
-be serialized before any given sub -group function, between dynamically
+In the presence of sub-group functions, work-items within a sub-group may
+be serialized before any given sub-group function, between dynamically
 encountered pairs of sub-group functions and between a work-group function
 and the end of the kernel.
 
@@ -535,10 +535,10 @@ so-called *device-side enqueue*.
 Device-side kernel-enqueue commands are similar to host-side kernel-enqueue
 commands.
 The kernel executing on a device (the *parent kernel*) enqueues a
-kernel-instance (the *child kernel*) to a device-side command queue.
+kernel-instance (the *child kernel*) to a device-side command-queue.
 This is an out-of-order command-queue and follows the same behavior as the
 out-of-order command-queues exposed to the host program.
-Commands enqueued to a device side command-queue generate and use events to
+Commands enqueued to a device-side command-queue generate and use events to
 enforce order constraints just as for the command-queue on the host.
 These events, however, are only visible to the parent kernel running on the
 device.
@@ -633,7 +633,7 @@ The synchronization points defined in OpenCL include:
     the work-groups in the kernel and all of its child kernels have
     completed.
     This is signaled to the host, a parent kernel or other kernels within
-    command queues by setting the value of the event associated with a
+    command-queues by setting the value of the event associated with a
     kernel to {CL_COMPLETE}.
   * *Blocking Commands:* A blocking command defines a synchronization point
     between the unit of execution that calls the blocking API function and
@@ -642,7 +642,7 @@ The synchronization points defined in OpenCL include:
     previously enqueued commands have completed before subsequently enqueued
     commands can be launched.
   * {clFinish}: This function blocks until all previously enqueued commands
-    in the command queue have completed after which {clFinish} defines a
+    in the command-queue have completed after which {clFinish} defines a
     synchronization point and the {clFinish} function returns.
 
 
@@ -695,11 +695,11 @@ The OpenCL execution model supports three types of kernels:
     The common use of built in kernels is to expose fixed-function hardware
     or firmware associated with a particular OpenCL device or custom device.
     The semantics of a built-in kernel may be defined outside of OpenCL and
-    hence are implementation defined.
+    hence are implementation-defined.
     Note: Built-in kernels are <<unified-spec, missing before>> version 1.2.
 
 
-All three types of kernels are manipulated through the OpenCL command queues
+All three types of kernels are manipulated through the OpenCL command-queues
 and must conform to the synchronization points defined in the OpenCL
 execution model.
 
@@ -940,7 +940,7 @@ devices.
 
   * *Read/Write/Fill commands*: The data associated with a memory object is
     explicitly read and written between the host and global memory regions
-    using commands enqueued to an OpenCL command queue.
+    using commands enqueued to an OpenCL command-queue.
     Note: Fill commands are <<unified-spec, missing before>> version 1.2.
   * *Map/Unmap commands*: Data from the memory object is mapped into a
     contiguous block of memory accessed through a host accessible pointer.
@@ -979,7 +979,7 @@ multiple devices, the OpenCL runtime system must manage the association of
 memory objects with a given device.
 In most cases the OpenCL runtime will implicitly associate a memory object
 with a device.
-A kernel instance is naturally associated with the command queue to which
+A kernel instance is naturally associated with the command-queue to which
 the kernel was submitted.
 Since a command-queue can only access a single device, the queue uniquely
 defines which device is involved with any given kernel-instance; hence
@@ -1051,8 +1051,9 @@ There are three types of SVM in OpenCL
               | No
 |====
 
-Coarse-Grained buffer SVM is required in the core OpenCL specification.
-The two finer grained approaches are optional features in OpenCL.
+Coarse-Grained buffer SVM is a required feature for OpenCL 2.0, 2.1, or 2.2
+devices and an optional feature for OpenCL 3.0 or newer devices.
+Fine-Grained SVM is an optional feature for all OpenCL devices.
 The various SVM mechanisms to access host memory from the work-items
 associated with a kernel instance are <<svm-summary-table, summarized
 above>>.
@@ -1188,6 +1189,7 @@ enumeration constant:
     does not have the {CL_MEM_SVM_ATOMICS} flag set will commit to at least
     *memory_scope_device* visibility, with full synchronization of the
     buffer at a queue synchronization point (e.g. an OpenCL event).
+  * *memory_scope_all_devices*: an alias for *memory_scope_all_svm_devices*.
 
 These memory scopes define a hierarchy of visibilities when analyzing the
 ordering constraints of memory operations.
@@ -1213,7 +1215,7 @@ model.
 This is accomplished by following these guidelines.
 
   * Write programs that manage safe sharing of global memory objects through
-    the synchronization points defined by the command queues.
+    the synchronization points defined by the command-queues.
   * Restrict low level synchronization inside work-groups to the work-group
     functions such as barrier.
   * If you want sequential consistency behavior with system allocations or
@@ -1487,7 +1489,7 @@ The value of *M*, as determined by evaluation *B*, shall be the value stored
 by some operation in the visible sequence of *M* with respect to *B*.
 <<iso-c11,[C11 standard, Section 5.1.2.4, paragraph 22, modified.]>>
 
-If an operation *A* that modifies an atomic object *M* global-happens before
+If an operation *A* that modifies an atomic object *M* global-happens-before
 an operation *B* that modifies *M*, then *A* shall be earlier than *B* in
 the modification order of *M*.
 This requirement is known as write-write coherence.
@@ -1621,7 +1623,7 @@ Note: Under the rules described above, and independent to the previously
 footnoted {cpp} issue, it is known that _x == y == 42_ is a valid final state
 in the following problematic example:
 
-[source,c]
+[source,opencl_c]
 ----
 global atomic_int x = ATOMIC_VAR_INIT(0);
 local atomic_int y = ATOMIC_VAR_INIT(0);
@@ -1815,7 +1817,7 @@ distinguish between a dynamic and a static instance of the call to a
 barrier.
 A call to a barrier can appear in a loop, for example, and each execution of
 the same static barrier call results in a new dynamic instance of the
-barrier that will independently synchronize a sub-groups work-items.
+barrier that will independently synchronize the work-items in a sub-group.
 
 A work-item executing a dynamic instance of a barrier results in two
 operations, both fences, that are called the entry and exit fences.
@@ -1851,9 +1853,9 @@ function instance.
 
 This section describes how the OpenCL API functions associated with
 command-queues contribute to happens-before relations.
-There are two types of command queues and associated API functions in OpenCL
+There are two types of command-queues and associated API functions in OpenCL
 2.x; _host command-queues_ and _device command-queues_.
-The interaction of these command queues with the memory model are for the
+The interaction of these command-queues with the memory model are for the
 most part equivalent.
 In a few cases, the rules only applies to the host command-queue.
 We will indicate these special cases by specifically denoting the host
@@ -1903,7 +1905,7 @@ following:
     memory operations made by the host thread.
   . If a command *C* has an event *E* that signals its completion, then *C*
     global- synchronizes-with *E*.
-  . For a command *C* enqueued to a host-side command queue, if *C* has an
+  . For a command *C* enqueued to a host-side command-queue, if *C* has an
     event *E* that signals its completion, then *E* global-synchronizes-with
     an API call *X* that waits on *E*.
     For example, if a host thread or kernel-instance calls the
@@ -1952,7 +1954,7 @@ following:
     `CLK_ENQUEUE_FLAGS_WAIT_WORK_GROUP` flag, then the end state of the
     work-group global-synchronizes with *C*.
 
-When using an out-of-order command queue, a wait on an event or a marker or
+When using an out-of-order command-queue, a wait on an event or a marker or
 command-queue barrier command can be used to ensure the correct ordering of
 dependent commands.
 In those cases, the wait for the event or the marker or barrier command will
@@ -1990,7 +1992,7 @@ No writes to fine-grained SVM buffers can be introduced that were not in the
 original program.
 
 In the remainder of this section, we discuss a few points regarding the
-ordering rules for commands with a host command queue.
+ordering rules for commands with a host command-queue.
 
 NOTE: In an OpenCL 1.x implementation a synchronization point is a
 kernel-instance or host program location where the contents of memory
@@ -2011,7 +2013,7 @@ may be overwritten by the map operation.
 
 Access to non-SVM {cl_mem_TYPE} buffers and coarse-grained SVM allocations is
 ordered at synchronization points between host commands.
-In the presence of an out-of-order command queue or a set of command queues
+In the presence of an out-of-order command-queue or a set of command-queues
 mapped to the same device, multiple kernel instances may execute
 concurrently on the same device.
 
@@ -2051,7 +2053,7 @@ The platform version indicates the version of the OpenCL runtime that is
 supported.
 This includes all of the APIs that the host can use to interact with
 resources exposed by the OpenCL runtime; including contexts, memory objects,
-devices, and command queues.
+devices, and command-queues.
 
 The device version is an indication of the device's capabilities separate
 from the runtime and compiler as represented by the device info returned by
@@ -2148,7 +2150,7 @@ _patch_ version.
 
 These are defined as follows:
 
-[source,c]
+[source,opencl]
 ----
 typedef cl_uint cl_version;
 
@@ -2169,9 +2171,9 @@ typedef cl_uint cl_version;
 #define CL_VERSION_PATCH(version) ((version) & CL_VERSION_PATCH_MASK)
 
 #define CL_MAKE_VERSION(major, minor, patch) \
-  ((((major)& CL_VERSION_MAJOR_MASK) << \
+  ((((major) & CL_VERSION_MAJOR_MASK) << \
         (CL_VERSION_MINOR_BITS + CL_VERSION_PATCH_BITS)) | \
-   (((minor)& CL_VERSION_MINOR_MASK) << \
+   (((minor) & CL_VERSION_MINOR_MASK) << \
          CL_VERSION_PATCH_BITS) | \
     ((patch) & CL_VERSION_PATCH_MASK))
 ----

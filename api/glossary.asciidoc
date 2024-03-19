@@ -1,4 +1,4 @@
-// Copyright 2017-2020 The Khronos Group. This work is licensed under a
+// Copyright 2017-2024 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -43,7 +43,7 @@ Blocking and Non-Blocking Enqueue API calls ::
 
 Barrier ::
     There are three types of _barriers_ a command-queue barrier, a
-    work-group barrier and a sub-group barrier.
+    work-group barrier, and a sub-group barrier.
 +
 --
   * The OpenCL API provides a function to enqueue a _command-queue_
@@ -107,7 +107,7 @@ Command-queue ::
     The _command-queue_ is created on a specific _device_ in a _context_.
     _Commands_ to a _command-queue_ are queued in-order but may be executed
     in-order or out-of-order.
-    _Refer to In-order Execution_and_Out-of-order Execution_.
+    Refer to _In-order Execution_ and _Out-of-order Execution_.
 
 Command-queue Barrier ::
     See _Barrier_.
@@ -200,7 +200,7 @@ Data race ::
     same memory location, and (2) at least one of these actions is not
     atomic, or the corresponding memory scopes are not inclusive, and (3)
     the actions are global actions unordered by the global-happens-before
-    relation or are local actions unordered by the local-happens before
+    relation or are local actions unordered by the local-happens-before
     relation.
 
 Deprecation ::
@@ -223,7 +223,7 @@ Device-side enqueue ::
     This produces _nested parallelism_; i.e. additional levels of
     concurrency are nested inside a running kernel-instance.
     The kernel-instance executing on a device (the _parent kernel_) enqueues
-    a kernel-instance (the _child kernel_) to a device-side command queue.
+    a kernel-instance (the _child kernel_) to a device-side command-queue.
     Child and parent kernels execute asynchronously though a parent kernel
     does not complete until all of its child-kernels have completed.
 
@@ -265,8 +265,8 @@ Generic address space ::
     write a single function that at compile time can take arguments from any
     of the three named address spaces.
 
-Global Happens before ::
-    See _Happens before_.
+Global-happens-before ::
+    See _Happens-before_.
 
 Global ID ::
     A _global ID_ is used to uniquely identify a _work-item_ and is derived
@@ -291,14 +291,17 @@ GL share group ::
 
 Handle ::
     An opaque type that references an _object_ allocated by OpenCL.
-    Any operation on an _object_ occurs by reference to that objects handle.
+    Any operation on an _object_ occurs by reference to that object's handle.
+    Each object must have a unique handle value during the course of its
+    lifetime. Handle values may be, but are not required to be, re-used by
+    an implementation.
 
-Happens before ::
+Happens-before ::
     An ordering relationship between operations that execute on multiple
     units of execution.
     If an operation A happens-before operation B then A must occur before B;
     in particular, any value written by A will be visible to B.
-    We define two separate happens before relations: _global-happens-before_
+    We define two separate happens-before relations: _global-happens-before_
     and _local-happens-before_.
     These are defined in <<memory-ordering-rules, Memory Ordering Rules>>.
 
@@ -334,7 +337,7 @@ The elements of an image are selected from a list of predefined image
 formats.
 --
 
-Implementation Defined ::
+Implementation-Defined ::
     Behavior that is explicitly allowed to vary between conforming
     implementations of OpenCL.
     An OpenCL implementor is required to document the implementation-defined
@@ -347,16 +350,16 @@ Independent Forward Progress ::
     must be released by, any other entity), then its execution cannot be
     blocked by the execution of any other entity in the system (it will not
     be starved).
-    Work-items in a subgroup, for example, typically do not support
-    independent forward progress, so one work-item in a subgroup may be
+    Work-items in a sub-group, for example, typically do not support
+    independent forward progress, so one work-item in a sub-group may be
     completely blocked (starved) if a different work-item in the same
-    subgroup enters a spin loop.
+    sub-group enters a spin loop.
 
 In-order Execution ::
     A model of execution in OpenCL where the _commands_ in a _command-queue_
     are executed in order of submission with each _command_ running to
     completion before the next one begins.
-    See Out-of-order Execution.
+    See _Out-of-order Execution_.
 
 Intermediate Language ::
     A lower-level language that may be used to create programs.
@@ -374,7 +377,7 @@ Kernel-instance ::
     of kernel-instances on devices.
     The kernel instance is the _kernel object_, the values associated with
     the arguments to the kernel, and the parameters that define the
-    _NDRange_ index space.
+    _ND-range_ index space.
 
 Kernel Object ::
     A _kernel object_ encapsulates a specific _kernel_ function declared
@@ -445,9 +448,9 @@ Memory Scopes ::
     (memory-ordering constraints only apply to work-items executing in a
     work-group), *memory_scope_device* (memory-ordering constraints only
     apply to work-items executing on a single device) and
-    *memory_scope_all_svm_devices* (memory-ordering constraints only apply
-    to work-items executing across multiple devices and when using shared
-    virtual memory).
+    *memory_scope_all_svm_devices* or equivalently *memory_scope_all_devices*
+    (memory-ordering constraints only apply to work-items executing across
+    multiple devices and when using shared virtual memory).
 
 Modification Order ::
     All modifications to a particular atomic object M occur in some
@@ -466,7 +469,7 @@ Object ::
     Examples include _program objects_, _kernel objects_, and _memory
     objects_.
 
-Out-of-Order Execution ::
+Out-of-order Execution ::
     A model of execution in which _commands_ placed in the _work queue_ may
     begin and complete execution in any order consistent with constraints
     imposed by _event wait lists_and_command-queue barrier_.
@@ -589,9 +592,9 @@ Release Semantics ::
 Remainder work-groups ::
     When the work-groups associated with a kernel-instance are defined, the
     sizes of a work-group in each dimension may not evenly divide the size
-    of the NDRange in the corresponding dimensions.
+    of the ND-range in the corresponding dimensions.
     The result is a collection of work-groups on the boundaries of the
-    NDRange that are smaller than the base work-group size.
+    ND-range that are smaller than the base work-group size.
     These are known as _remainder work-groups_.
 
 Running ::
@@ -639,9 +642,9 @@ Scope inclusion ::
     and *A* and *B* are executed by work-items within the same work-group,
     or (3) if *P* is *memory_scope_device*, and *A* and *B* are executed by
     work-items on the same device, or (4) if *P* is
-    *memory_scope_all_svm_devices*, if *A* and *B* are executed by host
-    threads or by work-items on one or more devices that can share SVM
-    memory with each other and the host process.
+    *memory_scope_all_svm_devices* or *memory_scope_all_devices*, if *A* and *B*
+    are executed by host threads or by work-items on one or more devices that
+    can share SVM memory with each other and the host process.
 
 Sequenced before ::
     A relation between evaluations executed by a single unit of execution.
@@ -795,6 +798,26 @@ Unit of execution ::
     A generic term for a process, OS managed thread running on the host (a
     host-thread), kernel-instance, host program, work-item or any other
     executable agent that advances the work associated with a program.
+
+[[valid-object-definition]]
+Valid Object ::
+    An OpenCL object is considered valid if it meets all of the following
+    criteria:
++
+--
+  * The object was created by a successful call to an OpenCL API function.
+  * The object has a strictly positive application-owned reference count.
+  * The object has not had its backing memory changed outside of normal
+    usage by the OpenCL implementation (e.g. corrupted by the application, a
+    library it uses, the implementation itself, or any other agent that can
+    access the object's backing memory).
+
+An object is only valid in the platform where it was created.
+
+An OpenCL implementation must check for a `NULL` object to determine if an
+object is valid.  The behavior for all other invalid objects is
+implementation-defined.
+--
 
 Work-group ::
     A collection of related _work-items_ that execute on a single _compute

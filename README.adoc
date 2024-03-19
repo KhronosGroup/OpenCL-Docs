@@ -10,12 +10,19 @@ The most useful parts of this document are the <<intro, Introduction>>,
 Dependencies>>.
 ====
 
+[NOTE]
+.Note
+====
+The default branch of this repository has changed from `master` to `main`.
+====
+
 [[intro]]
 == Introduction
 
 This repository contains the source and tool chain used to generate the
-formal OpenCL API, OpenCL Extensions, OpenCL SPIR-V Environment, and
-OpenCL C++ Specifications, as well as the OpenCL 2.2 Reference Pages.
+formal OpenCL API, OpenCL C, OpenCL Extensions, OpenCL SPIR-V Environment,
+OpenCL C++ Specifications, as well as the OpenCL Reference Pages
+and documentation for the C++ for OpenCL kernel language.
 
 This file describes the repository structure, tools, and build instructions
 needed.
@@ -36,28 +43,32 @@ You'll be prompted with a one-time "`click-through`" Contributor's License
 Agreement (CLA) dialog as part of submitting your pull request or other
 contribution to GitHub.
 
-We intend to maintain a linear history on the GitHub `master` branch.
+We intend to maintain a linear history on the GitHub `main` branch.
 
 
 [[repo]]
 == Repository Structure
 
 |====
-| *File*            | *Description*
-| `README.adoc`     | This file
-| `Makefile`        | GNU Makefile used to build HTML and PDF spec targets
-| `config/`         | Support files for asciidoctor build, HTML CSS / Javascript, etc.
-| `katex/`          | KaTeX math renderer for HTML outputs
-| `OpenCL_API.txt`  | Main source file for the OpenCL API Specification
-| `api/`            | Individual sections of the API Specification
-| `OpenCL_Cxx.txt`  | Main source file for the OpenCL C++ Specification
-| `cxx/`            | Individual sections of the C++ Specification
-| `OpenCL_Env.txt`  | Main source file for the OpenCL SPIR-V Environment Specification
-| `env/`            | Individual sections of the Environment Specification
-| `OpenCL_Ext.txt`  | Main source file for the OpenCL Extensions Specification
-| `ext/`            | Individual sections of the Extensions Specification
-| `images/`         | Shared images, used by all specs
-| `man/`            | Static reference page sources
+| *File*                | *Description*
+| `README.adoc`         | This file
+| `Makefile`            | GNU Makefile used to build HTML and PDF spec targets
+| `config/`             | Support files for asciidoctor build, HTML CSS / Javascript, etc.
+| `katex/`              | KaTeX math renderer for HTML outputs
+| `OpenCL_API.txt`      | Main source file for the OpenCL API Specification
+| `api/`                | Individual sections of the API Specification
+| `OpenCL_C.txt`        | Main source file for the OpenCL C Specification
+| `c/`                  | Individual sections of the C Specification
+| `OpenCL_Cxx.txt`      | Main source file for the OpenCL C++ Specification
+| `cxx/`                | Individual sections of the C++ Specification
+| `OpenCL_Env.txt`      | Main source file for the OpenCL SPIR-V Environment Specification
+| `env/`                | Individual sections of the Environment Specification
+| `OpenCL_Ext.txt`      | Main source file for the OpenCL Extensions Specification
+| `ext/`                | Individual sections of the Extensions Specification
+| `CXX_for_OpenCL.txt`  | Main source file for the C++ for OpenCL Documentation
+| `cxx4opencl/`         | Individual sections of the C++ for OpenCL Documentation
+| `images/`             | Shared images, used by all specs
+| `man/`                | Static reference page sources
 |====
 
 
@@ -73,27 +84,35 @@ Other Makefile targets are available for building the different outputs
 for each Specification:
 
 |====
-| *Target*  | *Builds*
-| html      | HTML outputs for all specifications
-| pdf       | PDF outputs for all specifications
-|           |
-| api       | HTML and PDF outputs for API Specification
-| apihtml   | HTML outputs for API Specification
-| apipdf    | PDF outputs for API Specification
-|           |
-| cxx       | HTML and PDF outputs for C++ Specification
-| cxxhtml   | HTML outputs for C++ Specification
-| cxxpdf    | PDF outputs for C++ Specification
-|           |
-| env       | HTML and PDF outputs for SPIR-V Environment Specification
-| envhtml   | HTML outputs for Environment Specification
-| envpdf    | PDF outputs for Environment Specification
-|           |
-| ext       | HTML and PDF outputs for Extensions Specification
-| exthtml   | HTML outputs for Extensions Specification
-| extpdf    | PDF outputs for Extensions Specification
-|           |
-| manhtmlpages | HTML outputs for Reference Pages
+| *Target*       | *Builds*
+| html           | HTML outputs for all specifications
+| pdf            | PDF outputs for all specifications
+|                |
+| api            | HTML and PDF outputs for API Specification
+| apihtml        | HTML outputs for API Specification
+| apipdf         | PDF outputs for API Specification
+|                |
+| c              | HTML and PDF outputs for C Specification
+| chtml          | HTML outputs for C Specification
+| cpdf           | PDF outputs for C Specification
+|                |
+| cxx            | HTML and PDF outputs for C++ Specification
+| cxxhtml        | HTML outputs for C++ Specification
+| cxxpdf         | PDF outputs for C++ Specification
+|                |
+| env            | HTML and PDF outputs for SPIR-V Environment Specification
+| envhtml        | HTML outputs for Environment Specification
+| envpdf         | PDF outputs for Environment Specification
+|                |
+| ext            | HTML and PDF outputs for Extensions Specification
+| exthtml        | HTML outputs for Extensions Specification
+| extpdf         | PDF outputs for Extensions Specification
+|                |
+| cxx4opencl     | HTML and PDF outputs for C++ for OpenCL Documentation
+| cxx4openclhtml | HTML outputs for C++ for OpenCL Documentation
+| cxx4openclpdf  | PDF outputs for C++ for OpenCL Documentation
+|                |
+| manhtmlpages   | HTML outputs for Reference Pages
 |====
 
 The specification targets are generated in `out/html/` for HTML targets,
@@ -129,8 +148,8 @@ take several minutes.
 Most of the reference pages are extracted from the OpenCL API and OpenCL
 C Specifications, although some are static.
 While anyone can generate reference page sets for themselves, Khronos
-publishes them via the `master` branch of the
-https://www.khronos.org/registry/OpenCL/sdk/2.2/docs/man/[OpenCL Registry].
+publishes them via the `main` branch of the
+https://www.khronos.org/registry/OpenCL/sdk/3.0/docs/man/[OpenCL Registry].
 
 When the OpenCL Specification Editor is updating the published reference
 pages, it is easiest to have local repository clones of this repository
@@ -138,11 +157,11 @@ pages, it is easiest to have local repository clones of this repository
 registry clone via
 
 ----
-make -j 6 OUTDIR=path-to-registry-repo/sdk/2.2/docs manhtmlpages
+make -j 6 OUTDIR=path-to-registry-repo/sdk/3.0/docs manhtmlpages
 ----
 
-This creates the HTML output pages under `sdk/2.2/docs/man/html`, and copies
-the KaTeX package to `sdk/2.2/docs/katex`.
+This creates the HTML output pages under `sdk/3.0/docs/man/html`, and copies
+the KaTeX package to `sdk/3.0/docs/katex`.
 To publish, commit those changes to the registry repository and push it to
 github.
 
@@ -227,6 +246,8 @@ scheme.
 
 This section describes the software components used by the OpenCL spec
 toolchain.
+The specified versions are known to work.
+Later compatible versions will probably work as well.
 
 Before building the OpenCL specs, you must install the following tools:
 
@@ -241,10 +262,6 @@ Before building the OpenCL specs, you must install the following tools:
     Any version supporting the following operations should work:
   ** `git symbolic-ref --short HEAD`
   ** `git log -1 --format="%H"`
-  * Ghostscript (ghostscript, version: 9.10).
-    This is for the PDF build, and it can still progress without it.
-    Ghostscript is used to optimize the size of the PDF, so will be a lot
-    smaller if it is included.
   * ttf Fonts.
     These are needed the PDF build for latexmath rendering.
     See https://github.com/asciidoctor/asciidoctor-mathematical/blob/master/README.md#dependencies[Font Dependencies for asciidoctor-mathematical].
@@ -256,19 +273,21 @@ environment managers below.
 Please read the remainder of this document (other than platform-specific
 parts you don't use) completely before trying to install.
 
-  * Asciidoctor (asciidoctor, version: 1.5.8)
+  * Asciidoctor (asciidoctor, version: 2.0.16)
   * Coderay (coderay, version: 1.1.1)
+  * hexapdf (version: 0.27.0)
+  * rouge (rouge, version 3.19.0)
   * ttfunk (ttfunk, version: 1.5.1)
   * Asciidoctor PDF (asciidoctor-pdf, version: 1.5.0)
-  * Asciidoctor Mathematical (asciidoctor-mathematical, version 0.2.2)
+  * Asciidoctor Mathematical (asciidoctor-mathematical, version 0.3.5)
   * https://github.com/asciidoctor/asciidoctor-mathematical#dependencies[Dependencies
     for asciidoctor-mathematical] (There are a lot of these!)
   * KaTeX distribution (version 0.7.0 from https://github.com/Khan/KaTeX .
     This is cached under `katex/`, and need not be
     installed from github.
 
-Only the `asciidoctor` and `coderay` gems are needed if you don't intend to
-build PDF versions of the spec and supporting documents.
+Only the `asciidoctor`, `coderay`, and `rouge` gems are needed if you don't
+intend to build PDF versions of the spec and supporting documents.
 
 [NOTE]
 .Note
@@ -422,11 +441,13 @@ echo "2.3.3" > ~/.rbenv/version
 # asciidoctor-mathematical also takes in excess of 20 min. to build!
 # The same RUBY_CONFIGURE_OPTS advice above may apply here as well.
 
-gem install asciidoctor -v 1.5.8
+gem install asciidoctor -v 2.0.16
 gem install coderay -v 1.1.1
+gem install hexapdf -v 0.27.0
+gem install rouge -v 3.19.0
 gem install ttfunk -v 1.5.1
 gem install asciidoctor-pdf -v 1.5.0
-MATHEMATICAL_SKIP_STRDUP=1 gem install asciidoctor-mathematical -v 0.2.2
+gem install asciidoctor-mathematical -v 0.3.5
 ----
 
 
@@ -541,7 +562,7 @@ that will require tweaking to get it working.
 Firstly, instead of:
 
 ----
-MATHEMATICAL_SKIP_STRDUP=1 gem install asciidoctor-mathematical
+gem install asciidoctor-mathematical
 ----
 
 You should use
@@ -633,13 +654,15 @@ The following ruby gems can be installed directly via the `gem install`
 command, once the platform is set up:
 
 ----
-gem install asciidoctor -v 1.5.8
+gem install asciidoctor -v 2.0.16
 gem install coderay -v 1.1.1
+gem install hexapdf -v 0.27.0
+gen install rouge -v 3.19.0
 gem install ttfunk -v 1.5.1
 
 # Required only for pdf builds
 gem install asciidoctor-pdf -v 1.5.0
-MATHEMATICAL_SKIP_STRDUP=1 gem install asciidoctor-mathematical -v 0.2.2
+gem install asciidoctor-mathematical -v 0.3.5
 ----
 
 
@@ -665,6 +688,7 @@ by Khronos.
 [[history]]
 == Revision History
 
+  * 2023-11-05 - Add hexapdf, remove ghostscript
   * 2020-03-13 - Updated package versions to match Travis build.
   * 2019-06-20 - Add directions for publishing OpenCL 2.2 reference pages,
     generated from the spec sources in this repository, in the

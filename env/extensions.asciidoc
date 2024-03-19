@@ -1,4 +1,4 @@
-// Copyright 2017-2020 The Khronos Group. This work is licensed under a
+// Copyright 2017-2024 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -7,8 +7,8 @@
 
 An OpenCL environment may be modified by <<opencl-extension-spec, OpenCL
 extensions>>.  For example, some OpenCL extensions may require support
-for support for additional SPIR-V capabilities or instructions, or by
-relaxing SPIR-V restrictions.
+for additional SPIR-V capabilities or instructions, or relax SPIR-V
+restrictions.
 Some OpenCL extensions may modify the OpenCL environment by requiring
 consumption of a SPIR-V module that uses a SPIR-V extension.  In this case,
 the implementation will include the OpenCL extension in the host API
@@ -18,8 +18,7 @@ corresponding SPIR-V extension.
 This section describes how the OpenCL environment is modified by Khronos
 (`khr`) OpenCL extensions.  Other OpenCL extensions, such as multi-vendor
 (`ext`) extensions or vendor-specific extensions, describe how they modify
-the OpenCL environment in their individual extension specifications.  The
-Khronos OpenCL extensions require no corresponding SPIR-V extensions.
+the OpenCL environment in their individual extension specifications.
 
 === Declaring SPIR-V Extensions
 
@@ -312,6 +311,73 @@ For instructions requiring these capabilities, _Scope_ for _Execution_ may be:
 * *Subgroup*
 
 When the *GroupNonUniformClustered* capability is declared, the *GroupNonUniformArithmetic* scan and reduction instructions may include the optional _ClusterSize_ operand.
+
+==== `cl_khr_spirv_extended_debug_info`
+
+If the OpenCL environment supports the extension `cl_khr_spirv_extended_debug_info`, then the environment must accept modules
+that import the `OpenCL.DebugInfo.100` extended instruction set via *OpExtInstImport*.
+
+==== `cl_khr_spirv_linkonce_odr`
+
+If the OpenCL environment supports the extension `cl_khr_spirv_linkonce_odr`, then the environment must accept modules that declare use of the extension `SPV_KHR_linkonce_odr` via *OpExtension*.
+
+If the OpenCL environment supports the extension `cl_khr_spirv_linkonce_odr` and use of the SPIR-V extension `SPV_KHR_linkonce_odr` is declared in the module via *OpExtension*, then the environment must accept modules that include the *LinkOnceODR* linkage type.
+
+==== `cl_khr_extended_bit_ops`
+
+If the OpenCL environment supports the extension `cl_khr_extended_bit_ops`, then the environment must accept modules that declare use of the extension `SPV_KHR_bit_instructions` via *OpExtension*.
+
+If the OpenCL environment supports the extension `cl_khr_extended_bit_ops` and use of the SPIR-V extension `SPV_KHR_bit_instructions` is declared in the module via *OpExtension*, then the environment must accept modules that declare the *BitInstructions* capability.
+
+==== `cl_khr_integer_dot_product`
+
+If the OpenCL environment supports the extension `cl_khr_integer_dot_product`,
+then the environment must accept modules that require `SPV_KHR_integer_dot_product` and
+declare the following SPIR-V capabilities:
+
+* *DotProductKHR*
+* *DotProductInput4x8BitKHR* if `CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR` is supported
+* *DotProductInput4x8BitPackedKHR*
+
+==== `cl_khr_expect_assume`
+
+If the OpenCL environment supports the extension `cl_khr_expect_assume`, then the environment must accept modules that declare use of the extension `SPV_KHR_expect_assume` via *OpExtension*.
+
+If the OpenCL environment supports the extension `cl_khr_expect_assume` and use of the SPIR-V extension `SPV_KHR_expect_assume` is declared in the module via *OpExtension*, then the environment must accept modules that declare the following SPIR-V capabilities:
+
+* *ExpectAssumeKHR*
+
+==== `cl_khr_subgroup_rotate`
+
+If the OpenCL environment supports the extension `cl_khr_subgroup_rotate`,
+then the environment accept modules that require `SPV_KHR_subgroup_rotate` and
+declare the following SPIR-V capabilities:
+
+* *GroupNonUniformRotateKHR*
+
+For instructions requiring these capabilities, _Scope_ for _Execution_ may be:
+
+* *Subgroup*
+
+==== `cl_khr_work_group_uniform_arithmetic`
+
+If the OpenCL environment supports the extension `cl_khr_work_group_uniform_arithmetic`, then the environment must accept modules that declare use of the extension `SPV_KHR_uniform_group_instructions` via *OpExtension*.
+
+If the OpenCL environment supports the extension `cl_khr_work_group_uniform_arithmetic` and use of the SPIR-V extension `SPV_KHR_uniform_group_instructions` is declared in the module via *OpExtension*, then the environment must accept modules that declare the following SPIR-V capabilities:
+
+* *GroupUniformArithmeticKHR*
+
+For instructions requiring these capabilities, _Scope_ for _Execution_ may be:
+
+* *Workgroup*
+
+For the instructions *OpGroupLogicalAndKHR*, *OpGroupLogicalOrKHR*, and *OpGroupLogicalXorKHR*, the valid type for _X_ is *OpTypeBool*.
+
+Otherwise, for the *GroupUniformArithmeticKHR* scan and reduction instructions, valid types for _X_ are:
+
+* Scalars of supported types:
+** *OpTypeInt* with _Width_ equal to `32` or `64` (equivalent to `int`, `uint`, `long`, and `ulong`)
+** *OpTypeFloat* (equivalent to `half`, `float`, and `double`)
 
 === Embedded Profile Extensions
 

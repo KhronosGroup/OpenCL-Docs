@@ -1,0 +1,226 @@
+= cl_intel_program_scope_host_pipe
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
+
+== Name Strings
+
+`cl_intel_program_scope_host_pipe`
+
+== Contact
+
+Zibai Wang, Intel (zibai 'dot' wang 'at' intel 'dot' com)
+
+== Contributors
+
+Bo Lei, Intel +
+Marco Jacques, Intel +
+Robert Ho, Intel +
+Zibai Wang, Intel +
+
+== Notice
+
+Copyright (c) 2023-2024 Intel Corporation.  All rights reserved.
+
+== Status
+
+Final Draft
+
+== Version
+
+Built On: {docdate} +
+
+== Dependencies
+
+This extension is written against the OpenCL API Specification Version 3.0.7.
+
+Program scope pipes cannot be expressed in the OpenCL kernel language.  But, they can be expressed through SPIR-V entry.  These runtime APIs are only relevant for kernels created from SPIR-V.
+
+
+== Overview
+
+This extension adds the ability to send data between host and device through program scope pipes.
+
+
+== New API Functions
+
+[source, c]
+----
+cl_int  clEnqueueReadHostPipeINTEL(
+            cl_command_queue command_queue,
+            cl_program program,
+            const char* pipe_symbol,
+            cl_bool blocking_read,
+            void* ptr,
+            size_t size,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+cl_int  clEnqueueWriteHostPipeINTEL(
+            cl_command_queue command_queue,
+            cl_program program,
+            const char* pipe_symbol,
+            cl_bool blocking_write,
+            const void* ptr,
+            size_t size,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+----
+
+
+== New API Enums
+
+New return values from clGetEventInfo when param_name is CL_EVENT_COMMAND_TYPE:
+
+[source, c]
+----
+#define CL_COMMAND_READ_HOST_PIPE_INTEL   0x4214
+#define CL_COMMAND_WRITE_HOST_PIPE_INTEL  0x4215
+#define CL_PROGRAM_NUM_HOST_PIPES_INTEL   0x4216
+#define CL_PROGRAM_HOST_PIPE_NAMES_INTEL  0x4217
+----
+
+
+== Modifications to the OpenCL API Specification
+
+=== New Section "Program Scope Pipes"
+
+Add a new subsection under Section 5, *The OpenCL Runtime* named *Program Scope Pipes* with the following content:
+
+Program scope pipes (also referred to as host pipes) are a new concept to OpenCL. Unlike regular pipes, program scope pipes are statically allocated in the device code and accessible from the host, whereas regular pipes are allocated by the OpenCL runtime and passed to the device.
+
+
+The following functions enqueue commands to read or write data through pipes on the host:
+
+[source, c]
+----
+cl_int  clEnqueueReadHostPipeINTEL(
+            cl_command_queue command_queue,
+            cl_program program,
+            const char* pipe_symbol,
+            cl_bool blocking_read,
+            void* ptr,
+            size_t size,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+cl_int  clEnqueueWriteHostPipeINTEL(
+            cl_command_queue command_queue,
+            cl_program program,
+            const char* pipe_symbol,
+            cl_bool blocking_write,
+            const void* ptr,
+            size_t size,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+----
+
+
+* _command_queue_ is a valid host command-queue in which the read / write command will be queued. command_queue and program must be created with the same OpenCL context.
+
+* _program_ is a program object with a successfully built executable.
+
+* _pipe_symbol_ is the name of the program scope pipe global variable.
+
+* _blocking_read_ and _blocking_write_ indicate if the read and write operations are blocking or non-blocking (see below).
+
+* _ptr_ is a pointer to buffer in host memory where data is to be read into or written from.
+
+* _size_ describes the size of the memory region to read or write, in bytes.
+
+* _event_wait_list_ and _num_events_in_wait_list_ specify events that need to complete before this particular command can be executed. If event_wait_list is NULL, then this particular command does not wait on any event to complete. If event_wait_list is NULL, num_events_in_wait_list must be 0. If event_wait_list is not NULL, the list of events pointed to by event_wait_list must be valid and num_events_in_wait_list must be greater than 0. The events specified in event_wait_list act as synchronization points. The context associated with events in event_wait_list and command_queue must be the same. The memory associated with event_wait_list can be reused or freed after the function returns.
+
+* _event_ returns an event object that identifies this read / write command and can be used to query or queue a wait for this command to complete. If event is NULL or the enqueue is unsuccessful, no event will be created and therefore it will not be possible to query the status of this command or to wait for this command to complete. If event_wait_list and event are not NULL, event must not refer to an element of the event_wait_list array.
+
+*clEnqueueReadHostPipeINTEL* and *clEnqueueWriteHostPipeINTEL* return CL_SUCCESS if the command is queued successfully. Otherwise, they return one of the following errors:
+
+* `CL_INVALID_COMMAND_QUEUE` if command_queue is not a valid host command-queue.
+
+* `CL_INVALID_CONTEXT` if the context associated with command_queue and program are not the same or if the context associated with command_queue and events in event_wait_list are not the same.
+
+* `CL_INVALID_PROGRAM` if program is not a valid program object.
+
+* `CL_INVALID_PROGRAM_EXECUTABLE` if there is no successfully built program executable available for device associated with command_queue.
+
+* `CL_INVALID_VALUE` if either _pipe_symbol_ or _ptr_ are `NULL`, or no such symbol is found on the device.
+
+* `CL_INVALID_SIZE` if _size_ doesn't equal the size of one data struct defined in the pipe.
+
+* `CL_INVALID_EVENT_WAIT_LIST` if event_wait_list is NULL and num_events_in_wait_list > 0, or event_wait_list is not NULL and num_events_in_wait_list is 0, or if event objects in event_wait_list are not valid events.
+
+* `CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST` if the read and write operations are blocking and the execution status of any of the events in event_wait_list is a negative integer value.
+
+* `CL_INVALID_OPERATION` if *clEnqueueReadHostPipeINTEL* is called for a global variable that is not a host pipe that can be read by the host.
+
+* `CL_INVALID_OPERATION` if *clEnqueueWriteHostPipeINTEL* is called for a global variable that is not a host pipe that can be written by the host.
+
+
+* `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
+
+* `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host.
+
+
+
+== Modify Section 5.8.9. Program Object Queries
+Add following rows to *Table 29. List of supported param_names by clGetProgramInfo*:
+
+[width="100%",cols="25,25,25"]
+|===
+| CL_PROGRAM_NUM_HOST_PIPES_INTEL
+| size_t 
+| Returns the number of host pipes declared in program. This information is only available after a successful program executable has been built for at least one device in the list of devices associated with program.
+| CL_PROGRAM_HOST_PIPE_NAMES_INTEL
+| char[] 
+| Returns a semi-colon separated list of host pipe names in program. This information is only available after a successful program executable has been built for at least one device in the list of devices associated with program.
+|===
+
+
+== Section 5.11: Event Objects
+Add two new rows to *Table 37, List of supported event command types*:
+
+[width="100%",cols="50,50"]
+|===
+| Events Created By |Event Command Type
+| clEnqueueReadHostPipeINTEL
+| CL_COMMAND_READ_HOST_PIPE_INTEL
+| clEnqueueWriteHostPipeINTEL
+| CL_COMMAND_WRITE_HOST_PIPE_INTEL
+|===
+
+== Issues
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1|2021-06-29|Bo Lei|*Initial working draft*
+|2|2022-02-22|Marco Jacques|*Updated draft, rewrote the API*
+|3|2022-12-12|Zibai Wang|*Final draft*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

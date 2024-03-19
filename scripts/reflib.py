@@ -1,24 +1,15 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2016-2020 The Khronos Group Inc.
+# Copyright 2016-2024 The Khronos Group Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
 
-# Utility functions for automatic ref page generation
+# Utility functions for automatic ref page generation and other script stuff
 
 import io
 import re
 import sys
+import subprocess
 
 # global errFile, warnFile, diagFile
 
@@ -109,7 +100,7 @@ def logErr(*args, **kwargs):
 
     if file is not None:
         file.write(strfile.getvalue())
-    raise UserWarning(strfile.getvalue())
+    sys.exit(1)
 
 def isempty(s):
     """Return True if s is nothing but white space, False otherwise"""
@@ -646,3 +637,27 @@ def findRefs(file, filename):
     setLogLine(None)
 
     return pageMap
+
+
+def getBranch():
+    """Determine current git branch
+
+    Returns (branch name, ''), or (None, stderr output) if the branch name
+    can't be determined"""
+
+    command = [ 'git', 'symbolic-ref', '--short', 'HEAD' ]
+    results = subprocess.run(command,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+
+    # git command failed
+    if len(results.stderr) > 0:
+        return (None, results.stderr)
+
+    # Remove newline from output and convert to a string
+    branch = results.stdout.rstrip().decode()
+    if len(branch) > 0:
+        # Strip trailing newline
+        branch = results.stdout.decode()[0:-1]
+
+    return (branch, '')

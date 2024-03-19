@@ -1,0 +1,197 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+
+ifdef::backend-html5[]
+:cl_device_feature_capabilities_intel_TYPE: pass:q[`cl_device_<wbr>feature_<wbr>capabilities_<wbr>intel`]
+:CL_DEVICE_IP_VERSION_INTEL: pass:q[`CL_DEVICE_<wbr>IP_<wbr>VERSION_<wbr>INTEL`]
+:CL_DEVICE_ID_INTEL: pass:q[`CL_DEVICE_<wbr>ID_<wbr>INTEL`]
+:CL_DEVICE_NUM_SLICES_INTEL: pass:q[`CL_DEVICE_<wbr>NUM_<wbr>SLICES_<wbr>INTEL`]
+:CL_DEVICE_NUM_SUB_SLICES_PER_SLICE_INTEL: pass:q[`CL_DEVICE_<wbr>NUM_<wbr>SUB_<wbr>SLICES_<wbr>PER_<wbr>SLICE_<wbr>INTEL`]
+:CL_DEVICE_NUM_EUS_PER_SUB_SLICE_INTEL: pass:q[`CL_DEVICE_<wbr>NUM_<wbr>EUS_<wbr>PER_<wbr>SUB_<wbr>SLICE_<wbr>INTEL`]
+:CL_DEVICE_NUM_THREADS_PER_EU_INTEL: pass:q[`CL_DEVICE_<wbr>NUM_<wbr>THREADS_<wbr>PER_<wbr>EU_<wbr>INTEL`]
+:CL_DEVICE_FEATURE_CAPABILITIES_INTEL: pass:q[`CL_DEVICE_<wbr>FEATURE_<wbr>CAPABILITIES_<wbr>INTEL`]
+endif::[]
+ifndef::backend-html5[]
+:cl_device_feature_capabilities_intel_TYPE: pass:q[`cl_device_&#8203;feature_&#8203;capabilities_&#8203;intel`]
+:CL_DEVICE_IP_VERSION_INTEL: pass:q[`CL_DEVICE_&#8203;IP_&#8203;VERSION_&#8203;INTEL`]
+:CL_DEVICE_ID_INTEL: pass:q[`CL_DEVICE_&#8203;ID_&#8203;INTEL`]
+:CL_DEVICE_NUM_SLICES_INTEL: pass:q[`CL_DEVICE_&#8203;NUM_&#8203;SLICES_&#8203;INTEL`]
+:CL_DEVICE_NUM_SUB_SLICES_PER_SLICE_INTEL: pass:q[`CL_DEVICE_&#8203;NUM_&#8203;SUB_&#8203;SLICES_&#8203;PER_&#8203;SLICE_&#8203;INTEL`]
+:CL_DEVICE_NUM_EUS_PER_SUB_SLICE_INTEL: pass:q[`CL_DEVICE_&#8203;NUM_&#8203;EUS_&#8203;PER_&#8203;SUB_&#8203;SLICE_&#8203;INTEL`]
+:CL_DEVICE_NUM_THREADS_PER_EU_INTEL: pass:q[`CL_DEVICE_&#8203;NUM_&#8203;THREADS_&#8203;PER_&#8203;EU_&#8203;INTEL`]
+:CL_DEVICE_FEATURE_CAPABILITIES_INTEL: pass:q[`CL_DEVICE_&#8203;FEATURE_&#8203;CAPABILITIES_&#8203;INTEL`]
+endif::[]
+
+= cl_intel_device_attribute_query
+
+== Name Strings
+
+`cl_intel_device_attribute_query`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel +
+Maciej Dziuban, Intel +
+Rafik Saliev, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2021-2024 Intel Corporation. All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+This feature is written against the OpenCL API Specification Version V3.0.6.
+
+This extension requires OpenCL 1.0.
+
+== Overview
+
+This extension can be used to query additional information about Intel OpenCL devices.
+The additional information may be useful to tailor a specific workload to the properties of the device.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+Possible values accepted as the _param_name_ parameter of *clGetDeviceInfo*, depending on the device type and the extension version.
+Additional queries may be added in subsequent versions of the extension:
+
+[source]
+----
+/* For GPU devices, version 1.0.0: */
+
+#define CL_DEVICE_IP_VERSION_INTEL                0x4250
+#define CL_DEVICE_ID_INTEL                        0x4251
+#define CL_DEVICE_NUM_SLICES_INTEL                0x4252
+#define CL_DEVICE_NUM_SUB_SLICES_PER_SLICE_INTEL  0x4253
+#define CL_DEVICE_NUM_EUS_PER_SUB_SLICE_INTEL     0x4254
+#define CL_DEVICE_NUM_THREADS_PER_EU_INTEL        0x4255
+#define CL_DEVICE_FEATURE_CAPABILITIES_INTEL      0x4256
+----
+
+Bitfield type describing the feature capabilities of a device.
+Additional feature flags may be added in subsequent versions of the extension.
+
+[source]
+----
+typedef cl_bitfield         cl_device_feature_capabilities_intel;
+
+/* For GPU devices, version 1.0.0: */
+
+#define CL_DEVICE_FEATURE_FLAG_DP4A_INTEL         (1 << 0)
+#define CL_DEVICE_FEATURE_FLAG_DPAS_INTEL         (1 << 1)
+----
+
+== New API Types
+
+None.
+
+== Modifications to the OpenCL API Specification
+
+(Add to the list preceding Table 5 in Section 4.2 - Querying Devices) ::
++
+--
+The device queries described in the Device Queries table should return the same information for a root-level device i.e. a device returned by *clGetDeviceIDs* and any sub-devices created from this device except for the following queries:
+
+* ...
+* {CL_DEVICE_NUM_SLICES_INTEL}
+--
+
+(Add to Table 5 - OpenCL Device Queries in Section 4.2 - Querying Devices) ::
++
+--
+[caption="Table 5. "]
+.List of supported param_names by clGetDeviceInfo
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_device_info* | Return Type | Description
+| {CL_DEVICE_IP_VERSION_INTEL}
+  | `cl_version`
+      | The IP version for the device.
+        The meaning of this version is implementation-defined, but newer devices should have a higher version than older devices.
+| {CL_DEVICE_ID_INTEL}
+  | `cl_uint`
+      | A unique device identifier for the OpenCL device.
+
+        If the implementation is driven primarily by a PCI device with a PCI device ID, the low 16 bits of the device identifier must contain that PCI device ID, and the remaining bits must be set to zero.
+        Otherwise, the choice of what to return may be dictated by operating system or platform policies - but should uniquely identify both the device version and any major configuration options (for example, core count in the case of multi-core devices).
+| {CL_DEVICE_NUM_SLICES_INTEL}
+  | `cl_uint`
+      | The number of slices in the device.
+        A slice is a collection of sub-slices.
+| {CL_DEVICE_NUM_SUB_SLICES_PER_SLICE_INTEL}
+  | `cl_uint`
+      | The maximum number of sub-slices in one slice.
+        A sub-slice is a collection of execution units (EUs), fixed-function units, and caches.
+| {CL_DEVICE_NUM_EUS_PER_SUB_SLICE_INTEL}
+  | `cl_uint`
+      | The maximum number of execution units (EUs) in one sub-slice.
+        An execution unit is a multi-threaded processor that runs OpenCL kernels.
+| {CL_DEVICE_NUM_THREADS_PER_EU_INTEL}
+  | `cl_uint`
+      | The maximum number of threads that may be simultaneously resident on one execution unit (EU).
+| {CL_DEVICE_FEATURE_CAPABILITIES_INTEL}
+  | {cl_device_feature_capabilities_intel_TYPE}
+      | Feature flags describing capabilities supported by the device.
+|====
+--
+
+== Issues
+
+. How to express cache sizes?  Is it for the entire device?
++
+--
+*RESOLVED*: The cache size query was removed in rev B, for now.
+If we decide to add it back, note that some caches are local to the device, while others are local to a sub-slice.
+--
+
+. Do we need a query for a "full device ID"?
++
+--
+*RESOLVED*: This is useful but it will be added by a different extension.
+--
+
+. What should the return type be for the {CL_DEVICE_IP_VERSION_INTEL} query?
++
+--
+*RESOLVED*: Using the OpenCL 3.0 `cl_version` type for now, but it could just as easily be interpreted as a plain `cl_uint`.
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Version|Date|Author|Changes
+|1.0.0|2021-08-12|Ben Ashbaugh|*Initial public revision*
+|========================================
+
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

@@ -1,18 +1,7 @@
 #!/usr/bin/python3
 
-# Copyright (c) 2019-2020 The Khronos Group Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright 2019-2024 The Khronos Group Inc.
+# SPDX-License-Identifier: Apache-2.0
 
 from collections import OrderedDict
 
@@ -34,7 +23,7 @@ def parse_xml(path):
 
 # File Header:
 def GetHeader():
-    return """// Copyright 2017-2020 The Khronos Group. This work is licensed under a
+    return """// Copyright 2017-2024 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 """
@@ -51,11 +40,11 @@ def FullNote(name, added_in, deprecated_by):
     if added_in == "1.0" and deprecated_by == None:
         return "\n// Intentionally empty, %s has always been present." % name
     if added_in != "1.0" and deprecated_by == None:
-        return "\nIMPORTANT: {%s} is <<unified-spec, missing before>> version %s." % (name, added_in)
+        return "\nIMPORTANT: {%s} is {missing_before} version %s." % (name, added_in)
     if added_in == "1.0" and deprecated_by != None:
-        return "\nIMPORTANT: {%s} is <<unified-spec, deprecated by>> version %s." % (name, deprecated_by)
+        return "\nIMPORTANT: {%s} is {deprecated_by} version %s." % (name, deprecated_by)
     if added_in != "1.0" and deprecated_by != None:
-        return "\nIMPORTANT: {%s} is <<unified-spec, missing before>> version %s and <<unified-spec, deprecated by>> version %s." % (name, added_in, deprecated_by)
+        return "\nIMPORTANT: {%s} is {missing_before} version %s and {deprecated_by} version %s." % (name, added_in, deprecated_by)
 
 def ShortNote(name, added_in, deprecated_by):
     # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
@@ -63,11 +52,11 @@ def ShortNote(name, added_in, deprecated_by):
     if added_in == "1.0" and deprecated_by == None:
         return "// Intentionally empty, %s has always been present." % name
     if added_in != "1.0" and deprecated_by == None:
-        return "<<unified-spec, Missing before>> version %s." % added_in
+        return "{missing_before} version %s." % added_in
     if added_in == "1.0" and deprecated_by != None:
-        return "<<unified-spec, Deprecated by>> version %s." % deprecated_by
+        return "{deprecated_by} version %s." % deprecated_by
     if added_in != "1.0" and deprecated_by != None:
-        return "<<unified-spec, Missing before>> version %s and <<unified-spec, deprecated by>> version %s." % (added_in, deprecated_by)
+        return "{missing_before} version %s and {deprecated_by} version %s." % (added_in, deprecated_by)
 
 # Find feature groups that are parents of a feature/require/${entry_type}
 # hierarchy, and then find all the ${entry_type} within each hierarchy:

@@ -1,4 +1,4 @@
-// Copyright 2017-2020 The Khronos Group. This work is licensed under a
+// Copyright 2017-2024 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -75,7 +75,7 @@ The information that can be queried using {clGetPlatformInfo} is specified
 in the <<platform-queries-table, Platform Queries>> table.
 
 [[platform-queries-table]]
-.List of supported param_names by <<clGetPlatformInfo>>
+.List of supported param_names by {clGetPlatformInfo}
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
 | Platform Info | Return Type | Description
@@ -210,7 +210,7 @@ include::{generated}/api/version-notes/clGetDeviceIDs.asciidoc[]
     If _num_devices_ is `NULL`, this argument is ignored.
 
 [[device-types-table]]
-.List of supported device_types by <<clGetDeviceIDs>>
+.List of supported device_types by {clGetDeviceIDs}
 [width="100%",cols="<50%,<50%",options="header"]
 |====
 | Device Type | Description
@@ -331,7 +331,7 @@ device except for the following queries:
   * {CL_DEVICE_REFERENCE_COUNT}
 
 [[device-queries-table]]
-.List of supported param_names by <<clGetDeviceInfo>>
+.List of supported param_names by {clGetDeviceInfo}
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
 | Device Info | Return Type | Description
@@ -659,7 +659,9 @@ include::{generated}/api/version-notes/CL_DEVICE_MAX_PARAMETER_SIZE.asciidoc[]
         The minimum value is 1024 for devices that are not of type
         {CL_DEVICE_TYPE_CUSTOM}.
         For this minimum value, only a maximum of 128 arguments can be
-        passed to a kernel
+        passed to a kernel.
+        For all other values, a maximum of 255 arguments can be passed
+        to a kernel.
 | {CL_DEVICE_MEM_BASE_ADDR_ALIGN_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_MEM_BASE_ADDR_ALIGN.asciidoc[]
@@ -731,10 +733,20 @@ Also see extension *cl_khr_fp64*.
         double precision floating-point capability is 0.
 
         If double precision is supported by the device, then the minimum
-        double precision floating-point capability is:
+        double precision floating-point capability for OpenCL 2.0 or
+        newer devices is:
 
         {CL_FP_FMA} \| +
         {CL_FP_ROUND_TO_NEAREST} \| +
+        {CL_FP_INF_NAN} \| +
+        {CL_FP_DENORM}.
+
+        or for OpenCL 1.0, OpenCL 1.1 or OpenCL 1.2 devices:
+
+        {CL_FP_FMA} \| +
+        {CL_FP_ROUND_TO_NEAREST} \| +
+        {CL_FP_ROUND_TO_ZERO} \| +
+        {CL_FP_ROUND_TO_INF} \| +
         {CL_FP_INF_NAN} \| +
         {CL_FP_DENORM}.
 | {CL_DEVICE_GLOBAL_MEM_CACHE_TYPE_anchor}
@@ -1168,7 +1180,7 @@ include::{generated}/api/version-notes/CL_DEVICE_EXTENSIONS_WITH_VERSION.asciido
         extensions reported must match the list reported via
         {CL_DEVICE_EXTENSIONS}.
 
-        See {CL_DEVICE_EXTENSIONS_anchor} for a list of extensions that are
+        See {CL_DEVICE_EXTENSIONS} for a list of extensions that are
         required to be reported for a given OpenCL version.
 
 | {CL_DEVICE_PRINTF_BUFFER_SIZE_anchor}
@@ -1217,7 +1229,7 @@ include::{generated}/api/version-notes/CL_DEVICE_PARTITION_PROPERTIES.asciidoc[]
 
         If the device cannot be partitioned (i.e. there is no partitioning
         scheme supported by the device that will return at least two
-        subdevices), a value of 0 will be returned.
+        sub-devices), a value of 0 will be returned.
 | {CL_DEVICE_PARTITION_AFFINITY_DOMAIN_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_PARTITION_AFFINITY_DOMAIN.asciidoc[]
@@ -1328,9 +1340,9 @@ include::{generated}/api/version-notes/CL_DEVICE_MAX_NUM_SUB_GROUPS.asciidoc[]
         capable of executing on a single compute unit, for any given
         kernel-instance running on the device.
 
-        The minimum value is 1 if the device supports subgroups, and must be
-        0 for devices that do not support subgroups.
-        Support for subgroups is required for an OpenCL 2.1 or 2.2 device.
+        The minimum value is 1 if the device supports sub-groups, and must be
+        0 for devices that do not support sub-groups.
+        Support for sub-groups is required for an OpenCL 2.1 or 2.2 device.
 
         (Refer also to {clGetKernelSubGroupInfo}.)
 | {CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS_anchor}
@@ -1343,7 +1355,7 @@ include::{generated}/api/version-notes/CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_P
 
         This query must return {CL_TRUE} for devices that support the
         *cl_khr_subgroups* extension, and must return {CL_FALSE} for
-        devices that do not support subgroups.
+        devices that do not support sub-groups.
 
 | {CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES_anchor}
 
@@ -1498,7 +1510,7 @@ timestamps from the device timer and the host timer as seen by _device_.
 Implementations may need to execute this query with a high latency in order
 to provide reasonable synchronization of the timestamps.
 The host timestamp and device timestamp returned by this function and
-{clGetHostTimer} each have an implementation defined timebase.
+{clGetHostTimer} each have an implementation-defined timebase.
 The timestamps will always be in their respective timebases regardless of
 which query function is used.
 The timestamp returned from {clGetEventProfilingInfo} for an event on a
@@ -1541,7 +1553,7 @@ This value is in the same timebase as the _host_timestamp_ returned from
 The implementation will return with as low a latency as possible to allow a
 correlation with a subsequent application sampled time.
 The host timestamp and device timestamp returned by this function and
-{clGetDeviceAndHostTimer} each have an implementation defined timebase.
+{clGetDeviceAndHostTimer} each have an implementation-defined timebase.
 The timestamps will always be in their respective timebases regardless of
 which query function is used.
 The timestamp returned from {clGetEventProfilingInfo} for an event on a
@@ -1581,7 +1593,7 @@ include::{generated}/api/version-notes/clCreateSubDevices.asciidoc[]
     value.
     The list is terminated with 0.
     The list of supported partitioning schemes is described in the
-    <<subdevice-partition-table, Subdevice Partition>> table.
+    <<sub-device-partition-table, Sub-device Partition>> table.
     Only one of the listed partitioning schemes can be specified in
     _properties_.
   * _num_devices_ is the size of memory pointed to by _out_devices_ specified as
@@ -1605,8 +1617,8 @@ calls to {clCreateSubDevices} and creating command-queues.
 When a command-queue is created against a sub-device, the commands enqueued
 on the queue are executed only on the sub-device.
 
-[[subdevice-partition-table]]
-.List of supported partition schemes by <<clCreateSubDevices>>
+[[sub-device-partition-table]]
+.List of supported partition schemes by {clCreateSubDevices}
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
 | Partition Property | Partition Value | Description
@@ -1707,7 +1719,7 @@ _properties_ argument to {clCreateSubDevices} are given below:
 To partition a device containing 16 compute units into two sub-devices, each
 containing 8 compute units, pass the following in _properties_:
 
-[source,c]
+[source,opencl]
 ----
 { CL_DEVICE_PARTITION_EQUALLY, 8,
   0 } // 0 terminates the property list
@@ -1717,7 +1729,7 @@ To partition a device with four compute units into two sub-devices with one
 sub-device containing 3 compute units and the other sub-device 1 compute
 unit, pass the following in properties argument:
 
-[source,c]
+[source,opencl]
 ----
 { CL_DEVICE_PARTITION_BY_COUNTS,
     3, 1, CL_DEVICE_PARTITION_BY_COUNTS_LIST_END,
@@ -1727,7 +1739,7 @@ unit, pass the following in properties argument:
 To split a device along the outermost cache line (if any), pass the
 following in properties argument:
 
-[source,c]
+[source,opencl]
 ----
 { CL_DEVICE_PARTITION_BY_AFFINITY_DOMAIN,
     CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITIONABLE,
@@ -1769,7 +1781,7 @@ To release a device, call the function:
 include::{generated}/api/protos/clReleaseDevice.txt[]
 include::{generated}/api/version-notes/clReleaseDevice.asciidoc[]
 
-  * _device_ is the OpenCL device to retain.
+  * _device_ is the OpenCL device to release.
 
 {clReleaseDevice} decrements the _device_ reference count if device is a
 valid sub-device created by a call to {clCreateSubDevices}.
@@ -1825,7 +1837,7 @@ include::{generated}/api/version-notes/clCreateContext.asciidoc[]
     at runtime in this context.
     This callback function may be called asynchronously by the OpenCL
     implementation.
-    It is the applications responsibility to ensure that the callback function
+    It is the application's responsibility to ensure that the callback function
     is thread-safe.
     If _pfn_notify_ is `NULL`, no callback function is registered.
   * _user_data_ will be passed as the _user_data_ argument when _pfn_notify_ is
@@ -1847,7 +1859,7 @@ command-queues, memory, program and kernel objects and for executing kernels
 on one or more devices specified in the context.
 
 [[context-properties-table]]
-.List of supported context creation properties by <<clCreateContext>>
+.List of supported context creation properties by {clCreateContext}
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
 | Context Property | Property Value | Description
@@ -1882,9 +1894,9 @@ to {CL_SUCCESS} if the context is created successfully.
 Otherwise, it returns a `NULL` value with the following error values
 returned in _errcode_ret_:
 
-  * {CL_INVALID_PLATFORM} if _properties_ is `NULL` and no platform could be
-    selected or if platform value specified in _properties_ is not a valid
-    platform.
+  * {CL_INVALID_PLATFORM} if no platform is specified in _properties_ and no
+    platform could be selected, or if the platform specified in _properties_ is
+    not a valid platform.
   * {CL_INVALID_PROPERTY} if context property name in _properties_ is not a
     supported property name, if the value specified for a supported property
     name is not valid, or if the same property name is specified more than
@@ -1950,9 +1962,9 @@ is set to {CL_SUCCESS} if the context is created successfully.
 Otherwise, it returns a `NULL` value with the following error values
 returned in _errcode_ret_:
 
-  * {CL_INVALID_PLATFORM} if _properties_ is `NULL` and no platform could be
-    selected or if platform value specified in _properties_ is not a valid
-    platform.
+  * {CL_INVALID_PLATFORM} if no platform is specified in _properties_ and no
+    platform could be selected, or if the platform specified in _properties_ is
+    not a valid platform.
   * {CL_INVALID_PROPERTY} if context property name in _properties_ is not a
     supported property name, if the value specified for a supported property
     name is not valid, or if the same property name is specified more than
@@ -2058,7 +2070,7 @@ _param_value_ by {clGetContextInfo} is described in the
 <<context-info-table, Context Attributes>> table.
 
 [[context-info-table]]
-.List of supported param_names by <<clGetContextInfo>>
+.List of supported param_names by {clGetContextInfo}
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
 | Context Info | Return Type | Description

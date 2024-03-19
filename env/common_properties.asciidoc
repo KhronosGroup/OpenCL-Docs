@@ -1,4 +1,4 @@
-// Copyright 2017-2020 The Khronos Group. This work is licensed under a
+// Copyright 2017-2024 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -163,6 +163,10 @@ OpenCL environments:
 // sampler_t
 *OpTypeSampler* may be used to declare sampler types in OpenCL environments.
 
+// This cannot be passed to a kernel or expressed directly in OpenCL C but
+// should be mentioned explicitly, see internal issue 273:
+*OpTypeSampledImage* may be used to declare combined image and sampler types in OpenCL environments.
+
 ==== Other Data Types
 
 The following table describes other data types that may be used in an
@@ -180,7 +184,7 @@ OpenCL environment:
 
 // clk_event_t
 | *OpTypeDeviceEvent*
-| OpenCL device-side event representing commands enqueued to device command queues.
+| OpenCL device-side event representing commands enqueued to device command-queues.
 
 // pipe_t
 | *OpTypePipe*
@@ -192,7 +196,7 @@ OpenCL environment:
 
 // queue_t
 | *OpTypeQueue*
-| OpenCL device-side command queue.
+| OpenCL device-side command-queue.
 
 |====
 
@@ -366,7 +370,7 @@ Allowed types for OpenCL kernel arguments are:
 For *OpTypeInt* parameters, supported _Widths_ are 8, 16, 32, and 64, and
 must have no signedness semantics.
 
-For *OpTypeFloat* parameters, _Width_ must be 32.
+For *OpTypeFloat* parameters, supported _Width_ are 16, 32, and 64.
 
 For *OpTypeStruct* parameters, supported structure _Member Types_ are:
 
@@ -393,6 +397,111 @@ additional types in an entry point's parameter list.
 An *OpVariable* in a SPIR-V module with the *BuiltIn* decoration represents
 a built-in variable.
 All built-in variables must be in the *Input* storage class.
+
+The following table describes the required SPIR-V type for built-in variables.
+In this table, `size_t` is used as a generic type to represent:
+
+  * *OpTypeInt* with _Width_ equal to 32 if the _Addressing Model_ declared in *OpMemoryModel* is *Physical32*.
+  * *OpTypeInt* with _Width_ equal to 64 if the _Addressing Model_ declared in *OpMemoryModel* is *Physical64*.
+
+The mapping from an OpenCL C built-in function to the SPIR-V *BuiltIn* is informational and non-normative.
+
+[cols="2,2,3",options="header"]
+|====
+|*OpenCL C Function*
+|*SPIR-V BuiltIn*
+|*Required SPIR-V Type*
+
+| `get_work_dim`
+ | *WorkDim*
+  | *OpTypeInt* with _Width_ equal to 32
+
+| `get_global_size`
+ | *GlobalSize*
+  | *OpTypeVector* of 3 components of `size_t`
+
+| `get_global_id`
+ | *GlobalInvocationId*
+  | *OpTypeVector* of 3 components of `size_t`
+
+| `get_local_size`
+ | *WorkgroupSize*
+  | *OpTypeVector* of 3 components of `size_t`
+
+| `get_enqueued_local_size`
+ | *EnqueuedWorkgroupSize*
+  | *OpTypeVector* of 3 components of `size_t`
+
+| `get_local_id`
+ | *LocalInvocationId*
+  | *OpTypeVector* of 3 components of `size_t`
+
+| `get_num_groups`
+ | *NumWorkgroups*
+  | *OpTypeVector* of 3 components of `size_t`
+
+| `get_group_id`
+ | *WorkgroupId*
+  | *OpTypeVector* of 3 components of `size_t`
+
+| `get_global_offset`
+ | *GlobalOffset*
+  | *OpTypeVector* of 3 components of `size_t`
+
+| `get_global_linear_id`
+ | *GlobalLinearId*
+  | `size_t`
+
+| `get_local_linear_id`
+ | *LocalInvocationIndex*
+  | `size_t`
+
+| `get_sub_group_size`
+ | *SubgroupSize*
+  | *OpTypeInt* with _Width_ equal to 32
+
+| `get_max_sub_group_size`
+ | *SubgroupMaxSize*
+  | *OpTypeInt* with _Width_ equal to 32
+
+| `get_num_sub_groups`
+ | *NumSubgroups*
+  | *OpTypeInt* with _Width_ equal to 32
+
+| `get_enqueued_num_sub_groups`
+ | *NumEnqueuedSubgroups*
+  | *OpTypeInt* with _Width_ equal to 32
+
+| `get_sub_group_id`
+ | *SubgroupId*
+  | *OpTypeInt* with _Width_ equal to 32
+
+| `get_sub_group_local_id`
+ | *SubgroupLocalInvocationId*
+  | *OpTypeInt* with _Width_ equal to 32
+
+// TODO: Ensure this is documented as part of the extension!
+//| `get_sub_group_eq_mask`
+// | *SubgroupEqMask*
+//  | *OpTypeVector* of 4 components of *OpTypeInt* with _Width_ equal to 32
+//
+//| `get_sub_group_ge_mask`
+// | *SubgroupGeMask*
+//  | *OpTypeVector* of 4 components of *OpTypeInt* with _Width_ equal to 32
+//
+//| `get_sub_group_gt_mask`
+// | *SubgroupGtMask*
+//  | *OpTypeVector* of 4 components of *OpTypeInt* with _Width_ equal to 32
+//
+//| `get_sub_group_le_mask`
+// | *SubgroupLeMask*
+//  | *OpTypeVector* of 4 components of *OpTypeInt* with _Width_ equal to 32
+//
+//| `get_sub_group_lt_mask`
+// | *SubgroupLtMask*
+//  | *OpTypeVector* of 4 components of *OpTypeInt* with _Width_ equal to 32
+
+|====
 
 === Alignment of Types
 

@@ -2,6 +2,7 @@
 :data-uri:
 :icons: font
 include::../config/attribs.txt[]
+include::{generated}/api/api-dictionary-no-links.asciidoc[]
 :source-highlighter: coderay
 
 = cl_arm_scheduling_controls
@@ -16,11 +17,12 @@ Kevin Petit (kevin.petit 'at' arm.com)
 
 == Contributors
 
-Kevin Petit, Arm Ltd.
+Kevin Petit, Arm Ltd. +
+Radek Szymanski, Arm Ltd. +
 
 == Notice
 
-Copyright (c) 2020 Arm Ltd.
+Copyright (c) 2020-2024 Arm Ltd.
 
 == Status
 
@@ -29,7 +31,7 @@ Shipping
 == Version
 
 Built On: {docdate} +
-Version: 0.2.0
+Version: 0.6.0
 
 == Dependencies
 
@@ -54,23 +56,53 @@ CL_DEVICE_SCHEDULING_KERNEL_BATCHING_ARM                (1 << 0)
 CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_ARM           (1 << 1)
 CL_DEVICE_SCHEDULING_WORKGROUP_BATCH_SIZE_MODIFIER_ARM  (1 << 2)
 CL_DEVICE_SCHEDULING_DEFERRED_FLUSH_ARM                 (1 << 3)
+CL_DEVICE_SCHEDULING_REGISTER_ALLOCATION_ARM            (1 << 4)
+CL_DEVICE_SCHEDULING_WARP_THROTTLING_ARM                (1 << 5)
+CL_DEVICE_SCHEDULING_COMPUTE_UNIT_BATCH_QUEUE_SIZE_ARM  (1 << 6)
+CL_DEVICE_SCHEDULING_COMPUTE_UNIT_LIMIT_ARM             (1 << 7)
+
+CL_DEVICE_SUPPORTED_REGISTER_ALLOCATIONS_ARM              0x41EB
+
+CL_DEVICE_MAX_WARP_COUNT_ARM                             0x41EA
 ----
 
 Accepted value for the _param_name_ parameter to *clSetKernelExecInfo*:
 
 [source,c]
 ----
-CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM           0x41E5
-CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM  0x41E6
+CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM            0x41E5
+CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM   0x41E6
+CL_KERNEL_EXEC_INFO_WARP_COUNT_LIMIT_ARM                0x41E8
+CL_KERNEL_EXEC_INFO_COMPUTE_UNIT_MAX_QUEUED_BATCHES_ARM 0x41F1
 ----
 
 Accepted value for the _properties_ parameter to *clCreateCommandQueueWithProperties*:
 
 [source,c]
 ----
-CL_QUEUE_KERNEL_BATCHING_ARM 0x41E7
-CL_QUEUE_DEFERRED_FLUSH_ARM  0x41EC
+CL_QUEUE_KERNEL_BATCHING_ARM    0x41E7
+CL_QUEUE_DEFERRED_FLUSH_ARM     0x41EC
+CL_QUEUE_COMPUTE_UNIT_LIMIT_ARM 0x41F3
 ----
+
+Accepted value for the _param_name_ parameter to *clGetKernelInfo*:
+
+[source,c]
+----
+CL_KERNEL_MAX_WARP_COUNT_ARM 0x41E9
+----
+
+== New build options
+
+This extension adds a build option to control the number of registers allocated
+to each thread:
+
+[source,c]
+----
+-fregister-allocation=
+----
+
+NOTE: Missing before version 0.3.0
 
 == Modifications to the OpenCL API Specification
 
@@ -89,7 +121,7 @@ CL_QUEUE_DEFERRED_FLUSH_ARM  0x41EC
 | Description
 
 | `CL_DEVICE_SCHEDULING_CONTROLS_CAPABILITIES_ARM`
-| `cl_bitfield`
+| `cl_device_scheduling_controls_capabilities_arm`
 | Returns a bitfield of the scheduling controls this device supports:
  +
 - `CL_DEVICE_SCHEDULING_KERNEL_BATCHING_ARM` is set when the device supports
@@ -103,12 +135,41 @@ CL_QUEUE_DEFERRED_FLUSH_ARM  0x41EC
 - `CL_DEVICE_SCHEDULING_DEFERRED_FLUSH_ARM` is set when the device supports
   `CL_QUEUE_DEFERRED_FLUSH_ARM`.
 
+- `CL_DEVICE_SCHEDULING_REGISTER_ALLOCATION_ARM` is set when the device compiler
+  supports the `-fregister-allocation` option.
+
+- {CL_DEVICE_SCHEDULING_WARP_THROTTLING_ARM} is set when the device supports
+  {CL_KERNEL_EXEC_INFO_WARP_COUNT_LIMIT_ARM}, {CL_KERNEL_MAX_WARP_COUNT_ARM}
+  and {CL_DEVICE_MAX_WARP_COUNT_ARM}. +
+  Missing before version 0.4.
+
+- {CL_DEVICE_SCHEDULING_COMPUTE_UNIT_BATCH_QUEUE_SIZE_ARM} is set when the
+  device supports {CL_KERNEL_EXEC_INFO_COMPUTE_UNIT_MAX_QUEUED_BATCHES_ARM}. +
+  Missing before version 0.5.
+
+- {CL_DEVICE_SCHEDULING_COMPUTE_UNIT_LIMIT_ARM} is set when the device supports
+  {CL_QUEUE_COMPUTE_UNIT_LIMIT_ARM}. +
+  Missing before version 0.6.
+
+| `CL_DEVICE_SUPPORTED_REGISTER_ALLOCATIONS_ARM`
+| `cl_int[]`
+| Returns an array of valid register allocations for this device. Each of the
+  returned values can be passed to the `-fregister-allocation` build option. +
+  Missing before version 0.3.
+
+| {CL_DEVICE_MAX_WARP_COUNT_ARM}
+| {cl_uint_TYPE}
+| Returns the maximum number of warps per compute unit a kernel may use. The
+  value returned is an upper bound for any possible kernel. When
+  {CL_DEVICE_SCHEDULING_CONTROLS_CAPABILITIES_ARM} is not set, the call to
+  {clGetDeviceInfo} returns {CL_INVALID_VALUE}. +
+  Missing before version 0.4.
 |====
 
 --
 --
 
-(Modify Section 5.1, *Command Queues*) ::
+(Modify Section 5.1, *Command-Queues*) ::
 +
 --
 
@@ -134,8 +195,37 @@ CL_QUEUE_DEFERRED_FLUSH_ARM  0x41EC
   deferred for execution in another thread managed by the OpenCL runtime.
   `CL_TRUE` means flush operations are deferred. Defaults to `CL_TRUE`. +
   Missing before version 0.2.
+
+| {CL_QUEUE_COMPUTE_UNIT_LIMIT_ARM}
+| {cl_uint_TYPE}
+| Set a limit for the number of compute units this queue is allowed to use.
+  The limit provided must be greater than 0 and less than or equal to
+  {CL_DEVICE_MAX_COMPUTE_UNITS}. +
+  Missing before version 0.6.
 |====
 
+--
+--
+
+(Modify Section 5.8.6, *Compiler Options*) ::
++
+--
+
+(Add the following to _Optimization Options_) ::
++
+--
+
+The following options are supported when building programs created from
+source or intermediate language. Specifying these options when building
+a program created from a binary will result in {CL_INVALID_BUILD_OPTIONS}
+being returned by *clBuildProgram*.
+
+`-fregister-allocation=<number-of-registers-per-thread>` ::
+    This option overrides the compiler's selection of the number of machine
+    registers allocated to each thread for all kernels in the program.
+`-fregister-allocation=<kernel-name>:<number-of-registers-per-thread>[,...]` ::
+    This option overrides the compiler's selection of the number of machine
+    registers allocated to each thread for specific kernels in the program.
 --
 --
 
@@ -158,9 +248,9 @@ CL_QUEUE_DEFERRED_FLUSH_ARM  0x41EC
 | Set the size of batches of work groups distributed to compute units.
   The value is a number of work groups. If set to 0, then the runtime
   will pick a suitable value automatically. Defaults to 0. If the value is
-  greater than the number of work groups necessary to execute a given NDRange,
+  greater than the number of work groups necessary to execute a given ND-range,
   the actual batch size will be capped at the number of work groups in the
-  NDRange. When a value is not directly usable due to device-specific
+  ND-range. When a value is not directly usable due to device-specific
   constraints, it will be rounded up to the next usable value.
 
 | `CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM`
@@ -180,9 +270,44 @@ or multiply (positive value) the batch size by 2. If the requested modification
 is not possible due to hardware constraints, the greatest possible modification
 will be used.
 
+| {CL_KERNEL_EXEC_INFO_WARP_COUNT_LIMIT_ARM}
+| {cl_uint_TYPE}
+| Limit the number of warps allowed to run in each compute unit for this kernel. +
+  The value passed must be greater than 0 and smaller than or equal to
+  {CL_KERNEL_MAX_WARP_COUNT_ARM}, otherwise the call to {clSetKernelExecInfo}
+  will fail and return {CL_INVALID_VALUE}. +
+  Missing before version 0.4.
+
+| {CL_KERNEL_EXEC_INFO_COMPUTE_UNIT_MAX_QUEUED_BATCHES_ARM}
+| {cl_uint_TYPE}
+| Limit the number of workgroup batches each compute unit can have in its queue. +
+  Acceptable values depend on the device. If a value not supported by the device
+  is passed, the call to {clSetKernelExecInfo} will fail and return {CL_INVALID_VALUE}.
+  All devices that support this functionality accept `0` to let the implementation
+  select the max number of queued workgroup batches. +
+  Missing before version 0.5.
 |====
 
 --
+
+(Add the following to Table 32, _List of supported param_names by *clGetKernelInfo*_) ::
++
+--
+
+[cols="1,1,4",options="header"]
+|====
+| Kernel Info
+| Return type
+| Description
+
+| {CL_KERNEL_MAX_WARP_COUNT_ARM}
+| {cl_uint_TYPE}
+| Returns the maximum number of warps this kernel can use per compute unit. +
+  Missing before version 0.4.
+|====
+
+--
+
 --
 
 == Interactions with Other Extensions
@@ -206,6 +331,10 @@ None.
 [options="header"]
 |====
 | Version | Date       | Author       | Changes
+| 0.6.0   | 2022-12-12 | Kévin Petit  | Add support for compute unit limit
+| 0.5.0   | 2022-06-29 | Kévin Petit  | Add support for compute unit batch size queue control
+| 0.4.0   | 2022-02-28 | Kévin Petit  | Add support for warp throttling
+| 0.3.0   | 2021-01-19 | Kévin Petit  | Add support for register allocation control
 | 0.2.0   | 2020-09-14 | Kévin Petit  | Add support for deferred queue flush control
 | 0.1.0   | 2020-08-28 | Kévin Petit  | Initial version
 |====

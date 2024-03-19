@@ -1,0 +1,608 @@
+= cl_intel_planar_yuv
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
+
+== Name Strings
+
+`cl_intel_planar_yuv`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Dan Petre, Intel +
+Krzysztof Laskowski, Intel +
+Bartosz Sochacki, Intel +
+Ben Ashbaugh, Intel +
+Biju George, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2021-2024 Intel Corporation.  All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Revision: 1.0.1
+
+== Dependencies
+
+OpenCL 1.2 is required.
+
+This extension is written against the OpenCL Specification Version 3.0.7.
+
+== Overview
+
+The purpose of this extension is to provide OpenCL support for the Planar YUV (YCbCr)
+image formats. The NV12 format must be supported; support for other Planar YUV formats
+that may be defined in this extension is optional.
+
+The extension introduces two new `cl_mem_flags`:
+
+* `CL_MEM_NO_ACCESS_INTEL` may be used together with image formats for which
+    device does not support reading from or writing to at the OpenCL kernel level, but are
+    still useful in other use-cases.
+* `CL_MEM_ACCESS_FLAGS_UNRESTRICTED_INTEL` may be used to relax the memory access
+    rights specified in `cl_mem_flags` at memory object creation time and allow to access
+    and modify the contents of the underlying data storage in an unrestricted way e.g. by
+    creating another memory object from that memory object or using dedicated device
+    mechanisms.
+
+== New API Enums
+
+Accepted as `cl_mem_flags`:
+
+[source]
+----
+#define CL_MEM_NO_ACCESS_INTEL                      (1 << 24)
+#define CL_MEM_ACCESS_FLAGS_UNRESTRICTED_INTEL      (1 << 25)
+----
+
+Accepted as the `image_channel_order` of `cl_image_format`:
+
+[source]
+----
+#define CL_NV12_INTEL                               0x410E
+----
+
+Accepted value for the _param_name_ parameter to *clGetDeviceInfo*:
+
+[source]
+----
+#define CL_DEVICE_PLANAR_YUV_MAX_WIDTH_INTEL        0x417E
+#define CL_DEVICE_PLANAR_YUV_MAX_HEIGHT_INTEL       0x417F
+----
+
+== Modifications to the OpenCL API Specification
+
+(Add to Table 5 - OpenCL Device Queries in Section 4.2 - Querying Devices) ::
++
+--
+[caption="Table 5. "]
+.List of supported param_names by clGetDeviceInfo
+[width="100%",cols="3,2,5",options="header"]
+|====
+| Device Info | Return Type | Description
+| `CL_DEVICE_PLANAR_YUV_MAX_WIDTH_INTEL`
+    | `size_t`
+        | Max width of a Planar YUV image in pixels.
+| `CL_DEVICE_PLANAR_YUV_MAX_HEIGHT_INTEL`
+    | `size_t`
+        | Max height of a Planar YUV image in pixels.
+|====
+--
+
+(Add to Table 12 - List of supported memory flag values in Section 5.2.1 - Creating Buffer Objects) ::
++
+--
+[caption="Table 12. "]
+.List of supported memory flag values
+[width="100%",cols="<50%,<50%",options="header"]
+|====
+| Memory Flags | Description
+| `CL_MEM_NO_ACCESS_INTEL`
+    | This flag specifies that the device will not read or write to the memory
+      object.
+
+      `CL_MEM_NO_ACCESS_INTEL` and `CL_MEM_READ_WRITE`, `CL_MEM_WRITE_ONLY`, or
+      `CL_MEM_READ_ONLY` are mutually exclusive
+| `CL_MEM_ACCESS_FLAGS_UNRESTRICTED_INTEL`
+    | This flag indicates that the host and device access flags used together
+      with this flag do not strictly prohibit reading or modifying the contents
+      of this memory object. Memory objects created from this memory object may
+      re-specify the host and device access capabilities of the created memory
+      object with new access capabilities, and any mechanisms provided by the
+      implementation which explicitly support certain operations on memory
+      objects of this type are allowed to access this memory object without any
+      restrictions.
+|====
+--
+
+(Extend the argument description for clCreateImage in Section 5.3.1 - Creating Image Objects) ::
++
+--
+* _flags_ is a bit-field that is used to specify allocation and usage
+  information about the image memory object being created and is described in
+  the supported memory flag values table. [...] If the `image_channel_order` of
+  _image_format_ is a Planar YUV format then _flags_ must include
+  `CL_MEM_HOST_NO_ACCESS`. If `CL_MEM_ACCESS_FLAGS_UNRESTRICTED_INTEL` was
+  specified in the memory flags associated with _mem_object_ then _flags_ can
+  specify any host and device access capabilities regardless of the memory flags
+  associated with _mem_object_.
+--
+
+(Modify the error code descriptions for clCreateImage in Section 5.3.1 - Creating Image Objects) ::
++
+--
+*clCreateImage* returns a valid non-zero image object created and _errcode_ret_ is
+set to `CL_SUCCESS` if the image object is created successfully. Otherwise, it returns
+a `NULL` value with one of the following error values returned in _errcode_ret_:
+
+* ...
+* `CL_INVALID_VALUE` if the `image_channel_order` of _image_format_ is a Planar
+  YUV format and _flags_ does not include `CL_MEM_HOST_NO_ACCESS`.
+* `CL_INVALID_VALUE` if an image is being created from another memory object
+  (buffer or image) under one of the following circumstances: 1) _mem_object_
+  was created with `CL_MEM_WRITE_ONLY` and _flags_ specifies `CL_MEM_READ_WRITE`
+  or `CL_MEM_READ_ONLY`, 2) _mem_object_ was created with `CL_MEM_READ_ONLY` and
+  _flags_ specifies `CL_MEM_READ_WRITE` or `CL_MEM_WRITE_ONLY`, 3) _mem_object_
+  was created with `CL_MEM_NO_ACCESS_INTEL` and _flags_ specifies
+  `CL_MEM_READ_ONLY`, `CL_MEM_WRITE_ONLY` or `CL_MEM_READ_WRITE`, 4) _flags_
+  specifies `CL_MEM_USE_HOST_PTR` or `CL_MEM_ALLOC_HOST_PTR` or
+  `CL_MEM_COPY_HOST_PTR`. However, restrictions 1), 2) and 3) described above do
+  not apply if _mem_object_ was created with
+  `CL_MEM_ACCESS_FLAGS_UNRESTRICTED_INTEL`.
+* `CL_INVALID_VALUE` if an image is being created from another memory object
+  (buffer or image) and _mem_object_ was created with `CL_MEM_HOST_WRITE_ONLY`
+  and _flags_ specifies `CL_MEM_HOST_READ_ONLY`, or if _mem_object_ was created
+  with `CL_MEM_HOST_READ_ONLY` and _flags_ specifies `CL_MEM_HOST_WRITE_ONLY`,
+  or if _mem_object_ was created with `CL_MEM_HOST_NO_ACCESS` and flags
+  specifies `CL_MEM_HOST_READ_ONLY` or `CL_MEM_HOST_WRITE_ONLY`. However, these
+  restrictions do not apply if _mem_object_ was created with
+  `CL_MEM_ACCESS_FLAGS_UNRESTRICTED_INTEL`.
+--
+
+(Add to Table 15 - Required _host_ptr_ buffer sizes for images in Section 5.3.1 - Creating Image Objects) ::
++
+--
+[caption="Table 15. "]
+.Required _host_ptr_ buffer sizes for images
+[width="100%",cols="<50%,<50%",options="header"]
+|====
+| Image Type | Size of buffer that _host_ptr_ points to
+| `CL_MEM_OBJECT_IMAGE2D`
+    | >= image_row_pitch * image_height + image_row_pitch * image_height / 2,
+      for images with `image_channel_order` equal to `CL_NV12_INTEL`.
+|====
+--
+
+(Add to the description of creation of an image object from another image object in Section 5.3.1.2 - Image Descriptor) ::
++
+--
+Creating a 2D image from a Planar YUV image object allows creation of a new
+image object that shares the Planar YUV image object's data store but
+represents only the specified plane. Restrictions are:
+
+* All the values specified in _image_desc_ except for _mem_object_ must match
+the image descriptor information associated with _mem_object_, with exception
+where _mem_object_ is a Planar YUV image object then _image_width_ and
+_image_height_ are ignored and derived from the _mem_object_ and _image_depth_
+specifies the index of the target plane the image will be created against and
+must be one of the following:
++
+[width="75%",cols="2,1,2",options="header"]
+|====
+| _image_channel_order_ of _mem_object_
+  | Plane
+    | _image_depth_ specified in _image_desc_
+| `CL_NV12_INTEL`
+  | Y
+    | 0
+| `CL_NV12_INTEL`
+  | UV
+    | 1
+|====
++
+The derived values of image_width and image_height can be later queried using
+clGetImageInfo.
+
+* The channel data type specified in _image_format_ must match the channel data
+type associated with _mem_object_ with exception to the following list of
+supported combinations:
++
+[width="75%",cols="1,1",options="header"]
+|====
+| _image_channel_order_ of _mem_object_
+  | _image_channel_data_type_ specified in _image_format_
+| `CL_NV12_INTEL`
+  | `CL_UNORM_INT8`
+| `CL_NV12_INTEL`
+  | `CL_UNSIGNED_INT8`
+|====
+
+* If _mem_object_ is a Planar YUV image object the channel order specified in
+image format must be one of the following:
++
+[width="75%",cols="3,2,1,2",options="header"]
+|====
+| _image_channel_order_ specified in _image_format_
+  | _image_channel_order_ of _mem_object_
+    | Plane
+      | Channel Mappings
+| `CL_R`
+  | `CL_NV12_INTEL`
+    | Y
+      | R = Y
+| `CL_RG`
+  | `CL_NV12_INTEL`
+    | UV
+      | R = U, G = V
+|====
+
+[NOTE]
+====
+Concurrent reading from or writing to both a Planar YUV image object and
+an image object created from the Planar YUV image object is undefined.
+
+Reading from or writing to an image created from a Planar YUV image and then
+reading from or writing to the Planar YUV image in a kernel even if appropriate
+synchronization operations (such as a barrier) are performed between the reads
+or writes is undefined. Similarly, reading from and writing to the Planar YUV
+image and then reading from or writing to the image created from the Planar YUV
+image with appropriate synchronization between the reads or writes is undefined.
+====
+--
+
+(Add to Table 16 - List of supported Image Channel Order Values in Section 5.3.1 - Creating Image Objects) ::
++
+--
+[caption="Table 16. "]
+.List of supported Image Channel Order Values
+[width="100%",cols="<50%,<50%",options="header"]
+|====
+| Image Channel Order | Description
+| `CL_NV12_INTEL`
+  | A Planar YUV image format with two planes.
+    There are three channels in a `CL_NV12_INTEL` image.
+    For a `CL_NV12_INTEL` image, the image element size refers to an image
+    element in the Y plane.
+|====
+--
+
+(Extend the descriptions in Section 5.3.1.2 - Image Descriptor) ::
++
+--
+* `image_width` is the width of the image in pixels. [...] For a `CL_NV12_INTEL`
+image, the image width must be a multiple of 4 and less than or equal to
+`CL_DEVICE_PLANAR_YUV_MAX_WIDTH_INTEL`.
+
+* `image_height` is the height of the image in pixels. [...] For a
+`CL_NV12_INTEL` image, the image height must be a multiple of 4 and less than or
+equal to `CL_DEVICE_PLANAR_YUV_MAX_HEIGHT_INTEL`.
+
+* `image_depth` is the depth of the image in pixels. [...] For a `CL_NV12_INTEL`
+image, the image depth must be 1.
+--
+
+(Add Section 5.3.1.X - Memory Layout for Planar YUV Images) ::
++
+--
+In Planar YUV formats the Y, U and V components can all be stored as separate
+planes or the U and V components can be stored combined as one plane. There are
+various flavors of Planar YUV formats, differing in the number of planes, order,
+layout and the sub-sampling methods used for the U and V components.
+
+The `CL_NV12_INTEL` image format consists of two planes, Y (luma) plane and an
+interleaved UV (chroma) plane:
+
+----
+          <----    WIDTH   ---->
+          +------------------------+ ^
+          |YYYYYYYYYYYYYYYYYYYY^^^^| |
+          |YYYYYYYYYYYYYYYYYYYY^^^^| H
+          |YYYYYYYYYYYYYYYYYYYY^^^^| E
+          |YYYYYYYYYYYYYYYYYYYY^^^^| I  Luma plane (Y)
+          |YYYYYYYYYYYYYYYYYYYY^^^^| G
+          |YYYYYYYYYYYYYYYYYYYY^^^^| H
+          |YYYYYYYYYYYYYYYYYYYY^^^^| T
+          |YYYYYYYYYYYYYYYYYYYY^^^^| |
+          +------------------------+ v
+          |UVUVUVUVUVUVUVUVUVUV^^^^|
+          |UVUVUVUVUVUVUVUVUVUV^^^^|    Chroma plane (UV)
+          |UVUVUVUVUVUVUVUVUVUV^^^^|
+          |UVUVUVUVUVUVUVUVUVUV^^^^|
+          +------------------------+
+          <----    ROW PITCH    --->
+----
+
+The luma plane contains 8 bit Y samples in case of the `CL_NV12_INTEL` format,
+one for each image element:
+
+----
+          +-----+-----+-----+-----+--
+          | Y00 | Y01 | Y02 | Y03 |   ...
+          +-----+-----+-----+-----+--
+          | Y10 | Y11 | Y12 | Y13 |   ...
+          +-----+-----+-----+-----+--
+          | Y20 | Y21 | Y22 | Y23 |   ...
+          +-----+-----+-----+-----+--
+          | ... | ... | ... | ... |
+Sample ->    0     1     2     3
+Offset
+----
+
+The chroma plane contains interleaved 8 bit UV 2x2 samples in case of the
+`CL_NV12_INTEL` format. The chroma components are sampled only once for every
+other image element and for every other row of image elements:
+
+----
+          +-----+-----+-----+-----+--
+          | U00 | V00 | U02 | V02 |   ...
+          +-----+-----+-----+-----+--
+          | U20 | V20 | U22 | V22 |   ...
+          +-----+-----+-----+-----+--
+          | ... | ... | ... | ... |
+Sample ->    0     1     2     3
+Offset
+----
+
+Using the above notation we can represent image elements like this:
+
+----
+          +-----+-----+-----+-----+--
+          | P00 | P01 | P02 | P03 |   ...
+          +-----+-----+-----+-----+--
+          | P10 | P11 | P12 | P13 |   ...
+          +-----+-----+-----+-----+--
+          | P20 | P21 | P22 | P23 |   ...
+          +-----+-----+-----+-----+--
+          | ... | ... | ... | ... |
+----
+
+where:
+
+----
+    P00 = Y00U00V00     P01 = Y01U00V00
+    P10 = Y10U00V00     P11 = Y11U00V00
+    ...
+    P20 = Y20U20V20     P21 = Y21U20V20
+    ...
+    P30 = Y30U20V20     P31 = Y31U20V20
+----
+
+etc.
+
+The Y (luma) plane is followed immediately by the UV (chroma) plane.
+Both the Y and the UV planes have the same _image_row_pitch_.
+The Y plane height is _image_height_.
+The UV plane height is (_image_height_ / 2).
+The Y plane width is _image_width_.
+The UV plane width is (_image_width_ / 2).
+--
+
+(Extend the description of _flags_ in Section 5.3.2 - Querying List of Supported Image Formats) ::
++
+--
+_flags_ is a bit-field that is used to specify information about the image
+formats being queried [...]. To get a list of images that cannot be read from
+nor written to by a kernel, flags must be set to `CL_MEM_NO_ACCESS_INTEL`.
+--
+
+(Add a table to Section 5.3.2.1 - Minimum List of Supported Image Formats) ::
++
+--
+For 2D image objects, the mandated minimum list of image formats that are not
+required to be read from nor written to by a kernel and that must be supported
+by all devices that support the `c_intel_planar_yuv` extension is:
+
+[width="100%",cols="<34%,<33%,<33%",options="header"]
+|====
+| num_channels | channel_order | channel_data_type
+| 3
+  | `CL_NV12_INTEL`
+    | `CL_UNORM_INT8`
+|====
+--
+
+== Modifications to the OpenCL C Specification
+
+(Add Planar YUV formats to Section 6.15.15.1.1 - Determining the border color or value) ::
++
+--
+* If image channel order is `CL_NV12_INTEL` the border color is value is undefined.
+--
+
+(Add to the un-numbered table in Section 6.15.15.7 - Mapping image channels to color values returned by read_image and color values passed to write_image to image channels) ::
++
+--
+[cols=",",]
+|====
+| *Channel Order*   | `float4`, `int4` or `uint4` *components of channel data*
+| `CL_NV12_INTEL`
+  | (V, Y, U, 1.0)
+|====
+--
+
+(Add to the beginning of Section 6.15.15.2 Built-in Image Read Functions) ::
++
+--
+Note that reading from a `CL_NV12_INTEL` image object is only supported by *read_imagef*
+functions that take integer coordinates.
+--
+
+== Sample Code
+
+=== Sample Host Code
+
+[source]
+----
+cl_image_format image_format;
+image_format.image_channel_order     = CL_NV12_INTEL;
+image_format.image_channel_data_type = CL_UNORM_INT8;
+
+cl_image_desc image_desc;
+image_desc.image_type                = CL_MEM_OBJECT_IMAGE2D;
+image_desc.image_width               = width;
+image_desc.image_height              = height;
+image_desc.image_array_size          = 0;
+image_desc.image_row_pitch           = 0;
+image_desc.image_slice_pitch         = 0;
+image_desc.num_mip_levels            = 0;
+image_desc.num_samples               = 0;
+image_desc.mem_object                = NULL;
+
+// create a CL_NV12_IMAGE
+cl_mem nv12Img = clCreateImage(context,
+                               CL_MEM_READ_ONLY | CL_MEM_HOST_NO_ACCESS |   
+                               CL_MEM_ACCESS_FLAGS_UNRESTRICTED_INTEL,
+                               image_format, image_desc,
+                               host_ptr, errcode_ret);
+
+// image_width & image_height are ignored for plane extraction
+image_desc.image_width               = 0;
+image_desc.image_height              = 0;
+
+// set mem_object to the full NV12 image
+image_desc.mem_object                = nv12Img;
+
+// get access to the Y plane (CL_R)
+image_desc.image_depth               = 0;
+
+// set proper image_format for the Y plane
+image_format.image_channel_order     = CL_R;
+image_format.image_channel_data_type = CL_UNORM_INT8;
+
+cl_mem nv12YplaneImg = clCreateImage(context, CL_MEM_READ_WRITE,
+                                     image_format, image_desc,
+                                     NULL, errcode_ret);
+
+// get access to the UV plane (CL_RG)
+image_desc.image_depth               = 1;
+
+// set proper image_format for the UV plane
+image_format.image_channel_order     = CL_RG;
+image_format.image_channel_data_type = CL_UNORM_INT8;
+
+cl_mem nv12UVplaneImg = clCreateImage(context, CL_MEM_READ_WRITE,
+                                      image_format, image_desc,
+                                      NULL, errcode_ret);
+// NOT SUPPORTED: transfer the whole NV12 image to the device
+// status = clEnqueueWriteImage(queue, nv12Img, true, origin, region,
+//                              row_pitch, slice_pitch,
+//                              ptr, 0, NULL, NULL);
+
+// write Y plane of NV12 image
+status = clEnqueueWriteImage(queue, nv12YplaneImg, true,
+                             origin, region, row_pitch, slice_pitch,
+                             ptr, 0, NULL, NULL);
+
+// write UV plane of NV12 image
+status = clEnqueueWriteImage(queue, nv12YplaneImg, true,
+                             origin, region, row_pitch, slice_pitch,
+                             ptr + uvPlaneOffset, 0, NULL, NULL);
+
+// NOT SUPPORTED: read the whole NV12 image back
+// status = clEnqueueReadImage(queue, nv12Img, true,
+//                             origin, region, row_pitch, slice_pitch, 
+//                             ptr, 0, NULL, NULL);
+
+// read Y plane of NV12 image
+status = clEnqueueReadImage(queue, nv12UVplaneImg, true,
+                            origin, region, row_pitch, slice_pitch,
+                            ptr, 0, NULL, NULL);
+
+// read UV plane of NV12 image
+status = clEnqueueReadImage(queue, nv12UVplaneImg, true,
+                            origin, region, row_pitch, slice_pitch,
+                            ptr + uvPlaneOffset, 0, NULL, NULL);
+----
+
+=== Sample Kernel Code
+
+[source]
+----
+// do something with a whole NV12 image
+kernel void DoSomethingWithNV12
+(
+    ...
+    read_write image2d_t nv12Img,
+    ...
+)
+{
+    ...
+    // sample the CL_NV12_INTEL image - supported if CL_NV12_INTEL format is 
+    // available with CL_MEM_READ_ONLY or CL_MEM_READ_WRITE access flags 
+    // based on clGetSupportedImageFormats query.
+    float4 p = read_imagef(nv12Img, sampler, coord);
+    ...
+    // write to the CL_NV12_INTEL image - supported if CL_NV12_INTEL format is 
+    // available with CL_MEM_WRITE_ONLY or CL_MEM_READ_WRITE access flags 
+    // based on clGetSupportedImageFormats query.
+    write_imagef(nv12Img, coord, p);
+    ...
+}
+
+// do something with planes of an NV12 image
+kernel void DoSomethingWithNV12Planes
+(
+    ...
+    read_write image2d_t nv12ImgYPlane,
+    read_write image2d_t nv12ImgUVPlane,
+    ...
+)
+{
+    ...
+    // sample the Y & UV planes
+    float4 py = read_imagef(nv12ImgYPlane, sampler, coord);
+    float4 puv = read_imagef(nv12ImgUVPlane, sampler, coord);
+    ...
+    // write to Y & UV planes
+    write_imagef(nv12ImgYPlane, coord, py);
+    write_imagef(nv12ImgUVPlane, coord, puv);
+    ...
+}
+----
+
+== Issues
+
+None.
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1.0.0|2016-11-22|Krzysztof Laskowski|*Initial Revision*
+|1.0.1|2021-06-11|Ben Ashbaugh|Converted to asciidoc, added HOST_NO_ACCESS error description, corrected border color value.
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

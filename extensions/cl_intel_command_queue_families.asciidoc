@@ -1,0 +1,428 @@
+= cl_intel_command_queue_families
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
+
+== Name Strings
+
+`cl_intel_command_queue_families`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel +
+Maciej Dziuban, Intel +
+Filip Hazubski, Intel +
+Dariusz Mroz, Intel +
+Michal Mrozek, Intel +
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2021-2024 Intel Corporation.  All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Revision: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL API Specification Version 3.0.5.
+
+Because this extension adds to the command-queue properties accepted by the *clCreateCommandQueueWithProperties* API, this extension requires support for either OpenCL 2.0 or the `cl_khr_create_command_queue` extension.
+
+== Overview
+
+Some OpenCL devices may support different sets of command-queues with different capabilities or execution properties.
+These sets are described in this extension as _command-queue families_.
+Applications may be able to improve performance or predictability by creating command-queues from a specific _command-queue family_.
+
+This extension adds the ability to:
+
+* Query the _command-queue families_ supported by an OpenCL device and their capabilities.
+* Create an OpenCL command-queue from a specific _command-queue family_.
+* Query the _command-queue family_ and _command-queue index_ associated with an OpenCL command-queue.
+
+== New API Enums
+
+Accepted value for the _param_name_ parameter to *clGetDeviceInfo* to query the number of command-queue families and command-queue family properties supported by an OpenCL device:
+
+[source]
+----
+#define CL_DEVICE_QUEUE_FAMILY_PROPERTIES_INTEL 0x418B
+----
+
+Accepted as a property name for the _properties_ parameter to *clCreateCommandQueueWithProperties* to specify the command-queue family and command-queue index that this command-queue should submit work to; and for the _param_name_ parameter to *clGetCommandQueueInfo* to query the command-queue family or command-queue index associated with a command-queue:
+
+[source]
+----
+#define CL_QUEUE_FAMILY_INTEL                   0x418C
+#define CL_QUEUE_INDEX_INTEL                    0x418D
+----
+
+== New API Types
+
+Returned as the query result value *clGetDeviceInfo* for `CL_DEVICE_QUEUE_FAMILY_PROPERTIES_INTEL`:
+
+[source]
+----
+#define CL_QUEUE_FAMILY_MAX_NAME_SIZE_INTEL   64
+
+typedef struct _cl_queue_family_properties_intel {
+    cl_command_queue_properties         properties;
+    cl_command_queue_capabilities_intel capabilities;
+    cl_uint                             count;
+    char name[CL_QUEUE_FAMILY_MAX_NAME_SIZE_INTEL];
+} cl_queue_family_properties_intel;
+----
+
+Bitfield type describing the capabilities of the queues in a command-queue family.
+Subsequent versions of this extension may add additional queue capabilities:
+
+[source]
+----
+typedef cl_bitfield         cl_command_queue_capabilities_intel;
+
+#define CL_QUEUE_DEFAULT_CAPABILITIES_INTEL   0
+
+/* Synchronization Capabilities: */
+#define CL_QUEUE_CAPABILITY_CREATE_SINGLE_QUEUE_EVENTS_INTEL    (1 << 0)
+#define CL_QUEUE_CAPABILITY_CREATE_CROSS_QUEUE_EVENTS_INTEL     (1 << 1)
+#define CL_QUEUE_CAPABILITY_SINGLE_QUEUE_EVENT_WAIT_LIST_INTEL  (1 << 2)
+#define CL_QUEUE_CAPABILITY_CROSS_QUEUE_EVENT_WAIT_LIST_INTEL   (1 << 3)
+
+/* bit 4 - bit 7 are currently unused */
+
+/* Transfer Capabilities: */
+#define CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_INTEL       (1 << 8)
+#define CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_RECT_INTEL  (1 << 9)
+#define CL_QUEUE_CAPABILITY_MAP_BUFFER_INTEL            (1 << 10)
+#define CL_QUEUE_CAPABILITY_FILL_BUFFER_INTEL           (1 << 11)
+#define CL_QUEUE_CAPABILITY_TRANSFER_IMAGE_INTEL        (1 << 12)
+#define CL_QUEUE_CAPABILITY_MAP_IMAGE_INTEL             (1 << 13)
+#define CL_QUEUE_CAPABILITY_FILL_IMAGE_INTEL            (1 << 14)
+#define CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_IMAGE_INTEL (1 << 15)
+#define CL_QUEUE_CAPABILITY_TRANSFER_IMAGE_BUFFER_INTEL (1 << 16)
+
+/* bit 17 - bit 23 are currently unused */
+
+/* Execution Capabilities */
+#define CL_QUEUE_CAPABILITY_MARKER_INTEL                (1 << 24)
+#define CL_QUEUE_CAPABILITY_BARRIER_INTEL               (1 << 25)
+#define CL_QUEUE_CAPABILITY_KERNEL_INTEL                (1 << 26)
+
+/* bit 27 and beyond are currently unused */
+----
+
+== Modifications to the OpenCL API Specification
+
+(Add to the list preceding Table 5 in Section 4.2 - Querying Devices) ::
++
+--
+The device queries described in the Device Queries table should return the same information for a root-level device i.e. a device returned by *clGetDeviceIDs* and any sub-devices created from this device except for the following queries:
+
+* ...
+* `CL_DEVICE_QUEUE_FAMILY_PROPERTIES_INTEL`
+--
+
+(Add to Table 5 - OpenCL Device Queries in Section 4.2 - Querying Devices) ::
++
+--
+[caption="Table 5. "]
+.List of supported param_names by clGetDeviceInfo
+[width="100%",cols="3,2,5",options="header"]
+|====
+| Device Info | Return Type | Description
+| `CL_DEVICE_QUEUE_FAMILY_PROPERTIES_INTEL`
+  | `cl_queue_family_properties_intel[]`
+      | Returns an array of `cl_queue_family_properties_intel` structures describing command-queue families supported by the device.
+      Each structure consists of:
+
+      `properties`: Describes the host command-queue properties supported by this command-queue family.
+      The supported property values are the same as those returned by the query for `CL_DEVICE_QUEUE_ON_HOST_PROPERTIES`.
+
+      `capabilities`: Describes the command-queue capabilities supported by this command-queue family.
+      This is a bitfield value that may either be `CL_QUEUE_DEFAULT_CAPABILITIES_INTEL` or a set of queue capabilities from the <<queue-capabilities-table,Queue Capabilities Table>>.
+
+      `count`: Describes the number of command-queues in this command-queue family.
+      Command-queues created with unique command-queue indices may execute more efficiently than command-queues created with equal indices.
+
+      `name`: An array of `CL_QUEUE_FAMILY_MAX_NAME_SIZE_INTEL` bytes used as storage for a null-terminated string.
+      The string is a descriptive name for this command-queue family.
+      The descriptive name is purely informative and has no semantic meaning.
+
+      At least one entry in the array must return the same properties returned by `CL_DEVICE_QUEUE_ON_HOST_PROPERTIES` and must have capabilities equal to `CL_QUEUE_DEFAULT_CAPABILITIES_INTEL`.
+
+      Please note that a sub-device may support different command-queue families than its root-level device.
+|====
+--
+
+(Add to Table 9 - List of supported queue creation properties by clCreateCommandQueueWithProperties) ::
++
+--
+[caption="Table 9. "]
+.List of supported queue creation properties by clCreateCommandQueueWithProperties
+[width="100%",cols="<34%,<33%,<33%",options="header"]
+|====
+| Queue Property | Property Value | Description
+| `CL_QUEUE_FAMILY_INTEL`
+  | `cl_uint`
+      | Specifies the command-queue family that this command-queue will submit work to.
+
+        The specified command-queue family must be between zero and the total number of command-queue families supported by the device.
+        If a command-queue family is specified then a command-queue index must also be specified.
+| `CL_QUEUE_INDEX_INTEL`
+  | `cl_uint`
+      | Specifies the command-queue index within the command-queue family that this command-queue will submit work to.
+
+        The specified command-queue index must be between zero and the total number of command-queues in the command-queue family for this command-queue for the device.
+        If a command-queue index is specified then a command-queue family must also be specified.
+|====
+--
+
+(Add to the list of error conditions for *clCreateCommandQueueWithProperties*) ::
++
+--
+*clCreateCommandQueueWithProperties* returns a valid non-zero command-queue and _errcode_ret_ is set to `CL_SUCCESS` if the command-queue is created successfully.
+Otherwise, it returns a `NULL` value with one of the following error values returned in _errcode_ret_:
+
+* ...
+* `CL_INVALID_VALUE` if the property value for `CL_QUEUE_FAMILY_INTEL` specifies a command-queue family greater than or equal to the number of command-queue families supported by the device.
+* `CL_INVALID_VALUE` if the property value for `CL_QUEUE_INDEX_INTEL` specifies a command-queue index greater than or equal to the number of queues for the command-queue family for the device.
+* `CL_INVALID_VALUE` if the property `CL_QUEUE_FAMILY_INTEL` is specified and the property `CL_QUEUE_INDEX_INTEL` is not specified, or if the property `CL_QUEUE_INDEX_INTEL` is specified and the property `CL_QUEUE_FAMILY_INTEL` is not specified.
+--
+
+(Add to Table 9 - List of Supported param_names by *clGetCommandQueueInfo*) ::
++
+--
+[caption="Table 9. "]
+.List of supported param_names by *clGetCommandQueueInfo*
+[width="100%",cols="<34%,<33%,<33%",options="header"]
+|====
+| *Queue Properties* | Property Value | Description
+| `CL_QUEUE_FAMILY_INTEL`
+  | `cl_uint`
+      | Returns the command-queue family that this command-queue will submit work to.
+
+        If no command-queue family was specified when this command-queue was created then the value returned for this query is implementation-defined, but must be a command-queue family with the same properties returned by `CL_DEVICE_QUEUE_ON_HOST_PROPERTIES` for the device and capabilities equal to `CL_QUEUE_DEFAULT_CAPABILITIES_INTEL`.
+| `CL_QUEUE_INDEX_INTEL`
+  | `cl_uint`
+      | Returns the command-queue index within the command-queue family that this command-queue will submit work to.
+
+        If no command-queue index was specified when this command-queue was created then the value returned for this query is implementation-defined, but must be between zero and the total number of queues supported by the device for the command-queue family that this command-queue will submit work to.
+|====
+--
+
+(Add a new Section 5.1.X Command-Queue Families) ::
++
+--
+Some OpenCL devices may support different sets of command-queues with different capabilities or execution properties.
+The sets of command-queues with different capabilities or execution properties are known as command-queue families.
+Each command-queue family may contain multiple queues with similar characteristics.
+
+Using multiple unique queues from a command-queue family or queues from different command-queue families may improve performance, such as by allowing commands to execute concurrently or using dedicated hardware resources.
+
+Every OpenCL device must support at least one command-queue family with "default" command-queue capabilities.
+These command-queue families are identified with the special command-queue capability value `CL_QUEUE_DEFAULT_CAPABILITIES_INTEL`.
+Command-queues created from a command-queue family with default command-queue capabilities have no additional restrictions and support all commands and command-queue features described by standard OpenCL device queries.
+
+When a command-queue family does not have the default command-queue capabilities, the command-queue family capability value is a bitfield describing the commands and command-queue features that are supported for queues created from the command-queue family.
+Enqueueing an unsupported command or using an unsupported command-queue feature will fail and generate an OpenCL error.
+
+The following table describes the supported command-queue capabilities and the OpenCL commands they enable.
+
+[[queue-capabilities-table]]
+[caption="Table X. "]
+.List of supported command-queue capabilities
+[width="100%",cols="1,2",options="header"]
+|====
+| Queue Capability | Description
+|`CL_QUEUE_DEFAULT_CAPABILITIES_INTEL`
+| A special capability value to indicate that queues in this command-queue family have no additional restrictions.
+At least one command-queue family must support this capability.
+
+|`CL_QUEUE_CAPABILITY_CREATE_SINGLE_QUEUE_EVENTS_INTEL`
+| Indicates that queues in this command-queue family support creating event objects identifying commands for event profiling, waiting on the host, or in the event wait list for another command in the same queue.
+
+|`CL_QUEUE_CAPABILITY_CREATE_CROSS_QUEUE_EVENTS_INTEL`
+| Indicates that queues in this command-queue family support creating event objects identifying commands for event profiling, waiting on the host, or in the event wait list for another command in another queue.
+When creating cross-queue events is supported, creating single-queue events must also be supported.
+
+|`CL_QUEUE_CAPABILITY_SINGLE_QUEUE_EVENT_WAIT_LIST_INTEL`
+| Indicates that queues in this command-queue family support commands that wait on events that were created in the same queue.
+
+|`CL_QUEUE_CAPABILITY_CROSS_QUEUE_EVENT_WAIT_LIST_INTEL`
+| Indicates that queues in this command-queue family support commands that wait on events that were created in another queue.
+When waiting on cross-queue events is supported, waiting on single-queue events must also be supported.
+
+|`CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_INTEL`
+| Indicates that queues in this command-queue family support calls to `clEnqueueReadBuffer`, `clEnqueueWriteBuffer`, and `clEnqueueCopyBuffer`.
+
+|`CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_RECT_INTEL`
+| Indicates that queues in this command-queue family support calls to `clEnqueueReadBufferRect`, `clEnqueueWriteBufferRect`, and `clEnqueueCopyBufferRect`.
+
+|`CL_QUEUE_CAPABILITY_MAP_BUFFER_INTEL`
+| Indicates that queues in this command-queue family support calls to `clEnqueueMapBuffer` and `clEnqueueUnmapMemObject`.
+
+|`CL_QUEUE_CAPABILITY_FILL_BUFFER_INTEL`
+| Indicates that queues in this command-queue family support calls to `clEnqueueFillBuffer`.
+
+|`CL_QUEUE_CAPABILITY_TRANSFER_IMAGE_INTEL`
+| Indicates that queues in this command-queue family support calls to `clEnqueueReadImage`, `clEnqueueWriteImage`, and `clEnqueueCopyImage`.
+
+|`CL_QUEUE_CAPABILITY_MAP_IMAGE_INTEL`
+| Indicates that queues in this command-queue family support calls to `clEnqueueMapImage` and `clEnqueueUnmapMemObject`.
+
+|`CL_QUEUE_CAPABILITY_FILL_IMAGE_INTEL`
+| Indicates that queues in this command-queue family support calls to `clEnqueueFillImage`.
+
+|`CL_QUEUE_CAPABILITY_TRANSFER_BUFFER_IMAGE_INTEL`
+| Indicates that queues in this command-queue family support calls to `clEnqueueCopyBufferToImage`.
+
+|`CL_QUEUE_CAPABILITY_TRANSFER_IMAGE_BUFFER_INTEL`
+| Indicates that queues in this command-queue family support calls to `clEnqueueCopyImageToBuffer`.
+
+|`CL_QUEUE_CAPABILITY_MARKER_INTEL`
+| Indicates that queues in this command-queue family support calls to `clEnqueueMarker` and `clEnqueueMarkerWithWaitList`.
+
+|`CL_QUEUE_CAPABILITY_BARRIER_INTEL`
+| Indicates that queues in this command-queue family support calls to `clEnqueueBarrier` and `clEnqueueBarrierWithWaitList`.
+
+|====
+--
+
+(Add to the list of error conditions for all enqueue APIs) ::
++
+--
+// This is the case where the command-queue does not support waiting on any events:
+* `CL_INVALID_EVENT_WAIT_LIST` if the queue capabilities for _command_queue_ is not `CL_QUEUE_DEFAULT_CAPABILITIES_INTEL` or does not include `CL_QUEUE_CAPABILITY_SINGLE_QUEUE_EVENT_WAIT_LIST_INTEL`, and _num_events_in_wait_list_ is not `0` or _event_wait_list_ is not `NULL`.
+
+// This is the case where the associated command-queue for an event in the event
+// wait list does not support cross-queue events and the associated command-queue
+// for an event is not this queue:
+* `CL_INVALID_EVENT_WAIT_LIST` if the queue capabilities for the command-queue associated with an event in the event wait list is not `CL_QUEUE_DEFAULT_CAPABILITIES_INTEL` or does not include `CL_QUEUE_CREATE_CROSS_QUEUE_EVENTS_INTEL`, and _command_queue_ is not equal to the command-queue associated with the event.
+
+// This is the case where the command-queue does not support cross-queue event
+// wait lists and the associated command-queue for an event is not this queue:
+* `CL_INVALID_EVENT_WAIT_LIST` if the queue capabilities for _command_queue_ is not `CL_QUEUE_DEFAULT_CAPABILITIES_INTEL` and _command_queue_ is not equal to the command-queue associated with an event.
+
+// This is the case where the command-queue does not support creating events:
+* `CL_INVALID_EVENT` if the queue capabilities for _command_queue_ is not `CL_QUEUE_DEFAULT_CAPABILITIES_INTEL` or does not include `CL_QUEUE_CAPABILITY_CREATE_SINGLE_QUEUE_EVENTS_INTEL` or `CL_QUEUE_CAPABILITY_CREATE_CROSS_QUEUE_EVENTS_INTEL`, and _event_ is not `NULL`.
+
+For all enqueue APIs described in the <<queue-capabilities-table,Queue Capabilities Table>>:
+
+* `CL_INVALID_OPERATION` if the queue capabilities for _command_queue_ is not `CL_QUEUE_DEFAULT_CAPABILITIES_INTEL` or does not include the required queue capability.
+
+For all other enqueue APIs not described in the <<queue-capabilities-table,Queue Capabilities Table>>:
+
+* `CL_INVALID_OPERATION` if the queue capabilities for _command_queue_ is not `CL_QUEUE_DEFAULT_CAPABILITIES_INTEL`.
+--
+
+== Issues
+
+. What should this extension be called?
++
+--
+*RESOLVED*
+
+The name of this extension is `cl_intel_command_queue_families`.
+--
+
+. What does this extension offer compared to "device partitioning"?
++
+--
+*RESOLVED*: This extension describes command-queue families and their properties
+to control how work can be executed on a device or sub-device. It is
+complementary to device partitioning.
+--
+
+. What are the memory model implications for command-queue families?
++
+--
+*UNRESOLVED*
+--
+
+. Is there a better way to describe `CL_QUEUE_CAPABILITY_ALL_INTEL`?
++
+--
+*RESOLVED*
+
+This special capability was switched to `CL_QUEUE_DEFAULT_CAPABILITIES_INTEL`,
+and the value of the capability was changed to zero from all-bits-set.  This
+should allow for special queue capabilities that go beyond default command-queue
+capabilities, if desired.
+--
+
+. Do we need a query for the number of command-queue families for a device?
++
+--
+*RESOLVED*
+
+No, this is not needed.  The number of command-queue families can be derived
+from the size returned by `CL_DEVICE_QUEUE_FAMILY_PROPERTIES_INTEL`.
+--
+
+. Should there be a default command-queue family or command-queue index for a
+command-queue?
++
+--
+*RESOLVED*
+
+No, it's preferable to allow an implementation to vary the command-queue family
+and command-queue index per-command-queue.  This enables an implementation to
+implement a policy to choose among different command-queue families or command
+queue indices for each command-queue rather than a single default if it leads to
+improved performance.
+
+Note that specifying only a command-queue family or a command-queue index is an
+error, and an application must either specify no command-queue family or command
+queue index, or both a command-queue family and command-queue index.
+--
+
+. Do we need a capability for cross-queue event wait lists?
++
+--
+*RESOLVED*
+
+`CL_QUEUE_CAPABILITY_CROSS_QUEUE_EVENT_WAIT_LIST_INTEL` was added.
+--
+
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1.0.0|2021-02-09|Ben Ashbaugh|First public version.
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

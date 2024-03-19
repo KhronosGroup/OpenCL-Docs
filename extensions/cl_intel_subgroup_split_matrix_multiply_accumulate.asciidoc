@@ -1,0 +1,214 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+// TODO: try rouge?
+
+= cl_intel_subgroup_split_matrix_multiply_accumulate
+
+== Name Strings
+
+`cl_intel_subgroup_split_matrix_multiply_accumulate`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel +
+Junjie Gu, Intel +
+Mike MacPherson, Intel +
+Lukasz Towarek, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2022-2024 Intel Corporation.  All rights reserved.
+
+== Status
+
+Complete
+
+== Version
+
+Built On: {docdate} +
+Revision: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL 3.0 C Language specification, V3.0.10.
+
+This extension requires support for subgroups.
+
+This extension uses many of the terms and concepts from the `cl_intel_subgroup_matrix_multiply_accumulate` extension.
+
+== Overview
+
+The goal of this extension is to allow programmers to access specialized hardware to compute the product of an M x K matrix with a K x N matrix and then add an M x N matrix accumulation value.
+This is a commonly used building block to compute the product of two large matrices.
+
+The functionality described in this extension is very similar to the functionality described in the `cl_intel_subgroup_matrix_multiply_accumulate` extension, with one key difference:
+in this extension, work items across two subgroups cooperate to perform the operation.
+This is done by _splitting_ the M x K matrix source across two participating subgroups:
+The first M-divided-by-2 rows of the matrix source are provided by the first subgroup, and the remaining M-divided-by-2 rows of the matrix source are provided by the second subgroup.
+
+Splitting the matrix source improves performance by halving the amount of data each subgroup must load for the first matrix source.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+None.
+
+== New OpenCL C Functions
+
+[source]
+----
+// 8-bit matrices:
+int2 intel_sub_group_i8_i8_split_matrix_mad_k32(int   a, int8  b, int2 acc);  // M = 2
+int4 intel_sub_group_i8_i8_split_matrix_mad_k32(int2  a, int8  b, int4 acc);  // M = 4
+int8 intel_sub_group_i8_i8_split_matrix_mad_k32(int4  a, int8  b, int8 acc);  // M = 8
+
+int2 intel_sub_group_i8_u8_split_matrix_mad_k32(int   a, uint8 b, int2 acc);  // ...
+int4 intel_sub_group_i8_u8_split_matrix_mad_k32(int2  a, uint8 b, int4 acc);
+int8 intel_sub_group_i8_u8_split_matrix_mad_k32(int4  a, uint8 b, int8 acc);
+
+int2 intel_sub_group_u8_i8_split_matrix_mad_k32(uint  a, int8  b, int2 acc);
+int4 intel_sub_group_u8_i8_split_matrix_mad_k32(uint2 a, int8  b, int4 acc);
+int8 intel_sub_group_u8_i8_split_matrix_mad_k32(uint4 a, int8  b, int8 acc);
+
+int2 intel_sub_group_u8_u8_split_matrix_mad_k32(uint  a, uint8 b, int2 acc);
+int4 intel_sub_group_u8_u8_split_matrix_mad_k32(uint2 a, uint8 b, int4 acc);
+int8 intel_sub_group_u8_u8_split_matrix_mad_k32(uint4 a, uint8 b, int8 acc);
+
+// bfloat16 matrices:
+float2 intel_sub_group_bf16_bf16_split_matrix_mad_k16(int  a, int8 b, float2 acc);
+float4 intel_sub_group_bf16_bf16_split_matrix_mad_k16(int2 a, int8 b, float4 acc);
+float8 intel_sub_group_bf16_bf16_split_matrix_mad_k16(int4 a, int8 b, float8 acc);
+
+// fp16 matrices:
+float2 intel_sub_group_f16_f16_split_matrix_mad_k16(int  a, int8 b, float2 acc);
+float4 intel_sub_group_f16_f16_split_matrix_mad_k16(int2 a, int8 b, float4 acc);
+float8 intel_sub_group_f16_f16_split_matrix_mad_k16(int4 a, int8 b, float8 acc);
+----
+
+== Modifications to the OpenCL C Specification
+
+=== Add a new Section 6.13.X - Subgroup Split Matrix Multiply Accumulate Instructions
+
+This section describes a family of built-in functions that multiply two matrix sources `a` and `b` and then add a matrix accumulation value to produce a matrix result value.
+Work items from two subgroups cooperate to perform this operation.
+`a` is the first matrix operand and has M rows and K columns.
+Each subgroup provides half of the rows of the `a` matrix.
+`b` is the second matrix operand and has K rows and N columns.
+`acc` is the matrix accumulation value and has M rows and N columns.
+The result value also has M rows and N columns.
+All work items in both subgroups cooperate to perform this operation.
+These functions must be encountered by all work items in both subgroups executing the kernel.
+
+The dimensions of the two source matrices and the elements of each source matrix are described by the built-in function name and its arguments.
+
+As an example, given the function:
+
+[source]
+----
+int2 intel_sub_group_u8_i8_split_matrix_mad_k32(uint  a, int8  b, int2 acc);
+----
+
+* `a` is the first source matrix operand and has `M` rows and `K` columns.
+This matrix operand is split across two participating subgroups.
+Work items from each participating subgroup provide half of the row data for this matrix.
+** The value for `M` is determined by the number of vector components in the source operand `a`.
+Since each subgroup provides half of the row data for this matrix, multiply the number of components in `a` by two to compute the number of rows `M`.
+In the example above, `a` is a scalar `uint` argument, therefore the matrix `a` operand has `M` equal to 2 rows.
+** The value of `K` is described by the function name.
+In this case, the value of `K` is 32, therefore the matrix `a` operand has `K` equal to 32 columns.
+** The matrix component data type is also described by the function name.
+In this case, the matrix `a` component data type is `u8`, indicating that the elements of the matrix `a` operand are unsigned 8-bit integers.
+** Each work item contributes part of this matrix.
+In this case, since the elements of the matrix `a` are 8-bit integers, and since each work item is contributing 32 bits (the size of a `uint`) of data per row of this matrix, each work item is contributing four 8-bit integer values per row.
+** Since `K` is 32, and each work item is contributing four 8-bit values per row, the number of work items in the subgroup must be equal to 8.
+
+* `b` is the second source matrix operand and has `K` rows and `N` columns.
+** Each work item contributes one column of this matrix.
+Therefore, the number of columns `N` is equivalent to the subgroup size.
+** As above, the value of `K` is described by the function name.
+In this case, the value of `K` is 32, therefore the matrix `b` operand has `K` equal to 32 rows.
+** As above, the matrix component data type is described by the function name.
+In this case, the matrix `b` component data type is `i8`, indicating that the elements of the matrix `b` operand are signed 8-bit integers.
+** Since `K` is 32 and the elements of the matrix `b` are 8-bit integers, each work item must contribute 256 bits of source data to contribute `K` values.
+The 256 bits of source data are packed and passed as the `int8` argument `b`.
+
+* `acc` specifies the accumulation value and has `M` rows and `N` columns.
+** As above, the value of `M` is determined by the number of components in the source operand `acc`.
+In the example above, `acc` is an `int2` argument, therefore the accumulation value operand has `M` equal to 2 rows.
+** Both `a` and `acc` specify operands with `M` rows, and the value of `M` is determined by the number of components in each source operand.
+Since each subgroup provides half of the `a` matrix data, the `a` operand will have half the number of components as the `acc` source operand.
+** As above, each work item contributes one column of accumulation values.
+Therefore, the number of columns `N` is equivalent to the subgroup size.
+** The `acc` operand is a "full precision" accumulation value.
+In the example above, the matrices contain integer data, therefore the `acc` operand is a vector of `int` data.
+
+* The result value returned by the function also has `M` rows and `N` columns.
+** As above, the value of `M` is determined by the number of components in the return type.
+In the example above, the return type is `int2`, therefore the result value has `M` equal to 2 rows.
+** The result value, `a`, and `acc` all specify values with `M` rows, and the value of `M` is determined by the number of components in each source operand or return type.
+Since each subgroup provides half of the `a` matrix data, the `a` operand will have half the number of components as the return type and `acc` operand.
+** As above, each work item will receive one column of result values.
+Therefore, the number of columns `N` is equivalent to the subgroup size.
+** Similar to the `acc` operand, the return value is a "full precision" result value.
+In the example above, the matrices contain integer data, therefore the return type is a vector of `int` data.
+
+The full list of supported functions is described in the overview, above.
+For this list of functions:
+
+* `M` may be equal to 2, 4, or 8.
+* `N` must be equal to 8.  In other words, the only supported subgroup size is 8.
+* Supported integer matrix types for `a` and `b` are any combination of signed or unsigned 8-bit integers.
+For these integer matrix types, the accumulation value `acc` and result value are signed 32-bit integers, and `K` must be equal to 32.
+* The supported floating-point matrix types for `a` and `b` are fp16 (half) or bfloat16.
+For these floating-point matrix type, the accumulation value `acc` and result value are 32-bit floating-point values, and `K` must be equal to 16.
+
+== Issues
+
+. Do we need to talk about which two subgroups cooperate to perform the split matrix multiplication?
++
+--
+*UNRESOLVED*: For now, this is left as an implementation detail, outside of the scope of this extension.
+--
+
+. Should the built-in functions in this extension overload the built-ins from `cl_intel_subgroup_matrix_multiply_accumulate`, or define new functions?
++
+--
+`RESOLVED`: Switched to a non-overloaded syntax: `intel_sub_group_i8_i8_split_matrix_mad_k32`.
+--
+
+. Should this extension use signed or unsigned types to represent fp16 and bf16 data?
++
+--
+`RESOLVED`: This extension will use signed types to represent fp16 and bf16 data even though this is inconsistent with other extensions such as cl_intel_bfloat16 conversions.
+See discussion in `cl_intel_subgroup_matrix_multiply_accumulate`.
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1.0.0|2022-05-18|Ben Ashbaugh|*Initial public revision*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

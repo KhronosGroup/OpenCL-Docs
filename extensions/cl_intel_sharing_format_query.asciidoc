@@ -1,0 +1,476 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+
+= cl_intel_sharing_format_query
+
+== Name Strings
+
+`cl_intel_sharing_format_query`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel +
+Jacek Danecki, Intel +
+Mateusz Hoppe, Intel +
+Krzysztof Laskowski, Intel +
+Eric Palmer, Intel +
+Pawel Wilma, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2021-2024 Intel Corporation.  All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Revision: 1.0.0
+
+== Dependencies
+
+This extension depends on and modifies one or more of the following interop / sharing extensions:
+
+* `cl_khr_gl_sharing`
+* `cl_khr_dx9_media_sharing`
+* `cl_khr_d3d10_sharing`
+* `cl_khr_d3d11_sharing`
+* `cl_intel_dx9_media_sharing`
+* `cl_intel_va_api_media_sharing`
+
+This extension is written against the OpenCL Extension specification v3.0.7, which describes `cl_khr_gl_sharing`, `cl_khr_dx9_media_sharing`, `cl_khr_d3d10_sharing`, and `cl_khr_d3d11_sharing`.
+This extension is written against version 6 of the `cl_intel_dx9_media_sharing` specification and against version 1 of the `cl_intel_va_api_media_sharing` specification.
+
+This extension does not make any changes to the core OpenCL API specification or the OpenCL C specification.
+
+== Overview
+
+Existing interop / sharing extensions require support for a minimum set of image formats, however many OpenCL implementations may support sharing image formats above and beyond the minimum.
+This extension provides a mechanism for an application to query the set of API-specific image formats that an OpenCL implementation can accept for sharing.
+
+Note that the query functionality provided by this extension does not replace API-specific query functions or guarantee that an API-specific image with the returned format may be created.
+Additionally, some APIs may require that a buffer or image be created with particular flags or parameters to be shared with OpenCL, so this extension does not guarantee that all API-specific images of the queried formats may be shared with OpenCL.
+It does, however, guarantee that some API-specific images of the queried formats may be shared with OpenCL.
+
+== New API Functions
+
+If `cl_khr_gl_sharing` is supported:
+
+[source]
+----
+cl_int clGetSupportedGLTextureFormatsINTEL(
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint num_entries,
+    cl_GLenum* gl_formats,
+    cl_uint* num_texture_formats)
+----
+
+If `cl_khr_dx9_media_sharing` or `cl_intel_dx9_media_sharing` is supported:
+
+[source]
+----
+cl_int clGetSupportedDX9MediaSurfaceFormatsINTEL(
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint plane,
+    cl_uint num_entries,
+    D3DFORMAT* dx9_formats,
+    cl_uint* num_surface_formats)
+----
+
+If `cl_khr_d3d10_sharing` is supported:
+
+[source]
+----
+cl_int clGetSupportedD3D10TextureFormatsINTEL(
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint num_entries,
+    DXGI_FORMAT* d3d10_formats,
+    cl_uint* num_texture_formats)
+----
+
+If `cl_khr_d3d11_sharing` is supported:
+
+[source]
+----
+cl_int clGetSupportedD3D11TextureFormatsINTEL(
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint plane,
+    cl_uint num_entries,
+    DXGI_FORMAT* d3d11_formats,
+    cl_uint* num_texture_formats)
+----
+
+If `cl_intel_va_api_media_sharing` is supported:
+
+[source]
+----
+cl_int clGetSupportedVA_APIMediaSurfaceFormatsINTEL(	
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint plane,
+    cl_uint num_entries,
+    VAImageFormat* va_api_formats,
+    cl_uint* num_surface_formats)
+----
+
+== Modifications to Extension Specifications
+
+=== Modifications to cl_khr_gl_sharing:
+
+Add a new section 11.4.X - "Querying OpenGL Image Formats for Sharing":
+
+The function
+
+[source]
+----
+cl_int clGetSupportedGLTextureFormatsINTEL(
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint num_entries,
+    cl_GLenum* gl_formats,
+    cl_uint* num_texture_formats)
+----
+
+can be used to query the list of OpenGL internal texture formats supported for sharing with an OpenCL implementation, given _flags_ indicating how the image is going to be used and _image_type_ indicating the type of image to create.
+If there are multiple devices in the _context_, the returned set of image formats is the union of image formats supported by all devices in the _context_.
+
+_context_ is a valid OpenCL context created from an OpenGL context.
+
+_flags_ is a bit-field used to specify usage information about the image memory object that will be created from the OpenGL texture.
+_flags_ may be `CL_MEM_READ_WRITE`, to indicate that the image will be read from and written to by different kernel instances; `CL_MEM_READ_ONLY`, to indicate that the image will only be read from by a kernel; `CL_MEM_WRITE_ONLY`, to indicate that the image will be only written to by a kernel; or `CL_MEM_KERNEL_READ_AND_WRITE`, to indicate that the image will be both read from and written to by the same kernel instance.
+
+_image_type_ describes the type of image that will be created from the OpenGL texture.
+
+_num_entries_ specifies the number of entries that can be returned in the memory location given by _gl_formats_.
+
+_gl_formats_ is a pointer to a memory location where the list of supported OpenGL internal texture formats supported for sharing is returned.
+If _gl_formats_ is `NULL`, it is ignored.
+
+_num_texture_formats_ returns the actual total number of supported OpenGL internal texture formats for the specified _context_ and _flags_ for the specified _image_type_.
+If _num_texture_formats_ is `NULL`, it is ignored.
+
+*clGetSupportedGLTextureFormatsINTEL* returns `CL_SUCCESS` if the function is executed successfully.
+Otherwise, it returns one of the following errors:
+
+* `CL_INVALID_CONTEXT` if _context_ is not a valid context, or if _context_ was not created from an OpenGL context.
+
+* `CL_INVALID_VALUE` if values specified in _flags_ or _image_type_ are not valid, if _num_entries_ is 0 and _gl_formats_ is not `NULL`, or if both _gl_formats_ and _num_texture_formats_ are `NULL`.
+
+* `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
+
+* `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host.
+
+=== Modifications to cl_khr_dx9_media_sharing and cl_intel_dx9_media_sharing:
+
+Add a new section 15.7.X - "Querying DirectX 9 Media Surface Formats for Sharing" to the OpenCL Extension Specification, and/or a new section 9.13.X to the cl_intel_dx9_media_sharing extension specification:
+
+The function
+
+[source]
+----
+cl_int clGetSupportedDX9MediaSurfaceFormatsINTEL(
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint plane,
+    cl_uint num_entries,
+    D3DFORMAT* dx9_formats,
+    cl_uint* num_surface_formats)
+----
+
+can be used to query the list of DirectX 9 media surface formats supported for sharing with an OpenCL implementation, given _flags_ indicating how the image is going to be used, _image_type_ indicating the type of image to create, and optionally _plane_ describing which plane will be shared for planar surface formats.
+If there are multiple devices in the _context_, the returned set of image formats is the union of Direct9 media surface formats supported by all devices in the _context_.
+
+_context_ is a valid OpenCL context that supports sharing DirectX 9 media surfaces.
+
+_flags_ is a bit-field used to specify usage information about the image memory object that will be created from the DirectX 9 media surface.
+_flags_ may be `CL_MEM_READ_WRITE`, to indicate that the image will be read from and written to by different kernel instances; `CL_MEM_READ_ONLY`, to indicate that the image will only be read from by a kernel; `CL_MEM_WRITE_ONLY`, to indicate that the image will be only written to by a kernel; or `CL_MEM_KERNEL_READ_AND_WRITE`, to indicate that the image will be both read from and written to by the same kernel instance.
+
+_image_type_ describes the type of image that will be created from the DirectX 9 media surface.
+
+_plane_ describes the plane that will be shared, for planar surface formats.
+When _plane_ is equal to zero, the returned list of supported DirectX 9 media surface formats may include both planar surface formats and non-planar surface formats.
+
+_num_entries_ specifies the number of entries that can be returned in the memory location given by _dx9_formats_.
+
+_dx9_formats_ is a pointer to a memory location where the list of supported DirectX 9 media surface formats supported for sharing is returned.
+If _dx9_formats_ is `NULL`, it is ignored.
+
+_num_surface_formats_ returns the actual total number of supported DirectX 9 media surface formats for the specified _context_ and _flags_ for the specified _image_type_.
+If _num_surface_formats_ is `NULL`, it is ignored.
+
+*clGetSupportedDX9MediaSurfaceFormatsINTEL* returns `CL_SUCCESS` if the function is executed successfully.
+Otherwise, it returns one of the following errors:
+
+* `CL_INVALID_CONTEXT` if _context_ is not a valid context, or if _context_ does not support sharing DirectX 9 media surfaces.
+
+* `CL_INVALID_VALUE` if values specified in _flags_ or _image_type_ are not valid, if _num_entries_ is 0 and _dx9_formats_ is not `NULL`, or if both _dx9_formats_ and _num_surface_formats_ are `NULL`.
+
+* `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
+
+* `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host."
+
+=== Modifications to cl_khr_d3d10_sharing:
+
+Add a new section 13.7.X - "Querying Direct3D 10 Texture Resource Formats for Sharing" to the OpenCL Extension Specification:
+
+The function
+
+[source]
+----
+cl_int clGetSupportedD3D10TextureFormatsINTEL(
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint num_entries,
+    DXGI_FORMAT* d3d10_formats,
+    cl_uint* num_texture_formats)
+----
+
+can be used to query the list of Direct3D 10 texture resource formats supported for sharing with an OpenCL implementation, given _flags_ indicating how the image is going to be used and _image_type_ indicating the type of image to create.
+If there are multiple devices in the _context_, the returned set of image formats is the union of Direct3D 10 texture resource formats supported by all devices in the _context_.
+
+_context_ is a valid OpenCL context that supports sharing Direct3D 10 resources.
+
+_flags_ is a bit-field used to specify usage information about the image memory object that will be created from the Direct3D 10 texture resource.
+_flags_ may be `CL_MEM_READ_WRITE`, to indicate that the image will be read from and written to by different kernel instances; `CL_MEM_READ_ONLY`, to indicate that the image will only be read from by a kernel; `CL_MEM_WRITE_ONLY`, to indicate that the image will be only written to by a kernel; or `CL_MEM_KERNEL_READ_AND_WRITE`, to indicate that the image will be both read from and written to by the same kernel instance.
+
+_image_type_ describes the type of image that will be created from the Direct3D 10 texture resource.
+
+_num_entries_ specifies the number of entries that can be returned in the memory location given by _d3d10_formats_.
+
+_d3d10_formats_ is a pointer to a memory location where the list of supported Direct3D 10 texture resource formats supported for sharing is returned.
+If _d3d10_formats_ is `NULL`, it is ignored.
+
+_num_texture_formats_ returns the actual total number of supported Direct3D 10 texture resource formats for the specified _context_ and _flags_ for the specified _image_type_.
+If _num_texture_formats_ is `NULL`, it is ignored.
+
+*clGetSupportedD3D10TextureFormatsINTEL* returns `CL_SUCCESS` if the function is executed successfully.
+Otherwise, it returns one of the following errors:
+
+* `CL_INVALID_CONTEXT` if _context_ is not a valid context, or if _context_ does not support sharing Direct3D 10 resources.
+
+* `CL_INVALID_VALUE` if values specified in _flags_ or _image_type_ are not valid, if _num_entries_ is 0 and _d3d10_formats_ is not `NULL`, or if both _d3d10_formats_ and _num_texture_formats_ are `NULL`.
+
+* `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
+
+* `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host."
+
+=== Modifications to cl_khr_d3d11_sharing:
+
+Add a new section 14.7.X - "Querying Direct3D 11 Texture Resource Formats for Sharing" to the OpenCL Extension Specification:
+
+The function
+
+[source]
+----
+cl_int clGetSupportedD3D11TextureFormatsINTEL(
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint plane,
+    cl_uint num_entries,
+    DXGI_FORMAT* d3d11_formats,
+    cl_uint* num_texture_formats)
+----
+
+can be used to query the list of Direct3D 11 texture resource formats supported for sharing with an OpenCL implementation, given _flags_ indicating how the image is going to be used and _image_type_ indicating the type of image to create.
+If there are multiple devices in the _context_, the returned set of image formats is the union of Direct3D 11 texture resource formats supported by all devices in the _context_.
+
+_context_ is a valid OpenCL context that supports sharing Direct3D 11 resources.
+
+_flags_ is a bit-field used to specify usage information about the image memory object that will be created from the Direct3D 11 texture resource.
+_flags_ may be `CL_MEM_READ_WRITE`, to indicate that the image will be read from and written to by different kernel instances; `CL_MEM_READ_ONLY`, to indicate that the image will only be read from by a kernel; `CL_MEM_WRITE_ONLY`, to indicate that the image will be only written to by a kernel; or `CL_MEM_KERNEL_READ_AND_WRITE`, to indicate that the image will be both read from and written to by the same kernel instance.
+
+_image_type_ describes the type of image that will be created from the Direct3D 11 texture resource.
+
+_plane_ describes the plane that will be shared, for planar surface formats.
+When _plane_ is equal to zero, the returned list of supported Direct3D 11 texture resource formats may include both planar texture resource formats and non-planar texture resource formats.
+
+_num_entries_ specifies the number of entries that can be returned in the memory location given by _d3d11_formats_.
+
+_d3d11_formats_ is a pointer to a memory location where the list of supported Direct3D 11 texture resource formats supported for sharing is returned.
+If _d3d11_formats_ is `NULL`, it is ignored.
+
+_num_texture_formats_ returns the actual total number of supported Direct3D 11 texture resource formats for the specified _context_ and _flags_ for the specified _image_type_.
+If _num_texture_formats_ is `NULL`, it is ignored.
+
+*clGetSupportedD3D11TextureFormatsINTEL* returns `CL_SUCCESS` if the function is executed successfully.
+Otherwise, it returns one of the following errors:
+
+* `CL_INVALID_CONTEXT` if _context_ is not a valid context, or if _context_ does not support sharing Direct3D 11 resources.
+
+* `CL_INVALID_VALUE` if values specified in _flags_ or _image_type_ are not valid, if _num_entries_ is 0 and _d3d11_formats_ is not `NULL`, or if both _d3d11_formats_ and _num_texture_formats_ are `NULL`.
+
+* `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
+
+* `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host."
+
+=== Modifications to cl_intel_va_api_media_sharing:
+
+Add a new section 9.X.Y - "Querying VA_API Media Image Formats for Sharing" to the cl_intel_va_api_media_sharing extension specification:
+
+"The function
+
+[source]
+----
+cl_int clGetSupportedVA_APIMediaSurfaceFormatsINTEL(	
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint plane,
+    cl_uint num_entries,
+    VAImageFormat* va_api_formats,
+    cl_uint* num_surface_formats)
+----
+
+can be used to query the list of VA_API media image formats supported for sharing with an OpenCL implementation, given _flags_ indicating how the image is going to be used and _image_type_ indicating the type of image to create.
+If there are multiple devices in the _context_, the returned set of image formats is the union of VA_API media image formats supported by all devices in the _context_.
+
+_context_ is a valid OpenCL context that supports sharing VA_API media images.
+
+_flags_ is a bit-field used to specify usage information about the image memory object that will be created from the VA_API media image.
+_flags_ may be `CL_MEM_READ_WRITE`, to indicate that the image will be read from and written to by different kernel instances; `CL_MEM_READ_ONLY`, to indicate that the image will only be read from by a kernel; `CL_MEM_WRITE_ONLY`, to indicate that the image will be only written to by a kernel; or `CL_MEM_KERNEL_READ_AND_WRITE`, to indicate that the image will be both read from and written to by the same kernel instance.
+
+_image_type_ describes the type of image that will be created from the VA_API media image.
+
+_plane_ describes the plane that will be shared, for planar surface formats.
+When _plane_ is equal to zero, the returned list of VA_API media image formats may include both planar media image formats and non-planar media image formats.
+
+_num_entries_ specifies the number of entries that can be returned in the memory location given by _va_api_formats_.
+
+_va_api_formats_ is a pointer to a memory location where the list of supported VA_API media image formats supported for sharing is returned.
+If _va_api_formats_ is `NULL`, it is ignored.
+
+_num_surface_formats_ returns the actual total number of supported VA_API media image formats for the specified _context_ and _flags_ for the specified _image_type_.
+If _num_surface_formats_ is `NULL`, it is ignored.
+
+*clGetSupportedVA_APIMediaSurfaceFormatsINTEL* returns `CL_SUCCESS` if the function is executed successfully.
+Otherwise, it returns one of the following errors:
+
+* `CL_INVALID_CONTEXT` if _context_ is not a valid context, or if _context_ does not support sharing VA_API media images.
+
+* `CL_INVALID_VALUE` if values specified in _flags_ or _image_type_ are not valid, if _num_entries_ is 0 and _va_api_formats_ is not `NULL`, or if both _va_api_formats_ and _num_surface_formats_ are `NULL`.
+
+* `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
+
+* `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host."
+
+== Issues
+
+. What should the name of this extension be?
++
+--
+Status: `RESOLVED`
+
+Discussion: The best name appears to be cl_intel_sharing_format_query.
+Another possibility is cl_intel_interop_format_query, but it seems better to have 'sharing' in the name, since all of the API-specific sharing extensions also have 'sharing' in the name, with the exception of cl_khr_egl_image.
+--
+
+. Do we need to say anything about cl_intel_d3d11_nv12_media_sharing in this spec?
++
+--
+Status: `RESOLVED`
+
+Discussion: Since cl_khr_d3d11_sharing is required by cl_intel_d3d11_nv12_media_sharing, we do not need to say anything about cl_intel_d3d11_nv12_media_sharing in this spec.
+--
+
+. What should the query for EGL images return?
++
+--
+Status: `RESOLVED`, this spec will not support EGL sharing format queries.
+
+Discussion: The most common flow to get an EGL image to interop with appears to be:
+
+  - Create a GraphicBuffer with a requested PIXEL_FORMAT
+  - Get an EGLClientBuffer with the getNativeBuffer() member function
+  - Create an EGLImageKHR by passing the EGLClientBuffer to eglCreateImageKHR()
+  - Create an OpenCL cl_mem from the EGLImageKHR using clCreateFromEGLImageKHR()
+
+So, arguably the query for EGL images should return PIXEL_FORMATs that can be passed to the GraphicBuffer constructor to get an image to interop with, which would work with this flow, but not for other flows that could also create EGL images to interop with.
+
+Since there are multiple valid flows that can result in an EGL image to interop with, does it even make sense to have a query for EGL images?
+
+Decision: Not going to support EGL sharing format queries for now, due to the multiple "domains" that can create EGL images.
+If desired, we can always add cl_intel_egl_sharing_format_query at a later date.
+Note as well that the EGL sharing extension doesn't have a "list of supported image formats" like the other sharing APIs, so the value of a sharing format query for EGL is already less than it is for other sharing APIs.
+--
+
+. What should the query for VA_API media surfaces return?
++
+--
+Status: `RESOLVED`
+
+Discussion: Right now it's defined to return a VAImageFormat, which is correct, but arguably overkill since we're only using VA_API sharing for media surfaces.
+The alternative is to return unsigned ints representing the appropriate fourcc codes.
+--
+
+. For OpenGL sharing, should the query include the un-sized, un-typed "base" internal formats?  Or should it only include the sized internal formats?
++
+--
+Status: `RESOLVED`
+
+Discussion: For the base internal formats, the user is at the mercy of the actual internal format chosen by the OpenGL driver.
+So, it may be possible that there could be OpenGL textures created with the same base internal format, where one of them is shareable with OpenCL and one of them is not, which could be confusing.
+Then again, it's also somewhat confusing to leave the base internal formats out of the image format query since it's likely that sharing will succeed for OpenGL textures created with base the base internal formats in many cases.
+
+Decision: This extension won't say anything about whether the query will return of the un-sized, un-typed "base" internal formats or the sized internal formats.
+--
+
+. How should we handle sharing APIs like DX9 media sharing where a format may be supported for sharing for some planes (such as the individual planes of a planar YUV image) but not for other planes (such as a plane value indicating a monolithic planar YUV image)?
++
+--
+Status: `RESOLVED`
+
+Decision: Added a "plane" argument to the sharing format query for the following APIs:
+
+- clGetSupportedDX9MediaSurfaceFormatsINTEL
+- clGetSupportedD3D11TextureFormatsINTEL
+- clGetSupportedVA_APIMediaSurfaceFormatsINTEL
+
+No "plane" argument was added to these APIs, since they do not support sharing planar images:
+
+- clGetSupportedGLTextureFormatsINTEL
+- clGetSupportedD3D10TextureFormatsINTEL
+
+Note that the D3D10 / D3D11 sharing APIs specify the "plane" using the "subresource" argument, but for the purposes of the sharing format query we really do want this to be the "plane", since it doesn't make sense to query for a particular "subresource".
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Version|Date|Author|Changes
+|1.0.0|2021-05-31|Ben Ashbaugh|*Initial public revision*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

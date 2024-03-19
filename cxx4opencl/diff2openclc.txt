@@ -1,4 +1,4 @@
-// Copyright 2019-2020 The Khronos Group. This work is licensed under a
+// Copyright 2019-2024 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -9,8 +9,8 @@
 for the majority of features. However, there are a number of
 exceptions that are described in this section. Some of them come
 from the nature of {cpp} but others are due to improvements in OpenCL
-features. Most of such improvements do not invalidate old code,
-but simply provide extra functionality.
+features. Most of such improvements do not invalidate code written in
+OpenCL C, but simply provide extra functionality.
 
 ==== C++ related differences
 
@@ -32,7 +32,7 @@ to non-`const` implicitly. For details please refer to {cpp}17 `[conv]`.
 ----------
 void foo(){
   const int *ptrconst;
-  int *ptr = ptrconst; // invalid initialization discards const qualifier
+  int *ptr = ptrconst; // invalid initialization discards const qualifier.
 }
 ----------
 
@@ -46,7 +46,7 @@ struct mytype {
 };
 void foo(uint par){
   mytype var = {
-    .i = par // narrowing from uint to int is disallowed
+    .i = par // narrowing from uint to int is disallowed.
   };
 }
 ----------
@@ -62,7 +62,7 @@ type conversions.
 ----------
 void foo(){
   int *ptr;
-  int i = ptr; // incompatible pointer to integer conversion
+  int i = ptr; // incompatible pointer to integer conversion.
 }
 ----------
 
@@ -82,7 +82,7 @@ In {cpp}17 there is an explicit builtin pointer literal `nullptr` that should
 be used instead ({cpp}17 `[lex.nullptr]`).
 
 `NULL` macro definition in {cpp} for OpenCL follows {cpp}17
-`[support.types.nullptr]` where it is an implementation defined macro and it
+`[support.types.nullptr]` where it is an implementation-defined macro and it
 is not guaranteed to be the same as in OpenCL C. Reusing the definition of
 `NULL` from OpenCL C does not guarantee that any code with NULL is legal in
 {cpp} for OpenCL even if it is legal in OpenCL C.
@@ -91,7 +91,7 @@ is not guaranteed to be the same as in OpenCL C. Reusing the definition of
 ----------
 #define NULL ((void*)0)
 void foo(){
- int *ptr = NULL; // invalid initialization of int* with void*
+ int *ptr = NULL; // invalid initialization of int* with void*.
 }
 ----------
 
@@ -102,7 +102,7 @@ encouraged to define `NULL` as an alias to pointer literal `nullptr`.
 
 {cpp}17 does not support `restrict` and therefore {cpp} for OpenCL
 can not support it either. Some compilers might provide extensions
-with some functionality of `restrict` in {cpp}, e.g. `__restrict`
+with some functionality of `restrict` in {cpp}, e.g. `+__restrict+`
 in Clang.
 
 This feature only affects optimizations and the source
@@ -110,7 +110,7 @@ code can be modified by removing it. As a workaround to avoid manual
 modifications, macro substitutions can be used to either remove the
 keyword during the preprocessing by defining `restrict` as an empty
 macro or mapping it to another similar compiler features, e.g.
-`__restrict` in Clang. This can be done in headers or using `-D`
+`+__restrict+` in Clang. This can be done in headers or using `-D`
 compilation flag.
 
 ===== Limitations of goto statements
@@ -125,9 +125,21 @@ declaration statement apart from some exceptions detailed in {cpp}17
 if (cond)
   goto label;
 int n = foo();
-label:  // invalid: jumping forward over declaration of n
+label:  // invalid: jumping forward over declaration of n.
    // ...
 ----------
+
+===== Ternary selection operator
+
+The ternary selection operator (`?:`) inherits its behaviour from both
+{cpp} and OpenCL C. It operates on three expressions
+`(exp1 ? exp2 : exp3)`. If all three expressions are scalar values,
+the {cpp}17 rules for ternary operator are followed. If the result is
+a vector value, then this is equivalent to calling
+`select(exp3, exp2, exp1)` as described in `OpenCL C 3.0 s6.15.6`.
+The rules from OpenCL C impose limitation that `exp1` cannot be a
+vector of float values. However, `exp1` can be evaluated to a scalar
+float as it is contextually convertible to bool in {cpp}.
 
 ==== OpenCL specific difference
 
@@ -137,40 +149,48 @@ in OpenCL specific behavior.
 ===== Variadic macros
 
 {cpp} for OpenCL eliminates the restriction on variadic macros from
-`OpenCL C v2.0 s6.9.e`.
+`OpenCL C 3.0 s6.11.f`.
 Variadic macros can be used normally as per {cpp}17 `[cpp.replace]`.
 
 ===== Predefined macros
 
-The macro `+__OPENCL_C_VERSION__+` described in `OpenCL C v2.0 s6.10`,
+The macro `+__OPENCL_C_VERSION__+` described in `OpenCL C 3.0 s6.12`,
 is not defined.
 
 The following new predefined macros are added in {cpp} for OpenCL:
 
- * `+__OPENCL_CPP_VERSION__+` set to value `100`.
- * `+__CL_CPP_VERSION_1_0__+` also set to `100` and can be used for
+ * `+__OPENCL_CPP_VERSION__+` set to integer value reflecting the C++
+   for OpenCL version the translation unit is compiled for. The value
+   `100` corresponds to the language version 1.0 and `202100` corresponds
+   to the version 2021.
+ * `+__CL_CPP_VERSION_1_0__+` set to `100` and can be used for
+   convenience instead of a literal.
+ * `+__CL_CPP_VERSION_2021__+` set to `202100` and can be used for
    convenience instead of a literal.
 
 ===== Atomic operations
 
-{cpp} for OpenCL relaxes restriction from `OpenCL C v2.0 s6.13.11` to
+{cpp} for OpenCL relaxes restriction from `OpenCL C 3.0 s6.15.12` to
 atomic types allowing them to be used by builtin operators, and not
-only by builtin functions.
+only by builtin functions. This relaxation does not apply to
+{cpp} for OpenCL version 2021 if the sequential consistency memory model
+(i.e. `+__opencl_c_atomic_order_seq_cst+` feature) is not supported.
 
 Operators on atomic types behave as described in {cpp}17
 sections `[atomics.types.int]` `[atomics.types.pointer]`
 `[atomics.types.float]`.
-
 [source,c]
 ----------
+// Assumes support of sequential consistency memory model.
 atomic_int acnt;
 acnt++; // equivalent to atomic_fetch_add(&acnt, 1);
 ----------
 
-===== Use of Clang Blocks
+===== Use of Blocks
 
-Clang Blocks that are defined by the Objective-C language are not supported
-and their use can be replaced by lambdas ({cpp}17 `[expr.prim.lambda]`).
+Blocks that are defined in `OpenCL C 3.0 s6.14` are not supported
+and their use might be replaced by lambdas ({cpp}17 `[expr.prim.lambda]`)
+in future versions.
 
 The above implies that builtin functions using blocks, such as `enqueue_kernel`,
 are not supported in {cpp} for OpenCL.

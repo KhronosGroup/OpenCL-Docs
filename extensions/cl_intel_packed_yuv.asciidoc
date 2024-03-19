@@ -1,0 +1,260 @@
+= cl_intel_packed_yuv
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
+
+== Name Strings
+
+`cl_intel_packed_yuv`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2021-2024 Intel Corporation.  All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Revision: 1.0.1
+
+== Dependencies
+
+OpenCL 1.2 is required.
+
+This extension is written against the OpenCL Specification Version 3.0.7.
+
+== Overview
+
+The purpose of this extension is to provide OpenCL support for packed YUV
+images.
+
+== New API Enums
+
+Accepted as the `image_channel_order` of `cl_image_format`:
+
+[source]
+----
+#define CL_YUYV_INTEL                               0x4076
+#define CL_UYVY_INTEL                               0x4077
+#define CL_YVYU_INTEL                               0x4078
+#define CL_VYUY_INTEL                               0x4079
+----
+
+== Modifications to the OpenCL API Specification
+
+In section 5.3.1.2 Image Descriptor, add a sentence to the end of the description of image_width: ::
++
+--
+* `image_width` is...  If the image is a packed YUV image, `image_width` is the width of the Y data and must be even.
+--
+
+Add to List of supported Image Channel Order Values in section 5.3.1.1 Image Format Descriptor: ::
++
+--
+[caption="Table 16. "]
+.List of supported Image Channel Order Values
+[width="100%",cols="<50%,<50%",options="header"]
+|====
+| Image Channel Order | Description
+| `CL_YUYV_INTEL`, `CL_UYVY_INTEL`, `CL_YVYU_INTEL`, `CL_VYUY_INTEL`
+  | Packed YUV image format.  This format can only be used if `image_channel_data_type` = `CL_UNORM_INT8`.
+|====
+--
+
+Add to the end of section 5.3.1.1 Image Format Descriptor: ::
++
+--
+The only supported `image_channel_data_type` for packed YUV images is `CL_UNORM_INT8`.
+
+The memory layout of a packed YUV image when `image_channel_order` is `CL_YUYV_INTEL` is:
+
+[width="80%",cols="<20%,<20%,<20%,<20%,<20%"]
+|====
+| Y +
+Pixel N
+| U +
+Pixel N
+| Y +
+Pixel N+1
+| V +
+Pixel N
+| ...
+|====
+
+The memory layout of a packed YUV image when `image_channel_order` is `CL_UYVY_INTEL` is:
+
+[width="80%",cols="<20%,<20%,<20%,<20%,<20%"]
+|====
+| U +
+Pixel N
+| Y +
+Pixel N
+| V +
+Pixel N
+| Y +
+Pixel N+1
+| ...
+|====
+
+The memory layout of a packed YUV image when `image_channel_order` is `CL_YVYU_INTEL` is:
+
+[width="80%",cols="<20%,<20%,<20%,<20%,<20%"]
+|====
+| Y +
+Pixel N
+| V +
+Pixel N
+| Y +
+Pixel N+1
+| U +
+Pixel N
+| ...
+|====
+
+The memory layout of a packed YUV image when `image_channel_order` is `CL_VYUY_INTEL` is:
+
+[width="80%",cols="<20%,<20%,<20%,<20%,<20%"]
+|====
+| V +
+Pixel N
+| Y +
+Pixel N
+| U +
+Pixel N
+| Y +
+Pixel N+1
+| ...
+|====
+--
+
+Add a new table to section 5.3.2.1 Minimum List of Supported Image Formats: ::
++
+--
+[caption="Table XX. "]
+.Additional Required Image Formats for Read-Only 2D Images
+[width="100%",cols="1,1,1",options="header"]
+|====
+| num_channels | channel_order | channel_data_type
+| 2
+    | `CL_YUYV_INTEL`
+        | `CL_UNORM_INT8`
+| 2
+    | `CL_UYVY_INTEL`
+        | `CL_UNORM_INT8`
+| 2
+    | `CL_YVYU_INTEL`
+        | `CL_UNORM_INT8`
+| 2
+    | `CL_VYUY_INTEL`
+        | `CL_UNORM_INT8`
+|====
+--
+
+In section 5.3.3 Reading, Writing, and Copying Image Objects, add a sentence to the end of the descriptions of origin and region under clEnqueueReadImage and clEnqueueWriteImage: ::
++
+--
+* _origin_ defines... If _image_ is a packed YUV image, the x value given by _origin_[0] indexes Y data in the image and must be even.
+
+* _region_ defines... If _image_ is a packed YUV image, the _width_ value given by _region_[0] describes Y data in the image and must be even.
+--
+
+Add a sentence to the end of the descriptions of src_origin, dst_origin, and region under clEnqueueCopyImage: ::
++
+--
+* _src_origin_ defines... If _src_image_ is a packed YUV image, the x value given by _src_origin_[0] indexes Y data in _src_image_ and must be even.
+
+* _dst_origin_ defines... If _dst_image_ is a packed YUV image, the x value given by _dst_origin_[0] indexes Y data in _dst_image_ and must be even.
+
+* _region_ defines... If _src_image_ or _dst_image_ is a packed YUV image, the _width_ value given by _region_[0] describes Y data and must be even.
+--
+
+In section 5.3.5 Copying between Image and Buffer Objects, add a sentence to the end of the descriptions of src_origin and region for clEnqueueCopyImageToBuffer: ::
++
+--
+* _src_origin_ defines... If _src_image_ is a packed YUV image, the x value given by _origin_[0] indexes Y data in the image and must be even.
+
+* _region_ defines... If _src_image_ is a packed YUV image, the width value given by _origin_[0] describes Y data and must be even.
+--
+
+Add a sentence to the end of the descriptions of dst_origin and region for clEnqueueCopyBufferToImage: ::
++
+--
+* _dst_origin_ defines... If _dst_image_ is a packed YUV image, the x value given by _origin_[0] indexes Y data in the image and must be even.
+
+* _region_ defines... If _dst_image_ is a packed YUV image, the width value given by _region_[0] describes Y data and must be even.
+--
+
+In section 5.3.6 Mapping Image Objects, add a sentence to the end of the descriptions of origin and region for clEnqueueMapImage: ::
++
+--
+* _origin_ defines... If _image_ is a packed YUV image, the x value given by _origin_[0] describes Y data and must be even.
+
+* _region_ defines... If _image_ is a packed YUV image, the width value given by _region_[0] describes Y data and must be even.
+--
+
+== Modifications to the OpenCL C Specification
+
+In section 6.15.15.1.1 Determining the border color or value, add a bullet for packed YUV formats: ::
++
+--
+* If image channel order is `CL_YUYV_INTEL`, `CL_UYVY_INTEL`, `CL_YVYU_INTEL`, or `CL_VYUY_INTEL`, the border color is value is undefined.
+--
+
+Add to the un-numbered table in section 6.15.15.7 Mapping image channels to color values returned by read_image and color values passed to write_image to image channels: ::
++
+--
+[cols=",",]
+|====
+| *Channel Order*   | `float4`, `int4` or `uint4` *components of channel data*
+| `CL_YUYV_INTEL`, `CL_UYVY_INTEL`, `CL_YVYU_INTEL`, `CL_VYUY_INTEL`
+                    | (V, Y, U, 1.0)
+|====
+--
+
+== Issues
+
+None.
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1.0.0|2016-07-14|Ben Ashbaugh|*Initial Revision*
+|1.0.1|2021-05-28|Ben Ashbaugh|Converted to asciidoc, corrected border color value.
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

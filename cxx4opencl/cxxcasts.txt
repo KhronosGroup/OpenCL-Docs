@@ -1,0 +1,47 @@
+// Copyright 2019-2024 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+[[cxxcasts]]
+=== {cpp} casts
+
+{cpp} has three cast operators in addition to C-style casts. Additional
+logic specific to address spaces are applied to all casts as detailed in
+<<address_space_casts, _conversions with address spaces_>>.
+`reinterpret_cast` has some additional functionality:
+
+* Conversion between vectors and scalars are allowed.
+* Conversion between OpenCL types are disallowed.
+
+==== Vectors and scalars
+
+`reinterpret_cast` reinterprets between integral types like integers and
+pointers. In {cpp} for openCL this also includes vector types, and so using
+`reinterpret_cast` between vectors and scalars is also possible, as long as the
+size of the vectors are the same.
+
+[source,cpp]
+------------
+int i;
+short2 s2 = reinterpret_cast<short2>(i); // legal.
+int2 i2 = reinterpret_cast<int2>(i); // illegal.
+
+short8 s8;
+int4 i4 = reinterpret_cast<int4>(s8); // legal.
+long l4 = reinterpret_cast<long>(s8); // illegal.
+------------
+
+==== OpenCL types
+
+Some of the OpenCL-specific types, defined as "Other Built-in Data Types" in
+`OpenCL C 3.0 s6.3.3`, are convertible to integer literals, but since they
+are not conceptually integral, they can not be used with `reinterpret_cast`.
+Therefore conversions of an OpenCL-specific type to any distinct type are
+illegal.
+
+[source,cpp]
+------------
+queue_t q;
+reserve_id_t id = reinterpret_cast<reserve_id_t>(q); // illegal.
+int i = reinterpret_cast<int>(id); // illegal.
+------------

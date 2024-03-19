@@ -1,0 +1,209 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+// TODO: try rouge?
+
+= cl_intel_split_work_group_barrier
+
+== Name Strings
+
+`cl_intel_split_work_group_barrier`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel +
+Eugene Chereshnev, Intel +
+John Pennycook, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2022-2024 Intel Corporation. All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL 3.0 C Language specification and the OpenCL SPIR-V Environment specification, V3.0.10.
+
+This extension requires OpenCL 1.0.
+
+Some OpenCL C function overloads added by this extension require OpenCL C 2.0 or newer.
+
+== Overview
+
+This extension adds built-in functions to split a `barrier` or `work_group_barrier` function in OpenCL C into two separate operations:
+the first indicates that a work-item has "arrived" at a barrier but should continue executing,
+and the second indicates that a work-item should "wait" for all of the work-items to arrive at the barrier before executing further.
+
+Splitting a barrier operation may improve performance and may provide a closer match to "latch" or "barrier" operations in other parallel languages such as C++ 20.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+None.
+
+== New API Types
+
+None.
+
+== New OpenCL C Functions
+
+[source]
+----
+void intel_work_group_barrier_arrive(cl_mem_fence_flags flags);
+void intel_work_group_barrier_wait(cl_mem_fence_flags flags);
+
+// For OpenCL C 2.0 or newer:
+void intel_work_group_barrier_arrive(cl_mem_fence_flags flags, memory_scope scope);
+void intel_work_group_barrier_wait(cl_mem_fence_flags flags, memory_scope scope);
+----
+
+== Modifications to the OpenCL C Specification
+
+=== Add to Table 19 - Built-in Work-group Synchronization Functions
+
+[caption="Table 19. "]
+.Built-in Work-group synchronization Functions
+[cols="1a,2",options="header"]
+|====
+| *Function*
+| *Description*
+
+|[source]
+----
+void intel_work_group_barrier_arrive(
+    cl_mem_fence_flags flags);
+void intel_work_group_barrier_wait(
+    cl_mem_fence_flags flags);
+
+// For OpenCL C 2.0 or newer:
+void intel_work_group_barrier_arrive(
+    cl_mem_fence_flags flags,
+    memory_scope scope);
+void intel_work_group_barrier_wait(
+    cl_mem_fence_flags flags,
+    memory_scope scope);
+----
+| For these functions, if any work-item in a work-group arrives at a barrier, behavior is undefined unless all work-items in the work-group arrive at the barrier.
+If any work-item in a work-group waits on a barrier, behavior is undefined unless all work-items in the work-group wait on the barrier.
+
+If a barrier arrive function is inside of a conditional statement and any work-item in the work-group enters the conditional statement and arrives at the barrier, behavior is undefined unless all work-items enter the conditional and arrive at the barrier.
+If a barrier wait function is inside of a conditional statement and any work-item in the work-group enters the conditional statement and waits on the barrier, behavior is undefined unless all work-items enter the conditional and wait on the barrier.
+
+If a barrier arrive function is inside of a loop and any work-item arrives at the barrier for an iteration of the loop, behavior is undefined unless all work-items arrive at the barrier for the same iteration of the loop.
+If a barrier wait function is inside of a loop and any work-item waits on the barrier for an iteration of the loop, behavior is undefined unless all work-items wait on the barrier for the same iteration of the loop.
+
+Behavior is undefined if a work-item waits on a barrier before arriving at a barrier.
+After a work-item arrives at a barrier, behavior is undefined if the work-item arrives at another barrier before waiting on a barrier.
+After a work-item waits on a barrier, behavior is undefined if the work-item waits on another barrier before arriving at a barrier.
+
+The `intel_work_group_barrier_arrive` and `intel_work_group_barrier_wait` functions specify which memory operations from before arriving at the barrier must be visible to work-items after waiting on the barrier by using the _flags_ and _scope_ arguments.
+
+The _flags_ argument specifies the memory address spaces to apply the memory ordering constraints.
+This is a bitfield that can be zero or a combination of the following values:
+
+`CLK_LOCAL_MEM_FENCE`: for `local` memory accesses. +
+`CLK_GLOBAL_MEM_FENCE`: for `global` memory accesses. +
+`CLK_IMAGE_MEM_FENCE`: for image memory accesses, for this flag the value of _scope_ must be `memory_scope_work_group` or behavior is undefined.
+
+The _scope_ argument describes the work-items to apply the memory ordering constraints.
+If no _scope_ argument is provided, the _scope_ is `memory_scope_work_group`.
+
+If the _flags_ argument differs between the barrier arrive function and the barrier wait function then only memory operations for the address spaces specified by the intersection of the two _flags_ arguments must be visible.
+
+If the _scope_ argument differs between the barrier arrive function and the barrier wait function then the memory ordering constraints only apply to work-items described by the narrower of the two _scope_ arguments.
+
+For each call to these functions, the values of _flags_ and _scope_ must be the same for all work-items in the work-group.
+|====
+
+== Modifications to the OpenCL SPIR-V Environment Specification
+
+=== Add a new section 5.2.X - `cl_intel_split_work_group_barrier`
+
+If the OpenCL environment supports the extension `cl_intel_split_work_group_barrier` then the environment must accept modules that declare use of the extension `SPV_INTEL_split_barrier` and that declare the SPIR-V capability *SplitBarrierINTEL*.
+
+For the instructions *OpControlBarrierArriveINTEL* and *OpControlBarrierWaitINTEL* added by the extension:
+
+  * _Scope_ for _Execution_ must be *WorkGroup*.
+  * Valid values for _Scope_ for _Memory_ are the same as for *OpControlBarrier*.
+
+For the instruction *OpControlBarrierArriveINTEL*, the memory-order constraint in _Memory Semantics_ must be *Release*.
+
+For the instruction *OpControlBarrierWaitINTEL*, the memory-order constraint in _Memory Semantics_ must be *Acquire*.
+
+== Issues
+
+. Do we need to support all of the features of C++ 20 barriers (completion functions, arrival tokens, etc.)?
++
+--
+*RESOLVED*: Not in this extension.
+--
+
+. Do we need to support sub-group split barriers?
++
+--
+*RESOLVED*: Not in this extension.
+--
+
+. Do we need to document formal changes to the memory model?
++
+--
+*RESOLVED*: Not initially.
+Informally, the barrier wait for one work-item synchronizes-with the barrier arrives for the other work-items in the work-group.
+--
+
+. What are the memory order constraints for a split barrier?
++
+--
+*RESOLVED*: Arriving at a split barrier will effectively be a release memory fence and waiting on a barrier will effectively be an acquire memory fence.
+
+Alternatively, both arriving and waiting could be sequentially consistent memory fences, but acquire and release are sufficient for most use-cases and may perform better.
+If a sequentially consistent fence is required instead, applications can use an ordinary non-split barrier, or insert explicit memory fences before arriving at the split barrier and after waiting on a split barrier.
+--
+
+. What should behavior be if the flags arguments differ between the barrier arrive and the barrier wait?
++
+--
+*RESOLVED*: The address spaces will be the intersection of the flags, and the memory scope will be the narrowest of the two scopes.
+This is the same behavior that would be observed with a release fence before arriving at the barrier and an acquire fence after waiting on the barrier.
+
+Alternatively, this scenario could be undefined behavior, but this appears to be unnecessary.
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Version|Date|Author|Changes
+|0.9.0|2022-01-11|Ben Ashbaugh|*Initial revision*
+|0.9.1|2022-02-07|Ben Ashbaugh|Added "intel" prefix to split barrier functions.
+|1.0.0|2022-09-06|Ben Ashbaugh|Updated version.
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

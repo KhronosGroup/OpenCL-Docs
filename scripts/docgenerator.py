@@ -1,21 +1,25 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2013-2020 The Khronos Group Inc.
+# Copyright 2013-2024 The Khronos Group Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
 
+from pathlib import Path
 
-from generator import GeneratorOptions, OutputGenerator, regSortFeatures, noneStr, write
+from generator import GeneratorOptions, OutputGenerator, noneStr, write
+
+ENUM_TABLE_PREFIX = """
+[cols=",",options="header",]
+|=======================================================================
+|Enum |Description"""
+
+ENUM_TABLE_SUFFIX = """|======================================================================="""
+
+FLAG_BLOCK_PREFIX = """.Flag Descriptions
+****"""
+
+FLAG_BLOCK_SUFFIX = """****"""
+
 
 class DocGeneratorOptions(GeneratorOptions):
     """DocGeneratorOptions - subclass of GeneratorOptions for
@@ -66,6 +70,11 @@ class DocGeneratorOptions(GeneratorOptions):
         type declarations
         - secondaryInclude - if True, add secondary (no xref anchor) versions
         of generated files
+        - extEnumerantAdditions - if True, include enumerants added by extensions
+        in comment tables for core enumeration types.
+        - extEnumerantFormatString - A format string for any additional message for
+        enumerants from extensions if extEnumerantAdditions is True. The correctly-
+        marked-up extension name will be passed.
         """
         GeneratorOptions.__init__(self, **kwargs)
         self.prefixText = prefixText
@@ -95,6 +104,15 @@ class DocGeneratorOptions(GeneratorOptions):
         self.expandEnumerants = expandEnumerants
         """if True, add BEGIN/END_RANGE macros in enumerated type declarations"""
 
+        self.extEnumerantAdditions = extEnumerantAdditions
+        """if True, include enumerants added by extensions in comment tables for core enumeration types."""
+
+        self.extEnumerantFormatString = extEnumerantFormatString
+        """A format string for any additional message for
+        enumerants from extensions if extEnumerantAdditions is True. The correctly-
+        marked-up extension name will be passed."""
+
+
 class DocOutputGenerator(OutputGenerator):
     """DocOutputGenerator - subclass of OutputGenerator.
 
@@ -112,15 +130,24 @@ class DocOutputGenerator(OutputGenerator):
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
 
+        # This should be a separate conventions property rather than an
+        # inferred type name pattern for different APIs.
+        self.result_type = genOpts.conventions.type_prefix + "Result"
+
     def endFile(self):
         OutputGenerator.endFile(self)
 
     def beginFeature(self, interface, emit):
         # Start processing in superclass
         OutputGenerator.beginFeature(self, interface, emit)
+
+        # Decide if we're in a core <feature> or an <extension>
+        self.in_core = (interface.tag == 'feature')
+
         # Verify that each <extension> has a unique number during doc
         # generation
-        if interface.tag == 'extension':
+        # TODO move this to consistency_tools
+        if not self.in_core:
             extension_number = interface.get('number')
             if extension_number is not None and extension_number != "0":
                 if extension_number in self.extension_numbers:
@@ -132,6 +159,34 @@ class DocOutputGenerator(OutputGenerator):
     def endFeature(self):
         # Finish processing in superclass
         OutputGenerator.endFeature(self)
+
+    def genRequirements(self, name, mustBeFound = True):
+        """Generate text showing what core versions and extensions introduce
+        an API. This relies on the map in api.py, which may be loaded at
+        runtime into self.apidict. If not present, no message is
+        generated.
+
+        - name - name of the API
+        - mustBeFound - If True, when requirements for 'name' cannot be
+          determined, a warning comment is generated.
+        """
+
+        if self.apidict:
+            if name in self.apidict.requiredBy:
+                features = []
+                for (base,dependency) in self.apidict.requiredBy[name]:
+                    if dependency is not None:
+                        features.append('{} with {}'.format(base, dependency))
+                    else:
+                        features.append(base)
+                return '// Provided by {}\n'.format(', '.join(features))
+            else:
+                if mustBeFound:
+                    self.logMsg('warn', 'genRequirements: API {} not found'.format(name))
+                return ''
+        else:
+            # No API dictionary available, return nothing
+            return ''
 
     def writeInclude(self, directory, basename, contents):
         """Generate an include file.
@@ -151,7 +206,19 @@ class DocOutputGenerator(OutputGenerator):
         # Asciidoc anchor
         write(self.genOpts.conventions.warning_comment, file=fp)
         write('[[{0},{0}]]'.format(basename), file=fp)
-        write('[source,c++]', file=fp)
+
+        if self.genOpts.conventions.generate_index_terms:
+            index_terms = []
+            if basename.startswith(self.conventions.command_prefix):
+                index_terms.append(basename[2:] + " (function)")
+            elif basename.startswith(self.conventions.type_prefix):
+                index_terms.append(basename[2:] + " (type)")
+            elif basename.startswith(self.conventions.api_prefix):
+                index_terms.append(basename[len(self.conventions.api_prefix):] + " (define)")
+            index_terms.append(basename)
+            write('indexterm:[{}]'.format(','.join(index_terms)), file=fp)
+
+        write('[source%unbreakable,opencl]', file=fp)
         write('----', file=fp)
         write(contents, file=fp)
         write('----', file=fp)
@@ -166,36 +233,73 @@ class DocOutputGenerator(OutputGenerator):
             # Asciidoc anchor
             write(self.genOpts.conventions.warning_comment, file=fp)
             write('// Include this no-xref version without cross reference id for multiple includes of same file', file=fp)
-            write('[source,c++]', file=fp)
+            write('[source,%unbreakable,opencl]', file=fp)
             write('----', file=fp)
             write(contents, file=fp)
             write('----', file=fp)
             fp.close()
 
+    def writeTable(self, basename, values):
+        """Output a table of enumerants."""
+        directory = Path(self.genOpts.directory) / 'enums'
+        self.makeDir(str(directory))
+
+        filename = str(directory / '{}.comments.txt'.format(basename))
+        self.logMsg('diag', '# Generating include file:', filename)
+
+        with open(filename, 'w', encoding='utf-8') as fp:
+            write(self.conventions.warning_comment, file=fp)
+            write(ENUM_TABLE_PREFIX, file=fp)
+
+            for data in values:
+                write("|ename:{}".format(data['name']), file=fp)
+                write("|{}".format(data['comment']), file=fp)
+
+            write(ENUM_TABLE_SUFFIX, file=fp)
+
+    def writeFlagBox(self, basename, values):
+        """Output a box of flag bit comments."""
+        directory = Path(self.genOpts.directory) / 'enums'
+        self.makeDir(str(directory))
+
+        filename = str(directory / '{}.comments.txt'.format(basename))
+        self.logMsg('diag', '# Generating include file:', filename)
+
+        with open(filename, 'w', encoding='utf-8') as fp:
+            write(self.conventions.warning_comment, file=fp)
+            write(FLAG_BLOCK_PREFIX, file=fp)
+
+            for data in values:
+                write("* ename:{} -- {}".format(data['name'],
+                                                data['comment']),
+                      file=fp)
+
+            write(FLAG_BLOCK_SUFFIX, file=fp)
+
     def genType(self, typeinfo, name, alias):
-        "Generate type."
+        """Generate type."""
         OutputGenerator.genType(self, typeinfo, name, alias)
         typeElem = typeinfo.elem
         # If the type is a struct type, traverse the embedded <member> tags
         # generating a structure. Otherwise, emit the tag text.
         category = typeElem.get('category')
 
-        body = ''
         if category in ('struct', 'union'):
             # If the type is a struct type, generate it using the
             # special-purpose generator.
             self.genStruct(typeinfo, name, alias)
         else:
+            body = self.genRequirements(name)
             if alias:
                 # If the type is an alias, just emit a typedef declaration
-                body = 'typedef ' + alias + ' ' + name + ';\n'
+                body += 'typedef ' + alias + ' ' + name + ';\n'
                 self.writeInclude(OutputGenerator.categoryToPath[category],
                                   name, body)
             else:
                 # Replace <apientry /> tags with an APIENTRY-style string
                 # (from self.genOpts). Copy other text through unchanged.
                 # If the resulting text is an empty string, don't emit it.
-                body = noneStr(typeElem.text)
+                body += noneStr(typeElem.text)
                 for elem in typeElem:
                     if elem.tag == 'apientry':
                         body += self.genOpts.apientry + noneStr(elem.tail)
@@ -218,10 +322,11 @@ class DocOutputGenerator(OutputGenerator):
 
         typeElem = typeinfo.elem
 
+        body = self.genRequirements(typeName)
         if alias:
-            body = 'typedef ' + alias + ' ' + typeName + ';\n'
+            body += 'typedef ' + alias + ' ' + typeName + ';\n'
         else:
-            body = 'typedef ' + typeElem.get('category') + ' ' + typeName + ' {\n'
+            body += 'typedef ' + typeElem.get('category') + ' ' + typeName + ' {\n'
 
             targetLen = self.getMaxCParamTypeLength(typeinfo)
             for member in typeElem.findall('.//member'):
@@ -231,28 +336,102 @@ class DocOutputGenerator(OutputGenerator):
 
         self.writeInclude('structs', typeName, body)
 
+    def genEnumTable(self, groupinfo, groupName):
+        """Generate tables of enumerant values and short descriptions from
+        the XML."""
+
+        values = []
+        got_comment = False
+        missing_comments = []
+        for elem in groupinfo.elem.findall('enum'):
+            if not elem.get('required'):
+                continue
+            name = elem.get('name')
+
+            data = {
+                'name': name,
+            }
+
+            (numVal, strVal) = self.enumToValue(elem, True)
+            data['value'] = numVal
+
+            extname = elem.get('extname')
+
+            added_by_extension_to_core = (extname is not None and self.in_core)
+            if added_by_extension_to_core and not self.genOpts.extEnumerantAdditions:
+                # We're skipping such values
+                continue
+
+            comment = elem.get('comment')
+            if comment:
+                got_comment = True
+            elif name.endswith('_UNKNOWN') and numVal == 0:
+                # This is a placeholder for 0-initialization to be clearly invalid.
+                # Just skip this silently
+                continue
+            else:
+                # Skip but record this in case it's an odd-one-out missing a comment.
+                missing_comments.append(name)
+                continue
+
+            if added_by_extension_to_core and self.genOpts.extEnumerantFormatString:
+                # Add a note to the comment
+                comment += self.genOpts.extEnumerantFormatString.format(
+                    self.conventions.formatExtension(extname))
+
+            data['comment'] = comment
+            values.append(data)
+
+        if got_comment:
+            # If any had a comment, output it.
+
+            if missing_comments:
+                self.logMsg('warn', 'The following values for', groupName,
+                            'were omitted from the table due to missing comment attributes:',
+                            ', '.join(missing_comments))
+
+            group_type = groupinfo.elem.get('type')
+            if groupName == self.result_type:
+                # Split this into success and failure
+                self.writeTable(groupName + '.success',
+                                (data for data in values
+                                 if data['value'] >= 0))
+                self.writeTable(groupName + '.error',
+                                (data for data in values
+                                 if data['value'] < 0))
+            elif group_type == 'bitmask':
+                self.writeFlagBox(groupName, values)
+            elif group_type == 'enum':
+                self.writeTable(groupName, values)
+            else:
+                raise RuntimeError("Unrecognized enums type: " + str(group_type))
+
     def genGroup(self, groupinfo, groupName, alias):
         """Generate group (e.g. C "enum" type)."""
         OutputGenerator.genGroup(self, groupinfo, groupName, alias)
 
+        body = self.genRequirements(groupName)
         if alias:
             # If the group name is aliased, just emit a typedef declaration
             # for the alias.
-            body = 'typedef ' + alias + ' ' + groupName + ';\n'
+            body += 'typedef ' + alias + ' ' + groupName + ';\n'
         else:
             expand = self.genOpts.expandEnumerants
-            (_, body) = self.buildEnumCDecl(expand, groupinfo, groupName)
+            (_, enumbody) = self.buildEnumCDecl(expand, groupinfo, groupName)
+            body += enumbody
+            if self.genOpts.conventions.generate_enum_table:
+                self.genEnumTable(groupinfo, groupName)
 
         self.writeInclude('enums', groupName, body)
 
     def genEnum(self, enuminfo, name, alias):
-        """Generate enumerant."""
-        OutputGenerator.genEnum(self, enuminfo, name, alias)
-        self.logMsg('diag', '# NOT writing compile-time constant', name)
+        """Generate the C declaration for a constant (a single <enum> value)."""
 
-        # (_, strVal) = self.enumToValue(enuminfo.elem, False)
-        # body = '#define ' + name.ljust(33) + ' ' + strVal
-        # self.writeInclude('consts', name, body)
+        OutputGenerator.genEnum(self, enuminfo, name, alias)
+
+        body = self.buildConstantCDecl(enuminfo, name, alias)
+
+        self.writeInclude('enums', name, body)
 
     def genCmd(self, cmdinfo, name, alias):
         "Generate command."
@@ -269,5 +448,7 @@ class DocOutputGenerator(OutputGenerator):
                 self.logMsg('error', 'Missing required error code for command: ', name, '\n')
                 exit(1)
 
+        body = self.genRequirements(name)
         decls = self.makeCDecls(cmdinfo.elem)
-        self.writeInclude('protos', name, decls[0])
+        body += decls[0]
+        self.writeInclude('protos', name, body)

@@ -1,18 +1,7 @@
 #!/usr/bin/python3
 
-# Copyright (c) 2019-2020 The Khronos Group Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright 2019-2024 The Khronos Group Inc.
+# SPDX-License-Identifier: Apache-2.0
 
 from collections import OrderedDict
 
@@ -30,7 +19,7 @@ def parse_xml(path):
 
 # File Header:
 def GetHeader():
-    return """// Copyright 2017-2020 The Khronos Group. This work is licensed under a
+    return """// Copyright 2017-2024 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -55,9 +44,10 @@ if __name__ == "__main__":
 
     linkFileName   = args.directory + '/api-dictionary.asciidoc'
     nolinkFileName = args.directory + '/api-dictionary-no-links.asciidoc'
+    typeFileName   = args.directory + '/api-types.txt'
 
     specpath = args.registry
-    #specpath = "https://raw.githubusercontent.com/KhronosGroup/OpenCL-Registry/master/xml/cl.xml"
+    #specpath = "https://raw.githubusercontent.com/KhronosGroup/OpenCL-Registry/main/xml/cl.xml"
 
     print('Generating dictionaries from: ' + specpath)
 
@@ -67,6 +57,7 @@ if __name__ == "__main__":
     nolinkFile = open(nolinkFileName, 'w')
     linkFile.write( GetHeader() )
     nolinkFile.write( GetHeader() )
+    typeFile = open(typeFileName, 'w')
 
     # Generate the API functions dictionaries:
 
@@ -125,54 +116,50 @@ if __name__ == "__main__":
     numberOfEnums = 0
 
     for enums in spec.findall('enums'):
-        # Skip Vendor Extension Enums
-        vendor = enums.get('vendor')
-        name = enums.get('name')    # special-case: enum block with KHR enums assigned to vendor
-        include_anyway = name == 'enums.4010'
-        if not vendor or vendor == 'Khronos' or vendor == 'Multiple' or include_anyway:
-            for enum in enums.findall('enum'):
-                name = enum.get('name')
-                #print('found enum: ' + name)
+        name = enums.get('name')
+        for enum in enums.findall('enum'):
+            name = enum.get('name')
+            #print('found enum: ' + name)
 
-                # Create a variant of the name that precedes underscores with
-                # "zero width" spaces.  This causes some long names to be
-                # broken at more intuitive places.
-                htmlName = name[:3] + name[3:].replace("_", "_<wbr>")
-                otherName = name[:3] + name[3:].replace("_", "_&#8203;")
+            # Create a variant of the name that precedes underscores with
+            # "zero width" spaces.  This causes some long names to be
+            # broken at more intuitive places.
+            htmlName = name[:3] + name[3:].replace("_", "_<wbr>")
+            otherName = name[:3] + name[3:].replace("_", "_&#8203;")
 
-                # Example with link:
-                #
-                # // CL_MEM_READ_ONLY
-                #:CL_MEM_READ_ONLY_label: pass:q[`CL_MEM_READ_ONLY`]
-                #:CL_MEM_READ_ONLY: <<CL_MEM_READ_ONLY,{CL_MEM_READ_ONLY_label}>>
-                #:CL_MEM_READ_ONLY_anchor: [[CL_MEM_READ_ONLY]]{CL_MEM_READ_ONLY}
-                linkFile.write('// ' + name + '\n')
-                linkFile.write('ifdef::backend-html5[]\n')
-                linkFile.write(':' + name + '_label: pass:q[`' + htmlName + '`]\n')
-                linkFile.write('endif::[]\n')
-                linkFile.write('ifndef::backend-html5[]\n')
-                linkFile.write(':' + name + '_label: pass:q[`' + otherName + '`]\n')
-                linkFile.write('endif::[]\n')
-                linkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
-                linkFile.write(':' + name + '_anchor: [[' + name + ']]{' + name + '}\n')
-                linkFile.write('\n')
+            # Example with link:
+            #
+            # // CL_MEM_READ_ONLY
+            #:CL_MEM_READ_ONLY_label: pass:q[`CL_MEM_READ_ONLY`]
+            #:CL_MEM_READ_ONLY: <<CL_MEM_READ_ONLY,{CL_MEM_READ_ONLY_label}>>
+            #:CL_MEM_READ_ONLY_anchor: [[CL_MEM_READ_ONLY]]{CL_MEM_READ_ONLY}
+            linkFile.write('// ' + name + '\n')
+            linkFile.write('ifdef::backend-html5[]\n')
+            linkFile.write(':' + name + '_label: pass:q[`' + htmlName + '`]\n')
+            linkFile.write('endif::[]\n')
+            linkFile.write('ifndef::backend-html5[]\n')
+            linkFile.write(':' + name + '_label: pass:q[`' + otherName + '`]\n')
+            linkFile.write('endif::[]\n')
+            linkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
+            linkFile.write(':' + name + '_anchor: [[' + name + ']]{' + name + '}\n')
+            linkFile.write('\n')
 
-                # Example without link:
-                #
-                # // CL_MEM_READ_ONLY
-                #:CL_MEM_READ_ONLY: pass:q[`CL_MEM_READ_ONLY`]
-                #:CL_MEM_READ_ONLY_anchor: {CL_MEM_READ_ONLY}
-                nolinkFile.write('// ' + name + '\n')
-                nolinkFile.write('ifdef::backend-html5[]\n')
-                nolinkFile.write(':' + name + ': pass:q[`' + htmlName + '`]\n')
-                nolinkFile.write('endif::[]\n')
-                nolinkFile.write('ifndef::backend-html5[]\n')
-                nolinkFile.write(':' + name + ': pass:q[`' + otherName + '`]\n')
-                nolinkFile.write('endif::[]\n')
-                nolinkFile.write(':' + name + '_anchor: {' + name + '}\n')
-                nolinkFile.write('\n')
+            # Example without link:
+            #
+            # // CL_MEM_READ_ONLY
+            #:CL_MEM_READ_ONLY: pass:q[`CL_MEM_READ_ONLY`]
+            #:CL_MEM_READ_ONLY_anchor: {CL_MEM_READ_ONLY}
+            nolinkFile.write('// ' + name + '\n')
+            nolinkFile.write('ifdef::backend-html5[]\n')
+            nolinkFile.write(':' + name + ': pass:q[`' + htmlName + '`]\n')
+            nolinkFile.write('endif::[]\n')
+            nolinkFile.write('ifndef::backend-html5[]\n')
+            nolinkFile.write(':' + name + ': pass:q[`' + otherName + '`]\n')
+            nolinkFile.write('endif::[]\n')
+            nolinkFile.write(':' + name + '_anchor: {' + name + '}\n')
+            nolinkFile.write('\n')
 
-                numberOfEnums = numberOfEnums + 1
+            numberOfEnums = numberOfEnums + 1
 
     print('Found ' + str(numberOfEnums) + ' API enumerations.')
 
@@ -250,6 +237,11 @@ if __name__ == "__main__":
             nolinkFile.write('endif::[]\n')
             nolinkFile.write('\n')
 
+            # Print the type list to a file for custom syntax highlighting.
+            # For this we only care about CL types, not base types.
+            if category != 'basetype':
+                typeFile.write('        ' + name + '\n')
+
             numberOfTypes = numberOfTypes + 1
 
     print('Found ' + str(numberOfTypes) + ' API types.')
@@ -258,7 +250,9 @@ if __name__ == "__main__":
     linkFile.close()
     nolinkFile.write( GetFooter() )
     nolinkFile.close()
+    typeFile.close()
 
     print('Successfully generated file: ' + linkFileName)
     print('Successfully generated file: ' + nolinkFileName)
+    print('Successfully generated file: ' + typeFileName)
 

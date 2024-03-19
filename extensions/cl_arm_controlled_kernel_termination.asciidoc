@@ -1,0 +1,211 @@
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_arm_controlled_kernel_termination
+
+== Name Strings
+
+`cl_arm_controlled_kernel_termination`
+
+== Contact
+
+Kevin Petit, kevin.petit@arm.com
+
+== Contributors
+
+Kevin Petit, Arm Ltd. +
+Mats Petersson, Arm Ltd. +
+Anastasia Stulova, Arm Ltd. +
+
+== Notice
+
+Copyright (c) 2021-2024 Arm Ltd.
+
+== Status
+
+Shipping.
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification
+Version 3.0.6.
+
+This extension requires OpenCL 1.0.
+
+== Overview
+
+This extension enables the controlled termination of kernels using a built-in
+function. It also enables the termination reason to be queried on devices that
+support it. This makes it possible to end the execution of a successful search
+kernel early or implement assert-like functionnality using +printf+.
+
+== New API Types
+
+[source,c]
+----
+typedef cl_uint cl_command_termination_reason_arm;
+
+#define CL_COMMAND_TERMINATION_COMPLETION_ARM 0
+#define CL_COMMAND_TERMINATION_CONTROLLED_SUCCESS_ARM 1
+#define CL_COMMAND_TERMINATION_CONTROLLED_FAILURE_ARM 2
+#define CL_COMMAND_TERMINATION_ERROR_ARM 3
+----
+
+== New API Enums
+
+Error code reported for the status of events:
+
+[source,c]
+----
+CL_COMMAND_TERMINATED_ITSELF_WITH_FAILURE_ARM   -1108
+----
+
+Accepted value for the _param_name_ parameter to *clGetEventInfo*:
+
+[source,c]
+----
+CL_EVENT_COMMAND_TERMINATION_REASON_ARM       0x41ED
+----
+
+Accepted value for the _param_name_ parameter to *clGetDeviceInfo*:
+
+[source,c]
+----
+CL_DEVICE_CONTROLLED_TERMINATION_CAPABILITIES_ARM   0x41EE
+
+#define CL_DEVICE_CONTROLLED_TERMINATION_SUCCESS_ARM (1 << 0)
+#define CL_DEVICE_CONTROLLED_TERMINATION_FAILURE_ARM (1 << 1)
+#define CL_DEVICE_CONTROLLED_TERMINATION_QUERY_ARM   (1 << 2)
+----
+
+== New OpenCL C Types and Functions
+
+[source,c]
+----
+typedef enum {
+    ARM_TERMINATION_SUCCESS,
+    ARM_TERMINATION_FAILURE
+} arm_termination_reason;
+
+void arm_terminate_kernel(arm_termination_reason reason);
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 4.2, *Querying Devices*) ::
++
+--
+
+(Add the following to Table 5, _List of supported param_names by *clGetDeviceInfo*_) ::
++
+--
+
+[cols="1,1,10",options="header"]
+|====
+| cl_device_info
+| Return Type
+| Description
+
+| `CL_DEVICE_CONTROLLED_TERMINATION_CAPABILITIES_ARM`
+| `cl_device_controlled_termination_capabilities_arm`
+| Returns a bitfield describing which features of this extension
+  are supported by the device. +
+  - `CL_DEVICE_CONTROLLED_TERMINATION_SUCCESS_ARM` is set when calling the
+    `arm_terminate_kernel` function with `ARM_TERMINATION_SUCCESS` is supported. +
+  - `CL_DEVICE_CONTROLLED_TERMINATION_FAILURE_ARM` is set when calling the
+    `arm_terminate_kernel` function with `ARM_TERMINATION_FAILURE` is supported. +
+  - `CL_DEVICE_CONTROLLED_TERMINATION_QUERY_ARM` is set when
+    `CL_EVENT_COMMAND_TERMINATION_REASON_ARM` and
+    `CL_COMMAND_TERMINATED_ITSELF_WITH_FAILURE_ARM` are supported.
+
+|====
+
+--
+--
+
+(Modify Section 5.11, *Event Objects*) ::
++
+--
+
+(Add the following to Table 36, _List of supported param_names by *clGetEventInfo*_) ::
++
+--
+[cols="1,1,4",options="header"]
+|====
+| cl_event_info
+| Return Type
+| Description
+
+| `CL_EVENT_COMMAND_TERMINATION_REASON_ARM`
+| `cl_command_termination_reason_arm`
+| Returns the reason for a command's execution having ended: +
+  - `CL_COMMAND_TERMINATION_COMPLETION_ARM` when the command ran to completion +
+  - `CL_COMMAND_TERMINATION_CONTROLLED_SUCCESS_ARM` when the command terminated itself with a success status +
+  - `CL_COMMAND_TERMINATION_CONTROLLED_FAILURE_ARM` when the command terminated itself with a failure status +
+  - `CL_COMMAND_TERMINATION_ERROR_ARM` when the command's execution ended because of an unexpected error +
+
+| `CL_EVENT_COMMAND_EXECUTION_STATUS`
+| `cl_int`
+| Returns `CL_COMMAND_TERMINATED_ITSELF_WITH_FAILURE_ARM` if the kernel was
+  terminated by calling `arm_terminate_kernel` with `ARM_TERMINATION_FAILURE`.
+
+|====
+--
+
+The following new error conditions are added for *clGetEventInfo*:
+
+  * {CL_INVALID_EVENT} if _event_ does not correspond to a
+    `CL_COMMAND_NDRANGE_KERNEL` or `CL_COMMAND_TASK` command.
+  * {CL_INVALID_OPERATION} if the `CL_EVENT_COMMAND_EXECUTION_STATUS` of _event_ is neither
+    `CL_COMPLETE` nor a negative value.
+
+--
+
+== Modifications to the OpenCL C Specification
+
+(Add a new Section 6.15.X, *Controlled kernel termination*) ::
++
+--
+[[arm_terminate_kernel]]
+[float]
+==== arm_terminate_kernel
+
+[source,c]
+----
+void arm_terminate_kernel(arm_termination_reason reason);
+----
+Any work-item calling this function will provoke the early termination
+of the whole kernel instance. No guarantees are given as to how early the
+termination occurs. Implementations are expected to terminate the kernel as
+quickly as possible.
+--
+
+== Interactions with Other Extensions
+
+None.
+
+== Conformance tests
+
+None.
+
+== Issues
+
+None.
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 1.0.0   | 2020-10-18 | Kevin Petit  | *Initial revision*
+|====
+
