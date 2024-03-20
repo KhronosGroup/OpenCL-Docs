@@ -1,6 +1,5 @@
-// Copyright 2017-2024 The Khronos Group. This work is licensed under a
-// Creative Commons Attribution 4.0 International License; see
-// http://creativecommons.org/licenses/by/4.0/
+// Copyright 2017-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
 
 = The OpenCL Architecture
 
@@ -300,7 +299,7 @@ within a work-group.
 The details of this mapping are described in the following section.
 
 
-=== Mapping work-items onto an ND-range
+=== Mapping Work-items Onto an Nd-range
 
 The index space supported by OpenCL is called an ND-range.
 An ND-range is an N-dimensional index space, where N is one, two or three.
@@ -411,7 +410,7 @@ In this situation all sub-group scope functions are equivalent to their
 work-group level equivalents.
 
 
-=== Execution of kernel-instances
+=== Execution of Kernel-instances
 
 The work carried out by an OpenCL program occurs through the execution of
 kernel-instances on compute devices.
@@ -515,7 +514,7 @@ work-group synchronization functions.
 
 
 [[device-side-enqueue]]
-=== Device-side enqueue
+=== Device-Side Enqueue
 
 NOTE: Device-side enqueue is <<unified-spec, missing before>> version 2.0.
 
@@ -990,6 +989,79 @@ explicitly manage association of memory objects with devices in order to
 improve performance.
 
 
+ifdef::cl_khr_d3d10_sharing,cl_khr_d3d11_sharing[]
+[[lifetime-of-shared-opencl-direct3d-memory-objects]]
+=== Lifetime of Shared Direct3D Memory Objects
+
+This section refers to similar Direct3D 10 and Direct3D 11 objects and
+concepts such as _resources_, _reference counts_, and _devices_.
+
+Sharing is accomplished by creating an OpenCL context via the context create
+parameters {CL_CONTEXT_D3D10_DEVICE_KHR} (for Direct3D 10, if the
+`<<cl_khr_d3d10_sharing>>` extension is supported) or
+{CL_CONTEXT_D3D11_DEVICE_KHR} (for Direct3D 11, if the
+`<<cl_khr_d3d11_sharing>>` extension is supported.
+
+An OpenCL memory object created from a Direct3D resource remains valid as
+long as the corresponding Direct3D resource has not been deleted.
+If the Direct3D resource is deleted through the Direct3D API, subsequent use
+of the OpenCL memory object will result in undefined behavior, including but
+not limited to possible OpenCL errors, data corruption, and program
+termination.
+
+The successful creation of a {cl_context_TYPE} against a Direct3D device
+will increment the internal Direct3D reference count on the specified
+device.
+The internal Direct3D reference count on that Direct3D device will be
+decremented when the OpenCL reference count on the returned OpenCL context
+drops to zero.
+
+The OpenCL context and corresponding command-queues are dependent on the
+existence of the Direct3D device from which the OpenCL context was created.
+If the Direct3D device is deleted through the Direct3D API, subsequent use
+of the OpenCL context will result in undefined behavior, including but not
+limited to possible OpenCL errors, data corruption, and program termination.
+endif::cl_khr_d3d10_sharing,cl_khr_d3d11_sharing[]
+
+
+ifdef::cl_khr_egl_image[]
+==== Lifetime of Shared EGLImage Objects
+
+An OpenCL memory object created from an EGL `EGLImage` object remains valid
+according to the lifetime behavior as described in the `EGL_KHR_image_base`
+extension.
+
+Any `EGLImage` siblings exist in any client API context
+
+For OpenCL this means that while the application retains a reference on the
+{cl_mem_TYPE} (the EGL sibling), the image remains valid.
+endif::cl_khr_egl_image[]
+
+
+ifdef::cl_khr_gl_sharing[]
+[[lifetime-of-shared-opencl-opengl-memory-objects]]
+=== Lifetime of Shared OpenCL/OpenGL Memory Objects
+
+An OpenCL memory object created from an OpenGL object (hereinafter referred
+to as a "`shared OpenCL/OpenGL object`") remains valid as long as the
+corresponding OpenGL object has not been deleted.
+If the OpenGL object is deleted through the OpenGL API (e.g.
+`glDeleteBuffers`, `glDeleteTextures`, or `glDeleteRenderbuffers`),
+subsequent use of the OpenCL buffer or image object will result in undefined
+behavior, including but not limited to possible OpenCL errors and data
+corruption, but may not result in program termination.
+
+The OpenCL context and corresponding command-queues are dependent on the
+existence of the OpenGL share group object, or the share group associated
+with the OpenGL context from which the OpenCL context is created.
+If the OpenGL share group object or all OpenGL contexts in the share group
+are destroyed, any use of the OpenCL context or command-queue(s) will result
+in undefined behavior, which may include program termination.
+Applications should destroy the OpenCL command-queue(s) and OpenCL context
+before destroying the corresponding OpenGL share group or contexts
+endif::cl_khr_gl_sharing[]
+
+
 [[shared-virtual-memory]]
 === Shared Virtual Memory
 
@@ -1232,7 +1304,7 @@ If these guidelines are followed in your OpenCL programs, you can skip the
 detailed rules behind the relaxed memory models and go directly to
 <<opencl-framework, OpenCL Framework>>.
 
-=== Overview of atomic and fence operations
+=== Overview of Atomic and Fence Operations
 
 OpenCL 2.x has a number of _synchronization operations_ that are used to define
 memory order constraints in a program.
@@ -1741,7 +1813,7 @@ conditions required for *X* to local-synchronize-with *Y* are met, or both
 sets of conditions are met.
 
 
-==== Work-group Functions
+==== Work-Group Functions
 
 The OpenCL kernel execution model includes collective operations across the
 work-items within a single work-group.
@@ -1794,10 +1866,10 @@ must execute the same work-group function call site, or dynamic work-group
 function instance.
 
 
-==== Sub-group Functions
+==== Sub-Group Functions
 
 NOTE: Sub-group functions are <<unified-spec, missing before>> version 2.1.
-Also see extension *cl_khr_subgroups*.
+Also see `<<cl_khr_subgroups>>`.
 
 The OpenCL kernel execution model includes collective operations across the
 work-items within a single sub-group.
@@ -1849,7 +1921,7 @@ must execute the same sub-group function call site, or dynamic sub-group
 function instance.
 
 
-==== Host-side and Device-side Commands
+==== Host-Side and Device-Side Commands
 
 This section describes how the OpenCL API functions associated with
 command-queues contribute to happens-before relations.
@@ -2111,6 +2183,8 @@ It is therefore strongly recommended that applications
 <<CL_DEVICE_PROFILE,query the profile>> supported by the OpenCL device
 they are running on in order to remain robust to future changes.
 
+
+[[versioning]]
 === Versioning
 
 The OpenCL specification is regularly updated with bug fixes and clarifications.
@@ -2120,35 +2194,46 @@ and to provide a way to identify each set of changes, the OpenCL API, C language
 intermediate languages and extensions maintain a version number. Built-in kernels
 are also versioned.
 
-==== Versions
+
+[[version-numbers]]
+==== Version Numbers
 
 A version number comprises three logical fields:
 
-* The _major_ version indicates a significant change. Backwards compatibility may
-  break across major versions.
-* The _minor_ version indicates the addition of new functionality with backwards
-  compatibility for any existing profiles.
-* The _patch_ version indicates bug fixes, clarifications and general improvements.
+  * The _major_ version indicates a significant change. Backwards
+    compatibility may break across major versions.
+  * The _minor_ version indicates the addition of new functionality with
+    backwards compatibility for any existing profiles.
+  * The _patch_ version indicates bug fixes, clarifications and general
+    improvements.
 
-Version numbers are represented using the {cl_version_TYPE} type that is an alias for
-a 32-bit integer. The fields are packed as follows:
+Version numbers are represented using the {cl_version_TYPE} type that is an
+alias for a 32-bit integer.
+The fields are packed as follows:
 
-* The _major_ version is a 10-bit integer packed into bits 31-22.
-* The _minor_ version is a 10-bit integer packed into bits 21-12.
-* The _patch_ version is a 12-bit integer packed into bits 11-0.
+  * The _major_ version is a 10-bit integer packed into bits 31-22.
+  * The _minor_ version is a 10-bit integer packed into bits 21-12.
+  * The _patch_ version is a 12-bit integer packed into bits 11-0.
 
 This enables versions to be ordered using standard C/C++ operators.
 
 A number of convenience macros are provided by the OpenCL Headers to make
 working with version numbers easier.
 
-`CL_VERSION_MAJOR` extracts the _major_ version from a packed {cl_version_TYPE}. +
-`CL_VERSION_MINOR` extracts the _minor_ version from a packed {cl_version_TYPE}. +
-`CL_VERSION_PATCH` extracts the _patch_ version from a packed {cl_version_TYPE}. +
-`CL_MAKE_VERSION` returns a packed {cl_version_TYPE} from a _major_, _minor_ and
-_patch_ version.
-
-These are defined as follows:
+  * `CL_VERSION_MAJOR` extracts the _major_ version from a packed
+    {cl_version_TYPE}.
+  * `CL_VERSION_MINOR` extracts the _minor_ version from a packed
+    {cl_version_TYPE}.
+  * `CL_VERSION_PATCH` extracts the _patch_ version from a packed
+    {cl_version_TYPE}.
+  * `CL_MAKE_VERSION` returns a packed `cl_version_TYPE} from a
+    _major_, _minor_ and _patch_ version.
+  * {CL_VERSION_MAJOR_BITS_anchor}, {CL_VERSION_MINOR_BITS_anchor}, and
+    {CL_VERSION_PATCH_BITS_anchor} are the number of bits in the
+    corresponding field.
+  * `CL_VERSION_MAJOR_MASK`, `CL_VERSION_MINOR_MASK`, and
+    {CL_VERSION_PATCH_MASK` are bitmasks used to extract the
+    corresponding packed fields from the version number.
 
 [source,opencl]
 ----
@@ -2178,14 +2263,18 @@ typedef cl_uint cl_version;
     ((patch) & CL_VERSION_PATCH_MASK))
 ----
 
-==== Version name pairing
+[[version-name-pairing]]
+==== Version-Name Pairing
 
-It is sometimes necessary to associate a version to an entity it applies to
-(e.g. extension or built-in kernel). This is done using a dedicated
-{cl_name_version_TYPE} structure, defined as follows:
+[open,refpage='cl_name_version',desc='Structure describing a version number and corresponding entity name',type='structs']
+--
+The {cl_name_version_TYPE} structure describes a version number and a
+corresponding entity (e.g. extension or built-in kernel) name:
 
 include::{generated}/api/structs/cl_name_version.txt[]
 
-The `name` field is an array of `CL_NAME_VERSION_MAX_NAME_SIZE` bytes used as
-storage for a NUL-terminated string whose maximum length is therefore
-`CL_NAME_VERSION_MAX_NAME_SIZE - 1`.
+  * _version_ is a <<version-numbers, Version Number>>.
+  * _name_ is an array of {CL_NAME_VERSION_MAX_NAME_SIZE_anchor} `char`
+    containing a null-terminated string whose maximum length is therefore
+    {CL_NAME_VERSION_MAX_NAME_SIZE} - 1`.
+--

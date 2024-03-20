@@ -1,0 +1,75 @@
+// Copyright 2017-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_expect_assume.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2021-11-10
+*Interactions and External Dependencies*::
+    The initial version of this extension extends the OpenCL SPIR-V
+    environment to support new instructions.
+    Please refer to the OpenCL SPIR-V Environment Specification that
+    describes how this extension modifies the OpenCL SPIR-V environment.
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+    TBD
+
+=== Description
+
+`cl_khr_expect_assume` adds mechanisms to provide information to the
+compiler that may improve the performance of some kernels.
+Specifically, this extension adds the ability to:
+
+  * Tell the compiler the _expected_ value of a variable.
+  * Allow the compiler to _assume_ a condition is true.
+
+These functions are not required for functional correctness.
+
+The initial version of this extension extends the OpenCL SPIR-V environment
+to support new instructions for offline compilation tool chains.
+Similar functionality may be provided by some OpenCL C online compilation
+tool chains, but formal support in OpenCL C is not required by the initial
+version of the extension.
+
+=== Sample Code
+
+Although this extension does not formally extend OpenCL C, the ability to
+provide _expect_ and _assume_ information is supported by many OpenCL C
+compiler tool chains.
+The sample code below describes how to test for and provide _expect_ and
+_assume_ information to compilers based on Clang:
+
+[source,opencl_c]
+----
+// __has_builtin is an optional compiler feature that is supported by Clang.
+// If this feature is not supported, we will assume the builtin is not present.
+#ifndef __has_builtin
+#define __has_builtin(x)    0
+#endif
+
+kernel void test(global int* dst, global int* src)
+{
+    int value = src[get_global_id(0)];
+
+    // Tell the compiler that the most likely source value is zero.
+#if __has_builtin(__builtin_expect)
+    value = __builtin_expect(value, 0);
+#endif
+
+    // Tell the compiler that the source value is non-negative.
+    // Behavior is undefined if the source value is actually negative.
+#if __has_builtin(__builtin_assume)
+    __builtin_assume(value >= 0);
+#endif
+
+    dst[get_global_id(0)] = value % 4;
+}
+----
+
+=== Version History
+
+  * Revision 1.0.0, 2021-11-10
+  ** First assigned version.
