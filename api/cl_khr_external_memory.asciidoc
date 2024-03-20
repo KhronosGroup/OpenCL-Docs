@@ -1,0 +1,316 @@
+// Copyright 2021-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_external_memory.txt[]
+
+//@ *Revision*::
+//@     0.9.3
+//@ *Extension and Version Dependencies*::
+//@     This extension requires OpenCL 3.0.
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2023-08-29
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+  - Ajit Hakke-Patil, NVIDIA
+  - Amit Rao, NVIDIA
+  - Balaji Calidas, QUALCOMM
+  - Ben Ashbaugh, INTEL
+  - Carsten Rohde, NVIDIA
+  - Christoph Kubisch, NVIDIA
+  - Debalina Bhattacharjee, NVIDIA
+  - Faith Ekstrand, INTEL
+  - James Jones,  NVIDIA
+  - Jeremy Kemp, IMAGINATION
+  - Joshua Kelly, QUALCOMM
+  - Karthik Raghavan Ravi, NVIDIA
+  - Kedar Patil, NVIDIA
+  - Kevin Petit, ARM
+  - Nikhil Joshi, NVIDIA
+  - Sharan Ashwathnarayan, NVIDIA
+  - Vivek Kini,  NVIDIA
+
+=== Description
+
+`cl_khr_external_memory` defines a generic mechanism to share buffer and
+image objects between OpenCL and many other APIs, including:
+
+  * Optional properties to import external memory exported by other APIs
+    into OpenCL for a set of devices.
+  * Routines to explicitly hand off memory ownership between OpenCL and
+    other APIs.
+
+Other related extensions define specific external memory types that may be
+imported into OpenCL.
+
+
+==== Background
+
+TODO
+
+==== Rationale
+
+TODO
+
+=== Interactions With Other Extensions
+
+TODO
+
+// The 'New ...' section can be auto-generated
+
+=== New Commands
+
+  * {clEnqueueAcquireExternalMemObjectsKHR}
+  * {clEnqueueReleaseExternalMemObjectsKHR}
+
+=== New Structures
+
+  * None
+
+=== New Types
+
+  * {cl_external_memory_handle_type_khr_TYPE}
+
+=== New Enums
+
+  * {cl_platform_info_TYPE}
+  ** {CL_PLATFORM_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR}
+  * {cl_device_info_TYPE}
+  ** {CL_DEVICE_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR}
+  ** {CL_DEVICE_EXTERNAL_MEMORY_IMPORT_ASSUME_LINEAR_IMAGES_HANDLE_TYPES_KHR}
+  * {cl_mem_properties_TYPE}
+  ** {CL_MEM_DEVICE_HANDLE_LIST_KHR}
+  ** {CL_MEM_DEVICE_HANDLE_LIST_END_KHR}
+  * Return values from from {clGetEventInfo} when _param_name_ is
+    {CL_EVENT_COMMAND_TYPE}:
+  ** {CL_COMMAND_ACQUIRE_EXTERNAL_MEM_OBJECTS_KHR}
+  ** {CL_COMMAND_RELEASE_EXTERNAL_MEM_OBJECTS_KHR}
+
+[[cl_khr_external_memory-Sample-Code]]
+=== Sample Code
+
+==== Example for Creating a CL Buffer From an Exported External Buffer in a Single Device Context
+
+This example also requires use of the `<<cl_khr_external_memory_opaque_fd>>`
+extension.
+
+[source]
+----
+// Get cl_devices of the platform.
+clGetDeviceIDs(..., &devices, &deviceCount);
+
+// Create cl_context with just first device
+clCreateContext(..., 1, devices, ...);
+
+// Obtain fd/win32 or similar handle for external memory to be imported
+// from other API.
+int fd = getFdForExternalMemory();
+
+// Create extMemBuffer of type cl_mem from fd.
+cl_mem_properties_khr extMemProperties[] =
+{
+    (cl_mem_properties_khr)CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR,
+    (cl_mem_properties_khr)fd,
+    0
+};
+
+cl_mem extMemBuffer = clCreateBufferWithProperties(/*context*/          clContext,
+                                                   /*properties*/       extMemProperties,
+                                                   /*flags*/            0,
+                                                   /*size*/             size,
+                                                   /*host_ptr*/         NULL,
+                                                   /*errcode_ret*/      &errcode_ret);
+----
+
+
+==== Example for Creating a CL Image From an Exported External Image for Single Device Usage in a Multi-Device Context
+
+This example also requires use of the `<<cl_khr_external_memory_opaque_fd>>`
+extension.
+
+[source]
+----
+// Get cl_devices of the platform.
+clGetDeviceIDs(..., &devices, &deviceCount);
+
+// Create cl_context with first two devices
+clCreateContext(..., 2, devices, ...);
+
+// Create img of type cl_mem usable only on devices[0]
+
+// Create img of type cl_mem.
+// Obtain fd/win32 or similar handle for external memory to be imported
+// from other API.
+int fd = getFdForExternalMemory();
+
+// Set cl_image_format based on external image info
+cl_image_format clImgFormat = { };
+clImageFormat.image_channel_order = CL_RGBA;
+clImageFormat.image_channel_data_type = CL_UNORM_INT8;
+
+// Set cl_image_desc based on external image info
+size_t clImageFormatSize;
+cl_image_desc image_desc = { };
+image_desc.image_type = CL_MEM_OBJECT_IMAGE2D_ARRAY;
+image_desc.image_width = width;
+image_desc.image_height = height;
+image_desc.image_depth = depth;
+image_desc.image_array_size = num_slices;
+image_desc.image_row_pitch = width * 8 * 4; // May need alignment
+image_desc.image_slice_pitch = image_desc.image_row_pitch * height;
+image_desc.num_mip_levels = 1;
+image_desc.num_samples = 0;
+image_desc.buffer = NULL;
+
+cl_mem_properties_khr extMemProperties[] = {
+    (cl_mem_properties_khr)CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR,
+    (cl_mem_properties_khr)fd,
+    (cl_mem_properties_khr)CL_MEM_DEVICE_HANDLE_LIST_KHR,
+    (cl_mem_properties_khr)devices[0],
+    CL_MEM_DEVICE_HANDLE_LIST_END_KHR,
+    0
+};
+
+cl_mem img = clCreateImageWithProperties(/*context*/        clContext,
+                                         /*properties*/     extMemProperties,
+                                         /*flags*/          0,
+                                         /*image_format*/   &clImgFormat,
+                                         /*image_desc*/     &image_desc,
+                                         /*errcode_ret*/    &errcode_ret);
+
+// Use clGetImageInfo to get cl_image_format details.
+size_t clImageFormatSize;
+clGetImageInfo(img,
+               CL_IMAGE_FORMAT,
+               sizeof(cl_image_format),
+               &clImageFormat,
+               &clImageFormatSize);
+----
+
+
+==== Example for Synchronization Using Wait and Signal
+
+[source]
+----
+// Start the main rendering loop
+
+// Create extSem of type cl_semaphore_khr using clCreateSemaphoreWithPropertiesKHR
+
+// Create extMem of type cl_mem using clCreateBufferWithProperties or clCreateImageWithProperties
+
+while (true) {
+    // (not shown) Signal the semaphore from the other API
+
+    // Wait for the semaphore in OpenCL, by calling clEnqueueWaitSemaphoresKHR on 'extSem'
+    clEnqueueWaitSemaphoresKHR(/*command_queue*/            command_queue,
+                               /*num_sema_objects*/         1,
+                               /*sema_objects*/             &extSem,
+                               /*sema_payload_list*/        NULL,
+                               /*num_events_in_wait_list*/  0,
+                               /*event_wait_list*/          NULL,
+                               /*event*/                    NULL);
+
+    // Launch kernel that accesses extMem
+    clEnqueueNDRangeKernel(command_queue, ...);
+
+    // Signal the semaphore in OpenCL
+    clEnqueueSignalSemaphoresKHR(/*command_queue*/           command_queue,
+                                 /*num_sema_objects*/        1,
+                                 /*sema_objects*/            &extSem,
+                                 /*sema_payload_list*/       NULL,
+                                 /*num_events_in_wait_list*/ 0,
+                                 /*event_wait_list*/         NULL,
+                                 /*event*/                   NULL);
+
+    // (not shown) Launch work in other API that waits on 'extSem'
+}
+----
+
+==== Example With Memory Sharing Using Acquire/Release
+
+[source]
+----
+// Create extSem of type cl_semaphore_khr using
+// clCreateSemaphoreWithPropertiesKHR with CL_SEMAPHORE_HANDLE_*_KHR.
+
+// Create extMem1 and extMem2 of type cl_mem using clCreateBufferWithProperties
+// or clCreateImageWithProperties
+
+while (true) {
+    // (not shown) Signal the semaphore from the other API. Wait for the
+    // semaphore in OpenCL, by calling clEnqueueWaitForSemaphore on extSem
+    clEnqueueWaitSemaphoresKHR(/*command_queue*/            cq1,
+                               /*num_sema_objects*/         1,
+                               /*sema_objects*/             &extSem,
+                               /*sema_payload_list*/        NULL,
+                               /*num_events_in_wait_list*/  0,
+                               /*event_wait_list*/          NULL,
+                               /*event*/                    NULL);
+
+    // Get explicit ownership of extMem1
+    clEnqueueAcquireExternalMemObjectsKHR(/*command_queue*/             cq1,
+                                          /*num_mem_objects*/           1,
+                                          /*mem_objects*/               extMem1,
+                                          /*num_events_in_wait_list*/   0,
+                                          /*event_wait_list*/           NULL,
+                                          /*event*/                     NULL);
+
+    // Launch kernel that accesses extMem1 on cq1 on cl_device1
+    clEnqueueNDRangeKernel(cq1,  ..., &event1);
+
+    // Launch kernel that accesses both extMem1 and extMem2 on cq2 on cl_device2
+    // Migration of extMem1 and extMem2 handles through regular CL memory
+    // migration.
+    clEnqueueNDRangeKernel(cq2, ..., &event1, &event2);
+
+    // Give up ownership of extMem1 before you signal the semaphore. Handle
+    // memory migration here.
+    clEnqueueReleaseExternalMemObjectsKHR(/*command_queue*/           cq2
+                                          /*num_mem_objects*/         1,
+                                          /*mem_objects*/             &extMem1,
+                                          /*num_events_in_wait_list*/ 0,
+                                          /*event_wait_list*/         NULL,
+                                          /*event*/                   NULL);
+
+    // Signal the semaphore from OpenCL
+    clEnqueueSignalSemaphoresKHR(/*command_queue*/           cq2,
+                                 /*num_sema_objects*/        1,
+                                 /*sema_objects*/            &extSem,
+                                 /*sema_payload_list*/       NULL,
+                                 /*num_events_in_wait_list*/ 0,
+                                 /*event_wait_list*/         NULL,
+                                 /*event*/                   NULL);
+
+    // (not shown) Launch work in other API that waits on 'extSem'
+    // Other API accesses ext1, but not ext2 on device-1
+}
+----
+
+=== Issues
+
+. How should the import of images that are created in external APIs with
+  non-linear tiling be robustly handled?
++
+--
+*UNRESOLVED*
+--
+
+include::provisional_notice.asciidoc[]
+
+=== Version History
+
+  * Revision 0.9.0, 2021-09-10
+  ** Initial version (provisional).
+  * Revision 0.9.1, 2023-05-04
+  ** Clarified device handle list enum cannot be specified without an
+     external memory handle (provisional).
+  * Revision 0.9.2, 2023-08-01
+  ** Changed device handle list enum to the memory-specific
+     {CL_MEM_DEVICE_HANDLE_LIST_KHR} (provisional).
+  * Revision 0.9.3, 2023-08-29
+  ** Added query for
+     {CL_DEVICE_EXTERNAL_MEMORY_IMPORT_ASSUME_LINEAR_IMAGES_HANDLE_TYPES_KHR}
+     (provisional).
