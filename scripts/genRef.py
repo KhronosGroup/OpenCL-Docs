@@ -139,6 +139,9 @@ def seeAlsoList(apiName, explicitRefs=None, apiAliases=[]):
                 if dependency is not None:
                     refs.add(dependency)
 
+    # Filter references based on API conventions
+    refs = set([ref for ref in refs if not conventions.filter_ref(ref)])
+
     if len(refs) == 0:
         return None
     else:
