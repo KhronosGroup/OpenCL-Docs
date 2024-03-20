@@ -1,0 +1,436 @@
+// Copyright 2018-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_command_buffer.txt[]
+
+// *Revision*::
+//    0.9.4
+// *Extension and Version Dependencies*::
+//     This extension requires OpenCL 1.2 or later.
+//     Buffering of SVM commands requires OpenCL 2.0 or later.
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2023-03-31
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+  - Ewan Crawford, Codeplay Software Ltd.
+  - Gordon Brown, Codeplay Software Ltd.
+  - Kenneth Benzie, Codeplay Software Ltd.
+  - Alastair Murray, Codeplay Software Ltd.
+  - Jack Frankland, Codeplay Software Ltd.
+  - Balaji Calidas, Qualcomm Technologies Inc.
+  - Joshua Kelly, Qualcomm Technologies, Inc.
+  - Kevin Petit, Arm Ltd.
+  - Aharon Abramson, Intel.
+  - Ben Ashbaugh, Intel.
+  - Boaz Ouriel, Intel.
+  - Chris Gearing, Intel.
+  - Pekka Jääskeläinen, Tampere University and Intel
+  - Jan Solanti, Tampere University
+  - Nikhil Joshi, NVIDIA
+  - James Price, Google
+  - Brice Videau, Argonne National Laboratory
+
+=== Description
+
+`cl_khr_command_buffer` adds the ability to record and replay buffers of
+OpenCL commands.
+
+Command-buffers enable a reduction in overhead when enqueuing the same
+workload multiple times. By separating the command-queue setup from dispatch,
+the ability to replay a set of previously created commands is introduced.
+
+Device-side _cl_sync_point_khr_ synchronization-points can be used within
+command-buffers to define command dependencies. This allows the commands of a
+command-buffer to execute out-of-order on a single <<compatible, compatible>>
+command-queue. The command-buffer itself has no inherent in-order/out-of-order
+property, this ordering is inferred from the command-queue used on command
+recording. Out-of-order enqueues without event dependencies of both regular
+commands, such as {clEnqueueFillBuffer}, and command-buffers are allowed to
+execute concurrently, and it is up to the user to express any dependencies using
+events.
+
+The command-queues a command-buffer will be executed on can be set on replay via
+parameters to {clEnqueueCommandBufferKHR}, provided they are
+<<compatible, compatible>> with the command-queues used on command-buffer
+recording.
+
+==== Background
+
+On embedded devices where building a command stream accounts for a significant
+expenditure of resources and where workloads are often required to be pipelined,
+a solution that minimizes driver overhead can significantly improve the
+utilization of accelerators by removing a bottleneck in repeated command stream
+generation.
+
+An additional motivator is lowering task execution latency, as devices can be
+kept occupied with work by repeated submissions, without having to wait on
+the host to construct commands again for a similar workload.
+
+==== Rationale
+
+The command-buffer abstraction over the generation of command streams is a
+proven approach which facilitates a significant reduction in driver overhead in
+existing real-world applications with repetitive pipelined workloads which are
+built on top of Vulkan, DirectX 12, and Metal.
+
+A primary goal is for a command-buffer to avoid any interaction with
+application code after being enqueued until all recorded commands have
+completed. As such, any command which maps or migrates memory objects; reads
+or writes memory objects; or enqueues a native kernel, is not available for
+command-buffer recording. Finally commands recorded into a command buffer do
+not wait for or return event objects, these are instead replaced with
+device-side synchronization-point identifiers which enable out-of-order
+execution when enqueued on <<compatible, compatible>> command-queues.
+
+Adding new entry-points for individual commands, rather than recording existing
+command-queue APIs with begin/end markers was a design decision made for the
+following reasons:
+
+* Individually specified entry points makes it clearer to the user what's
+  supported, as opposed to adding a large number of error conditions
+  throughout the specification with all the restrictions.
+
+* Prevents code forking in existing entry points for the implementer, as
+  otherwise separate paths in each entry point need to be maintained for both
+  the recording and normal cases.
+
+* Allows the definition of a new device-side synchronization primitive rather
+  than overloading {cl_event_TYPE}. As use of {cl_event_TYPE} in individual commands
+  allows host interaction from callback and user-events, as well as introducing
+  complexities when a command-buffer is enqueued multiple times regarding
+  profiling and execution status.
+
+* New entry points facilitate returning handles to individual commands, allowing
+  those commands to be modified between enqueues of the command buffer. Not all
+  command handles are used in this extension, but providing them facilitates
+  other extensions layered on top to take advantage of them to provide additional
+  mutable functionality.
+
+==== Simultaneous Use
+
+The optional simultaneous use capability was added to the extension so that
+vendors can support pipelined workflows, where command-buffers are repeatedly
+enqueued without blocking in user code. However, simultaneous use may result in
+command-buffers being more expensive to enqueue than in a sequential model, so
+the capability is optional to enable optimizations on command-buffer recording.
+
+=== Interactions With Other Extensions
+
+The introduction of the command-buffer abstraction enables functionality
+beyond what the `cl_khr_command_buffer` extension currently provides, i.e.
+the recording of immutable commands to a single queue which can then be
+executed without commands synchronizing outside the command-buffer. It is
+intended that extra functionality expanding on this will be provided as layered
+extensions on top of `cl_khr_command_buffer`.
+
+Having `cl_khr_command_buffer` as a minimal base specification means that the
+API defines mechanisms for functionality that is not enabled by this extension,
+these are described in the following sub-sections. `cl_khr_command_buffer` will
+retain its provisional extension status until other layered extensions are
+released, as these may reveal modifications needed to the base specification to
+support their intended use cases.
+
+==== ND-range Kernel Command Properties
+
+The {clCommandNDRangeKernelKHR} entry-point defines a `properties` parameter of
+new type {cl_ndrange_kernel_command_properties_khr_TYPE}. No properties are defined
+in `cl_khr_command_buffer`, but the parameter is intended to enable future
+functionality that would change the characteristics of the kernel command.
+
+==== Command Handles
+
+All command recording entry-points define a {cl_mutable_command_khr_TYPE} output
+parameter which provides a handle to the specific command being recorded. Use of
+these output handles is not enabled by the `cl_khr_command_buffer` extension,
+but the handles will allow individual commands in a command-buffer to be
+referenced by the user. In particular, the capability for an application to use
+these handles to modify commands between enqueues of a command-buffer is
+envisaged.
+
+==== List of Queues
+
+Only a single command-queue can be associated with a command-buffer in the
+`cl_khr_command_buffer` extension, but the API is designed with the intention
+that a future extension will allow commands to be recorded across multiple
+queues in the same command-buffer, providing replay of heterogeneous task
+graphs.
+
+Using multiple queue functionality will result in an error without any layered
+extensions to relax usage of the following API features:
+
+* When a command-buffer is created the API enables passing a list of queues
+  that the command-buffer will record commands to. Only a single queue is
+  permitted in `cl_khr_command_buffer`.
+
+* Individual command recording entry-points define a {cl_command_queue_TYPE}
+  parameter for which of the queues set on command-buffer creation that command
+  should be record to. This must be passed as NULL in `cl_khr_command_buffer`.
+
+* {clEnqueueCommandBufferKHR} takes a list of queues for command-buffer execution,
+  correspond to those set on creation. Only a single queue is permitted in
+  `cl_khr_command_buffer`.
+
+// The 'New ...' section can be auto-generated
+
+=== New Commands
+
+  * {clCreateCommandBufferKHR}
+  * {clRetainCommandBufferKHR}
+  * {clReleaseCommandBufferKHR}
+  * {clFinalizeCommandBufferKHR}
+  * {clEnqueueCommandBufferKHR}
+  * {clCommandBarrierWithWaitListKHR}
+  * {clCommandCopyBufferKHR}
+  * {clCommandCopyBufferRectKHR}
+  * {clCommandCopyBufferToImageKHR}
+  * {clCommandCopyImageKHR}
+  * {clCommandCopyImageToBufferKHR}
+  * {clCommandFillBufferKHR}
+  * {clCommandFillImageKHR}
+  * {clCommandNDRangeKernelKHR}
+  * {clGetCommandBufferInfoKHR}
+  * The following SVM entry points are supported only with at least OpenCL 2.0,
+    and starting from version 0.9.4 of this extension
+  ** {clCommandSVMMemcpyKHR}
+  ** {clCommandSVMMemFillKHR}
+
+=== New Structures
+
+  * {cl_command_buffer_khr}
+  * {cl_mutable_command_khr}
+
+=== New Types
+
+  * {cl_device_command_buffer_capabilities_khr_TYPE}
+  * {cl_command_buffer_khr_TYPE}
+  * {cl_sync_point_khr_TYPE}
+  * {cl_command_buffer_info_khr_TYPE}
+  * {cl_command_buffer_state_khr_TYPE}
+  * {cl_command_buffer_properties_khr_TYPE}
+  * {cl_command_buffer_flags_khr_TYPE}
+  * {cl_ndrange_kernel_command_properties_khr_TYPE}
+  * {cl_mutable_command_khr_TYPE}
+
+=== New Enums
+
+  * {cl_device_info_TYPE}
+  ** {CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR}
+  ** {CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR}
+  * {cl_device_command_buffer_capabilities_khr - bitfield_TYPE}
+  ** {CL_COMMAND_BUFFER_CAPABILITY_KERNEL_PRINTF_KHR}
+  ** {CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR}
+  ** {CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR}
+  ** {CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR}
+  * {cl_command_buffer_properties_khr_TYPE}
+  ** {CL_COMMAND_BUFFER_FLAGS_KHR}
+  * {cl_command_buffer_flags_khr - bitfield_TYPE}
+  ** {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR}
+  * {Error codes_TYPE}
+  ** {CL_INVALID_COMMAND_BUFFER_KHR}
+  ** {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR}
+  ** {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR}
+  * {cl_command_buffer_info_khr_TYPE}
+  ** {CL_COMMAND_BUFFER_QUEUES_KHR}
+  ** {CL_COMMAND_BUFFER_NUM_QUEUES_KHR}
+  ** {CL_COMMAND_BUFFER_REFERENCE_COUNT_KHR}
+  ** {CL_COMMAND_BUFFER_STATE_KHR}
+  ** {CL_COMMAND_BUFFER_PROPERTIES_ARRAY_KHR}
+  ** {CL_COMMAND_BUFFER_CONTEXT_KHR}
+  * {cl_command_buffer_state_khr_TYPE}
+  ** {CL_COMMAND_BUFFER_STATE_RECORDING_KHR}
+  ** {CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR}
+  ** {CL_COMMAND_BUFFER_STATE_PENDING_KHR}
+  * {cl_command_type_TYPE}
+  ** {CL_COMMAND_COMMAND_BUFFER_KHR}
+
+=== Sample Code
+
+[source]
+----
+  #define CL_CHECK(ERROR)                             \
+    if (ERROR) {                                      \
+      std::cerr << "OpenCL error: " << ERROR << "\n"; \
+      return ERROR;                                   \
+    }
+
+  int main() {
+    cl_platform_id platform;
+    CL_CHECK(clGetPlatformIDs(1, &platform, nullptr));
+    cl_device_id device;
+    CL_CHECK(clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, nullptr));
+
+    cl_int error;
+    cl_context context =
+        clCreateContext(nullptr, 1, &device, nullptr, nullptr, &error);
+    CL_CHECK(error);
+
+    const char* code = R"OpenCLC(
+  kernel void vector_addition(global int* tile1, global int* tile2,
+                              global int* res) {
+    size_t index = get_global_id(0);
+    res[index] = tile1[index] + tile2[index];
+  }
+  )OpenCLC";
+    const size_t length = std::strlen(code);
+
+    cl_program program =
+        clCreateProgramWithSource(context, 1, &code, &length, &error);
+    CL_CHECK(error);
+
+    CL_CHECK(clBuildProgram(program, 1, &device, nullptr, nullptr, nullptr));
+
+    cl_kernel kernel = clCreateKernel(program, "vector_addition", &error);
+    CL_CHECK(error);
+
+    constexpr size_t frame_count = 60;
+    constexpr size_t frame_elements = 1024;
+    constexpr size_t frame_size = frame_elements * sizeof(cl_int);
+
+    constexpr size_t tile_count = 16;
+    constexpr size_t tile_elements = frame_elements / tile_count;
+    constexpr size_t tile_size = tile_elements * sizeof(cl_int);
+
+    cl_mem buffer_tile1 =
+        clCreateBuffer(context, CL_MEM_READ_ONLY, tile_size, nullptr, &error);
+    CL_CHECK(error);
+    cl_mem buffer_tile2 =
+        clCreateBuffer(context, CL_MEM_READ_ONLY, tile_size, nullptr, &error);
+    CL_CHECK(error);
+    cl_mem buffer_res =
+        clCreateBuffer(context, CL_MEM_WRITE_ONLY, tile_size, nullptr, &error);
+    CL_CHECK(error);
+
+    CL_CHECK(clSetKernelArg(kernel, 0, sizeof(buffer_tile1), &buffer_tile1));
+    CL_CHECK(clSetKernelArg(kernel, 1, sizeof(buffer_tile2), &buffer_tile2));
+    CL_CHECK(clSetKernelArg(kernel, 2, sizeof(buffer_res), &buffer_res));
+
+    cl_command_queue command_queue =
+      clCreateCommandQueue(context, device,
+                           CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
+    CL_CHECK(error);
+
+    cl_command_buffer_khr command_buffer =
+        clCreateCommandBufferKHR(1, &command_queue, nullptr, &error);
+    CL_CHECK(error);
+
+    cl_mem buffer_src1 =
+        clCreateBuffer(context, CL_MEM_READ_ONLY, frame_size, nullptr, &error);
+    CL_CHECK(error);
+    cl_mem buffer_src2 =
+        clCreateBuffer(context, CL_MEM_READ_ONLY, frame_size, nullptr, &error);
+    CL_CHECK(error);
+    cl_mem buffer_dst =
+        clCreateBuffer(context, CL_MEM_WRITE_ONLY, frame_size, nullptr, &error);
+    CL_CHECK(error);
+
+    cl_sync_point_khr tile_sync_point = 0;
+    for (size_t tile_index = 0; tile_index < tile_count; tile_index++) {
+      std::array<cl_sync_point_khr, 2> copy_sync_points;
+      CL_CHECK(clCommandCopyBufferKHR(command_buffer,
+          command_queue, buffer_src1, buffer_tile1, tile_index * tile_size, 0,
+          tile_size, tile_sync_point ? 1 : 0,
+          tile_sync_point ? &tile_sync_point : nullptr, &copy_sync_points[0]),
+          nullptr);
+      CL_CHECK(clCommandCopyBufferKHR(command_buffer,
+          command_queue, buffer_src2, buffer_tile2, tile_index * tile_size, 0,
+          tile_size, tile_sync_point ? 1 : 0,
+          tile_sync_point ? &tile_sync_point : nullptr, &copy_sync_points[1]),
+          nullptr);
+
+      cl_sync_point_khr nd_sync_point;
+      CL_CHECK(clCommandNDRangeKernelKHR(command_buffer,
+          command_queue, nullptr, kernel, 1, nullptr, &tile_elements, nullptr,
+          copy_sync_points.size(), copy_sync_points.data(), &nd_sync_point,
+          nullptr));
+
+      CL_CHECK(clCommandCopyBufferKHR(command_buffer,
+          command_queue, buffer_res, buffer_dst, 0, tile_index * tile_size,
+          tile_size, 1, &nd_sync_point, &tile_sync_point, nullptr));
+    }
+
+    CL_CHECK(clFinalizeCommandBufferKHR(command_buffer));
+
+    std::random_device random_device;
+    std::mt19937 random_engine{random_device()};
+    std::uniform_int_distribution<cl_int> random_distribution{
+        0, std::numeric_limits<cl_int>::max() / 2};
+    auto random_generator = [&]() { return random_distribution(random_engine); };
+
+    for (size_t frame_index = 0; frame_index < frame_count; frame_index++) {
+      std::array<cl_event, 2> write_src_events;
+      std::vector<cl_int> src1(frame_elements);
+      std::generate(src1.begin(), src1.end(), random_generator);
+      CL_CHECK(clEnqueueWriteBuffer(command_queue, buffer_src1, CL_FALSE, 0,
+                                    frame_size, src1.data(), 0, nullptr,
+                                    &write_src_events[0]));
+      std::vector<cl_int> src2(frame_elements);
+      std::generate(src2.begin(), src2.end(), random_generator);
+      CL_CHECK(clEnqueueWriteBuffer(command_queue, buffer_src2, CL_FALSE, 0,
+                                    frame_size, src2.data(), 0, nullptr,
+                                    &write_src_events[1]));
+
+      CL_CHECK(clEnqueueCommandBufferKHR(0, NULL, command_buffer, 2,
+                                         write_src_events.data(), nullptr));
+
+      CL_CHECK(clFinish(command_queue));
+
+      CL_CHECK(clReleaseEvent(write_src_event[0]));
+      CL_CHECK(clReleaseEvent(write_src_event[1]));
+    }
+
+    CL_CHECK(clReleaseCommandBufferKHR(command_buffer));
+    CL_CHECK(clReleaseCommandQueue(command_queue));
+
+    CL_CHECK(clReleaseMemObject(buffer_src1));
+    CL_CHECK(clReleaseMemObject(buffer_src2));
+    CL_CHECK(clReleaseMemObject(buffer_dst));
+
+    CL_CHECK(clReleaseMemObject(buffer_tile1));
+    CL_CHECK(clReleaseMemObject(buffer_tile2));
+    CL_CHECK(clReleaseMemObject(buffer_res));
+
+    CL_CHECK(clReleaseKernel(kernel));
+    CL_CHECK(clReleaseProgram(program));
+    CL_CHECK(clReleaseContext(context));
+
+    return 0;
+  }
+----
+
+=== Issues
+
+. Introduce a `clCloneCommandBufferKHR` entry-point for cloning a
+  command-buffer.
++
+--
+*UNRESOLVED*
+--
+. Enable detached command-buffer execution, where command-buffers are executed
+  on their own internal queue to prevent locking user created queues for the
+  duration of their execution.
++
+--
+*UNRESOLVED*
+--
+
+include::provisional_notice.asciidoc[]
+
+=== Version History
+
+  * Revision 0.9.0, 2021-11-10
+  ** First assigned version (provisional).
+  * 0.9.1, 2022-08-24
+  ** Specify an error if a command-buffer is finalized multiple times
+     (provisional).
+  * 0.9.2, 2023-03-31
+  ** Introduce context query {CL_COMMAND_BUFFER_CONTEXT_KHR} (provisional).
+  * 0.9.3, 2023-04-04
+  ** Remove Invalid command-buffer state (provisional).
+  * 0.9.4, 2023-05-11
+  ** Add clCommandSVMMemcpyKHR and clCommandSVMMemFillKHR command entries
+     (provisional).
+
