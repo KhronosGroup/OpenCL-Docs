@@ -1278,6 +1278,29 @@ For some devices, this query will return the same value as `CL_DEVICE_MAX_MEM_AL
 * Do nothing and keep the existing error behavior.
 --
 
+. Should it be an error to allocate zero bytes?
++
+--
+*UNRESOLVED*:
+Currently, attempting to allocate zero bytes fails and returns `CL_INVALID_BUFFER_SIZE`.
+This is consistent with SVM, where *clSVMAlloc* fails and returns a `NULL` pointer if the size to allocate is zero.
+It is also consistent with CUDA, where *cuMemAlloc*, etc. returns an error if the size to allocate is zero.
+
+However, it is not necessarily consistent with other memory allocation functions.  For example:
+
+* The result of calling `malloc(0)` is implementation-defined: it can either return a `NULL` pointer or a unique non-null pointer that must be freed.
+If a `NULL` pointer is returned then `errno` may be set to an implementation-defined value.
+If a unique non-null pointer is returned then it cannot be dereferenced.
+* Allocating an array of zero elements using `new` must return a non-null pointer, though dereferencing the pointer is undefined.
+
+Possible resolutions:
+
+* Allow zero-sized allocations and require returning a non-null pointer that must be freed.
+* Allow zero-sized allocations but allow returning a `NULL` pointer.  No error would be generated, even if a `NULL` pointer is returned.
+* Specify that this case is implementation-defined.
+* Do nothing and keep the existing error behavior.
+--
+
 == Revision History
 
 [cols="5,15,15,70"]
