@@ -1,0 +1,72 @@
+// Copyright 2017-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_egl_event.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2020-04-21
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+    TBD
+
+=== Description
+
+`cl_khr_egl_event` allows creating OpenCL event objects linked to EGL fence
+sync objects, potentially improving efficiency of sharing images and buffers
+between the two APIs.
+The companion `EGL_KHR_cl_event` extension provides the complementary
+functionality of creating an EGL sync object from an OpenCL event object.
+
+=== New Commands
+
+  * {clCreateEventFromEGLSyncKHR}
+
+=== New Tokens
+
+  * New Error Codes
+  ** {CL_INVALID_EGL_OBJECT_KHR}
+  ** {CL_COMMAND_EGL_FENCE_SYNC_OBJECT_KHR}
+
+=== Issues
+
+Most issues are shared with `<<cl_khr_gl_event>>` and are resolved as
+described in that extension.
+
+  . Should we support implicit synchronization?
++
+--
+*RESOLVED*: No, as this may be very difficult since the synchronization
+would not be with EGL, it would be with currently bound EGL client APIs.
+It would be necessary to know which client APIs might be bound, to validate
+that they're associated with the `EGLDisplay` associated with the OpenCL
+context, and to reach into each such context.
+--
+
+  . Do we need to have typedefs to use EGL handles in OpenCL?
++
+--
+*RESOLVED* Using typedefs for EGL handles.
+--
+
+  . Should we restrict which CL APIs can be used with this cl_event?
++
+--
+*RESOLVED* Use is limited to {clEnqueueAcquire}*** calls only.
+--
+
+  . What is the desired behaviour for this extension when EGLSyncKHR is of a
+    type other than `EGL_SYNC_FENCE_KHR`?
++
+--
+*RESOLVED* This extension only requires support for `EGL_SYNC_FENCE_KHR`.
+Support of other types is an implementation choice, and will result in
+CL_INVALID_EGL_OBJECT_KHR if unsupported.
+--
+
+=== Version History
+
+  * Revision 1.0.0, 2020-04-21
+  ** First assigned version.

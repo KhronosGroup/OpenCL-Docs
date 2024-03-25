@@ -1,0 +1,103 @@
+// Copyright 2017-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_egl_image.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2020-04-21
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+    TBD
+
+=== Description
+
+`cl_khr_egl_image` provides a mechanism to creating OpenCL memory objects
+from from EGLImages.
+
+=== New Commands
+
+  * {clCreateFromEGLImageKHR}
+  * {clEnqueueAcquireEGLObjectsKHR}
+  * {clEnqueueReleaseEGLObjectsKHR}
+  * {cl_event_info_TYPE}
+  ** {CL_COMMAND_ACQUIRE_EGL_OBJECTS_KHR}
+  ** {CL_COMMAND_RELEASE_EGL_OBJECTS_KHR}
+  * New Error Codes
+  ** {CL_EGL_RESOURCE_NOT_ACQUIRED_KHR}
+  ** {CL_INVALID_EGL_OBJECT_KHR}
+
+=== Issues
+
+  . This extension does not support reference counting of the images, so the
+    onus is on the application to behave sensibly and not release the
+    underlying {cl_mem_TYPE} object while the `EGLImage` is still being
+    used.
+  . In order to ensure data integrity, the application is responsible for
+    synchronizing access to shared CL/EGL image objects by their respective
+    APIs.
+    Failure to provide such synchronization may result in race conditions
+    and other undefined behavior.
+    This may be accomplished by calling {clWaitForEvents} with the event
+    objects returned by any OpenCL commands which use the shared image
+    object or by calling {clFinish}.
+  . Currently {CL_MEM_READ_ONLY} is the only supported flag for _flags_.
++
+--
+*RESOLVED*: Implementation will now return an error if writing to a shared
+object that is not supported rather than disallowing it entirely.
+--
+  . Currently restricted to 2D image objects.
+  . What should happen for YUV color-space conversion, multi plane images,
+    and chroma-siting, and channel mapping?
++
+--
+*RESOLVED*: YUV is no longer explicitly described in this extension.
+Before this removal the behavior was dependent on the platform.
+This extension explicitly leaves the YUV layout to the platform and `EGLImage`
+source extension (i.e. is implementation specific).
+Colorspace conversion must be applied by the application using a color
+conversion matrix.
+
+The expected extension path if YUV color-space conversion is to be supported
+is to introduce a YUV image type and provide overloaded versions of the
+read_image built-in functions.
+
+Getting image information for a YUV image should return the original image
+size (non quantized size) when all of Y U and V are present in the image.
+If the planes have been separated then the actual dimensionality of the
+separated plane should be reported.
+For example with YUV 4:2:0 (NV12) with a YUV image of 256x256, the Y only
+image would return 256x256 whereas the UV only image would return 128x128.
+--
+  . Should an attribute list be used instead?
++
+--
+*RESOLVED*: function has been changed to use an attribute list.
+--
+  . What should happen for `EGLImage` extensions which introduce formats
+    without a mapping to an OpenCL image channel data type or channel order?
++
+--
+*RESOLVED*: This extension does not define those formats.
+It is expected that as additional EGL extensions are added to create EGL
+images from other sources, an extension to CL will be introduced where
+needed to represent those image types.
+--
+  . What are the guarantees to synchronization behavior provided by the
+    implementation?
++
+--
+The basic portable form of synchronization is to use a {clFinish}, as is the
+case for GL interop.
+In addition implementations which support the synchronization extensions
+`<<cl_khr_egl_event>>` and `EGL_KHR_cl_event` can interoperate more
+efficiently as described in those extensions.
+--
+
+=== Version History
+
+  * Revision 1.0.0, 2020-04-21
+  ** First assigned version.
