@@ -4727,19 +4727,19 @@ ifdef::cl_khr_egl_image[]
 
 [open,refpage='clCreateFromEGLImageKHR',desc='Create cl_mem target from EGLImage source',type='protos']
 --
-To create an `EGLImage` target of type {cl_mem} from the `EGLImage` source
+To create an `EGLImage` target of type {cl_mem_TYPE} from the `EGLImage` source
 provided as _image_, call the function
 
 include::{generated}/api/protos/clCreateFromEGLImageKHR.txt[]
 include::{generated}/api/version-notes/clCreateFromEGLImageKHR.asciidoc[]
 
   * _display_ should be of type `EGLDisplay`, cast into the type
-    {CLeglDisplayKHR}.
+    {CLeglDisplayKHR_TYPE}.
   * _image_ should be of type `EGLImageKHR`, cast into the type
     {CLeglImageKHR_TYPE}.
     Assuming no errors are generated in this function, the resulting image
     object will be an `EGLImage` target of the specified `EGLImage` _image_.
-    The resulting {cl_mem} is an image object which may be used normally by
+    The resulting {cl_mem_TYPE} is an image object which may be used normally by
     all OpenCL operations.
     This maps to an `image2d_t` type in OpenCL kernel code.
   * _flags_ is a bit-field that is used to specify usage information about
@@ -4786,7 +4786,7 @@ returned in _errcode_ret_:
     above.
   * {CL_INVALID_EGL_OBJECT_KHR} if _image_ is not a valid `EGLImage` object.
   * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if the OpenCL implementation is not able
-    to create a {cl_mem} compatible with the provided {CLeglImageKHR_TYPE}
+    to create a {cl_mem_TYPE} compatible with the provided {CLeglImageKHR_TYPE}
     for an implementation-dependent reason (this could be caused by, but not
     limited to, reasons such as unsupported texture formats, etc).
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -6264,7 +6264,7 @@ include::{generated}/api/version-notes/clGetGLTextureInfo.asciidoc[]
 .OpenGL texture info that may be queried with {clGetGLTextureInfo}
 [cols=",,",options="header",]
 |====
-| {cl_gl_texture_info} | Return Type | Info. Returned in _param_value_
+| {cl_gl_texture_info_TYPE} | Return Type | Info. Returned in _param_value_
 | {CL_GL_TEXTURE_TARGET_anchor}
 
 include::{generated}/api/version-notes/CL_GL_TEXTURE_TARGET.asciidoc[]
@@ -7153,10 +7153,9 @@ memory objects through the other API with which such objects are shared.
 Failure to provide such synchronization may result in race conditions and
 other undefined behavior including non-portability between implementations.
 
-Prior to acquiring objects shared with the other API via an appropriate
-{clEnqueueAcquire}*** call, the application must ensure that any pending
-operations in that API which accesses the objects specified in _mem_objects_
-have completed.
+Prior to acquiring objects shared with the other API, the application must
+ensure that any pending operations in that API which accesses the objects
+specified in _mem_objects_ have completed.
 
 Depending on the application and the implementation, there are two
 extensions which may be used to synchronize with other APIs:
@@ -7216,10 +7215,9 @@ are supported on a platform.
 
 ===== Synchronizing OpenCL Operations With Other APIs
 
-After releasing a shared memory object via an appropriate
-{clEnqueueRelease}*** call, the application is responsible for ensuring that
-any pending OpenCL operations which access the objects specified in
-_mem_objects_ have completed prior to executing subsequent commands in the
+After releasing a shared memory object, the application is responsible for
+ensuring that any pending OpenCL operations which access the objects specified
+in _mem_objects_ have completed prior to executing subsequent commands in the
 other API which reference these objects.
 
 This may be accomplished portably by calling {clWaitForEvents} with the
@@ -12348,7 +12346,7 @@ When the event object is deleted, the reference will be removed from the EGL
 sync object.
 
 Events returned from {clCreateEventFromEGLSyncKHR} may only be consumed by
-{clEnqueueAcquire}*** commands.
+commands to acquire and release memory objects.
 Passing such events to any other CL API that enqueues commands will generate
 a {CL_INVALID_EVENT} error.
 
@@ -12452,7 +12450,7 @@ sync object.
 
 Events returned from {clCreateEventFromGLsyncKHR} can be used in the
 _event_wait_list_ argument to {clEnqueueAcquireGLObjects} and CL APIs that
-take a {cl_event} as an argument but do not enqueue commands.
+take a {cl_event_TYPE} as an argument but do not enqueue commands.
 Passing such events to any other CL API that enqueues commands will generate
 a {CL_INVALID_EVENT} error.
 --
