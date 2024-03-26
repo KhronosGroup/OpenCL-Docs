@@ -1,0 +1,49 @@
+name: Presubmit
+
+permissions:
+  contents: read
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build all specs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install required packages
+        run: |
+          sudo apt-get install -y libpango1.0-dev libwebp-dev ghostscript fonts-lyx jing libavalon-framework-java libbatik-java python3-pyparsing
+          sudo gem install asciidoctor -v 2.0.16
+          sudo gem install coderay -v 1.1.1
+          sudo gem install rouge -v 3.19.0
+          sudo gem install ttfunk -v 1.7.0
+          sudo gem install hexapdf -v 0.27.0
+          sudo gem install asciidoctor-pdf -v 2.3.4
+          sudo gem install asciidoctor-mathematical -v 0.3.5
+          sudo pip install pyparsing
+
+      - name: List git tag
+        run: |
+          git describe --tags --dirty
+
+      - name: Generate core specs (HTML and PDF)
+        run: |
+          python3 makeSpec -clean -spec core OUTDIR=out.core -j 5 api c env ext cxx4opencl
+          
+      - name: Generate core + extension specs (HTML)
+        run: |
+          python3 makeSpec -clean -spec khr OUTDIR=out.khr -j 12 html
+
+      - name: Generate reference pages
+        run: |
+          python3 makeSpec -spec khr OUTDIR=out.refpages -j 12 manhtmlpages
+
+      - name: Validate XML
+        run: |
+          make -C xml validate

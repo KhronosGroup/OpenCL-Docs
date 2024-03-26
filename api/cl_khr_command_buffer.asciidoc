@@ -123,9 +123,12 @@ the capability is optional to enable optimizations on command-buffer recording.
 The introduction of the command-buffer abstraction enables functionality
 beyond what the `cl_khr_command_buffer` extension currently provides, i.e.
 the recording of immutable commands to a single queue which can then be
-executed without commands synchronizing outside the command-buffer. It is
-intended that extra functionality expanding on this will be provided as layered
-extensions on top of `cl_khr_command_buffer`.
+executed without commands synchronizing outside the command-buffer. Extra
+functionality expanding on this is provided as layered extensions on top of
+`cl_khr_command_buffer`. The layered extensions that currently exist are:
+
+* `<<cl_khr_command_buffer_multi_device>>`
+* `<<cl_khr_command_buffer_mutable_dispatch>>`
 
 Having `cl_khr_command_buffer` as a minimal base specification means that the
 API defines mechanisms for functionality that is not enabled by this extension,
@@ -138,29 +141,33 @@ support their intended use cases.
 
 The {clCommandNDRangeKernelKHR} entry-point defines a `properties` parameter of
 new type {cl_ndrange_kernel_command_properties_khr_TYPE}. No properties are defined
-in `cl_khr_command_buffer`, but the parameter is intended to enable future
-functionality that would change the characteristics of the kernel command.
+in `cl_khr_command_buffer`, but the parameter enables layered extensions like
+`<<cl_khr_command_buffer_mutable_dispatch>>` to define properties that inform
+the characteristics of the kernel command.
 
 ==== Command Handles
 
 All command recording entry-points define a {cl_mutable_command_khr_TYPE} output
 parameter which provides a handle to the specific command being recorded. Use of
 these output handles is not enabled by the `cl_khr_command_buffer` extension,
-but the handles will allow individual commands in a command-buffer to be
-referenced by the user. In particular, the capability for an application to use
-these handles to modify commands between enqueues of a command-buffer is
-envisaged.
+but the handles allow individual commands in a command-buffer to be
+referenced by the user.
+
+Use of these handles is enabled in `<<cl_khr_command_buffer_mutable_dispatch>>`
+to give the capability for an application to use the handles to modify commands
+between enqueues of a command-buffer.
 
 ==== List of Queues
 
 Only a single command-queue can be associated with a command-buffer in the
-`cl_khr_command_buffer` extension, but the API is designed with the intention
-that a future extension will allow commands to be recorded across multiple
-queues in the same command-buffer, providing replay of heterogeneous task
-graphs.
+`cl_khr_command_buffer` extension, but the API is designed so that the layered
+`<<cl_khr_command_buffer_multi_device>>` extension can relax this constraint
+to allow commands to be recorded across multiple queues in the same
+command-buffer, providing replay of heterogeneous task graphs.
 
-Using multiple queue functionality will result in an error without any layered
-extensions to relax usage of the following API features:
+Using multiple queue functionality will result in an error without
+`<<cl_khr_command_buffer_multi_device>>` to relax usage of the following API
+features:
 
 * When a command-buffer is created the API enables passing a list of queues
   that the command-buffer will record commands to. Only a single queue is
@@ -200,8 +207,8 @@ extensions to relax usage of the following API features:
 
 === New Structures
 
-  * {cl_command_buffer_khr}
-  * {cl_mutable_command_khr}
+  * {cl_command_buffer_khr_TYPE}
+  * {cl_mutable_command_khr_TYPE}
 
 === New Types
 
@@ -220,19 +227,15 @@ extensions to relax usage of the following API features:
   * {cl_device_info_TYPE}
   ** {CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR}
   ** {CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR}
-  * {cl_device_command_buffer_capabilities_khr - bitfield_TYPE}
+  * {cl_device_command_buffer_capabilities_khr_TYPE}
   ** {CL_COMMAND_BUFFER_CAPABILITY_KERNEL_PRINTF_KHR}
   ** {CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR}
   ** {CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR}
   ** {CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR}
   * {cl_command_buffer_properties_khr_TYPE}
   ** {CL_COMMAND_BUFFER_FLAGS_KHR}
-  * {cl_command_buffer_flags_khr - bitfield_TYPE}
+  * {cl_command_buffer_flags_khr_TYPE}
   ** {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR}
-  * {Error codes_TYPE}
-  ** {CL_INVALID_COMMAND_BUFFER_KHR}
-  ** {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR}
-  ** {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR}
   * {cl_command_buffer_info_khr_TYPE}
   ** {CL_COMMAND_BUFFER_QUEUES_KHR}
   ** {CL_COMMAND_BUFFER_NUM_QUEUES_KHR}
@@ -246,6 +249,10 @@ extensions to relax usage of the following API features:
   ** {CL_COMMAND_BUFFER_STATE_PENDING_KHR}
   * {cl_command_type_TYPE}
   ** {CL_COMMAND_COMMAND_BUFFER_KHR}
+  * New Error Codes
+  ** {CL_INVALID_COMMAND_BUFFER_KHR}
+  ** {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR}
+  ** {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR}
 
 === Sample Code
 
