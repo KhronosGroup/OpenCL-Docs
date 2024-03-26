@@ -383,12 +383,18 @@ include::{generated}/api/version-notes/CL_DEVICE_TYPE_ACCELERATOR.asciidoc[]
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_CUSTOM.asciidoc[]
   | Specialized devices that implement some of the OpenCL runtime APIs but
-    do not support all required OpenCL functionality.
+    do not support all of the required OpenCL functionality.
 
 | {CL_DEVICE_TYPE_DEFAULT_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_DEFAULT.asciidoc[]
   | The default OpenCL device in the platform.
+    One device in the platform must be returned as the {CL_DEVICE_TYPE_DEFAULT}
+    device when passed as the _device_type_ to {clGetDeviceIDs}.
+    {CL_DEVICE_TYPE_DEFAULT} is only used to query OpenCL devices using
+    {clGetDeviceIDs} or to create OpenCL contexts using
+    {clCreateContextFromType}, and will never be returned in {CL_DEVICE_TYPE}
+    for any OpenCL device.
     The default OpenCL device must not be a {CL_DEVICE_TYPE_CUSTOM} device.
 
 | {CL_DEVICE_TYPE_ALL_anchor}
@@ -396,21 +402,12 @@ include::{generated}/api/version-notes/CL_DEVICE_TYPE_DEFAULT.asciidoc[]
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_ALL.asciidoc[]
   | All OpenCL devices available in the platform, except for
     {CL_DEVICE_TYPE_CUSTOM} devices.
+    {CL_DEVICE_TYPE_ALL} is only used to query OpenCL devices using
+    {clGetDeviceIDs} or to create OpenCL contexts using
+    {clCreateContextFromType}, and will never be returned in {CL_DEVICE_TYPE}
+    for any OpenCL device.
 
 |====
-
-The device type is purely informational and has no semantic meaning.
-
-Some devices may be more than one type.
-For example, a {CL_DEVICE_TYPE_CPU} device may also be a
-{CL_DEVICE_TYPE_GPU} device, or a {CL_DEVICE_TYPE_ACCELERATOR} device
-may also be some other, more descriptive device type.
-{CL_DEVICE_TYPE_CUSTOM} devices must not be combined with any other
-device types.
-
-One device in the platform should be a {CL_DEVICE_TYPE_DEFAULT} device.
-The default device should also be a more specific device type, such
-as {CL_DEVICE_TYPE_CPU} or {CL_DEVICE_TYPE_GPU}.
 
 // refError
 
@@ -483,10 +480,13 @@ device except for the following queries:
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE.asciidoc[]
   | {cl_device_type_TYPE}
-      | The type or types of the OpenCL device.
+      | The type of the OpenCL device.
+        The device type is purely informational and has no semantic meaning.
+        The device must report a single device type, which must not be
+        {CL_DEVICE_TYPE_DEFAULT} or {CL_DEVICE_TYPE_ALL}.
 
         Please see the <<device-types-table, Device Types>> table
-        for supported device types and device type combinations.
+        for supported device types and device type descriptions.
 
 | {CL_DEVICE_VENDOR_ID_anchor} footnote:[{fn-vendor-id}]
 
