@@ -33,29 +33,37 @@ def GetFooter():
     return """
 """
 
-def FullNote(name, added_in, deprecated_by):
-    # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
-    # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
-    if added_in == "1.0" and deprecated_by == None:
-        return "\n// Intentionally empty, %s has always been present." % name
-    if added_in != "1.0" and deprecated_by == None:
-        return "\nIMPORTANT: {%s} is {missing_before} version %s." % (name, added_in)
-    if added_in == "1.0" and deprecated_by != None:
-        return "\nIMPORTANT: {%s} is {deprecated_by} version %s." % (name, deprecated_by)
-    if added_in != "1.0" and deprecated_by != None:
-        return "\nIMPORTANT: {%s} is {missing_before} version %s and {deprecated_by} version %s." % (name, added_in, deprecated_by)
+def FullNote(name, is_extension, added_in, deprecated_by):
+    if is_extension:
+        assert deprecated_by == None
+        return "\nIMPORTANT: {%s} is provided by the `%s` extension." % (name, added_in)
+    else:
+        # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
+        # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
+        if added_in == "1.0" and deprecated_by == None:
+            return "\n// Intentionally empty, %s has always been present." % name
+        if added_in != "1.0" and deprecated_by == None:
+            return "\nIMPORTANT: {%s} is {missing_before} version %s." % (name, added_in)
+        if added_in == "1.0" and deprecated_by != None:
+            return "\nIMPORTANT: {%s} is {deprecated_by} version %s." % (name, deprecated_by)
+        if added_in != "1.0" and deprecated_by != None:
+            return "\nIMPORTANT: {%s} is {missing_before} version %s and {deprecated_by} version %s." % (name, added_in, deprecated_by)
 
-def ShortNote(name, added_in, deprecated_by):
-    # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
-    # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
-    if added_in == "1.0" and deprecated_by == None:
-        return "// Intentionally empty, %s has always been present." % name
-    if added_in != "1.0" and deprecated_by == None:
-        return "{missing_before} version %s." % added_in
-    if added_in == "1.0" and deprecated_by != None:
-        return "{deprecated_by} version %s." % deprecated_by
-    if added_in != "1.0" and deprecated_by != None:
-        return "{missing_before} version %s and {deprecated_by} version %s." % (added_in, deprecated_by)
+def ShortNote(name, is_extension, added_in, deprecated_by):
+    if is_extension:
+        assert deprecated_by == None
+        return "provided by the `%s` extension." % added_in
+    else:
+        # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
+        # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
+        if added_in == "1.0" and deprecated_by == None:
+            return "// Intentionally empty, %s has always been present." % name
+        if added_in != "1.0" and deprecated_by == None:
+            return "{missing_before} version %s." % added_in
+        if added_in == "1.0" and deprecated_by != None:
+            return "{deprecated_by} version %s." % deprecated_by
+        if added_in != "1.0" and deprecated_by != None:
+            return "{missing_before} version %s and {deprecated_by} version %s." % (added_in, deprecated_by)
 
 # Find feature or extension groups that are parents of a <feature> or
 # <extension> <require> <${entry_type}> tag, and then find all the
@@ -74,6 +82,7 @@ def process_xml(spec, entry_type, note_printer):
         for feature in spec.findall(f'.//{feature_type}/require/{entry_type}/../..'):
             for entry in feature.findall(f'.//{entry_type}'):
                 name = entry.get('name')
+                is_extension = feature_type != 'feature'
                 deprecated_by = None
 
                 numberOfEntries += 1
@@ -104,7 +113,7 @@ def process_xml(spec, entry_type, note_printer):
                 versionFileName = os.path.join(args.directory, name + ".asciidoc")
                 with open(versionFileName, 'w') as versionFile:
                     versionFile.write(GetHeader())
-                    versionFile.write(note_printer(name, added_in, deprecated_by))
+                    versionFile.write(note_printer(name, is_extension, added_in, deprecated_by))
                     versionFile.write(GetFooter())
 
                     numberOfNewEntries += 0 if added_in == "1.0" else 1
