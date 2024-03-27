@@ -256,7 +256,7 @@ class Extension:
 
         if not isRefpage:
             write('[[' + self.name + ']]', file=fp)
-            write('=== ' + self.name, file=fp)
+            write('== ' + self.name, file=fp)
             write('', file=fp)
 
             self.writeTag('Name String', '`' + self.name + '`', isRefpage, fp)

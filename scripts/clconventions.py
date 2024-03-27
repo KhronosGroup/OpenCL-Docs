@@ -199,7 +199,7 @@ class OpenCLConventions(ConventionsBase):
            file.
             - name - extension name"""
 
-        return 'include::{{apispec}}/{}[]'.format(
+        return 'include::{{apispec}}/{}[leveloffset=+1]'.format(
                 self.extension_file_path(name))
 
     @property
