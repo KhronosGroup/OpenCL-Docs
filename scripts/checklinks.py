@@ -28,9 +28,9 @@ if __name__ == "__main__":
         sourcefile.close()
 
         # We're not going to check API links.
-        #filelinks = re.findall(r"{((cl\w+)|(CL\w+))}", sourcetext)
-        filelinks = re.findall(r"{((CL\w+))}", sourcetext)
-        fileanchors = re.findall(r"{((cl\w+)|(CL\w+))_anchor}", sourcetext)
+        #filelinks = re.findall(r"{((cl\w+)|(CL_\w+))}", sourcetext)
+        filelinks = re.findall(r"{((CL_\w+))}", sourcetext)
+        fileanchors = re.findall(r"{((cl\w+)|(CL_\w+))_anchor}", sourcetext)
 
         filelinks = [re.sub(r"_anchor\b", "", link[0]) for link in filelinks]
         fileanchors = [anchor[0] for anchor in fileanchors]
