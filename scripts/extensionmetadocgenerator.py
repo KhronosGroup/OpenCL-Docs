@@ -9,7 +9,7 @@ import re
 import sys
 from functools import total_ordering
 from generator import GeneratorOptions, OutputGenerator, regSortFeatures, write
-from parse_dependency import dependencyMarkup
+from parse_dependency import dependencyMarkup, dependencyNames
 
 class ExtensionMetaDocGeneratorOptions(GeneratorOptions):
     """ExtensionMetaDocGeneratorOptions - subclass of GeneratorOptions.
@@ -23,6 +23,7 @@ class Extension:
     def __init__(self,
                  generator, # needed for logging and API conventions
                  filename,
+                 interface,
                  name,
                  number,
                  ext_type,
@@ -36,9 +37,14 @@ class Extension:
                  specialuse,
                  ratified
                 ):
+        """Object encapsulating information from an XML <extension> tag.
+           Most of the parameters / members are XML tag values.
+           'interface' is the actual XML <extension> element."""
+
         self.generator = generator
         self.conventions = generator.genOpts.conventions
         self.filename = filename
+        self.interface = interface
         self.name = name
         self.number = number
         self.ext_type = ext_type
@@ -176,7 +182,7 @@ class Extension:
     def resolveDeprecationChain(self, extensions, succeededBy, isRefpage, file):
         if succeededBy not in extensions:
             write(f'  ** *NOTE* The extension `{succeededBy}` is not supported for the API specification being generated', file=file)
-            self.generator.logMsg('warn', f'resolveDeprecationChain: {self.name} defines a superceding interface {succeededBy} which is not in the supported extensions list')
+            self.generator.logMsg('warn', f'resolveDeprecationChain: {self.name} defines a superseding interface {succeededBy} which is not in the supported extensions list')
             return
 
         ext = extensions[succeededBy]
@@ -223,10 +229,11 @@ class Extension:
 
         if isRefpage:
             # Use subsection headers for the tag name
-            tagPrefix = '== '
+            # Because we do not know what preceded this, add whitespace
+            tagPrefix = '\n== '
             tagSuffix = ''
         else:
-            # Use an bolded item list for the tag name
+            # Use a bolded item list for the tag name
             tagPrefix = '*'
             tagSuffix = '*::'
 
@@ -238,12 +245,14 @@ class Extension:
         if isRefpage:
             write('', file=fp)
 
-    def makeMetafile(self, extensions, isRefpage = False):
+    def makeMetafile(self, extensions, SPV_deps, isRefpage = False):
         """Generate a file containing extension metainformation in
            asciidoctor markup form.
 
         - extensions - dictionary of Extension objects for extensions spec
           is being generated against
+        - SPV_deps - dictionary of SPIR-V extension names required for each
+          extension and version name
         - isRefpage - True if generating a refpage include, False if
           generating a specification extension appendix include"""
 
@@ -256,7 +265,7 @@ class Extension:
 
         if not isRefpage:
             write('[[' + self.name + ']]', file=fp)
-            write('=== ' + self.name, file=fp)
+            write('== ' + self.name, file=fp)
             write('', file=fp)
 
             self.writeTag('Name String', '`' + self.name + '`', isRefpage, fp)
@@ -300,6 +309,34 @@ class Extension:
                                 isRefpage = isRefpage) +
                   ' of provisional header files for enablement and stability details.*', file=fp)
         write('', file=fp)
+
+        # Determine version and extension interactions from 'depends'
+        # attributes of <require> tags.
+        interacts = set()
+        for elem in self.interface.findall('require[@depends]'):
+            names = dependencyNames(elem.get('depends'))
+            interacts |= names
+
+        if len(interacts) > 0:
+            self.writeTag('API Interactions', None, isRefpage, fp)
+
+            def versionKey(name):
+                """Sort _VERSION_ names before extension names"""
+                return '_VERSION_' not in name
+
+            names = sorted(sorted(interacts), key=versionKey)
+            for name in names:
+                write(f'* Interacts with {name}', file=fp)
+
+            write('', file=fp)
+
+        if self.name in SPV_deps:
+            self.writeTag('SPIR-V Dependencies', None, isRefpage, fp)
+
+            for spvname in sorted(SPV_deps[self.name]):
+                write(f'  * {self.conventions.formatSPIRVlink(spvname)}', file=fp)
+
+            write('', file=fp)
 
         if self.deprecationType:
             self.writeTag('Deprecation State', None, isRefpage, fp)
@@ -362,7 +399,7 @@ class Extension:
                 if handle.startswith('gitlab:'):
                     prettyHandle = 'icon:gitlab[alt=GitLab, role="red"]' + handle.replace('gitlab:@', '')
                 elif handle.startswith('@'):
-                    issuePlaceholderText = f'[{self.name}]{handle}'
+                    issuePlaceholderText = f'[{self.name}] {handle}'
                     issuePlaceholderText += f'%0A*Here describe the issue or question you have about the {self.name} extension*'
                     trackerLink = f'link:++https://github.com/KhronosGroup/Vulkan-Docs/issues/new?body={issuePlaceholderText}++'
                     prettyHandle = f'{trackerLink}[icon:github[alt=GitHub,role="black"]{handle[1:]},window=_blank,opts=nofollow]'
@@ -408,7 +445,7 @@ class Extension:
             tag = 'Extension Proposal'
             for (name, path) in sorted(proposals):
                 self.writeTag(tag,
-                    f'link:{{specRepositoryURL}}/{path}[{name}]',
+                    f'{{proposalRefPath}}{path}[{name}]',
                     isRefpage, fp)
                 # Setting tag = None so additional values will not get
                 # additional tag headers.
@@ -446,6 +483,8 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
         # List of strings containing all vendor tags
         self.vendor_tags = []
         self.file_suffix = ''
+        # SPIR-V dependencies, generated in beginFile()
+        self.SPV_deps = {}
 
     def newFile(self, filename):
         self.logMsg('diag', '# Generating include file:', filename)
@@ -464,6 +503,28 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
         root = self.registry.tree.getroot()
         for tag in root.findall('tags/tag'):
             self.vendor_tags.append(tag.get('name'))
+
+        # If there are <spirvextension> elements in the XML, generate a
+        # reverse map from API version and extension names to the SPV
+        # extensions they depend on.
+
+        def add_dep(SPV_deps, name, spvname):
+            """Add spvname as a dependency of name.
+               name may be an API or extension name."""
+
+            if name not in SPV_deps:
+                SPV_deps[name] = set()
+            SPV_deps[name].add(spvname)
+
+        for spvext in root.findall('spirvextensions/spirvextension'):
+            spvname = spvext.get('name')
+            for elem in spvext.findall('enable'):
+                if elem.get('version'):
+                    version_name = elem.get('version')
+                    add_dep(self.SPV_deps, version_name, spvname)
+                elif elem.get('extension'):
+                    ext_name = elem.get('extension')
+                    add_dep(self.SPV_deps, ext_name, spvname)
 
         # Create subdirectory, if needed
         self.makeDir(self.directory)
@@ -516,9 +577,9 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
 
         # Generate metadoc extension files, in refpage and non-refpage form
         for ext in self.extensions.values():
-            ext.makeMetafile(self.extensions, isRefpage = False)
+            ext.makeMetafile(self.extensions, self.SPV_deps, isRefpage = False)
             if self.conventions.write_refpage_include:
-                ext.makeMetafile(self.extensions, isRefpage = True)
+                ext.makeMetafile(self.extensions, self.SPV_deps, isRefpage = True)
 
         # Key to sort extensions alphabetically within 'KHR', 'EXT', vendor
         # extension prefixes.
@@ -565,6 +626,10 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
             # This is difficult to change, and it is very unlikely changing
             # it will be needed.
 
+            # Do not include the lengthy '*extension_appendices_toc' indices
+            # in the Antora site build, since all the extensions are already
+            # indexed on the right navigation sidebar.
+
             write('', file=current_extensions_appendix_fp)
             write('include::{generated}/meta/deprecated_extensions_guard_macro' + self.file_suffix + '[]', file=current_extensions_appendix_fp)
             write('', file=current_extensions_appendix_fp)
@@ -577,7 +642,9 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
             write('== List of Current Extensions', file=current_extensions_appendix_fp)
             write('endif::HAS_DEPRECATED_EXTENSIONS[]', file=current_extensions_appendix_fp)
             write('', file=current_extensions_appendix_fp)
+            write('ifndef::site-gen-antora[]', file=current_extensions_appendix_fp)
             write('include::{generated}/meta/current_extension_appendices_toc' + self.file_suffix + '[]', file=current_extensions_appendix_fp)
+            write('endif::site-gen-antora[]', file=current_extensions_appendix_fp)
             write('\n<<<\n', file=current_extensions_appendix_fp)
             write('include::{generated}/meta/current_extension_appendices' + self.file_suffix + '[]', file=current_extensions_appendix_fp)
 
@@ -587,7 +654,9 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
             write('ifdef::HAS_DEPRECATED_EXTENSIONS[]', file=deprecated_extensions_appendix_fp)
             write('[[deprecated-extension-appendices-list]]', file=deprecated_extensions_appendix_fp)
             write('== List of Deprecated Extensions', file=deprecated_extensions_appendix_fp)
+            write('ifndef::site-gen-antora[]', file=deprecated_extensions_appendix_fp)
             write('include::{generated}/meta/deprecated_extension_appendices_toc' + self.file_suffix + '[]', file=deprecated_extensions_appendix_fp)
+            write('endif::site-gen-antora[]', file=deprecated_extensions_appendix_fp)
             write('\n<<<\n', file=deprecated_extensions_appendix_fp)
             write('include::{generated}/meta/deprecated_extension_appendices' + self.file_suffix + '[]', file=deprecated_extensions_appendix_fp)
             write('endif::HAS_DEPRECATED_EXTENSIONS[]', file=deprecated_extensions_appendix_fp)
@@ -604,7 +673,9 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
             write('ifdef::HAS_PROVISIONAL_EXTENSIONS[]', file=provisional_extensions_appendix_fp)
             write('[[provisional-extension-appendices-list]]', file=provisional_extensions_appendix_fp)
             write('== List of Provisional Extensions', file=provisional_extensions_appendix_fp)
+            write('ifndef::site-gen-antora[]', file=provisional_extensions_appendix_fp)
             write('include::{generated}/meta/provisional_extension_appendices_toc' + self.file_suffix + '[]', file=provisional_extensions_appendix_fp)
+            write('endif::site-gen-antora[]', file=provisional_extensions_appendix_fp)
             write('\n<<<\n', file=provisional_extensions_appendix_fp)
             write('include::{generated}/meta/provisional_extension_appendices' + self.file_suffix + '[]', file=provisional_extensions_appendix_fp)
             write('endif::HAS_PROVISIONAL_EXTENSIONS[]', file=provisional_extensions_appendix_fp)
@@ -614,8 +685,14 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
             for name in sorted_keys:
                 ext = self.extensions[name]
 
-                include = self.makeExtensionInclude(ext.name)
+                # Increase the leveloffset of the extension include so it is
+                # lower than the subsection (extension name) it belongs to
+                include =  ':leveloffset: +1\n'
+                include += '\n' + self.makeExtensionInclude(ext.name) + '\n\n'
+                include += ':leveloffset: -1\n'
+
                 link = '  * ' + self.conventions.formatExtension(ext.name)
+
                 if ext.provisional == 'true':
                     write(self.conditionalExt(ext.name, include), file=provisional_extension_appendices_fp)
                     write(self.conditionalExt(ext.name, link), file=provisional_extension_appendices_toc_fp)
@@ -675,6 +752,7 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
         extdata = Extension(
             generator = self,
             filename = filename,
+            interface = interface,
             name = name,
             number = number,
             ext_type = ext_type,
