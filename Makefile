@@ -459,7 +459,7 @@ $(REFPATH)/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(PYAPIMAP)
 	(cat $(MANDIR)/rewritehead ; \
 	 echo ; echo "# Aliases hard-coded in refpage markup" ; \
 	 sort < $(REFPATH)/rewritebody) > $(REFPATH)/.htaccess
-	echo $(CP) $(MANDIR)/static/*.txt $(REFPATH)
+	$(CP) $(MANDIR)/static/*.txt $(REFPATH)
 
 # These targets are HTML5 ref pages
 #
@@ -493,11 +493,12 @@ $(MANHTMLDIR)/%.html: $(REFPATH)/%.txt $(MANCOPYRIGHT) $(GENDEPENDS) $(KATEXINST
 	$(VERYQUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) \
 	    $(ADOCREFOPTS) -o $@ $<
 
+# This is not formatted as a refpage, so needs a different build rule
 $(MANHTMLDIR)/intro.html: $(REFPATH)/intro.txt $(MANCOPYRIGHT)
 	$(VERYQUIET)echo "Building $@ from $< using default options"
 	$(VERYQUIET)$(MKDIR) $(MANHTMLDIR)
 	$(VERYQUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) \
-	    $(ADOCREFOPTS) -o $@ $<
+	    -o $@ $<
 
 # Targets generated from the XML and registry processing scripts
 #   apimap.py - Python encoding of the registry
