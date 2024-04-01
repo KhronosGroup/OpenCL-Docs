@@ -2168,7 +2168,7 @@ OpenCL 3.0 also adds a new version of the OpenCL C programming language, which m
 The new version of OpenCL C is backwards compatible with OpenCL C 1.2, but is not backwards compatible with OpenCL C 2.0.
 The new version of OpenCL C must be explicitly requested via the `-cl-std=` build option, otherwise a program will continue to be compiled using the highest OpenCL C 1.x language version supported for the device.
 +
-Whenever an OpenCL C feature is optional in the new version of the OpenCL C programming language, it will be paired with a feature macro, such as `+__opencl_c_feature_name+`, and a corresponding API query.
+Whenever an OpenCL C feature is optional in the new version of the OpenCL C programming language, it will be paired with a feature macro, such as {opencl_c_feature_name}, and a corresponding API query.
 If a feature macro is defined then the feature is supported by the OpenCL C compiler, otherwise the optional feature is not supported.
 
 In order to allow future versions of OpenCL to support new types of
@@ -2226,7 +2226,7 @@ working with version numbers easier.
     {cl_version_TYPE}.
   * `CL_VERSION_PATCH` extracts the _patch_ version from a packed
     {cl_version_TYPE}.
-  * `CL_MAKE_VERSION` returns a packed `cl_version_TYPE} from a
+  * `CL_MAKE_VERSION` returns a packed {cl_version_TYPE} from a
     _major_, _minor_ and _patch_ version.
   * {CL_VERSION_MAJOR_BITS_anchor}, {CL_VERSION_MINOR_BITS_anchor}, and
     {CL_VERSION_PATCH_BITS_anchor} are the number of bits in the
@@ -2277,4 +2277,34 @@ include::{generated}/api/structs/cl_name_version.txt[]
   * _name_ is an array of {CL_NAME_VERSION_MAX_NAME_SIZE_anchor} characters
     containing a null-terminated string, whose maximum length is therefore
     {CL_NAME_VERSION_MAX_NAME_SIZE} minus one.
+--
+
+[[valid-usage]]
+=== Valid Usage and Undefined Behavior
+
+The OpenCL specification describes valid usage and how to use the API correctly.
+For some conditions where an API is used incorrectly, behavior is well-defined,
+such as returning an error code.
+For other conditions, behavior is undefined, and may include program
+termination.
+However, OpenCL implementations must always ensure that incorrect usage by an
+application does not affect the integrity of the operating system, the OpenCL
+implementation, or other OpenCL client applications in the system.
+In particular, any guarantees made by an operating system about whether memory
+from one process can be visible to another process or not must not be violated
+by an OpenCL implementation for any memory allocation.
+OpenCL implementations are not required to make additional security or integrity
+guarantees beyond those provided by the operating system unless explicitly
+directed by the application’s use of a particular feature or extension.
+
+[NOTE]
+--
+For instance, if an operating system guarantees that data in all its memory
+allocations are set to zero when newly allocated, the OpenCL implementation must
+make the same guarantees for any allocations it controls.
+
+Similarly, if an operating system guarantees that use-after-free of host
+allocations will not result in values written by another process becoming
+visible, the same guarantees must be made by the OpenCL implementation for
+memory accessible to an OpenCL device.
 --
