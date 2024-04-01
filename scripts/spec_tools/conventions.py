@@ -548,3 +548,11 @@ class ConventionsBase(abc.ABC):
            blocks."""
 
         return 'c++'
+
+    @property
+    def docgen_source_options(self):
+        """Return block options to be used in docgenerator [source] blocks,
+           which are appended to the 'source' block type.
+           Can be empty."""
+
+        return '%unbreakable'
