@@ -31,6 +31,7 @@ module Rouge
         image2d_array_t
         image2d_depth_t
         image2d_array_depth_t
+        image2d_msaa_t
         sampler_t
         queue_t
         ndrange_t
