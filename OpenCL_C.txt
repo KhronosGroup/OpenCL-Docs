@@ -33,6 +33,9 @@ include::config/attribs.txt[]
 // Attributes that are shared by OpenCL specifications.
 include::config/opencl.asciidoc[]
 
+// Formatting and links for API functions and enums.
+include::c/dictionary.asciidoc[]
+
 // Feature Dictionary
 include::c/feature-dictionary.asciidoc[]
 
@@ -221,13 +224,27 @@ ifdef::cl_khr_integer_dot_product[]
   (when the `<<cl_khr_integer_dot_product>>` extension macro is defined)
 
 | The OpenCL C compiler supports built-in functions that perform dot
-products on 4x8 bit packed integer vectors
+products on 4x8 bit packed integer vectors.
 
 | {opencl_c_integer_dot_product_input_4x8bit} +
   (when the `<<cl_khr_integer_dot_product>>` extension macro is defined)
 | The OpenCL C compiler supports built-in functions that perform dot
-products on 4x8 bit integer vectors
+products on 4x8 bit integer vectors.
 endif::cl_khr_integer_dot_product[]
+
+ifdef::cl_khr_kernel_clock[]
+| {opencl_c_kernel_clock_scope_device}
+| The OpenCL C compiler supports built-in functions that sample the value from a
+clock shared by all work-items executing on the device.
+
+| {opencl_c_kernel_clock_scope_work_group}
+| The OpenCL C compiler supports built-in functions that sample the value from a
+clock shared by all work-items executing in the same work-group.
+
+| {opencl_c_kernel_clock_scope_sub_group}
+| The OpenCL C compiler supports built-in functions that sample the value from a
+clock shared by all work-items executing in the same sub-group.
+endif::cl_khr_kernel_clock[]
 
 |====
 
@@ -459,6 +476,16 @@ The extension provides new <<table-builtin-functions, built-in vector
 integer argument functions>> operating on these types.
 endif::cl_khr_integer_dot_product[]
 
+ifdef::cl_khr_kernel_clock[]
+[[cl_khr_kernel_clock,cl_khr_kernel_clock]]
+==== Kernel Clock
+
+The `cl_khr_kernel_clock` extension adds support for SPIR-V instructions and
+OpenCL C built-in functions to sample the value from one of three clocks
+provided by compute units.  The extension provides the following functions:
+
+* <<table-kernel-clock-functions,Built-in Kernel Clock Functions>>
+endif::cl_khr_kernel_clock[]
 
 ifdef::cl_khr_local_int32_base_atomics[]
 [[cl_khr_local_int32_base_atomics,cl_khr_local_int32_base_atomics]]
@@ -1095,7 +1122,7 @@ The `image2d_t`, `image3d_t`, `image2d_array_t`, `image1d_t`,
 `image1d_buffer_t`, `image1d_array_t`, `image2d_depth_t`,
 `image2d_array_depth_t` and `sampler_t` types are only defined if the device
 supports images, i.e. the value of the <<opencl-device-queries,
-`CL_DEVICE_IMAGE_SUPPORT` device query>>) is `CL_TRUE`.
+{CL_DEVICE_IMAGE_SUPPORT} device query>>) is {CL_TRUE}.
 If this is the case then an OpenCL C 3.0 or newer compiler must also define
 the {opencl_c_images} feature macro.
 ====
@@ -2751,7 +2778,7 @@ be declared in program scope or in the outermost kernel scope or inside
 Each argument to a kernel that is a pointer to the `{constant}` address
 space is counted separately towards the maximum number of such arguments,
 defined as the value of the <<opencl-device-queries,
-`CL_DEVICE_MAX_CONSTANT_ARGS` device query>>.
+{CL_DEVICE_MAX_CONSTANT_ARGS} device query>>.
 ====
 
 It is illegal to write to a variable in the constant address space and will
@@ -3628,7 +3655,7 @@ qualifier:
 ====
 Kernel functions with variables declared inside the function with the
 `{local}` or `local` qualifier can be called by the host using appropriate
-APIs such as *clEnqueueNDRangeKernel*.
+APIs such as {clEnqueueNDRangeKernel}.
 ====
 
 The `{kernel}` and `kernel` names are reserved for use as functions
@@ -3712,20 +3739,20 @@ concerns or some preference for divisibility by 2.
 The optional `+__attribute__((work_group_size_hint(X, Y, Z)))+` is a hint to
 the compiler and is intended to specify the work-group size that may be used
 i.e. value most likely to be specified by the _local_work_size_ argument to
-*clEnqueueNDRangeKernel*.
+{clEnqueueNDRangeKernel}.
 For example, the `+__attribute__((work_group_size_hint(1, 1, 1)))+` is a
 hint to the compiler that the kernel will most likely be executed with a
 work-group size of 1.
 
 The optional `+__attribute__((reqd_work_group_size(X, Y, Z)))+` is the
 work-group size that must be used as the _local_work_size_ argument to
-*clEnqueueNDRangeKernel*.
+{clEnqueueNDRangeKernel}.
 This allows the compiler to optimize the generated code appropriately for
 this kernel.
 
-If `Z` is one, the _work_dim_ argument to *clEnqueueNDRangeKernel* can be 2
+If `Z` is one, the _work_dim_ argument to {clEnqueueNDRangeKernel} can be 2
 or 3.
-If `Y` and `Z` are one, the _work_dim_ argument to *clEnqueueNDRangeKernel*
+If `Y` and `Z` are one, the _work_dim_ argument to {clEnqueueNDRangeKernel}
 can be 1, 2 or 3.
 --
 
@@ -3927,7 +3954,7 @@ supported with `{global}` address space qualifier.
 ifdef::cl_khr_initialize_memory[]
   . [[restrictions-initialize-memory]] The following restriction only
     applies if the `<<cl_khr_initialize_memory>>` extension is supported: +
-    If the context is created with `CL_CONTEXT_MEMORY_INITIALIZE_KHR`,
+    If the context is created with {CL_CONTEXT_MEMORY_INITIALIZE_KHR},
     appropriate memory locations as specified by the bit-field are
     initialized with zeroes, prior to the start of execution of any kernel.
     The driver chooses when, prior to kernel execution, the initialization of
@@ -4014,7 +4041,7 @@ The following predefined macro names are available.
 `+__OPENCL_C_VERSION__+` ::
     Substitutes an integer reflecting the OpenCL C version specified by the
     `-cl-std` build option (see <<opencl-spec,OpenCL Specification>>) to
-    *clBuildProgram* or *clCompileProgram*.
+    {clBuildProgram} or {clCompileProgram}.
     If the `-cl-std` build option is not specified, the highest OpenCL C 1.x
     language version supported by each device is used as the version of
     OpenCL C when compiling the program for each device.
@@ -4031,7 +4058,7 @@ The following predefined macro names are available.
     or a big endian architecture (an integer constant of 1 if device is
     little endian and is undefined otherwise).
     Also refer to the value of the <<opencl-device-queries,
-    `CL_DEVICE_ENDIAN_LITTLE` device query>>.
+    {CL_DEVICE_ENDIAN_LITTLE} device query>>.
 
 `+__kernel_exec(X, typen)+` (and `kernel_exec(X, typen)`) ::
     is defined as:
@@ -4047,13 +4074,13 @@ __kernel __attribute__((work_group_size_hint(X, 1, 1))) \
     This is an integer constant of 1 if images are supported and is
     undefined otherwise.
     Also refer to the value of the <<opencl-device-queries,
-    `CL_DEVICE_IMAGE_SUPPORT` device query>> and the {opencl_c_images}
+    {CL_DEVICE_IMAGE_SUPPORT} device query>> and the {opencl_c_images}
     feature.
 
 `+__FAST_RELAXED_MATH__+` ::
     Used to determine if the `-cl-fast-relaxed-math` optimization option is
-    specified in build options given to *clBuildProgram* or
-    *clCompileProgram*.
+    specified in build options given to {clBuildProgram} or
+    {clCompileProgram}.
     This is an integer constant of 1 if the `-cl-fast-relaxed-math` build
     option is specified and is undefined otherwise.
 
@@ -4913,7 +4940,7 @@ that operate on mixed scalar and vector types, however.
 --
 The following table describes the list of built-in work-item functions that
 can be used to query the number of dimensions, the global and local work
-size specified to *clEnqueueNDRangeKernel*, and the global and local
+size specified to {clEnqueueNDRangeKernel}, and the global and local
 identifier of each work-item when this kernel is being executed on a device.
 
 [[table-work-item-functions]]
@@ -4924,12 +4951,12 @@ identifier of each work-item when this kernel is being executed on a device.
 | uint *get_work_dim*()
     | Returns the number of dimensions in use.
       This is the value given to the _work_dim_ argument specified in
-      *clEnqueueNDRangeKernel*.
+      {clEnqueueNDRangeKernel}.
 | size_t *get_global_size*(uint _dimindx_)
     | Returns the number of global work-items specified for dimension
       identified by _dimindx_.
       This value is given by the _global_work_size_ argument to
-      *clEnqueueNDRangeKernel*.
+      {clEnqueueNDRangeKernel}.
 
       Valid values of _dimindx_ are 0 to *get_work_dim*() - 1.
       For other values of _dimindx_, *get_global_size*() returns 1.
@@ -4945,7 +4972,7 @@ identifier of each work-item when this kernel is being executed on a device.
     | Returns the number of local work-items specified in dimension
       identified by _dimindx_.
       This value is at most the value given by the _local_work_size_
-      argument to *clEnqueueNDRangeKernel* if _local_work_size_ is not
+      argument to {clEnqueueNDRangeKernel} if _local_work_size_ is not
       `NULL`; otherwise the OpenCL implementation chooses an appropriate
       _local_work_size_ value which is returned by this function.
       If the kernel is executed with a non-uniform work-group size
@@ -4964,7 +4991,7 @@ identifier of each work-item when this kernel is being executed on a device.
       the number of local work-items in each of the work-groups that make up
       the uniform region of the global range in the dimension identified by
       _dimindx_.
-      If the _local_work_size_ argument to *clEnqueueNDRangeKernel* is not
+      If the _local_work_size_ argument to {clEnqueueNDRangeKernel} is not
       `NULL`, this value will match the value specified in
       _local_work_size_[_dimindx_].
       If _local_work_size_ is `NULL`, this value will match the local size
@@ -4995,7 +5022,7 @@ identifier of each work-item when this kernel is being executed on a device.
       For other values, *get_group_id*() returns 0.
 | size_t *get_global_offset*(uint _dimindx_)
     | *get_global_offset* returns the offset values specified in
-      _global_work_offset_ argument to *clEnqueueNDRangeKernel*.
+      _global_work_offset_ argument to {clEnqueueNDRangeKernel}.
 
       Valid values of _dimindx_ are 0 to *get_work_dim*() - 1.
       For other values, *get_global_offset*() returns 0.
@@ -5070,7 +5097,7 @@ sub-group when this kernel is being executed on a device.
 
   This number will be constant for the duration of a work-group's execution.
   If the kernel is executed with a non-uniform work-group size
-  (i.e. the global_work_size values specified to *clEnqueueNDRangeKernel*
+  (i.e. the global_work_size values specified to {clEnqueueNDRangeKernel}
   are not evenly divisible by the local_work_size values for any dimension,
   calls to this built-in from some work-groups may return different values
   than calls to this built-in from other work-groups.
@@ -5087,7 +5114,7 @@ sub-group when this kernel is being executed on a device.
 | *get_sub_group_id* returns the sub-group ID which is a number from 0 ..
   *get_num_sub_groups*() - 1.
 
-  For *clEnqueueTask*, this returns 0.
+  For {clEnqueueTask}, this returns 0.
 
 | uint *get_sub_group_local_id*()
 | Returns the unique work-item ID within the current sub-group.
@@ -5811,16 +5838,16 @@ the application.
 [cols=",",options="header",]
 |====
 | Macro in OpenCL Language    | Macro for application
-| `FLT_DIG`                   | `CL_FLT_DIG`
-| `FLT_MANT_DIG`              | `CL_FLT_MANT_DIG`
-| `FLT_MAX_10_EXP`            | `CL_FLT_MAX_10_EXP`
-| `FLT_MAX_EXP`               | `CL_FLT_MAX_EXP`
-| `FLT_MIN_10_EXP`            | `CL_FLT_MIN_10_EXP`
-| `FLT_MIN_EXP`               | `CL_FLT_MIN_EXP`
-| `FLT_RADIX`                 | `CL_FLT_RADIX`
-| `FLT_MAX`                   | `CL_FLT_MAX`
-| `FLT_MIN`                   | `CL_FLT_MIN`
-| `FLT_EPSILSON`              | `CL_FLT_EPSILON`
+| `FLT_DIG`                   | {CL_FLT_DIG}
+| `FLT_MANT_DIG`              | {CL_FLT_MANT_DIG}
+| `FLT_MAX_10_EXP`            | {CL_FLT_MAX_10_EXP}
+| `FLT_MAX_EXP`               | {CL_FLT_MAX_EXP}
+| `FLT_MIN_10_EXP`            | {CL_FLT_MIN_10_EXP}
+| `FLT_MIN_EXP`               | {CL_FLT_MIN_EXP}
+| `FLT_RADIX`                 | {CL_FLT_RADIX}
+| `FLT_MAX`                   | {CL_FLT_MAX}
+| `FLT_MIN`                   | {CL_FLT_MIN}
+| `FLT_EPSILSON`              | {CL_FLT_EPSILON}
 |====
 
 The following macros shall expand to integer constant expressions whose
@@ -5883,15 +5910,15 @@ the application.
 [cols=",",options="header",]
 |====
 | Macro in OpenCL Language   | Macro for application
-| `DBL_DIG`                  | `CL_DBL_DIG`
-| `DBL_MANT_DIG`             | `CL_DBL_MANT_DIG`
-| `DBL_MAX_10_EXP`           | `CL_DBL_MAX_10_EXP`
-| `DBL_MAX_EXP`              | `CL_DBL_MAX_EXP`
-| `DBL_MIN_10_EXP`           | `CL_DBL_MIN_10_EXP`
-| `DBL_MIN_EXP`              | `CL_DBL_MIN_EXP`
-| `DBL_MAX`                  | `CL_DBL_MAX`
-| `DBL_MIN`                  | `CL_DBL_MIN`
-| `DBL_EPSILSON`             | `CL_DBL_EPSILON`
+| `DBL_DIG`                  | {CL_DBL_DIG}
+| `DBL_MANT_DIG`             | {CL_DBL_MANT_DIG}
+| `DBL_MAX_10_EXP`           | {CL_DBL_MAX_10_EXP}
+| `DBL_MAX_EXP`              | {CL_DBL_MAX_EXP}
+| `DBL_MIN_10_EXP`           | {CL_DBL_MIN_10_EXP}
+| `DBL_MIN_EXP`              | {CL_DBL_MIN_EXP}
+| `DBL_MAX`                  | {CL_DBL_MAX}
+| `DBL_MIN`                  | {CL_DBL_MIN}
+| `DBL_EPSILSON`             | {CL_DBL_EPSILON}
 |====
 
 The following constants are also available.
@@ -5952,16 +5979,16 @@ the application.
 [cols=",",options="header",]
 |====
 | Macro in OpenCL Language   | Macro for application
-| `HALF_DIG`                 | `CL_HALF_DIG`
-| `HALF_MANT_DIG`            | `CL_HALF_MANT_DIG`
-| `HALF_MAX_10_EXP`          | `CL_HALF_MAX_10_EXP`
-| `HALF_MAX_EXP`             | `CL_HALF_MAX_EXP`
-| `HALF_MIN_10_EXP`          | `CL_HALF_MIN_10_EXP`
-| `HALF_MIN_EXP`             | `CL_HALF_MIN_EXP`
-| `HALF_RADIX`               | `CL_HALF_RADIX`
-| `HALF_MAX`                 | `CL_HALF_MAX`
-| `HALF_MIN`                 | `CL_HALF_MIN`
-| `HALF_EPSILSON`            | `CL_HALF_EPSILON`
+| `HALF_DIG`                 | {CL_HALF_DIG}
+| `HALF_MANT_DIG`            | {CL_HALF_MANT_DIG}
+| `HALF_MAX_10_EXP`          | {CL_HALF_MAX_10_EXP}
+| `HALF_MAX_EXP`             | {CL_HALF_MAX_EXP}
+| `HALF_MIN_10_EXP`          | {CL_HALF_MIN_10_EXP}
+| `HALF_MIN_EXP`             | {CL_HALF_MIN_EXP}
+| `HALF_RADIX`               | {CL_HALF_RADIX}
+| `HALF_MAX`                 | {CL_HALF_MAX}
+| `HALF_MIN`                 | {CL_HALF_MIN}
+| `HALF_EPSILSON`            | {CL_HALF_EPSILON}
 |====
 
 The following constants are also available.
@@ -6352,21 +6379,21 @@ the application.
 [cols=",",options="header",]
 |====
 | Macro in OpenCL Language   | Macro for application
-| `CHAR_BIT`                 | `CL_CHAR_BIT`
-| `CHAR_MAX`                 | `CL_CHAR_MAX`
-| `CHAR_MIN`                 | `CL_CHAR_MIN`
-| `INT_MAX`                  | `CL_INT_MAX`
-| `INT_MIN`                  | `CL_INT_MIN`
-| `LONG_MAX`                 | `CL_LONG_MAX`
-| `LONG_MIN`                 | `CL_LONG_MIN`
-| `SCHAR_MAX`                | `CL_SCHAR_MAX`
-| `SCHAR_MIN`                | `CL_SCHAR_MIN`
-| `SHRT_MAX`                 | `CL_SHRT_MAX`
-| `SHRT_MIN`                 | `CL_SHRT_MIN`
-| `UCHAR_MAX`                | `CL_UCHAR_MAX`
-| `USHRT_MAX`                | `CL_USHRT_MAX`
-| `UINT_MAX`                 | `CL_UINT_MAX`
-| `ULONG_MAX`                | `CL_ULONG_MAX`
+| `CHAR_BIT`                 | {CL_CHAR_BIT}
+| `CHAR_MAX`                 | {CL_CHAR_MAX}
+| `CHAR_MIN`                 | {CL_CHAR_MIN}
+| `INT_MAX`                  | {CL_INT_MAX}
+| `INT_MIN`                  | {CL_INT_MIN}
+| `LONG_MAX`                 | {CL_LONG_MAX}
+| `LONG_MIN`                 | {CL_LONG_MIN}
+| `SCHAR_MAX`                | {CL_SCHAR_MAX}
+| `SCHAR_MIN`                | {CL_SCHAR_MIN}
+| `SHRT_MAX`                 | {CL_SHRT_MAX}
+| `SHRT_MIN`                 | {CL_SHRT_MIN}
+| `UCHAR_MAX`                | {CL_UCHAR_MAX}
+| `USHRT_MAX`                | {CL_USHRT_MAX}
+| `UINT_MAX`                 | {CL_UINT_MAX}
+| `ULONG_MAX`                | {CL_ULONG_MAX}
 |====
 --
 
@@ -9525,7 +9552,7 @@ The OpenCL C programming language implements the *printf* function.
 When the event that is associated with a particular kernel invocation is
 completed, the output of all printf() calls executed by this kernel
 invocation is flushed to the implementation-defined output stream.
-Calling *clFinish* on a command-queue flushes all pending output by printf
+Calling {clFinish} on a command-queue flushes all pending output by printf
 in previously enqueued and completed commands to the implementation-defined
 output stream.
 In the case that printf is executed from multiple work-items concurrently,
@@ -9906,7 +9933,7 @@ kernel void my_kernel(global char *s, ... )
     a `float` argument to a `double` only if the `double` data type is
     supported.
     Refer to the value of the <<opencl-device-queries,
-    `CL_DEVICE_DOUBLE_FP_CONFIG` device query>>.
+    {CL_DEVICE_DOUBLE_FP_CONFIG} device query>>.
     If the `double` data type is not supported, the argument will be a
     `float` instead of a `double`.
   * For the embedded profile, the *l* length modifier is supported only if
@@ -9929,7 +9956,7 @@ from and/or write to specific locations in the image.
 
 Support for the image built-in functions is optional.
 If a device supports images then the value of the <<opencl-device-queries,
-`CL_DEVICE_IMAGE_SUPPORT` device query>>) is `CL_TRUE` and the OpenCL C
+{CL_DEVICE_IMAGE_SUPPORT} device query>>) is {CL_TRUE} and the OpenCL C
 compiler for that device must define the `+__IMAGE_SUPPORT__+` macro.
 A compiler for OpenCL C 3.0 or newer for that device must also support the
 {opencl_c_images} feature.
@@ -9963,7 +9990,7 @@ component.
 
 The image read functions take a sampler argument.
 The sampler can be passed as an argument to the kernel using
-*clSetKernelArg*, or can be declared in the outermost scope of kernel
+{clSetKernelArg}, or can be declared in the outermost scope of kernel
 functions, or it can be a constant variable of type `sampler_t` declared in
 the program source.
 
@@ -10005,8 +10032,8 @@ Note that samplers declared using the `constant` qualifier are not counted
 towards the maximum number of arguments pointing to the constant address
 space or the maximum size of the `constant` address space allowed per device
 (i.e. the value of the <<opencl-device-queries,
-`CL_DEVICE_MAX_CONSTANT_ARGS`>> and <<opencl-device-queries,
-`CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE`>> device queries).
+{CL_DEVICE_MAX_CONSTANT_ARGS}>> and <<opencl-device-queries,
+{CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE}>> device queries).
 
 The sampler fields are described in the following table.
 
@@ -10082,7 +10109,7 @@ const sampler_t samplerA = CLK_NORMALIZED_COORDS_TRUE |
 addressing mode and a nearest filter.
 
 The maximum number of samplers that can be declared in a kernel can be
-queried using the `CL_DEVICE_MAX_SAMPLERS` token in *clGetDeviceInfo*.
+queried using the {CL_DEVICE_MAX_SAMPLERS} token in {clGetDeviceInfo}.
 --
 
 
@@ -10094,13 +10121,13 @@ image coordinates return the border color.
 The border color selected depends on the image channel order and can be one
 of the following values:
 
-    * If the image channel order is `CL_A`, `CL_INTENSITY`, `CL_Rx`,
-      `CL_RA`, `CL_RGx`, `CL_RGBx`, `CL_sRGBx`, `CL_ARGB`, `CL_BGRA`,
-      `CL_ABGR`, `CL_RGBA`, `CL_sRGBA` or `CL_sBGRA`, the border color is
+    * If the image channel order is {CL_A}, {CL_INTENSITY}, {CL_Rx},
+      {CL_RA}, {CL_RGx}, {CL_RGBx}, {CL_sRGBx}, {CL_ARGB}, {CL_BGRA},
+      {CL_ABGR}, {CL_RGBA}, {CL_sRGBA} or {CL_sBGRA}, the border color is
       `(0.0f, 0.0f, 0.0f, 0.0f)`.
-    * If the image channel order is `CL_R`, `CL_RG`, `CL_RGB`, or
-      `CL_LUMINANCE`, the border color is `(0.0f, 0.0f, 0.0f, 1.0f)`.
-    * If the image channel order is `CL_DEPTH`, the border value is `0.0f`.
+    * If the image channel order is {CL_R}, {CL_RG}, {CL_RGB}, or
+      {CL_LUMINANCE}, the border color is `(0.0f, 0.0f, 0.0f, 1.0f)`.
+    * If the image channel order is {CL_DEPTH}, the border value is `0.0f`.
 
 
 [[srgb-images]]
@@ -10148,15 +10175,15 @@ endif::cl_khr_mipmap_image[]
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       The *read_imagef* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -10179,14 +10206,14 @@ ifdef::cl_khr_fp16[]
       *read_imageh* returns half-precision floating-point values in the
       range [0.0, 1.0] for image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed
-      formats or `CL_UNORM_INT8`, or `CL_UNORM_INT16`.
+      formats or {CL_UNORM_INT8}, or {CL_UNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values in the
       range [-1.0, 1.0] for image objects created with
-      _image_channel_data_type_ set to `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      _image_channel_data_type_ set to {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values for image
-      objects created with _image_channel_data_type_ set to `CL_HALF_FLOAT`.
+      objects created with _image_channel_data_type_ set to {CL_HALF_FLOAT}.
 
       The *read_imageh* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -10220,9 +10247,9 @@ endif::cl_khr_fp16[]
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -10230,9 +10257,9 @@ endif::cl_khr_fp16[]
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -10257,15 +10284,15 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       The *read_imagef* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -10289,14 +10316,14 @@ ifdef::cl_khr_fp16[]
       *read_imageh* returns half-precision floating-point values in the
       range [0.0, 1.0] for image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or `CL_UNORM_INT8`, or `CL_UNORM_INT16`.
+      or {CL_UNORM_INT8}, or {CL_UNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values in the
       range [-1.0, 1.0] for image objects created with
-      _image_channel_data_type_ set to `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      _image_channel_data_type_ set to {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       **read_imageh** returns half-precision floating-point values for image
-      objects created with _image_channel_data_type_ set to `CL_HALF_FLOAT`.
+      objects created with _image_channel_data_type_ set to {CL_HALF_FLOAT}.
 
       The *read_imageh* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -10331,9 +10358,9 @@ endif::cl_khr_fp16[]
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -10341,9 +10368,9 @@ endif::cl_khr_fp16[]
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -10367,15 +10394,15 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       The *read_imagef* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -10398,14 +10425,14 @@ ifdef::cl_khr_fp16[]
       *read_imageh* returns half-precision floating-point values in the
       range [0.0, 1.0] for image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or `CL_UNORM_INT8`, or `CL_UNORM_INT16`.
+      or {CL_UNORM_INT8}, or {CL_UNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values in the
       range [-1.0, 1.0] for image objects created with
-      _image_channel_data_type_ set to `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      _image_channel_data_type_ set to {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values for image
-      objects created with _image_channel_data_type_ set to `CL_HALF_FLOAT`.
+      objects created with _image_channel_data_type_ set to {CL_HALF_FLOAT}.
 
       The *read_imageh* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -10439,9 +10466,9 @@ endif::cl_khr_fp16[]
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -10449,9 +10476,9 @@ endif::cl_khr_fp16[]
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -10475,15 +10502,15 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       The *read_imagef* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -10508,14 +10535,14 @@ ifdef::cl_khr_fp16[]
       *read_imageh* returns half-precision floating-point values in the
       range [0.0, 1.0] for image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or `CL_UNORM_INT8`, or `CL_UNORM_INT16`.
+      or {CL_UNORM_INT8}, or {CL_UNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values in the
       range [-1.0, 1.0] for image objects created with
-      _image_channel_data_type_ set to `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      _image_channel_data_type_ set to {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values for image
-      objects created with _image_channel_data_type_ set to `CL_HALF_FLOAT`.
+      objects created with _image_channel_data_type_ set to {CL_HALF_FLOAT}.
 
       The *read_imageh* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -10549,9 +10576,9 @@ endif::cl_khr_fp16[]
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -10559,9 +10586,9 @@ endif::cl_khr_fp16[]
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -10587,15 +10614,15 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       The *read_imagef* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -10620,14 +10647,14 @@ ifdef::cl_khr_fp16[]
       *read_imageh* returns half-precision floating-point values in the
       range [0.0, 1.0] for image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or `CL_UNORM_INT8`, or `CL_UNORM_INT16`.
+      or {CL_UNORM_INT8}, or {CL_UNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values in the
       range [-1.0, 1.0] for image objects created with
-      _image_channel_data_type_ set to `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      _image_channel_data_type_ set to {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values for image
-      objects created with _image_channel_data_type_ set to `CL_HALF_FLOAT`.
+      objects created with _image_channel_data_type_ set to {CL_HALF_FLOAT}.
 
       The *read_imageh* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -10661,9 +10688,9 @@ endif::cl_khr_fp16[]
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -10671,9 +10698,9 @@ endif::cl_khr_fp16[]
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -10699,10 +10726,10 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns a floating-point value in the range [0.0, 1.0]
       for depth image objects created with _image_channel_data_type_ set to
-      `CL_UNORM_INT16` or `CL_UNORM_INT24`.
+      {CL_UNORM_INT16} or {CL_UNORM_INT24}.
 
       *read_imagef* returns a floating-point value for depth image objects
-      created with _image_channel_data_type_ set to `CL_FLOAT`.
+      created with _image_channel_data_type_ set to {CL_FLOAT}.
 
       The *read_imagef* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -10726,10 +10753,10 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns a floating-point value in the range [0.0, 1.0]
       for depth image objects created with _image_channel_data_type_ set to
-      `CL_UNORM_INT16` or `CL_UNORM_INT24`.
+      {CL_UNORM_INT16} or {CL_UNORM_INT24}.
 
       *read_imagef* returns a floating-point value for depth image objects
-      created with _image_channel_data_type_ set to `CL_FLOAT`.
+      created with _image_channel_data_type_ set to {CL_FLOAT}.
 
       The *read_imagef* calls that take integer coordinates must use a
       sampler with filter mode set to `CLK_FILTER_NEAREST`, normalized
@@ -11062,12 +11089,12 @@ endif::cl_khr_mipmap_image[]
 
 ifdef::cl_khr_mipmap_image[]
 NOTE: If the `<<cl_khr_mipmap_image>>` extension macro is supported,
-`CL_SAMPLER_NORMALIZED_COORDS` must be `CL_TRUE` for built-in functions
+{CL_SAMPLER_NORMALIZED_COORDS} must be {CL_TRUE} for built-in functions
 described in the table above that read from a mipmapped image; otherwise
 behavior is undefined.
 The value specified in the _lod_ argument is clamped to the minimum of
 (actual number of mip levels - 1) in the image or the value specified for
-`CL_SAMPLER_LOD_MAX`.
+{CL_SAMPLER_LOD_MAX}.
 endif::cl_khr_mipmap_image[]
 
 
@@ -11087,7 +11114,7 @@ integer coordinates and a sampler with filter mode set to
 `CLK_FILTER_NEAREST`, normalized coordinates set to
 `CLK_NORMALIZED_COORDS_FALSE` and addressing mode to `CLK_ADDRESS_NONE`.
 There is one exception when the _image_channel_data_type_ is a floating-point
-type (such as `CL_FLOAT`).
+type (such as {CL_FLOAT}).
 In this exceptional case, when channel data values are denormalized, the
 sampler-less image read function may return the denormalized data, while
 the image read function with a sampler argument may flush the denormalized
@@ -11107,15 +11134,15 @@ For sampler-less read functions this may be `read_only` or `read_write`.
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       Values returned by *read_imagef* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11129,14 +11156,14 @@ ifdef::cl_khr_fp16[]
       *read_imageh* returns half-precision floating-point values in the
       range [0.0, 1.0] for image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or `CL_UNORM_INT8`, or `CL_UNORM_INT16`.
+      or {CL_UNORM_INT8}, or {CL_UNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values in the
       range [-1.0, 1.0] for image objects created with
-      _image_channel_data_type_ set to `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      _image_channel_data_type_ set to {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values for image
-      objects created with _image_channel_data_type_ set to `CL_HALF_FLOAT`.
+      objects created with _image_channel_data_type_ set to {CL_HALF_FLOAT}.
 
       Values returned by *read_imageh* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11158,9 +11185,9 @@ endif::cl_khr_fp16[]
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -11168,9 +11195,9 @@ endif::cl_khr_fp16[]
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -11182,15 +11209,15 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       Values returned by *read_imagef* for image objects with
       _image_channel_data_type_ values not specified in the description are
@@ -11205,14 +11232,14 @@ ifdef::cl_khr_fp16[]
       *read_imageh* returns half-precision floating-point values in the
       range [0.0, 1.0] for image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or `CL_UNORM_INT8`, or `CL_UNORM_INT16`.
+      or {CL_UNORM_INT8}, or {CL_UNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values in the
       range [-1.0, 1.0] for image objects created with
-      _image_channel_data_type_ set to `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      _image_channel_data_type_ set to {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values for image
-      objects created with _image_channel_data_type_ set to `CL_HALF_FLOAT`.
+      objects created with _image_channel_data_type_ set to {CL_HALF_FLOAT}.
 
       Values returned by *read_imageh* for image objects with
       _image_channel_data_type_ values not specified in the description are
@@ -11235,9 +11262,9 @@ endif::cl_khr_fp16[]
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -11245,9 +11272,9 @@ endif::cl_khr_fp16[]
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -11258,15 +11285,15 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       Values returned by *read_imagef* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11280,14 +11307,14 @@ ifdef::cl_khr_fp16[]
       *read_imageh* returns half-precision floating-point values in the
       range [0.0, 1.0] for image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or `CL_UNORM_INT8`, or `CL_UNORM_INT16`.
+      or {CL_UNORM_INT8}, or {CL_UNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values in the
       range [-1.0, 1.0] for image objects created with
-      _image_channel_data_type_ set to `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      _image_channel_data_type_ set to {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values for image
-      objects created with _image_channel_data_type_ set to `CL_HALF_FLOAT`.
+      objects created with _image_channel_data_type_ set to {CL_HALF_FLOAT}.
 
       Values returned by *read_imageh* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11309,9 +11336,9 @@ endif::cl_khr_fp16[]
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -11319,9 +11346,9 @@ endif::cl_khr_fp16[]
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -11333,15 +11360,15 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       Values returned by *read_imagef* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11356,14 +11383,14 @@ ifdef::cl_khr_fp16[]
       *read_imageh* returns half-precision floating-point values in the
       range [0.0, 1.0] for image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or `CL_UNORM_INT8`, or `CL_UNORM_INT16`.
+      or {CL_UNORM_INT8}, or {CL_UNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values in the
       range [-1.0, 1.0] for image objects created with
-      _image_channel_data_type_ set to `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      _image_channel_data_type_ set to {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values for image
-      objects created with _image_channel_data_type_ set to `CL_HALF_FLOAT`.
+      objects created with _image_channel_data_type_ set to {CL_HALF_FLOAT}.
 
       Values returned by *read_imageh* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11387,9 +11414,9 @@ endif::cl_khr_fp16[]
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -11397,9 +11424,9 @@ endif::cl_khr_fp16[]
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -11410,15 +11437,15 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       Values returned by *read_imagef* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11432,14 +11459,14 @@ ifdef::cl_khr_fp16[]
       *read_imageh* returns half-precision floating-point values in the
       range [0.0, 1.0] for image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or `CL_UNORM_INT8`, or `CL_UNORM_INT16`.
+      or {CL_UNORM_INT8}, or {CL_UNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values in the
       range [-1.0, 1.0] for image objects created with
-      _image_channel_data_type_ set to `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      _image_channel_data_type_ set to {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imageh* returns half-precision floating-point values for image
-      objects created with _image_channel_data_type_ set to `CL_HALF_FLOAT`.
+      objects created with _image_channel_data_type_ set to {CL_HALF_FLOAT}.
 
       Values returned by *read_imageh* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11461,9 +11488,9 @@ endif::cl_khr_fp16[]
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -11471,9 +11498,9 @@ endif::cl_khr_fp16[]
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -11484,10 +11511,10 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns a floating-point value in the range [0.0, 1.0]
       for depth image objects created with _image_channel_data_type_ set to
-      `CL_UNORM_INT16` or `CL_UNORM_INT24`.
+      {CL_UNORM_INT16} or {CL_UNORM_INT24}.
 
       *read_imagef* returns a floating-point value for depth image objects
-      created with _image_channel_data_type_ set to `CL_FLOAT`.
+      created with _image_channel_data_type_ set to {CL_FLOAT}.
 
       Values returned by *read_imagef* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11502,10 +11529,10 @@ endif::cl_khr_fp16[]
 
       *read_imagef* returns a floating-point value in the range [0.0, 1.0]
       for depth image objects created with _image_channel_data_type_ set to
-      `CL_UNORM_INT16` or `CL_UNORM_INT24`.
+      {CL_UNORM_INT16} or {CL_UNORM_INT24}.
 
       *read_imagef* returns a floating-point value for depth image objects
-      created with _image_channel_data_type_ set to `CL_FLOAT`.
+      created with _image_channel_data_type_ set to {CL_FLOAT}.
 
       Values returned by *read_imagef* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11529,15 +11556,15 @@ float4 read_imagef(
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       Values returned by *read_imagef* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11568,9 +11595,9 @@ uint4 read_imageui(
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-        * `CL_SIGNED_INT8`,
-        * `CL_SIGNED_INT16`, and
-        * `CL_SIGNED_INT32`.
+        * {CL_SIGNED_INT8},
+        * {CL_SIGNED_INT16}, and
+        * {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -11578,9 +11605,9 @@ uint4 read_imageui(
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-        * `CL_UNSIGNED_INT8`,
-        * `CL_UNSIGNED_INT16`, and
-        * `CL_UNSIGNED_INT32`.
+        * {CL_UNSIGNED_INT8},
+        * {CL_UNSIGNED_INT16}, and
+        * {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -11600,15 +11627,15 @@ float4 read_imagef(
 
       *read_imagef* returns floating-point values in the range [0.0, 1.0]
       for image objects created with _image_channel_data_type_ set to one of
-      the pre-defined packed formats or `CL_UNORM_INT8`, or
-      `CL_UNORM_INT16`.
+      the pre-defined packed formats or {CL_UNORM_INT8}, or
+      {CL_UNORM_INT16}.
 
       *read_imagef* returns floating-point values in the range [-1.0, 1.0]
       for image objects created with _image_channel_data_type_ set to
-      `CL_SNORM_INT8`, or `CL_SNORM_INT16`.
+      {CL_SNORM_INT8}, or {CL_SNORM_INT16}.
 
       *read_imagef* returns floating-point values for image objects created
-      with _image_channel_data_type_ set to `CL_HALF_FLOAT` or `CL_FLOAT`.
+      with _image_channel_data_type_ set to {CL_HALF_FLOAT} or {CL_FLOAT}.
 
       Values returned by *read_imagef* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11639,9 +11666,9 @@ uint4 read_imageui(
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-        * `CL_SIGNED_INT8`,
-        * `CL_SIGNED_INT16`, and
-        * `CL_SIGNED_INT32`.
+        * {CL_SIGNED_INT8},
+        * {CL_SIGNED_INT16}, and
+        * {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -11649,9 +11676,9 @@ uint4 read_imageui(
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-        * `CL_UNSIGNED_INT8`,
-        * `CL_UNSIGNED_INT16`, and
-        * `CL_UNSIGNED_INT32`.
+        * {CL_UNSIGNED_INT8},
+        * {CL_UNSIGNED_INT16}, and
+        * {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -11671,10 +11698,10 @@ float read_imagef(
 
       *read_imagef* returns a floating-point value in the range [0.0, 1.0]
       for depth image objects created with _image_channel_data_type_ set to
-      `CL_UNORM_INT16` or `CL_UNORM_INT24`.
+      {CL_UNORM_INT16} or {CL_UNORM_INT24}.
 
       *read_imagef* returns a floating-point value for depth image objects
-      created with _image_channel_data_type_ set to `CL_FLOAT`.
+      created with _image_channel_data_type_ set to {CL_FLOAT}.
 
       Values returned by *read_imagef* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11695,10 +11722,10 @@ float read_imagef(image2d_array_msaaa_depth_t image,
 
       *read_imagef* returns a floating-point value in the range [0.0, 1.0]
       for depth image objects created with _image_channel_data_type_ set to
-      `CL_UNORM_INT16` or `CL_UNORM_INT24`.
+      {CL_UNORM_INT16} or {CL_UNORM_INT24}.
 
       *read_imagef* returns a floating-point value for depth image objects
-      created with _image_channel_data_type_ set to `CL_FLOAT`.
+      created with _image_channel_data_type_ set to {CL_FLOAT}.
 
       Values returned by *read_imagef* for image objects with
       _image_channel_data_type_ values not specified in the description
@@ -11790,8 +11817,8 @@ endif::cl_khr_fp16[]
 ifdef::cl_khr_fp16[and *write_imageh*]
       can only be used with image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or set to `CL_SNORM_INT8`, `CL_UNORM_INT8`, `CL_SNORM_INT16`,
-      `CL_UNORM_INT16`, `CL_HALF_FLOAT` or `CL_FLOAT`.
+      or set to {CL_SNORM_INT8}, {CL_UNORM_INT8}, {CL_SNORM_INT16},
+      {CL_UNORM_INT16}, {CL_HALF_FLOAT} or {CL_FLOAT}.
       Appropriate data format conversion will be done to convert channel
       data from a floating-point value to actual data format in which the
       channels are stored.
@@ -11799,16 +11826,16 @@ ifdef::cl_khr_fp16[and *write_imageh*]
       *write_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       *write_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       The behavior of *write_imagef*,
 ifdef::cl_khr_fp16[*write_imageh*,]
@@ -11854,8 +11881,8 @@ endif::cl_khr_fp16[]
 ifdef::cl_khr_fp16[and *write_imageh*]
       can only be used with image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or set to `CL_SNORM_INT8`, `CL_UNORM_INT8`, `CL_SNORM_INT16`,
-      `CL_UNORM_INT16`, `CL_HALF_FLOAT` or `CL_FLOAT`.
+      or set to {CL_SNORM_INT8}, {CL_UNORM_INT8}, {CL_SNORM_INT16},
+      {CL_UNORM_INT16}, {CL_HALF_FLOAT} or {CL_FLOAT}.
       Appropriate data format conversion will be done to convert channel
       data from a floating-point value to actual data format in which the
       channels are stored.
@@ -11863,16 +11890,16 @@ ifdef::cl_khr_fp16[and *write_imageh*]
       *write_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       *write_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       The behavior of *write_imagef*,
 ifdef::cl_khr_fp16[*write_imageh*,]
@@ -11935,8 +11962,8 @@ endif::cl_khr_fp16[]
 ifdef::cl_khr_fp16[and *write_imageh*]
       can only be used with image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or set to `CL_SNORM_INT8`, `CL_UNORM_INT8`, `CL_SNORM_INT16`,
-      `CL_UNORM_INT16`, `CL_HALF_FLOAT` or `CL_FLOAT`.
+      or set to {CL_SNORM_INT8}, {CL_UNORM_INT8}, {CL_SNORM_INT16},
+      {CL_UNORM_INT16}, {CL_HALF_FLOAT} or {CL_FLOAT}.
       Appropriate data format conversion will be done to convert channel
       data from a floating-point value to actual data format in which the
       channels are stored.
@@ -11944,16 +11971,16 @@ ifdef::cl_khr_fp16[and *write_imageh*]
       *write_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       *write_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       The behavior of *write_imagef*,
 ifdef::cl_khr_fp16[*write_imageh*,]
@@ -11999,8 +12026,8 @@ endif::cl_khr_fp16[]
 ifdef::cl_khr_fp16[and *write_imageh*]
       can only be used with image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or set to `CL_SNORM_INT8`, `CL_UNORM_INT8`, `CL_SNORM_INT16`,
-      `CL_UNORM_INT16`, `CL_HALF_FLOAT` or `CL_FLOAT`.
+      or set to {CL_SNORM_INT8}, {CL_UNORM_INT8}, {CL_SNORM_INT16},
+      {CL_UNORM_INT16}, {CL_HALF_FLOAT} or {CL_FLOAT}.
       Appropriate data format conversion will be done to convert channel
       data from a floating-point value to actual data format in which the
       channels are stored.
@@ -12008,16 +12035,16 @@ ifdef::cl_khr_fp16[and *write_imageh*]
       *write_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16` and +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       *write_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16` and +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       The behavior of *write_imagef*,
 ifdef::cl_khr_fp16[*write_imageh*,]
@@ -12042,8 +12069,8 @@ ifdef::cl_khr_fp16[*write_imageh*,]
       respectively.
 
       *write_imagef* can only be used with image objects created with
-      _image_channel_data_type_ set to `CL_UNORM_INT16`, `CL_UNORM_INT24` or
-      `CL_FLOAT`.
+      _image_channel_data_type_ set to {CL_UNORM_INT16}, {CL_UNORM_INT24} or
+      {CL_FLOAT}.
       Appropriate data format conversion will be done to convert depth valye
       from a floating-point value to actual data format associated with the
       image.
@@ -12071,8 +12098,8 @@ ifdef::cl_khr_fp16[*write_imageh*,]
       height-1], and [0, image number of layers-1], respectively.
 
       *write_imagef* can only be used with image objects created with
-      _image_channel_data_type_ set to `CL_UNORM_INT16`, `CL_UNORM_INT24` or
-      `CL_FLOAT`.
+      _image_channel_data_type_ set to {CL_UNORM_INT16}, {CL_UNORM_INT24} or
+      {CL_FLOAT}.
       Appropriate data format conversion will be done to convert depth valye
       from a floating-point value to actual data format associated with the
       image.
@@ -12116,8 +12143,8 @@ endif::cl_khr_fp16[]
 ifdef::cl_khr_fp16[and *write_imageh*]
       can only be used with image objects created with
       _image_channel_data_type_ set to one of the pre-defined packed formats
-      or set to `CL_SNORM_INT8`, `CL_UNORM_INT8`, `CL_SNORM_INT16`,
-      `CL_UNORM_INT16`, `CL_HALF_FLOAT` or `CL_FLOAT`.
+      or set to {CL_SNORM_INT8}, {CL_UNORM_INT8}, {CL_SNORM_INT16},
+      {CL_UNORM_INT16}, {CL_HALF_FLOAT} or {CL_FLOAT}.
       Appropriate data format conversion will be done to convert channel
       data from a floating-point value to actual data format in which the
       channels are stored.
@@ -12125,16 +12152,16 @@ ifdef::cl_khr_fp16[and *write_imageh*]
       *write_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_SIGNED_INT8`, +
-      `CL_SIGNED_INT16`, or +
-      `CL_SIGNED_INT32`.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16}, or +
+      {CL_SIGNED_INT32}.
 
       *write_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-      `CL_UNSIGNED_INT8`, +
-      `CL_UNSIGNED_INT16`, or +
-      `CL_UNSIGNED_INT32`.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16}, or +
+      {CL_UNSIGNED_INT32}.
 
       The behavior of *write_imagef*,
 ifdef::cl_khr_fp16[*write_imageh*,]
@@ -12145,7 +12172,7 @@ ifdef::cl_khr_fp16[*write_imageh*,]
       image depth-1], respectively, is undefined.
 
       <<unified-spec, Requires>> support for OpenCL C 2.0, or OpenCL C 3.0 or
-      newer and the {c_3d_image_writes} feature, or the
+      newer and the {opencl_c_3d_image_writes} feature, or the
       `<<cl_khr_3d_image_writes>>` extension.
 
 ifdef::cl_khr_fp16[]
@@ -12598,7 +12625,7 @@ Query Functions>> with the `CLK_` prefixes correspond to the `CL_` prefixes used
 to describe the <<opencl-channel-order,image channel order>> and
 <<opencl-channel-data-type,data type>> in the <<opencl-spec,OpenCL
 Specification>>.
-For example, both `CL_UNORM_INT8` and `CLK_UNORM_INT8` refer to an image
+For example, both {CL_UNORM_INT8} and `CLK_UNORM_INT8` refer to an image
 channel data type that is an unnormalized unsigned 8-bit integer.
 --
 
@@ -12657,26 +12684,26 @@ and will be set to 1.0 for the alpha channel.
 [cols=",",options="header",]
 |====
 | Channel Order     | `float4`, `int4` or `uint4` components of channel data
-| `CL_R`, `CL_Rx`   | (r, 0.0, 0.0, 1.0)
-| `CL_A`            | (0.0, 0.0, 0.0, a)
-| `CL_RG`, `CL_RGx` | (r, g, 0.0, 1.0)
-| `CL_RA`           | (r, 0.0, 0.0, a)
-| `CL_RGB`, `CL_RGBx`, `CL_sRGB`, `CL_sRGBx`
+| {CL_R}, {CL_Rx}   | (r, 0.0, 0.0, 1.0)
+| {CL_A}            | (0.0, 0.0, 0.0, a)
+| {CL_RG}, {CL_RGx} | (r, g, 0.0, 1.0)
+| {CL_RA}           | (r, 0.0, 0.0, a)
+| {CL_RGB}, {CL_RGBx}, {CL_sRGB}, {CL_sRGBx}
                     | (r, g, b, 1.0)
-| `CL_RGBA`, `CL_BGRA`, `CL_ARGB`, `CL_ABGR`, `CL_sRGBA`, `CL_sBGRA`
+| {CL_RGBA}, {CL_BGRA}, {CL_ARGB}, {CL_ABGR}, {CL_sRGBA}, {CL_sBGRA}
                     | (r, g, b, a)
-| `CL_INTENSITY`    | (I, I, I, I)
-| `CL_LUMINANCE`    | (L, L, L, 1.0)
+| {CL_INTENSITY}    | (I, I, I, I)
+| {CL_LUMINANCE}    | (L, L, L, 1.0)
 |====
 
-For `CL_DEPTH` images, a scalar value is returned by *read_imagef* or
+For {CL_DEPTH} images, a scalar value is returned by *read_imagef* or
 supplied to *write_imagef*.
 <<unified-spec, Requires>> support for OpenCL C 2.0 or newer, or for
 the `<<cl_khr_depth_images>>` extension macro.
 
 [NOTE]
 ====
-A kernel that uses a sampler with the `CL_ADDRESS_CLAMP` addressing mode
+A kernel that uses a sampler with the {CL_ADDRESS_CLAMP} addressing mode
 with multiple images may result in additional samplers being used internally
 by an implementation.
 If the same sampler is used with multiple images called via
@@ -12685,9 +12712,9 @@ allocate an additional sampler to handle the different border color values
 that may be needed depending on the image formats being used.
 These implementation allocated samplers will count against the maximum
 sampler values supported by the device and given by
-`CL_DEVICE_MAX_SAMPLERS`.
+{CL_DEVICE_MAX_SAMPLERS}.
 Enqueuing a kernel that requires more samplers than the implementation can
-support will result in a `CL_OUT_OF_RESOURCES` error being returned.
+support will result in a {CL_OUT_OF_RESOURCES} error being returned.
 ====
 
 
@@ -13168,7 +13195,7 @@ packets to the pipe.
 ====
 
 There can only be the value of the <<opencl-device-queries,
-`CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS` device query>> reservations active
+{CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS} device query>> reservations active
 (i.e. reservation IDs that have been reserved but not committed) per
 work-item or work-group for a pipe in a kernel executing on a device.
 
@@ -13330,7 +13357,7 @@ Work-items can enqueue multiple blocks to a device queue(s).
 The *enqueue_kernel* built-in function returns `CLK_SUCCESS` if the block is
 enqueued successfully and returns `CLK_ENQUEUE_FAILURE` otherwise.
 If the -g compile option is specified in compiler options passed to
-*clCompileProgram* or *clBuildProgram* when compiling or building the parent
+{clCompileProgram} or {clBuildProgram} when compiling or building the parent
 program, the following errors may be returned instead of
 `CLK_ENQUEUE_FAILURE` to indicate why *enqueue_kernel* failed to enqueue the
 block:
@@ -13633,7 +13660,7 @@ child kernels can begin execution.
 
 A parent kernel's execution status is considered to be complete when it and
 all its child kernels have finished execution.
-The execution status of a parent kernel will be `CL_COMPLETE` if this kernel
+The execution status of a parent kernel will be {CL_COMPLETE} if this kernel
 and all its child kernels finish execution successfully.
 The execution status of the kernel will be an error code (given by a
 negative integer value) if it or any of its child kernels encounter an
@@ -13648,7 +13675,7 @@ with kernel `A` in the `event_wait_list` argument, i.e. wait for kernel `A`
 to finish execution before kernel `B` can begin execution.
 Let's assume kernel `A` enqueues kernels `X`, `Y` and `Z`.
 Kernel `A` is considered to have finished execution, i.e. its execution
-status is `CL_COMPLETE`, only after `A` and the kernels `A` enqueued (and
+status is {CL_COMPLETE}, only after `A` and the kernels `A` enqueued (and
 any kernels these enqueued kernels enqueue and so on) have finished
 execution.
 
@@ -13718,7 +13745,7 @@ The *enqueue_marker* built-in function returns `CLK_SUCCESS` if the marked
 command is enqueued successfully and returns `CLK_ENQUEUE_FAILURE`
 otherwise.
 If the -g compile option is specified in compiler options passed to
-*clCompileProgram* or *clBuildProgram*, the following errors may be returned
+{clCompileProgram} or {clBuildProgram}, the following errors may be returned
 instead of `CLK_ENQUEUE_FAILURE` to indicate why *enqueue_marker* failed to
 enqueue the marker command:
 
@@ -13764,7 +13791,7 @@ events.
     | Create a user event.
       Returns the user event.
       The execution status of the user event created is set to
-      `CL_SUBMITTED`.
+      {CL_SUBMITTED}.
 | bool *is_valid_event*(clk_event_t _event_)
     | Returns _true_ if _event_ is a valid event.
       Otherwise returns _false_.
@@ -13772,7 +13799,7 @@ events.
     | Sets the execution status of a user event.
       Behavior is undefined if _event_ is not a valid event returned by
       *create_user_event*.
-      _status_ can be either `CL_COMPLETE` or a negative integer value
+      _status_ can be either {CL_COMPLETE} or a negative integer value
       indicating an error.
 | |
 | void *capture_event_profiling_info*(clk_event_t _event_,
@@ -13792,12 +13819,12 @@ _name_ identifies which profiling information is to be queried and can be:
 
 _value_ is a pointer to two 64-bit values.
 
-The first 64-bit value describes the elapsed time `CL_PROFILING_COMMAND_END`
-- `CL_PROFLING_COMMAND_START` for the command identified by _event_ in
+The first 64-bit value describes the elapsed time {CL_PROFILING_COMMAND_END}
+- {CL_PROFILING_COMMAND_START} for the command identified by _event_ in
 nanoseconds.
 
 The second 64-bit value describes the elapsed time
-`CL_PROFILING_COMMAND_COMPLETE` - `CL_PROFILING_COMAMND_START` for the
+{CL_PROFILING_COMMAND_COMPLETE} - {CL_PROFILING_COMMAND_START} for the
 command identified by _event_ in nanoseconds.
 
 [NOTE]
@@ -13811,21 +13838,21 @@ Events can be used to identify commands enqueued to a command-queue from the
 host.
 These events created by the OpenCL runtime can only be used on the host,
 i.e. as events passed in the _event_wait_list_ argument to various
-*clEnqueue* APIs or runtime APIs that take events as arguments, such as
-*clRetainEvent*, *clReleaseEvent*, and *clGetEventProfilingInfo*.
+enqueue APIs or runtime APIs that take events as arguments, such as
+{clRetainEvent}, {clReleaseEvent}, and {clGetEventProfilingInfo}.
 
 Similarly, events can be used to identify commands enqueued to a device
 queue (from a kernel).
 These event objects cannot be passed to the host or used by OpenCL runtime
-APIs such as the *clEnqueue* APIs or runtime APIs that take event arguments.
+APIs such as the enqueue APIs or runtime APIs that take event arguments.
 
-*clRetainEvent* and *clReleaseEvent* will return `CL_INVALID_OPERATION` if
+{clRetainEvent} and {clReleaseEvent} will return {CL_INVALID_OPERATION} if
 _event_ specified is an event that refers to any kernel enqueued to a device
 queue using *enqueue_kernel* or *enqueue_marker*, or is a user event created
 by *create_user_event*.
 
-Similarly, *clSetUserEventStatus* can only be used to set the execution
-status of events created using *clCreateUserEvent*.
+Similarly, {clSetUserEventStatus} can only be used to set the execution
+status of events created using {clCreateUserEvent}.
 User events created on the device can be set using set_user_event_status
 built-in function.
 
@@ -15303,6 +15330,60 @@ endif::cl_khr_subgroup_shuffle_relative[]
 
 |====
 
+ifdef::cl_khr_kernel_clock[]
+[[kernel-clock-functions]]
+=== Kernel Clock Functions
+
+NOTE: The functionality described in this section <<unified-spec, requires>>
+support for the `<<cl_khr_kernel_clock>>` extension. +
+The `clock_read_device` and `clock_read_hilo_device` functions require support
+for the {opencl_c_kernel_clock_scope_device} feature.
+The `clock_read_work_group` and `clock_read_hilo_work_group` functions require
+support for the {opencl_c_kernel_clock_scope_work_group} feature.
+The `clock_read_sub_group` and `clock_read_hilo_sub_group` functions require
+support for the {opencl_c_kernel_clock_scope_sub_group} feature.
+
+This section describes OpenCL C built-in functions that sample the value from
+one of three clocks provided by compute units.
+
+[[table-kernel-clock-functions]]
+.Built-in Kernel Clock Functions
+[cols="1a,1",options="header",]
+|====
+| Function | Description
+
+|[source,opencl_c]
+----
+ulong clock_read_device();
+ulong clock_read_work_group();
+ulong clock_read_sub_group();
+----
+  | Returns a sampled value of a clock as seen by the compute unit.
+
+    An idealized clock is an unbounded unsigned scalar integer tick count
+    increasing monotonically over time. A clock’s rate of progress may vary
+    within the lifetime of a work-item, may vary across different
+    executions of the program, and may be affected by conditions beyond the
+    control of the programmer. The sampled value read by this function consists of
+    the least significant bits of the idealized clock’s tick count at the time the
+    instruction was executed. In particular, an observer may see sampled values wrap
+    around zero.
+
+|[source,opencl_c]
+----
+uint2 clock_read_hilo_device();
+uint2 clock_read_hilo_work_group();
+uint2 clock_read_hilo_sub_group();
+----
+  | Performs the same operation as `clock_read`, but returns the value as a
+    `uint2` whose `.lo` component contains the 32 least significant bits of the
+    result and `.hi` component contains the 32 most significant bits of the
+    result.
+
+|====
+
+endif::cl_khr_kernel_clock[]
+
 
 [[opencl-numerical-compliance]]
 = OpenCL Numerical Compliance
@@ -15338,7 +15419,7 @@ spec is unsupported.
 
 ifdef::cl_khr_fp16[]
 If the `<<cl_khr_fp16>>` extension macro is supported, then
-if `CL_FP_ROUND_TO_NEAREST` is supported, the default rounding mode for
+if {CL_FP_ROUND_TO_NEAREST} is supported, the default rounding mode for
 half-precision floating-point operations will be round to nearest even;
 otherwise the default rounding mode will be round to zero.
 
@@ -16681,7 +16762,7 @@ If any of the selected `T_ijk` or `T_ij` in the above equations refers to a
 location outside the image, the border color is used as the color value for
 `T_ijk` or `T_ij`.
 
-If the image channel type is `CL_FLOAT` or `CL_HALF_FLOAT` and any of the
+If the image channel type is {CL_FLOAT} or {CL_HALF_FLOAT} and any of the
 image elements `T_ijk` or `T_ij` is `INF` or NaN, the behavior of the built-in
 image read function is undefined.
 
@@ -16793,7 +16874,7 @@ T = (1 - a) * (1 - b) * T_i0j0
 
 where `T_ij` is the image element at location (_i_,_j_) in the 2D image.
 
-If the image channel type is `CL_FLOAT` or `CL_HALF_FLOAT` and any of the
+If the image channel type is {CL_FLOAT} or {CL_HALF_FLOAT} and any of the
 image elements `T_ijk` or `T_ij` is `INF` or NaN, the behavior of the built-in
 image read function is undefined.
 
@@ -16921,7 +17002,7 @@ T = (1 - a) * T_i0
 
 where `T_i` is the image element at location (_i_) in the 1D image.
 
-If the image channel type is `CL_FLOAT` or `CL_HALF_FLOAT` and any of the
+If the image channel type is {CL_FLOAT} or {CL_HALF_FLOAT} and any of the
 image elements `T_ijk` or `T_ij` is `INF` or NaN, the behavior of the built-in
 image read function is undefined.
 
@@ -16967,39 +17048,39 @@ to floating-point values and vice-versa.
 [[converting-normalized-integer-channel-data-types-to-floating-point-values]]
 ==== Converting Normalized Integer Channel Data Types to Floating-point Values
 
-For images created with image channel data type of `CL_UNORM_INT8` and
-`CL_UNORM_INT16`, *read_imagef* will convert the channel values from an
+For images created with image channel data type of {CL_UNORM_INT8} and
+{CL_UNORM_INT16}, *read_imagef* will convert the channel values from an
 8-bit or 16-bit unsigned integer to normalized floating-point values in the
 range [`0.0f`, `1.0f`].
 
-For images created with image channel data type of `CL_SNORM_INT8` and
-`CL_SNORM_INT16`, *read_imagef* will convert the channel values from an
+For images created with image channel data type of {CL_SNORM_INT8} and
+{CL_SNORM_INT16}, *read_imagef* will convert the channel values from an
 8-bit or 16-bit signed integer to normalized floating-point values in the
 range [`-1.0f`, `1.0f`].
 
 These conversions are performed as follows:
 
-`CL_UNORM_INT8` (8-bit unsigned integer) {rightarrow} `float`
+{CL_UNORM_INT8} (8-bit unsigned integer) {rightarrow} `float`
 
 [none]
 * normalized `float` value = `(float)c / 255.0f`
 
-`CL_UNORM_INT_101010` (10-bit unsigned integer) {rightarrow} `float`
+{CL_UNORM_INT_101010} (10-bit unsigned integer) {rightarrow} `float`
 
 [none]
 * normalized `float` value = `(float)c / 1023.0f`
 
-`CL_UNORM_INT16` (16-bit unsigned integer) {rightarrow} `float`
+{CL_UNORM_INT16} (16-bit unsigned integer) {rightarrow} `float`
 
 [none]
 * normalized `float` value = `(float)c / 65535.0f`
 
-`CL_SNORM_INT8` (8-bit signed integer) {rightarrow} `float`
+{CL_SNORM_INT8} (8-bit signed integer) {rightarrow} `float`
 
 [none]
 * normalized `float` value = *max*(`-1.0f`, `(float)c / 127.0f`)
 
-`CL_SNORM_INT16` (16-bit signed integer) {rightarrow} `float`
+{CL_SNORM_INT16} (16-bit signed integer) {rightarrow} `float`
 
 [none]
 * normalized `float` value = *max*(`-1.0f`, `(float)c / 32767.0f`)
@@ -17007,32 +17088,32 @@ These conversions are performed as follows:
 The precision of the above conversions is \<= 1.5 ulp except for the
 following cases:
 
-For `CL_UNORM_INT8`
+For {CL_UNORM_INT8}
 
 [none]
 * 0 must convert to `0.0f` and
 * 255 must convert to `1.0f`
 
-For `CL_UNORM_INT_101010`
+For {CL_UNORM_INT_101010}
 
 [none]
 * 0 must convert to `0.0f` and
 * 1023 must convert to `1.0f`
 
-For `CL_UNORM_INT16`
+For {CL_UNORM_INT16}
 
 [none]
 * 0 must convert to `0.0f` and
 * 65535 must convert to `1.0f`
 
-For `CL_SNORM_INT8`
+For {CL_SNORM_INT8}
 
 [none]
 * -128 and -127 must convert to `-1.0f`,
 * 0 must convert to `0.0f` and
 * 127 must convert to `1.0f`
 
-For `CL_SNORM_INT16`
+For {CL_SNORM_INT16}
 
 [none]
 * -32768 and -32767 must convert to `-1.0f`,
@@ -17045,39 +17126,39 @@ ifdef::cl_khr_fp16[]
 ==== Converting Normalized Integer Channel Data Types to Half-Precision Floating-Point Values
 
 If the `<<cl_khr_fp16>>` extension is supported, then
-for images created with image channel data type of `CL_UNORM_INT8` and
-`CL_UNORM_INT16`, *read_imageh* will convert the channel values from an
+for images created with image channel data type of {CL_UNORM_INT8} and
+{CL_UNORM_INT16}, *read_imageh* will convert the channel values from an
 8-bit or 16-bit unsigned integer to normalized half-precision floating-point
 values in the range [`0.0h`, `1.0h`].
 
-For images created with image channel data type of `CL_SNORM_INT8` and
-`CL_SNORM_INT16`, *read_imageh* will convert the channel values from an
+For images created with image channel data type of {CL_SNORM_INT8} and
+{CL_SNORM_INT16}, *read_imageh* will convert the channel values from an
 8-bit or 16-bit signed integer to normalized half-precision floating-point
 values in the range [`-1.0h`, `1.0h`].
 
 These conversions are performed as follows:
 
-`CL_UNORM_INT8` (8-bit unsigned integer) {rightarrow} `half`
+{CL_UNORM_INT8} (8-bit unsigned integer) {rightarrow} `half`
 
 [none]
 * normalized `half` value = `round_to_half(c / 255)`
 
-`CL_UNORM_INT_101010` (10-bit unsigned integer) {rightarrow} `half`
+{CL_UNORM_INT_101010} (10-bit unsigned integer) {rightarrow} `half`
 
 [none]
 * normalized `half` value = `round_to_half(c / 1023)`
 
-`CL_UNORM_INT16` (16-bit unsigned integer) {rightarrow} `half`
+{CL_UNORM_INT16} (16-bit unsigned integer) {rightarrow} `half`
 
 [none]
 * normalized `half` value = `round_to_half(c / 65535)`
 
-`CL_SNORM_INT8` (8-bit signed integer) {rightarrow} `half`
+{CL_SNORM_INT8} (8-bit signed integer) {rightarrow} `half`
 
 [none]
 * normalized `half` value = *max*(`-1.0h`, `round_to_half(c / 127)`)
 
-`CL_SNORM_INT16` (16-bit signed integer) {rightarrow} `half`
+{CL_SNORM_INT16} (16-bit signed integer) {rightarrow} `half`
 
 [none]
 * normalized `half` value = *max*(`-1.0h`, `round_to_half(c / 32767)`)
@@ -17085,32 +17166,32 @@ These conversions are performed as follows:
 The precision of the above conversions is \<= 1.5 ulp except for the
 following cases:
 
-For `CL_UNORM_INT8`
+For {CL_UNORM_INT8}
 
 [none]
 * 0 must convert to `0.0h` and
 * 255 must convert to `1.0h`
 
-For `CL_UNORM_INT_101010`
+For {CL_UNORM_INT_101010}
 
 [none]
 * 0 must convert to `0.0h` and
 * 1023 must convert to `1.0h`
 
-For `CL_UNORM_INT16`
+For {CL_UNORM_INT16}
 
 [none]
 * 0 must convert to `0.0h` and
 * 65535 must convert to `1.0h`
 
-For `CL_SNORM_INT8`
+For {CL_SNORM_INT8}
 
 [none]
 * -128 and -127 must convert to `-1.0h`,
 * 0 must convert to `0.0h` and
 * 127 must convert to `1.0h`
 
-For `CL_SNORM_INT16`
+For {CL_SNORM_INT16}
 
 [none]
 * -32768 and -32767 must convert to `-1.0h`,
@@ -17122,38 +17203,38 @@ endif::cl_khr_fp16[]
 [[converting-floating-point-values-to-normalized-integer-channel-data-types]]
 ==== Converting Floating-Point Values to Normalized Integer Channel Data Types
 
-For images created with image channel data type of `CL_UNORM_INT8` and
-`CL_UNORM_INT16`, *write_imagef* will convert the floating-point color value
+For images created with image channel data type of {CL_UNORM_INT8} and
+{CL_UNORM_INT16}, *write_imagef* will convert the floating-point color value
 to an 8-bit or 16-bit unsigned integer.
 
-For images created with image channel data type of `CL_SNORM_INT8` and
-`CL_SNORM_INT16`, *write_imagef* will convert the floating-point color value
+For images created with image channel data type of {CL_SNORM_INT8} and
+{CL_SNORM_INT16}, *write_imagef* will convert the floating-point color value
 to an 8-bit or 16-bit signed integer.
 
 The preferred method for how conversions from floating-point values to
 normalized integer values are performed is as follows:
 
-`float` {rightarrow} `CL_UNORM_INT8` (8-bit unsigned integer)
+`float` {rightarrow} {CL_UNORM_INT8} (8-bit unsigned integer)
 
 [none]
 * *convert_uchar_sat_rte*(`f * 255.0f`)
 
-`float` {rightarrow} `CL_UNORM_INT_101010` (10-bit unsigned integer)
+`float` {rightarrow} {CL_UNORM_INT_101010} (10-bit unsigned integer)
 
 [none]
 * *min*(*convert_ushort_sat_rte*(`f * 1023.0f`), `0x3ff`)
 
-`float` {rightarrow} `CL_UNORM_INT16` (16-bit unsigned integer)
+`float` {rightarrow} {CL_UNORM_INT16} (16-bit unsigned integer)
 
 [none]
 * *convert_ushort_sat_rte*(`f * 65535.0f`)
 
-`float` {rightarrow} `CL_SNORM_INT8` (8-bit signed integer)
+`float` {rightarrow} {CL_SNORM_INT8} (8-bit signed integer)
 
 [none]
 * *convert_char_sat_rte*(`f * 127.0f`)
 
-`float` {rightarrow} `CL_SNORM_INT16` (16-bit signed integer)
+`float` {rightarrow} {CL_SNORM_INT16} (16-bit signed integer)
 
 [none]
 * *convert_short_sat_rte*(`f * 32767.0f`)
@@ -17168,14 +17249,14 @@ absolute error of the implementation dependant rounding mode vs.
 the result produced by the round to nearest even rounding mode must be {leq}
 0.6.
 
-`float` {rightarrow} `CL_UNORM_INT8` (8-bit unsigned integer)
+`float` {rightarrow} {CL_UNORM_INT8} (8-bit unsigned integer)
 
 [none]
 * Let f~preferred~ = *convert_uchar_sat_rte*(f * `255.0f`)
 * Let f~approx~ = *convert_uchar_sat_<impl-rounding-mode>*(f * `255.0f`)
 * *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
 
-`float` {rightarrow} `CL_UNORM_INT_101010` (10-bit unsigned integer)
+`float` {rightarrow} {CL_UNORM_INT_101010} (10-bit unsigned integer)
 
 [none]
 * Let f~preferred~ = *convert_ushort_sat_rte*(f * `1023.0f`)
@@ -17183,7 +17264,7 @@ the result produced by the round to nearest even rounding mode must be {leq}
      `1023.0f`)
 * *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
 
-`float` {rightarrow} `CL_UNORM_INT16` (16-bit unsigned integer)
+`float` {rightarrow} {CL_UNORM_INT16} (16-bit unsigned integer)
 
 [none]
 * Let f~preferred~ = *convert_ushort_sat_rte*(f * `65535.0f`)
@@ -17191,14 +17272,14 @@ the result produced by the round to nearest even rounding mode must be {leq}
      `65535.0f`)
 * *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
 
-`float` {rightarrow} `CL_SNORM_INT8` (8-bit signed integer)
+`float` {rightarrow} {CL_SNORM_INT8} (8-bit signed integer)
 
 [none]
 * Let f~preferred~ = *convert_char_sat_rte*(f * `127.0f`)
 * Let f~approx~ = *convert_char_sat_<impl_rounding_mode>*(f * `127.0f`)
 * *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
 
-`float` {rightarrow} `CL_SNORM_INT16` (16-bit signed integer)
+`float` {rightarrow} {CL_SNORM_INT16} (16-bit signed integer)
 
 [none]
 * Let f~preferred~ = *convert_short_sat_rte*(f * `32767.0f`)
@@ -17212,12 +17293,12 @@ ifdef::cl_khr_fp16[]
 ==== Converting Half-Precision Floating-point Values to Normalized Integer Channel Data Types
 
 If the `<<cl_khr_fp16>>` extension is supported, then
-for images created with image channel data type of `CL_UNORM_INT8` and
-`CL_UNORM_INT16`, *write_imageh* will convert the floating-point color value
+for images created with image channel data type of {CL_UNORM_INT8} and
+{CL_UNORM_INT16}, *write_imageh* will convert the floating-point color value
 to an 8-bit or 16-bit unsigned integer.
 
-For images created with image channel data type of `CL_SNORM_INT8` and
-`CL_SNORM_INT16`, *write_imageh* will convert the floating-point color value
+For images created with image channel data type of {CL_SNORM_INT8} and
+{CL_SNORM_INT16}, *write_imageh* will convert the floating-point color value
 to an 8-bit or 16-bit signed integer.
 
 The preferred conversion uses the round to nearest even (`_rte`) rounding
@@ -17226,7 +17307,7 @@ used in the conversions described below.
 When approximate rounding is used instead of the preferred rounding, the
 result of the conversion must satisfy the bound given below.
 
-`half` {rightarrow` `CL_UNORM_INT8` (8-bit unsigned integer)
+`half` {rightarrow` {CL_UNORM_INT8} (8-bit unsigned integer)
 
 [none]
   * Let f~exact~ = *max*(`0`, *min*(`f * 255`, `255`))
@@ -17234,7 +17315,7 @@ result of the conversion must satisfy the bound given below.
   * Let f~approx~ = *convert_uchar_sat_<impl-rounding-mode>*(`f * 255.0f`)
   * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
 
-`half` {rightarrow` `CL_UNORM_INT_101010` (10-bit unsigned integer)
+`half` {rightarrow` {CL_UNORM_INT_101010} (10-bit unsigned integer)
 
 [none]
   * Let f~exact~ = *max*(`0`, *min*(`f * 1023`, `1023`))
@@ -17243,7 +17324,7 @@ result of the conversion must satisfy the bound given below.
   * Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(`f * 1023.0f`)
   * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
 
-`half` {rightarrow` `CL_UNORM_INT16` (16-bit unsigned integer)
+`half` {rightarrow` {CL_UNORM_INT16} (16-bit unsigned integer)
 
 [none]
   * Let f~exact~ = *max*(`0`, *min*(`f * 65535`, `65535`))
@@ -17252,7 +17333,7 @@ result of the conversion must satisfy the bound given below.
     65535.0f`)
   * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
 
-`half` {rightarrow` `CL_SNORM_INT8` (8-bit signed integer)
+`half` {rightarrow` {CL_SNORM_INT8} (8-bit signed integer)
 
 [none]
   * Let f~exact~ = *max*(`-128`, *min*(`f * 127`, `127`))
@@ -17260,7 +17341,7 @@ result of the conversion must satisfy the bound given below.
   * Let f~approx~ = *convert_char_sat_<impl_rounding_mode>*(`f * 127.0f`)
   * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
 
-`half` {rightarrow` `CL_SNORM_INT16` (16-bit signed integer)
+`half` {rightarrow` {CL_SNORM_INT16} (16-bit signed integer)
 
 [none]
   * Let f~exact~ = *max*(`-32768`, *min*(`f * 32767`, `32767`))
@@ -17273,7 +17354,7 @@ endif::cl_khr_fp16[]
 [[conversion-rules-for-half-precision-floating-point-channel-data-type]]
 === Conversion Rules for Half-Precision Floating-Point Channel Data Type
 
-For images created with a channel data type of `CL_HALF_FLOAT`, the
+For images created with a channel data type of {CL_HALF_FLOAT}, the
 conversions from `half` to `float` are lossless (as described in
 <<the-half-data-type,"The half data type">>).
 Conversions from `float` to `half` round the mantissa using the round to
@@ -17289,7 +17370,7 @@ type.
 === Conversion Rules for Floating-Point Channel Data Type
 
 The following rules apply for reading and writing images created with
-channel data type of `CL_FLOAT`.
+channel data type of {CL_FLOAT}.
 
   * NaNs may be converted to a NaN value(s) supported by the device.
   * Denorms can be flushed to zero.
@@ -17299,12 +17380,12 @@ channel data type of `CL_FLOAT`.
 [[conversion-rules-for-signed-and-unsigned-8-bit-16-bit-and-32-bit-integer-channel-data-types]]
 === Conversion Rules for Signed and Unsigned 8-Bit, 16-Bit and 32-Bit Integer Channel Data Types
 
-Calls to *read_imagei* with channel data type values of `CL_SIGNED_INT8`,
-`CL_SIGNED_INT16` and `CL_SIGNED_INT32` return the unmodified integer values
+Calls to *read_imagei* with channel data type values of {CL_SIGNED_INT8},
+{CL_SIGNED_INT16} and {CL_SIGNED_INT32} return the unmodified integer values
 stored in the image at specified location.
 
-Calls to *read_imageui* with channel data type values of `CL_UNSIGNED_INT8`,
-`CL_UNSIGNED_INT16` and `CL_UNSIGNED_INT32` return the unmodified integer
+Calls to *read_imageui* with channel data type values of {CL_UNSIGNED_INT8},
+{CL_UNSIGNED_INT16} and {CL_UNSIGNED_INT32} return the unmodified integer
 values stored in the image at specified location.
 
 Calls to *write_imagei* will perform one of the following conversions:
@@ -17474,7 +17555,7 @@ one of the integers 0, 1, ... h~t~ - 1.
     References are to sections and tables of this specific version, although
     other versions exists.
   . [[opencl-device-queries]] "`Device Queries`" are defined in the
-    <<opencl-spec,OpenCL Specification>> for *clGetDeviceInfo*, and the
+    <<opencl-spec,OpenCL Specification>> for {clGetDeviceInfo}, and the
     individual queries are defined in the "`OpenCL Device Queries`" table
     (4.3) of that Specification.
   . [[opencl-channel-order,image channel order]] "`Image Channel Order`" is
