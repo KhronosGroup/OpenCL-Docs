@@ -173,6 +173,66 @@ if __name__ == "__main__":
 
     print('Found ' + str(numberOfEnums) + ' API enumerations.')
 
+    # Generate the API macro dictionaries:
+
+    numberOfMacros = 0
+
+    for types in spec.findall('types'):
+        for type in types.findall('type'):
+            name = ""
+            category = type.get('category')
+            if category == 'define':
+                if type.text and type.text.startswith("#define"):
+                    name = type.find('name').text
+                else:
+                    continue
+            else:
+                continue
+
+            #print('found macro: ' +name)
+
+            # Create a variant of the name that precedes underscores with
+            # "zero width" spaces.  This causes some long names to be
+            # broken at more intuitive places.
+            htmlName = name[:3] + name[3:].replace("_", "_<wbr>")
+            otherName = name[:3] + name[3:].replace("_", "_&#8203;")
+
+            # Example with link:
+            #
+            # // CL_MAKE_VERSION
+            #:CL_MAKE_VERSION_label: pass:q[`CL_MAKE_VERSION`]
+            #:CL_MAKE_VERSION: <<CL_MAKE_VERSION,{CL_MAKE_VERSION_label}>>
+            #:CL_MAKE_VERSION_anchor: [[CL_MAKE_VERSION]]{CL_MAKE_VERSION}
+            apiLinkFile.write('// ' + name + '\n')
+            apiLinkFile.write('ifdef::backend-html5[]\n')
+            apiLinkFile.write(':' + name + '_label: pass:q[`' + htmlName + '`]\n')
+            apiLinkFile.write('endif::[]\n')
+            apiLinkFile.write('ifndef::backend-html5[]\n')
+            apiLinkFile.write(':' + name + '_label: pass:q[`' + otherName + '`]\n')
+            apiLinkFile.write('endif::[]\n')
+            apiLinkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
+            apiLinkFile.write(':' + name + '_anchor: [[' + name + ']]{' + name + '}\n')
+            apiLinkFile.write('\n')
+
+            # Example without link:
+            #
+            # // CL_MAKE_VERSION
+            #:CL_MAKE_VERSION: pass:q[`CL_MAKE_VERSION`]
+            #:CL_MAKE_VERSION_anchor: {CL_MAKE_VERSION}
+            apiNoLinkFile.write('// ' + name + '\n')
+            apiNoLinkFile.write('ifdef::backend-html5[]\n')
+            apiNoLinkFile.write(':' + name + ': pass:q[`' + htmlName + '`]\n')
+            apiNoLinkFile.write('endif::[]\n')
+            apiNoLinkFile.write('ifndef::backend-html5[]\n')
+            apiNoLinkFile.write(':' + name + ': pass:q[`' + otherName + '`]\n')
+            apiNoLinkFile.write('endif::[]\n')
+            apiNoLinkFile.write(':' + name + '_anchor: {' + name + '}\n')
+            apiNoLinkFile.write('\n')
+
+            numberOfMacros = numberOfMacros + 1
+
+    print('Found ' + str(numberOfMacros) + ' API macros.')
+
     # Generate the API types dictionaries:
 
     numberOfTypes = 0
@@ -188,6 +248,8 @@ if __name__ == "__main__":
                 addLink = True
                 name = type.get('name')
             elif category == 'define':
+                if type.text and type.text.startswith("#define"):
+                    continue
                 name = type.find('name').text
             else:
                 continue
