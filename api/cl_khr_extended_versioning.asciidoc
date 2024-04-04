@@ -1,0 +1,158 @@
+// Copyright 2019-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_extended_versioning.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2020-02-12
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+  - Kévin Petit, Arm Ltd.
+  - Ben Ashbaugh, Intel
+  - Alastair Murray, Codeplay Software Ltd.
+  - Einar Hov, Arm Ltd.
+
+=== Description
+
+The {cl_khr_extended_versioning_EXT} extension introduces new platform and
+device queries that return detailed version information to applications.
+It makes it possible to return the exact revision of the specification or
+intermediate languages supported by an implementation.
+It also enables implementations to communicate a version number for each of
+the extensions they support and remove the requirement for applications to
+process strings to test for the presence of an extension or intermediate
+language or built-in kernel.
+
+Extended versioning was promoted to a core feature in OpenCL 3.0.
+However, the query for {CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR} was replaced
+by the query for {CL_DEVICE_OPENCL_C_ALL_VERSIONS}.
+With the exception of this query, all types, structures, enums, and macro
+names defined by this extension are equivalent to the corresponding core
+name (with the `_KHR` or `_khr` suffix removed).
+
+The version number encoding scheme is described in the <<versioning,
+Versioning>> section.
+
+=== New Types
+
+  * {cl_version_khr_TYPE}
+
+=== New Structures
+
+  * {cl_name_version_khr_TYPE}
+  * {CL_NAME_VERSION_MAX_NAME_SIZE_KHR_anchor}
+
+=== New Macro Names
+
+  * {CL_VERSION_MAJOR_BITS_KHR_anchor}
+  * {CL_VERSION_MINOR_BITS_KHR_anchor}
+  * {CL_VERSION_PATCH_BITS_KHR_anchor}
+  * {CL_VERSION_MAJOR_MASK_KHR_anchor}
+  * {CL_VERSION_MINOR_MASK_KHR_anchor}
+  * {CL_VERSION_PATCH_MASK_KHR_anchor}
+  * {CL_VERSION_MAJOR_KHR_anchor}
+  * {CL_VERSION_MINOR_KHR_anchor}
+  * {CL_VERSION_PATCH_KHR_anchor}
+  * {CL_MAKE_VERSION_KHR_anchor}
+
+=== New Enums
+
+  * {cl_device_info_TYPE}
+  ** {CL_DEVICE_NUMERIC_VERSION_KHR}
+  ** {CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR}
+  ** {CL_DEVICE_EXTENSIONS_WITH_VERSION_KHR}
+  ** {CL_DEVICE_ILS_WITH_VERSION_KHR}
+  ** {CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR}
+  * {cl_platform_info_TYPE}
+  ** {CL_PLATFORM_NUMERIC_VERSION_KHR}
+  ** {CL_PLATFORM_EXTENSIONS_WITH_VERSION_KHR}
+
+=== Conformance Tests
+
+. Each of the new queries described in this extension must be attempted and
+  succeed.
+. It must be verified that the information returned by all queries that
+  extend existing queries is consistent with the information returned by
+  existing queries.
+. Some of the queries introduced by this extension impose uniqueness constraints
+  on the list of returned values.
+  It must be verified that these constraints are satisfied.
+
+=== Issues
+
+. What compatibility policy should we define? e.g. a _revision_ has to be
+  backwards-compatible with previous ones
++
+--
+*RESOLVED*: No general rules as that wouldn't be testable.
+Here's a recommended policy:
+
+  - Patch version bump: only clarifications and small/obvious bugfixes.
+  - Minor version bump: backwards-compatible changes only.
+  - Major version bump: backwards compatibility may break.
+--
+
+. Do we want versioning for built-in kernels as returned by {CL_DEVICE_BUILT_IN_KERNELS}?
++
+--
+*RESOLVED*: No immediate use-case for versioning but being able to get a
+  list of individual kernels without parsing a string is desirable.
+  Adding {CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR}.
+--
+
+. What is the behaviour of the queries that return an array of structures when
+there are no elements to return?
++
+--
+*RESOLVED*: The query succeeds and the size returned is zero.
+--
+
+. What value should be returned when version information is not available?
++
+--
+*RESOLVED*: If a patch version is not available, it should be reported as 0.
+            If no version information is available, 0.0.0 should be
+            reported.
+            These values have been chosen as they are guaranteed to be lower
+            than or equal to any other version.
+--
+
+. Should we add a query to report SPIR-V extended instruction sets?
++
+--
+*RESOLVED*: It is unlikely that we will introduce many SPIR-V extended
+            instruction sets without an accompanying API extension.
+            Decided not to do this.
+--
+
+. Should the queries for which the old-style query doesn't exist in a given
+  OpenCL version be present (e.g.
+  {CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR} prior to OpenCL 2.1 or
+  without support for {cl_khr_il_program_EXT} or
+  {CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR} on OpenCL 1.0)?
++
+--
+*RESOLVED*: All the queries are always present.
+            {CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR} returns an empty
+            set when Intermediate Languages are not supported.
+            {CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR} always returns 1.0 on
+            an OpenCL 1.0 platform.
+--
+
+. Is reporting multiple Intermediate Languages with the same name and major/minor
+  versions but differing patch versions allowed?
++
+--
+*RESOLVED*: No.
+            This isn't aligned with the intended use for patch versions and
+            makes it harder for implementations to guarantee consistency
+            with the existing IL queries.
+--
+
+=== Version History
+
+  * Revision 1.0.0, 2020-02-12
+  ** Initial version.

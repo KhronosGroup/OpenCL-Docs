@@ -1,0 +1,239 @@
+// Copyright 2017-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_gl_sharing.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2020-04-21
+*IP Status*::
+    No known IP claims.
+
+=== Description
+
+The {cl_khr_gl_sharing_EXT} extension allows use of OpenGL buffer, texture, and
+renderbuffer objects as OpenCL memory objects, referred to as "`Shared
+OpenCL/OpenGL Memory Objects`".
+
+An OpenCL context may be associated with an OpenGL context or share group
+object, using additional attributes described for {clCreateContext}.
+
+An OpenCL image object may be created from an OpenGL texture or renderbuffer
+object as described for {clCreateFromGLTexture} and
+{clCreateFromGLRenderbuffer}, respectively.
+
+An OpenCL buffer object may be created from an OpenGL buffer object using
+{clCreateFromGLBuffer}.
+
+Any supported OpenGL object defined within the associated OpenGL context or
+share group object may be shared, with the exception of the default OpenGL
+objects (i.e. objects named zero), which may not be shared.
+
+Additional information on the use of shared OpenCL/OpenGL memory objects is
+found in the <<lifetime-of-shared-opencl-opengl-memory-objects, Lifetime of
+Shared OpenCL/OpenGL Memory Objects>>,
+<<acquiring-shared-opencl-opengl-memory-objects, Acquiring, Releasing, and
+Synchronizing Access to Shared OpenCL/OpenGL Memory Objects>> and
+<<querying-devices-that-support-sharing-with-opengl, Querying Devices that
+Support Sharing with OpenGL>> sections.
+
+An OpenGL implementation supporting buffer objects and sharing of texture
+and buffer object images with OpenCL is required by this extension.
+
+=== New Commands
+
+  * {clGetGLContextInfoKHR}
+  * {clCreateFromGLBuffer}
+  * {clCreateFromGLTexture}
+  * {clCreateFromGLRenderbuffer}
+  * {clGetGLObjectInfo}
+  * {clGetGLTextureInfo}
+  * {clEnqueueAcquireGLObjects}
+  * {clEnqueueReleaseGLObjects}
+
+=== New Types
+
+  * {cl_gl_context_info_TYPE}
+  * {cl_gl_object_type_TYPE}
+  * {cl_gl_texture_info_TYPE}
+  * {cl_gl_platform_info_TYPE}
+
+=== New Enums
+
+  * {cl_gl_context_info_TYPE}
+  ** {CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR}
+  ** {CL_DEVICES_FOR_GL_CONTEXT_KHR}
+  * {cl_context_properties_TYPE}
+  ** {CL_GL_CONTEXT_KHR}
+  ** {CL_EGL_DISPLAY_KHR}
+  ** {CL_GLX_DISPLAY_KHR}
+  ** {CL_WGL_HDC_KHR}
+  ** {CL_CGL_SHAREGROUP_KHR}
+  * {cl_gl_object_type_TYPE}
+  ** {CL_GL_OBJECT_BUFFER}
+  ** {CL_GL_OBJECT_TEXTURE2D}
+  ** {CL_GL_OBJECT_TEXTURE3D}
+  ** {CL_GL_OBJECT_RENDERBUFFER}
+  ** {CL_GL_OBJECT_TEXTURE2D_ARRAY}
+  ** {CL_GL_OBJECT_TEXTURE1D}
+  ** {CL_GL_OBJECT_TEXTURE1D_ARRAY}
+  ** {CL_GL_OBJECT_TEXTURE_BUFFER}
+  * {cl_gl_texture_info_TYPE}
+  ** {CL_GL_TEXTURE_TARGET}
+  ** {CL_GL_MIPMAP_LEVEL}
+  * New Error Codes
+  ** {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR}
+
+=== Issues
+
+  . How should the OpenGL context be identified when creating an associated
+    OpenCL context?
++
+--
+*RESOLVED*: by using a (display,context handle) attribute pair to identify
+an arbitrary OpenGL or OpenGL ES context with respect to one of the
+window-system binding layers EGL, GLX, or WGL, or a share group handle to
+identify a CGL share group.
+If a context is specified, it need not be current to the thread calling
+clCreateContext*.
+
+A previously suggested approach would use a single boolean attribute
+CL_USE_GL_CONTEXT_KHR to allow creating a context associated with the
+currently bound OpenGL context.
+This may still be implemented as a separate extension, and might allow more
+efficient acquire/release behavior in the special case where they are being
+executed in the same thread as the bound GL context used to create the CL
+context.
+--
+
+  . What should the format of an attribute list be?
++
+--
+After considerable discussion, we think we can live with a list of
+<attribute name,value> pairs terminated by zero.
+The list is passed as 'cl_context_properties *_properties'_, where
+cl_context_properties is typedefed to be 'intptr_t' in cl.h.
+
+This effectively allows encoding all scalar integer, pointer, and handle
+values in the host API into the argument list and is analogous to the
+structure and type of EGL attribute lists.
+`NULL` attribute lists are also allowed.
+Again as for EGL, any attributes not explicitly passed in the list will take
+on a defined default value that does something reasonable.
+
+Experience with EGL, GLX, and WGL has shown attribute lists to be a
+sufficiently flexible and general mechanism to serve the needs of management
+calls such as context creation.
+It is not completely general (encoding floating-point and non-scalar
+attribute values is not straightforward), and other approaches were
+suggested such as opaque attribute lists with getter/setter methods, or
+arrays of varadic structures.
+--
+
+  . What's the behavior of an associated OpenGL or OpenCL context when using
+    resources defined by the other associated context, and that context is
+    destroyed?
++
+--
+*RESOLVED*: OpenCL objects place a reference on the data store underlying
+the corresponding GL object when they're created.
+The GL name corresponding to that data store may be deleted, but the data
+store itself remains so long as any CL object has a reference to it.
+However, destroying all GL contexts in the share group corresponding to a CL
+context results in implementation-dependent behavior when using a
+corresponding CL object, up to and including program termination.
+--
+
+  . How about sharing with D3D?
++
+--
+Sharing between D3D and OpenCL should use the same attribute list mechanism,
+though obviously with different parameters, and be exposed as a similar
+parallel OpenCL extension.
+There may be an interaction between that extension and this one since it's
+not yet clear if it will be possible to create a CL context simultaneously
+sharing GL and D3D objects.
+--
+
+  . Under what conditions will context creation fail due to sharing?
++
+--
+*RESOLVED*: Several cross-platform failure conditions are described (GL
+context or CGL share group doesn't exist, GL context doesn't support types
+of GL objects, GL context implementation doesn't allow sharing), but
+additional failures may result due to implementation-dependent reasons and
+should be added to this extension as such failures are discovered.
+Sharing between OpenCL and OpenGL requires integration at the driver
+internals level.
+--
+
+  . What command-queues can *clEnqueueAcquire/ReleaseGLObjects* be placed
+    on?
++
+--
+*RESOLVED*: All command-queues.
+This restriction is enforced at context creation time.
+If any device passed to context creation cannot support shared OpenCL/OpenGL
+memory objects, context creation will fail with a {CL_INVALID_OPERATION}
+error.
+--
+
+  . How can applications determine which command-queue to place an
+    Acquire/Release on?
++
+--
+*RESOLVED*: The {clGetGLContextInfoKHR} returns either the CL device
+currently corresponding to a specified GL context (typically the display
+it's running on), or a list of all the CL devices the specified context
+might run on (potentially useful in multiheaded / "`virtual screen`"
+environments).
+This command is not placed together with commands to create shared
+OpenCL/OpenGL memory objects because it relies on the same property-list
+method of specifying a GL context introduced by this extension.
+
+If no devices are returned, it means that the GL context exists on an older
+GPU not capable of running OpenCL, but still capable of sharing objects
+between GL running on that GPU and CL running elsewhere.
+--
+
+  . What is the meaning of the {CL_DEVICES_FOR_GL_CONTEXT_KHR} query?
++
+--
+*RESOLVED*: The list of all CL devices that may ever be associated with a
+specific GL context.
+On platforms such as MacOS X, the "`virtual screen`" concept allows multiple
+GPUs to back a single virtual display.
+Similar functionality might be implemented on other windowing systems, such
+as a transparent heterogenous multiheaded X server.
+Therefore the exact meaning of this query is interpreted relative to the
+binding layer API in use.
+--
+
+  . What happened to the "`extension`"s `+cl_khr_gl_sharing__context+` and
+    `+cl_khr_gl_sharing__memobjs+` that were previously published?
++
+--
+*RESOLVED*: These were not actual extensions, but the result of splitting
+the {cl_khr_gl_sharing_EXT} extension language into two separate sections for
+publication.
+All extension language has now been integrated into the unified
+Specification and this distinction is not useful.
+--
+
+  . Where are the `clCreateFromGLTexture2D` and `clCreateFromGLTexture3D`
+    fuctions described?
++
+--
+*PROPOSED*: These functions are present in cl.xml, listed as OpenCL 1.0 APIs
+that were deprecated in OpenCL 1.2, but the current extension language does
+not described them.
+Since OpenCL 1.2 itself is so old, it is not worth the effort to look back
+and determine the exact details of these APIs.
+--
+
+
+=== Version History
+
+  * Revision 1.0.0, 2020-04-21
+  ** First assigned version.

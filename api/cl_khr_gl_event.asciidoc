@@ -1,0 +1,107 @@
+// Copyright 2017-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_gl_event.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2020-04-21
+*IP Status*::
+    No known IP claims.
+
+=== Description
+
+{cl_khr_gl_event_EXT} allows creating OpenCL event objects linked to OpenGL
+fence sync objects, potentially improving efficiency of sharing images and
+buffers between the two APIs.
+The companion `GL_ARB_cl_event` extension provides the complementary
+functionality of creating an OpenGL sync object from an OpenCL event object.
+
+In addition, this extension modifies the behavior of
+{clEnqueueAcquireGLObjects} and {clEnqueueReleaseGLObjects} to
+<<event-command-types-for-shared-opencl-opencl-memory-objects, implicitly
+guarantee synchronization>> with an OpenGL context bound in the same thread
+as the OpenCL context.
+
+=== New Commands
+
+  * {clCreateEventFromGLsyncKHR}
+
+=== New Enums
+
+  * {cl_command_type_TYPE}
+  ** {CL_COMMAND_GL_FENCE_SYNC_OBJECT_KHR}
+
+=== Issues
+
+  . How are references between CL events and GL syncs handled?
++
+--
+*PROPOSED*: The linked CL event places a single reference on the GL sync
+object.
+That reference is removed when the CL event is deleted.
+A more expensive alternative would be to reflect changes in the CL event
+reference count through to the GL sync.
+--
+
+  . How are linkages to synchronization primitives in other APIs handled?
++
+--
+*UNRESOLVED*.
+We will at least want to have a way to link events to EGL sync objects.
+There is probably no analogous DX concept.
+There would be an entry point for each type of synchronization primitive to
+be linked to, such as {clCreateEventFromEGLSyncKHR}.
+
+An alternative is a generic clCreateEventFromExternalEvent taking an
+attribute list.
+The attribute list would include information defining the type of the
+external primitive and additional information (GL sync object handle, EGL
+display and sync object handle, etc.) specific to that type.
+This allows a single entry point to be reused.
+
+These will probably be separate extensions following the API proposed here.
+--
+
+  . Should the {CL_EVENT_COMMAND_TYPE} correspond to the type of command
+    (fence) or the type of the linked sync object?
++
+--
+*PROPOSED*: To the type of the linked sync object.
+--
+
+  . Should we support both explicit and implicit synchronization?
++
+--
+*PROPOSED*: Yes.
+Implicit synchronization is suitable when GL and CL are executing in the
+same application thread.
+Explicit synchronization is suitable when they are executing in different
+threads but the expense of glFinish is too high.
+--
+
+  . Should this be a platform or device extension?
++
+--
+*PROPOSED*: Platform extension.
+This may result in considerable under-the-hood work to implement the
+sync->event semantics using only the public GL API, however, when multiple
+drivers and devices with different GL support levels coexist in the same
+runtime.
+--
+
+  . Where can events generated from GL syncs be usable?
++
+--
+*PROPOSED*: Only with {clEnqueueAcquireGLObjects}, and attempting to use such
+an event elsewhere will generate an error.
+There is no apparent use case for using such events elsewhere, and possibly
+some cost to supporting it, balanced by the cost of checking the source of
+events in all other commands accepting them as parameters.
+--
+
+=== Version History
+
+  * Revision 1.0.0, 2020-04-21
+  ** First assigned version.

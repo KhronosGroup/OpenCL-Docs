@@ -1,0 +1,480 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+// TODO: try rouge?
+
+= cl_intel_subgroup_local_block_io
+
+== Name Strings
+
+`cl_intel_subgroup_local_block_io`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2023 Intel Corporation.  All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+OpenCL 1.2 and support for `cl_intel_subgroups` is required.
+This extension is written against version 8 of the `cl_intel_subgroups` specification.
+This extension interacts with the `cl_intel_subgroups_char`, `cl_intel_subgroups_short`, `cl_intel_subgroups_long`, and `cl_intel_spirv_subgroups` extensions.
+
+This extension requires OpenCL support for SPIR-V, either via OpenCL 2.1 or newer, or via the `cl_khr_il_program` extension.
+
+== Overview
+
+This extension extends the subgroup block read and write functions defined by `cl_intel_subgroups` (and, when supported, `cl_intel_subgroups_char`, `cl_intel_subgroups_short`, and `cl_intel_subgroups_long`) to support reading from and writing to pointers to the `+__local+` memory address space in addition to pointers to the `+__global+` memory address space.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+None.
+
+== New OpenCL C Functions
+
+Add variants of the `uint` subgroup block read and write functions that support loading from and storing to pointers to the `+__local+` address space:
+
+[source]
+----
+uint  intel_sub_group_block_read_ui( const __local uint* p )
+uint2 intel_sub_group_block_read_ui2( const __local uint* p )
+uint4 intel_sub_group_block_read_ui4( const __local uint* p )
+uint8 intel_sub_group_block_read_ui8( const __local uint* p )
+
+void  intel_sub_group_block_write_ui( __local uint* p, uint data )
+void  intel_sub_group_block_write_ui2( __local uint* p, uint2 data )
+void  intel_sub_group_block_write_ui4( __local uint* p, uint4 data )
+void  intel_sub_group_block_write_ui8( __local uint* p, uint8 data )
+----
+
+For naming consistency, also add un-suffixed aliases of the `uint` functions as originally described in the `cl_intel_subgroups` extension:
+
+[source]
+----
+uint  intel_sub_group_block_read( const __local uint* p )
+uint2 intel_sub_group_block_read2( const __local uint* p )
+uint4 intel_sub_group_block_read4( const __local uint* p )
+uint8 intel_sub_group_block_read8( const __local uint* p )
+
+void  intel_sub_group_block_write( __local uint* p, uint data )
+void  intel_sub_group_block_write2( __local uint* p, uint2 data )
+void  intel_sub_group_block_write4( __local uint* p, uint4 data )
+void  intel_sub_group_block_write8( __local uint* p, uint8 data )
+----
+
+If `cl_intel_subgroups_char` is supported, add variants of the `uchar` subgroup block read and write functions that support loading from and storing to pointers to the `+__local+` address space:
+
+[source]
+----
+uchar  intel_sub_group_block_read_uc( const __local uchar* p )
+uchar2 intel_sub_group_block_read_uc2( const __local uchar* p )
+uchar4 intel_sub_group_block_read_uc4( const __local uchar* p )
+uchar8 intel_sub_group_block_read_uc8( const __local uchar* p )
+uchar16 intel_sub_group_block_read_uc16( const __local uchar* p )
+
+void  intel_sub_group_block_write_uc( __local uchar* p, uchar data )
+void  intel_sub_group_block_write_uc2( __local uchar* p, uchar2 data )
+void  intel_sub_group_block_write_uc4( __local uchar* p, uchar4 data )
+void  intel_sub_group_block_write_uc8( __local uchar* p, uchar8 data )
+void  intel_sub_group_block_write_uc16( __local uchar* p, uchar16 data )
+----
+
+If `cl_intel_subgroups_short` is supported, add variants of the `ushort` subgroup block read and write functions that support loading from and storing to pointers to the `+__local+` address space:
+
+[source]
+----
+ushort  intel_sub_group_block_read_us( const __local ushort* p )
+ushort2 intel_sub_group_block_read_us2( const __local ushort* p )
+ushort4 intel_sub_group_block_read_us4( const __local ushort* p )
+ushort8 intel_sub_group_block_read_us8( const __local ushort* p )
+
+void  intel_sub_group_block_write_us( __local ushort* p, ushort data )
+void  intel_sub_group_block_write_us2( __local ushort* p, ushort2 data )
+void  intel_sub_group_block_write_us4( __local ushort* p, ushort4 data )
+void  intel_sub_group_block_write_us8( __local ushort* p, ushort8 data )
+----
+
+If `cl_intel_subgroups_long` is supported, add variants of the `ulong` subgroup block read and write functions that support loading from and storing to pointers to the `+__local+` address space:
+
+[source]
+----
+ulong  intel_sub_group_block_read_ul( const __local ulong* p )
+ulong2 intel_sub_group_block_read_ul2( const __local ulong* p )
+ulong4 intel_sub_group_block_read_ul4( const __local ulong* p )
+ulong8 intel_sub_group_block_read_ul8( const __local ulong* p )
+
+void  intel_sub_group_block_write_ul( __local ulong* p, ulong data )
+void  intel_sub_group_block_write_ul2( __local ulong* p, ulong2 data )
+void  intel_sub_group_block_write_ul4( __local ulong* p, ulong4 data )
+void  intel_sub_group_block_write_ul8( __local ulong* p, ulong8 data )
+----
+
+== Modifications to the OpenCL C Specification
+
+=== Modifications to Section 6.13.X "Sub Group Read and Write Functions"
+
+This section was added by the `cl_intel_subgroups` extension.
+
+Add versions of the 32-bit block read and write functions that support loading from and storing to pointers to the `+__local+` address space:
+
+[cols="5a,4",options="header"]
+|==================================
+|*Function*
+|*Description*
+
+|[source,opencl_c]
+----
+uint  intel_sub_group_block_read(
+        const __global uint* p )
+uint2 intel_sub_group_block_read2(
+        const __global uint* p )
+uint4 intel_sub_group_block_read4(
+        const __global uint* p )
+uint8 intel_sub_group_block_read8(
+        const __global uint* p )
+
+uint  intel_sub_group_block_read_ui(
+        const __global uint* p )
+uint2 intel_sub_group_block_read_ui2(
+        const __global uint* p )
+uint4 intel_sub_group_block_read_ui4(
+        const __global uint* p )
+uint8 intel_sub_group_block_read_ui8(
+        const __global uint* p )
+
+uint  intel_sub_group_block_read(
+        const __local uint* p )
+uint2 intel_sub_group_block_read2(
+        const __local uint* p )
+uint4 intel_sub_group_block_read4(
+        const __local uint* p )
+uint8 intel_sub_group_block_read8(
+        const __local uint* p )
+
+uint  intel_sub_group_block_read_ui(
+        const __local uint* p )
+uint2 intel_sub_group_block_read_ui2(
+        const __local uint* p )
+uint4 intel_sub_group_block_read_ui4(
+        const __local uint* p )
+uint8 intel_sub_group_block_read_ui8(
+        const __local uint* p )
+----
+
+| Reads 1, 2, 4, or 8 uints of data for each work item in the subgroup from the specified pointer as a block operation...
+
+|[source,opencl_c]
+----
+void  intel_sub_group_block_write(
+        __global uint* p, uint data )
+void  intel_sub_group_block_write2(
+        __global uint* p, uint2 data )
+void  intel_sub_group_block_write4(
+        __global uint* p, uint4 data )
+void  intel_sub_group_block_write8(
+        __global uint* p, uint8 data )
+
+void  intel_sub_group_block_write_ui(
+        __global uint* p, uint data )
+void  intel_sub_group_block_write_ui2(
+        __global uint* p, uint2 data )
+void  intel_sub_group_block_write_ui4(
+        __global uint* p, uint4 data )
+void  intel_sub_group_block_write_ui8(
+        __global uint* p, uint8 data )
+
+void  intel_sub_group_block_write(
+        __local uint* p, uint data )
+void  intel_sub_group_block_write2(
+        __local uint* p, uint2 data )
+void  intel_sub_group_block_write4(
+        __local uint* p, uint4 data )
+void  intel_sub_group_block_write8(
+        __local uint* p, uint8 data )
+
+void  intel_sub_group_block_write_ui(
+        __local uint* p, uint data )
+void  intel_sub_group_block_write_ui2(
+        __local uint* p, uint2 data )
+void  intel_sub_group_block_write_ui4(
+        __local uint* p, uint4 data )
+void  intel_sub_group_block_write_ui8(
+        __local uint* p, uint8 data )
+----
+
+| Writes 1, 2, 4, or 8 uints of data for each work item in the subgroup to the specified pointer as a block operation...
+
+|==================================
+
+If `cl_intel_subgroups_char` is supported, add versions of the 8-bit block read and write functions that support loading from and storing to pointers to the `+__local+` address space:
+
+[cols="5a,4",options="header"]
+|==================================
+|*Function*
+|*Description*
+
+|[source,opencl_c]
+----
+uchar   intel_sub_group_block_read_uc(
+          const __global uchar* p )
+uchar2  intel_sub_group_block_read_uc2(
+          const __global uchar* p )
+uchar4  intel_sub_group_block_read_uc4(
+          const __global uchar* p )
+uchar8  intel_sub_group_block_read_uc8(
+          const __global uchar* p )
+uchar16 intel_sub_group_block_read_uc16(
+          const __global uchar* p )
+
+uchar   intel_sub_group_block_read_uc(
+          const __local uchar* p )
+uchar2  intel_sub_group_block_read_uc2(
+          const __local uchar* p )
+uchar4  intel_sub_group_block_read_uc4(
+          const __local uchar* p )
+uchar8  intel_sub_group_block_read_uc8(
+          const __local uchar* p )
+uchar16 intel_sub_group_block_read_uc16(
+          const __local uchar* p )
+----
+
+| Reads 1, 2, 4, 8, or 16 uchars of data for each work item in the subgroup from the specified pointer as a block operation...
+
+|[source,opencl_c]
+----
+void  intel_sub_group_block_write_uc(
+        __global uchar* p, uchar data )
+void  intel_sub_group_block_write_uc2(
+        __global uchar* p, uchar2 data )
+void  intel_sub_group_block_write_uc4(
+        __global uchar* p, uchar4 data )
+void  intel_sub_group_block_write_uc8(
+        __global uchar* p, uchar8 data )
+void  intel_sub_group_block_write_uc16(
+        __global uchar* p, uchar16 data )
+
+void  intel_sub_group_block_write_uc(
+        __local uchar* p, uchar data )
+void  intel_sub_group_block_write_uc2(
+        __local uchar* p, uchar2 data )
+void  intel_sub_group_block_write_uc4(
+        __local uchar* p, uchar4 data )
+void  intel_sub_group_block_write_uc8(
+        __local uchar* p, uchar8 data )
+void  intel_sub_group_block_write_uc16(
+        __local uchar* p, uchar16 data )
+----
+
+| Writes 1, 2, 4, 8, or 16 uchars of data for each work item in the subgroup to the specified pointer as a block operation...
+
+|==================================
+
+If `cl_intel_subgroups_short` is supported, add versions of the 16-bit block read and write functions that support loading from and storing to pointers to the `+__local+` address space:
+
+[cols="5a,4",options="header"]
+|==================================
+|*Function*
+|*Description*
+
+|[source,opencl_c]
+----
+ushort  intel_sub_group_block_read_us(
+          const __global ushort* p )
+ushort2 intel_sub_group_block_read_us2(
+          const __global ushort* p )
+ushort4 intel_sub_group_block_read_us4(
+          const __global ushort* p )
+ushort8 intel_sub_group_block_read_us8(
+          const __global ushort* p )
+
+ushort  intel_sub_group_block_read_us(
+          const __local ushort* p )
+ushort2 intel_sub_group_block_read_us2(
+          const __local ushort* p )
+ushort4 intel_sub_group_block_read_us4(
+          const __local ushort* p )
+ushort8 intel_sub_group_block_read_us8(
+          const __local ushort* p )
+----
+
+| Reads 1, 2, 4, or 8 ushorts of data for each work item in the subgroup from the specified pointer as a block operation...
+
+|[source,opencl_c]
+----
+void  intel_sub_group_block_write_us(
+        __global ushort* p, ushort data )
+void  intel_sub_group_block_write_us2(
+        __global ushort* p, ushort2 data )
+void  intel_sub_group_block_write_us4(
+        __global ushort* p, ushort4 data )
+void  intel_sub_group_block_write_us8(
+        __global ushort* p, ushort8 data )
+
+void  intel_sub_group_block_write_us(
+        __local ushort* p, ushort data )
+void  intel_sub_group_block_write_us2(
+        __local ushort* p, ushort2 data )
+void  intel_sub_group_block_write_us4(
+        __local ushort* p, ushort4 data )
+void  intel_sub_group_block_write_us8(
+        __local ushort* p, ushort8 data )
+----
+
+| Writes 1, 2, 4, or 8 ushorts of data for each work item in the subgroup to the specified pointer as a block operation...
+
+|==================================
+
+If `cl_intel_subgroups_long` is supported, add versions of the 64-bit block read and write functions that support loading from and storing to pointers to the `+__local+` address space:
+
+[cols="5a,4",options="header"]
+|==================================
+|*Function*
+|*Description*
+
+|[source,opencl_c]
+----
+ulong   intel_sub_group_block_read_ul(
+          const __global ulong* p )
+ulong2  intel_sub_group_block_read_ul2(
+          const __global ulong* p )
+ulong4  intel_sub_group_block_read_ul4(
+          const __global ulong* p )
+ulong8  intel_sub_group_block_read_ul8(
+          const __global ulong* p )
+
+ulong   intel_sub_group_block_read_ul(
+          const __local ulong* p )
+ulong2  intel_sub_group_block_read_ul2(
+          const __local ulong* p )
+ulong4  intel_sub_group_block_read_ul4(
+          const __local ulong* p )
+ulong8  intel_sub_group_block_read_ul8(
+          const __local ulong* p )
+----
+
+| Reads 1, 2, 4, or 8 ulongs of data for each work item in the subgroup from the specified pointer as a block operation...
+
+|[source,opencl_c]
+----
+void  intel_sub_group_block_write_ul(
+        __global ulong* p, ulong data )
+void  intel_sub_group_block_write_ul2(
+        __global ulong* p, ulong2 data )
+void  intel_sub_group_block_write_ul4(
+        __global ulong* p, ulong4 data )
+void  intel_sub_group_block_write_ul8(
+        __global ulong* p, ulong8 data )
+
+void  intel_sub_group_block_write_ul(
+        __local ulong* p, ulong data )
+void  intel_sub_group_block_write_ul2(
+        __local ulong* p, ulong2 data )
+void  intel_sub_group_block_write_ul4(
+        __local ulong* p, ulong4 data )
+void  intel_sub_group_block_write_ul8(
+        __local ulong* p, ulong8 data )
+----
+
+| Writes 1, 2, 4, or 8 ulongs of data for each work item in the subgroup to the specified pointer as a block operation...
+
+|==================================
+
+=== Modifications to Section 6.13.X.1 "Restrictions"
+
+This section was added by the `cl_intel_subgroups` extension.
+
+Change the description of the first section to: The following restrictions apply to the subgroup buffer block read and write functions that accept pointers to `+__global+` memory...
+
+Insert a section between the restrictions on subgroup buffer block read and write functions that accept pointers to `+__global+` memory and the restrictions on subgroup image block read and write functions:
+
+The following restrictions apply to the subgroup buffer block read and write functions that accept pointers to `+__local+` memory:
+
+* The pointer `p` must be 128-bit (16-byte) aligned for both reads and writes.
+
+== Modifications to the OpenCL SPIR-V Environment Specification
+
+=== Modifications to Section 7.1.X.2 "Block IO Instructions"
+
+This section was added by the `cl_intel_spirv_subgroups` extension.
+
+Add to the validation rules for _Ptr_:
+
+Additionally, if the OpenCL environment supports the extension `cl_intel_subgroup_local_block_io`, for _Ptr_ valid _Storage Classes_ are:
+
+* *Workgroup* (equivalent to the `local` address space)
+
+=== Modifications to Section 7.1.X.3 "Notes and Restrictions"
+
+This section was added by the `cl_intel_spirv_subgroups` extension.
+
+Change the description of the restrictions on *SubgroupBufferBlockIOINTEL* instructions to: The following restrictions apply to the *SubgroupBufferBlockIOINTEL* instructions when the pointer operand _Ptr_ is a pointer to the *CrossWorkgroup* _Storage Class_...
+
+Insert a section between the restrictions on *SubgroupBufferBlockIOINTEL* instructions when the pointer operand _Ptr_ is a pointer to the *CrossWorkGroup* _Storage Class_ and restrictions on *SubgroupImageBlockIOINTEL* instructions:
+
+The following restrictions apply to the *SubgroupBufferBlockIOINTEL* instructions when the pointer operand _Ptr_ is a pointer to the *Workgroup* _Storage Class_:
+
+* The pointer _Ptr_ must be 128-bit (16-byte) aligned for both reads and writes.
+
+== Issues
+
+. What should this extension be called?
++
+--
+*RESOLVED*: `cl_intel_subgroup_local_block_io`
+--
+
+. Do we need un-suffixed aliases of the 32-bit subgroup block read and write functions?
++
+--
+*RESOLVED*: Yes, this extension describes both suffixed functions and their un-suffixed aliases.
+
+As background:
+
+The 32-bit subgroup block read and write functions were originally un-suffixed in `cl_intel_subgroups`.
+
+When we extended the subgroup block read and write functions for other types in `cl_intel_subgroups_short` (and, eventually, `cl_intel_subgroups_char` and `cl_intel_subgroups_long`), we added suffixed aliases for consistency with the suffixed functions added to support the other types.
+
+For consistency with `cl_intel_subgroups` we should include both the un-suffixed and suffixed versions of the 32-bit functions.
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1.0.0|2023-11-29|Ben Ashbaugh|*Initial revision for publication*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************
