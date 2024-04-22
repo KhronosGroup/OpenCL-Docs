@@ -60,6 +60,7 @@ if __name__ == "__main__":
             iface_file.write('=== New Types\n\n')
             for ty in types:
                 iface_file.write('  * {{{}_TYPE}}\n'.format(ty.get('name')))
+            iface_file.write('\n')
 
         # New enums
         first_enum = True
