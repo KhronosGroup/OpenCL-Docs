@@ -250,6 +250,23 @@ will, for each platform, query dispatchable entry points using
 {clIcdGetFunctionAddressForPlatformKHR} and then set the platform dispatch
 data using {clIcdSetPlatformDispatchDataKHR}.
 
+The ICD Loader will also query the following functions from the library:
+{clIcdCreateInstancePlatformKHR} and {clIcdDestroyInstancePlatformKHR}.
+If these two funcions are present and the library's platforms are ICD 2
+compatible, these platformes will be deemed instance compatible.
+
+Users can create new instances using {clCreateInstanceKHR}. Instances contain
+all instance platforms of all instance compatible platforms. These instance
+platforms can be queied using {clGetPlatformIDsForInstanceKHR}. Devices returned
+by {clGetDeviceIDs} used on an instance platform will be instance devices.
+An instance can be destroyed using {clDestroyInstanceKHR}.
+
+When new instances are created the loader will create new instances of these
+platforms using {clIcdCreateInstancePlatformKHR}, and set instance platforms'
+dispatch data using {clIcdSetPlatformDispatchDataKHR}. When an instance is
+destroyed, instance platforms are destroyed with
+{clIcdDestroyInstancePlatformKHR}.
+
 [[cl_khr_icd-new-procedures-and-functions]]
 === New Procedures and Functions
 
@@ -266,6 +283,36 @@ void *clIcdGetFunctionAddressForPlatformKHR(cl_platform_id platform,
 /* New in version 2.0.0 */
 cl_int clIcdSetPlatformDispatchDataKHR(cl_platform_id platform,
                                        void *dispatch_data);
+
+/* New in version 2.0.0 */
+cl_platform_id clIcdCreateInstancePlatformKHR(cl_platform_id platform,
+                                              cl_int *errcode_ret);
+
+/* New in version 2.0.0 */
+cl_int clIcdDestroyInstancePlatformKHR(cl_platform_id platform);
+
+/* New in version 2.0.0 */
+cl_instance_khr clCreateInstanceKHR(const cl_instance_properties_khr *properties,
+                                    cl_int *errcode_ret);
+
+/* New in version 2.0.0 */
+cl_int clDestroyInstanceKHR(cl_instance_khr instance);
+
+/* New in version 2.0.0 */
+cl_int clGetPlatformIDsForInstanceKHR(cl_instance_khr instance,
+                                      cl_uint num_entries,
+                                      cl_platform_id *platforms,
+                                      cl_uint *num_platforms);
+----
+
+[[cl_khr_icd-new-api-types]]
+=== New API Types
+
+*New in version 2.0.0*
+[source,opencl]
+----
+typedef struct _cl_instance_khr *cl_instance_khr;
+typedef intptr_t cl_instance_properties_khr;
 ----
 
 [[cl_khr_icd-new-tokens]]
@@ -277,17 +324,36 @@ Accepted as _param_name_ to the function {clGetPlatformInfo}:
 CL_PLATFORM_ICD_SUFFIX_KHR
 ----
 
+*New in version 2.0.0*
+----
+CL_PLATFORM_UNLOADABLE_KHR
+----
+
 Returned by {clGetPlatformIDs} when no platforms are found:
 
 ----
 CL_PLATFORM_NOT_FOUND_KHR
 ----
 
-*New in version 2.0.0*, Used as a value in the pointer to
+*New in version 2.0.0*, returned by {clDestroyInstanceKHR} or
+{clGetPlatformIDsForInstanceKHR} when an invalid instance is given:
+
+----
+CL_INVALID_INSTANCE_KHR
+----
+
+*New in version 2.0.0*, used as a value in the pointer to
 `clGetPlatformIDs` in the dispatch structure.
 
 ----
 CL_ICD2_TAG_KHR
+----
+
+*New in version 2.0.0*, accepted as terminator to the _properties_
+list of {clCreateInstanceKHR}.
+
+----
+CL_INSTANCE_PROPERTIES_LIST_END_KHR
 ----
 
 [[cl_khr_icd-additions-to-chapter-4]]
@@ -336,7 +402,8 @@ _platforms_ is not `NULL` or if both _num_platforms_ and _platforms_ are
 *New in cl_khr_icd version 2.0.0*
 
 The entry point of a given platform that is ICD 2 compatible can be obtained
-using the following function:
+by the ICD Loader by using the following function:
+
 include::{generated}/api/protos/clIcdGetFunctionAddressForPlatformKHR.txt[]
 
 _platform_ refers to the platform ID returned by {clIcdGetPlatformIDsKHR}
@@ -350,16 +417,112 @@ header file.
 A return value of `NULL` indicates that the specified function does not exist
 for _platform_, or _platform_ is not a valid platform for the implementation.
 
-The `dispatch_data` field of a platform can be set using the following function:
+The `dispatch_data` field of a platform can be set by the ICD loader by using
+the following function:
+
 include::{generated}/api/protos/clIcdSetPlatformDispatchDataKHR.txt[]
 
-_platform_ refers to the platform ID returned by {clIcdGetPlatformIDsKHR}
+_platform_ refers to the platform ID returned by {clIcdGetPlatformIDsKHR} or by
+{clIcdCreateInstancePlatformKHR}
+
 _dispatch_data_ is the value to set the `dispatch_data` field of the structure
 to
 
 {clIcdSetPlatformDispatchDataKHR} returns {CL_SUCCESS} if the function is
 executed successfully.
-It returns {CL_INVALID_PLATFORM} if _platform_ is not a valid platform."
+It returns {CL_INVALID_PLATFORM} if _platform_ is not a valid platform.
+
+An instance can be created by the user by using the following function:
+
+include::{generated}/api/protos/clCreateInstanceKHR.txt[]
+
+_properties_ specifies additional instance properties in a
+{CL_INSTANCE_PROPERTIES_LIST_END_KHR} terminated list.
+Can be `NULL` if no properties are given.
+
+_errcode_ret_ will return an appropriate error code as described below.
+If _errcode_ret_ is `NULL`, no error code is returned.
+
+{clCreateInstanceKHR} returns a valid non-zero OpenCL instance object
+and _errcode_ret_ is set to {CL_SUCCESS} if the instance object is
+created successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+    * {CL_INVALID_VALUE} if _properties_ contains an invalid value
+    * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+      required by the OpenCL implementation on the host.
+    * {CL_PLATFORM_NOT_FOUND_KHR} if zero instance platforms are available.
+
+An instance can be destroyed by the user by using the following function:
+
+include::{generated}/api/protos/clDestroyInstanceKHR.txt[]
+
+_instance_ refers to the instance object returned by {clCreateInstanceKHR}.
+
+{clDestroyInstanceKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+It returns {CL_INVALID_INSTANCE} if _instance_ is not a valid instance object.
+
+Instance platforms can be queried by the user using the following function:
+
+include::{generated}/api/protos/clGetPlatformIDsForInstanceKHR.txt[]
+
+_instance_ refers to the instance object returned by {clCreateInstanceKHR}.
+
+_num_entries_ is the number of {cl_platform_id_TYPE} entries that can be added to
+_platforms_.
+If _platforms_ is not `NULL`, then _num_entries_ must be greater than zero.
+
+_platforms_ returns a list of OpenCL platforms available for access through
+the _instance_.
+The {cl_platform_id_TYPE} values returned in _platforms_ can be used to identify a
+specific instance platform.
+If the _platforms_ argument is `NULL`, then this argument is ignored.
+The number of OpenCL platforms returned is the minimum of the value
+specified by _num_entries_ or the number of instance platforms available.
+
+_num_platforms_ returns the number of instance platforms available.
+If _num_platforms_ is `NULL`, then this argument is ignored.
+
+{clGetPlatformIDsForInstanceKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+It returns {CL_INVALID_INSTANCE} if _instance_ is not a valid instance object.
+It returns {CL_INVALID_VALUE} if _num_entries_ is equal to zero and
+_platforms_ is not `NULL` or if both _num_platforms_ and _platforms_ are
+`NULL`.
+
+An instance platform can be created by the ICD Loader by using the following
+function:
+
+include::{generated}/api/protos/clIcdCreateInstancePlatformKHR.txt[]
+
+_platform_ refers to the platform ID returned by {clIcdGetPlatformIDsKHR}
+
+_errcode_ret_ will return an appropriate error code as described below.
+If _errcode_ret_ is `NULL`, no error code is returned.
+
+{clIcdCreateInstancePlatformKHR} returns a valid non-zero OpenCL platform object
+and _errcode_ret_ is set to {CL_SUCCESS} if the instance platform object is
+created successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+  
+    * CL_INVALID_PLATFORM if _platform_ is not a valid platform.
+    * CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+      required by the OpenCL implementation on the host.
+
+An instance platform can be destroyed by the ICD Loader by using the following
+function:
+
+include::{generated}/api/protos/clIcdDestroyInstancePlatformKHRtxt[]
+
+_platform_ refers to the instance platform object returned by
+{clIcdCreateInstancePlatformKHR}
+
+{clIcdDestroyInstancePlatformKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+It returns {CL_INVALID_PLATFORM} if _platform_ is not a valid instance platform."
 
 Add the following to _table 4.1_:
 
