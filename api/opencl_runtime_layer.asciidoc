@@ -5597,32 +5597,6 @@ The imported memory object holds a reference to its payload.
 
 ==== NT Handle Types
 
-ifdef::cl_khr_external_memory_dx[]
-The {cl_khr_external_memory_dx_EXT} extension extends
-{cl_external_memory_handle_type_khr_TYPE} to support the following new types
-of handles, and adds as a property that may be specified when creating a
-buffer or an image memory object from an external handle:
-
-  * {CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR_anchor} specifies an NT handle
-    returned by `IDXGIResource1::CreateSharedHandle` referring to a Direct3D
-    10 or 11 texture resource.
-    It owns a reference to the memory used by the Direct3D resource.
-  * {CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR_anchor} specifies a global
-    share handle returned by `IDXGIResource::GetSharedHandle` referring to a
-    Direct3D 10 or 11 texture resource.
-    It does not own a reference to the underlying Direct3D resource, and
-    will therefore become invalid when all memory objects and Direct3D
-    resources associated with it are destroyed.
-  * {CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR_anchor} specifies an NT handle
-    returned by `ID3D12Device::CreateSharedHandle` referring to a Direct3D
-    12 heap resource.
-    It owns a reference to the resources used by the Direct3D heap.
-  * {CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR_anchor} specifies an NT handle
-    returned by `ID3D12Device::CreateSharedHandle` referring to a Direct3D
-    12 committed resource.
-    It owns a reference to the memory used by the Direct3D resource.
-endif::cl_khr_external_memory_dx[]
-
 ifdef::cl_khr_external_memory_win32[]
 The {cl_khr_external_memory_win32_EXT} extension extends
 {cl_external_memory_handle_type_khr_TYPE} to support the following new types
@@ -13128,41 +13102,9 @@ endif::cl_khr_external_semaphore_sync_fd[]
 endif::cl_khr_external_semaphore_opaque_fd,cl_khr_external_semaphore_sync_fd[]
 
 
-ifdef::cl_khr_external_semaphore_dx_fence,cl_khr_external_semaphore_win32[]
+ifdef::cl_khr_external_semaphore_win32[]
 
 ==== NT Handle Types
-
-ifdef::cl_khr_external_semaphore_dx_fence[]
-
-The {cl_khr_external_semaphore_dx_fence_EXT} extension extends
-{cl_external_semaphore_handle_type_khr_TYPE} to support the following new
-types of handles, and adds as a property that may be specified when creating
-a semaphore from an external handle:
-
-  * {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR} specifies an NT handle returned by
-    `ID3D12Device::CreateSharedHandle` referring to a Direct3D 12 fence, or
-    `ID3D11Device5::CreateFence` referring to a Direct3D 11 fence.
-    It owns a reference to the underlying synchronization primitive
-    associated with the Direct3D fence.
-
-When waiting on semaphores using {clEnqueueWaitSemaphoresKHR} or signaling
-semaphores using {clEnqueueSignalSemaphoresKHR}, the semaphore payload must
-be provided for semaphores created from
-{CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR}.
-
-  * If _sema_objects_ list has a mix of semaphores obtained from
-    {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR} and other handle types, then the
-    _sema_payload_list_ should point to a list of _num_sema_objects_ payload
-    values for each semaphore in _sema_objects_.
-    However, the payload values corresponding to semaphores with type
-    {CL_SEMAPHORE_TYPE_BINARY_KHR} can be set to 0 or will be ignored.
-
-{clEnqueueWaitSemaphoresKHR} and {clEnqueueSignalSemaphoresKHR} may return
-{CL_INVALID_VALUE} if _sema_objects_ list has one or more semaphores
-obtained from {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR} and _sema_payload_list_
-is NULL.
-
-endif::cl_khr_external_semaphore_dx_fence[]
 
 ifdef::cl_khr_external_semaphore_win32[]
 
@@ -13193,14 +13135,6 @@ endif::cl_khr_external_semaphore_win32[]
 |====
 | Handle Type | Transference | Permanence
 
-ifdef::cl_khr_external_semaphore_dx_fence[]
-| {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR.asciidoc[]
-  | Reference
-    | Temporary, Permanent
-endif::cl_khr_external_semaphore_dx_fence[]
-
 ifdef::cl_khr_external_semaphore_win32[]
 | {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR_anchor}
 
@@ -13223,7 +13157,7 @@ For handle types defined as NT handles, the application must release
 ownership using the `CloseHandle` system call when the handle is no longer
 needed.
 
-endif::cl_khr_external_semaphore_dx_fence,cl_khr_external_semaphore_win32[]
+endif::cl_khr_external_semaphore_win32[]
 
 endif::cl_khr_external_semaphore[]
 
