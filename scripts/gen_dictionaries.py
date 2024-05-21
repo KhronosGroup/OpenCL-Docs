@@ -105,12 +105,9 @@ if __name__ == "__main__":
             name = api.get('name')
             #print('found extension api: ' +name)
 
-            # Example without link:
-            #
-            # // clGetGLObjectInfo
-            # :clGetGLObjectInfo: pass:q[*clGetGLObjectInfo*]
             apiLinkFile.write('// ' + name + '\n')
-            apiLinkFile.write(':' + name + ': pass:q[*' + name + '*]\n')
+            apiLinkFile.write(':' + name + '_label: pass:q[*' + name + '*]\n')
+            apiLinkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
             apiLinkFile.write('\n')
 
             apiNoLinkFile.write('// ' + name + '\n')
