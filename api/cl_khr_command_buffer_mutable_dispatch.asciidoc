@@ -6,7 +6,7 @@ include::{generated}/meta/{refprefix}cl_khr_command_buffer_mutable_dispatch.txt[
 === Other Extension Metadata
 
 *Last Modified Date*::
-    2022-08-31
+    2024-06-19
 *IP Status*::
     No known IP claims.
 *Contributors*::
@@ -43,32 +43,15 @@ in a new command-buffer.
 
 === Interactions With Other Extensions
 
-The {cl_command_buffer_structure_type_khr_TYPE} type has been added to this
-extension for the purpose of allowing expansion of mutable functionality in
-future extensions layered on top of
-{cl_khr_command_buffer_mutable_dispatch_EXT}.
-Any parameter that is a structure containing a `void* next` member *must*
-have a value of `next` that is either `NULL`, or is a pointer to a valid
-structure defined by {cl_khr_command_buffer_mutable_dispatch_EXT} or an
-extension layered on top.
-To be a valid structure in the pointer chain the first member of the
-structure *must* be a {cl_command_buffer_structure_type_khr_TYPE} identifier
-for the structure being iterated through, and the second member a `void*
-next` pointer to the next structure in the chain.
+The {clUpdateMutableCommandsKHR} entry-point has been designed for the purpose
+of allowing expansion of mutable functionality in future extensions layered on
+top of `cl_khr_command_buffer_mutable_dispatch`.
 
-[NOTE]
-====
-This approach is based on structure pointer chains in Vulkan, for more
-details see the "`Valid Usage for Structure Pointer Chains`" section of the
-Vulkan specification.
-====
-
-This is designed so that another extension layered on
-{cl_khr_command_buffer_mutable_dispatch_EXT} could allow modification of
-commands recorded to a command-buffer other than kernel execution commands.
-As all command recording entry-points return a {cl_mutable_command_khr_TYPE}
-handle, and aspects like which {cl_mem_TYPE} object a command uses could
-also be updated between enqueues of the command-buffer.
+A new extension can define its own structure type to specify the update
+configuration it requires, with a matching
+{cl_command_buffer_update_type_khr_TYPE} value. This new structure type can
+then be passed to {clUpdateMutableCommandsKHR} where it is reinterpreted from a
+void pointer using {cl_command_buffer_update_type_khr_TYPE}.
 
 === New Commands
 
@@ -79,8 +62,7 @@ also be updated between enqueues of the command-buffer.
 
   * {cl_mutable_dispatch_fields_khr_TYPE}
   * {cl_mutable_command_info_khr_TYPE}
-  * {cl_command_buffer_structure_type_khr_TYPE}
-  * {cl_mutable_base_config_khr_TYPE}
+  * {cl_command_buffer_update_type_khr_TYPE}
   * {cl_mutable_dispatch_asserts_khr_TYPE}
   * {cl_mutable_dispatch_config_khr_TYPE}
   * {cl_mutable_dispatch_exec_info_khr_TYPE}
@@ -115,8 +97,7 @@ also be updated between enqueues of the command-buffer.
   ** {CL_COMMAND_BUFFER_MUTABLE_KHR}
   * {cl_command_buffer_properties_khr_TYPE}
   ** {CL_COMMAND_BUFFER_MUTABLE_DISPATCH_ASSERTS_KHR}
-  * {cl_command_buffer_structure_type_khr_TYPE}
-  ** {CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR}
+  * {cl_command_buffer_update_type_khr_TYPE}
   ** {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}
   * New Error Codes
   ** {CL_INVALID_MUTABLE_COMMAND_KHR}
@@ -274,8 +255,6 @@ kernel void vector_addition(global int* tile1, global int* tile2,
       cl_mutable_dispatch_arg_khr arg_2{2, sizeof(cl_mem), &output_buffer};
       cl_mutable_dispatch_arg_khr args[] = {arg_0, arg_1, arg_2};
       cl_mutable_dispatch_config_khr dispatch_config{
-          CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR,
-          nullptr,
           command_handle,
           3 /* num_args */,
           0 /* num_svm_arg */,
@@ -287,12 +266,16 @@ kernel void vector_addition(global int* tile1, global int* tile2,
           nullptr /* global_work_offset */,
           nullptr /* global_work_size */,
           nullptr /* local_work_size */};
-      cl_mutable_base_config_khr mutable_config{
-          CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR, nullptr, 1,
-          &dispatch_config};
 
       // Update the command buffer with the mutable configuration
-      error = clUpdateMutableCommandsKHR(command_buffer, &mutable_config);
+      cl_uint num_configs = 1;
+      cl_command_buffer_update_type_khr config_types[1] = {
+          CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR
+      };
+      const void* configs[1] = {&dispatch_config};
+      error = clUpdateMutableCommandsKHR(command_buffer, num_configs,
+                                         config_types, configs);
+
       CL_CHECK(error);
     }
 
@@ -374,3 +357,6 @@ may be a introduced as a stand alone extension.
   * Revision 0.9.1, 2023-11-07
   ** Add type {cl_mutable_dispatch_asserts_khr_TYPE} and its possible values
      (provisional).
+  * Revision 0.9.2, 2024-06-19
+  ** Change {clUpdateMutableCommandsKHR} API to pass configs as an array rather
+     than linked list (provisional).
