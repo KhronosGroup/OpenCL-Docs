@@ -1,0 +1,241 @@
+= cl_intel_subgroup_buffer_prefetch
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C,
+// for syntax highlighting purposes.
+:language: c
+
+== Name Strings
+
+`cl_intel_subgroup_buffer_prefetch`
+
+== Contact
+
+Grzegorz Wawiorko Intel (grzegorz 'dot' wawiorko 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Grzegorz Wawiorko, Intel +
+Ben Ashbaugh, Intel +
+Andrzej Ratajewski, Intel +
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2024 Intel Corporation.  All rights reserved.
+
+== Status
+
+Complete
+
+== Version
+
+Built On: {docdate} +
+Revision: 1
+
+== Dependencies
+
+OpenCL 1.2 and support for `cl_intel_subgroups` is required.
+
+This extension requires OpenCL support for SPIR-V, either via OpenCL 2.1 or via the `cl_khr_il_program` extension.
+
+This extension is written against the OpenCL 3.0 C Language specification, V3.0.16.
+
+== Overview
+
+The extension adds the ability to prefetch data from a buffer as a sub-group operation.
+The functionality added by this extension can improve the performance of some kernels by prefetching data into a cache, so future reads of the data are from a fast cache rather than slower memory.
+
+The new block prefetch operations are supported both in the OpenCL C kernel programming language and in the SPIR-V intermediate language.
+
+The prefetch functions are companions to the sub-group block reads described by the extensions `cl_intel_subgroups`, `cl_intel_subgroups_char`, `cl_intel_subgroups_short` and `cl_intel_subgroups_long`.
+
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+None.
+
+== New OpenCL C Functions
+
+Add `uchar` variants of the sub-group block prefetch functions: ::
++
+--
+[source]
+----
+void intel_sub_group_block_prefetch_uc( const __global uchar* p )
+void intel_sub_group_block_prefetch_uc2( const __global uchar* p )
+void intel_sub_group_block_prefetch_uc4( const __global uchar* p )
+void intel_sub_group_block_prefetch_uc8( const __global uchar* p )
+void intel_sub_group_block_prefetch_uc16( const __global uchar* p )
+----
+--
+
+Add `ushort` variants of the sub-group block prefetch functions: ::
++
+--
+[source]
+----
+void intel_sub_group_block_prefetch_us( const __global ushort* p )
+void intel_sub_group_block_prefetch_us2( const __global ushort* p )
+void intel_sub_group_block_prefetch_us4( const __global ushort* p )
+void intel_sub_group_block_prefetch_us8( const __global ushort* p )
+void intel_sub_group_block_prefetch_us16( const __global ushort* p )
+----
+--
+
+Add `uint` variants of the sub-group block prefetch functions: ::
++
+--
+[source]
+----
+void intel_sub_group_block_prefetch_ui( const __global uint* p )
+void intel_sub_group_block_prefetch_ui2( const __global uint* p )
+void intel_sub_group_block_prefetch_ui4( const __global uint* p )
+void intel_sub_group_block_prefetch_ui8( const __global uint* p )
+----
+--
+
+Add `ulong` variants of the sub-group block prefetch functions: ::
++
+--
+[source]
+----
+void intel_sub_group_block_prefetch_ul( const __global ulong* p )
+void intel_sub_group_block_prefetch_ul2( const __global ulong* p )
+void intel_sub_group_block_prefetch_ul4( const __global ulong* p )
+void intel_sub_group_block_prefetch_ul8( const __global ulong* p )
+----
+--
+
+== Modifications to the OpenCL C Specification
+
+=== Add a new Section 6.15.X - "Sub-group Prefetch Functions"
+
+--
+[cols="5a,4",options="header"]
+|==================================
+|*Function*
+|*Description*
+
+|[source,c]
+----
+void intel_sub_group_block_prefetch_uc(
+        const __global uchar* p )
+void intel_sub_group_block_prefetch_uc2(
+        const __global uchar* p )
+void intel_sub_group_block_prefetch_uc4(
+        const __global uchar* p )
+void intel_sub_group_block_prefetch_uc8(
+        const __global uchar* p )
+void intel_sub_group_block_prefetch_uc16(
+        const __global uchar* p )
+----
+
+| Takes 1, 2, 4, 8 or 16 uchars of data for each work item in the sub-group from the specified pointer as a block operation and saves it in the global cache memory.
+
+Prefetches have no effect on the behavior of the program but can change its performance characteristics.
+
+|[source,c]
+----
+void intel_sub_group_block_prefetch_us(
+        const __global ushort* p )
+void intel_sub_group_block_prefetch_us2(
+        const __global ushort* p )
+void intel_sub_group_block_prefetch_us4(
+        const __global ushort* p )
+void intel_sub_group_block_prefetch_us8(
+        const __global ushort* p )
+void intel_sub_group_block_prefetch_us16(
+        const __global ushort* p )
+----
+
+| Takes 1, 2, 4, 8 or 16 ushorts of data for each work item in the sub-group from the specified pointer as a block operation and saves it in the global cache memory.
+
+Prefetches have no effect on the behavior of the program but can change its performance characteristics.
+
+|[source,c]
+----
+void intel_sub_group_block_prefetch_ui(
+        const __global uint* p )
+void intel_sub_group_block_prefetch_ui2(
+        const __global uint* p )
+void intel_sub_group_block_prefetch_ui4(
+        const __global uint* p )
+void intel_sub_group_block_prefetch_ui8(
+        const __global uint* p )
+----
+
+| Takes 1, 2, 4 or 8 uints of data for each work item in the sub-group from the specified pointer as a block operation and saves it in the global cache memory.
+
+Prefetches have no effect on the behavior of the program but can change its performance characteristics.
+
+|[source,c]
+----
+void intel_sub_group_block_prefetch_ul(
+        const __global ulong* p )
+void intel_sub_group_block_prefetch_ul2(
+        const __global ulong* p )
+void intel_sub_group_block_prefetch_ul4(
+        const __global ulong* p )
+void intel_sub_group_block_prefetch_ul8(
+        const __global ulong* p )
+----
+
+| Takes 1, 2, 4 or 8 ulongs of data for each work item in the sub-group from the specified pointer as a block operation and saves it in the global cache memory.
+
+Prefetches have no effect on the behavior of the program but can change its performance characteristics.
+
+|==================================
+--
+
+== Modifications to the OpenCL SPIR-V Environment Specification
+
+=== Add a new section 5.2.X - `cl_intel_subgroup_buffer_prefetch`
+
+If the OpenCL environment supports the extension `cl_intel_subgroup_buffer_prefetch`, then the environment must accept modules that declare use of the extension `SPV_INTEL_subgroup_buffer_prefetch` via *OpExtension*.
+
+If the OpenCL environment supports the extension `cl_intel_subgroup_buffer_prefetch` and use of the SPIR-V extension `SPV_INTEL_subgroup_buffer_prefetch` is declared in the module via *OpExtension*, then the environment must accept modules that declare the *SubgroupBufferPrefetchINTEL* capability.
+
+Note that the restrictions described in Section 7.1.X.3 - _Notes and Restrictions_ in the `cl_intel_spirv_subgroups` extension are unchanged and continue to apply for this extension.
+
+== Issues
+
+None.
+
+//. Issue?
+//+
+//--
+//`STATUS`: Description.
+//--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1|2024-06-28|Grzegorz Wawiorko|*First public revision.*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************
