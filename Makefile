@@ -14,6 +14,7 @@ EXTOPTIONS := $(foreach ext,$(EXTS),-extension $(ext))
 
 QUIET	    ?=
 VERYQUIET   ?= @
+PYTHON	    ?= python3
 ASCIIDOCTOR ?= asciidoctor
 RM	    = rm -f
 RMRF	    = rm -rf
@@ -545,6 +546,7 @@ $(METADEPEND): $(APIXML) $(GENSCRIPT)
 attribs: $(ATTRIBFILE)
 
 $(ATTRIBFILE):
+	$(QUIET)$(MKDIR) $(dir $@)
 	for attrib in $(EXTS) ; do \
 	    echo ":$${attrib}:" ; \
 	done > $@
