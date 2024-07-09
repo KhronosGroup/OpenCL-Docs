@@ -12866,6 +12866,10 @@ ifdef::cl_khr_external_semaphore[]
 
 [open,refpage='clGetSemaphoreHandleForTypeKHR',desc='Export external handle from a semaphore',type='protos']
 --
+
+Export operations have the same transference as the specified handle type's import operations. Additionally, exporting a semaphore payload to a handle with copy transference has the same side effects on the source semaphore's payload as executing a semaphore wait operation.
+
+Please refer to handle specific documentation for more details on transference requirements per handle type.
 To export an external handle from a semaphore, call the function
 
 include::{generated}/api/protos/clGetSemaphoreHandleForTypeKHR.txt[]
@@ -12919,53 +12923,19 @@ Otherwise, it returns one of the following errors:
 
 === Importing Semaphore External Handles
 
-Applications can import a semaphore payload into an existing semaphore using
-an external semaphore handle.
-The effects of the import operation will be either temporary or permanent,
-as specified by the application.
-If the import is temporary, the implementation must restore the semaphore to
-its prior permanent state after submitting the next semaphore wait
-operation.
-Performing a subsequent temporary import on a semaphore before performing a
-semaphore wait has no effect on this requirement; the next wait submitted on
-the semaphore must still restore its last permanent state.
-A permanent payload import behaves as if the target semaphore was destroyed,
-and a new semaphore was created with the same handle but the imported
-payload.
-Because importing a semaphore payload temporarily or permanently detaches
-the existing payload from a semaphore, similar usage restrictions to those
-applied to {clReleaseSemaphoreKHR} are applied to any command that imports a
-semaphore payload.
-Which of these import types is used is referred to as the import operation's
-permanence.
-Each handle type supports either one or both types of permanence.
+Applications can import a semaphore payload by creating a semaphore from an external handle. The
+implementation must perform the import operation by either referencing or copying the payload
+referred to by the specified external semaphore handle, depending on the handle's type. When using
+handle types with reference transference, importing a payload to a semaphore adds the semaphore to
+the set of all semaphores sharing that payload. This set includes the semaphore from which the payload
+was exported. Semaphore signaling and waiting operations performed on any semaphore in the set must
+behave as if the set were a single semaphore. Importing a payload using handle types with copy
+transference creates a duplicate copy of the payload at the time of import, but makes no further
+reference to it. Semaphore signaling and waiting operations performed on the target of copy imports
+must not affect any other semaphore or payload.
 
-The implementation must perform the import operation by either referencing
-or copying the payload referred to by the specified external semaphore
-handle, depending on the handle's type.
-The import method used is referred to as the handle type's transference.
-When using handle types with reference transference, importing a payload to
-a semaphore adds the semaphore to the set of all semaphores sharing that
-payload.
-This set includes the semaphore from which the payload was exported.
-Semaphore signaling and waiting operations performed on any semaphore in the
-set must behave as if the set were a single semaphore.
-Importing a payload using handle types with copy transference creates a
-duplicate copy of the payload at the time of import, but makes no further
-reference to it.
-Semaphore signaling and waiting operations performed on the target of copy
-imports must not affect any other semaphore or payload.
-
-Export operations have the same transference as the specified handle type's
-import operations.
-Additionally, exporting a semaphore payload to a handle with copy
-transference has the same side effects on the source semaphore's payload as
-executing a semaphore wait operation.
-If the semaphore was using a temporarily imported payload, the semaphore's
-prior permanent payload will be restored.
-
-Please refer to handle specific specifications for more details on
-transference and permanence requirements specific to handle type.
+Please refer to handle specific documentation for more details on transference requirements per
+handle type.
 
 
 === Descriptions of External Semaphore Handle Types
@@ -13034,17 +13004,16 @@ descriptor when exporting a {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} from a
 
 endif::cl_khr_external_semaphore_sync_fd[]
 
-.Transference and Permanence Properties for File Descriptor Handles
-[width="100%",cols="60%,<20%,<20%",options="header"]
+.Transference Properties for File Descriptor Handles
+[width="100%",cols="60%,<40%",options="header"]
 |====
-| Handle Type | Transference | Permanence
+| Handle Type | Transference
 
 ifdef::cl_khr_external_semaphore_opaque_fd[]
 | {CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR.asciidoc[]
   | Reference
-    | Temporary, Permanent
 endif::cl_khr_external_semaphore_opaque_fd[]
 
 ifdef::cl_khr_external_semaphore_sync_fd[]
@@ -13052,7 +13021,6 @@ ifdef::cl_khr_external_semaphore_sync_fd[]
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_SYNC_FD_KHR.asciidoc[]
   | Copy
-    | Temporary
 endif::cl_khr_external_semaphore_sync_fd[]
 |====
 
@@ -13130,24 +13098,21 @@ a semaphore from an external handle:
 
 endif::cl_khr_external_semaphore_win32[]
 
-.Transference and Permanence Properties for NT Handle Types
-[width="100%",cols="60%,<20%,<20%",options="header"]
+.Transference Properties for NT Handle Types
+[width="100%",cols="60%,<40%",options="header"]
 |====
-| Handle Type | Transference | Permanence
+| Handle Type | Transference
 
 ifdef::cl_khr_external_semaphore_win32[]
 | {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR.asciidoc[]
   | Reference
-    | Temporary, Permanent
 | {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR.asciidoc[]
   | Reference
-    | Temporary, Permanent
 endif::cl_khr_external_semaphore_win32[]
-|====
 
 // TODO Why "Windows handles" here but "NT handles" elsewhere?
 
