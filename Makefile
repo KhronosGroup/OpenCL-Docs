@@ -73,8 +73,8 @@ SPECREVISION = $(shell echo `git describe --tags --dirty`)
 # This used to be a dependency in the spec html/pdf targets,
 # but that's likely to lead to merge conflicts. Just regenerate
 # when pushing a new spec for review to the sandbox.
-SPECREMARK = from git branch: $(shell echo `git symbolic-ref --short HEAD`) \
-	     commit: $(shell echo `git log -1 --format="%H"`)
+SPECREMARK = from git branch: $(shell echo `git symbolic-ref --short HEAD 2> /dev/null || echo Git branch not available`) \
+	     commit: $(shell echo `git log -1 --format="%H" 2> /dev/null || echo Git commit not available`)
 endif
 # The C++ for OpenCL document revision scheme is aligned with its release date.
 # Revision naming scheme is as follows:
