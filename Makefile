@@ -117,7 +117,7 @@ ADOCCOMMONOPTS	      = -a apispec="$(CURDIR)/api" \
 			-a cspec="$(CURDIR)/c" \
 			-a images="$(CURDIR)/images" \
 			$(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
-ADOCOPTS	      = -d book $(ADOCCOMMONOPTS)
+ADOCOPTS	      = --failure-level ERROR -d book $(ADOCCOMMONOPTS)
 
 # Asciidoctor options to build refpages
 #
