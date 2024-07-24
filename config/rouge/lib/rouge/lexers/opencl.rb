@@ -158,7 +158,7 @@ module Rouge
         cl_command_buffer_state_khr
         cl_command_buffer_properties_khr
         cl_command_buffer_flags_khr
-        cl_ndrange_kernel_command_properties_khr
+        cl_command_properties_khr
         cl_mutable_command_khr
         cl_mutable_dispatch_fields_khr
         cl_mutable_command_info_khr
