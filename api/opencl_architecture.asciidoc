@@ -1,6 +1,5 @@
-// Copyright 2017-2023 The Khronos Group. This work is licensed under a
-// Creative Commons Attribution 4.0 International License; see
-// http://creativecommons.org/licenses/by/4.0/
+// Copyright 2017-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
 
 = The OpenCL Architecture
 
@@ -141,7 +140,7 @@ The commands placed into the command-queue fall into one of three types:
     order constraints between commands.
 
 In addition to commands submitted from the host command-queue, a kernel
-running on a device can enqueue commands to a device-side command queue.
+running on a device can enqueue commands to a device-side command-queue.
 This results in _child kernels_ enqueued by a kernel executing on a device
 (the _parent kernel_).
 Regardless of whether the command-queue resides on the host or a device,
@@ -156,8 +155,8 @@ each command passes through six states.
     prerequisites for execution are met.
   . *Ready*: All prerequisites constraining execution of a command have been
     met.
-    The command, or for a kernel-enqueue command the collection of work
-    groups associated with a command, is placed in a device work-pool from
+    The command, or for a kernel-enqueue command the collection of work-groups
+    associated with a command, is placed in a device work-pool from
     which it is scheduled for execution.
   . *Running*: Execution of the command starts.
     For the case of a kernel-enqueue command, one or more work-groups
@@ -193,21 +192,23 @@ Unsuccessful completion results in abnormal termination of the command which
 is indicated by setting the event status to a negative value.
 In this case, the command-queue associated with the abnormally terminated
 command and all other command-queues in the same context may no longer be
-available and their behavior is implementation defined.
+available and their behavior is implementation-defined.
 
 A command submitted to a device will not launch until prerequisites that
 constrain the order of commands have been resolved.
 These prerequisites have three sources:
 
-  * They may arise from commands submitted to a command-queue that constrain
-    the order in which commands are launched.
-    For example, commands that follow a command queue barrier will not
-    launch until all commands prior to the barrier are complete.
+  * The first source of prerequisites is implicit dependencies between commands
+    enqueued to the same command-queue which arise as follows:
+  ** Commands enqueued after a command-queue barrier have the preceding barrier command
+      as a prerequisite.
+  ** Commands enqueued in an in-order command-queue have the command enqueued
+     before them as a prerequisite.
   * The second source of prerequisites is dependencies between commands
     expressed through events.
     A command may include an optional list of events.
     The command will wait and not launch until all the events in the list
-    are in the state CL COMPLETE.
+    are in the state {CL_COMPLETE}.
     By this mechanism, event objects define order constraints between
     commands and coordinate execution between the host and one or more
     devices.
@@ -262,13 +263,13 @@ of two modes:
     commands appear to the OpenCL application as if they execute in the same
     order they are enqueued to a command-queue.
   * *Out-of-order Execution*: Commands execute in any order constrained only
-    by explicit synchronization points (e.g. through command queue barriers)
+    by explicit synchronization points (e.g. through command-queue barriers)
     or explicit dependencies on events.
 
 Multiple command-queues can be present within a single context.
 Multiple command-queues execute commands independently.
 Event objects visible to the host program can be used to define
-synchronization points between commands in multiple command queues.
+synchronization points between commands in multiple command-queues.
 If such synchronization points are established between commands in multiple
 command-queues, an implementation must assure that the command-queues
 progress concurrently and correctly account for the dependencies established
@@ -300,13 +301,13 @@ within a work-group.
 The details of this mapping are described in the following section.
 
 
-=== Mapping work-items onto an NDRange
+=== Mapping Work-items Onto an Nd-range
 
-The index space supported by OpenCL is called an NDRange.
-An NDRange is an N-dimensional index space, where N is one, two or three.
-The NDRange is decomposed into work-groups forming blocks that cover the
+The index space supported by OpenCL is called an ND-range.
+An ND-range is an N-dimensional index space, where N is one, two or three.
+The ND-range is decomposed into work-groups forming blocks that cover the
 Index space.
-An NDRange is defined by three integer arrays of length N:
+An ND-range is defined by three integer arrays of length N:
 
   * The extent of the index space (or global size) in each dimension.
   * An offset index F indicating the initial value of the indices in each
@@ -319,7 +320,7 @@ number of elements in that dimension minus one.
 
 Unless a kernel comes from a source that disallows it, e.g. OpenCL C 1.x or
 using `-cl-uniform-work-group-size`, the size of work-groups in
-an NDRange (the local size) need not be the same for all work-groups.
+an ND-range (the local size) need not be the same for all work-groups.
 In this case, any single dimension for which the global size is not
 divisible by the local size will be partitioned into two regions.
 One region will have work-groups that have the same number of work-items as
@@ -341,7 +342,7 @@ range from zero to the size of the work-group in that dimension minus one.
 
 Work-groups are assigned IDs similarly.
 The number of work-groups in each dimension is not directly defined but is
-inferred from the local and global NDRanges provided when a kernel-instance
+inferred from the local and global ND-ranges provided when a kernel-instance
 is enqueued.
 A work-group's ID is an N-dimensional tuple with components in the range 0
 to the ceiling of the global size in that dimension divided by the local
@@ -382,7 +383,7 @@ is computed as:
 * (w~x~, w~y~) = ( (g~x~ - s~x~ - F~x~) / S~x~, (g~y~ - s~y~ - F~y~) / S~y~ )
 
 [[index-space-image]]
-image::images/index_space.jpg[align="center", title="An example of an NDRange index space showing work-items, their global IDs and their mapping onto the pair of work-group and local IDs. In this case, we assume that in each dimension, the size of the work-group evenly divides the global NDRange size (i.e. all work-groups have the same size) and that the offset is equal to zero."]
+image::images/index_space.jpg[align="center", title="An example of an ND-range index space showing work-items, their global IDs and their mapping onto the pair of work-group and local IDs. In this case, we assume that in each dimension, the size of the work-group evenly divides the global ND-range size (i.e. all work-groups have the same size) and that the offset is equal to zero."]
 
 Within a work-group work-items may be divided into sub-groups.
 The mapping of work-items to sub-groups is implementation-defined and may be
@@ -411,7 +412,7 @@ In this situation all sub-group scope functions are equivalent to their
 work-group level equivalents.
 
 
-=== Execution of kernel-instances
+=== Execution of Kernel-instances
 
 The work carried out by an OpenCL program occurs through the execution of
 kernel-instances on compute devices.
@@ -421,8 +422,8 @@ command-queue, executes on a device, and completes.
 
 A kernel object is defined as a function within the program object and a
 collection of arguments connecting the kernel to a set of argument values.
-The host program enqueues a kernel object to the command queue along with
-the NDRange and the work-group decomposition.
+The host program enqueues a kernel object to the command-queue along with
+the ND-range and the work-group decomposition.
 These define a _kernel-instance_.
 In addition, an optional set of events may be defined when the kernel is
 enqueued.
@@ -432,12 +433,12 @@ commands in the queue or to commands in other queues within the same
 context.
 
 A kernel-instance is submitted to a device.
-For an in-order command queue, the kernel instances appear to launch and
+For an in-order command-queue, the kernel instances appear to launch and
 then execute in that same order; where we use the term appear to emphasize
 that when there are no dependencies between commands and hence differences
 in the order that commands execute cannot be observed in a program, an
-implementation can reorder commands even in an in-order command queue.
-For an out of order command-queue, kernel-instances wait to be launched
+implementation can reorder commands even in an in-order command-queue.
+For an out-of-order command-queue, kernel-instances wait to be launched
 until:
 
   * Synchronization commands enqueued prior to the kernel-instance are
@@ -462,7 +463,7 @@ to {CL_COMPLETE}.
 While a command-queue is associated with only one device, a single device
 may be associated with multiple command-queues all feeding into the single
 work-pool.
-A device may also be associated with command queues associated with
+A device may also be associated with command-queues associated with
 different contexts within the same platform, again all feeding into the
 single work-pool.
 The device will pull work-groups from the work-pool and execute them on one
@@ -504,8 +505,8 @@ synchronization within the work-group.
 
 In the absence of synchronization functions (e.g. a barrier), work-items
 within a sub-group may be serialized.
-In the presence of sub -group functions, work-items within a sub -group may
-be serialized before any given sub -group function, between dynamically
+In the presence of sub-group functions, work-items within a sub-group may
+be serialized before any given sub-group function, between dynamically
 encountered pairs of sub-group functions and between a work-group function
 and the end of the kernel.
 
@@ -515,7 +516,7 @@ work-group synchronization functions.
 
 
 [[device-side-enqueue]]
-=== Device-side enqueue
+=== Device-Side Enqueue
 
 NOTE: Device-side enqueue is <<unified-spec, missing before>> version 2.0.
 
@@ -535,10 +536,10 @@ so-called *device-side enqueue*.
 Device-side kernel-enqueue commands are similar to host-side kernel-enqueue
 commands.
 The kernel executing on a device (the *parent kernel*) enqueues a
-kernel-instance (the *child kernel*) to a device-side command queue.
+kernel-instance (the *child kernel*) to a device-side command-queue.
 This is an out-of-order command-queue and follows the same behavior as the
 out-of-order command-queues exposed to the host program.
-Commands enqueued to a device side command-queue generate and use events to
+Commands enqueued to a device-side command-queue generate and use events to
 enforce order constraints just as for the command-queue on the host.
 These events, however, are only visible to the parent kernel running on the
 device.
@@ -633,7 +634,7 @@ The synchronization points defined in OpenCL include:
     the work-groups in the kernel and all of its child kernels have
     completed.
     This is signaled to the host, a parent kernel or other kernels within
-    command queues by setting the value of the event associated with a
+    command-queues by setting the value of the event associated with a
     kernel to {CL_COMPLETE}.
   * *Blocking Commands:* A blocking command defines a synchronization point
     between the unit of execution that calls the blocking API function and
@@ -642,7 +643,7 @@ The synchronization points defined in OpenCL include:
     previously enqueued commands have completed before subsequently enqueued
     commands can be launched.
   * {clFinish}: This function blocks until all previously enqueued commands
-    in the command queue have completed after which {clFinish} defines a
+    in the command-queue have completed after which {clFinish} defines a
     synchronization point and the {clFinish} function returns.
 
 
@@ -695,11 +696,11 @@ The OpenCL execution model supports three types of kernels:
     The common use of built in kernels is to expose fixed-function hardware
     or firmware associated with a particular OpenCL device or custom device.
     The semantics of a built-in kernel may be defined outside of OpenCL and
-    hence are implementation defined.
+    hence are implementation-defined.
     Note: Built-in kernels are <<unified-spec, missing before>> version 1.2.
 
 
-All three types of kernels are manipulated through the OpenCL command queues
+All three types of kernels are manipulated through the OpenCL command-queues
 and must conform to the synchronization points defined in the OpenCL
 execution model.
 
@@ -940,7 +941,7 @@ devices.
 
   * *Read/Write/Fill commands*: The data associated with a memory object is
     explicitly read and written between the host and global memory regions
-    using commands enqueued to an OpenCL command queue.
+    using commands enqueued to an OpenCL command-queue.
     Note: Fill commands are <<unified-spec, missing before>> version 1.2.
   * *Map/Unmap commands*: Data from the memory object is mapped into a
     contiguous block of memory accessed through a host accessible pointer.
@@ -979,7 +980,7 @@ multiple devices, the OpenCL runtime system must manage the association of
 memory objects with a given device.
 In most cases the OpenCL runtime will implicitly associate a memory object
 with a device.
-A kernel instance is naturally associated with the command queue to which
+A kernel instance is naturally associated with the command-queue to which
 the kernel was submitted.
 Since a command-queue can only access a single device, the queue uniquely
 defines which device is involved with any given kernel-instance; hence
@@ -988,6 +989,79 @@ devices.
 Programmers may anticipate these associations in their programs and
 explicitly manage association of memory objects with devices in order to
 improve performance.
+
+
+ifdef::cl_khr_d3d10_sharing,cl_khr_d3d11_sharing[]
+[[lifetime-of-shared-opencl-direct3d-memory-objects]]
+=== Lifetime of Shared Direct3D Memory Objects
+
+This section refers to similar Direct3D 10 and Direct3D 11 objects and
+concepts such as _resources_, _reference counts_, and _devices_.
+
+Sharing is accomplished by creating an OpenCL context via the context create
+parameters {CL_CONTEXT_D3D10_DEVICE_KHR} (for Direct3D 10, if the
+{cl_khr_d3d10_sharing_EXT} extension is supported) or
+{CL_CONTEXT_D3D11_DEVICE_KHR} (for Direct3D 11, if the
+{cl_khr_d3d11_sharing_EXT} extension is supported.
+
+An OpenCL memory object created from a Direct3D resource remains valid as
+long as the corresponding Direct3D resource has not been deleted.
+If the Direct3D resource is deleted through the Direct3D API, subsequent use
+of the OpenCL memory object will result in undefined behavior, including but
+not limited to possible OpenCL errors, data corruption, and program
+termination.
+
+The successful creation of a {cl_context_TYPE} against a Direct3D device
+will increment the internal Direct3D reference count on the specified
+device.
+The internal Direct3D reference count on that Direct3D device will be
+decremented when the OpenCL reference count on the returned OpenCL context
+drops to zero.
+
+The OpenCL context and corresponding command-queues are dependent on the
+existence of the Direct3D device from which the OpenCL context was created.
+If the Direct3D device is deleted through the Direct3D API, subsequent use
+of the OpenCL context will result in undefined behavior, including but not
+limited to possible OpenCL errors, data corruption, and program termination.
+endif::cl_khr_d3d10_sharing,cl_khr_d3d11_sharing[]
+
+
+ifdef::cl_khr_egl_image[]
+==== Lifetime of Shared EGLImage Objects
+
+An OpenCL memory object created from an EGL `EGLImage` object remains valid
+according to the lifetime behavior as described in the `EGL_KHR_image_base`
+extension.
+
+Any `EGLImage` siblings exist in any client API context
+
+For OpenCL this means that while the application retains a reference on the
+{cl_mem_TYPE} (the EGL sibling), the image remains valid.
+endif::cl_khr_egl_image[]
+
+
+ifdef::cl_khr_gl_sharing[]
+[[lifetime-of-shared-opencl-opengl-memory-objects]]
+=== Lifetime of Shared OpenCL/OpenGL Memory Objects
+
+An OpenCL memory object created from an OpenGL object (hereinafter referred
+to as a "`shared OpenCL/OpenGL object`") remains valid as long as the
+corresponding OpenGL object has not been deleted.
+If the OpenGL object is deleted through the OpenGL API (e.g.
+`glDeleteBuffers`, `glDeleteTextures`, or `glDeleteRenderbuffers`),
+subsequent use of the OpenCL buffer or image object will result in undefined
+behavior, including but not limited to possible OpenCL errors and data
+corruption, but may not result in program termination.
+
+The OpenCL context and corresponding command-queues are dependent on the
+existence of the OpenGL share group object, or the share group associated
+with the OpenGL context from which the OpenCL context is created.
+If the OpenGL share group object or all OpenGL contexts in the share group
+are destroyed, any use of the OpenCL context or command-queue(s) will result
+in undefined behavior, which may include program termination.
+Applications should destroy the OpenCL command-queue(s) and OpenCL context
+before destroying the corresponding OpenGL share group or contexts
+endif::cl_khr_gl_sharing[]
 
 
 [[shared-virtual-memory]]
@@ -1051,8 +1125,9 @@ There are three types of SVM in OpenCL
               | No
 |====
 
-Coarse-Grained buffer SVM is required in the core OpenCL specification.
-The two finer grained approaches are optional features in OpenCL.
+Coarse-Grained buffer SVM is a required feature for OpenCL 2.0, 2.1, or 2.2
+devices and an optional feature for OpenCL 3.0 or newer devices.
+Fine-Grained SVM is an optional feature for all OpenCL devices.
 The various SVM mechanisms to access host memory from the work-items
 associated with a kernel instance are <<svm-summary-table, summarized
 above>>.
@@ -1214,7 +1289,7 @@ model.
 This is accomplished by following these guidelines.
 
   * Write programs that manage safe sharing of global memory objects through
-    the synchronization points defined by the command queues.
+    the synchronization points defined by the command-queues.
   * Restrict low level synchronization inside work-groups to the work-group
     functions such as barrier.
   * If you want sequential consistency behavior with system allocations or
@@ -1231,7 +1306,7 @@ If these guidelines are followed in your OpenCL programs, you can skip the
 detailed rules behind the relaxed memory models and go directly to
 <<opencl-framework, OpenCL Framework>>.
 
-=== Overview of atomic and fence operations
+=== Overview of Atomic and Fence Operations
 
 OpenCL 2.x has a number of _synchronization operations_ that are used to define
 memory order constraints in a program.
@@ -1488,7 +1563,7 @@ The value of *M*, as determined by evaluation *B*, shall be the value stored
 by some operation in the visible sequence of *M* with respect to *B*.
 <<iso-c11,[C11 standard, Section 5.1.2.4, paragraph 22, modified.]>>
 
-If an operation *A* that modifies an atomic object *M* global-happens before
+If an operation *A* that modifies an atomic object *M* global-happens-before
 an operation *B* that modifies *M*, then *A* shall be earlier than *B* in
 the modification order of *M*.
 This requirement is known as write-write coherence.
@@ -1740,7 +1815,7 @@ conditions required for *X* to local-synchronize-with *Y* are met, or both
 sets of conditions are met.
 
 
-==== Work-group Functions
+==== Work-Group Functions
 
 The OpenCL kernel execution model includes collective operations across the
 work-items within a single work-group.
@@ -1793,10 +1868,10 @@ must execute the same work-group function call site, or dynamic work-group
 function instance.
 
 
-==== Sub-group Functions
+==== Sub-Group Functions
 
 NOTE: Sub-group functions are <<unified-spec, missing before>> version 2.1.
-Also see extension *cl_khr_subgroups*.
+Also see {cl_khr_subgroups_EXT}.
 
 The OpenCL kernel execution model includes collective operations across the
 work-items within a single sub-group.
@@ -1816,7 +1891,7 @@ distinguish between a dynamic and a static instance of the call to a
 barrier.
 A call to a barrier can appear in a loop, for example, and each execution of
 the same static barrier call results in a new dynamic instance of the
-barrier that will independently synchronize a sub-groups work-items.
+barrier that will independently synchronize the work-items in a sub-group.
 
 A work-item executing a dynamic instance of a barrier results in two
 operations, both fences, that are called the entry and exit fences.
@@ -1848,13 +1923,13 @@ must execute the same sub-group function call site, or dynamic sub-group
 function instance.
 
 
-==== Host-side and Device-side Commands
+==== Host-Side and Device-Side Commands
 
 This section describes how the OpenCL API functions associated with
 command-queues contribute to happens-before relations.
-There are two types of command queues and associated API functions in OpenCL
+There are two types of command-queues and associated API functions in OpenCL
 2.x; _host command-queues_ and _device command-queues_.
-The interaction of these command queues with the memory model are for the
+The interaction of these command-queues with the memory model are for the
 most part equivalent.
 In a few cases, the rules only applies to the host command-queue.
 We will indicate these special cases by specifically denoting the host
@@ -1904,7 +1979,7 @@ following:
     memory operations made by the host thread.
   . If a command *C* has an event *E* that signals its completion, then *C*
     global- synchronizes-with *E*.
-  . For a command *C* enqueued to a host-side command queue, if *C* has an
+  . For a command *C* enqueued to a host-side command-queue, if *C* has an
     event *E* that signals its completion, then *E* global-synchronizes-with
     an API call *X* that waits on *E*.
     For example, if a host thread or kernel-instance calls the
@@ -1953,7 +2028,7 @@ following:
     `CLK_ENQUEUE_FLAGS_WAIT_WORK_GROUP` flag, then the end state of the
     work-group global-synchronizes with *C*.
 
-When using an out-of-order command queue, a wait on an event or a marker or
+When using an out-of-order command-queue, a wait on an event or a marker or
 command-queue barrier command can be used to ensure the correct ordering of
 dependent commands.
 In those cases, the wait for the event or the marker or barrier command will
@@ -1991,7 +2066,7 @@ No writes to fine-grained SVM buffers can be introduced that were not in the
 original program.
 
 In the remainder of this section, we discuss a few points regarding the
-ordering rules for commands with a host command queue.
+ordering rules for commands with a host command-queue.
 
 NOTE: In an OpenCL 1.x implementation a synchronization point is a
 kernel-instance or host program location where the contents of memory
@@ -2012,7 +2087,7 @@ may be overwritten by the map operation.
 
 Access to non-SVM {cl_mem_TYPE} buffers and coarse-grained SVM allocations is
 ordered at synchronization points between host commands.
-In the presence of an out-of-order command queue or a set of command queues
+In the presence of an out-of-order command-queue or a set of command-queues
 mapped to the same device, multiple kernel instances may execute
 concurrently on the same device.
 
@@ -2052,7 +2127,7 @@ The platform version indicates the version of the OpenCL runtime that is
 supported.
 This includes all of the APIs that the host can use to interact with
 resources exposed by the OpenCL runtime; including contexts, memory objects,
-devices, and command queues.
+devices, and command-queues.
 
 The device version is an indication of the device's capabilities separate
 from the runtime and compiler as represented by the device info returned by
@@ -2095,7 +2170,7 @@ OpenCL 3.0 also adds a new version of the OpenCL C programming language, which m
 The new version of OpenCL C is backwards compatible with OpenCL C 1.2, but is not backwards compatible with OpenCL C 2.0.
 The new version of OpenCL C must be explicitly requested via the `-cl-std=` build option, otherwise a program will continue to be compiled using the highest OpenCL C 1.x language version supported for the device.
 +
-Whenever an OpenCL C feature is optional in the new version of the OpenCL C programming language, it will be paired with a feature macro, such as `+__opencl_c_feature_name+`, and a corresponding API query.
+Whenever an OpenCL C feature is optional in the new version of the OpenCL C programming language, it will be paired with a feature macro, such as {opencl_c_feature_name}, and a corresponding API query.
 If a feature macro is defined then the feature is supported by the OpenCL C compiler, otherwise the optional feature is not supported.
 
 In order to allow future versions of OpenCL to support new types of
@@ -2110,6 +2185,8 @@ It is therefore strongly recommended that applications
 <<CL_DEVICE_PROFILE,query the profile>> supported by the OpenCL device
 they are running on in order to remain robust to future changes.
 
+
+[[versioning]]
 === Versioning
 
 The OpenCL specification is regularly updated with bug fixes and clarifications.
@@ -2119,35 +2196,46 @@ and to provide a way to identify each set of changes, the OpenCL API, C language
 intermediate languages and extensions maintain a version number. Built-in kernels
 are also versioned.
 
-==== Versions
+
+[[version-numbers]]
+==== Version Numbers
 
 A version number comprises three logical fields:
 
-* The _major_ version indicates a significant change. Backwards compatibility may
-  break across major versions.
-* The _minor_ version indicates the addition of new functionality with backwards
-  compatibility for any existing profiles.
-* The _patch_ version indicates bug fixes, clarifications and general improvements.
+  * The _major_ version indicates a significant change. Backwards
+    compatibility may break across major versions.
+  * The _minor_ version indicates the addition of new functionality with
+    backwards compatibility for any existing profiles.
+  * The _patch_ version indicates bug fixes, clarifications and general
+    improvements.
 
-Version numbers are represented using the {cl_version_TYPE} type that is an alias for
-a 32-bit integer. The fields are packed as follows:
+Version numbers are represented using the {cl_version_TYPE} type that is an
+alias for a 32-bit integer.
+The fields are packed as follows:
 
-* The _major_ version is a 10-bit integer packed into bits 31-22.
-* The _minor_ version is a 10-bit integer packed into bits 21-12.
-* The _patch_ version is a 12-bit integer packed into bits 11-0.
+  * The _major_ version is a 10-bit integer packed into bits 31-22.
+  * The _minor_ version is a 10-bit integer packed into bits 21-12.
+  * The _patch_ version is a 12-bit integer packed into bits 11-0.
 
 This enables versions to be ordered using standard C/C++ operators.
 
 A number of convenience macros are provided by the OpenCL Headers to make
 working with version numbers easier.
 
-`CL_VERSION_MAJOR` extracts the _major_ version from a packed {cl_version_TYPE}. +
-`CL_VERSION_MINOR` extracts the _minor_ version from a packed {cl_version_TYPE}. +
-`CL_VERSION_PATCH` extracts the _patch_ version from a packed {cl_version_TYPE}. +
-`CL_MAKE_VERSION` returns a packed {cl_version_TYPE} from a _major_, _minor_ and
-_patch_ version.
-
-These are defined as follows:
+  * {CL_VERSION_MAJOR_anchor} extracts the _major_ version from a packed
+    {cl_version_TYPE}.
+  * {CL_VERSION_MINOR_anchor} extracts the _minor_ version from a packed
+    {cl_version_TYPE}.
+  * {CL_VERSION_PATCH_anchor} extracts the _patch_ version from a packed
+    {cl_version_TYPE}.
+  * {CL_MAKE_VERSION_anchor} returns a packed {cl_version_TYPE} from a
+    _major_, _minor_ and _patch_ version.
+  * {CL_VERSION_MAJOR_BITS_anchor}, {CL_VERSION_MINOR_BITS_anchor}, and
+    {CL_VERSION_PATCH_BITS_anchor} are the number of bits in the
+    corresponding field.
+  * {CL_VERSION_MAJOR_MASK_anchor}, {CL_VERSION_MINOR_MASK_anchor}, and
+    {CL_VERSION_PATCH_MASK_anchor} are bitmasks used to extract the
+    corresponding packed fields from the version number.
 
 [source,opencl]
 ----
@@ -2177,14 +2265,67 @@ typedef cl_uint cl_version;
     ((patch) & CL_VERSION_PATCH_MASK))
 ----
 
-==== Version name pairing
+[NOTE]
+--
+The available version of an extension is exposed to the user via a macro
+defined by the OpenCL Headers. This macro takes the format of the uppercase
+extension name followed by the `_EXTENSION_VERSION` suffix. For example,
+`CL_KHR_SEMAPHORE_EXTENSION_VERSION` is the macro defining the version of the
+{cl_khr_semaphore_EXT} extension.
 
-It is sometimes necessary to associate a version to an entity it applies to
-(e.g. extension or built-in kernel). This is done using a dedicated
-{cl_name_version_TYPE} structure, defined as follows:
+The value of this macro is set to the {cl_version_TYPE} of the extension using
+the semantic version of the extension. If no semantic version is defined for
+the extension, then the value of the macro is set to `0` to represent semantic
+version `0.0.0`.
+
+Applications can use these version macros along with the convience macros
+defined in this section to guard their code against breaking changes to the API
+of extensions, in particular provisional KHR extensions which have yet to
+finalize an API.
+--
+
+[[version-name-pairing]]
+==== Version-Name Pairing
+
+[open,refpage='cl_name_version',desc='Structure describing a version number and corresponding entity name',type='structs']
+--
+The {cl_name_version_TYPE} structure describes a version number and a
+corresponding entity (e.g. extension or built-in kernel) name:
 
 include::{generated}/api/structs/cl_name_version.txt[]
 
-The `name` field is an array of `CL_NAME_VERSION_MAX_NAME_SIZE` bytes used as
-storage for a NUL-terminated string whose maximum length is therefore
-`CL_NAME_VERSION_MAX_NAME_SIZE - 1`.
+  * _version_ is a <<version-numbers, Version Number>>.
+  * _name_ is an array of {CL_NAME_VERSION_MAX_NAME_SIZE_anchor} characters
+    containing a null-terminated string, whose maximum length is therefore
+    {CL_NAME_VERSION_MAX_NAME_SIZE} minus one.
+--
+
+[[valid-usage]]
+=== Valid Usage and Undefined Behavior
+
+The OpenCL specification describes valid usage and how to use the API correctly.
+For some conditions where an API is used incorrectly, behavior is well-defined,
+such as returning an error code.
+For other conditions, behavior is undefined, and may include program
+termination.
+However, OpenCL implementations must always ensure that incorrect usage by an
+application does not affect the integrity of the operating system, the OpenCL
+implementation, or other OpenCL client applications in the system.
+In particular, any guarantees made by an operating system about whether memory
+from one process can be visible to another process or not must not be violated
+by an OpenCL implementation for any memory allocation.
+OpenCL implementations are not required to make additional security or integrity
+guarantees beyond those provided by the operating system unless explicitly
+directed by the application’s use of a particular feature or extension.
+
+[NOTE]
+--
+For instance, if an operating system guarantees that data in all its memory
+allocations are set to zero when newly allocated, the OpenCL implementation must
+make the same guarantees for any allocations it controls.
+
+Similarly, if an operating system guarantees that use-after-free of host
+allocations will not result in values written by another process becoming
+visible, the same guarantees must be made by the OpenCL implementation for
+memory accessible to an OpenCL device.
+--

@@ -43,7 +43,7 @@ Lukasz Towarek, Intel
 
 == Notice
 
-Copyright (c) 2021-2023 Intel Corporation.  All rights reserved.
+Copyright (c) 2021-2024 Intel Corporation.  All rights reserved.
 
 == Status
 
@@ -798,6 +798,13 @@ The new _param_name_ values described below may be used with the existing *clSet
 
 |====
 
+The following errors may be returned by *clSetKernelExecInfo* for these new _param_name_ values:
+
+* `CL_INVALID_OPERATION` if _param_name_ is `CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL` and no devices in the context associated with _kernel_ support Unified Shared Memory.
+* `CL_INVALID_OPERATION` if _param_name_ is `CL_KERNEL_EXEC_INFO_INDIRECT_HOST_ACCESS_INTEL` and no devices in the context associated with _kernel_ support host Unified Shared Memory allocations.
+* `CL_INVALID_OPERATION` if _param_name_ is `CL_KERNEL_EXEC_INFO_INDIRECT_DEVICE_ACCESS_INTEL` and no devices in the context associated with _kernel_ support device Unified Shared Memory allocations.
+* `CL_INVALID_OPERATION` if _param_name_ is `CL_KERNEL_EXEC_INFO_INDIRECT_SHARED_ACCESS_INTEL` and no devices in the context associated with _kernel_ support shared Unified Shared Memory allocations.
+
 The <<valid-usm-pointer-argument-definition,definition of a valid pointer value>> specified using `CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL` was changed in extension version 1.1.0.
 
 ==== Filling and Copying Unified Shared Memory
@@ -819,7 +826,7 @@ cl_int  clEnqueueMemFillINTEL(
 
 fills a region of a memory with the specified pattern.
 
-_command_queue_ is a valid host command queue.
+_command_queue_ is a valid host command-queue.
 The memory fill command will be queued for execution on the device associated with _command_queue_.
 
 _dst_ptr_ is a pointer to the start of the memory region to fill.
@@ -876,7 +883,7 @@ cl_int  clEnqueueMemcpyINTEL(
 
 copies a region of memory from one location to another.
 
-_command_queue_ is a valid host command queue.
+_command_queue_ is a valid host command-queue.
 The memory copy command will be queued for execution on the device associated with _command_queue_.
 
 _blocking_ indicates if the copy operation is blocking or non-blocking.
@@ -938,7 +945,7 @@ If memory migration is not supported for the specified memory range then the mig
 Memory migration may only be supported at a device-specific granularity, such as a page boundary.
 In this case, the memory range may be expanded such that the start and end of the range satisfy the granularity requirements.
 
-_command_queue_ is a valid host command queue.
+_command_queue_ is a valid host command-queue.
 The memory migration command will be queued for execution on the device associated with _command_queue_.
 
 _ptr_ is a pointer to the start of the shared Unified Shared Memory allocation to migrate.
@@ -992,7 +999,7 @@ If a memory advice hint is not supported by the device it will be ignored.
 Memory advice hints may only be supported at a device-specific granularity, such as at a page boundary.
 In this case, the memory range may be expanded such that the start and end of the range satisfy the granularity requirements.
 
-_command_queue_ is a valid host command queue.
+_command_queue_ is a valid host command-queue.
 The memory advice hints will be queued for the device associated with _command_queue_.
 
 _ptr_ is a pointer to the start of the shared Unified Shared Memory allocation.
@@ -1210,7 +1217,7 @@ Trending "yes" for host USM allocations, both when the host USM allocation is fr
 +
 --
 *UNRESOLVED*:
-Trending "yes" for device USM allocations, so long as the device USM allocation is accessible by the device associated with the command queue, and the device allocation was made against the context associated with the command queue.
+Trending "yes" for device USM allocations, so long as the device USM allocation is accessible by the device associated with the command-queue, and the device allocation was made against the context associated with the command-queue.
 
 Trending "yes" for host USM allocations, both when the host USM allocation is from this context and from another context.
 
@@ -1271,6 +1278,24 @@ Note that there is no similar 2D "rect" memcpy for SVM.
 We could also support a 2D "rect" fill or memset, though there are no similar functions for `cl_mem` buffers or SVM.
 --
 
+. Should there be an upper limit on the size of an allocation using *clHostMemAllocINTEL*?
+If so, what should the upper limit be?
++
+--
+*UNRESOLVED*:
+The upper limit is currently defined by `CL_DEVICE_MAX_MEM_ALLOC_SIZE` and if the allocation size exceeds this value then *clHostMemAllocINTEL* returns `CL_INVALID_BUFFER_SIZE`.
+
+This behavior is consistent with *clSVMAlloc* (although *clSVMAlloc* does not return an error code it is specified to return a `NULL` pointer in this case) and *clCreateBuffer*.
+However, because *clHostMemAllocINTEL* is intended to allocate host memory, some implementations are able to support larger allocation sizes using *clHostMemAllocINTEL*.
+
+Possible resolutions:
+
+* Add a new query representing the maximum host memory allocation size supported by the device, e.g. `CL_DEVICE_MAX_HOST_MEM_ALLOC_SIZE_INTEL`.
+For some devices, this query will return the same value as `CL_DEVICE_MAX_MEM_ALLOC_SIZE`, but for other devices this query will return a larger value.
+* Relax the error behavior so implementations may return `CL_INVALID_BUFFER_SIZE`, but they would not be required to return an error if they support larger allocation sizes.
+* Do nothing and keep the existing error behavior.
+--
+
 . Can a device USM allocation for a parent device be accessed by its sub-devices?
 Can a single device shared USM allocation associated with a parent device be accessed by its sub-devices?
 +
@@ -1282,7 +1307,6 @@ We could document this expectation explicitly in this extension if it is not alr
 Note that a USM allocation against a sub-device need not be accessible by its parent device or by other sibling sub-devices, though some implementations may support this, just like some implementations optionally support access to USM allocations from other devices.
 --
 
-
 == Revision History
 
 [cols="5,15,15,70"]
@@ -1292,7 +1316,8 @@ Note that a USM allocation against a sub-device need not be accessible by its pa
 |Rev|Date|Author|Changes
 |1.0.0|2021-11-07|Ben Ashbaugh|Added version and other minor updates prior to posting on the OpenCL registry.
 |1.0.0|2022-11-08|Ben Ashbaugh|Added new issues regarding error behavior for clSetKernelArgMemPointerINTEL and rect copies.
-|1.1.0|2023-04-14|Ben Ashbaugh|Modified error behavior for clSetKernelArgMemPointerINTEL and clSetKernelExecInfo.
+|1.0.1|2023-08-28|Ben Ashbaugh|Documented error conditions for clSetKernelExecInfo.
+|1.1.0|2024-07-30|Ben Ashbaugh|Modified error behavior for clSetKernelArgMemPointerINTEL and clSetKernelExecInfo.
 |========================================
 
 //************************************************************************

@@ -1,0 +1,318 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+// TODO: try rouge?
+
+= cl_intel_subgroup_matrix_multiply_accumulate
+
+== Name Strings
+
+`cl_intel_subgroup_matrix_multiply_accumulate`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel +
+Eugene Chereshnev, Intel +
+Junjie Gu, Intel +
+Bartosz Koscielak, Intel +
+Mike MacPherson, Intel +
+Ritesh Patel, Intel +
+Lukasz Towarek, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2022-2024 Intel Corporation.  All rights reserved.
+
+== Status
+
+Complete
+
+== Version
+
+Built On: {docdate} +
+Revision: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL 3.0 C Language specification, V3.0.10.
+
+This extension requires support for subgroups.
+
+This extension depends on `cl_intel_required_subgroup_size` to query the subgroup sizes supported by a device or to require a subgroup size for a kernel.
+
+== Overview
+
+The goal of this extension is to allow programmers to access specialized hardware to compute the product of an M x K matrix with a K x N matrix and then add an M x N matrix accumulation value.
+This is a commonly used building block to compute the product of two large matrices.
+When used in an OpenCL kernel, all work items in the subgroup cooperate to perform this operation.
+
+This is a low-level extension for expert programmers seeking to access this functionality directly in custom kernels.
+Most users will access this functionality via high-level libraries or frameworks.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+None.
+
+== New OpenCL C Functions
+
+[source]
+----
+// These functions are available to devices where the minimum subgroup
+// size is 8.  For these devices, the subgroup size must be 8 (the
+// minimum supported subgroup size).  Calling these functions on other
+// devices or from kernels with a different subgroup size is undefined
+// behavior:
+
+// 8-bit matrices:
+int  intel_sub_group_i8_i8_matrix_mad_k32(int   a, int8  b, int  acc);  // M = 1
+int2 intel_sub_group_i8_i8_matrix_mad_k32(int2  a, int8  b, int2 acc);  // M = 2
+int4 intel_sub_group_i8_i8_matrix_mad_k32(int4  a, int8  b, int4 acc);  // M = 4
+int8 intel_sub_group_i8_i8_matrix_mad_k32(int8  a, int8  b, int8 acc);  // M = 8
+
+int  intel_sub_group_i8_u8_matrix_mad_k32(int   a, uint8 b, int  acc);  // ...
+int2 intel_sub_group_i8_u8_matrix_mad_k32(int2  a, uint8 b, int2 acc);
+int4 intel_sub_group_i8_u8_matrix_mad_k32(int4  a, uint8 b, int4 acc);
+int8 intel_sub_group_i8_u8_matrix_mad_k32(int8  a, uint8 b, int8 acc);
+
+int  intel_sub_group_u8_i8_matrix_mad_k32(uint  a, int8  b, int  acc);
+int2 intel_sub_group_u8_i8_matrix_mad_k32(uint2 a, int8  b, int2 acc);
+int4 intel_sub_group_u8_i8_matrix_mad_k32(uint4 a, int8  b, int4 acc);
+int8 intel_sub_group_u8_i8_matrix_mad_k32(uint8 a, int8  b, int8 acc);
+
+int  intel_sub_group_u8_u8_matrix_mad_k32(uint  a, uint8 b, int  acc);
+int2 intel_sub_group_u8_u8_matrix_mad_k32(uint2 a, uint8 b, int2 acc);
+int4 intel_sub_group_u8_u8_matrix_mad_k32(uint4 a, uint8 b, int4 acc);
+int8 intel_sub_group_u8_u8_matrix_mad_k32(uint8 a, uint8 b, int8 acc);
+
+// bfloat16 matrices:
+float  intel_sub_group_bf16_bf16_matrix_mad_k16(int  a, int8 b, float  acc);
+float2 intel_sub_group_bf16_bf16_matrix_mad_k16(int2 a, int8 b, float2 acc);
+float4 intel_sub_group_bf16_bf16_matrix_mad_k16(int4 a, int8 b, float4 acc);
+float8 intel_sub_group_bf16_bf16_matrix_mad_k16(int8 a, int8 b, float8 acc);
+
+// fp16 matrices:
+float  intel_sub_group_f16_f16_matrix_mad_k16(int  a, int8 b, float  acc);
+float2 intel_sub_group_f16_f16_matrix_mad_k16(int2 a, int8 b, float2 acc);
+float4 intel_sub_group_f16_f16_matrix_mad_k16(int4 a, int8 b, float4 acc);
+float8 intel_sub_group_f16_f16_matrix_mad_k16(int8 a, int8 b, float8 acc);
+
+// These functions are available to devices where the minimum subgroup
+// size is 16.  For these devices, the subgroup size must be 16 (the
+// minimum supported subgroup size).  Calling these functions on other
+// devices or from kernels with a different subgroup size is undefined
+// behavior:
+
+// 8-bit matrices:
+int  intel_sub_group_i8_i8_matrix_mad_k32(short   a, int8  b, int  acc);  // M = 1
+int2 intel_sub_group_i8_i8_matrix_mad_k32(short2  a, int8  b, int2 acc);  // M = 2
+int4 intel_sub_group_i8_i8_matrix_mad_k32(short4  a, int8  b, int4 acc);  // M = 4
+int8 intel_sub_group_i8_i8_matrix_mad_k32(short8  a, int8  b, int8 acc);  // M = 8
+
+int  intel_sub_group_i8_u8_matrix_mad_k32(short   a, uint8 b, int  acc);  // ...
+int2 intel_sub_group_i8_u8_matrix_mad_k32(short2  a, uint8 b, int2 acc);
+int4 intel_sub_group_i8_u8_matrix_mad_k32(short4  a, uint8 b, int4 acc);
+int8 intel_sub_group_i8_u8_matrix_mad_k32(short8  a, uint8 b, int8 acc);
+
+int  intel_sub_group_u8_i8_matrix_mad_k32(ushort  a, int8  b, int  acc);
+int2 intel_sub_group_u8_i8_matrix_mad_k32(ushort2 a, int8  b, int2 acc);
+int4 intel_sub_group_u8_i8_matrix_mad_k32(ushort4 a, int8  b, int4 acc);
+int8 intel_sub_group_u8_i8_matrix_mad_k32(ushort8 a, int8  b, int8 acc);
+
+int  intel_sub_group_u8_u8_matrix_mad_k32(ushort  a, uint8 b, int  acc);
+int2 intel_sub_group_u8_u8_matrix_mad_k32(ushort2 a, uint8 b, int2 acc);
+int4 intel_sub_group_u8_u8_matrix_mad_k32(ushort4 a, uint8 b, int4 acc);
+int8 intel_sub_group_u8_u8_matrix_mad_k32(ushort8 a, uint8 b, int8 acc);
+
+// bfloat16 matrices:
+float  intel_sub_group_bf16_bf16_matrix_mad_k16(short  a, int8 b, float  acc);
+float2 intel_sub_group_bf16_bf16_matrix_mad_k16(short2 a, int8 b, float2 acc);
+float4 intel_sub_group_bf16_bf16_matrix_mad_k16(short4 a, int8 b, float4 acc);
+float8 intel_sub_group_bf16_bf16_matrix_mad_k16(short8 a, int8 b, float8 acc);
+
+// fp16 matrices:
+float  intel_sub_group_f16_f16_matrix_mad_k16(short  a, int8 b, float  acc);
+float2 intel_sub_group_f16_f16_matrix_mad_k16(short2 a, int8 b, float2 acc);
+float4 intel_sub_group_f16_f16_matrix_mad_k16(short4 a, int8 b, float4 acc);
+float8 intel_sub_group_f16_f16_matrix_mad_k16(short8 a, int8 b, float8 acc);
+----
+
+== Modifications to the OpenCL C Specification
+
+=== Add a new Section 6.13.X - Subgroup Matrix Multiply Accumulate Instructions
+
+This section describes a family of built-in functions that multiply two matrix sources `a` and `b` and then add a matrix accumulation value to produce a matrix result value.
+`a` is the first matrix operand and has M rows and K columns.
+`b` is the second matrix operand and has K rows and N columns.
+`acc` is the matrix accumulation value and has M rows and N columns.
+The result value also has M rows and N columns.
+All work items in the subgroup cooperate to perform this operation.
+These functions must be encountered by all work items in the subgroup executing the kernel.
+
+The dimensions of the two source matrices and the elements of each source matrix are described by the built-in function name and its arguments.
+
+As an example, given the function:
+
+[source]
+----
+int2 intel_sub_group_u8_i8_matrix_mad_k32(uint2 a, int8  b, int2 acc);
+----
+
+* `a` is the first source matrix operand and has `M` rows and `K` columns.
+** The value for `M` is determined by the number of vector components in the source operand `a`.
+In the example above, `a` is a `uint2` argument, therefore the matrix `a` operand has `M` equal to 2 rows.
+** The value of `K` is described by the function name.
+In this case, the value of `K` is 32, therefore the matrix `a` operand has `K` equal to 32 columns.
+** The matrix component data type is also described by the function name.
+In this case, the matrix `a` component data type is `u8`, indicating that the elements of the matrix `a` operand are unsigned 8-bit integers.
+** Each work item contributes part of this matrix.
+In this case, since the elements of the matrix `a` are 8-bit integers, and since each work item is contributing 32 bits (the size of a `uint`) of data per row of this matrix, each work item is contributing four 8-bit integer values per row.
+** Since `K` is 32, and each work item is contributing four 8-bit values per row, the number of work items in the subgroup must be equal to 8.
+
+* `b` is the second source matrix operand and has `K` rows and `N` columns.
+** Each work item contributes one column of this matrix.
+Therefore, the number of columns `N` is equivalent to the subgroup size.
+** As above, the value of `K` is described by the function name.
+In this case, the value of `K` is 32, therefore the matrix `b` operand has `K` equal to 32 rows.
+** As above, the matrix component data type is described by the function name.
+In this case, the matrix `b` component data type is `i8`, indicating that the elements of the matrix `b` operand are signed 8-bit integers.
+** Since `K` is 32 and the elements of the matrix `b` are 8-bit integers, each work item must contribute 256 bits of source data to contribute `K` values.
+The 256 bits of source data are packed and passed as the `int8` argument `b`.
+
+* `acc` specifies the accumulation value and has `M` rows and `N` columns.
+** As above, the value of `M` is determined by the number of components in the source operand `acc`.
+In the example above, `acc` is an `int2` argument, therefore the accumulation value operand has `M` equal to 2 rows.
+** Since both `a` and `acc` specify operands with `M` rows, and since the value of `M` is determined by the number of components in the source operand, both the `a` and `acc` operands will be vector operands with the same number of components.
+** As above, each work item contributes one column of accumulation values.
+Therefore, the number of columns `N` is equivalent to the subgroup size.
+** The `acc` operand is a "full precision" accumulation value.
+In the example above, the matrices contain integer data, therefore the `acc` operand is a vector of `int` data.
+
+* The result value returned by the function also has `M` rows and `N` columns.
+** As above, the value of `M` is determined by the number of components in the return type.
+In the example above, the return type is `int2`, therefore the result value has `M` equal to 2 rows.
+** Since the result value, `a`, and `acc` all specify values with `M` rows, and since the value of `M` is determined by the number of components in the source operand or return type, the return tye, `a`, and `acc` will all be vectors with the same number of components.
+** As above, each work item will receive one column of result values.
+Therefore, the number of columns `N` is equivalent to the subgroup size.
+** Similar to the `acc` operand, the return value is a "full precision" result value.
+In the example above, the matrices contain integer data, therefore the return type is a vector of `int` data.
+
+The full list of supported functions is described in the overview, above.
+For this list of functions:
+
+* `M` may be equal to 1, 2, 4, or 8.
+* `N` must be equal to 8 for some devices or 16 for other devices.
+In other words, the only supported subgroup sizes are 8 and 16.
+* Supported integer matrix types for `a` and `b` are any combination of signed or unsigned 8-bit integers.
+For these integer matrix types, the accumulation value `acc` and result value are signed 32-bit integers, and `K` must be equal to 32.
+* The supported floating-point matrix types for `a` and `b` are fp16 (half) or bfloat16.
+For these floating-point matrix type, the accumulation value `acc` and result value are 32-bit floating-point values, and `K` must be equal to 16.
+
+== Coding Sample
+
+[source]
+----
+// The code below shows a functional implementation of one of the
+// built-in functions added by this extension.  For this built-in
+// function:
+//  * M = 2, since the result value, a operand, and acc operand
+//    are all vectors with two components.
+//  * N = 8, and is equal to the subgroup size.
+//  * K = 32, as described by the function name.
+//  * The elements of both matrix a and matrix b are signed 8-bit
+//    integers.
+
+// This is a helper function that performs the dot product of
+// two vectors of four components of 8-bit integer data, and then
+// adds a 32-bit integer accumulation value.
+static int __intel_dot_product_accumulate( char4 a, char4 b, int acc )
+{
+    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w + acc;
+}
+
+// This is a helper function that computes the product of a
+// 1 x 32 row vector value shared across the subgroup and a 32 x 1
+// column vector, that is added to a full precision accumulation
+// value.
+static int __intel_vector_matrix_multiply_accumulate_k32( int v, int8 b, int acc )
+{
+    // Note: 8 is the size of the subgroup.
+    // As K is 32, and the size of the subgroup is 8, each
+    // work item contributes 4 elements of the 1 x K vector.
+    // as_char4() is used to reinterpret 32-bits of data
+    // as four components of 8-bit data.
+
+    int result = acc;
+
+    result = __intel_dot_product_accumulate(
+        as_char4( sub_group_broadcast( v, 0 ) ), as_char4( b.s0 ), result );
+    result = __intel_dot_product_accumulate(
+        as_char4( sub_group_broadcast( v, 1 ) ), as_char4( b.s1 ), result );
+    result = __intel_dot_product_accumulate(
+        as_char4( sub_group_broadcast( v, 2 ) ), as_char4( b.s2 ), result );
+    result = __intel_dot_product_accumulate(
+        as_char4( sub_group_broadcast( v, 3 ) ), as_char4( b.s3 ), result );
+
+    result = __intel_dot_product_accumulate(
+        as_char4( sub_group_broadcast( v, 4 ) ), as_char4( b.s4 ), result );
+    result = __intel_dot_product_accumulate(
+        as_char4( sub_group_broadcast( v, 5 ) ), as_char4( b.s5 ), result );
+    result = __intel_dot_product_accumulate(
+        as_char4( sub_group_broadcast( v, 6 ) ), as_char4( b.s6 ), result );
+    result = __intel_dot_product_accumulate(
+        as_char4( sub_group_broadcast( v, 7 ) ), as_char4( b.s7 ), result );
+
+    return result;
+}
+
+int2 intel_sub_group_i8_i8_matrix_mad_k32(int2  a, int8  b, int2 acc)
+{
+    int2 result;
+
+    result.x = __intel_vector_matrix_multiply_accumulate_k32( a.x, b, acc.x );
+    result.y = __intel_vector_matrix_multiply_accumulate_k32( a.y, b, acc.y );
+
+    return result;
+}
+----
+
+== Issues
+
+None.
+
+. Should this extension use signed or unsigned types to represent fp16 and bf16 data?
++
+--
+`RESOLVED`: This extension will use signed types to represent fp16 and bf16 data even though this is inconsistent with other extensions such as cl_intel_bfloat16 conversions.
+This inconsistency may be addressed in a future extension or in a future version of this extension.
+Applications are encouraged to use `as_type` to reinterpret unsigned data as signed data as needed to use the functions added by this extension.
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1.0.0|2022-05-18|Ben Ashbaugh|*Initial public revision*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************

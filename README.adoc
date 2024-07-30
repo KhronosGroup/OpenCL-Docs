@@ -142,6 +142,48 @@ build is very fast, even for the whole Specification, but PDF builds may
 take several minutes.
 
 
+[[building-extensions]]
+== Building With Extensions Included
+
+Invoking 'make' with no extra arguments will build the OpenCL API and OpenCL
+C Language specifications with only the core APIs and functionality
+included.
+To build versions of these specifications with extension language included,
+you should use the `makeSpec` script.
+`makeSpec` is a Python script accepting the following arguments:
+
+  * -spec _variant_ - _variant_ is `core`, `khr`, or `all`, building
+    specifications with only core, core + all khr extensions and core + all
+    extensions, respectively.
+    At present, `all` is equivalent to `khr` as only `khr` extensions are
+    included in the specification source.
+  * -ext _name_ - add the specified extension _name_ and its dependencies to
+    the build.
+  * -clean - clean generated files before building.
+  * -registry _path_ - use specified API XML instead of the default
+    `xml/cl.xml`.
+  * -v - verbose, print actions before executing them.
+  * -n - dry-run, print actions instead of executing them.
+  * Unrecognized options are passed on to `make`, so must be valid Makefile
+    targets or `make` options such as `-j`.
+
+Any other options reported by `makeSpec --help` are not yet functional, and
+should not be used.
+
+For example, to build with all `khr` extensions, you could use
+
+[source,sh]
+----
+$ makeSpec -clean -spec khr -j html refpages
+----
+
+`makeSpec` is a wrapper which constructs options and invokes `make`
+when building with extensions included, which only affects building the API
+(including reference pages) and C language specifications.
+`makeSpec` determines extension dependencies from the metadata in the
+specified registry XML path.
+
+
 [[refpage-install]]
 == Reference Page Installation
 
@@ -246,6 +288,8 @@ scheme.
 
 This section describes the software components used by the OpenCL spec
 toolchain.
+The specified versions are known to work.
+Later compatible versions will probably work as well.
 
 Before building the OpenCL specs, you must install the following tools:
 
@@ -260,10 +304,6 @@ Before building the OpenCL specs, you must install the following tools:
     Any version supporting the following operations should work:
   ** `git symbolic-ref --short HEAD`
   ** `git log -1 --format="%H"`
-  * Ghostscript (ghostscript, version: 9.10).
-    This is for the PDF build, and it can still progress without it.
-    Ghostscript is used to optimize the size of the PDF, so will be a lot
-    smaller if it is included.
   * ttf Fonts.
     These are needed the PDF build for latexmath rendering.
     See https://github.com/asciidoctor/asciidoctor-mathematical/blob/master/README.md#dependencies[Font Dependencies for asciidoctor-mathematical].
@@ -277,6 +317,7 @@ parts you don't use) completely before trying to install.
 
   * Asciidoctor (asciidoctor, version: 2.0.16)
   * Coderay (coderay, version: 1.1.1)
+  * hexapdf (version: 0.27.0)
   * rouge (rouge, version 3.19.0)
   * ttfunk (ttfunk, version: 1.5.1)
   * Asciidoctor PDF (asciidoctor-pdf, version: 1.5.0)
@@ -444,6 +485,7 @@ echo "2.3.3" > ~/.rbenv/version
 
 gem install asciidoctor -v 2.0.16
 gem install coderay -v 1.1.1
+gem install hexapdf -v 0.27.0
 gem install rouge -v 3.19.0
 gem install ttfunk -v 1.5.1
 gem install asciidoctor-pdf -v 1.5.0
@@ -656,6 +698,7 @@ command, once the platform is set up:
 ----
 gem install asciidoctor -v 2.0.16
 gem install coderay -v 1.1.1
+gem install hexapdf -v 0.27.0
 gen install rouge -v 3.19.0
 gem install ttfunk -v 1.5.1
 
@@ -687,6 +730,8 @@ by Khronos.
 [[history]]
 == Revision History
 
+  * 2024-04-07 - Add `makeSpec` instructions.
+  * 2023-11-05 - Add hexapdf, remove ghostscript
   * 2020-03-13 - Updated package versions to match Travis build.
   * 2019-06-20 - Add directions for publishing OpenCL 2.2 reference pages,
     generated from the spec sources in this repository, in the

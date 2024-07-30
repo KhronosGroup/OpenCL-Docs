@@ -1,0 +1,314 @@
+// Copyright 2018-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_command_buffer_multi_device.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2023-04-30
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+  - Ewan Crawford, Codeplay Software Ltd.
+  - Gordon Brown, Codeplay Software Ltd.
+  - Kenneth Benzie, Codeplay Software Ltd.
+  - Alastair Murray, Codeplay Software Ltd.
+  - Jack Frankland, Codeplay Software Ltd.
+  - Balaji Calidas, Qualcomm Technologies Inc.
+  - Joshua Kelly, Qualcomm Technologies, Inc.
+  - Kevin Petit, Arm Ltd.
+  - Aharon Abramson, Intel.
+  - Ben Ashbaugh, Intel.
+  - Boaz Ouriel, Intel.
+  - Pekka Jääskeläinen, Tampere University and Intel.
+  - Jan Solanti, Tampere University
+  - Nikhil Joshi, NVIDIA
+  - James Price, Google
+
+=== Description
+
+The {cl_khr_command_buffer_EXT} extension separates command construction from
+enqueue by providing a mechanism to record a set of commands which can then
+be repeatedly enqueued.
+However, the commands in a command-buffer can only be recorded to a single
+command-queue specified on command-buffer creation.
+
+{cl_khr_command_buffer_multi_device_EXT} extends the scope of a command-buffer
+to allow commands to be recorded across multiple queues in the same
+command-buffer, providing execution of heterogeneous task graphs from
+command-queues associated with different devices.
+
+The ability for a user to deep copy an existing command-buffer so that the
+commands target a different device is also made possible by
+{cl_khr_command_buffer_multi_device_EXT}.
+Depending on platform support the mapping of commands to the new target
+device can be done either explicitly by the user, or automatically by the
+OpenCL runtime.
+
+=== New Commands
+
+  * {clRemapCommandBufferKHR}
+
+=== New Types
+
+Bitfield for querying command-buffer capabilities of an OpenCL Platform with
+{clGetPlatformInfo}, see the <<multi-device-platform-queries, platform
+queries table>>:
+
+  * {cl_platform_command_buffer_capabilities_khr_TYPE}
+
+=== New Enums
+
+Enums for querying device command-buffer capabilities with
+{clGetDeviceInfo}, see the <<multi-device-queries, device queries table>>:
+
+  * {cl_device_info_TYPE}
+  ** {CL_DEVICE_COMMAND_BUFFER_NUM_SYNC_DEVICES_KHR}
+  ** {CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR}
+  * {cl_device_command_buffer_capabilities_khr_TYPE}
+  ** {CL_COMMAND_BUFFER_CAPABILITY_MULTIPLE_QUEUE_KHR}
+  * {cl_command_buffer_flags_khr_TYPE}
+  ** {CL_COMMAND_BUFFER_DEVICE_SIDE_SYNC_KHR}
+  * {cl_platform_info_TYPE}
+  ** {CL_PLATFORM_COMMAND_BUFFER_CAPABILITIES_KHR}
+  * {cl_platform_command_buffer_capabilities_khr_TYPE}
+  ** {CL_COMMAND_BUFFER_PLATFORM_UNIVERSAL_SYNC_KHR}
+  ** {CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR}
+  ** {CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR}
+
+=== Sample Code
+
+[source,opencl]
+----
+#define CL_CHECK(ERROR)                                                        \
+  if (ERROR) {                                                                 \
+    std::cerr << "OpenCL error: " << ERROR << "\n";                            \
+    return ERROR;                                                              \
+  }
+
+int main() {
+  cl_platform_id platform;
+  CL_CHECK(clGetPlatformIDs(1, &platform, nullptr));
+  cl_platform_command_buffer_capabilities_khr platform_caps;
+  CL_CHECK(clGetPlatformInfo(platform,
+                             CL_PLATFORM_COMMAND_BUFFER_CAPABILITIES_KHR,
+                             sizeof(platform_caps), &platform_caps, NULL));
+  if (!(platform_caps & CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR)) {
+    std::cerr << "Command-buffer remapping not supported but used in example, "
+                 "skipping\n";
+    return 0;
+  }
+
+  cl_uint num_devices = 0;
+  CL_CHECK(clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices));
+  std::vector<cl_device_id> devices(num_devices);
+  CL_CHECK(
+      clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, devices.data(), nullptr));
+
+  // Checks omitted for brevity that either a) the platform supports
+  // CL_COMMAND_BUFFER_PLATFORM_UNIVERSAL_SYNC_KHR or b) each device is listed
+  // in the others CL_DEVICE_COMMAND_BUFFER_SYNC_DEVICES_KHR
+
+  cl_int error;
+  cl_context context =
+      clCreateContext(NULL, num_devices, devices.data(), NULL, NULL, &error);
+  CL_CHECK(error);
+
+  std::vector<cl_command_queue> queues(num_devices);
+  for (cl_uint i = 0; i < num_devices; i++) {
+    queues[i] = clCreateCommandQueue(context, devices[i], 0, &error);
+    CL_CHECK(error);
+  }
+
+  const char *code = R"OpenCLC(
+  kernel void vector_addition(global int* tile1, global int* tile2,
+                              global int* res) {
+    size_t index = get_global_id(0);
+    res[index] = tile1[index] + tile2[index];
+  }
+  )OpenCLC";
+  const size_t length = std::strlen(code);
+
+  cl_program program =
+      clCreateProgramWithSource(context, 1, &code, &length, &error);
+  CL_CHECK(error);
+
+  CL_CHECK(
+      clBuildProgram(program, num_devices, devices.data(), NULL, NULL, NULL));
+
+  cl_kernel kernel = clCreateKernel(program, "vector_addition", &error);
+  CL_CHECK(error);
+
+  constexpr size_t frame_count = 60;
+  constexpr size_t frame_elements = 1024;
+  constexpr size_t frame_size = frame_elements * sizeof(cl_int);
+
+  constexpr size_t tile_count = 16;
+  constexpr size_t tile_elements = frame_elements / tile_count;
+  constexpr size_t tile_size = tile_elements * sizeof(cl_int);
+
+  cl_mem buffer_tile1 =
+      clCreateBuffer(context, CL_MEM_READ_ONLY, tile_size, NULL, &error);
+  CL_CHECK(error);
+
+  cl_mem buffer_tile2 =
+      clCreateBuffer(context, CL_MEM_READ_ONLY, tile_size, NULL, &error);
+  CL_CHECK(error);
+
+  cl_mem buffer_res =
+      clCreateBuffer(context, CL_MEM_WRITE_ONLY, tile_size, NULL, &error);
+  CL_CHECK(error);
+
+  CL_CHECK(clSetKernelArg(kernel, 0, sizeof(buffer_tile1), &buffer_tile1));
+  CL_CHECK(clSetKernelArg(kernel, 1, sizeof(buffer_tile2), &buffer_tile2));
+  CL_CHECK(clSetKernelArg(kernel, 2, sizeof(buffer_res), &buffer_res));
+
+  cl_command_buffer_khr original_cmdbuf =
+      clCreateCommandBufferKHR(num_devices, queues.data(), nullptr, &error);
+  CL_CHECK(error);
+
+  cl_mem buffer_src1 =
+      clCreateBuffer(context, CL_MEM_READ_ONLY, frame_size, NULL, &error);
+  CL_CHECK(error);
+
+  cl_mem buffer_src2 =
+      clCreateBuffer(context, CL_MEM_READ_ONLY, frame_size, NULL, &error);
+  CL_CHECK(error);
+
+  cl_mem buffer_dst =
+      clCreateBuffer(context, CL_MEM_READ_WRITE, frame_size, NULL, &error);
+  CL_CHECK(error);
+
+  cl_sync_point_khr tile_sync_point = 0;
+  for (size_t tile_index = 0; tile_index < tile_count; tile_index++) {
+    cl_sync_point_khr copy_sync_points[2];
+    CL_CHECK(clCommandCopyBufferKHR(
+        original_cmdbuf, queues[tile_index % num_devices], buffer_src1,
+        buffer_tile1, tile_index * tile_size, 0, tile_size,
+        tile_sync_point ? 1 : 0, tile_sync_point ? &tile_sync_point : NULL,
+        &copy_sync_points[0], NULL));
+
+    CL_CHECK(clCommandCopyBufferKHR(
+                 original_cmdbuf, queues[tile_index % num_devices], buffer_src2,
+                 buffer_tile2, tile_index * tile_size, 0, tile_size,
+                 tile_sync_point ? 1 : 0,
+                 tile_sync_point ? &tile_sync_point : nullptr,
+                 &copy_sync_points[1], NULL));
+
+    cl_sync_point_khr nd_sync_point;
+    CL_CHECK(clCommandNDRangeKernelKHR(
+        original_cmdbuf, queues[tile_index % num_devices], NULL, kernel, 1,
+        NULL, &tile_elements, NULL, 2, copy_sync_points, &nd_sync_point, NULL));
+
+    CL_CHECK(clCommandCopyBufferKHR(
+        original_cmdbuf, queues[tile_index % num_devices], buffer_res,
+        buffer_dst, 0, tile_index * tile_size, tile_size, 1, &nd_sync_point,
+        &tile_sync_point, NULL));
+  }
+
+  CL_CHECK(clFinalizeCommandBufferKHR(original_cmdbuf));
+
+  std::random_device random_device;
+  std::mt19937 random_engine{random_device()};
+  std::uniform_int_distribution<cl_int> random_distribution{
+      0, std::numeric_limits<cl_int>::max() / 2};
+  auto random_generator = [&]() { return random_distribution(random_engine); };
+
+  auto enqueue_frame = [&](cl_command_buffer_khr command_buffer) {
+    for (size_t frame_index = 0; frame_index < frame_count; frame_index++) {
+      std::array<cl_event, 3> enqueue_events;
+      std::vector<cl_int> src1(frame_elements);
+      std::generate(src1.begin(), src1.end(), random_generator);
+      CL_CHECK(clEnqueueWriteBuffer(queues[0], buffer_src1, CL_FALSE, 0,
+                                    frame_size, src1.data(), 0, nullptr,
+                                    &enqueue_events[0]));
+      std::vector<cl_int> src2(frame_elements);
+      std::generate(src2.begin(), src2.end(), random_generator);
+      CL_CHECK(clEnqueueWriteBuffer(queues[0], buffer_src2, CL_FALSE, 0,
+                                    frame_size, src2.data(), 0, nullptr,
+                                    &enqueue_events[1]));
+
+      CL_CHECK(clEnqueueCommandBufferKHR(0, NULL, command_buffer, 2,
+                                         enqueue_events.data(),
+                                         &enqueue_events[2]));
+
+      CL_CHECK(clWaitForEvents(1, enqueue_events[2]));
+
+      for (auto e : enqueue_events) {
+        CL_CHECK(clReleaseEvent(e));
+      }
+    }
+    return 0;
+  };
+
+  error = enqueue_frame(original_cmdbuf);
+  CL_CHECK(error);
+
+  // Remap from N queues to 1 queue and run again
+  cl_command_buffer_khr remapped_cmdbuf = clRemapCommandBufferKHR(
+      original_cmdbuf, CL_TRUE, 1, queues.data(), 0, NULL, NULL, &error);
+  CL_CHECK(error);
+
+  error = enqueue_frame(remapped_cmdbuf);
+  CL_CHECK(error);
+
+  for (unsigned i = 0; i < num_devices; ++i) {
+    CL_CHECK(clReleaseCommandQueue(queues[i]));
+  }
+  CL_CHECK(clReleaseMemObject(buffer_src1));
+  CL_CHECK(clReleaseMemObject(buffer_src2));
+  CL_CHECK(clReleaseMemObject(buffer_dst));
+
+  CL_CHECK(clReleaseMemObject(buffer_tile1));
+  CL_CHECK(clReleaseMemObject(buffer_tile2));
+  CL_CHECK(clReleaseMemObject(buffer_res));
+
+  CL_CHECK(clReleaseCommandBufferKHR(original_cmdbuf));
+  CL_CHECK(clReleaseCommandBufferKHR(remapped_cmdbuf));
+
+  CL_CHECK(clReleaseKernel(kernel));
+  CL_CHECK(clReleaseProgram(program));
+  CL_CHECK(clReleaseContext(context));
+
+  return 0;
+}
+----
+
+=== Issues
+
+. In cl_event profiling info for a command-buffer running across the queues for
+  several devices, how do we know what the first & last commands executed
+  are if there is concurrent execution across devices.
++
+--
+*RESOLVED*: Allowed an implementation to fallback to
+{CL_PROFILING_COMMAND_SUBMIT} and {CL_PROFILING_COMMAND_COMPLETE} when
+reporting {CL_PROFILING_COMMAND_START} & {CL_PROFILING_COMMAND_END}.
+--
+. Is an atomic constraint required? This would forbid regular clEnqueue* commands,
+  from interleaving execution on a queue which a command-buffer is being
+  executed on.
++
+--
+*RESOLVED*: This behavior can block parallelism, and constraint is
+expressible by the user through existing synchronization mechanisms if they
+require it.
+--
+. It is currently an error if a set of command-queues passed to
+  {clEnqueueCommandBufferKHR} aren't compatible with those set on recording.
+  Should we relax this as an optional capability that allows an
+  implementation to do a more expensive command-buffer enqueue for this
+  case?
++
+--
+*RESOLVED*: Added as an optional feature.
+--
+
+=== Version History
+
+  * Revision 0.9.0, 2023-04-14
+  ** First assigned version (provisional).
+  * Revision 0.9.1, 2023-04-30
+  ** Added clCommandSVMMemcpyKHR and clCommandSVMMemFillKHR as affected
+     functions (provisional).

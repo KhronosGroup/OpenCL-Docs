@@ -1,28 +1,40 @@
-// Copyright 2017-2023 The Khronos Group. This work is licensed under a
+// Copyright 2017-2024 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
 [[extensions-overview]]
 == Extensions Overview
 
-This document describes the list of optional features supported by OpenCL.
-Optional extensions are not required to be supported by a conformant OpenCL
-implementation, but are expected to be widely available, and in some cases may define
-functionality that is likely to be required in a future revision of the
-OpenCL specification.
+_Extensions_ are optional features which may be supported by OpenCL
+implementations.
+Extensions are not required to be supported by a conformant OpenCL
+implementation, but are expected to be widely available, and in some cases
+may define functionality that is likely to be required in a future revision
+of the OpenCL specification.
 
-This document describes all extensions that have been approved by the OpenCL
-working group.
-It is a _unified_ specification, meaning that the extensions described in this
-document are not specific to a specific core OpenCL specification version.
+In the past, this document contained full specification language for
+Khronos-approved `khr` extensions, described in terms of changes to the core
+OpenCL Specification.
+This extension language has now been integrated into the OpenCL 3.0
+Specification, and can be read in context there.
 
-OpenCL extensions approved by the OpenCL working group may be _promoted_ to
-core features in later revisions of OpenCL.
-When this occurs, the feature described by the extension specification
-is merged into the core OpenCL specification.
-The extension will continue to be documented in this specification, both for
-backwards compatibility and for devices that wish to support the feature
-but that are unable to support the newer core OpenCL version.
+The remaining parts of this document describe general issues in _using_
+extensions, such as API <<naming-convention-for-optional-extensions, Naming
+Conventions for Optional Extensions>>; OpenCL C
+<<compiler-directives-for-optional-extensions, Compiler Directives for
+Optional Extensions>>; and <<getting-opencl-api-extension-function-pointers,
+Getting OpenCL API Extension Function Pointers>>.
+
+In addition, there is a section on <<spirv_extensions, Extensions to the
+OpenCL SPIR-V Environment>>.
+
+Finally, the <<quick-reference, Quick Reference>> appendix summarizes khr
+extensions and links to them in the OpenCL API Specification.
+In some cases, extensions are mostly or entirely to the OpenCL C language
+rather than to the OpenCL API.
+Such extensions can be reached by following the links in the API
+Specification extension appendices.
+
 
 [[naming-convention-for-optional-extensions]]
 === Naming Convention for Optional Extensions
@@ -33,8 +45,8 @@ naming convention:
   * A unique _name string_ of the form `"*cl_khr_<__name__>*"` is associated
     with each extension.
     If the extension is supported by an implementation, this string will be
-    present in the implementation's `CL_PLATFORM_EXTENSIONS` string or
-    `CL_DEVICE_EXTENSIONS` string.
+    present in the implementation's {CL_PLATFORM_EXTENSIONS} string or
+    {CL_DEVICE_EXTENSIONS} string.
   * All API functions defined by the extension will have names of the form
     *cl<__function_name__>KHR*.
   * All enumerants defined by the extension will have names of the form
@@ -43,8 +55,8 @@ naming convention:
 Functions and enumerants defined by extensions that are promoted to
 core features will have their *KHR* affix removed.
 OpenCL implementations of such later revisions must also export the name
-strings of promoted extensions in the `CL_PLATFORM_EXTENSIONS` or
-`CL_DEVICE_EXTENSIONS` string, and support the *KHR*-affixed versions of
+strings of promoted extensions in the {CL_PLATFORM_EXTENSIONS} or
+{CL_DEVICE_EXTENSIONS} string, and support the *KHR*-affixed versions of
 functions and enumerants as a transition aid.
 
 Vendor extensions are strongly encouraged to follow a similar naming
@@ -53,12 +65,13 @@ convention:
   * A unique _name string_ of the form `"*cl_<__vendor_name__>_<__name>__*"`
     is associated with each extension.
     If the extension is supported by an implementation, this string will be
-    present in the implementation's `CL_PLATFORM_EXTENSIONS` string or
-    `CL_DEVICE_EXTENSIONS` string.
+    present in the implementation's {CL_PLATFORM_EXTENSIONS} string or
+    {CL_DEVICE_EXTENSIONS} string.
   * All API functions defined by the vendor extension will have names of the
     form *cl<__function_name__><__vendor_name__>*.
   * All enumerants defined by the vendor extension will have names of the
     form *CL_<__enum_name__>_<__vendor_name__>.*
+
 
 [[compiler-directives-for-optional-extensions]]
 === Compiler Directives for Optional Extensions
@@ -132,7 +145,7 @@ extension is supported on a given implementation.
 *Example*:
 
 An extension which adds the extension string `"cl_khr_3d_image_writes"`
-should also add a preprocessor `#define` called *`cl_khr_3d_image_writes`*.
+should also add a preprocessor `#define` called *cl_khr_3d_image_writes*.
 A kernel can now use this preprocessor `#define` to do something like:
 
 [source,opencl_c]
@@ -143,6 +156,7 @@ A kernel can now use this preprocessor `#define` to do something like:
     // do something else or #error!
 #endif
 ----
+
 
 [[getting-opencl-api-extension-function-pointers]]
 === Getting OpenCL API Extension Function Pointers
@@ -161,12 +175,12 @@ type matching the extension function's definition defined in the appropriate
 extension specification and header file.
 A return value of `NULL` indicates that the specified function does not
 exist for the implementation or _platform_ is not a valid platform.
-A non-`NULL` return value for *clGetExtensionFunctionAddressForPlatform*
+A non-`NULL` return value for {clGetExtensionFunctionAddressForPlatform}
 does not guarantee that an extension function is actually supported by the
 platform.
 The application must also make a corresponding query using
-*clGetPlatformInfo*(platform, CL_PLATFORM_EXTENSIONS, ...) or
-*clGetDeviceInfo*(device, CL_DEVICE_EXTENSIONS, ...) to determine if an
+{clGetPlatformInfo}(platform, CL_PLATFORM_EXTENSIONS, ...) or
+{clGetDeviceInfo}(device, CL_DEVICE_EXTENSIONS, ...) to determine if an
 extension is supported by the OpenCL implementation.
 
 Since there is no way to qualify the query with a
@@ -175,10 +189,10 @@ that extension on different devices for a platform.
 The behavior of calling a device extension function on a device not
 supporting that extension is undefined.
 
-*clGetExtensionFunctionAddressForPlatform* may not be be used to query for core
+{clGetExtensionFunctionAddressForPlatform} may not be be used to query for core
 (non-extension) functions in OpenCL.
 For extension functions that may be queried using
-*clGetExtensionFunctionAddressForPlatform*, implementations may also choose to
+{clGetExtensionFunctionAddressForPlatform}, implementations may also choose to
 export those functions statically from the object libraries
 implementing those functions, however, portable applications cannot rely on
 this behavior.
@@ -212,7 +226,7 @@ typedef return_type
 
 where `TAG` can be `KHR`, `EXT` or `vendor-specific`.
 
-Consider, for example, the *cl_khr_gl_sharing* extension.
+Consider, for example, the {cl_khr_gl_sharing_EXT} extension.
 This extension would add the following to cl_gl_ext.h:
 
 [source,opencl]
