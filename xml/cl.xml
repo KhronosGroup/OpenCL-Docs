@@ -249,7 +249,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef struct _cl_mutable_command_khr* <name>cl_mutable_command_khr</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>       <name>cl_mutable_dispatch_fields_khr</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_mutable_command_info_khr</name>;</type>
-        <type category="define">typedef <type>cl_uint</type>          <name>cl_command_buffer_structure_type_khr</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_command_buffer_update_type_khr</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_fp_atomic_capabilities_ext</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_image_requirements_info_ext</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_platform_command_buffer_capabilities_khr</name>;</type>
@@ -370,8 +370,6 @@ server's OpenCL/api-docs repository.
             <member>const <type>void</type>*            <name>param_value</name></member>
         </type>
         <type category="struct" name="cl_mutable_dispatch_config_khr">
-            <member><type>cl_command_buffer_structure_type_khr</type>      <name>type</name></member>
-            <member>const <type>void</type>*                               <name>next</name></member>
             <member><type>cl_mutable_command_khr</type>                    <name>command</name></member>
             <member><type>cl_uint</type>                                   <name>num_args</name></member>
             <member><type>cl_uint</type>                                   <name>num_svm_args</name></member>
@@ -383,13 +381,6 @@ server's OpenCL/api-docs repository.
             <member>const <type>size_t</type>*                             <name>global_work_offset</name></member>
             <member>const <type>size_t</type>*                             <name>global_work_size</name></member>
             <member>const <type>size_t</type>*                             <name>local_work_size</name></member>
-        </type>
-
-        <type category="struct" name="cl_mutable_base_config_khr">
-            <member><type>cl_command_buffer_structure_type_khr</type>    <name>type</name></member>
-            <member>const <type>void</type>*                             <name>next</name></member>
-            <member><type>cl_uint</type>                                 <name>num_mutable_dispatch</name></member>
-            <member>const <type>cl_mutable_dispatch_config_khr</type>*   <name>mutable_dispatch_list</name></member>
         </type>
     </types>
 
@@ -1370,10 +1361,9 @@ server's OpenCL/api-docs repository.
         <enum bitpos="0"            name="CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR"/>
     </enums>
 
-    <enums name="cl_command_buffer_structure_type_khr" vendor="Khronos">
-        <enum value="0"             name="CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR"/>
-        <enum value="1"             name="CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR"/>
-            <unused start="2" end="2" comment="Used by future command-buffer extensions"/>
+    <enums name="cl_command_buffer_update_type_khr" vendor="Khronos">
+        <enum value="0"             name="CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR"/>
+            <unused start="1" end="1" comment="Used by future command-buffer extensions"/>
     </enums>
 
     <enums name="cl_device_fp_atomic_capabilities_ext" vendor="EXT" type="bitmask">
@@ -3280,9 +3270,11 @@ server's OpenCL/api-docs repository.
             <param><type>size_t</type>*                    <name>param_value_size_ret</name></param>
         </command>
         <command>
-            <proto><type>cl_int</type>                             <name>clUpdateMutableCommandsKHR</name></proto>
-            <param><type>cl_command_buffer_khr</type>              <name>command_buffer</name></param>
-            <param>const <type>cl_mutable_base_config_khr</type>*  <name>mutable_config</name></param>
+            <proto><type>cl_int</type>                     <name>clUpdateMutableCommandsKHR</name></proto>
+            <param><type>cl_command_buffer_khr</type>      <name>command_buffer</name></param>
+            <param><type>cl_uint</type>                    <name>num_configs</name></param>
+            <param>const <type>cl_command_buffer_update_type_khr</type>*  <name>config_types</name></param>
+            <param>const <type>void</type>**               <name>configs</name></param>
         </command>
         <command>
             <proto><type>cl_int</type>                       <name>clGetMutableCommandInfoKHR</name></proto>
@@ -6567,6 +6559,11 @@ server's OpenCL/api-docs repository.
                 <type name="CL/cl.h"/>
             </require>
             <require>
+                <type name="cl_GLint"/>
+                <type name="cl_GLenum"/>
+                <type name="cl_GLuint"/>
+            </require>
+            <require>
                 <type name="cl_gl_context_info"/>
             </require>
             <require comment="Error codes">
@@ -7319,18 +7316,17 @@ server's OpenCL/api-docs repository.
                 <enum name="CL_QUEUE_JOB_SLOT_ARM"/>
             </require>
         </extension>
-        <extension name="cl_khr_command_buffer_mutable_dispatch" revision="0.9.1" supported="opencl" depends="cl_khr_command_buffer" ratified="opencl" provisional="true" comment="requires cl_khr_command_buffer 0.9.0 or later">
+        <extension name="cl_khr_command_buffer_mutable_dispatch" revision="0.9.2" supported="opencl" depends="cl_khr_command_buffer" ratified="opencl" provisional="true" comment="requires cl_khr_command_buffer 0.9.0 or later">
             <require>
                 <type name="CL/cl.h"/>
             </require>
             <require>
-                <type name="cl_command_buffer_structure_type_khr"/>
+                <type name="cl_command_buffer_update_type_khr"/>
                 <type name="cl_mutable_dispatch_fields_khr"/>
                 <type name="cl_mutable_command_info_khr"/>
                 <type name="cl_mutable_dispatch_arg_khr"/>
                 <type name="cl_mutable_dispatch_exec_info_khr"/>
                 <type name="cl_mutable_dispatch_config_khr"/>
-                <type name="cl_mutable_base_config_khr"/>
                 <type name="cl_mutable_dispatch_asserts_khr"/>
             </require>
             <require comment="cl_command_buffer_flags_khr - bitfield">
@@ -7364,8 +7360,7 @@ server's OpenCL/api-docs repository.
                <enum name="CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR"/>
                <enum name="CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR"/>
             </require>
-            <require comment="cl_command_buffer_structure_type_khr">
-                <enum name="CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR"/>
+            <require comment="cl_command_buffer_update_type_khr">
                 <enum name="CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR"/>
             </require>
             <require comment="cl_command_buffer_properties_khr">

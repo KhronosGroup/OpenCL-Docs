@@ -1,0 +1,134 @@
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_img_swap_ops
+
+== Name Strings
+
+`cl_img_swap_ops`
+
+== Contact
+
+Imagination Technologies Developer Forum: +
+https://forums.imgtec.com/
+
+Tomasz Platek, Imagination Technologies (Tomasz.Platek 'at' imgtec.com)
+
+== Contributors
+
+CY Cheng, Imagination Technologies. +
+Tomasz Platek, Imagination Technologies.
+
+== Notice
+
+Copyright (c) 2024 Imagination Technologies Ltd. All Rights Reserved.
+
+== Status
+
+Final Draft
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL C Specification Version V3.0.16.
+
+== Overview
+
+This extension adds built-in functions that exercise hardware capabilities of Imagination GPU IP and expose cross work-items swap functions.
+
+== New OpenCL C Feature Names
+
+[source,c]
+----
+__opencl_img_swap
+----
+
+== New OpenCL C Functions
+
+Perform the swap operation:
+
+[source,c]
+----
+gentype img_swap_x(gentype value);
+gentype img_swap_y(gentype value);
+----
+
+== Modifications to the OpenCL C Specification
+
+(Add to Table 16 - Built-in Scalar and Vector Argument Common Functions in Section 6.15.4 - Common Functions) ::
++
+--
+[cols="1,2",options="header"]
+|====
+| Function | Description
+| gentype *img_swap_x*(gentype value)
+    a| `img_swap_x` swaps `values` between work-items in the following way: all work-items are divided into blocks of four consecutive elements. For each block: 
+
+* In the first work-item, `img_swap_x` returns `value` passed as an argument in the second work-item.
+* In the second work-item, `img_swap_x` returns `value` passed as an argument in the first work-item.
+* In the third work-item, `img_swap_x` returns `value` passed as an argument in the fourth work-item.
+* In the fourth work-item, `img_swap_x` returns `value` passed as an argument in the third work-item.
+
+The work-items are assigned into blocks based on their 1-dimensional local ID (see `get_local_linear_id`).
+
+The number of work-items that make up a work-group must be evenly divisible by four; otherwise, the behaviour is undefined.
+
+The function must be called in all four work-items of the block; otherwise, the behaviour is undefined.
+
+Requires that the `__opencl_img_swap` feature macro is defined.
+| gentype *img_swap_y*(gentype value)
+    a| `img_swap_y` swaps `values` between work-items in the following way: all work-items are divided into blocks of four consecutive elements. For each block: 
+
+* In the first work-item, `img_swap_y` returns `value` passed as an argument in the third work-item.
+* In the third work-item, `img_swap_y` returns `value` passed as an argument in the first work-item.
+* In the second work-item, `img_swap_y` returns `value` passed as an argument in the fourth work-item.
+* In the fourth work-item, `img_swap_y` returns `value` passed as an argument in the second work-item.
+
+The work-items are assigned into blocks based on their 1-dimensional local ID (see `get_local_linear_id`).
+
+The number of work-items that make up a work-group must be evenly divisible by four; otherwise, the behaviour is undefined.
+
+The function must be called in all four work-items of the block; otherwise, the behaviour is undefined.
+
+Requires that the `__opencl_img_swap` feature macro is defined.
+|====
+--
+
+== Coding Sample
+
+This coding sample shows how to use the *img_swap_x* function:
+[source]
+----
+__kernel void swap() {
+    int i = get_global_id(0);
+    int res = img_swap_x(i);
+
+    printf("id: %d, res = [ %d ]\n", i, res);
+}
+----
+
+Executing four work-items of this kernel in one work-group gives the following result:
+[source]
+----
+id: 0, res = [ 1 ]
+id: 1, res = [ 0 ]
+id: 2, res = [ 3 ]
+id: 3, res = [ 2 ]
+----
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author        | Changes
+| 1.0.0   | 2024-06-19 | Tomasz Platek | *Initial revision*
+|====
+

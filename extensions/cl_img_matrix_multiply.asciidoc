@@ -1,0 +1,303 @@
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_img_matrix_multiply
+
+== Name Strings
+
+`cl_img_matrix_multiply`
+
+== Contact
+
+Imagination Technologies Developer Forum: +
+https://forums.imgtec.com/
+
+Tomasz Platek, Imagination Technologies (Tomasz.Platek 'at' imgtec.com)
+
+== Contributors
+
+CY Cheng, Imagination Technologies. +
+Joe Molleson, Imagination Technologies. +
+Tomasz Platek, Imagination Technologies.
+
+== Notice
+
+Copyright (c) 2024 Imagination Technologies Ltd. All Rights Reserved.
+
+== Status
+
+Final Draft
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL C Specification Version V3.0.16.
+
+This extension requires the `cl_khr_fp16` extension.
+
+== Overview
+
+This extension adds built-in functions that exercise hardware capabilities of Imagination GPU IP and allow to implement matrix multiplication in highly efficient and performant manner.
+
+== New OpenCL C Feature Names
+
+[source,c]
+----
+__opencl_img_dot_interleaved
+__opencl_img_matmul_2x4_4x4
+----
+
+== New OpenCL C Functions
+
+Perform the interleaved dot product operation:
+
+[source,c]
+----
+float2 img_dot_interleaved(float a,__local float2 * b);
+float2 img_dot_interleaved(float2 a,__local float4 * b);
+float2 img_dot_interleaved(float4 a,__local float8 * b);
+float2 img_dot_interleaved(float8 a,__local float16 * b);
+float2 img_dot_interleaved_acc(float a,__local float2 * b, float2 acc);
+float2 img_dot_interleaved_acc(float2 a,__local float4 * b, float2 acc);
+float2 img_dot_interleaved_acc(float4 a,__local float8 * b, float2 acc);
+float2 img_dot_interleaved_acc(float8 a,__local float16 * b, float2 acc);
+----
+
+Perform the matrix multiplication operation:
+
+[source,c]
+----
+float8 img_matmul_2x4_4x4f(half4 a0, half4 a1,__local half16 * b);
+half8 img_matmul_2x4_4x4h(half4 a0, half4 a1,__local half16 * b);
+float8 img_matmul_acc_2x4_4x4f(half4 a0, half4 a1,__local half16 * b, float4 acc0, float4 acc1);
+half8 img_matmul_acc_2x4_4x4h(half4 a0, half4 a1,__local half16 * b, half4 acc0, half4 acc1);
+float8 img_matmul_2x4_4x4transposedf(half4 a0, half4 a1,__local half16 * b);
+half8 img_matmul_2x4_4x4transposedh(half4 a0, half4 a1,__local half16 * b);
+float8 img_matmul_acc_2x4_4x4transposedf(half4 a0, half4 a1,__local half16 * b, float4 acc0, float4 acc1);
+half8 img_matmul_acc_2x4_4x4transposedh(half4 a0, half4 a1,__local half16 * b, half4 acc0, half4 acc1);
+----
+
+== Modifications to the OpenCL C Specification
+
+(Add to Table 11 - Built-in Scalar and Vector Argument Math Functions in Section 6.15.2 - Math Functions) ::
++
+--
+[cols="1,2",options="header"]
+|====
+| Function | Description
+| float2 *img_dot_interleaved*(float _a_,pass:[__local] float2 * _b_) +
+  float2 *img_dot_interleaved*(float2 _a_,pass:[__local] float4 * _b_) +
+  float2 *img_dot_interleaved*(float4 _a_,pass:[__local] float8 * _b_) +
+  float2 *img_dot_interleaved*(float8 _a_,pass:[__local] float16 * _b_)
+    a| `img_dot_interleaved` performs the dual dot product operation. 
+    The input vectors of the first dot product are `a` and the vector containing the even-indexed elements of `b`. The result is stored into the first element of the output vector.
+    The input vectors of the second dot product are `a` and the vector containing the odd-indexed elements of `b`. The result is stored into the second element of the output vector.
+    
+For example, given:
+ 
+----
+a = [a0 a1]
+b = [b0 b1 b2 b3]
+----
+
+the output vector is:
+
+----
+[res0 res1] = [a0 a1] x [b0 b1]
+                        [b2 b3]
+----
+
+Requires that the `__opencl_img_dot_interleaved` feature macro is defined.
+| float2 *img_dot_interleaved_acc*(float _a_,pass:[__local] float2 * _b_, float2 _acc_) +
+  float2 *img_dot_interleaved_acc*(float2 _a_,pass:[__local] float4 * _b_, float2 _acc_) +
+  float2 *img_dot_interleaved_acc*(float4 _a_,pass:[__local] float8 * _b_, float2 _acc_) +
+  float2 *img_dot_interleaved_acc*(float8 _a_,pass:[__local] float16 * _b_, float2 _acc_)
+    a| `img_dot_interleaved_acc` performs the dual dot product operation with the accumulator `acc`. 
+    The input vectors of the first dot product are `a` and the vector containing the even-indexed elements of `b`. The result is stored into the first element of the output vector.
+    The input vectors of the second dot product are `a` and the vector containing the odd-indexed elements of `b`. The result is stored into the second element of the output vector.
+
+For example, given:
+
+----
+a = [a0 a1]
+b = [b0 b1 b2 b3]
+acc = [acc0 acc1]
+----
+
+the output vector is:
+
+----
+[res0 res1] = [a0 a1] x [b0 b1] + [acc0 acc1]
+                        [b2 b3]
+----
+
+Requires that the `__opencl_img_dot_interleaved` feature macro is defined.
+| float8 *img_matmul_2x4_4x4f*(half4 _a0_, half4 _a1_,pass:[__local] half16 * _b_) +
+  half8 *img_matmul_2x4_4x4h*(half4 _a0_, half4 _a1_,pass:[__local] half16 * _b_)
+    a| `img_matmul_2x4_4x4f` and `img_matmul_2x4_4x4h` perform the matrix multiplication operation of matrices A and B of dimensions 2x4 and 4x4, where `a0` is the first row and `a1` is the second row of the matrix A.
+    The first row of the matrix B is represented by the elements 0-3 of `b`, the second row by the elements 4-7, the third row by the elements 8-11, and the fourth row by the elements 12-15.
+
+For example, given:
+
+----
+A = [a00 a01 a02 a03]
+    [a10 a11 a12 a13]
+B = [b0  b1  b2  b3]
+    [b4  b5  b6  b7]
+    [b8  b9  b10 b11]
+    [b12 b13 b14 b15]
+----
+
+the output vector is:
+
+----
+[res0 res1 res2 res3] = A x B
+[res4 res5 res6 res7]                                                        
+----
+
+Requires that the `__opencl_img_matmul_2x4_4x4` feature macro is defined.
+| float8 *img_matmul_acc_2x4_4x4f*(half4 _a0_, half4 _a1_,pass:[__local] half16 _b_, float4 _acc0_, float4 _acc1_) +
+  half8 *img_matmul_acc_2x4_4x4h*(half4 _a0_, half4 _a1_,pass:[__local] half16 _b_, half4 _acc0_, half4 _acc1_)
+    a| `img_matmul_acc_2x4_4x4f` and `img_matmul_acc_2x4_4x4h` perform the matrix multiplication operation with the accumulator of matrices A and B of dimensions 2x4 and 4x4, where `a0` is the first row and `a1` is the second row of the matrix A, and where `acc0` is the first row and `acc1` is the second row of the accumulator.
+   The first row of the matrix B is represented by the elements 0-3 of `b`, the second row by the elements 4-7, the third row by the elements 8-11, and the fourth row by the elements 12-15.
+
+For example, given:
+
+----
+A = [a00 a01 a02 a03]
+    [a10 a11 a12 a13]
+B = [b0  b1  b2  b3]
+    [b4  b5  b6  b7]
+    [b8  b9  b10 b11]
+    [b12 b13 b14 b15]
+C = [acc00 acc01 acc02 acc03]
+    [acc10 acc11 acc12 acc13]
+----
+
+the output vector is:
+
+----
+[res0 res1 res2 res3] = A x B + C
+[res4 res5 res6 res7]                                                   
+----
+
+Requires that the `__opencl_img_matmul_2x4_4x4` feature macro is defined.
+
+| float8 *img_matmul_2x4_4x4transposedf*(half4 _a0_, half4 _a1_,pass:[__local] half16 * _b_) +
+  half8 *img_matmul_2x4_4x4transposedh*(half4 _a0_, half4 _a1_,pass:[__local] half16 * _b_)
+    a| `img_matmul_2x4_4x4transposedf` and `img_matmul_2x4_4x4transposedh` perform the matrix multiplication operation of matrix A and transposed matrix B of dimensions 2x4 and 4x4, where `a0` is the first row and `a1` is the second row of the matrix A.
+    The first row of the matrix B is represented by the elements 0-3 of `b`, the second row by the elements 4-7, the third row by the elements 8-11, and the fourth row by the elements 12-15.
+
+For example, given:
+
+----
+A = [a00 a01 a02 a03]
+    [a10 a11 a12 a13]
+BT = [b0 b4 b8  b12]
+     [b1 b5 b9  b13]
+     [b2 b6 b10 b14]
+     [b3 b7 b11 b15]
+----
+
+the output vector is:
+
+----
+[res0 res1 res2 res3] = A x BT
+[res4 res5 res6 res7]                                                        
+----
+
+Requires that the `__opencl_img_matmul_2x4_4x4` feature macro is defined.
+| float8 *img_matmul_acc_2x4_4x4transposedf*(half4 _a0_, half4 _a1_,pass:[__local] half16 * _b_, float4 _acc0_, float4 _acc1_) +
+  half8 *img_matmul_acc_2x4_4x4transposedh*(half4 _a0_, half4 _a1_,pass:[__local] half16 * _b_, half4 _acc0_, half4 _acc1_)
+    a| `img_matmul_acc_2x4_4x4transposedf` and `img_matmul_acc_2x4_4x4transposedh` perform the matrix multiplication operation with the accumulator of matrix A and transposed matrix B of dimensions 2x4 and 4x4, where `a0` is the first row and `a1` is the second row of the matrix A, and where `acc0` is the first row and `acc1` is the second row of the accumulator.
+    The first row of the matrix B is represented by the elements 0-3 of `b`, the second row by the elements 4-7, the third row by the elements 8-11, and the fourth row by the elements 12-15.
+
+For example, given:
+
+----
+A = [a00 a01 a02 a03]
+    [a10 a11 a12 a13]
+BT = [b0 b4 b8  b12]
+     [b1 b5 b9  b13]
+     [b2 b6 b10 b14]
+     [b3 b7 b11 b15]
+C = [acc00 acc01 acc02 acc03]
+    [acc10 acc11 acc12 acc13]  
+----
+
+the output vector is:
+
+----
+[res0 res1 res2 res3] = A x BT + C
+[res4 res5 res6 res7]                                                       
+----
+
+Requires that the `__opencl_img_matmul_2x4_4x4` feature macro is defined.
+|====
+--
+
+== Coding Sample
+
+This coding sample shows how to initialize the input vectors, use the *img_dot_interleaved_acc* function, and access the output vector:
+[source]
+----
+float4 a = (float4) (1.0f, 1.0f, 1.0f, 1.0f);
+__local float8 b;
+b = (float8) (0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+
+float2 acc = (float2) (1.0f, 1.0f);
+float2 res = img_dot_interleaved_acc(a, &b, acc);
+
+printf("res = [ %f %f ]\n", res.s0, res.s1);
+----
+
+Executing a work-item containing this code gives the following result:
+[source]
+----
+res = [ 1.000000 5.000000 ]
+----
+
+This coding sample shows how to initialize the input vectors, use the *img_matmul_acc_2x4_4x4f* function, and access the output vector:
+[source]
+----
+half4  a0 = (half4) (1.0h, 0.0h, 0.0h, 0.0h);
+half4  a1 = (half4) (0.0h, 1.0h, 0.0h, 0.0h);
+
+local half16 b;
+b = (half16) (0.0h,  1.0h,  2.0h,  3.0h,
+              4.0h,  5.0h,  6.0h,  7.0h,
+              8.0h,  9.0h,  10.0h, 11.0h,
+              12.0h, 13.0h, 14.0h, 15.0h);
+
+float4 acc0 = (float4) (1.0f, 1.0f, 1.0f, 1.0f);
+float4 acc1 = (float4) (1.0f, 1.0f, 1.0f, 1.0f);
+
+float8 res = img_matmul_acc_2x4_4x4f(a0, a1, &b, acc0, acc1);
+
+printf("res = [ %f %f %f %f ]\n", res.s0, res.s1, res.s2, res.s3);
+printf("      [ %f %f %f %f ]\n", res.s4, res.s5, res.s6, res.s7);
+----
+
+Executing a work-item containing this code gives the following result:
+[source]
+----
+res = [ 1.000000 2.000000 3.000000 4.000000 ]
+      [ 5.000000 6.000000 7.000000 8.000000 ]
+----
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author        | Changes
+| 1.0.0   | 2024-06-07 | Tomasz Platek | *Initial revision*
+|====
+
