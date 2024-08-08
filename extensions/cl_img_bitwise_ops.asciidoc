@@ -1,0 +1,118 @@
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_img_bitwise_ops
+
+== Name Strings
+
+`cl_img_bitwise_ops`
+
+== Contact
+
+Imagination Technologies Developer Forum: +
+https://forums.imgtec.com/
+
+Tomasz Platek, Imagination Technologies (Tomasz.Platek 'at' imgtec.com)
+
+== Contributors
+
+CY Cheng, Imagination Technologies. +
+Tomasz Platek, Imagination Technologies.
+
+== Notice
+
+Copyright (c) 2024 Imagination Technologies Ltd. All Rights Reserved.
+
+== Status
+
+Final Draft
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL C Specification Version V3.0.16.
+
+== Overview
+
+This extension adds built-in functions that expose the bitwise operations of Imagination GPU IP that are not accessible by standard OpenCL C functions.
+
+== New OpenCL C Feature Names
+
+[source,c]
+----
+__opencl_img_bit_interleave
+----
+
+== New OpenCL C Functions
+
+Performs the bit interleave operation:
+
+[source,c]
+----
+gentype img_bit_interleave(gentype a, gentype b);
+----
+
+== Modifications to the OpenCL C Specification
+
+(Add to Table 16 - Built-in Scalar and Vector Argument Common Functions in Section 6.15.4 - Common Functions) ::
++
+--
+[cols="1,2",options="header"]
+|====
+| Function | Description
+| gentype *img_bit_interleave*(gentype a, gentype b)
+    a| `img_bit_interleave` interleaves the first `n` bits from two sources where `n` is half of the size of gentype in bits.
+
+For `a` and `b`, where a0 and b0 are the least significant bits:
+[source]
+----
+a = a(N-1)\|a(N-2)\|a(N-3)\|...\|a3\|a2\|a1\|a0
+b = b(N-1)\|b(N-2)\|b(N-3)\|...\|b3\|b2\|b1\|b0
+----
+
+the output is:
+[source]
+----
+res = b(N/2-1)\|a(N/2-1)\|b(N/2-2)\|a(N/2-2)\|b(N/2-3)\|a(N/2-3)\|...\|b3\|a3\|b2\|a2\|b1\|a1\|b0\|a0
+----
+so the sizes of `a`,`b`, and `res` are equal.
+
+Requires that the `__opencl_img_bit_interleave` feature macro is defined.
+|====
+--
+
+== Coding Sample
+
+This coding sample shows how to use the *img_bit_interleave* function:
+[source]
+----
+int4 a = (int4) ( 0x00000000, 0x00000000, 0x0000FFFF, 0xFFFFFFFF);
+int4 b = (int4) ( 0xFFFFFFFF, 0x0000FFFF, 0x00000000, 0x00000000);
+
+int4 res = img_bit_interleave(a,b);
+
+printf("res = [ 0x%x 0x%x 0x%x 0x%x]\n", res.s0, res.s1, res.s2, res.s3);
+----
+
+Executing a work-item of this kernel gives the following result:
+[source]
+----
+res = [ 0xaaaaaaaa 0xaaaaaaaa 0x55555555 0x55555555]
+----
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author        | Changes
+| 1.0.0   | 2024-06-19 | Tomasz Platek | *Initial revision*
+|====
+
