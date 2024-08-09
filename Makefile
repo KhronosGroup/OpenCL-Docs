@@ -512,9 +512,11 @@ $(MANHTMLDIR)/intro.html: $(REFPATH)/intro.txt $(MANCOPYRIGHT)
 
 REGISTRY       = $(ROOTDIR)/xml
 APIXML	       = $(REGISTRY)/cl.xml
+CFEATURES      = c/features.txt
 GENSCRIPT      = $(SCRIPTS)/gencl.py
 DICTSCRIPT     = $(SCRIPTS)/gen_dictionaries.py
 VERSIONSCRIPT  = $(SCRIPTS)/gen_version_notes.py
+CFEATSCRIPT    = $(SCRIPTS)/gen_c_feature_dictionary.py
 GENSCRIPTOPTS  = $(VERSIONOPTIONS) $(EXTOPTIONS) $(GENSCRIPTEXTRA) -registry $(APIXML)
 GENSCRIPTEXTRA =
 
@@ -540,6 +542,7 @@ extinc: $(METADEPEND)
 $(METADEPEND): $(APIXML) $(GENSCRIPT)
 	$(QUIET)$(MKDIR) $(METAPATH)
 	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(METAPATH) extinc
+	$(QUIET)$(PYTHON) $(CFEATSCRIPT) -features $(CFEATURES) -o $(METAPATH)/c-feature-dictionary.asciidoc
 
 # This generates a single file containing asciidoc attributes for each
 # extension in the spec being built.
