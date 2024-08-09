@@ -1,0 +1,1058 @@
+:data-uri:
+:icons: font
+//include::../config/attribs.txt[]
+//include::{generated}/api/api-dictionary.asciidoc[]
+:source-highlighter: coderay
+
+= cl_exp_tensor
+
+This extension provides new buffer abstraction - tensor objects - for
+managing N-dimensional data.
+
+== XXX - Not complete yet!!!
+
+== Name Strings
+
+`cl_exp_tensor`
+
+== Contact
+
+TODO
+
+== Contributors
+
+Henry Linjamäki, Intel. +
+Pekka Jääslkeläinen, Intel and Tampere University. +
+Ben Ashbaugh, Intel. +
+
+== Notice
+
+TODO
+
+== Status
+
+Draft spec, NOT APPROVED!!
+
+== Version
+
+Built On: {docdate} +
+Version: 0.2.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification version 3.0.14.
+
+This extension requires OpenCL 1.2 or later.
+
+== Overview
+
+The extension provides new tensor object abstraction. Tensor objects
+are similar to image types in regard they represents N-dimensional
+data of some application chosen data type and they may be mapped to
+dedicated hardware except that
+
+* higher than 3-dimensional data can be supported (limited by
+  devices' capabilities).
+
+* applications may choose how the data elements of the tensors are
+  laid out in the buffers using the tensor layout descriptions
+  provided in this extension.
+
+Applications may also choose the memory layouts of the tensors be
+implementation-specified, letting the driver to optimize the tensor
+data layout for better performance or to lay out the data as required by
+hardware functions (e.g. exposed via builtin kernels).
+
+The scope of this extension to provide host APIs for creating tensor
+objects and transfer data between tensors, host and other memory
+objects.
+
+A separate extension implemented on top of this extension,
+cl_exp_defined_builtin_kernels which provides "defined built-in
+kernels" (DKBs) which operates on tensors. It also provides mechanism
+for drivers to create DBKs that are optimized for the tensor arguments
+they operate on.
+
+== New API Functions
+
+[source,c]
+----
+cl_int clEnqueueImportFromTensorEXP(
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  cl_bool blocking_command,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  void* host_ptr,
+  cl_uint num_events_in_wait_list,
+  const cl_event* event_wait_list,
+  cl_event* event);
+
+cl_int clEnqueueExportToTensorEXP(
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  cl_bool blocking_command,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  const void* host_ptr,
+  cl_uint num_events_in_wait_list,
+  const cl_event* event_wait_list,
+  cl_event* event);
+
+cl_int clEnqueueCopyTensorEXP(
+  cl_command_queue command_queue,
+  cl_tensor src_tensor,
+  cl_tensor dst_tensor,
+  const cl_tensor_shape* src_origin,
+  const cl_tensor_shape* dst_origin,
+  const cl_tensor_shape* region,
+  cl_uint num_events_in_wait_list,
+  const cl_event* event_wait_list,
+  cl_event* event);
+
+cl_int clCommandImportFromTensorEXP(
+  cl_command_buffer_khr command_buffer,
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  void* host_ptr,
+  cl_uint num_sync_points_in_wait_list,
+  const cl_sync_point_khr* sync_point_wait_list,
+  cl_sync_point_khr* sync_point,
+  cl_mutable_command_khr* mutable_handle);
+
+cl_int clCommandExportToTensorEXP(
+  cl_command_buffer_khr command_buffer,
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  const void* host_ptr,
+  cl_uint num_sync_points_in_wait_list,
+  const cl_sync_point_khr* sync_point_wait_list,
+  cl_sync_point_khr* sync_point,
+  cl_mutable_command_khr* mutable_handle);
+----
+
+== New API Types
+
+[source,c]
+----
+typedef cl_uint cl_tensor_layout_type_exp;
+typedef cl_uint cl_tensor_dim_exp;
+typedef cl_uint cl_tensor_layout_ml_type_exp;
+typedef cl_properties cl_tensor_properties_exp;
+
+#define CL_TENSOR_DESC_MAX_RANK_EXP       20u
+#define CL_TENSOR_DESC_MAX_PROPERTIES_EXP 16u
+
+typedef struct cl_tensor_desc_exp {
+    cl_uint               rank;
+    cl_tensor_datatype    dtype;
+    cl_tensor_properties_exp  properties[CL_TENSOR_DESC_MAX_PROPERTIES_EXP]
+    cl_tensor_shape       shape[CL_TENSOR_DESC_MAX_RANK_EXP];
+    const void*           layout;
+    cl_tensor_layout_type_exp layout_type;
+} cl_tensor_desc_exp;
+
+typedef struct cl_tensor_layout_blas_exp {
+    cl_tensor_dim_exp    leading_dims[CL_TENSOR_DESC_MAX_RANK_EXP];
+} cl_tensor_layout_blas_exp;
+
+typedef struct cl_tensor_layout_blas_pitched_exp {
+    cl_tensor_dim_exp    leading_dims[CL_TENSOR_DESC_MAX_RANK_EXP];
+    cl_tensor_stride     leading_strides[CL_TENSOR_DESC_MAX_RANK_EXP];
+} cl_tensor_layout_blas_pitched__exp;
+
+typedef struct cl_tensor_layout_ml_exp {
+  cl_tensor_layout_ml_type_exp ml_type;
+} cl_tensor_layout_ml_exp;
+----
+
+== New API Enums
+
+Accepted value for _properties_ parameter to
+*clCreateBufferWithProperties* for creating a tensor object:
+
+[source,c]
+----
+CL_MEM_TENSOR_EXP               0x????
+----
+
+Accepted values for the _param_name_ parameter to *clGetDeviceInfo*:
+
+[source,c]
+----
+CL_DEVICE_MAX_TENSOR_ARGS_EXP     0x????
+CL_DEVICE_MAX_TENSOR_RANK_EXP     0x????
+CL_DEVICE_MAX_TENSOR_ELEMENTS_EXP 0x????
+CL_DEVICE_MAX_TENSOR_STRIDE_EXP   0x????
+----
+
+Accepted values for *cl_tensor_datatype* type:
+
+[source,c]
+----
+CL_TENSOR_DTYPE_BOOL_EXP        0x????
+
+CL_TENSOR_DTYPE_INT4_EXP        0x????
+CL_TENSOR_DTYPE_INT8_EXP        0x????
+CL_TENSOR_DTYPE_INT16_EXP       0x????
+CL_TENSOR_DTYPE_INT32_EXP       0x????
+CL_TENSOR_DTYPE_INT64_EXP       0x????
+
+CL_TENSOR_DTYPE_UINT4_EXP       0x????
+CL_TENSOR_DTYPE_UINT8_EXP       0x????
+CL_TENSOR_DTYPE_UINT16_EXP      0x????
+CL_TENSOR_DTYPE_UINT32_EXP      0x????
+CL_TENSOR_DTYPE_UINT64_EXP      0x????
+
+CL_TENSOR_DTYPE_FP8_EXP         0x????
+CL_TENSOR_DTYPE_FP16_EXP        0x????
+CL_TENSOR_DTYPE_FP32_EXP        0x????
+CL_TENSOR_DTYPE_FP64_EXP        0x????
+
+CL_TENSOR_DTYPE_BFLOAT16_EXP    0x????
+
+CL_TENSOR_DTYPE_COMPLEX64_EXP   0x????
+CL_TENSOR_DTYPE_COMPLEX128_EXP  0x????
+----
+
+Accepted values for *cl_tensor_layout_type_exp*:
+
+[source,c]
+----
+CL_TENSOR_LAYOUT_OPAQUE_EXP       0x????
+CL_TENSOR_LAYOUT_BLAS_EXP         0x????
+CL_TENSOR_LAYOUT_BLAS_PITCHED_EXP 0x????
+CL_TENSOR_LAYOUT_ML_EXP           0x????
+----
+
+Accepted values for *cl_tensor_layout_ml_type_exp*:
+
+[source,c]
+----
+CL_TENSOR_LAYOUT_ML_C_EXP       0x????
+CL_TENSOR_LAYOUT_ML_NC_EXP      0x????
+CL_TENSOR_LAYOUT_ML_CN_EXP      0x????
+CL_TENSOR_LAYOUT_ML_HW_EXP      0x????
+CL_TENSOR_LAYOUT_ML_CHW_EXP     0x????
+CL_TENSOR_LAYOUT_ML_NCHW_EXP    0x????
+CL_TENSOR_LAYOUT_ML_NHWC_EXP    0x????
+----
+
+New error codes:
+
+[source,c]
+----
+CL_INVALID_TENSOR_RANK_EXP   0x????
+CL_INVALID_TENSOR_DTYPE_EXP  0x????
+CL_INVALID_TENSOR_SHAPE_EXP  0x????
+CL_INVALID_TENSOR_LAYOUT_EXP 0x????
+----
+
+=== Modifications to The OpenCL API Specification
+
+(Modify Section 4.2, *Querying Devices*) ::
++
+--
+(Add the following to Table 5., _List of supported _param_names_ by *clGetDeviceInfo*) ::
++
+--
+
+[cols="2,1,2",stripes=odd,options="header"]
+|===
+| Device Info
+| Return Type
+| Description
+
+// The following enumerators are introduced for Vulkan layering in
+// mind. The minimum values are copied from the Vulkan's tensor draft
+// spec.
+
+| CL_DEVICE_MAX_TENSOR_ARGS_EXP | cl_uint | Max number of tensor objects
+  arguments specified as arguments to.
+
+| CL_DEVICE_MAX_TENSOR_RANK_EXP | cl_uint | Max tensor rank. The minimum
+  value is 4.
+
+| CL_DEVICE_MAX_TENSOR_ELEMENTS_EXP | size_t | Maximum number of tensor
+  elements in total. The minimum value is 65536.
+
+| CL_DEVICE_MAX_TENSOR_PITCH_EXP | size_t | Maximum pitch value for
+  all pitch components for
+  <<cl-tensor-layout-blas,CL_TENSOR_LAYOUT_BLAS_PITCHED_EXP>> memory
+  layout.
+
+The minimum value is 65536.
+
+|===
+--
+--
+// End (Modify Section 4.2, *Querying Devices*)
+
+(Modify Section 5.2.1, *Creating Buffer Objects*) ::
++
+--
+(Add the following to Table 18.,  _Buffer creation properties_) ::
++
+--
+
+[cols="2,1,2",stripes=odd,options="header"]
+|===
+| cl_mem_properties
+| Property Value
+| Description
+
+| CL_MEM_TENSOR_EXP | cl_tensor_desc_exp a| Creates a tensor object with
+properties set in *cl_tensor_desc_exp* tensor description structure.
+
+The _size_ parameter of the *clCreateBufferWithProperties()* is
+ignored and may be set to zero. The required storage space needed is
+inferred from the tensor description. The storage size of the queried
+with *clGetMemObjectInfo()*. The storage size may change during
+the runtime unless constrained by the given tensor description.
+
+// The last sentence is for accommodating tensors with dynamic
+// dimension sizes and rank which are present in many ML frameworks.
+|===
+--
+
+(Add to list of error codes *clCreateBufferWithProperties()*) ::
++
+--
+
+* `CL_INVALID_VALUE` if `CL_MEM_TENSOR_EXP` property is specified and the
+  `rank` member of the `cl_tensor_desc_exp` structure has invalid or
+  unsupported value.
+
+* `CL_INVALID_TENSOR_SHAPE_EXP` if `CL_MEM_TENSOR_EXP` property is
+  specified and the `shape` member of the `cl_tensor_desc_exp`
+  structure has invalid or unsupported description.
+
+* `CL_INVALID_TENSOR_LAYOUT_TYPE_EXP` if `CL_MEM_TENSOR_EXP` property is
+  specified and the `layout_type` member of the `cl_tensor_desc_exp`
+  structure has an invalid enumeration constant.
+
+* `CL_INVALID_TENSOR_LAYOUT_EXP` if `CL_MEM_TENSOR_EXP` property is
+  specified and the `layout` member of the `cl_tensor_desc_exp` has an
+  invalid description.
+--
+--
+// End (Modify Section 5.2.1, *Creating Buffer Objects*)
+
+(Add the following to Section 5.2.2, *Reading, Writing and Copying Buffer Objects*) ::
++
+--
+The following functions are for reading from a tensor to host memory /
+buffer object or to write to a tensor object from host memory / buffer
+object.
+
+[source,c]
+----
+cl_int clEnqueueImportFromTensorEXP(
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  cl_bool blocking_command,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  void* host_ptr,
+  cl_uint num_events_in_wait_list,
+  const cl_event* event_wait_list,
+  cl_event* event);
+----
+
+[source,c]
+----
+cl_int clEnqueueExportToTensorEXP(
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  cl_bool blocking_command,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  const void* host_ptr,
+  cl_uint num_events_in_wait_list,
+  const cl_event* event_wait_list,
+  cl_event* event);
+----
+
+* _command_queue_ is a valid host command-queue in which the read /
+  write command will be queued. _command_queue_ and _tensor_ must be
+  created with the same OpenCL context.
+
+* _tensor_ refers to a valid tensor object which is bound to a buffer.
+
+* _blocking_command_ indicate if the read and write operations are
+  blocking or non-blocking (see below).
+
+* _tensor_origin_ defines the offset coordinates in _tensor_ for start of
+  the regions to read / write tensor data. The length of the array
+  must be at least rank the the _tensor_.
+
+* _mem_origin_ defines the offset coordinates in the memory region
+  pointed by _buffer_ or _host_ptr_ expressed in elements of _tensor_
+  data type. The length of the array must be at least rank the the
+  _tensor_.
+
+* _region_ defines the region being read or written expressed in in
+  elements of _tensor_ data type. The length of the array must be at
+  least rank the the _tensor_. If _region_ is NULL then _tensor_'s
+  shape will be used as the region.
+
+* _mem_pitch_ defines the length of each dimension in elements to be
+  used for the memory region of _buffer_ or _host_ptr_. The length of
+  the array must be at least the rank of _tensor_ minus one. if
+  _mem_pitch_ is NULL or _mem_pitch_[i] is zero, _mem_pitch_[i] is
+  computed as _region_[i + 1].
+
+* _buffer_ and _host_ptr_ refer to a valid buffer object / host
+  allocation where data is to be read into or to be written from.
+  Either the _buffer_ or _host_ptr_ can be non-NULL in which case the
+  non-NULL argument is used as the operand for the operation.
+
+* _event_wait_list_ and _num_events_in_wait_list_ specify events that
+  need to complete before this particular command can be executed. If
+  _event_wait_list_ is NULL, then this particular command does not
+  wait on any event to complete. If _event_wait_list_ is NULL,
+  _num_events_in_wait_list_ must be 0. If _event_wait_list_ is not
+  NULL, the list of events pointed to by _event_wait_list_ must be
+  valid and _num_events_in_wait_list_ must be greater than 0. The
+  events specified in _event_wait_list_ act as synchronization
+  points. The context associated with events in _event_wait_list_ and
+  _command_queue_ must be the same. The memory associated with
+  _event_wait_list_ can be reused or freed after the function returns.
+
+* _event_ returns an event object that identifies this read / write
+  command and can be used to query or queue a wait for this command to
+  complete. If _event_ is NULL or the enqueue is unsuccessful, no
+  event will be created and therefore it will not be possible to query
+  the status of this command or to wait for this command to
+  complete. If _event_wait_list_ and _event_ are not NULL, _event_
+  must not refer to an element of the _event_wait_list_ array.
+
+The *clEnqueueExportToTensorEXP* function copies contents of the buffer
+object / host allocation to tensor's storage in
+implementation-defined, opaque memory layout. The
+*clEnqueueImportFromTensorEXP* function copies data from tensor's
+storage to buffer object / host allocation.
+
+The elements of buffer object / host allocation are mapped to tensor
+coordinates and vice versa as follows in pseudo C code:
+
+[source,c]
+----
+tensor_element(
+  tensor,
+  tensor_origin[0] + i[0],
+  tensor_origin[1] + i[1],
+  ...,
+  tensor_origin[N-2] + i[N-2],
+  tensor_origin[N-2] + i[N-1]) ==
+((TENSOR_DATATYPE *)buffer_or_host_ptr)[
+  (mem_origin[0] + i[0]) * pitch(0) +
+  (mem_origin[1] + i[1]) * pitch(1) +
+  ... +
+  (mem_origin[N-2] + i[N-2]) * pitch(N-2) +
+  (mem_origin[N-1] + i[N-1])];
+----
+
+Where the `N` is tensor rank, the `i[X]` is a tensor coordinate with
+inclusive range of `0..<region[X]-1>` and the `pitch` is computed as
+follows in pseudo C code:
+
+[source,c]
+----
+size_t pitch(size_t dim) {
+  size_t pitch = 1;
+  for (size_t i = dim; i < tensor_rank - 1; i++)
+    pitch *=
+      (mem_pitch != NULL || mem_pitch[i] == 0) ? mem_pitch[i] : region[i + 1];
+  return pitch;
+}
+----
+
+For `dim` in `0..(tensor_rank()-1)`. The `tensor_element()` represents
+an abstract function that accesses a tensor element in its storage at
+given coordinate. The method how the coordinates translate to tensor
+storage addresses is unspecified.
+
+*clEnqueueImportFromTensorEXP* and *clEnqueueExportToTensorEXP*
+returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:
+
+* CL_INVALID_COMMAND_QUEUE if _command_queue_ is not a valid host
+  command-queue.
+
+* CL_INVALID_CONTEXT if the context associated with _command_queue_
+  and buffer are not the same or if the context associated with
+  _command_queue_ and events in _event_wait_list_ are not the same.
+
+* CL_INVALID_MEM_OBJECT if _buffer_ is not a valid buffer object.
+
+* CL_INVALID_VALUE if _tensor_origin_ or _mem_origin_ is NULL.
+
+* CL_INVALID_VALUE if the region being read or written specified by
+  (_mem_origin_, _region_, _mem_pitch_) is out of bounds.
+
+* CL_INVALID_VALUE if any _region_ array element is 0.
+
+* CL_INVALID_VALUE if _mem_pitch_ is not NULL and _mem_pitch_[i] is
+  not 0 and _mem_pitch_[i] is less than _region_[i].
+
+* CL_INVALID_VALUE if _buffer_ and _host_ptr_ both are NULL or non-NULL.
+
+* CL_INVALID_EVENT_WAIT_LIST if _event_wait_list_ is NULL and
+  _num_events_in_wait_list_ > 0, or _event_wait_list_ is not NULL and
+  _num_events_in_wait_list_ is 0, or if event objects in
+  _event_wait_list_ are not valid events.
+
+* CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST if the read and write
+  operations are blocking and the execution status of any of the
+  events in _event_wait_list_ is a negative integer value.
+
+* CL_OUT_OF_RESOURCES if there is a failure to allocate resources
+  required by the OpenCL implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+  required by the OpenCL implementation on the host.
+
+
+To copy elements from one tensor to another use:
+
+[source,c]
+----
+cl_int clEnqueueCopyTensorEXP(
+  cl_command_queue command_queue,
+  cl_tensor src_tensor,
+  cl_tensor dst_tensor,
+  const cl_tensor_shape* src_origin,
+  const cl_tensor_shape* dst_origin,
+  const cl_tensor_shape* region,
+  cl_uint num_events_in_wait_list,
+  const cl_event* event_wait_list,
+  cl_event* event);
+----
+
+* _command_queue_ is a valid host command-queue in which the read /
+  write command will be queued. _command_queue_ and _tensor_ must be
+  created with the same OpenCL context.
+
+* _src_tensor_ and _dst_tensor_ refer to valid buffer objects created
+  with `CL_MEM_TENSOR_EXP`. Tensor elements are copied from _src_tensor_
+  to _dst_tensor_. Rank of the _src_tensor_ and _dst_tensor_ must match.
+
+* _src_origin_ and _dst_origin_ define origins of the copy region. The
+  length of the arrays must be at least tensors' rank.
+
+* _region_ defines extends of the slice being being copied. The length
+  of the arrays must be at least tensors' rank.
+
+* _event_wait_list_ and _num_events_in_wait_list_ specify events that
+  need to complete before this particular command can be executed. If
+  _event_wait_list_ is NULL, then this particular command does not
+  wait on any event to complete. If _event_wait_list_ is NULL,
+  _num_events_in_wait_list_ must be 0. If _event_wait_list_ is not
+  NULL, the list of events pointed to by _event_wait_list_ must be
+  valid and _num_events_in_wait_list_ must be greater than 0. The
+  events specified in _event_wait_list_ act as synchronization
+  points. The context associated with events in _event_wait_list_ and
+  _command_queue_ must be the same. The memory associated with
+  _event_wait_list_ can be reused or freed after the function returns.
+
+* _event_ returns an event object that identifies this read / write
+  command and can be used to query or queue a wait for this command to
+  complete. If _event_ is NULL or the enqueue is unsuccessful, no
+  event will be created and therefore it will not be possible to query
+  the status of this command or to wait for this command to
+  complete. If _event_wait_list_ and _event_ are not NULL, _event_
+  must not refer to an element of the _event_wait_list_ array.
+
+Elements are copied from the source tensor to the destination tensor
+so that after the completion following condition holds expressed in
+pseudo C:
+
+[source,c]
+----
+// 'so' and 'do' are aliases for src_origin and dst_origin, respectively.
+tensor_element(dst_tensor, do[0] + i[0], do[1] + i[1], ..., do[N-1] + i[N-1])
+==
+tensor_element(src_tensor, so[0] + i[0], so[1] + i[1], ..., so[N-1] + i[N-1]);
+----
+
+Where the `N` is tensor rank, the `i[X]` is a tensor coordinate with
+inclusive range of `0..<region[X]-1>`.
+
+*clEnqueueCopyTensorEXP* returns CL_SUCCESS if the function is
+executed successfully. Otherwise, it returns one of the following
+errors:
+
+* CL_INVALID_COMMAND_QUEUE if _command_queue_ is not a valid host
+  command-queue.
+
+* CL_INVALID_CONTEXT if the context associated with _command_queue_
+  and buffer are not the same or if the context associated with
+  _command_queue_ and events in _event_wait_list_ are not the same.
+
+* CL_INVALID_MEM_OBJECT if _src_tensor_ or _dst_tensor_ are not a
+  valid buffer object created with `CL_MEM_TENSOR_EXP`.
+
+* CL_INVALID_VALUE if _tensor_origin_ or _mem_origin_ is NULL.
+
+* CL_INVALID_VALUE if _src_origin_, _dst_origin_ or _region_ is NULL.
+
+* CL_INVALID_VALUE if `region[i]` is zero for i in `[0, tensor_rank)`.
+
+* CL_INVALID_VALUE if `origin[i] + region[i] > tensor_shape[i]` at any
+  dimension `i` in range `[0, tensor_rank)`.
+
+* CL_INVALID_EVENT_WAIT_LIST if _event_wait_list_ is NULL and
+  _num_events_in_wait_list_ > 0, or _event_wait_list_ is not NULL and
+  _num_events_in_wait_list_ is 0, or if event objects in
+  _event_wait_list_ are not valid events.
+
+* CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST if the read and write
+  operations are blocking and the execution status of any of the
+  events in _event_wait_list_ is a negative integer value.
+
+* CL_MEM_OBJECT_ALLOCATION_FAILURE if there is a failure to allocate
+  memory for data store associated with memory object the _tensor_ is
+  bound to.
+
+* CL_OUT_OF_RESOURCES if there is a failure to allocate resources
+  required by the OpenCL implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+  required by the OpenCL implementation on the host.
+
+// TODO: add clEnqueueFillTensor?
+
+--
+// End (Add the following to Section 5.2.2, *Reading, Writing and Copying Buffer Objects*)
+
+
+(Add the following to Section 5.17.5, *Recording Commands to a Command-Buffer*) ::
++
+--
+
+If *cl_khr_command_buffer* is supported, then the following command
+buffer counterparts of the *clEnqueueImportFromTensorEXP* and
+*clEnqueueExportToTensorEXP* commands are available.
+
+[source,c]
+----
+cl_int clCommandImportFromTensorEXP(
+  cl_command_buffer_khr command_buffer,
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  void* host_ptr,
+  cl_uint num_sync_points_in_wait_list,
+  const cl_sync_point_khr* sync_point_wait_list,
+  cl_sync_point_khr* sync_point,
+  cl_mutable_command_khr* mutable_handle);
+
+cl_int clCommandExportToTensorEXP(
+  cl_command_buffer_khr command_buffer,
+  cl_command_queue command_queue,
+  cl_tensor tensor,
+  const size_t* tensor_origin,
+  const size_t* mem_origin,
+  const size_t* region,
+  const size_t* mem_pitch,
+  cl_mem buffer,
+  const void* host_ptr,
+  cl_uint num_sync_points_in_wait_list,
+  const cl_sync_point_khr* sync_point_wait_list,
+  cl_sync_point_khr* sync_point,
+  cl_mutable_command_khr* mutable_handle);
+----
+
+* _command_buffer_ refers to valid command-buffer object.
+
+* For _command_queue_, _tensor_, _tensor_origin_, _mem_origin_,
+  _region_, _mem_pitch_, _buffer_ and _host_ptr_ parameters refer to
+  *clEnqueueImportFromTensor*.
+
+* For _num_sync_points_in_wait_list_, _sync_point_wait_list_,
+  _sync_point_, _mutable_handle_ parameters refer to
+  *clCommandCopyBufferEXP*.
+
+*clCommandImportFromTensorEXP* and *clCommandImportFromTensorEXP*
+returns CL_SUCCESS if the function is executed
+successfully. Otherwise, it returns one of the following errors:
+
+* CL_INVALID_COMMAND_QUEUE if _command_queue_ is not NULL.
+
+* CL_INVALID_COMMAND_BUFFER_KHR if _command_buffer_ is not a valid
+  command-buffer.
+
+* CL_INVALID_CONTEXT if the context associated with _command_queue_
+  and _command_buffer_ is not the same.
+
+* CL_INVALID_OPERATION if _command_buffer_ has been finalized.
+
+* CL_INVALID_VALUE if _mutable_handle_ is not NULL.
+
+* CL_INVALID_SYNC_POINT_WAIT_LIST_KHR if _sync_point_wait_list_ is
+  NULL and _num_sync_points_in_wait_list_ is > 0, or
+  _sync_point_wait_list_ is not NULL and _num_sync_points_in_wait_list_ is
+  0, or if synchronization-point objects in _sync_point_wait_list_ are
+  not valid synchronization-points.
+
+* CL_OUT_OF_RESOURCES if there is a failure to allocate resources
+  required by the OpenCL implementation on the device.
+
+* CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources
+  required by the OpenCL implementation on the host.
+
+--
+// End (Add the following to Section 5.17.5, *Recording Commands to a Command-Buffer*)
+
+
+(Add the following to new Section 5.X.Y, *Tensor Descriptions*) ::
++
+--
+
+The following structure describes properties of a tensor to be created
+with *clCreateBufferWithProperties()* using `CL_MEM_TENSOR_EXP` property:
+
+[source,c]
+----
+typedef struct cl_tensor_desc_exp {
+    cl_uint               rank;
+    cl_tensor_datatype    dtype;
+    cl_tensor_properties_exp  properties[CL_TENSOR_DESC_MAX_PROPERTIES_EXP]
+    cl_tensor_shape       shape[CL_TENSOR_DESC_MAX_RANK_EXP];
+    const void*           layout;
+    cl_tensor_layout_type_exp layout_type;
+} cl_tensor_desc_exp;
+----
+
+* _rank_ defines the tensor's rank - the number of dimensions.
+
+* _dtype_ defines the data type of the elements in the
+  tensor. Possible types are listed in <<tensor-dtype-table, tensor
+  element type>> table.
+
+* _properties_ is an optional list of properties for the tensor object
+  and their corresponding values. The list is terminated with the
+  special property 0. If no properties are required, properties may be
+  NULL. This extension does not define any optional properties for
+  tensors, but future extensions may define properties.
+
+* _shape_ defines the extends of the tensor's dimensions in number of
+  elements.
+
+* _layout_ points to an optional structure describing how tensor
+  elements are laid out in the buffer memory. The structure must be a
+  type corresponding to the _layout_type_ listed in
+  <<layout-types-table, tensor layout type>> table. The pointer is
+  ignored if the _tensor_type_ is `CL_TENSOR_LAYOUT_OPAQUE_EXP`.
+
+* _layout_type_ indicates the layout structure type the _layout_
+  point to.
+
+
+[[tensor-dtypes-table]]
+.Tensor element types. The API type indicates the corresponding type for copying elements from an host allocation / buffer object to tensor or vice versa.
+[cols="1,1,1",stripes=even]
+|===
+| *Tensor element data type* | *Description* | *API type*
+
+| CL_TENSOR_DTYPE_BOOL | Data type representing true or false.  |
+cl_uchar. footnote:[zero and non-zero bytes are interpreted as false
+and true values, respectively.]
+
+| CL_TENSOR_DTYPE_INT4_EXP        | 4-bit signed integer.            | cl_char.
+| CL_TENSOR_DTYPE_INT8_EXP        | 8-bit signed integer.            | cl_char.
+| CL_TENSOR_DTYPE_INT16_EXP       | 16-bit signed integer.           | cl_short.
+| CL_TENSOR_DTYPE_INT32_EXP       | 32-bit signed integer.           | cl_int.
+| CL_TENSOR_DTYPE_INT64_EXP       | 64-bit signed integer.           | cl_long.
+| CL_TENSOR_DTYPE_UINT8_EXP       | 8-bit unsigned integer.          | cl_uchar.
+| CL_TENSOR_DTYPE_UINT16_EXP      | 16-bit unsigned integer.         | cl_ushort.
+| CL_TENSOR_DTYPE_UINT32_EXP      | 32-bit unsigned integer.         | cl_uint.
+| CL_TENSOR_DTYPE_UINT64_EXP      | 64-bit unsigned integer.         | cl_ulong.
+| CL_TENSOR_DTYPE_FP8_EXP         | Half precision floating-point.   | cl_char.
+| CL_TENSOR_DTYPE_FP16_EXP        | Half precision floating-point.   | cl_half.
+| CL_TENSOR_DTYPE_BFLOAT16_EXP    | 16-bit brain floating-point.     | cl_ushort
+| CL_TENSOR_DTYPE_FP32_EXP        | Single precision floating-point. | cl_float.
+| CL_TENSOR_DTYPE_FP64_EXP        | Double precision floating-point. | cl_double.
+| CL_TENSOR_DTYPE_COMPLEX64_EXP   | 64-bit complex floating-point with
+  32-bit real and imaginary part. | cl_float2
+| CL_TENSOR_DTYPE_COMPLEX128_EXP  | 128-bit complex floating-point with
+  64-bit real and imaginary part. | cl_double2
+|===
+
+[[layout-types-table]]
+.Optional tensor memory layout types.
+[cols="1,1,4",stripes=even]
+|===
+| *layout type* | *tensor layout type* | *Description*
+
+| CL_TENSOR_LAYOUT_OPAQUE_EXP | N/A | The tensor don't have application
+  defined memory layout. Driver controls the tensors layout. To read
+  or write elements of the tensor
+
+| CL_TENSOR_LAYOUT_BLAS_EXP
+|<<cl-tensor-layout-blas,cl_tensor_layout_blas_exp>>
+| A type that describe packed memory layout similar ones used in BLAS APIs.
+
+| CL_TENSOR_LAYOUT_BLAS_EXP
+|<<cl-tensor-layout-blas,cl_tensor_layout_blas_pitched_exp>>
+| A type that describe memory layout similar ones used in BLAS APIs.
+
+| CL_TENSOR_LAYOUT_ML_EXP       | <<cl-tensor-layout-ml,cl_tensor_layout_ml_exp>> |
+A convenience layout type over `CL_TENSOR_LAYOUT_BLAS_EXP`.
+
+|===
+
+--
+// End (Add the following to new Section 5.X.Y, *Tensor Descriptions*)
+
+
+[[cl-tensor-layout-blas]]
+(Add the following to new Section 5.X.Y.1, *BLAS Tensor Layout*) ::
++
+--
+The following structures describes packed / pitched BLAS-like memory
+layout for the tensor:
+
+[source,c]
+----
+typedef struct cl_tensor_layout_blas_exp {
+    cl_tensor_dim_exp    leading_dims[CL_TENSOR_DESC_MAX_RANK_EXP];
+} cl_tensor_layout_blas_exp;
+
+typedef struct cl_tensor_layout_blas_pitched_exp {
+    cl_tensor_dim_exp    leading_dims[CL_TENSOR_DESC_MAX_RANK_EXP];
+    cl_tensor_pitch      leading_pitches[CL_TENSOR_DESC_MAX_RANK_EXP];
+} cl_tensor_layout_blas_pitched_exp;
+
+typedef struct cl_tensor_layout_ml_exp {
+    cl_tensor_layout_ml_type_exp ml_type;
+} cl_tensor_layout_ml_exp;
+----
+
+* _leading_dims_ describes which elements along the tensor dimension
+  are laid out in the memory. `leading_dims[0]` point to dimension
+  whose elements are laid out first, followed by elements along
+  dimension by `leading_dims[1]` and so on. The first N elements must
+  be non-zero where N is tensor's rank and the values must be unique
+  and within range `[0, tensor_rank)`.
+
+* _leading_pitches_ describes distance between from an element to the
+  next one for the leading dimensions in _leading_dims_. The distance
+  is measured in number of elements. The first N elements must be
+  non-zero where the N is tensor's rank minus one. The values of the
+  array must be non-zero for the first tensor rank minus one elements
+  and following conditions must hold:
+
+** `leading_pitches[0] >= tensor_shape[leading_dims[0]]` if the tensor
+   rank is greater than one and
+
+** `leading_pitches[i + 1] >= tensor_shape[leading_dims[i]] *
+  leading_pitches[i]` for `i` in `[0, tensor_rank - 1)` if the tensor
+  rank is greater than two.
+
+// ^ This condition is meant to ensure that the tensor elements at different
+// coordinates don't alias.
+
+* _ml_type_ defines memory layout via enumerators which corresponds to
+  predefined configurations of `cl_tensor_layout_blas_exp` structure
+  as listed in <<tensor-layout-ml-types,ML tensor layout type>> table.
+
+The memory layout descriptions map tensor coordinates to buffer's
+memory byte locations respect to buffer's base address as followed in
+pseudo C:
+
+[source,c]
+----
+size_t index = 0;
+for (unsigned i = 0; i < tensor_rank - 1; i++)
+  index += tensor_coordinates[leading_dims[i]] * pitches[i];
+buffer_offset = index * tensor_element_size;
+----
+
+Where `pitches[i]` equals to:
+
+* _leading_pitches_[i] for `cl_tensor_layout_blas_pitched_exp`.
+
+* `tensor_shape[leading_dims[i]] *
+  tensor_shape[leading_dims[i-1]] * ... *
+  tensor_shape[leading_dims[0]]` for `cl_tensor_layout_blas_exp`.
+
+
+[[tensor-layout-ml-type]]
+.ML tensor layout types and their corresponding cl_tensor_layout_blas_exp configuration.
+[cols="1,2",stripes=even]
+|===
+| *ML layout type* | *Equivalent _leading_dims_ configuration*
+
+|CL_TENSOR_LAYOUT_ML_C_EXP    | `{}`
+|CL_TENSOR_LAYOUT_ML_NC_EXP   | `{1}`
+|CL_TENSOR_LAYOUT_ML_CN_EXP   | `{0}`
+|CL_TENSOR_LAYOUT_ML_HW_EXP   | `{1}`
+|CL_TENSOR_LAYOUT_ML_CHW_EXP  | `{2, 1}`
+|CL_TENSOR_LAYOUT_ML_NCHW_EXP | `{3, 2, 1}`
+|CL_TENSOR_LAYOUT_ML_NHWC_EXP | `{1, 3, 2}`
+|===
+--
+
+== Sample Codes
+
+An example usage of tensors:
+
+[source,cpp]
+----
+constexpr size_t b = 64, m = 100, n = 200, k = 50;
+
+std::vector<float> in0_data = ...;
+std::vector<float> in1_data = ...;
+std::vector<float> out_data(b * m * n);
+
+// Create tensor with opaque layout.
+cl_tensor_desc_exp in0_desc;
+in0_desc.rank = 3;
+in0_desc.properties[0] = 0;
+in0_desc.shape[0] = b;
+in0_desc.shape[1] = m;
+in0_desc.shape[2] = k;
+in0_desc.layout = nullptr;
+in0_desc.layout_type = CL_TENSOR_LAYOUT_OPAQUE_EXP;
+
+cl_int err;
+cl_mem in0_tensor = clCreateBufferWithProperties(
+  ctx, {CL_MEM_TENSOR_EXP, in0_desc, 0},
+  CL_MEM_READ_ONLY, 0, nullptr, &err);
+
+// Create tensor from a host allocation using an application defined
+// layout description for mapping elements to the tensor.
+cl_tensor_desc_exp in1_desc;
+in1_desc.rank = 3;
+in1_desc.properties[0] = 0;
+in1_desc.shape[0] = b;
+in1_desc.shape[1] = k;
+in1_desc.shape[2] = n;
+
+cl_tensor_layout_blas_exp col_major;
+col_major.leading_dims[0] = 1,
+col_major.leading_dims[1] = 2,
+in1_desc.layout = &col_major;
+in1_desc.layout_type = CL_TENSOR_LAYOUT_BLAS_EXP;
+
+cl_mem in1_tensor = clCreateBufferWithProperties(
+  ctx, {CL_MEM_TENSOR_EXP, in1_desc, 0},
+  CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, 0, in1_data.data(), &err);
+
+// Create another tensor with application defined layout.
+cl_tensor_desc_exp out_desc;
+out_desc.rank = 3;
+out_desc.properties[0] = 0;
+out_desc.shape[0] = b;
+out_desc.shape[1] = m;
+out_desc.shape[2] = n;
+
+cl_tensor_layout_blas_exp row_major;
+row_major.leading_dims[0] = 2,
+row_major.leading_dims[1] = 1,
+out_desc.layout = &row_major;
+out_desc.layout_type = CL_TENSOR_LAYOUT_BLAS_EXP;
+
+cl_mem out_tensor = clCreateBufferWithProperties(
+  ctx, {CL_MEM_TENSOR_EXP, out_desc, 0},
+  CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, 0, out_data.data(), &err);
+
+// Create a kernel that operates on the tensors and is possibly
+// optimized for them using via yet realized API extension.
+cl_kernel batched_matmul_kernel = create_batched_matmul_kernel(
+  ctx, device_span, in1_desc, in2_desc, out_desc);
+
+clSetKernelArg(batched_matmul_kernel, 0, sizeof(cl_mem), &in0_tensor);
+clSetKernelArg(batched_matmul_kernel, 1, sizeof(cl_mem), &in1_tensor);
+clSetKernelArg(batched_matmul_kernel, 2, sizeof(cl_mem), &out_tensor);
+
+// Required command for transferring data to layout-opaque tensors and
+// from it to elsewhere.
+clEnqueueExportToTensor(
+  cmd_q, in0_tensor, false, {0, 0, 0}, {0, 0, 0}, {b, m, k},
+  nullptr, nullptr, in0_data.data(), 0, nullptr, nullptr);
+
+clEnqueueNDRangeKernel(
+  cmd_q, batched_matmul_kernel, 3, matmul_grid, nullptr, nullptr, 0, nullptr, nullptr);
+
+clEnqueueMapBuffer(
+  cmd_q, out_tensor, CL_TRUE, CL_MAP_READ, 0, b * m * n, 0, nullptr, nullptr);
+----
+
+
+== Issues
+
+. Should we have support for tensors with undefined shape and tensors
+  with unknown / symbolic dimension sizes like in ONNX?
++
+--
+// https://onnx.ai/onnx/repo-docs/ShapeInference.html
+*UNRESOLVED*
+--
+
+. Should we define OpenCL C language features for accessing tensors?
++
+--
+*RESOLVED*: OpenCL C support for tensors can be introduced later in a
+           separate extension. Built-in kernels may benefit from this
+           extension as it is.
+--
+
+. What is the use case of `cl_tensor_layout_blas_pitch_exp`?
++
+--
+*UNRESOLVED*
+--
+
+. Should image types be extended instead of adding a separate tensor type?
++
+--
+*UNRESOLVED*
+--
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author          | Changes
+| 0.1.0   | 2023-11-23 | Henry Linjamäki | *Initial revision*
+
+| 0.2.0   | 2024-8-14 | Henry Linjamäki |
+
+* Rework document structure match to the cl_khr_extension_template.
+
+* Added clEnqueueCopyTensor.
+
+* Added API for setting memory layout for tensors.
+
+|====
