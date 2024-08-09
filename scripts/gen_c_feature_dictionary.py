@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     features = []
     if len(args.features) > 0:
-        print('Generating feature dictionaries from: ' + args.features + ' ...\n\n')
+        print('Generating feature dictionaries from: ' + args.features)
         with open(args.features) as f:
             features = f.readlines()
     else:
