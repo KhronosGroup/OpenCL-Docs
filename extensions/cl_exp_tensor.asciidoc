@@ -22,7 +22,7 @@ TODO
 == Contributors
 
 Henry Linjamäki, Intel. +
-Pekka Jääslkeläinen, Intel and Tampere University. +
+Pekka Jääskeläinen, Intel. +
 Ben Ashbaugh, Intel. +
 
 == Notice
@@ -46,30 +46,30 @@ This extension requires OpenCL 1.2 or later.
 
 == Overview
 
-The extension provides new tensor object abstraction. Tensor objects
-are similar to image types in regard they represents N-dimensional
-data of some application chosen data type and they may be mapped to
-dedicated hardware except that
+The extension provides a new tensor object abstraction. Tensor objects
+are similar to image types in regard that they represent N-dimensional
+data of an application chosen data type and they may be mapped to
+dedicated hardware, with the following key differences:
 
-* higher than 3-dimensional data can be supported (limited by
+* Higher than 3-dimensional data can be supported (limited by
   devices' capabilities).
 
-* applications may choose how the data elements of the tensors are
+* Applications may choose how the data elements of the tensors are
   laid out in the buffers using the tensor layout descriptions
   provided in this extension.
 
-Applications may also choose the memory layouts of the tensors be
+Applications may also choose the memory layouts of the tensors to be
 implementation-specified, letting the driver to optimize the tensor
 data layout for better performance or to lay out the data as required by
-hardware functions (e.g. exposed via builtin kernels).
+hardware accelerated functions (e.g. exposed via builtin kernels).
 
-The scope of this extension to provide host APIs for creating tensor
+The scope of this extension is to provide host APIs for creating tensor
 objects and transfer data between tensors, host and other memory
 objects.
 
 A separate extension implemented on top of this extension,
-cl_exp_defined_builtin_kernels which provides "defined built-in
-kernels" (DKBs) which operates on tensors. It also provides mechanism
+cl_exp_defined_builtin_kernels provides "defined built-in
+kernels" (DKBs) which can operate on tensors. It also provides mechanism
 for drivers to create DBKs that are optimized for the tensor arguments
 they operate on.
 
@@ -184,7 +184,7 @@ typedef struct cl_tensor_layout_ml_exp {
 
 == New API Enums
 
-Accepted value for _properties_ parameter to
+Accepted value for the _properties_ parameter to
 *clCreateBufferWithProperties* for creating a tensor object:
 
 [source,c]
@@ -812,13 +812,13 @@ and true values, respectively.]
 |===
 | *layout type* | *tensor layout type* | *Description*
 
-| CL_TENSOR_LAYOUT_OPAQUE_EXP | N/A | The tensor don't have application
+| CL_TENSOR_LAYOUT_OPAQUE_EXP | N/A | The tensor doesn't have application
   defined memory layout. Driver controls the tensors layout. To read
   or write elements of the tensor
 
 | CL_TENSOR_LAYOUT_BLAS_EXP
 |<<cl-tensor-layout-blas,cl_tensor_layout_blas_exp>>
-| A type that describe packed memory layout similar ones used in BLAS APIs.
+| A type that describes a packed memory layout similar ones used in BLAS APIs.
 
 | CL_TENSOR_LAYOUT_BLAS_EXP
 |<<cl-tensor-layout-blas,cl_tensor_layout_blas_pitched_exp>>
@@ -837,7 +837,7 @@ A convenience layout type over `CL_TENSOR_LAYOUT_BLAS_EXP`.
 (Add the following to new Section 5.X.Y.1, *BLAS Tensor Layout*) ::
 +
 --
-The following structures describes packed / pitched BLAS-like memory
+The following structures describe packed / pitched BLAS-like memory
 layout for the tensor:
 
 [source,c]
@@ -857,13 +857,13 @@ typedef struct cl_tensor_layout_ml_exp {
 ----
 
 * _leading_dims_ describes which elements along the tensor dimension
-  are laid out in the memory. `leading_dims[0]` point to dimension
+  are laid out in the memory. `leading_dims[0]` points to the dimension
   whose elements are laid out first, followed by elements along
-  dimension by `leading_dims[1]` and so on. The first N elements must
-  be non-zero where N is tensor's rank and the values must be unique
+  the dimension by `leading_dims[1]` and so on. The first N elements must
+  be non-zero where N is a tensor's rank and the values must be unique
   and within range `[0, tensor_rank)`.
 
-* _leading_pitches_ describes distance between from an element to the
+* _leading_pitches_ describes the distance between an element to the
   next one for the leading dimensions in _leading_dims_. The distance
   is measured in number of elements. The first N elements must be
   non-zero where the N is tensor's rank minus one. The values of the
@@ -880,7 +880,7 @@ typedef struct cl_tensor_layout_ml_exp {
 // ^ This condition is meant to ensure that the tensor elements at different
 // coordinates don't alias.
 
-* _ml_type_ defines memory layout via enumerators which corresponds to
+* _ml_type_ defines the memory layout via enumerators which corresponds to
   predefined configurations of `cl_tensor_layout_blas_exp` structure
   as listed in <<tensor-layout-ml-types,ML tensor layout type>> table.
 
@@ -933,7 +933,7 @@ std::vector<float> in0_data = ...;
 std::vector<float> in1_data = ...;
 std::vector<float> out_data(b * m * n);
 
-// Create tensor with opaque layout.
+// Create a tensor with an opaque layout.
 cl_tensor_desc_exp in0_desc;
 in0_desc.rank = 3;
 in0_desc.properties[0] = 0;
@@ -948,7 +948,7 @@ cl_mem in0_tensor = clCreateBufferWithProperties(
   ctx, {CL_MEM_TENSOR_EXP, in0_desc, 0},
   CL_MEM_READ_ONLY, 0, nullptr, &err);
 
-// Create tensor from a host allocation using an application defined
+// Create tensor from a host allocation using an application-defined
 // layout description for mapping elements to the tensor.
 cl_tensor_desc_exp in1_desc;
 in1_desc.rank = 3;
@@ -967,7 +967,7 @@ cl_mem in1_tensor = clCreateBufferWithProperties(
   ctx, {CL_MEM_TENSOR_EXP, in1_desc, 0},
   CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, 0, in1_data.data(), &err);
 
-// Create another tensor with application defined layout.
+// Create another tensor with an application-defined layout.
 cl_tensor_desc_exp out_desc;
 out_desc.rank = 3;
 out_desc.properties[0] = 0;
@@ -995,7 +995,7 @@ clSetKernelArg(batched_matmul_kernel, 1, sizeof(cl_mem), &in1_tensor);
 clSetKernelArg(batched_matmul_kernel, 2, sizeof(cl_mem), &out_tensor);
 
 // Required command for transferring data to layout-opaque tensors and
-// from it to elsewhere.
+// from it elsewhere.
 clEnqueueExportToTensor(
   cmd_q, in0_tensor, false, {0, 0, 0}, {0, 0, 0}, {b, m, k},
   nullptr, nullptr, in0_data.data(), 0, nullptr, nullptr);
@@ -1008,9 +1008,9 @@ clEnqueueMapBuffer(
 ----
 
 
-== Issues
+== Issues and Open Questions
 
-. Should we have support for tensors with undefined shape and tensors
+. Should we support tensors with undefined shape and tensors
   with unknown / symbolic dimension sizes like in ONNX?
 +
 --
@@ -1053,6 +1053,6 @@ clEnqueueMapBuffer(
 
 * Added clEnqueueCopyTensor.
 
-* Added API for setting memory layout for tensors.
+* Added an API for setting the memory layout for tensors.
 
 |====
