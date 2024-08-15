@@ -220,7 +220,8 @@ CL_TENSOR_DTYPE_UINT16_EXP      0x????
 CL_TENSOR_DTYPE_UINT32_EXP      0x????
 CL_TENSOR_DTYPE_UINT64_EXP      0x????
 
-CL_TENSOR_DTYPE_FP8_EXP         0x????
+CL_TENSOR_DTYPE_FP8E4M3_EXP     0x????
+CL_TENSOR_DTYPE_FP8E5M2_EXP     0x????
 CL_TENSOR_DTYPE_FP16_EXP        0x????
 CL_TENSOR_DTYPE_FP32_EXP        0x????
 CL_TENSOR_DTYPE_FP64_EXP        0x????
@@ -795,7 +796,17 @@ and true values, respectively.]
 | CL_TENSOR_DTYPE_UINT16_EXP      | 16-bit unsigned integer.         | cl_ushort.
 | CL_TENSOR_DTYPE_UINT32_EXP      | 32-bit unsigned integer.         | cl_uint.
 | CL_TENSOR_DTYPE_UINT64_EXP      | 64-bit unsigned integer.         | cl_ulong.
-| CL_TENSOR_DTYPE_FP8_EXP         | Half precision floating-point.   | cl_char.
+
+| CL_TENSOR_DTYPE_FP8E4M3_EXP | 8-bit floating point with a sign bit,
+  4 exponent bits, 3 mantissa bits and a exponent bias of 7.
+| cl_char.
+
+| CL_TENSOR_DTYPE_FP8E5M2_EXP | 8-bit floating point with a sign bit,
+  5 exponent bits, 2 mantissa bits and a exponent bias of 15.
+| cl_char.
+
+// Reference: https://arxiv.org/pdf/2209.05433
+
 | CL_TENSOR_DTYPE_FP16_EXP        | Half precision floating-point.   | cl_half.
 | CL_TENSOR_DTYPE_BFLOAT16_EXP    | 16-bit brain floating-point.     | cl_ushort
 | CL_TENSOR_DTYPE_FP32_EXP        | Single precision floating-point. | cl_float.
@@ -812,20 +823,29 @@ and true values, respectively.]
 |===
 | *layout type* | *tensor layout type* | *Description*
 
-| CL_TENSOR_LAYOUT_OPAQUE_EXP | N/A | The tensor doesn't have application
-  defined memory layout. Driver controls the tensors layout. To read
-  or write elements of the tensor
+| CL_TENSOR_LAYOUT_OPAQUE_EXP | N/A   a| The tensor doesn't have
+  application defined memory layout. Driver controls the tensors
+  layout. To read or write elements of the tensor, the application
+  must:
+
+* use *clEnqueueExportToTensor* and *clEnqueueImportFromTensor* (or their
+   command buffer variants) or
+* use *clEnqueueCopyTensor* to copy elements to / from another tensor
+   object with an application-defined memory layout.
 
 | CL_TENSOR_LAYOUT_BLAS_EXP
 |<<cl-tensor-layout-blas,cl_tensor_layout_blas_exp>>
 | A type that describes a packed memory layout similar ones used in BLAS APIs.
 
-| CL_TENSOR_LAYOUT_BLAS_EXP
+| CL_TENSOR_LAYOUT_BLAS_PITCHED_EXP
 |<<cl-tensor-layout-blas,cl_tensor_layout_blas_pitched_exp>>
 | A type that describe memory layout similar ones used in BLAS APIs.
 
-| CL_TENSOR_LAYOUT_ML_EXP       | <<cl-tensor-layout-ml,cl_tensor_layout_ml_exp>> |
-A convenience layout type over `CL_TENSOR_LAYOUT_BLAS_EXP`.
+| CL_TENSOR_LAYOUT_ML_EXP       | <<cl-tensor-layout-blas,cl_tensor_layout_ml_exp>> |
+
+The tensor layout is specified with an enumerator. Each enumerator
+corresponds to a predefined configuration of
+*cl_tensor_layout_blas_exp* structure.
 
 |===
 
@@ -878,15 +898,15 @@ typedef struct cl_tensor_layout_ml_exp {
   rank is greater than two.
 
 // ^ This condition is meant to ensure that the tensor elements at different
-// coordinates don't alias.
+// coordinates don't alias in memory.
 
 * _ml_type_ defines the memory layout via enumerators which corresponds to
   predefined configurations of `cl_tensor_layout_blas_exp` structure
   as listed in <<tensor-layout-ml-types,ML tensor layout type>> table.
 
 The memory layout descriptions map tensor coordinates to buffer's
-memory byte locations respect to buffer's base address as followed in
-pseudo C:
+memory byte locations respect to buffer's base address as in the
+followed in pseudo C code example:
 
 [source,c]
 ----
@@ -1047,7 +1067,7 @@ clEnqueueMapBuffer(
 | Version | Date       | Author          | Changes
 | 0.1.0   | 2023-11-23 | Henry Linjamäki | *Initial revision*
 
-| 0.2.0   | 2024-8-14 | Henry Linjamäki |
+| 0.2.0   | 2024-8-14 | Henry Linjamäki a|
 
 * Rework document structure match to the cl_khr_extension_template.
 
