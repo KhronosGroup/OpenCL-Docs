@@ -535,7 +535,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>This extension provides new buffer abstraction - tensor objects - for
+<p>This extension provides a new buffer abstraction, tensor objects, for
 managing N-dimensional data.</p>
 </div>
 </div>
@@ -567,7 +567,7 @@ managing N-dimensional data.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Henry Linjamäki, Intel.<br>
-Pekka Jääslkeläinen, Intel and Tampere University.<br>
+Pekka Jääskeläinen, Intel.<br>
 Ben Ashbaugh, Intel.<br></p>
 </div>
 </div>
@@ -592,7 +592,7 @@ Ben Ashbaugh, Intel.<br></p>
 <h2 id="_version">Version</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Built On: 2024-08-14<br>
+<p>Built On: 2024-08-15<br>
 Version: 0.2.0</p>
 </div>
 </div>
@@ -612,39 +612,39 @@ Version: 0.2.0</p>
 <h2 id="_overview">Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The extension provides new tensor object abstraction. Tensor objects
-are similar to image types in regard they represents N-dimensional
-data of some application chosen data type and they may be mapped to
-dedicated hardware except that</p>
+<p>The extension provides a new tensor object abstraction. Tensor objects
+are similar to image types in regard that they represent N-dimensional
+data of an application chosen data type and they may be mapped to
+dedicated hardware, with the following key differences:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>higher than 3-dimensional data can be supported (limited by
+<p>Higher than 3-dimensional data can be supported (limited by
 devices' capabilities).</p>
 </li>
 <li>
-<p>applications may choose how the data elements of the tensors are
+<p>Applications may choose how the data elements of the tensors are
 laid out in the buffers using the tensor layout descriptions
 provided in this extension.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Applications may also choose the memory layouts of the tensors be
+<p>Applications may also choose the memory layouts of the tensors to be
 implementation-specified, letting the driver to optimize the tensor
 data layout for better performance or to lay out the data as required by
-hardware functions (e.g. exposed via builtin kernels).</p>
+hardware accelerated functions (e.g. exposed via builtin kernels).</p>
 </div>
 <div class="paragraph">
-<p>The scope of this extension to provide host APIs for creating tensor
+<p>The scope of this extension is to provide host APIs for creating tensor
 objects and transfer data between tensors, host and other memory
 objects.</p>
 </div>
 <div class="paragraph">
 <p>A separate extension implemented on top of this extension,
-cl_exp_defined_builtin_kernels which provides "defined built-in
-kernels" (DKBs) which operates on tensors. It also provides mechanism
+cl_exp_defined_builtin_kernels provides "defined built-in
+kernels" (DKBs) which can operate on tensors. It also provides mechanism
 for drivers to create DBKs that are optimized for the tensor arguments
 they operate on.</p>
 </div>
@@ -769,7 +769,7 @@ cl_int clCommandExportToTensorEXP(
 <h2 id="_new_api_enums">New API Enums</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Accepted value for <em>properties</em> parameter to
+<p>Accepted value for the <em>properties</em> parameter to
 <strong>clCreateBufferWithProperties</strong> for creating a tensor object:</p>
 </div>
 <div class="listingblock">
@@ -807,7 +807,8 @@ CL_TENSOR_DTYPE_UINT16_EXP      <span class="integer">0</span>x????
 CL_TENSOR_DTYPE_UINT32_EXP      <span class="integer">0</span>x????
 CL_TENSOR_DTYPE_UINT64_EXP      <span class="integer">0</span>x????
 
-CL_TENSOR_DTYPE_FP8_EXP         <span class="integer">0</span>x????
+CL_TENSOR_DTYPE_FP8E4M3_EXP     <span class="integer">0</span>x????
+CL_TENSOR_DTYPE_FP8E5M2_EXP     <span class="integer">0</span>x????
 CL_TENSOR_DTYPE_FP16_EXP        <span class="integer">0</span>x????
 CL_TENSOR_DTYPE_FP32_EXP        <span class="integer">0</span>x????
 CL_TENSOR_DTYPE_FP64_EXP        <span class="integer">0</span>x????
@@ -1588,8 +1589,15 @@ point to.</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">cl_ulong.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_DTYPE_FP8_EXP</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Half precision floating-point.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_DTYPE_FP8E4M3_EXP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8-bit floating point with a sign bit,
+  4 exponent bits, 3 mantissa bits and a exponent bias of 7.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">cl_char.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_DTYPE_FP8E5M2_EXP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8-bit floating point with a sign bit,
+  5 exponent bits, 2 mantissa bits and a exponent bias of 15.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">cl_char.</p></td>
 </tr>
 <tr>
@@ -1644,24 +1652,41 @@ point to.</p>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_LAYOUT_OPAQUE_EXP</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The tensor don&#8217;t have application
-  defined memory layout. Driver controls the tensors layout. To read
-  or write elements of the tensor</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>The tensor doesn&#8217;t have
+  application defined memory layout. Driver controls the tensors
+  layout. To read or write elements of the tensor, the application
+  must:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>use <strong>clEnqueueExportToTensor</strong> and <strong>clEnqueueImportFromTensor</strong> (or their
+command buffer variants) or</p>
+</li>
+<li>
+<p>use <strong>clEnqueueCopyTensor</strong> to copy elements to / from another tensor
+object with an application-defined memory layout.</p>
+</li>
+</ul>
+</div></div></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_LAYOUT_BLAS_EXP</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#cl-tensor-layout-blas">cl_tensor_layout_blas_exp</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A type that describe packed memory layout similar ones used in BLAS APIs.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A type that describes a packed memory layout similar ones used in BLAS APIs.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_LAYOUT_BLAS_EXP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_LAYOUT_BLAS_PITCHED_EXP</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#cl-tensor-layout-blas">cl_tensor_layout_blas_pitched_exp</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A type that describe memory layout similar ones used in BLAS APIs.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CL_TENSOR_LAYOUT_ML_EXP</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#cl-tensor-layout-ml">cl_tensor_layout_ml_exp</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A convenience layout type over <code>CL_TENSOR_LAYOUT_BLAS_EXP</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#cl-tensor-layout-blas">cl_tensor_layout_ml_exp</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The tensor layout is specified with an enumerator. Each enumerator
+corresponds to a predefined configuration of
+<strong>cl_tensor_layout_blas_exp</strong> structure.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1677,7 +1702,7 @@ point to.</p>
 <div class="openblock">
 <div class="content">
 <div class="paragraph">
-<p>The following structures describes packed / pitched BLAS-like memory
+<p>The following structures describe packed / pitched BLAS-like memory
 layout for the tensor:</p>
 </div>
 <div class="listingblock">
@@ -1700,14 +1725,14 @@ layout for the tensor:</p>
 <ul>
 <li>
 <p><em>leading_dims</em> describes which elements along the tensor dimension
-are laid out in the memory. <code>leading_dims[0]</code> point to dimension
+are laid out in the memory. <code>leading_dims[0]</code> points to the dimension
 whose elements are laid out first, followed by elements along
-dimension by <code>leading_dims[1]</code> and so on. The first N elements must
-be non-zero where N is tensor&#8217;s rank and the values must be unique
+the dimension by <code>leading_dims[1]</code> and so on. The first N elements must
+be non-zero where N is a tensor&#8217;s rank and the values must be unique
 and within range <code>[0, tensor_rank)</code>.</p>
 </li>
 <li>
-<p><em>leading_pitches</em> describes distance between from an element to the
+<p><em>leading_pitches</em> describes the distance between an element to the
 next one for the leading dimensions in <em>leading_dims</em>. The distance
 is measured in number of elements. The first N elements must be
 non-zero where the N is tensor&#8217;s rank minus one. The values of the
@@ -1732,7 +1757,7 @@ rank is greater than two.</p>
 <div class="ulist">
 <ul>
 <li>
-<p><em>ml_type</em> defines memory layout via enumerators which corresponds to
+<p><em>ml_type</em> defines the memory layout via enumerators which corresponds to
 predefined configurations of <code>cl_tensor_layout_blas_exp</code> structure
 as listed in <a href="#tensor-layout-ml-types">ML tensor layout type</a> table.</p>
 </li>
@@ -1740,8 +1765,8 @@ as listed in <a href="#tensor-layout-ml-types">ML tensor layout type</a> table.<
 </div>
 <div class="paragraph">
 <p>The memory layout descriptions map tensor coordinates to buffer&#8217;s
-memory byte locations respect to buffer&#8217;s base address as followed in
-pseudo C:</p>
+memory byte locations respect to buffer&#8217;s base address as in the
+followed in pseudo C code example:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1831,7 +1856,7 @@ std::vector&lt;<span class="predefined-type">float</span>&gt; in0_data = ...;
 std::vector&lt;<span class="predefined-type">float</span>&gt; in1_data = ...;
 std::vector&lt;<span class="predefined-type">float</span>&gt; out_data(b * m * n);
 
-<span class="comment">// Create tensor with opaque layout.</span>
+<span class="comment">// Create a tensor with an opaque layout.</span>
 cl_tensor_desc_exp in0_desc;
 in0_desc.rank = <span class="integer">3</span>;
 in0_desc.properties[<span class="integer">0</span>] = <span class="integer">0</span>;
@@ -1846,7 +1871,7 @@ cl_mem in0_tensor = clCreateBufferWithProperties(
   ctx, {CL_MEM_TENSOR_EXP, in0_desc, <span class="integer">0</span>},
   CL_MEM_READ_ONLY, <span class="integer">0</span>, <span class="predefined-constant">nullptr</span>, &amp;err);
 
-<span class="comment">// Create tensor from a host allocation using an application defined</span>
+<span class="comment">// Create tensor from a host allocation using an application-defined</span>
 <span class="comment">// layout description for mapping elements to the tensor.</span>
 cl_tensor_desc_exp in1_desc;
 in1_desc.rank = <span class="integer">3</span>;
@@ -1865,7 +1890,7 @@ cl_mem in1_tensor = clCreateBufferWithProperties(
   ctx, {CL_MEM_TENSOR_EXP, in1_desc, <span class="integer">0</span>},
   CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, <span class="integer">0</span>, in1_data.data(), &amp;err);
 
-<span class="comment">// Create another tensor with application defined layout.</span>
+<span class="comment">// Create another tensor with an application-defined layout.</span>
 cl_tensor_desc_exp out_desc;
 out_desc.rank = <span class="integer">3</span>;
 out_desc.properties[<span class="integer">0</span>] = <span class="integer">0</span>;
@@ -1893,7 +1918,7 @@ clSetKernelArg(batched_matmul_kernel, <span class="integer">1</span>, <span clas
 clSetKernelArg(batched_matmul_kernel, <span class="integer">2</span>, <span class="keyword">sizeof</span>(cl_mem), &amp;out_tensor);
 
 <span class="comment">// Required command for transferring data to layout-opaque tensors and</span>
-<span class="comment">// from it to elsewhere.</span>
+<span class="comment">// from it elsewhere.</span>
 clEnqueueExportToTensor(
   cmd_q, in0_tensor, <span class="predefined-constant">false</span>, {<span class="integer">0</span>, <span class="integer">0</span>, <span class="integer">0</span>}, {<span class="integer">0</span>, <span class="integer">0</span>, <span class="integer">0</span>}, {b, m, k},
   <span class="predefined-constant">nullptr</span>, <span class="predefined-constant">nullptr</span>, in0_data.data(), <span class="integer">0</span>, <span class="predefined-constant">nullptr</span>, <span class="predefined-constant">nullptr</span>);
@@ -1908,12 +1933,12 @@ clEnqueueMapBuffer(
 </div>
 </div>
 <div class="sect1">
-<h2 id="_issues">Issues</h2>
+<h2 id="_issues_and_open_questions">Issues and Open Questions</h2>
 <div class="sectionbody">
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Should we have support for tensors with undefined shape and tensors
+<p>Should we support tensors with undefined shape and tensors
 with unknown / symbolic dimension sizes like in ONNX?</p>
 <div class="openblock">
 <div class="content">
@@ -1964,10 +1989,10 @@ with unknown / symbolic dimension sizes like in ONNX?</p>
 <div class="sectionbody">
 <table class="tableblock frame-all grid-rows stretch">
 <colgroup>
-<col style="width: 4.7619%;">
+<col style="width: 7.1428%;">
 <col style="width: 14.2857%;">
-<col style="width: 14.2857%;">
-<col style="width: 66.6667%;">
+<col style="width: 21.4285%;">
+<col style="width: 57.143%;">
 </colgroup>
 <thead>
 <tr>
@@ -1987,10 +2012,23 @@ with unknown / symbolic dimension sizes like in ONNX?</p>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">0.2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">2024-8-14</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Henry Linjamäki</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">* Rework document structure match to the cl_khr_extension_template.</p>
-<p class="tableblock">* Added clEnqueueCopyTensor.</p>
-<p class="tableblock">* Added API for setting memory layout for tensors.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Henry Linjamäki<br>
+Pekka Jääskeläinen<br>
+Michal Babej<br>
+Freddie Witherden</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p>Rework document structure match to the cl_khr_extension_template.</p>
+</li>
+<li>
+<p>Added clEnqueueCopyTensor.</p>
+</li>
+<li>
+<p>Added an API for setting the memory layout for tensors.</p>
+</li>
+</ul>
+</div></div></td>
 </tr>
 </tbody>
 </table>
@@ -2005,7 +2043,7 @@ with unknown / symbolic dimension sizes like in ONNX?</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-08-14 16:10:59 +0300
+Last updated 2024-08-15 14:07:25 +0300
 </div>
 </div>
 </body>
