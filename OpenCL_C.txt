@@ -252,6 +252,13 @@ ifdef::cl_ext_image_unorm_int_2_101010[]
 from `get_image_channel_data_type`.
 endif::cl_ext_image_unorm_int_2_101010[]
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+| {opencl_c_ext_image_unsigned_10x6_12x4_14x2}
+| The OpenCL C compiler supports returning `CLK_UNSIGNED_INT10X6_EXT`,
+`CLK_UNSIGNED_INT12X4_EXT`, `CLK_UNSIGNED_INT14X2_EXT`, `CLK_UNORM_10X6_EXT`,
+`CLK_UNORM_12X4_EXT`, or `CLK_UNORM_14X2_EXT` from `get_image_channel_data_type`.
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 |====
 
 In OpenCL C 3.0 or newer, feature macros must expand to the value `1` if the
@@ -12500,6 +12507,19 @@ ifdef::cl_ext_image_unorm_int_2_101010[]
 
 endif::cl_ext_image_unorm_int_2_101010[]
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+      Additionally, if the {opencl_c_ext_image_unsigned_10x6_12x4_14x2} feature
+      macro is supported:
+
+      `CLK_UNSIGNED_INT10X6_EXT` +
+      `CLK_UNSIGNED_INT12X4_EXT` +
+      `CLK_UNSIGNED_INT14X2_EXT` +
+      `CLK_UNORM_INT10X6_EXT` +
+      `CLK_UNORM_INT12X4_EXT` +
+      `CLK_UNORM_INT14X2_EXT` +
+
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 | int *get_image_channel_order*(_aQual_ image2d_t _image_) +
   int *get_image_channel_order*(_aQual_ image3d_t _image_)
 
@@ -17057,15 +17077,24 @@ to floating-point values and vice-versa.
 [[converting-normalized-integer-channel-data-types-to-floating-point-values]]
 ==== Converting Normalized Integer Channel Data Types to Floating-point Values
 
-For images created with image channel data type of {CL_UNORM_INT8} and
-{CL_UNORM_INT16}, *read_imagef* will convert the channel values from an
-8-bit or 16-bit unsigned integer to normalized floating-point values in the
-range [`0.0f`, `1.0f`].
+For images created with any of the following image channel data types,
+*read_imagef* will convert the channel values from an unsigned integer to
+normalized floating-point values in the range [`0.0f`, `1.0f`].
 
-For images created with image channel data type of {CL_SNORM_INT8} and
-{CL_SNORM_INT16}, *read_imagef* will convert the channel values from an
-8-bit or 16-bit signed integer to normalized floating-point values in the
-range [`-1.0f`, `1.0f`].
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the following image channel data types,
+*read_imagef* will convert the channel values from a signed integer to
+normalized floating-point values in the range [`-1.0f`, `1.0f`].
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 These conversions are performed as follows:
 
@@ -17083,6 +17112,23 @@ These conversions are performed as follows:
 
 [none]
 * normalized `float` value = `(float)c / 65535.0f`
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+{CL_UNORM_INT10X6_EXT} (10-bit unsigned integer) {rightarrow} `float`
+
+[none]
+* normalized `float` value = `(float)c / 1023.0f`
+
+{CL_UNORM_INT12X4_EXT} (12-bit unsigned integer) {rightarrow} `float`
+
+[none]
+* normalized `float` value = `(float)c / 4095.0f`
+
+{CL_UNORM_INT14X2_EXT} (14-bit unsigned integer) {rightarrow} `float`
+
+[none]
+* normalized `float` value = `(float)c / 16383.0f`
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 {CL_SNORM_INT8} (8-bit signed integer) {rightarrow} `float`
 
@@ -17115,6 +17161,26 @@ For {CL_UNORM_INT16}
 * 0 must convert to `0.0f` and
 * 65535 must convert to `1.0f`
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+For {CL_UNORM_INT10X6_EXT}:
+
+[none]
+* 0 must convert to `0.0f`, and
+* 1023 must convert to `1.0f`
+
+For {CL_UNORM_INT12X4_EXT}:
+
+[none]
+* 0 must convert to `0.0f`, and
+* 4095 must convert to `1.0f`
+
+For {CL_UNORM_INT14X2_EXT}:
+
+[none]
+* 0 must convert to `0.0f`, and
+* 16383 must convert to `1.0f`
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 For {CL_SNORM_INT8}
 
 [none]
@@ -17134,16 +17200,27 @@ ifdef::cl_khr_fp16[]
 [[converting-normalized-integer-channel-data-types-to-half-precision-floating-point-values]]
 ==== Converting Normalized Integer Channel Data Types to Half-Precision Floating-Point Values
 
-If the {cl_khr_fp16_EXT} extension is supported, then
-for images created with image channel data type of {CL_UNORM_INT8} and
-{CL_UNORM_INT16}, *read_imageh* will convert the channel values from an
+NOTE: The conversions described in this section require the {cl_khr_fp16_EXT} extension.
+
+For images created with any of the following image channel data types,
+*read_imageh* will convert the channel values from an
 8-bit or 16-bit unsigned integer to normalized half-precision floating-point
 values in the range [`0.0h`, `1.0h`].
 
-For images created with image channel data type of {CL_SNORM_INT8} and
-{CL_SNORM_INT16}, *read_imageh* will convert the channel values from an
-8-bit or 16-bit signed integer to normalized half-precision floating-point
-values in the range [`-1.0h`, `1.0h`].
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the following image channel data types,
+*read_imageh* will convert the channel values from a signed integer to
+normalized half-precision floating-point values in the range [`-1.0h`, `1.0h`].
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 These conversions are performed as follows:
 
@@ -17161,6 +17238,23 @@ These conversions are performed as follows:
 
 [none]
 * normalized `half` value = `round_to_half(c / 65535)`
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+{CL_UNORM_INT10X6_EXT} (10-bit unsigned integer) {rightarrow} `half`
+
+[none]
+* normalized `half` value = `round_to_half(c / 1023)`
+
+{CL_UNORM_INT12X4_EXT} (12-bit unsigned integer) {rightarrow} `half`
+
+[none]
+* normalized `half` value = `round_to_half(c / 4095)`
+
+{CL_UNORM_INT14X2_EXT} (14-bit unsigned integer) {rightarrow} `half`
+
+[none]
+* normalized `half` value = `round_to_half(c / 16383)`
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 {CL_SNORM_INT8} (8-bit signed integer) {rightarrow} `half`
 
@@ -17193,6 +17287,26 @@ For {CL_UNORM_INT16}
 * 0 must convert to `0.0h` and
 * 65535 must convert to `1.0h`
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+For {CL_UNORM_INT10X6_EXT}:
+
+[none]
+* 0 must convert to `0.0h`, and
+* 1023 must convert to `1.0h`
+
+For {CL_UNORM_INT12X4_EXT}:
+
+[none]
+* 0 must convert to `0.0h`, and
+* 4095 must convert to `1.0h`
+
+For {CL_UNORM_INT14X2_EXT}:
+
+[none]
+* 0 must convert to `0.0h`, and
+* 16383 must convert to `1.0h`
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 For {CL_SNORM_INT8}
 
 [none]
@@ -17212,13 +17326,24 @@ endif::cl_khr_fp16[]
 [[converting-floating-point-values-to-normalized-integer-channel-data-types]]
 ==== Converting Floating-Point Values to Normalized Integer Channel Data Types
 
-For images created with image channel data type of {CL_UNORM_INT8} and
-{CL_UNORM_INT16}, *write_imagef* will convert the floating-point color value
-to an 8-bit or 16-bit unsigned integer.
+For images created with any of the following image channel data types,
+*write_imagef* will convert the floating-point color value to an unsigned
+integer.
 
-For images created with image channel data type of {CL_SNORM_INT8} and
-{CL_SNORM_INT16}, *write_imagef* will convert the floating-point color value
-to an 8-bit or 16-bit signed integer.
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the following image channel data types,
+*write_imagef* will convert the floating-point color value to a signed
+integer.
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 The preferred method for how conversions from floating-point values to
 normalized integer values are performed is as follows:
@@ -17237,6 +17362,23 @@ normalized integer values are performed is as follows:
 
 [none]
 * *convert_ushort_sat_rte*(`f * 65535.0f`)
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+`float` {rightarrow} {CL_UNORM_INT10X6_EXT} (10-bit unsigned integer)
+
+[none]
+* *min*(*convert_ushort_sat_rte*(`f * 1023.0f`), `1023`)
+
+`float` {rightarrow} {CL_UNORM_INT12X4_EXT} (12-bit unsigned integer)
+
+[none]
+* *min*(*convert_ushort_sat_rte*(`f * 4095.0f`), `4095`)
+
+`float` {rightarrow} {CL_UNORM_INT14X2_EXT} (14-bit unsigned integer)
+
+[none]
+* *min*(*convert_ushort_sat_rte*(`f * 16383.0f`), `16383`)
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 `float` {rightarrow} {CL_SNORM_INT8} (8-bit signed integer)
 
@@ -17281,6 +17423,32 @@ the result produced by the round to nearest even rounding mode must be {leq}
      `65535.0f`)
 * *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+`float` {rightarrow} {CL_UNORM_INT10X6_EXT} (10-bit unsigned integer)
+
+[none]
+* Let f~preferred~ = *convert_ushort_sat_rte*(f * `1023.0f`)
+* Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(f *
+     `1023.0f`)
+* *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
+
+`float` {rightarrow} {CL_UNORM_INT12X4_EXT} (12-bit unsigned integer)
+
+[none]
+* Let f~preferred~ = *convert_ushort_sat_rte*(f * `4095.0f`)
+* Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(f *
+     `4095.0f`)
+* *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
+
+`float` {rightarrow} {CL_UNORM_INT14X2_EXT} (14-bit unsigned integer)
+
+[none]
+* Let f~preferred~ = *convert_ushort_sat_rte*(f * `16383.0f`)
+* Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(f *
+     `16383.0f`)
+* *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 `float` {rightarrow} {CL_SNORM_INT8} (8-bit signed integer)
 
 [none]
@@ -17301,14 +17469,25 @@ ifdef::cl_khr_fp16[]
 [[converting-half-precision-floating-point-values-to-normalized-integer-channel-data-types]]
 ==== Converting Half-Precision Floating-point Values to Normalized Integer Channel Data Types
 
-If the {cl_khr_fp16_EXT} extension is supported, then
-for images created with image channel data type of {CL_UNORM_INT8} and
-{CL_UNORM_INT16}, *write_imageh* will convert the floating-point color value
-to an 8-bit or 16-bit unsigned integer.
+NOTE: The conversions described in this section require the {cl_khr_fp16_EXT} extension.
 
-For images created with image channel data type of {CL_SNORM_INT8} and
-{CL_SNORM_INT16}, *write_imageh* will convert the floating-point color value
-to an 8-bit or 16-bit signed integer.
+For images created with any of the following image channel data types,
+*write_imageh* will convert the floating-point color value to an unsigned
+integer.
+
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the following image channel data types,
+*write_imageh* will convert the floating-point color value to a signed integer.
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 The preferred conversion uses the round to nearest even (`_rte`) rounding
 mode, but OpenCL implementations may choose to approximate the rounding mode
@@ -17341,6 +17520,35 @@ result of the conversion must satisfy the bound given below.
   * Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(`f *
     65535.0f`)
   * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+`half` {rightarrow} {CL_UNORM_INT10X6_EXT} (10-bit unsigned integer)
+
+[none]
+  * Let f~exact~ = *max*(`0`, *min*(`f * 1023`, `1023`))
+  * Let f~preferred~ = *convert_ushort_sat_rte*(`f * 1023.0f`)
+  * Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(`f *
+    1023.0f`)
+  * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+
+`half` {rightarrow} {CL_UNORM_INT12X4_EXT} (12-bit unsigned integer)
+
+[none]
+  * Let f~exact~ = *max*(`0`, *min*(`f * 4095`, `4095`))
+  * Let f~preferred~ = *convert_ushort_sat_rte*(`f * 4095.0f`)
+  * Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(`f *
+    4095.0f`)
+  * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+
+`half` {rightarrow} {CL_UNORM_INT14X2_EXT} (14-bit unsigned integer)
+
+[none]
+  * Let f~exact~ = *max*(`0`, *min*(`f * 16383`, `16383`))
+  * Let f~preferred~ = *convert_ushort_sat_rte*(`f * 16383.0f`)
+  * Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(`f *
+    16383.0f`)
+  * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 `half` {rightarrow} {CL_SNORM_INT8} (8-bit signed integer)
 
@@ -17386,52 +17594,80 @@ channel data type of {CL_FLOAT}.
   * All other values must be preserved.
 
 
-[[conversion-rules-for-signed-and-unsigned-8-bit-16-bit-and-32-bit-integer-channel-data-types]]
-=== Conversion Rules for Signed and Unsigned 8-Bit, 16-Bit and 32-Bit Integer Channel Data Types
+[[conversion-rules-for-signed-and-unsigned-integer-channel-data-types]]
+=== Conversion Rules for Signed and Unsigned Integer Channel Data Types
 
-Calls to *read_imagei* with channel data type values of {CL_SIGNED_INT8},
-{CL_SIGNED_INT16} and {CL_SIGNED_INT32} return the integer values
-stored in the image at specified location, after sign extension to 32 bits for
-integer values smaller than 32 bits.
+Calls to *read_imagei* with any of the following channel data type values return
+the integer values stored in the image at specified location, after sign
+extension to 32 bits for integer values smaller than 32 bits.
 
-Calls to *read_imageui* with channel data type values of {CL_UNSIGNED_INT8},
-{CL_UNSIGNED_INT16} and {CL_UNSIGNED_INT32} return the integer values stored in
-the image at specified location, after zero extension to 32 bits for integer
-values smaller than 32 bits.
+  * {CL_SIGNED_INT8}
+  * {CL_SIGNED_INT16}
+  * {CL_SIGNED_INT32}
+
+Calls to *read_imageui* with any of the following channel data type values
+return the integer values stored in the image at specified location, after zero
+extension to 32 bits for integer values smaller than 32 bits.
+
+  * {CL_UNSIGNED_INT8}
+  * {CL_UNSIGNED_INT16}
+  * {CL_UNSIGNED_INT32}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNSIGNED_INT10X6_EXT}
+  * {CL_UNSIGNED_INT12X4_EXT}
+  * {CL_UNSIGNED_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 Calls to *write_imagei* will perform one of the following conversions:
 
-32 bit signed integer {rightarrow} 8-bit signed integer
+32 bit signed integer {rightarrow} {CL_SIGNED_INT8} (8-bit signed integer)
 
 [none]
 * *convert_char_sat*(i)
 
-32 bit signed integer {rightarrow} 16-bit signed integer
+32 bit signed integer {rightarrow} {CL_SIGNED_INT16} (16-bit signed integer)
 
 [none]
 * *convert_short_sat*(i)
 
-32 bit signed integer {rightarrow} 32-bit signed integer
+32 bit signed integer {rightarrow} {CL_SIGNED_INT32} (32-bit signed integer)
 
 [none]
 * no conversion is performed
 
 Calls to *write_imageui* will perform one of the following conversions:
 
-32 bit unsigned integer {rightarrow} 8-bit unsigned integer
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT8} (8-bit unsigned integer)
 
 [none]
 * *convert_uchar_sat*(i)
 
-32 bit unsigned integer {rightarrow} 16-bit unsigned integer
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT16} (16-bit unsigned integer)
 
 [none]
 * *convert_ushort_sat*(i)
 
-32 bit unsigned integer {rightarrow} 32-bit unsigned integer
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT32} (32-bit unsigned integer)
 
 [none]
 * no conversion is performed
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT10X6_EXT} (10-bit unsigned integer)
+
+[none]
+* *clamp*(*convert_ushort_sat*(i), 0, 1023)
+
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT12X4_EXT} (12-bit unsigned integer)
+
+[none]
+* *clamp*(*convert_ushort_sat*(i), 0, 4095)
+
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT14X2_EXT} (14-bit unsigned integer)
+
+[none]
+* *clamp*(*convert_ushort_sat*(i), 0, 16383)
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 The conversions described in this section must be correctly saturated.
 
