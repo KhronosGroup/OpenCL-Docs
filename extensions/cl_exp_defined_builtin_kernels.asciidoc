@@ -8,7 +8,7 @@ include::../config/attribs.txt[]
 :source-highlighter: coderay
 :stem:
 
-= cl_khr_defined_builtin_kernels
+= cl_exp_defined_builtin_kernels
 
 The purpose of this extension is to provide a standardized set of built-in
 kernels with well-defined semantics useful for accelerating applications
@@ -22,7 +22,7 @@ definitions and updating of previously defined ones.
 
 == Name Strings
 
-`cl_khr_defined_builtin_kernels`
+`cl_exp_defined_builtin_kernels`
 
 == Contact
 
@@ -148,7 +148,7 @@ clCreateProgramWithDefinedBuiltInKernels(
     const cl_device_id*  device_list,
     cl_uint              num_kernels,
     const char**         kernel_names,
-    const cl_dbk_id_khr* kernel_ids,
+    const cl_dbk_id_exp* kernel_ids,
     const void**         kernel_attributes,
     cl_int*              device_support_ret,
     cl_int*              errcode_ret);
@@ -158,8 +158,8 @@ clCreateProgramWithDefinedBuiltInKernels(
 
 [source,c]
 ----
-typedef cl_uint       cl_dbk_id_khr;
-typedef cl_properties cl_dbk_properties_khr;
+typedef cl_uint       cl_dbk_id_exp;
+typedef cl_properties cl_dbk_properties_exp;
 
 typedef union {
     cl_char    sc;
@@ -174,62 +174,62 @@ typedef union {
     cl_float   ff;
     cl_double  fd;
     void*      raw;
-} cl_tensor_datatype_union_khr;
+} cl_tensor_datatype_union_exp;
 
-typedef struct cl_dbk_attributes_matmul_khr {
+typedef struct cl_dbk_attributes_matmul_exp {
     cl_tensor_desc                a;
     cl_tensor_desc                b;
     cl_tensor_desc                c;
     cl_int                        trans_a;
     cl_int                        trans_b;
-    cl_dbk_properties_khr         kernel_props[CL_MAX_DBK_PROPERTIES];
-} cl_dbk_attributes_matmul_khr;
+    cl_dbk_properties_exp         kernel_props[CL_MAX_DBK_PROPERTIES];
+} cl_dbk_attributes_matmul_exp;
 
-typedef struct cl_dbk_attributes_gemm_khr {
+typedef struct cl_dbk_attributes_gemm_exp {
     cl_tensor_desc                a;
     cl_tensor_desc                b;
     cl_tensor_desc                c_in;
     cl_tensor_desc                c_out;
     cl_bool                       trans_a;
     cl_bool                       trans_b;
-    cl_tensor_datatype_union_khr  alpha;
-    cl_tensor_datatype_union_khr  beta;
-    cl_dbk_properties_khr         kernel_props[CL_MAX_DBK_PROPERTIES];
-} cl_dbk_attributes_gemm_khr;
+    cl_tensor_datatype_union_exp  alpha;
+    cl_tensor_datatype_union_exp  beta;
+    cl_dbk_properties_exp         kernel_props[CL_MAX_DBK_PROPERTIES];
+} cl_dbk_attributes_gemm_exp;
 
-typedef struct cl_dbk_attributes_leaky_relu_khr {
-   cl_tensor_datatype_union_khr   coefficient;
-   cl_dbk_properties_khr          kernel_props[CL_MAX_DBK_PROPERTIES];
-} cl_dbk_attributes_leaky_relu_khr;
+typedef struct cl_dbk_attributes_leaky_relu_exp {
+   cl_tensor_datatype_union_exp   coefficient;
+   cl_dbk_properties_exp          kernel_props[CL_MAX_DBK_PROPERTIES];
+} cl_dbk_attributes_leaky_relu_exp;
 ----
 
 == New API Enums
 
 
-Accepted values to *cl_dbk_id_khr*:
+Accepted values to *cl_dbk_id_exp*:
 [source,c]
 ----
-CL_DBK_MATMUL_KHR      0x????
-CL_DBK_GEMM_KHR        0x????
-CL_DBK_LEAKY_RELU_KHR  0x????
+CL_DBK_MATMUL_EXP      0x????
+CL_DBK_GEMM_EXP        0x????
+CL_DBK_LEAKY_RELU_EXP  0x????
 ----
 
-accepted values to *cl_dbk_properties_khr*:
+accepted values to *cl_dbk_properties_exp*:
 
 [source,c]
 ----
-CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_KHR  0x????
-CL_DBK_PROPERTY_NON_DETERMINISTIC_KHR   0x????
+CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP  0x????
+CL_DBK_PROPERTY_NON_DETERMINISTIC_EXP   0x????
 ----
 
 New error codes:
 
 [source,c]
 ----
-CL_DBK_UNSUPPORTED_KHR                0x????
-CL_DBK_UNSUPPORTED_PROPERTY_KHR       0x????
-CL_DBK_INVALID_ATTRIBUTE_KHR          0x????
-CL_DBK_UNMET_MAX_RELATIVE_ERROR_KHR   0x????
+CL_DBK_UNSUPPORTED_EXP                0x????
+CL_DBK_UNSUPPORTED_PROPERTY_EXP       0x????
+CL_DBK_INVALID_ATTRIBUTE_EXP          0x????
+CL_DBK_UNMET_MAX_RELATIVE_ERROR_EXP   0x????
 ----
 
 == Modifications to the OpenCL Specification
@@ -298,13 +298,13 @@ the devices that supports the requested built-in kernels indicated by
 create program for a device, one of the following errors code is set
 in _device_errcode_ret_ list for the respective device:
 
-* *CL_DBK_UNSUPPORTED_KHR* if the device does not support one of the
+* *CL_DBK_UNSUPPORTED_EXP* if the device does not support one of the
    built-in kernels listed in _kernel_ids_.
 
 * *CL_INVALID_PROPERTY* if a property list for a defined built-in
    kernel description is invalid.
 
-* *CL_DBK_UNMET_MAX_RELATIVE_ERROR_KHR* if a defined built-in kernel
+* *CL_DBK_UNMET_MAX_RELATIVE_ERROR_EXP* if a defined built-in kernel
    does not meet the requested precision.
 
 * *CL_OUT_OF_RESOURCES* if there is a failure to allocate resources
@@ -326,19 +326,19 @@ one of the following error codes returned in _errcode_ret_:
 
 * *CL_INVALID_VALUE* if there is a NULL value in _kernel_names_.
 
-* *CL_INVALID_DBK_ID_KHR* if any value in the _kernel_ids_ is not a known
+* *CL_INVALID_DBK_ID_EXP* if any value in the _kernel_ids_ is not a known
    identifier for a built-in kernel.
 
-* *CL_INVALID_DBK_ATTRIBUTE_KHR* if a kernel attribute structure is
+* *CL_INVALID_DBK_ATTRIBUTE_EXP* if a kernel attribute structure is
    invalid for a built-in kernel.
 
-* *CL_DBK_UNSUPPORTED_KHR* if _device_errcode_ret_ is NULL and any
+* *CL_DBK_UNSUPPORTED_EXP* if _device_errcode_ret_ is NULL and any
    device in _device_list_ does not support a defined built-in kernel.
 
-* *CL_DBK_UNSUPPORTED_KHR* if _device_errcode_ret_ is non-NULL and all
+* *CL_DBK_UNSUPPORTED_EXP* if _device_errcode_ret_ is non-NULL and all
    devices in _device_list_ does not support a defined built-in kernel.
 
-* *CL_DBK_UNSUPPORTED_PROPERTY_KHR* If a kernel does not accept a
+* *CL_DBK_UNSUPPORTED_PROPERTY_EXP* If a kernel does not accept a
    valid kernel property.
 
 * *CL_INVALID_DEVICE* if any device in _device_list_ is not in the list of
@@ -415,7 +415,7 @@ the DBK's description, when:
 
 * on the same vendor with the same driver version and
 
-* CL_DBK_PROPERTY_NON_DETERMINISTIC_KHR property is not set on.
+* CL_DBK_PROPERTY_NON_DETERMINISTIC_EXP property is not set on.
 
 In other cases, the DBKs may produce different results. Two DBKs for a
 device are considered identical if they are created using identical
@@ -425,9 +425,9 @@ devices, for example.
 
 DBKs may produce approximated results and the error, respect to
 infinitely precise result, can be optionally controlled by
-CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_KHR when the property name is listed in
+CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP when the property name is listed in
 the DBK's description. When the precision is not controlled by the
-application using CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_KHR, the OpenCL
+application using CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP, the OpenCL
 precision of results are
 
 * chosen by the implementation for floating-point based tasks.
@@ -463,17 +463,17 @@ Each defined built-in kernel entry is organized as follows:
 * *Description*: The description of the kernel in detail.
 
 * *Attribute validation rules*: Conditions of the kernel attribute for
-  the kernel. Implementation must return CL_DBK_INVALID_ATTRIBUTE_KHR on
+  the kernel. Implementation must return CL_DBK_INVALID_ATTRIBUTE_EXP on
   *clCreateProgramWithDefinedBuiltinKernels* call if any of the conditions
   are violated.
 
 * *Kernel mode properties*: List of <<dbk-property-table,kernel properties>>
-   (`cl_dbk_properties_khr`) the kernel may accept. The properties can
+   (`cl_dbk_properties_exp`) the kernel may accept. The properties can
    be used to tweak certain implementation details and behaviors in
    the kernel execution. If a property not listed in the DBK
    description is fed to *clCreateProgramWithDefinedBuiltinKernels*
    call, then implementation must return
-   `CL_DBK_UNSUPPORTED_PROPERTY_KHR`.
+   `CL_DBK_UNSUPPORTED_PROPERTY_EXP`.
 
 [[dbk-propery-table]]
 .Table of defined built-in kernel properties
@@ -481,13 +481,13 @@ Each defined built-in kernel entry is organized as follows:
 |===
 | *DBK Mode Property* | *Property Value* | *Description*
 
-| CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_KHR | float
+| CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP | float
 
 a| Require that the DBK produces the results which do not deviate more
 than the given amount value of ULPs (units in the last place) respect
 to infnitely precise result.
 
-| CL_DBK_PROPERTY_NON_DETERMINISTIC_KHR | cl_bool
+| CL_DBK_PROPERTY_NON_DETERMINISTIC_EXP | cl_bool
 
 a| Allow results of the kernel to be non-reproducible. This allows
 implementation to switch algorithm of the kernel on each launch for
@@ -500,23 +500,23 @@ possibly better performance.
 [[dbk-description-table]]
 .Standard Built-in Kernels and Their Semantics. *The table has been populated with a small set of non-trivial example entries which are subject to change and the list to expand during drafting.*
 |===
-| Name: *CL_DBK_GEMM_KHR*
+| Name: *CL_DBK_GEMM_EXP*
 | *Kernel Attributes*
 a|
 
 [source,c]
 ----
-typedef struct cl_dbk_attributes_gemm_khr {
+typedef struct cl_dbk_attributes_gemm_exp {
     cl_tensor_desc a;
     cl_tensor_desc b;
     cl_tensor_desc c_in;
     cl_tensor_desc c_out;
     cl_bool trans_a;
     cl_bool trans_b;
-    cl_tensor_datatype_union_khr alpha;
-    cl_tensor_datatype_union_khr beta;
+    cl_tensor_datatype_union_exp alpha;
+    cl_tensor_datatype_union_exp beta;
     cl_dbk_properties kernel_props[CL_MAX_DBK_PROPERTIES];
-} cl_dbk_attributes_gemm_khr;
+} cl_dbk_attributes_gemm_exp;
 ----
 
 * _a_ is a tensor description for input matrix A.
@@ -564,7 +564,7 @@ Second degree tensors of shape `(a, b)` are treated as third degree
 tensors of shape `(1, a, b)`.
 
 Operations of the matrix muliplication are performed in the precision
-of the `elementof\(COUT)`.
+of the `elementof(COUT)`.
 
 If an overflow occurs in the accumulation of the products, then `R`
 tensor's result will be undefined.
@@ -577,35 +577,35 @@ a|
 * `rankof(A) == rankof(B) == rankof(CIN) == rankof(COUT)`.
 * Let `shapeof(A~t~) == (b..., m, k)` and `shapeof(B~t~) = (b..., k,
   n)` of tensors `A` and `B`, respectively, after possible tranposing.
-  `shapeof\(COUT)` must be `(b..., m, n)`.
+  `shapeof(COUT)` must be `(b..., m, n)`.
 * `shapeof(CIN) == shapeof(COUT)`.
 * `elementof(A) == elementof(B)`.
-* `elemkindof\(COUT) == elemkindof(A)`.
-* `elementof\(COUT) == elementof(A)` or `elementof(A)` is promotable to
-  `elementof\(COUT)` without a loss of meaning.
+* `elemkindof(COUT) == elemkindof(A)`.
+* `elementof(COUT) == elementof(A)` or `elementof(A)` is promotable to
+  `elementof(COUT)` without a loss of meaning.
 // E.g. cl_int -> cl_uint: loses meaning of negative values.
 | *Kernel mode properties*
 a|
 This DBK accepts the following kernel properties:
 
-* CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_KHR
-* CL_DBK_PROPERTY_NON_DETERMINISTIC_KHR
+* CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP
+* CL_DBK_PROPERTY_NON_DETERMINISTIC_EXP
 |
 
-| Name: *CL_DBK_MATMUL_KHR*
+| Name: *CL_DBK_MATMUL_EXP*
 | *Kernel Attributes*
 a|
 
 [source,c]
 ----
-typedef struct cl_dbk_attributes_matmul_khr {
+typedef struct cl_dbk_attributes_matmul_exp {
     cl_tensor_desc a;
     cl_tensor_desc b;
     cl_tensor_desc c;
     cl_bool trans_a;
     cl_bool trans_b;
     cl_dbk_properties kernel_props[CL_MAX_DBK_PROPERTIES];
-} cl_dbk_attributes_matmul_khr;
+} cl_dbk_attributes_matmul_exp;
 ----
 
 * _a_ is a tensor description for input matrix A.
@@ -644,7 +644,7 @@ Second degree tensors of shape `(a, b)` are treated as third degree
 tensors of shape `(1, a, b)`.
 
 Operations of the matrix muliplication are performed in the precision
-of the `elementof\(COUT)`.
+of the `elementof(COUT)`.
 
 If an overflow occurs in the accumulation of the products, then `R`
 tensor's result will be undefined.
@@ -665,19 +665,19 @@ a|
 a|
 This DBK accepts the following kernel properties:
 
-* CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_KHR
+* CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP
 |
 
-| Name: *khr_leaky_relu*
+| Name: *CL_DBK_LEAKY_RELU_DBK*
 | *Kernel Attributes*
 a|
 
 [source,c]
 ----
-typedef struct cl_dbk_attributes_leaky_relu_khr {
-   cl_tensor_datatype_union_khr coefficient;
+typedef struct cl_dbk_attributes_leaky_relu_exp {
+   cl_tensor_datatype_union_exp coefficient;
    cl_dbk_properties kernel_props[CL_MAX_DBK_PROPERTIES];
-} cl_dbk_attributes_leaky_relu_khr;
+} cl_dbk_attributes_leaky_relu_exp;
 ----
 * _alpha_ is a coefficient of leakage, a positive value.
 | *Kernel arguments*
@@ -703,8 +703,8 @@ The `IN` and `OUT` tensors may be the same object.
 | *Kernel mode properties*
 | This DBK accepts the following kernel properties:
 
-* CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_KHR
-* CL_DBK_PROPERTY_NON_DETERMINISTIC_KHR
+* CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP
+* CL_DBK_PROPERTY_NON_DETERMINISTIC_EXP
 
 | *Attribute validation rules*
 a|
@@ -781,19 +781,19 @@ cl_mem out_tensor = clCreateBufferWithProperties(
   ctx, {CL_MEM_TENSOR_EXP, out_desc, 0},
   CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, 0, out_data.data(), &err);
 
-cl_tensor_datatype_union_khr alpha, beta, relu_coeff;
+cl_tensor_datatype_union_exp alpha, beta, relu_coeff;
 alpha.sf = 2.0f;
 beta.sf = -1.0f;
 relu_coeff.sf = 0.01f;
 
-cl_dkb_attributes_gemm_khr gemm_attrs = {
+cl_dkb_attributes_gemm_exp gemm_attrs = {
   lhs_desc, rhs_desc, out_desc, out_desc, 0, 0, alpha, beta, {}
 };
-gemm_attrs.kernel_props[0] = CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_KHR;
+gemm_attrs.kernel_props[0] = CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP;
 gemm_attrs.kernel_props[1] = 100; // in ILPs
 gemm_attrs.kernel_props[2] = 0;
 
-cl_dkb_attributes_leaky_relu_khr relu_attrs = {
+cl_dkb_attributes_leaky_relu_exp relu_attrs = {
   out_desc, out_desc, relu_coeffs, {0}
 };
 
@@ -801,7 +801,7 @@ cl_device_id target_devices[2] = {dev1, dev2};
 cl_int device_errcodes[2];
 auto prog = clCreateProgramWithDefinedBuiltInKernels(
   ctx, 2, target_devices, 2,
-  {CL_DBK_GEMM_KHR, CL_DBK_LEAKY_RELU_KHR}, {"my_gemm", "my_relu"},
+  {CL_DBK_GEMM_EXP, CL_DBK_LEAKY_RELU_EXP}, {"my_gemm", "my_relu"},
   {&gemm_attrs, &relu_attrs}, &device_errcodes, &err);
 
 std::vector<cl_device_id> supported_devs;
@@ -811,8 +811,8 @@ for (unsigned i = 0; i < 2; i++) {
   } else {
      // Handle errors. Possible error cases (non-exhaustive):
      //
-     // * CL_DBK_UNSUPPORTED_KHR: The DBK is not supported on the device.
-     // * CL_DBK_UNMET_MAX_RELATIVE_ERROR_KHR The DBK implementation does not
+     // * CL_DBK_UNSUPPORTED_EXP: The DBK is not supported on the device.
+     // * CL_DBK_UNMET_MAX_RELATIVE_ERROR_EXP The DBK implementation does not
      //   meet the requested precision.
   }
 }
@@ -852,21 +852,25 @@ clEnqueueMapBuffer(
 . Should the NDRange be used at all in DBKs? It feels sort of unnatural as typically the NDRange is used to imply SPMD parallelism while the hardware/firmware is free to choose whatever parallelization strategy to implement the function. On the other hand, similar applies to software kernel launches as the NDRange-launched work-items can be executed serially if adhering to barrier semantics.
 +
 --
-*UNRESOLVED*
+*RESOLVED*. Decided to go forward without NDRange (and global offset
+ as consequence), as there are currently no known uses for the
+ NDRange, and let OpenCL implementations decide the parallelization
+ strategy.
 
 --
 
 . Different accelerators prefer different channel orders (NHWC vs. NCHW...) for the processed data. Should the channel order be passed as a DBK argument (like in the example GEMM's row/column order) or is it better to have different DBK variations for each?
 +
 --
-*UNRESOLVED*
+*RESOLVED*. The memory layout information is a property of the tensors so
+ there is no need for DBK arguments for the layout or DBK variants.
 
 --
 
-. How to denote preference? Some of the DBKs are more efficient on a given device as they map more naturally to the underlying HW accelerator, but the slower variations (for example, with unoptimal channel order in NN accelerators) might be still beneficially accelerated.
+. How to denote tensors' memory layout preference? Some of the DBKs are more efficient on a given device as they map more naturally to the underlying HW accelerator, but the slower variations (for example, with unoptimal channel order in NN accelerators) might be still beneficially accelerated.
 +
 --
-*UNRESOLVED*
+*UNRESOLVED*.
 
 --
 
@@ -917,9 +921,17 @@ tensor type. Add sample code.
 Henry Linjamäki +
 Pekka Jääskeläinen +
 Freddie Witherden a|
-* Rework document structure match to the cl_khr_extension_template.
+* Rework document structure match to the cl_exp_extension_template.
 * Reflect changes of the `cl_exp_tensor` extension here.
 * Add "Kernel Interface" section into the DBK Appendix.
 * Add GEMM DBK.
 * Change DBK creation interface.
+
+| 0.3.1     | 2024-8-22  |
+Henry Linjamäki +
+Pekka Jääskekäinen +
+RABijl (@GitHub) a|
+* Rename extension name from 'khr' to 'exp'.
+* Resolve two open questions.
+* Small fixes.
 |====
