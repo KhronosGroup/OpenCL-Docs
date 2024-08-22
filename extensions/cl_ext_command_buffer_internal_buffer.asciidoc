@@ -8,13 +8,13 @@ include::../config/attribs.txt[]
 //include::{generated}/api/api-dictionary.asciidoc[]
 :source-highlighter: coderay
 
-= cl_khr_command_buffer_internal_buffer
+= cl_ext_command_buffer_internal_storage
 
 == XXX - Not complete yet!!!
 
 == Name Strings
 
-`cl_khr_command_buffer_internal_buffer`
+`cl_ext_command_buffer_internal_storage`
 
 == Contact
 
@@ -44,12 +44,12 @@ Version: 0.1.0
 
 This extension requires OpenCL 1.2.
 
-This extension requires `cl_khr_command_buffer`.
+This extension requires `cl_ext_command_buffer`.
 
 == Overview
 
 This extension adds a new buffer creation property,
-`CL_MEM_COMMAND_BUFFER_INTERNAL`. This property instructs the runtime
+`CL_MEM_COMMAND_BUFFER_INTERNAL_EXT`. This property instructs the runtime
 to create a buffer object that is only accessible by commands recorded
 by a single command-buffer the buffer is associated with. The contents
 of the buffer with this property are not accessible nor observable by
@@ -60,43 +60,14 @@ runtimes to potentially optimize command-buffers to:
   command-buffers are not executed and reallocate them when needed.
 
 * reduce memory usage by sharing data storage among the internal
-  buffers. In C analogy:
-+
-[source,c]
-----
-cl_mem in, out;
-void a_command_buffer() {
-  cl_mem buf0 = ..., buf1 = ..., buf2 = ...;
-  kernelA(in, buf0);
-  kernelB(buf0, buf1);
-  kernelC(buf1, buf2)
-  kernelD(buf2, out);
-}
-// -->
-void a_command_buffer() {
-  cl_mem buf0 = ..., buf1 = ...;
-  kernelA(in, buf0);
-  kernelB(buf0, buf1);
-  kernelC(buf1, buf0)
-  kernelD(buf0, out);
-}
-----
+  buffers.
+
 * fuse kernels together as intermediate results do not need to be
-  preserved. In C analogy:
-+
-[source,c]
-----
-cl_mem in, w, out;
-void a_command_buffer() {
-  cl_mem buf0 = ...;
-  convolutionKernel(in, w, buf0);
-  reluKernel(buf0, out);
-}
-// -->
-void a_command_buffer() {
-  convolutionPlusReluKernel(in, w, out);
-}
-----
+  preserved.
+
+The buffers created with the new property are similar to the OpenVX's
+virtual data objects.
+
 
 == New API Functions
 
@@ -108,9 +79,18 @@ None.
 
 == New API Enums
 
+Accepted value to *cl_mem_properties*:
+
 [source,c]
 ----
-CL_MEM_COMMAND_BUFFER_INTERNAL_KHR 0x????
+CL_MEM_COMMAND_BUFFER_INTERNAL_EXT 0x????
+----
+
+Accepted value to *cl_mem_info*:
+
+[source,c]
+----
+CL_MEM_ASSOCIATED_COMMAND_BUFFER_EXT 0x????
 ----
 
 == Modifications to the OpenCL API Specification
@@ -126,8 +106,8 @@ CL_MEM_COMMAND_BUFFER_INTERNAL_KHR 0x????
 |===
 | Propery | Property Value | Description
 
-| `CL_MEM_COMMAND_BUFFER_INTERNAL_KHR` | `cl_khr_command_buffer` a|
-This property can be used if *cl_khr_command_buffer_internal_buffer*
+| `CL_MEM_COMMAND_BUFFER_INTERNAL_EXT` | `cl_ext_command_buffer` a|
+This property can be used if *cl_ext_command_buffer_internal_storage*
 extension is supported.
 
 This property constraints the created buffer to be only accessible by
@@ -150,7 +130,7 @@ The contents of the buffer are not guaranteed to be preserved
 after the associated command-buffer execution completes.
 
 This property is incompatible with *CL_MEM_COPY_HOST_PTR* and
-*CL_MEM_USE_HOST_PTR* memory flags and *CL_MEM_DEVICE_HANDLE_LIST_KHR*
+*CL_MEM_USE_HOST_PTR* memory flags and *CL_MEM_DEVICE_HANDLE_LIST_EXT*
 buffer creation property.
 
 This property implies *CL_MEM_HOST_NO_ACCESS* memory flag.
@@ -169,7 +149,7 @@ released the buffer becomes invalid.
 --
 * *CL_INVALID_MEM_OBJECT* if a memory object passed to this function
   is a buffer object or references a buffer object created with
-  *CL_MEM_COMMAND_BUFFER_INTERNAL_KHR* property.
+  *CL_MEM_COMMAND_BUFFER_INTERNAL_EXT* property.
 
 // "references a buffer": E.g. sub-buffers.
 --
@@ -179,7 +159,7 @@ released the buffer becomes invalid.
 --
 * *CL_INVALID_MEM_OBJECT* if the _buffer_ or _mem_object_ field of
   _image_desc_ is a buffer object or references a buffer object
-  created with *CL_MEM_COMMAND_BUFFER_INTERNAL_KHR* property.
+  created with *CL_MEM_COMMAND_BUFFER_INTERNAL_EXT* property.
 --
 
 (Add to the list of error codes for *clCommandCopyBufferKHR*, *clCommandCopyBufferRectKHR*, *clCommandCopyBufferToImageKHR*, *clCommandCopyImageKHR*, *clCommand CopyImageToBufferKHR*, *clCommandFillBufferKHR* and *clCommandFillImageKHR*) ::
@@ -187,7 +167,7 @@ released the buffer becomes invalid.
 --
 * *CL_INVALID_MEM_OBJECT* if a memory object passed to this function
   is a buffer object or references a buffer object created with
-  *CL_MEM_COMMAND_BUFFER_INTERNAL_KHR* property.
+  *CL_MEM_COMMAND_BUFFER_INTERNAL_EXT* property.
 --
 
 (Add to the list of error codes for *clEnqueueNDRangeKernel* and *clEnqueueTask*) ::
@@ -195,7 +175,7 @@ released the buffer becomes invalid.
 --
 * *CL_INVALID_MEM_OBJECT* if the kernel has an argument that is a
   buffer object or references a buffer object created with
-  *CL_MEM_COMMAND_BUFFER_INTERNAL_KHR* property.
+  *CL_MEM_COMMAND_BUFFER_INTERNAL_EXT* property.
 --
 
 (Add to the list of error codes for *clEnqueueNativeKernel*) ::
@@ -203,7 +183,7 @@ released the buffer becomes invalid.
 --
 * *CL_INVALID_MEM_OBJECT* if a memory object in _mem_list_ is a buffer
   object or references a buffer object created with
-  *CL_MEM_COMMAND_BUFFER_INTERNAL_KHR* property.
+  *CL_MEM_COMMAND_BUFFER_INTERNAL_EXT* property.
 --
 
 (Add to the list of error codes for *clCommandNDRangeKernelKHR*) ::
@@ -211,7 +191,7 @@ released the buffer becomes invalid.
 --
 * *CL_INVALID_MEM_OBJECT* if the kernel has an argument that is a
   buffer object or references a buffer object created with
-  *CL_MEM_COMMAND_BUFFER_INTERNAL_KHR* property and _command_buffer_
+  *CL_MEM_COMMAND_BUFFER_INTERNAL_EXT* property and _command_buffer_
   is not same as the command-buffer the buffer is associated with.
 --
 
@@ -220,8 +200,27 @@ released the buffer becomes invalid.
 --
 * *CL_INVALID_MEM_OBJECT* if a new kernel argument value is a buffer
   object or references a buffer object created with
-  *CL_MEM_COMMAND_BUFFER_INTERNAL_KHR* property and _command_buffer_
+  *CL_MEM_COMMAND_BUFFER_INTERNAL_EXT* property and _command_buffer_
   is not same as the command-buffer the buffer is associated with.
+--
+
+(Modify Section 5.5.6, *Memory Object Quaries*) ::
++
+--
+
+(Add the following to the table of supported _param_names_ for *clGetMemObjectInfo*) ::
++
+--
+[cols="2,1,2",stripes=odd,options="header"]
+|===
+| Memory Object Info | Return Type | Description
+
+| `CL_MEM_ASSOCIATED_COMMAND_BUFFER_EXT` | `cl_khr_command_buffer` |
+
+Returns the command-buffer object the buffer is associated with if it
+was created with `CL_MEM_COMMAND_BUFFER_INTERNAL_EXT.` Otherwise, returns
+NULL.
+--
 --
 
 == Issues
@@ -230,7 +229,7 @@ released the buffer becomes invalid.
 command-buffer handle?
 +
 --
-*UNRESOLVED*
+*RESOLVED*. Added the query.
 --
 
 . Should we add a command-buffer query for returning total internal
@@ -253,4 +252,11 @@ Pekka Jääskeläinen +
 Ben Ashbaugh |
 *Initial revision*
 
+| Version | Date       | Author       | Changes
+| 0.1.1   | 2024-08-22 |
+Henry Linjamäki +
+Pekka Jääskeläinen +  a|
+* Rename the extension.
+* Add query to retrieve the associated command-buffer.
+* Other changes from feedback.
 |====
