@@ -9154,23 +9154,14 @@ include::{generated}/api/version-notes/clLinkProgram.asciidoc[]
   * _user_data_ will be passed as an argument when _pfn_notify_ is called.
     _user_data_ can be `NULL`.
 
-If _pfn_notify_ is not `NULL`, {clLinkProgram} does not need to wait for the
-linker to complete, and can return immediately once the linking operation can
-begin.
-Once the linker has completed, the _pfn_notify_ callback function is called
-which returns the program object returned by {clLinkProgram}.
-Any state changes of the program object that result from calling {clLinkProgram}
-(e.g. link status or log) will be observable from this callback function.
-This callback function may be called asynchronously by the OpenCL
-implementation.
-It is the application's responsibility to ensure that the callback function
-is thread-safe.
+The linking operation can begin if the context, list of devices, input
+programs and linker options specified are all valid and appropriate host and
+device resources needed to perform the link are available.
 
-If _pfn_notify_ is `NULL`, {clLinkProgram} does not return until the linker
-has completed.
+Once the linking operation can begin, a valid non-zero program object is created.
 
-{clLinkProgram} creates a new program object which contains the library or
-executable.
+Once the linking operation has been completed and is successful, the program object
+created by {clLinkProgram} contains the valid library or executable.
 The library or executable binary can be queried using
 {clGetProgramInfo}(_program_, {CL_PROGRAM_BINARIES}, ...) and can be specified
 to {clCreateProgramWithBinary} to create a new program object.
@@ -9179,29 +9170,38 @@ The devices associated with the returned program object will be the list of
 devices specified by _device_list_ or if _device_list_ is `NULL` it will be
 the list of devices associated with _context_.
 
-The linking operation can begin if the context, list of devices, input
-programs and linker options specified are all valid and appropriate host and
-device resources needed to perform the link are available.
-If the linking operation can begin, {clLinkProgram} returns a valid non-zero
-program object.
+Any state changes of the program object created by {clLinkProgram}
+(e.g. link status or log) will be observable from either
+return value of {clLinkProgram} function, if _pfn_notify_ is `NULL`,
+or program object passed to _pfn_notify_ if _pfn_notify_ is not `NULL`.
+
+Additionally, if _pfn_notify_ is not `NULL` then {clLinkProgram} returns
+the program object it created, but this program object is in undefined state
+until _pfn_notify_ is called.
+
+If _pfn_notify_ is not `NULL`, {clLinkProgram} does not need to wait for the
+linker to complete, and can return immediately once
+the {clLinkProgram} function has created the new program object.
+
+This callback function may be called asynchronously by the OpenCL
+implementation.
+It is the application's responsibility to ensure that the callback function
+is thread-safe.
 
 // refError
 
-If _pfn_notify_ is `NULL`, _errcode_ret_ will be set to {CL_SUCCESS} if
-the link operation was successful and {CL_LINK_PROGRAM_FAILURE} if there is a
-failure to link the compiled binaries and/or libraries.
+If the program object is created but the link failed, one of two cases occur:
 
-If _pfn_notify_ is not `NULL`, {clLinkProgram} does not have to wait until
-the linker to complete and can return {CL_SUCCESS} in _errcode_ret_ if the
-linking operation can begin.
-The _pfn_notify_ callback function will return a {CL_SUCCESS} or
-{CL_LINK_PROGRAM_FAILURE} if the linking operation was successful or not.
+1. if _pfn_notify_ is `NULL`, then {CL_LINK_PROGRAM_FAILURE} is returned in _errcode_ret_.
+2. if _pfn_notify_ is not `NULL`, then the application should query the linker status of
+   the program object passed to _pfn_notify_ to check if the link was successful or not.
 
-Otherwise {clLinkProgram} returns a `NULL` program object with an
-appropriate error in _errcode_ret_.
-The application should query the linker status of this program object to
-check if the link was successful or not.
-The list of errors that can be returned are:
+The application can query the log of the created program object using
+{clGetProgramInfo}(_program_, {CL_PROGRAM_BUILD_LOG}, ...)
+to get detailed information when the link has failed.
+
+Otherwise, if the program object is not created, {clLinkProgram}
+returns one of the following errors in _errcode_ret_:
 
   * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
   * {CL_INVALID_VALUE} if _device_list_ is `NULL` and _num_devices_ is greater
@@ -9227,8 +9227,6 @@ The list of errors that can be returned are:
   * {CL_LINKER_NOT_AVAILABLE} if a linker is not available, i.e.
     {CL_DEVICE_LINKER_AVAILABLE} specified in the
     <<device-queries-table,Device Queries>> table is set to {CL_FALSE}.
-  * {CL_LINK_PROGRAM_FAILURE} if there is a failure to link the compiled
-    binaries and/or libraries.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
