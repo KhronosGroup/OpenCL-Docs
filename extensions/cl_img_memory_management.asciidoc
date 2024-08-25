@@ -1,0 +1,247 @@
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_img_memory_management
+
+== Name Strings
+
+`cl_img_memory_management`
+
+== Contact
+
+Imagination Technologies Developer Forum: +
+https://forums.imgtec.com/
+
+Tomasz Platek, Imagination Technologies (Tomasz.Platek 'at' imgtec.com)
+
+== Contributors
+
+CY Cheng, Imagination Technologies. +
+Tomasz Platek, Imagination Technologies.
+
+== Notice
+
+Copyright (c) 2024 Imagination Technologies Ltd. All Rights Reserved.
+
+== Status
+
+Final Draft
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL C Specification Version V3.0.16.
+
+== Overview
+
+This extension adds built-in functions that expose the low-level memory and cache control instructions of Imagination GPU IP that are not accessible by standard OpenCL C functions.
+
+== New OpenCL C Feature Names
+
+[source,c]
+----
+__opencl_img_fence
+__opencl_img_cache
+__opencl_img_load_store
+----
+
+== New OpenCL C Functions
+
+Issues a data fence:
+
+[source,c]
+----
+void img_fence(cache_target_img target);
+----
+
+Perform the cache flush/invalidate operation:
+
+[source,c]
+----
+void img_cache_flush(cache_target_img target);
+void img_cache_invalidate(cache_target_img target);
+void img_cache_flush_invalidate(cache_target_img target);
+----
+
+Load to/store from memory:
+
+[source,c]
+----
+gentype img_load(gentype *p, cache_coherence_img coherence, L2_cache_policy_img policy, cache_persistence_level_img persistence, bool volatile);
+gentype img_load(const gentype *p, cache_coherence_img coherence, L2_cache_policy_img policy, cache_persistence_level_img persistence, bool volatile);
+void img_store(gentype *p, gentype value, cache_coherence_img coherence, L2_cache_policy_img policy, cache_persistence_level_img persistence, bool volatile);
+----
+
+== Modifications to the OpenCL C Specification
+
+(Add to Table 4 - Other Built-in Data Types in Section 6.3.3. Other Built-in Data Types) ::
++
+[cols=",",options="header",]
+|====
+| Type | Description
+| `cache_target_img`
+    | Target of the cache control functions. Refer to the Low-level Memory and Cache Control Functions section for a detailed description
+      of the built-in functions that use this enum.
+
+Requires that the `__opencl_img_fence` or the `__opencl_img_cache` feature macro is defined.
+| `cache_coherence_img`
+    | Level of cache coherence. Refer to the Low-level Memory and Cache Control Functions section for a detailed description
+      of the built-in functions that use this enum.
+
+Requires that the `__opencl_img_load_store` feature macro is defined.
+| `L2_cache_policy_img`
+    | Cache policy for the L2 cache. Refer to the Low-level Memory and Cache Control Functions section for a detailed description
+      of the built-in functions that use this enum.
+
+Requires that the `__opencl_img_load_store` feature macro is defined.
+| `cache_persistence_level_img`
+    | Level of cache persistence. Refer to the Low-level Memory and Cache Control Functions section for a detailed description
+      of the built-in functions that use this enum.
+
+Requires that the `__opencl_img_load_store` feature macro is defined.
+|====
+
+(Add a new Section 6.15.22, *Low-level Memory and Cache Control Functions*) ::
++
+--
+The OpenCL C programming language implements the following built-in functions
+to perform low-level memory and cache control operations:
+
+[cols="1,2",options="header"]
+|====
+| Function | Description
+| void *img_fence*(cache_target_img target)
+    a| `img_fence` issues a data fence as far as the specified `target`. For example, using `cache_target_L2_img` issues a data fence for the L1 and L2 caches.
+
+Requires that the `__opencl_img_fence` feature macro is defined.
+| void *img_cache_flush*(cache_target_img target)
+    a| `img_cache_flush` flushes cache, `target` determines how far through the memory hierarchy caches are flushed. For example, using `cache_target_L2_img` flushes the L1 and L2 caches.
+
+Requires that the `__opencl_img_cache` feature macro is defined.
+| void *img_cache_invalidate*(cache_target_img target)
+    a| `img_cache_invalidate` invalidates cache, `target` determines how far through the memory hierarchy caches are invalidated. For example, using `cache_target_L2_img` invalidates the L1 and L2 caches.
+
+Requires that the `__opencl_img_cache` feature macro is defined.
+| void *img_cache_flush_invalidate*(cache_target_img target)
+    a| `img_cache_flush_invalidate` flushes and invalidates cache, `target` determines how far through the memory hierarchy caches are flushed and invalidated. For example, using `cache_target_L2_img` flushes and invalidates the L1 and L2 caches.
+
+Requires that the `__opencl_img_cache` feature macro is defined.
+| gentype *img_load*(gentype pass:[*]p, cache_coherence_img coherence, L2_cache_policy_img policy, cache_persistence_level_img persistence, bool volatile) +
+  gentype *img_load*(const gentype pass:[*]p, cache_coherence_img coherence, L2_cache_policy_img policy, cache_persistence_level_img persistence, bool volatile)
+    a| `img_load` returns sizeof(gentype) bytes of data from `p`, where `coherence` specifies the level of cache coherence, `policy` specifies the cache policy for the L2 cache, `persistence` specifies the level of cache persistence, and `volatile` specifies volatility.
+
+Requires that the `__opencl_img_load_store` feature macro is defined.
+| void *img_store*(gentype pass:[*]p, gentype value, cache_coherence_img coherence, L2_cache_policy_img policy, cache_persistence_level_img persistence, bool volatile)
+    a| `img_store` writes 'value' to `p`, where `coherence` specifies the level of cache coherence, `policy` specifies the cache policy for the L2 cache, `persistence` specifies the level of cache persistence, and `volatile` specifies volatility.
+
+Requires that the `__opencl_img_load_store` feature macro is defined.
+|====
+--
+
+=== Cache Target
+
+The enumerated type `cache_target_img` specifies the target of the cache control functions.
+The following table lists the enumeration constants:
+
+[cols=",",options="header",]
+|====
+| Cache Target | Additional Notes
+| `cache_target_L1_img`
+    | Performs the operation on the L1 cache.
+
+Requires that the `__opencl_img_fence` or the `__opencl_img_cache` feature macro is defined.
+| `cache_target_L2_img`
+    | Performs the operation on the L1 and L2 caches.
+
+Requires that the `__opencl_img_fence` or the `__opencl_img_cache` feature macro is defined.
+| `cache_target_external_img`
+    | Performs the operation on the L1, L2, and external caches.
+
+Requires that the `__opencl_img_fence` or the `__opencl_img_cache` feature macro is defined.
+|====
+
+=== Cache Persistence
+Cache persistence modifies the priority of the request in the cache where low level means that requests are evicted quickly and high level means that requests remain in cache for a long time.
+The enumerated type `cache_persistence_level_img` specifies the level of cache persistence.
+The following table lists the enumeration constants:
+
+[cols=",",options="header",]
+|====
+| Cache Persistence | Additional Notes
+| `cache_persistence_level_default_img`
+    | `cache_persistence_level_min_img` is the default persistence level.
+
+Requires that the `__opencl_img_load_store` feature macro is defined.
+| `cache_persistence_level_min_img`
+    | Requires that the `__opencl_img_load_store` feature macro is defined.
+| `cache_persistence_level_low_img`
+    | Requires that the `__opencl_img_load_store` feature macro is defined.
+| `cache_persistence_level_high_img`
+    | Requires that the `__opencl_img_load_store` feature macro is defined.
+| `cache_persistence_level_max_img`
+    | Requires that the `__opencl_img_load_store` feature macro is defined.
+|====
+
+[[cache-coherence]]
+==== Cache Coherence
+The enumerated type `cache_coherence_img` specifies the level of cache coherence.
+The following table lists the enumeration constants:
+
+[cols=",",options="header",]
+|====
+| Cache Coherence | Additional Notes
+| `cache_coherence_L1_img`
+    | Cache coherence is guaranteed at the L1 level. Explicit flush or invalidate may be needed to ensure data coherency at higher levels.
+
+Requires that the `__opencl_img_load_store` feature macro is defined.
+| `cache_coherence_L2_img`
+    | Cache coherence is guaranteed at the L2 level. Explicit flush or invalidate may be needed to ensure data coherency at higher levels.
+    
+Requires that the `__opencl_img_load_store` feature macro is defined.
+|====
+
+=== L2 Cache Policy
+The enumerated type `L2_cache_policy_img` specifies the cache policy for the L2 cache.
+The following table lists the enumeration constants:
+
+[cols=",",options="header",]
+|====
+| L2 Cache Policy | Additional Notes
+| `L2_cache_policy_new_alloc_img`
+    | Allocates a new cache line on a cache miss.
+
+Requires that the `__opencl_img_load_store` feature macro is defined.
+| `L2_cache_policy_bypass_img`
+    | Permits to bypass the cache and access memory directly.
+    
+Requires that the `__opencl_img_load_store` feature macro is defined.
+|====
+
+== Coding Sample
+
+This coding sample shows how to use the *img_load* and *img_store* functions:
+[source]
+----
+__kernel void test(__global int *in, __global int *out) {
+   int a = img_load(in, cache_coherence_L1_img, L2_cache_policy_new_alloc_img, cache_persistence_level_min_img, true);
+   a += 1;
+   img_store(out, a, cache_coherence_L1_img, L2_cache_policy_new_alloc_img, cache_persistence_level_min_img, true);
+}
+----
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author        | Changes
+| 1.0.0   | 2024-06-19 | Tomasz Platek | *Initial revision*
+|====
+

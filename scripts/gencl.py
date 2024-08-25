@@ -1,6 +1,6 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
-# Copyright 2013-2023 The Khronos Group Inc.
+# Copyright 2013-2024 The Khronos Group Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -20,11 +20,9 @@ from generator import write
 
 
 from pygenerator import PyOutputGenerator
-from reflib import logDiag, logWarn, setLogFile
+from reflib import logDiag, logWarn, logErr, setLogFile
 from reg import Registry
-
-from clconventions import OpenCLConventions as APIConventions
-
+from apiconventions import APIConventions
 
 # Simple timer functions
 startTime = None
@@ -109,7 +107,7 @@ def makeGenOpts(args):
     # The SPDX formatting below works around constraints of the 'reuse' tool
     prefixStrings = [
         '/*',
-        '** Copyright 2015-2023 The Khronos Group Inc.',
+        '** Copyright 2015-2024 The Khronos Group Inc.',
         '**',
         '** SPDX' + '-License-Identifier: Apache-2.0',
         '*/',
@@ -131,6 +129,11 @@ def makeGenOpts(args):
     # An API style conventions object
     conventions = APIConventions()
 
+    if args.apiname is not None:
+        defaultAPIName = args.apiname
+    else:
+        defaultAPIName = conventions.xml_api_name
+
     # API include files for spec and ref pages
     # Overwrites include subdirectories in spec source tree
     # The generated include files do not include the calling convention
@@ -145,7 +148,7 @@ def makeGenOpts(args):
             filename          = 'timeMarker',
             directory         = directory,
             genpath           = genpath,
-            apiname           = 'opencl',
+            apiname           = defaultAPIName,
             profile           = None,
             versions          = featuresPat,
             emitversions      = featuresPat,
@@ -163,14 +166,14 @@ def makeGenOpts(args):
 
     # Python representation of API information, used by scripts that
     # don't need to load the full XML.
-    genOpts['api.py'] = [
+    genOpts['apimap.py'] = [
           PyOutputGenerator,
           DocGeneratorOptions(
             conventions       = conventions,
-            filename          = 'api.py',
+            filename          = 'apimap.py',
             directory         = directory,
-            genpath           = genpath,
-            apiname           = 'opencl',
+            genpath           = None,
+            apiname           = defaultAPIName,
             profile           = None,
             versions          = featuresPat,
             emitversions      = featuresPat,
@@ -180,6 +183,7 @@ def makeGenOpts(args):
             emitExtensions    = emitExtensionsPat,
             reparentEnums     = False)
         ]
+
 
     # Extension metainformation for spec extension appendices
     # Includes all extensions by default, but only so that the generated
@@ -192,7 +196,7 @@ def makeGenOpts(args):
             filename          = 'timeMarker',
             directory         = directory,
             genpath           = None,
-            apiname           = 'opencl',
+            apiname           = defaultAPIName,
             profile           = None,
             versions          = featuresPat,
             emitversions      = None,
@@ -202,70 +206,6 @@ def makeGenOpts(args):
             emitExtensions    = emitExtensionsPat)
         ]
 
-    # Platform extensions, in their own header files
-    # Each element of the platforms[] array defines information for
-    # generating a single platform:
-    #   [0] is the generated header file name
-    #   [1] is the set of platform extensions to generate
-    #   [2] is additional extensions whose interfaces should be considered,
-    #   but suppressed in the output, to avoid duplicate definitions of
-    #   dependent types like VkDisplayKHR and VkSurfaceKHR which come from
-    #   non-platform extensions.
-
-    # Track all platform extensions, for exclusion from vulkan_core.h
-    allPlatformExtensions = []
-
-    # # Extensions suppressed for all platforms.
-    # # Covers common WSI extension types.
-    # commonSuppressExtensions = [ 'VK_KHR_display', 'VK_KHR_swapchain' ]
-    #
-    # platforms = [
-    #     [ 'vulkan_android.h',     [ 'VK_KHR_android_surface',
-    #                                 'VK_ANDROID_external_memory_android_hardware_buffer'
-    #                                                               ], commonSuppressExtensions ],
-    #     [ 'vulkan_fuchsia.h',     [ 'VK_FUCHSIA_imagepipe_surface'], commonSuppressExtensions ],
-    #     [ 'vulkan_ios.h',         [ 'VK_MVK_ios_surface'          ], commonSuppressExtensions ],
-    #     [ 'vulkan_macos.h',       [ 'VK_MVK_macos_surface'        ], commonSuppressExtensions ],
-    #     [ 'vulkan_vi.h',          [ 'VK_NN_vi_surface'            ], commonSuppressExtensions ],
-    #     [ 'vulkan_wayland.h',     [ 'VK_KHR_wayland_surface'      ], commonSuppressExtensions ],
-    #     [ 'vulkan_win32.h',       [ 'VK_.*_win32(|_.*)'           ], commonSuppressExtensions + [ 'VK_KHR_external_semaphore', 'VK_KHR_external_memory_capabilities', 'VK_KHR_external_fence', 'VK_KHR_external_fence_capabilities', 'VK_NV_external_memory_capabilities' ] ],
-    #     [ 'vulkan_xcb.h',         [ 'VK_KHR_xcb_surface'          ], commonSuppressExtensions ],
-    #     [ 'vulkan_xlib.h',        [ 'VK_KHR_xlib_surface'         ], commonSuppressExtensions ],
-    #     [ 'vulkan_xlib_xrandr.h', [ 'VK_EXT_acquire_xlib_display' ], commonSuppressExtensions ],
-    # ]
-    #
-    # for platform in platforms:
-    #     headername = platform[0]
-    #
-    #     allPlatformExtensions += platform[1]
-    #
-    #     addPlatformExtensionsRE = makeREstring(platform[1] + platform[2])
-    #     emitPlatformExtensionsRE = makeREstring(platform[1])
-    #
-    #     opts = CGeneratorOptions(
-    #         filename          = headername,
-    #         directory         = directory,
-    #         apiname           = 'vulkan',
-    #         profile           = None,
-    #         versions          = featuresPat,
-    #         emitversions      = None,
-    #         defaultExtensions = None,
-    #         addExtensions     = addPlatformExtensionsRE,
-    #         removeExtensions  = None,
-    #         emitExtensions    = emitPlatformExtensionsRE,
-    #         prefixText        = prefixStrings + clPrefixStrings,
-    #         genFuncPointers   = True,
-    #         protectFile       = protectFile,
-    #         protectFeature    = False,
-    #         protectProto      = '#ifndef',
-    #         protectProtoStr   = 'VK_NO_PROTOTYPES',
-    #         apicall           = 'VKAPI_ATTR ',
-    #         apientry          = 'VKAPI_CALL ',
-    #         apientryp         = 'VKAPI_PTR *',
-    #         alignFuncParam    = 0)
-    #
-    #     genOpts[headername] = [ COutputGenerator, opts ]
-
     # Header for core API + extensions.
     # To generate just the core API,
     # change to 'defaultExtensions = None' below.
@@ -274,8 +214,8 @@ def makeGenOpts(args):
     # It removes all platform extensions (from the platform headers options
     # constructed above) as well as any explicitly specified removals.
 
-    removeExtensionsPat = makeREstring(
-        allPlatformExtensions + removeExtensions, None, strings_are_regex=True)
+    removeExtensionsPat = makeREstring(removeExtensions, None,
+        strings_are_regex=True)
 
     genOpts['cl.h'] = [
           COutputGenerator,
@@ -284,7 +224,7 @@ def makeGenOpts(args):
             filename          = 'cl.h',
             directory         = directory,
             genpath           = None,
-            apiname           = 'opencl',
+            apiname           = defaultAPIName,
             profile           = None,
             versions          = featuresPat,
             emitversions      = featuresPat,
@@ -353,8 +293,11 @@ def genTarget(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('-apiname', action='store',
+                        default=None,
+                        help='Specify API to generate (defaults to repository-specific conventions object value)')
     parser.add_argument('-defaultExtensions', action='store',
-                        default='opencl',
+                        default=APIConventions().xml_api_name,
                         help='Specify a single class of extensions to add to targets')
     parser.add_argument('-extension', action='append',
                         default=[],
@@ -425,10 +368,12 @@ if __name__ == '__main__':
     else:
         diag = None
 
-    (gen, options) = (None, None)
-    if not args.validate:
-      # Create the API generator & generator options
-      (gen, options) = genTarget(args)
+    if args.time:
+        # Log diagnostics and warnings
+        setLogFile(setDiag = True, setWarn = True, filename = '-')
+
+    # Create the API generator & generator options
+    (gen, options) = genTarget(args)
 
     # Create the registry object with the specified generator and generator
     # options. The options are set before XML loading as they may affect it.
@@ -443,10 +388,6 @@ if __name__ == '__main__':
     startTimer(args.time)
     reg.loadElementTree(tree)
     endTimer(args.time, '* Time to parse ElementTree =')
-
-    if args.validate:
-        success = reg.validateRegistry()
-        sys.exit(0 if success else 1)
 
     if args.dump:
         logDiag('* Dumping registry to regdump.txt')

@@ -1,0 +1,257 @@
+// Copyright 2021-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_semaphore.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2024-03-15
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+  - Ajit Hakke-Patil,  NVIDIA
+  - Amit Rao, NVIDIA
+  - Balaji Calidas, QUALCOMM
+  - Ben Ashbaugh, INTEL
+  - Carsten Rohde, NVIDIA
+  - Christoph Kubisch, NVIDIA
+  - Debalina Bhattacharjee, NVIDIA
+  - Faith Ekstrand, INTEL
+  - Gorazd Sumkovski, ARM
+  - James Jones,  NVIDIA
+  - Jeremy Kemp, IMAGINATION
+  - Joshua Kelly, QUALCOMM
+  - Karthik Raghavan Ravi, NVIDIA
+  - Kedar Patil, NVIDIA
+  - Kevin Petit, ARM
+  - Nikhil Joshi, NVIDIA
+  - Sharan Ashwathnarayan, NVIDIA
+  - Vivek Kini,  NVIDIA
+
+=== Description
+
+OpenCL provides {cl_event_TYPE} as a primary mechanism of synchronization
+between host and device as well as across devices.
+While events can be waited on or can be passed as dependencies across
+work-submissions, they suffer from following limitations:
+
+  * They are immutable.
+  * They are not reusable.
+
+{cl_khr_semaphore_EXT} introduces a new type of synchronization object to
+represent _semaphores_ that can be reused, waited on, and signaled multiple
+times by OpenCL work-submissions.
+
+In particular, this extension defines:
+
+  * a new type called {cl_semaphore_khr_TYPE} to represent the semaphore
+    objects.
+  * A new type called {cl_semaphore_properties_khr_TYPE} to specify metadata
+    associated with semaphores.
+  * Functions to create, retain, and release semaphores.
+  * Functions to wait on and signal semaphore objects.
+  * Functions to query the properties of semaphore objects.
+
+// The 'New ...' section can be auto-generated
+
+=== New Commands
+
+  * {clCreateSemaphoreWithPropertiesKHR}
+  * {clEnqueueWaitSemaphoresKHR}
+  * {clEnqueueSignalSemaphoresKHR}
+  * {clGetSemaphoreInfoKHR}
+  * {clReleaseSemaphoreKHR}
+  * {clRetainSemaphoreKHR}
+
+=== New Types
+
+  * {cl_semaphore_khr_TYPE}
+  * {cl_semaphore_properties_khr_TYPE}
+  * {cl_semaphore_info_khr_TYPE}
+  * {cl_semaphore_type_khr_TYPE}
+  * {cl_semaphore_payload_khr_TYPE}
+
+=== New Enums
+
+  * {cl_platform_info_TYPE}
+  ** {CL_PLATFORM_SEMAPHORE_TYPES_KHR}
+  * {cl_device_info_TYPE}
+  ** {CL_DEVICE_SEMAPHORE_TYPES_KHR}
+  * {cl_semaphore_type_khr_TYPE}
+  ** {CL_SEMAPHORE_TYPE_BINARY_KHR}
+  * {cl_semaphore_info_khr_TYPE}
+  ** {CL_SEMAPHORE_CONTEXT_KHR}
+  ** {CL_SEMAPHORE_REFERENCE_COUNT_KHR}
+  ** {CL_SEMAPHORE_PROPERTIES_KHR}
+  ** {CL_SEMAPHORE_PAYLOAD_KHR}
+  * {cl_semaphore_info_khr_TYPE} or {cl_semaphore_properties_khr_TYPE}
+  ** {CL_SEMAPHORE_TYPE_KHR}
+  ** {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR}
+  ** {CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR}
+  * {cl_command_type_TYPE}
+  ** {CL_COMMAND_SEMAPHORE_WAIT_KHR}
+  ** {CL_COMMAND_SEMAPHORE_SIGNAL_KHR}
+  * New Error Codes
+  ** {CL_INVALID_SEMAPHORE_KHR}
+
+
+[[cl_khr_semaphore-Sample-Code]]
+=== Sample Code
+
+==== Example for Semaphore Creation in a Single Device Context
+
+[source]
+----
+// Get cl_devices of the platform.
+clGetDeviceIDs(..., &devices, &deviceCount);
+
+// Create cl_context with just first device
+context = clCreateContext(..., 1, devices, ...);
+
+// Create clSema of type cl_semaphore_khr usable on single device in the context
+
+cl_semaphore_properties_khr sema_props[] =
+        {(cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR,
+         (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
+          0};
+
+int errcode_ret = 0;
+
+cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
+                                                             sema_props,
+                                                             &errcode_ret);
+----
+
+==== Example for Semaphore Creation for a Single Device in a Multi-Device Context
+
+[source]
+----
+// Get cl_devices of the platform.
+clGetDeviceIDs(..., &devices, &deviceCount);
+
+// Create cl_context with first two devices
+clCreateContext(..., 2, devices, ...);
+
+// Create clSema of type cl_semaphore_khr usable only on device 0
+cl_semaphore_properties_khr sema_props[] = {
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR,
+    (cl_semaphore_properties_khr)devices[0],
+    CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR,
+    0
+};
+
+int errcode_ret = 0;
+
+cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
+                                                             sema_props,
+                                                             &errcode_ret);
+----
+
+==== Example for Synchronization Using Wait and Signal
+
+[source]
+----
+// clSema is created using clCreateSemaphoreWithPropertiesKHR
+// using one of the examples for semaphore creation.
+
+cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
+                                                             sema_props,
+                                                             &errcode_ret);
+
+// Start the main loop
+
+while (true) {
+    // (not shown) Signal the semaphore from other work
+
+    // Wait for the semaphore in OpenCL
+    // by calling clEnqueueWaitSemaphoresKHR on 'clSema'
+    clEnqueueWaitSemaphoresKHR(/*command_queue*/              command_queue,
+                               /*num_sema_objects*/           1,
+                               /*sema_objects*/               &clSema,
+                               /*sema_payload_list*/          NULL,
+                               /*num_events_in_wait_list*/    0,
+                               /*event_wait_list*/            NULL,
+                               /*event*/                      NULL);
+
+    // Launch kernel that accesses extMem
+    clEnqueueNDRangeKernel(command_queue, ...);
+
+    // Signal the semaphore in OpenCL
+    clEnqueueSignalSemaphoresKHR(/*command_queue*/              command_queue,
+                                 /*num_sema_objects*/           1,
+                                 /*sema_objects*/               &clSema,
+                                 /*sema_payload_list*/          NULL,
+                                 /*num_events_in_wait_list*/    0,
+                                 /*event_wait_list*/            NULL,
+                                 /*event*/                      NULL);
+
+    // (not shown) Launch other work that waits on 'clSema'
+}
+----
+
+==== Example for {clGetSemaphoreInfoKHR}
+
+[source]
+----
+// clSema is created using clCreateSemaphoreWithPropertiesKHR
+// using one of the examples for semaphore creation.
+
+cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
+                                                             sema_props,
+                                                             &errcode_ret);
+
+// Start the main rendering loop
+
+while (true) {
+    // (not shown) Signal the semaphore from other work
+
+    // Wait for the semaphore in OpenCL, by calling clEnqueueWaitSemaphoresKHR on 'clSema'
+    clEnqueueWaitSemaphoresKHR(/*command_queue*/              command_queue,
+                               /*num_sema_objects*/           1,
+                               /*sema_objects*/               &clSema,
+                               /*sema_payload_list*/          NULL,
+                               /*num_events_in_wait_list*/    0,
+                               /*event_wait_list*/            NULL,
+                               /*event*/                      NULL);
+
+    // Launch kernel in OpenCL
+    clEnqueueNDRangeKernel(command_queue, ...);
+
+    // Signal the semaphore in OpenCL
+    clEnqueueSignalSemaphoresKHR(/*command_queue*/              command_queue,
+                                 /*num_sema_objects*/           1,
+                                 /*sema_objects*/               &clSema,
+                                 /*sema_payload_list*/          NULL,
+                                 /*num_events_in_wait_list*/    0,
+                                 /*event_wait_list*/            NULL,
+                                 /*event*/                      NULL);
+
+    // Query type of clSema
+    clGetSemaphoreInfoKHR(/*sema_object*/           clSema,
+                          /*param_name*/            CL_SEMAPHORE_TYPE_KHR,
+                          /*param_value_size*/      sizeof(cl_semaphore_type_khr),
+                          /*param_value*/           &clSemaType,
+                          /*param_value_ret_size*/  &clSemaTypeSize);
+
+    if (clSemaType == CL_SEMAPHORE_TYPE_BINARY_KHR) {
+        // Do something
+    }
+    else {
+        // Do something else
+    }
+    // (not shown) Launch other work that waits on 'clSema'
+}
+----
+
+=== Version History
+
+  * Revision 0.9.0, 2021-09-10
+  ** Initial version (provisional).
+  * Revision 0.9.1, 2023-08-01
+  ** Changed device handle list enum to the semaphore-specific
+     {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} (provisional).
+  * Revision 1.0.0, 2024-03-15
+  ** First non-provisional version.

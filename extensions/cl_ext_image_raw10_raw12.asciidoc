@@ -1,0 +1,276 @@
+// Copyright 2018-2024 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+include::{generated}/api/api-dictionary-no-links.asciidoc[]
+:source-highlighter: coderay
+
+= cl_ext_image_raw10_raw12
+:R: pass:q,r[^(R)^]
+Khronos{R} OpenCL Working Group
+
+== Name Strings
+
+`cl_ext_image_raw10_raw12`
+
+== Contact
+
+Please see the *Issues* list in the Khronos *OpenCL-Docs* repository: +
+https://github.com/KhronosGroup/OpenCL-Docs
+
+== Contributors
+
+Kevin Petit, Arm Ltd. +
+Jeremy Kemp, Google +
+
+== Notice
+
+include::../copyrights.txt[]
+
+== Status
+
+Complete.
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification version 3.0.14.
+
+This extension requires OpenCL 1.2.
+
+== Overview
+
+This extension adds support for single channel RAW10 and RAW12 images typically
+used to represent Bayer pattern images coming from an image sensor.
+
+== New API Enums
+
+New values for `cl_channel_type`:
+
+[source,c]
+----
+CL_UNSIGNED_INT_RAW10_EXT       0x10E3
+CL_UNSIGNED_INT_RAW12_EXT       0x10E4
+----
+
+== New OpenCL C Feature Names
+
+[source,c]
+----
+__opencl_c_ext_image_raw10_raw12
+----
+
+== New OpenCL C Enums
+
+Value returned by `get_image_channel_data_type`:
+
+[source,c]
+----
+CLK_UNSIGNED_INT_RAW10_EXT
+CLK_UNSIGNED_INT_RAW12_EXT
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 5.3.1, *Creating Image Objects*) ::
++
+--
+
+(Add the following to Table 17, _List of supported Image Channel Data Types_) ::
++
+--
+
+[cols="1,1",options="header"]
+|====
+| Image Channel Data Type
+| Description
+
+| {CL_UNSIGNED_INT_RAW10_EXT}
+| Each channel component is an unnormalized unsigned 10-bit integer value.
+  The channel order must be {CL_R}.
+
+| {CL_UNSIGNED_INT_RAW12_EXT}
+| Each channel component is an unnormalized unsigned 12-bit integer value.
+  The channel order must be {CL_R}.
+
+|====
+
+--
+
+(Add the following to Section 5.3.1.1, _Image Format Descriptor_) ::
++
+--
+If `image_channel_data_type` = {CL_UNSIGNED_INT_RAW10_EXT}, pixel data is densely
+packed in each row and each 4 consecutive pixels are packed into 5 bytes. Each one
+of the first 4 bytes contains the top 8 bits of each pixel, the fifth byte
+contains the 2 least significant bits of the 4 pixels. The memory layout of
+this image format is described below (`Pi[j]` stands for the jth bit of the
+ith pixel):
+
+[cols="9*1",options="header"]
+|====
+|
+| bit 7
+| bit 6
+| bit 5
+| bit 4
+| bit 3
+| bit 2
+| bit 1
+| bit 0
+
+| Byte 0
+| P0[9]
+| P0[8]
+| P0[7]
+| P0[6]
+| P0[5]
+| P0[4]
+| P0[3]
+| P0[2]
+
+| Byte 1
+| P1[9]
+| P1[8]
+| P1[7]
+| P1[6]
+| P1[5]
+| P1[4]
+| P1[3]
+| P1[2]
+
+| Byte 2
+| P2[9]
+| P2[8]
+| P2[7]
+| P2[6]
+| P2[5]
+| P2[4]
+| P2[3]
+| P2[2]
+
+| Byte 3
+| P3[9]
+| P3[8]
+| P3[7]
+| P3[6]
+| P3[5]
+| P3[4]
+| P3[3]
+| P3[2]
+
+| Byte 4
+| P3[1]
+| P3[0]
+| P2[1]
+| P2[0]
+| P1[1]
+| P1[0]
+| P0[1]
+| P0[0]
+
+|====
+
+If `image_channel_data_type` = {CL_UNSIGNED_INT_RAW12_EXT}, pixel data is densely
+packed in each row and each 2 consecutive pixels are packed into 3 bytes. The
+first and second byte contains the top 8 bits of first and second pixel. The
+third byte contains the 4 least significant bits of the two pixels, the memory
+layout of this image format is described below (`Pi[j]` stands for the jth bit
+of the ith pixel): 
+
+[cols="9*1",options="header"]
+|====
+|
+| bit 7
+| bit 6
+| bit 5
+| bit 4
+| bit 3
+| bit 2
+| bit 1
+| bit 0
+
+| Byte 0
+| P0[11]
+| P0[10]
+| P0[9]
+| P0[8]
+| P0[7]
+| P0[6]
+| P0[5]
+| P0[4]
+
+| Byte 1
+| P1[11]
+| P1[10]
+| P1[9]
+| P1[8]
+| P1[7]
+| P1[6]
+| P1[5]
+| P1[4]
+
+| Byte 2
+| P1[3]
+| P1[2]
+| P1[1]
+| P1[0]
+| P0[3]
+| P0[2]
+| P0[1]
+| P0[0]
+|====
+--
+
+(Modify Section 5.3.1.2, _Image Descriptor_) ::
++
+--
+Add the following to the description of `image_width`:
+
+The image width must be a multiple of 4 for images `image_channel_data_type`
+is {CL_UNSIGNED_INT_RAW10_EXT}. The image width must be a multiple of 2 for
+images `image_channel_data_type` is {CL_UNSIGNED_INT_RAW12_EXT}.
+--
+
+--
+
+== Modifications to the OpenCL C Specification
+
+(Modify section 6.15.15.5, *Built-in Image Query Functions*) ::
++
+--
+
+Add the following definitions to the list of valid values that can be
+returned by the `get_image_channel_data_type` functions:
+
+[source,c]
+----
+CLK_UNSIGNED_INT_RAW10_EXT
+CLK_UNSIGNED_INT_RAW12_EXT
+----
+--
+
+== Conformance tests
+
+. Extend all image conformance tests to cover the new formats.
+
+== Issues
+
+None.
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 1.0.0   | 2023-05-03 | Kevin Petit  | *Initial revision*
+|====
