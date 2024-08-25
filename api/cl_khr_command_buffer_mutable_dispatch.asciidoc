@@ -1,0 +1,362 @@
+// Copyright 2018-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_command_buffer_mutable_dispatch.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2024-06-19
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+  - Ewan Crawford, Codeplay Software Ltd.
+  - Gordon Brown, Codeplay Software Ltd.
+  - Kenneth Benzie, Codeplay Software Ltd.
+  - Alastair Murray, Codeplay Software Ltd.
+  - Jack Frankland, Codeplay Software Ltd.
+  - Balaji Calidas, Qualcomm Technologies Inc.
+  - Joshua Kelly, Qualcomm Technologies, Inc.
+  - Kevin Petit, Arm Ltd.
+  - Aharon Abramson, Intel.
+  - Ben Ashbaugh, Intel.
+  - Boaz Ouriel, Intel.
+  - Pekka Jääskeläinen, Tampere University
+  - Jan Solanti, Tampere University
+  - Nikhil Joshi, NVIDIA
+  - James Price, Google
+
+=== Description
+
+The {cl_khr_command_buffer_EXT} extension separates command construction
+from enqueue by providing a mechanism to record a set of commands which can
+then be repeatedly enqueued.
+However, the commands recorded to the command-buffer are immutable between
+enqueues.
+
+{cl_khr_command_buffer_mutable_dispatch_EXT} removes this restriction.
+In particular, this extension allows the configuration of a kernel execution
+command in a command-buffer, called a _mutable-dispatch_, to be modified.
+This allows inputs and outputs to the kernel, as well as work-item sizes and
+offsets, to change without having to re-record the entire command sequence
+in a new command-buffer.
+
+=== Interactions With Other Extensions
+
+The {clUpdateMutableCommandsKHR} entry-point has been designed for the purpose
+of allowing expansion of mutable functionality in future extensions layered on
+top of `cl_khr_command_buffer_mutable_dispatch`.
+
+A new extension can define its own structure type to specify the update
+configuration it requires, with a matching
+{cl_command_buffer_update_type_khr_TYPE} value. This new structure type can
+then be passed to {clUpdateMutableCommandsKHR} where it is reinterpreted from a
+void pointer using {cl_command_buffer_update_type_khr_TYPE}.
+
+=== New Commands
+
+  * {clUpdateMutableCommandsKHR}
+  * {clGetMutableCommandInfoKHR}
+
+=== New Types
+
+  * {cl_mutable_dispatch_fields_khr_TYPE}
+  * {cl_mutable_command_info_khr_TYPE}
+  * {cl_command_buffer_update_type_khr_TYPE}
+  * {cl_mutable_dispatch_asserts_khr_TYPE}
+  * {cl_mutable_dispatch_config_khr_TYPE}
+  * {cl_mutable_dispatch_exec_info_khr_TYPE}
+  * {cl_mutable_dispatch_arg_khr_TYPE}
+
+=== New Enums
+
+  * {cl_device_info_TYPE}
+  ** {CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR}
+  * {cl_ndrange_kernel_command_properties_khr_TYPE}
+  ** {CL_MUTABLE_DISPATCH_ASSERTS_KHR}
+  ** {CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR}
+  * {cl_mutable_dispatch_asserts_khr_TYPE}
+  ** {CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR}
+  * {cl_mutable_dispatch_fields_khr_TYPE}
+  ** {CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR}
+  ** {CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR}
+  ** {CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR}
+  ** {CL_MUTABLE_DISPATCH_ARGUMENTS_KHR}
+  ** {CL_MUTABLE_DISPATCH_EXEC_INFO_KHR}
+  * {cl_mutable_command_info_khr_TYPE}
+  ** {CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR}
+  ** {CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR}
+  ** {CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR}
+  ** {CL_MUTABLE_DISPATCH_KERNEL_KHR}
+  ** {CL_MUTABLE_DISPATCH_DIMENSIONS_KHR}
+  ** {CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR}
+  ** {CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR}
+  ** {CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR}
+  ** {CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR}
+  * {cl_command_buffer_flags_khr_TYPE}
+  ** {CL_COMMAND_BUFFER_MUTABLE_KHR}
+  * {cl_command_buffer_properties_khr_TYPE}
+  ** {CL_COMMAND_BUFFER_MUTABLE_DISPATCH_ASSERTS_KHR}
+  * {cl_command_buffer_update_type_khr_TYPE}
+  ** {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}
+  * New Error Codes
+  ** {CL_INVALID_MUTABLE_COMMAND_KHR}
+
+=== Sample Code
+
+==== Sample Application Updating the Arguments to a Mutable-dispatch Between Command-buffer Submissions
+
+[source,opencl]
+----
+#define CL_CHECK(ERROR)                             \
+  if (ERROR) {                                      \
+    std::cerr << "OpenCL error: " << ERROR << "\n"; \
+    return ERROR;                                   \
+  }
+
+int main() {
+  cl_platform_id platform;
+  CL_CHECK(clGetPlatformIDs(1, &platform, nullptr));
+  cl_device_id device;
+  CL_CHECK(clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, nullptr));
+
+  cl_mutable_dispatch_fields_khr mutable_capabilities;
+  CL_CHECK(clGetDeviceInfo(device, CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR,
+                           sizeof(mutable_capabilities), &mutable_capabilities,
+                           nullptr));
+  if (!(mutable_capabilities & CL_MUTABLE_DISPATCH_ARGUMENTS_KHR)) {
+    std::cerr
+        << "Device does not support update arguments to a mutable-dispatch, "
+           "skipping example.\n";
+    return 0;
+  }
+
+  cl_int error;
+  cl_context context =
+      clCreateContext(nullptr, 1, &device, nullptr, nullptr, &error);
+  CL_CHECK(error);
+
+  const char* code = R"OpenCLC(
+kernel void vector_addition(global int* tile1, global int* tile2,
+                            global int* res) {
+  size_t index = get_global_id(0);
+  res[index] = tile1[index] + tile2[index];
+}
+)OpenCLC";
+  const size_t length = std::strlen(code);
+
+  cl_program program =
+      clCreateProgramWithSource(context, 1, &code, &length, &error);
+  CL_CHECK(error);
+
+  CL_CHECK(clBuildProgram(program, 1, &device, nullptr, nullptr, nullptr));
+
+  cl_kernel kernel = clCreateKernel(program, "vector_addition", &error);
+  CL_CHECK(error);
+
+  // Set the parameters of the frames
+  constexpr size_t iterations = 60;
+  constexpr size_t elem_size = sizeof(cl_int);
+  constexpr size_t frame_width = 32;
+  constexpr size_t frame_count = frame_width * frame_width;
+  constexpr size_t frame_size = frame_count * elem_size;
+
+  cl_mem input_A_buffers[2] = {nullptr, nullptr};
+  cl_mem input_B_buffers[2] = {nullptr, nullptr};
+  cl_mem output_buffers[2] = {nullptr, nullptr};
+
+  // Create the buffer to swap between even and odd kernel iterations
+  for (size_t i = 0; i < 2; i++) {
+    input_A_buffers[i] =
+        clCreateBuffer(context, CL_MEM_READ_ONLY, frame_size, nullptr, &error);
+    CL_CHECK(error);
+
+    input_B_buffers[i] =
+        clCreateBuffer(context, CL_MEM_READ_ONLY, frame_size, nullptr, &error);
+    CL_CHECK(error);
+
+    output_buffers[i] =
+        clCreateBuffer(context, CL_MEM_WRITE_ONLY, frame_size, nullptr, &error);
+    CL_CHECK(error);
+  }
+
+  cl_command_queue command_queue =
+      clCreateCommandQueue(context, device, 0, &error);
+  CL_CHECK(error);
+
+  // Create command-buffer with mutable flag so we can update it
+  cl_command_buffer_properties_khr properties[3] = {
+      CL_COMMAND_BUFFER_FLAGS_KHR, CL_COMMAND_BUFFER_MUTABLE_KHR, 0};
+  cl_command_buffer_khr command_buffer =
+      clCreateCommandBufferKHR(1, &command_queue, properties, &error);
+  CL_CHECK(error);
+
+  CL_CHECK(clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_A_buffers[0]));
+  CL_CHECK(clSetKernelArg(kernel, 1, sizeof(cl_mem), &input_B_buffers[0]));
+  CL_CHECK(clSetKernelArg(kernel, 2, sizeof(cl_mem), &output_buffers[0]));
+
+  // Instruct the nd-range command to allow for mutable kernel arguments
+  cl_ndrange_kernel_command_properties_khr mutable_properties[] = {
+      CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR,
+      CL_MUTABLE_DISPATCH_ARGUMENTS_KHR, 0};
+
+  // Create command handle for mutating nd-range command
+  cl_mutable_command_khr command_handle = nullptr;
+
+  // Add the nd-range kernel command
+  error = clCommandNDRangeKernelKHR(
+      command_buffer, command_queue, mutable_properties, kernel, 1, nullptr,
+      &frame_count, nullptr, 0, nullptr, nullptr, &command_handle);
+  CL_CHECK(error);
+
+  CL_CHECK(clFinalizeCommandBufferKHR(command_buffer));
+
+  // Prepare for random input generation
+  std::random_device random_device;
+  std::mt19937 random_engine{random_device()};
+  std::uniform_int_distribution<cl_int> random_distribution{
+      std::numeric_limits<cl_int>::min() / 2,
+      std::numeric_limits<cl_int>::max() / 2};
+
+  // Iterate over each frame
+  for (size_t i = 0; i < iterations; i++) {
+    // Set the buffers for the current frame
+    cl_mem input_A_buffer = input_A_buffers[i % 2];
+    cl_mem input_B_buffer = input_B_buffers[i % 2];
+    cl_mem output_buffer = output_buffers[i % 2];
+
+    // Generate input A data
+    std::vector<cl_int> input_a(frame_count);
+    std::generate(std::begin(input_a), std::end(input_a),
+                  [&]() { return random_distribution(random_engine); });
+
+    // Write the generated data to the input A buffer
+    error =
+        clEnqueueWriteBuffer(command_queue, input_A_buffer, CL_FALSE, 0,
+                             frame_size, input_a.data(), 0, nullptr, nullptr);
+    CL_CHECK(error);
+
+    // Generate input B data
+    std::vector<cl_int> input_b(frame_count);
+    std::generate(std::begin(input_b), std::end(input_b),
+                  [&]() { return random_distribution(random_engine); });
+
+    // Write the generated data to the input B buffer
+    error =
+        clEnqueueWriteBuffer(command_queue, input_B_buffer, CL_FALSE, 0,
+                             frame_size, input_b.data(), 0, nullptr, nullptr);
+    CL_CHECK(error);
+
+    // If not executing the first frame
+    if (i != 0) {
+      // Configure the mutable configuration to update the kernel arguments
+      cl_mutable_dispatch_arg_khr arg_0{0, sizeof(cl_mem), &input_A_buffer};
+      cl_mutable_dispatch_arg_khr arg_1{1, sizeof(cl_mem), &input_B_buffer};
+      cl_mutable_dispatch_arg_khr arg_2{2, sizeof(cl_mem), &output_buffer};
+      cl_mutable_dispatch_arg_khr args[] = {arg_0, arg_1, arg_2};
+      cl_mutable_dispatch_config_khr dispatch_config{
+          command_handle,
+          3 /* num_args */,
+          0 /* num_svm_arg */,
+          0 /* num_exec_infos */,
+          0 /* work_dim - 0 means no change to dimensions */,
+          args /* arg_list */,
+          nullptr /* arg_svm_list - nullptr means no change*/,
+          nullptr /* exec_info_list */,
+          nullptr /* global_work_offset */,
+          nullptr /* global_work_size */,
+          nullptr /* local_work_size */};
+
+      // Update the command buffer with the mutable configuration
+      cl_uint num_configs = 1;
+      cl_command_buffer_update_type_khr config_types[1] = {
+          CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR
+      };
+      const void* configs[1] = {&dispatch_config};
+      error = clUpdateMutableCommandsKHR(command_buffer, num_configs,
+                                         config_types, configs);
+
+      CL_CHECK(error);
+    }
+
+    // Enqueue the command buffer
+    error = clEnqueueCommandBufferKHR(0, nullptr, command_buffer, 0, nullptr,
+                                      nullptr);
+    CL_CHECK(error);
+
+    // Allocate memory for the output data
+    std::vector<cl_int> output(frame_count);
+
+    // Read the output data from the output buffer
+    error = clEnqueueReadBuffer(command_queue, output_buffer, CL_TRUE, 0,
+                                frame_size, output.data(), 0, nullptr, nullptr);
+    CL_CHECK(error);
+
+    // Flush and execute the read buffer
+    error = clFinish(command_queue);
+    CL_CHECK(error);
+
+    // Verify the results of the frame
+    for (size_t i = 0; i < frame_count; ++i) {
+      const cl_int result = input_a[i] + input_b[i];
+      if (output[i] != result) {
+        std::cerr << "Error: Incorrect result at index " << i << " - Expected "
+                  << output[i] << " was " << result << std::endl;
+        std::exit(1);
+      }
+    }
+  }
+
+  std::cout << "Result verified\n";
+
+  CL_CHECK(clReleaseCommandBufferKHR(command_buffer));
+  for (size_t i = 0; i < 2; i++) {
+    CL_CHECK(clReleaseMemObject(input_A_buffers[i]));
+    CL_CHECK(clReleaseMemObject(input_B_buffers[i]));
+    CL_CHECK(clReleaseMemObject(output_buffers[i]));
+  }
+  CL_CHECK(clReleaseCommandQueue(command_queue));
+  CL_CHECK(clReleaseKernel(kernel));
+  CL_CHECK(clReleaseProgram(program));
+  CL_CHECK(clReleaseContext(context));
+  CL_CHECK(clReleaseDevice(device));
+  return 0;
+}
+----
+
+=== Issues
+
+. Include simpler, more user friendly, entry-points for updating kernel
+  arguments?
++
+--
+*RESOLVED*: Can be implemented in the ecosystem as a layer on top, if that
+layer proves popular then can be introduced, possibly as another extension
+on top.
+--
+
+. Add a command-buffer clone entry-point for deep copying a command-buffer?
+  Arguments could then be updated and both command-buffers used.
+  Useful for techniques like double buffering.
++
+--
+*RESOLVED*: In the use-case we're targeting a user would only have a handle
+to the original command-buffer, but not the clone, which may limit the
+usefulness of this capability.
+Additionally, an implementation could be complicated by non-trivial deep
+copying of the underlying objects contained in the command-buffer.
+As a result of this new entry-point being an additive change to the
+specification it is omitted, and if its functionality has demand later, it
+may be a introduced as a stand alone extension.
+--
+
+=== Version History
+
+  * Revision 0.9.0, 2022-08-31
+  ** First assigned version (provisional).
+  * Revision 0.9.1, 2023-11-07
+  ** Add type {cl_mutable_dispatch_asserts_khr_TYPE} and its possible values
+     (provisional).
+  * Revision 0.9.2, 2024-06-19
+  ** Change {clUpdateMutableCommandsKHR} API to pass configs as an array rather
+     than linked list (provisional).

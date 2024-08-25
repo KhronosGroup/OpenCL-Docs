@@ -1,20 +1,7 @@
-# Copyright (c) 2013-2023 The Khronos Group Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright 2013-2024 The Khronos Group Inc.
+# SPDX-License-Identifier: Apache-2.0
 
-# Relax NG schema for Khronos Vulkan API Registry XML
-#
-# See https://www.khronos.org/vulkan/
+# Relax NG schema for Khronos API Registry XML
 #
 # This definition is subject to change (mostly in the form of additions)
 
@@ -25,13 +12,13 @@ namespace xsd = "http://www.w3.org/2001/XMLSchema-datatypes"
 start = element registry {
     (
         element comment { text } ? |
-        Platforms  * |
-        Tags       * |
-        Types      * |
-        Enums      * |
-        Commands   * |
-        Feature    * |
-        Extensions *
+        Platforms         * |
+        Tags              * |
+        Types             * |
+        Enums             * |
+        Commands          * |
+        Feature           * |
+        Extensions        *
     ) *
 }
 
@@ -80,15 +67,19 @@ Types = element types {
 # may contain arbitrary C code.
 #   name - name of this type, if not present in the <name> tag
 #   api - matches a <feature> api attribute, if present
+#   alias - name of a type this type aliases
 #   requires - name of another type definition required by this one
+#   bitvalues - for a *Flags type, name of an enum definition that
+#       defines the valid values for parameters of that type
 #   category - if present, 'enum' indicates a matching <enums>
 #       block to generate an enumerated type for, and 'struct'
 #       causes special interpretation of the contents of the type
 #       tag including ... TBD ...
 #       Other allowed values are 'include', 'define', 'handle' and 'bitmask',
-#       which don't change syntactic interpretation but allow organization in
-#       the generated header.
-#   comment - unused
+#       which do not change syntactic interpretation but allow organization
+#       in the generated header.
+#   deprecated - denotes that this type is deprecated, and why.
+#       Valid values: 'aliased', 'true'.
 #   parent - only applicable if category is 'handle'. Notes another type with
 #       the 'handle' category that acts as a parent object for this type.
 #   returnedonly - only applicable if category is 'struct'. Notes that this
@@ -100,6 +91,11 @@ Types = element types {
 #       When present it suppresses generation of automatic validity for the
 #       pNext member of that structure, and instead the structure is added
 #       to pNext chain validity for the parent structures it extends.
+#   allowduplicate - only applicable if category is 'struct'. pNext can include
+#       multiple structures of this type.
+#   objtypeenum - name of VK_OBJECT_TYPE_* API enumerant which corresponds
+#       to this type. Currently only specified for category="handle" types.
+#   comment - descriptive text with no semantic meaning
 # For types without a category, contents include
 #   <apientry /> - substitutes for an APIENTRY-style macro on output
 #   <name> - contains name of the type being defined
@@ -109,21 +105,26 @@ Types = element types {
 # For types with category 'struct', contents should be one or more
 #   <member> - like <param> for a struct or union member
 #       len - if the member is an array, len may be one or more of the following
-#           things, separated by commas (one for each array indirection): another
-#           member of that struct, 'null-terminated' for a string, '1' to indicate it's
-#           just a pointer (used for nested pointers), or a latex equation (prefixed with
-#           'latexmath:')
+#           things, separated by commas (one for each array indirection):
+#           another member of that struct, 'null-terminated' for a string,
+#           '1' to indicate it is just a pointer (used for nested pointers),
+#           or a latex equation (prefixed with 'latexmath:')
 #       altlen - if len has latexmath equations, this contains equivalent C99
 #                expressions separated by commas.
+#       deprecated - denotes that this member is deprecated, and why.
+#           Valid values: 'ignored', 'true'.
 #       externsync - denotes that the member should be externally synchronized
 #           when accessed by Vulkan
 #       optional - whether this value can be omitted by providing NULL (for
 #           pointers), VK_NULL_HANDLE (for handles) or 0 (for bitmasks/values)
+#       selector - for a union member, identifies a separate enum member that
+#           selects which of the union's members are valid
+#       selection - for a member of a union, identifies an enum value indicating the member is valid
 #       noautovalidity - tag stating that no automatic validity language should be generated
 #       values - comma-separated list of legal values, usually used only for sType enums
 #   <comment> - containing arbitrary text (unused)
 #
-# *** There's a problem here: I'm not sure how to represent the <type>
+# *** There is a problem here: I am not sure how to represent the <type>
 # syntax where it may contain arbitrarily interleaved text, <type>, and
 # <enum> child tags. This allows only the syntax
 #   text <type>name</type> text <enum>name</enum> text
@@ -133,11 +134,15 @@ Type = element type {
     attribute api { text } ? ,
     attribute alias { text } ? ,
     attribute requires { text } ? ,
+    attribute bitvalues { text } ? ,
     attribute name { TypeName } ? ,
     attribute category { text } ? ,
+    attribute deprecated { text } ? ,
     attribute parent { TypeName } ? ,
     attribute returnedonly { text } ? ,
     attribute structextends { text } ? ,
+    attribute allowduplicate { text } ? ,
+    attribute objtypeenum { text } ? ,
     Comment ? ,
     (
         (
@@ -155,18 +160,22 @@ Type = element type {
         ) |
         (
             element member {
+                attribute api { text } ? ,
                 attribute len { text } ? ,
                 attribute altlen { text } ? ,
                 attribute externsync { text } ? ,
                 attribute optional { text } ? ,
+                attribute selector { text } ? ,
+                attribute selection { EnumName } ? ,
                 attribute noautovalidity { text } ? ,
                 attribute values { text } ? ,
+                attribute deprecated { text } ? ,
                 mixed {
                     element type { TypeName } ? ,
                     element name { text } ? ,
                     element enum { EnumName } ? ,
                     element comment { text } ?
-                }
+                } +
             } |
             element comment { text }
         ) *
@@ -179,10 +188,12 @@ Type = element type {
 #   start, end - beginning and end of a numeric range
 #   vendor - owner of the numeric range
 #   type - 'enum' or 'bitmask', if present
+#   bitwidth - bit width of the enum value type.
 #   comment - unused
 Enums = element enums {
     attribute name { text } ? ,
     attribute type { text } ? ,
+    attribute bitwidth { Integer } ? ,
     attribute start { Integer } ? ,
     attribute end { Integer } ? ,
     Vendor ? ,
@@ -216,10 +227,16 @@ Enums = element enums {
 #
 # Other attributes:
 #   api - matches a <feature> api attribute, if present
-#   type - 'u' (unsigned), 'ull' (uint64), or integer if not present
+#   type - 'uint32_t', 'uint64_t', or 'float', if present. There are
+#       certain conditions under which the tag must be present, or absent,
+#       but they are context-dependent and difficult to express in the
+#       RNC syntax.
 #   name - enumerant name
 #   alias - another enumerant this is semantically identical to
-#   comment - unused
+#   protect - additional #ifdef symbol to place around the enum
+#   comment - descriptive text with no semantic meaning
+#   deprecated - denotes that this enum is deprecated, and why.
+#       Valid values: 'aliased', 'ignored', 'true'.
 Enum = element enum {
     (
       (
@@ -242,9 +259,11 @@ Enum = element enum {
           attribute alias { TypeName }
         )
       ) ? &
+      attribute protect { text } ? &
       attribute api { text } ? &
       attribute type { TypeSuffix } ? &
       attribute name { text } &
+      attribute deprecated { text } ? &
       Comment ?
     )
 }
@@ -252,7 +271,7 @@ Enum = element enum {
 # <unused> defines a range of enumerants not currently being used
 #   start, end - beginning and end of an unused numeric range
 #   vendor - unused
-#   comment - unused
+#   comment - descriptive text with no semantic meaning
 Unused = element unused {
     attribute start { Integer } ,
     attribute end { Integer } ? ,
@@ -270,28 +289,46 @@ Commands = element commands {
 #
 # There are two forms of the tag.
 #
-# The first only has 'name' and 'alias' attributes, and no contents.
+# Either form may have an 'api' attribute
+#   api - matches a <feature> api attribute, if present
+#
+# The first form only has 'name' and 'alias' attributes, and no contents.
 # It defines a command alias.
 #
-# The second fully defines a command, and has the following structure:
+# The second form fully defines a command, and has the following structure:
 # The possible attributes are not described in this comment block yet, but
-# are in readme.pdf. The "prefix" and "suffix" attributes are currently
+# are in registry.html. The "prefix" and "suffix" attributes are currently
 # present only in the OpenCL XML registry, where they are currently unused.
 #
 #   <proto> is the C function prototype, including the return type
 #   <param> are function parameters, in order
 #     len - if the member is an array, len may be one or more of the following
-#           things, separated by commas (one for each array indirection): another
-#           member of that struct, 'null-terminated' for a string, '1' to indicate it's
-#           just a pointer (used for nested pointers), or a latex equation (prefixed with
-#           'latexmath:')
+#           things, separated by commas (one for each array indirection):
+#           another member of that struct, 'null-terminated' for a string,
+#           '1' to indicate it is just a pointer (used for nested pointers),
+#           or a latex equation (prefixed with 'latexmath:')
 #     altlen - if len has latexmath equations, this contains equivalent C99
 #              expressions separated by commas.
 #     externsync - denotes that the member should be externally synchronized
 #         when accessed by Vulkan
 #     optional - whether this value can be omitted by providing NULL (for
 #         pointers), VK_NULL_HANDLE (for handles) or 0 (for bitmasks/values)
-#     noautovalidity - tag stating that no automatic validity language should be generated
+#     selector - for a union parameter, identifies a separate enum parameter that
+#         selects which of the union's members are valid
+#     noautovalidity - tag stating that no automatic validity language should be
+#         generated
+#     objecttype - only applicable for parameters representing a handle as
+#         a uint64_t value. Specifies the name of another parameter which is
+#         a VkObjectType or VkDebugReportObjectTypeEXT value specifying
+#         the type of object the handle references.
+#     validstructs - only applicable for parameters which are pointers to
+#         VkBaseInStructure or VkBaseOutStructure types, used as abstract
+#         placeholders. Specifies a comma-separated list of structures which
+#         may be passed in place of the parameter, or anywhere in the pNext
+#         chain of the parameter.
+#     stride - if the member is an array, stride specifies the name of
+#         another member containing the byte stride between consecutive
+#         elements in the array. Is assumed tightly packed if omitted.
 #     <type> is a <type> name, if present
 #     <name> is the function / parameter name, if present (normally should
 #         be, except for void parameters).
@@ -305,16 +342,20 @@ Commands = element commands {
 #       are related to them and also require external synchronization.
 Command = element command {
     (   attribute name { text } ,
-        attribute alias { text } ) |
+        attribute alias { text } ,
+        attribute api { text } ?
+        ) |
     (
+        attribute tasks { text } ? ,
         attribute queues { text } ? ,
         attribute successcodes { text } ? ,
         attribute errorcodes { text } ? ,
         attribute renderpass { text } ? ,
+        attribute videocoding { text } ? ,
         attribute cmdbufferlevel { text } ? ,
-        attribute pipeline { text } ? ,
         attribute prefix { text } ? ,
         attribute suffix { text } ? ,
+        attribute api { text } ? ,
         Comment ? ,
         element proto {
             mixed {
@@ -323,11 +364,16 @@ Command = element command {
             }
         } ,
         element param {
+            attribute api { text } ? ,
             attribute len { text } ? ,
             attribute altlen { text } ? ,
             attribute externsync { text } ? ,
             attribute optional { text } ? ,
+            attribute selector { text } ? ,
             attribute noautovalidity { text } ? ,
+            attribute objecttype { text } ? ,
+            attribute validstructs { text } ? ,
+            attribute stride { text } ? ,
             mixed {
                 element type { TypeName } ? ,
                 element name { text } ?
@@ -357,7 +403,7 @@ Command = element command {
 #   <require> / <remove> contains features to require or remove in
 #                        this version
 #     profile - only require/remove when generated profile matches
-#     comment - unused
+#     comment - descriptive text with no semantic meaning
 Feature = element feature {
     attribute api { text } ,
     Name ,
@@ -368,7 +414,7 @@ Feature = element feature {
     (
         element require {
             ProfileName ? ,
-            ExtensionName ? ,
+            Depends ? ,
             Comment ? ,
             (
                 InterfaceElement |
@@ -391,14 +437,15 @@ Extensions = element extensions {
     Extension *
 }
 
-# Defines the interface of an API <extension>. Like a <feature>
-# tag, but with slightly different attributes:
+# Each <extension> defines the interface of an API <extension>.
+# Like a <feature> tag, but with slightly different attributes:
 #   api - regexp pattern matching one or more API tags, indicating
 #     which APIs the extension is known to work with. The only
 #     syntax supported is <name>{|<name>}* and each name must
 #     exactly match an API being generated (implicit ^$ surrounding).
 #   name - extension name string
 #   number - extension number (positive integer, should be unique)
+#   revision - extension spec revision, must be numeric 'major.minor.patch'
 #   sortorder - order relative to other extensions, default 0
 #   protect - C preprocessor symbol to conditionally define the interface
 #   platform - should be one of the platform names defined in the
@@ -406,27 +453,33 @@ Extensions = element extensions {
 #   author - name of the author (usually a company or project name)
 #   contact - contact responsible for the tag (name and contact information)
 #   type - 'device' or 'instance', if present
-#   requires - commas-separated list of extension names required by this
-#       extension
-#   requiresCore - core version of Vulkan required by the extension, e.g.
-#       "1.1". Defaults to "1.0".
-#   supported - profile name(s) supporting this extension, e.g. 'vulkan'
-#       or 'disabled' to never generate output.
-#   promotedto - Vulkan version or a name of an extension that this
-#       extension was promoted to; e.g. 'VK_VERSION_1_1', or
-#       'VK_KHR_draw_indirect_county'
-#   deprecatedby - Vulkan version or a name of an extension that deprecates
-#       this extension. It may be empty string.
-#       e.g. 'VK_VERSION_1_1', or 'VK_EXT_debug_utils', or ''
-#   obsoletedby - Vulkan version or a name of an extension that obsoletes
-#       this extension. It may be empty string.
-#       e.g. 'VK_VERSION_1_1', or 'VK_EXT_debug_utils', or ''
+#   condition - C preprocessor expression (**TBD**)
+#   depends - boolean expression of API and/or extension names
+#       upon which this extension depends.
+#   supported - comma-separated list of API name(s) supporting this extension,
+#       e.g. 'opencl', or 'disabled' to never generate output.
+#   ratified - comma-separated list of API name(s) for which this extension
+#       has been ratified by Khronos. Defaults to "" if not specified.
+#   promotedto - API version or name of an extension that this
+#       extension was promoted to; e.g. 'CL_VERSION_1_1', or
+#       'cl_khr_semaphore'
+#   deprecatedby - API version or name of an extension that deprecates
+#       this extension. It may be an empty string.
+#       e.g. 'CL_VERSION_1_1', or 'cl_khr_semaphore', or ''
+#   obsoletedby - API version or a name of an extension that obsoletes
+#       this extension. It may be an empty string.
+#       e.g. 'CL_VERSION_1_1', or 'cl_khr_semaphore', or ''
 #   provisional - 'true' if this extension is released provisionally
+#   specialuse - contains one or more tokens separated by commas, indicating
+#       a special purpose of the extension. Tokens may include 'cadsupport',
+#       'd3demulation', 'devtools', 'debugging', and 'glemulation'. Others
+#       may be added in the future.
 # In addition, <require> / <remove> tags also support an api attribute:
 #     api - only require/remove these features for the matching API.
 #       Not a regular expression.
 Extension = element extension {
     Name ,
+    attribute revision { text },
     attribute number { Integer } ? ,
     attribute sortorder { xsd:integer } ?,
     attribute protect { text } ? ,
@@ -434,22 +487,22 @@ Extension = element extension {
     attribute author { text } ? ,
     attribute contact { text } ? ,
     attribute type { text } ? ,
-    attribute requires { text } ? ,
-    attribute requiresCore { text } ? ,
     attribute condition { text } ? ,
+    attribute depends { text } ?,
     attribute supported { StringGroup } ? ,
+    attribute ratified { text } ? ,
     attribute promotedto { text } ? ,
     attribute deprecatedby { text } ? ,
     attribute obsoletedby { text } ? ,
     attribute provisional { text } ? ,
+    attribute specialuse { text } ? ,
     Comment ? ,
     (
         element require {
             attribute api { text } ? ,
             attribute condition { text } ? ,
             ProfileName ? ,
-            ExtensionName ? ,
-            FeatureName ? ,
+            Depends ? ,
             Comment ? ,
             (
                 InterfaceElement |
@@ -485,7 +538,7 @@ InterfaceElement =
     }
 
 # Integers are allowed to be either decimal or C-hex (0x[0-9A-F]+), but
-# XML Schema types don't seem to support hex notation, so we use this
+# XML Schema types do not seem to support hex notation, so we use this
 # as a placeholder.
 Integer = text
 
@@ -505,7 +558,8 @@ StringGroup = text
 # Repeatedly used attributes
 ProfileName = attribute profile { text }
 ExtensionName = attribute extension { text }
-FeatureName = attribute feature { text }
+# Boolean expression of core version and extension names using (),+ operators
+Depends = attribute depends { text }
 Vendor = attribute vendor { text }
 Comment = attribute comment { text }
 Name = attribute name { text }

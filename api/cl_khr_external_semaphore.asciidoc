@@ -1,0 +1,285 @@
+// Copyright 2021-2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_external_semaphore.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2024-03-15
+*Interactions and External Dependencies*::
+  * This extension requires OpenCL 1.2.
+  * The {cl_khr_semaphore_EXT} extension is required as it defines semaphore
+    objects as well as for wait and signal operations on semaphores.
+  * For OpenCL to be able to import external semaphores from other APIs
+    using this extension, the other API is required to provide below
+    mechanisms:
+  ** Ability to export semaphore handles
+  ** Ability to query semaphore handle in the form of one of the handle type
+     supported by OpenCL.
+  * The other APIs that want to use semaphore exported by OpenCL using this
+    extension are required to provide below mechanism:
+  ** Ability to import semaphore handles using handle types exported by
+     OpenCL.
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+  - Ajit Hakke-Patil, NVIDIA
+  - Amit Rao, NVIDIA
+  - Balaji Calidas, QUALCOMM
+  - Ben Ashbaugh, INTEL
+  - Carsten Rohde, NVIDIA
+  - Christoph Kubisch, NVIDIA
+  - Debalina Bhattacharjee, NVIDIA
+  - Faith Ekstrand, INTEL
+  - James Jones, NVIDIA
+  - Jeremy Kemp, IMAGINATION
+  - Joshua Kelly, QUALCOMM
+  - Karthik Raghavan Ravi, NVIDIA
+  - Kedar Patil, NVIDIA
+  - Kevin Petit, ARM
+  - Nikhil Joshi, NVIDIA
+  - Sharan Ashwathnarayan, NVIDIA
+  - Vivek Kini, NVIDIA
+
+=== Description
+
+{cl_khr_semaphore_EXT} introduced semaphores as a new type along with a set of
+APIs for create, release, retain, wait and signal operations on it.
+This extension defines APIs and mechanisms to share semaphores created in an
+external API by importing into and exporting from OpenCL.
+
+This extension defines:
+
+  * New attributes that can be passed as part of
+    {cl_semaphore_properties_khr_TYPE} for specifying properties of external
+    semaphores to be imported or exported.
+  * New attributes that can be passed as part of
+    {cl_semaphore_info_khr_TYPE} for specifying properties of external
+    semaphores to be exported.
+  * An extension to {clCreateSemaphoreWithPropertiesKHR} to accept external
+    semaphore properties allowing to import or export an external semaphore
+    into or from OpenCL.
+  * Semaphore handle types required for importing and exporting semaphores.
+  * Modifications to Wait and Signal API behavior when dealing with external
+    semaphores created from different handle types.
+  * API query exportable semaphores handles using specified handle type.
+
+The layered extensions {cl_khr_external_semaphore_opaque_fd_EXT},
+{cl_khr_external_semaphore_sync_fd_EXT}, and
+{cl_khr_external_semaphore_win32_EXT} define specific external semaphores
+that may be imported into or exported from OpenCL.
+
+=== New Types
+
+  * {cl_external_semaphore_handle_type_khr_TYPE}
+
+=== New Enums
+
+  * {cl_platform_info_TYPE}
+  ** {CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR}
+  ** {CL_PLATFORM_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR}
+  * {cl_device_info_TYPE}
+  ** {CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR}
+  ** {CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR}
+  * {cl_semaphore_properties_khr_TYPE} and {cl_semaphore_info_khr_TYPE}:
+  ** {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR}
+  ** {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR}
+  * {cl_semaphore_info_khr_TYPE}
+  ** {CL_SEMAPHORE_EXPORTABLE_KHR}
+
+=== Sample Code
+
+The following examples use the {cl_khr_external_semaphore_opaque_fd_EXT}
+extension to obtain an external semaphore.
+Similar code can be written using the other layered extensions.
+
+==== Example for Importing a Semaphore Created by Another API in OpenCL in a Single-Device Context
+
+[source,c]
+----
+// Get cl_devices of the platform.
+clGetDeviceIDs(..., &devices, &deviceCount);
+
+// Create cl_context with just first device
+clCreateContext(..., 1, devices, ...);
+
+// Obtain fd/win32 or similar handle for external semaphore to be imported
+// from the other API.
+int fd = getFdForExternalSemaphore();
+
+// Create clSema of type cl_semaphore_khr usable on the only available device
+// assuming the semaphore was imported from the same device.
+
+cl_semaphore_properties_khr sema_props[] =
+        {(cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR,
+         (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
+         (cl_semaphore_properties_khr)CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
+         (cl_semaphore_properties_khr)fd,
+          0};
+
+int errcode_ret = 0;
+cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
+                                                             sema_props,
+                                                             &errcode_ret);
+----
+
+==== Example for Importing a Semaphore Created by Another API in OpenCL in a Multi-device Context for Single Device Usage
+
+[source,c]
+----
+// Get cl_devices of the platform.
+clGetDeviceIDs(..., &devices, &deviceCount);
+
+// Create cl_context with first two devices
+clCreateContext(..., 2, devices, ...);
+
+// Obtain fd/win32 or similar handle for external semaphore to be imported
+// from the other API.
+int fd = getFdForExternalSemaphore();
+
+// Create clSema of type cl_semaphore_khr usable only on device 1
+// assuming the semaphore was imported from the same device.
+cl_semaphore_properties_khr sema_props[] = {
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
+    (cl_semaphore_properties_khr)fd,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR,
+    (cl_semaphore_properties_khr)devices[1],
+    CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR,
+    0
+};
+
+int errcode_ret = 0;
+cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
+                                                             sema_props,
+                                                             &errcode_ret);
+
+----
+
+==== Example for Synchronization Using a Semaphore Created by Another API and Imported in OpenCL
+
+[source,c]
+----
+// Create clSema using one of the above examples of external semaphore creation.
+
+int errcode_ret = 0;
+cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
+                                                             sema_props,
+                                                             &errcode_ret);
+
+// Start the main loop
+
+while (true) {
+    // (not shown) Signal the semaphore from the other API
+
+    // Wait for the semaphore in OpenCL
+    clEnqueueWaitSemaphoresKHR(/*command_queue*/           command_queue,
+                               /*num_sema_objects*/        1,
+                               /*sema_objects*/            &clSema,
+                               /*num_events_in_wait_list*/ 0,
+                               /*event_wait_list*/         NULL,
+                               /*event*/                   NULL);
+
+    // Launch kernel
+    clEnqueueNDRangeKernel(command_queue, ...);
+
+    // Signal the semaphore in OpenCL
+    clEnqueueSignalSemaphoresKHR(/*command_queue*/           command_queue,
+                                 /*num_sema_objects*/        1,
+                                 /*sema_objects*/            &clSema,
+                                 /*num_events_in_wait_list*/ 0,
+                                 /*event_wait_list*/         NULL,
+                                 /*event*/                   NULL);
+
+    // (not shown) Launch work in the other API that waits on 'clSema'
+
+}
+----
+
+==== Example for Synchronization Using a Semaphore Exported by OpenCL
+
+[source,c]
+----
+// Get cl_devices of the platform.
+clGetDeviceIDs(..., &devices, &deviceCount);
+
+// Create cl_context with first two devices
+clCreateContext(..., 2, devices, ...);
+
+// Create clSema of type cl_semaphore_khr usable only on device 1
+cl_semaphore_properties_khr sema_props[] = {
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_TYPE_BINARY_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
+    CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR,
+    (cl_semaphore_properties_khr)CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR,
+    (cl_semaphore_properties_khr)devices[1],
+    CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR,
+    0
+};
+
+int errcode_ret = 0;
+cl_semaphore_khr clSema = clCreateSemaphoreWithPropertiesKHR(context,
+                                                             sema_props,
+                                                             &errcode_ret);
+
+// Application queries handle-type and the exportable handle associated with the semaphore.
+clGetSemaphoreInfoKHR(clSema,
+                      CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,
+                      sizeof(cl_external_semaphore_handle_type_khr),
+                      &handle_type,
+                      &handle_type_size);
+
+// The other API or process can use the exported semaphore handle
+// to import
+int fd = -1;
+if (handle_type == CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR) {
+    clGetSemaphoreHandleForTypeKHR(clSema,
+                                   device,
+                                   CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
+                                   sizeof(int),
+                                   &fd,
+                                   NULL);
+}
+
+// Start the main rendering loop
+
+while (true) {
+    // (not shown) Signal the semaphore from the other API
+
+    // Wait for the semaphore in OpenCL
+    clEnqueueWaitSemaphoresKHR(/*command_queue*/           command_queue,
+                               /*num_sema_objects*/        1,
+                               /*sema_objects*/            &clSema,
+                               /*num_events_in_wait_list*/ 0,
+                               /*event_wait_list*/         NULL,
+                               /*event*/                   NULL);
+
+    // Launch kernel
+    clEnqueueNDRangeKernel(command_queue, ...);
+
+    // Signal the semaphore in OpenCL
+    clEnqueueSignalSemaphoresKHR(/*command_queue*/           command_queue,
+                                 /*num_sema_objects*/        1,
+                                 /*sema_objects*/            &clSema,
+                                 /*num_events_in_wait_list*/ 0,
+                                 /*event_wait_list*/         NULL,
+                                 /*event*/                   NULL);
+
+    // (not shown) Launch work in the other API that waits on 'clSema'
+}
+----
+
+=== Version History
+
+  * Revision 0.9.0, 2021-09-10
+  ** Initial version (provisional).
+  * Revision 0.9.1, 2023-11-16
+  ** Added {CL_SEMAPHORE_EXPORTABLE_KHR}.
+  * Revision 0.9.2, 2023-11-21
+  ** Added re-import function call to {cl_khr_external_semaphore_sync_fd_EXT}
+  * Revision 1.0.0, 2024-03-15
+  ** First non-provisional version.

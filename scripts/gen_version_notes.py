@@ -1,6 +1,6 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
-# Copyright 2019-2023 The Khronos Group Inc.
+# Copyright 2019-2024 The Khronos Group Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 from collections import OrderedDict
@@ -23,9 +23,8 @@ def parse_xml(path):
 
 # File Header:
 def GetHeader():
-    return """// Copyright 2017-2023 The Khronos Group. This work is licensed under a
-// Creative Commons Attribution 4.0 International License; see
-// http://creativecommons.org/licenses/by/4.0/
+    return """// Copyright 2017-2024 The Khronos Group.
+// SPDX-License-Identifier: CC-BY-4.0
 """
 
 
@@ -34,64 +33,91 @@ def GetFooter():
     return """
 """
 
-def FullNote(name, added_in, deprecated_by):
-    # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
-    # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
-    if added_in == "1.0" and deprecated_by == None:
-        return "\n// Intentionally empty, %s has always been present." % name
-    if added_in != "1.0" and deprecated_by == None:
-        return "\nIMPORTANT: {%s} is <<unified-spec, missing before>> version %s." % (name, added_in)
-    if added_in == "1.0" and deprecated_by != None:
-        return "\nIMPORTANT: {%s} is <<unified-spec, deprecated by>> version %s." % (name, deprecated_by)
-    if added_in != "1.0" and deprecated_by != None:
-        return "\nIMPORTANT: {%s} is <<unified-spec, missing before>> version %s and <<unified-spec, deprecated by>> version %s." % (name, added_in, deprecated_by)
+def FullNote(name, is_extension, added_in, deprecated_by):
+    if is_extension:
+        assert deprecated_by == None
+        return "\nIMPORTANT: {%s} is provided by the `%s` extension." % (name, added_in)
+    else:
+        # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
+        # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
+        if added_in == "1.0" and deprecated_by == None:
+            return "\n// Intentionally empty, %s has always been present." % name
+        if added_in != "1.0" and deprecated_by == None:
+            return "\nIMPORTANT: {%s} is {missing_before} version %s." % (name, added_in)
+        if added_in == "1.0" and deprecated_by != None:
+            return "\nIMPORTANT: {%s} is {deprecated_by} version %s." % (name, deprecated_by)
+        if added_in != "1.0" and deprecated_by != None:
+            return "\nIMPORTANT: {%s} is {missing_before} version %s and {deprecated_by} version %s." % (name, added_in, deprecated_by)
 
-def ShortNote(name, added_in, deprecated_by):
-    # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
-    # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
-    if added_in == "1.0" and deprecated_by == None:
-        return "// Intentionally empty, %s has always been present." % name
-    if added_in != "1.0" and deprecated_by == None:
-        return "<<unified-spec, Missing before>> version %s." % added_in
-    if added_in == "1.0" and deprecated_by != None:
-        return "<<unified-spec, Deprecated by>> version %s." % deprecated_by
-    if added_in != "1.0" and deprecated_by != None:
-        return "<<unified-spec, Missing before>> version %s and <<unified-spec, deprecated by>> version %s." % (added_in, deprecated_by)
+def ShortNote(name, is_extension, added_in, deprecated_by):
+    if is_extension:
+        assert deprecated_by == None
+        return "provided by the `%s` extension." % added_in
+    else:
+        # Four patterns: (1) always present in OpenCL, (2) added after 1.0, (3) in
+        # 1.0 but now deprecated, and (4) added after 1.0 but now deprecated.
+        if added_in == "1.0" and deprecated_by == None:
+            return "// Intentionally empty, %s has always been present." % name
+        if added_in != "1.0" and deprecated_by == None:
+            return "{missing_before} version %s." % added_in
+        if added_in == "1.0" and deprecated_by != None:
+            return "{deprecated_by} version %s." % deprecated_by
+        if added_in != "1.0" and deprecated_by != None:
+            return "{missing_before} version %s and {deprecated_by} version %s." % (added_in, deprecated_by)
 
-# Find feature groups that are parents of a feature/require/${entry_type}
-# hierarchy, and then find all the ${entry_type} within each hierarchy:
+# Find feature or extension groups that are parents of a <feature> or
+# <extension> <require> <${entry_type}> tag, and then find all the
+# ${entry_type} within each hierarchy:
 def process_xml(spec, entry_type, note_printer):
     numberOfEntries = 0
     numberOfNewEntries = 0
     numberOfDeprecatedEntries = 0
 
-    for feature in spec.findall('.//feature/require/%s/../..' % entry_type):
-        for entry in feature.findall('.//%s' % entry_type):
-            name = entry.get('name')
+    # Track the APIs which have already had a version file written, to avoid
+    # a couple of cases like CL_DEPTH, which is required by both a core
+    # version and an extension.
+    seen_apis = set()
 
-            numberOfEntries += 1
-            added_in = feature.get('number')
-            deprecated_by = None
+    for feature_type in [ 'feature', 'extension' ]:
+        for feature in spec.findall(f'.//{feature_type}/require/{entry_type}/../..'):
+            for entry in feature.findall(f'.//{entry_type}'):
+                name = entry.get('name')
+                is_extension = feature_type != 'feature'
+                deprecated_by = None
 
-            # All the groups that this specific API ${entry_type} belongs.
-            categories = spec.findall(
-                './/require[@comment]/%s[@name="%s"]/..' % (entry_type, name))
-            for category in categories:
-                comment = category.get('comment')
-                if "deprecated in OpenCL" in comment:
-                    words = comment.split(" ")
-                    assert " ".join(words[-4:-1]) == "deprecated in OpenCL"
-                    assert deprecated_by == None  # Can't deprecate something twice.
-                    deprecated_by = words[-1]
+                numberOfEntries += 1
+                if feature_type == 'feature':
+                    added_in = feature.get('number')
 
-            versionFileName = os.path.join(args.directory, name + ".asciidoc")
-            with open(versionFileName, 'w') as versionFile:
-                versionFile.write(GetHeader())
-                versionFile.write(note_printer(name, added_in, deprecated_by))
-                versionFile.write(GetFooter())
+                    # All the groups that this specific API ${entry_type} belongs.
+                    categories = spec.findall(
+                        './/require[@comment]/%s[@name="%s"]/..' % (entry_type, name))
+                    for category in categories:
+                        comment = category.get('comment')
+                        if "deprecated in OpenCL" in comment:
+                            words = comment.split(" ")
+                            assert " ".join(words[-4:-1]) == "deprecated in OpenCL"
+                            assert deprecated_by == None  # Can't deprecate something twice.
+                            deprecated_by = words[-1]
+                else:
+                    if name in seen_apis:
+                        print(f'WARNING: {name} exists as both a core version and extension API in the XML')
+                        print('This is not currently handled correctly - only the core version dependency is noted')
+                        continue
 
-                numberOfNewEntries += 0 if added_in == "1.0" else 1
-                numberOfDeprecatedEntries += 0 if deprecated_by == None else 1
+                    # Extensions do not allow for deprecation
+                    added_in = feature.get('name')
+
+                seen_apis.add(name)
+
+                versionFileName = os.path.join(args.directory, name + ".asciidoc")
+                with open(versionFileName, 'w') as versionFile:
+                    versionFile.write(GetHeader())
+                    versionFile.write(note_printer(name, is_extension, added_in, deprecated_by))
+                    versionFile.write(GetFooter())
+
+                    numberOfNewEntries += 0 if added_in == "1.0" else 1
+                    numberOfDeprecatedEntries += 0 if deprecated_by == None else 1
 
     print('Found ' + str(numberOfEntries) + ' API ' + entry_type + 's, '
           + str(numberOfNewEntries) + " newer than 1.0, "
