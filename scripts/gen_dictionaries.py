@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # Copyright 2019-2024 The Khronos Group Inc.
 # SPDX-License-Identifier: Apache-2.0
@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
             numberOfFuncs = numberOfFuncs + 1
 
-    # Add extension API functions without links:
+    # Add extension API functions with and without links:
     for extension in spec.findall('extensions/extension/require'):
         for api in extension.findall('command'):
             name = api.get('name')
@@ -110,7 +110,8 @@ if __name__ == "__main__":
             # // clGetGLObjectInfo
             # :clGetGLObjectInfo: pass:q[*clGetGLObjectInfo*]
             apiLinkFile.write('// ' + name + '\n')
-            apiLinkFile.write(':' + name + ': pass:q[*' + name + '*]\n')
+            apiLinkFile.write(':' + name + '_label: pass:q[*' + name + '*]\n')
+            apiLinkFile.write(':' + name + ': <<' + name + ',{' + name + '_label}>>\n')
             apiLinkFile.write('\n')
 
             apiNoLinkFile.write('// ' + name + '\n')
