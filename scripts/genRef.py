@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 # Copyright 2016-2024 The Khronos Group Inc.
 #
@@ -223,7 +223,7 @@ def refPageShell(pageName, pageDesc, fp, head_content = None, sections=None, tai
     """Generate body of a reference page.
 
     - pageName - string name of the page
-    - pageDesc - string short description of the page, or empty string
+    - pageDesc - string short description of the page
     - fp - file to write to
     - head_content - text to include before the sections
     - sections - iterable returning (title,body) for each section.
@@ -245,7 +245,6 @@ def refPageShell(pageName, pageDesc, fp, head_content = None, sections=None, tai
           conventions.extra_refpage_body,
           '',
           sep='\n', file=fp)
-
     if pageDesc.strip() == '':
         pageDesc = 'NO SHORT DESCRIPTION PROVIDED'
         logWarn('refPageHead: no short description provided for', pageName)

@@ -36,13 +36,13 @@ include::{generated}/api/version-notes/clGetPlatformIDs.asciidoc[]
 {clGetPlatformIDs} returns {CL_SUCCESS} if the function is executed
 ifndef::cl_khr_icd[successfully.]
 ifdef::cl_khr_icd[]
-and, if the `<<cl_khr_icd>>` extension is supported, there are a non-zero
+and, if the {cl_khr_icd_EXT} extension is supported, there are a non-zero
 number of platforms available.
 endif::cl_khr_icd[]
 Otherwise, it returns one of the following errors:
 
 ifdef::cl_khr_icd[]
-  * {CL_PLATFORM_NOT_FOUND_KHR} if the `<<cl_khr_icd>>` extension is
+  * {CL_PLATFORM_NOT_FOUND_KHR} if the {cl_khr_icd_EXT} extension is
     supported and zero platforms are available.
 endif::cl_khr_icd[]
   * {CL_INVALID_VALUE} if _num_entries_ is equal to zero and _platforms_ is
@@ -383,34 +383,31 @@ include::{generated}/api/version-notes/CL_DEVICE_TYPE_ACCELERATOR.asciidoc[]
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_CUSTOM.asciidoc[]
   | Specialized devices that implement some of the OpenCL runtime APIs but
-    do not support all required OpenCL functionality.
+    do not support all of the required OpenCL functionality.
 
 | {CL_DEVICE_TYPE_DEFAULT_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_DEFAULT.asciidoc[]
   | The default OpenCL device in the platform.
-    The default OpenCL device must not be a {CL_DEVICE_TYPE_CUSTOM} device.
+    One device in the platform must be returned as the {CL_DEVICE_TYPE_DEFAULT}
+    device when passed as the _device_type_ to {clGetDeviceIDs}.
+    {CL_DEVICE_TYPE_DEFAULT} is only used to query OpenCL devices using
+    {clGetDeviceIDs} or to create OpenCL contexts using
+    {clCreateContextFromType}, and will never be returned in {CL_DEVICE_TYPE}
+    for any OpenCL device.
+    The default OpenCL device must not be a {CL_DEVICE_TYPE_CUSTOM} device
+    unless it is the only device in the platform.
 
 | {CL_DEVICE_TYPE_ALL_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE_ALL.asciidoc[]
-  | All OpenCL devices available in the platform, except for
-    {CL_DEVICE_TYPE_CUSTOM} devices.
+  | All OpenCL devices in the platform.
+    {CL_DEVICE_TYPE_ALL} is only used to query OpenCL devices using
+    {clGetDeviceIDs} or to create OpenCL contexts using
+    {clCreateContextFromType}, and will never be returned in {CL_DEVICE_TYPE}
+    for any OpenCL device.
 
 |====
-
-The device type is purely informational and has no semantic meaning.
-
-Some devices may be more than one type.
-For example, a {CL_DEVICE_TYPE_CPU} device may also be a
-{CL_DEVICE_TYPE_GPU} device, or a {CL_DEVICE_TYPE_ACCELERATOR} device
-may also be some other, more descriptive device type.
-{CL_DEVICE_TYPE_CUSTOM} devices must not be combined with any other
-device types.
-
-One device in the platform should be a {CL_DEVICE_TYPE_DEFAULT} device.
-The default device should also be a more specific device type, such
-as {CL_DEVICE_TYPE_CPU} or {CL_DEVICE_TYPE_GPU}.
 
 // refError
 
@@ -483,10 +480,13 @@ device except for the following queries:
 
 include::{generated}/api/version-notes/CL_DEVICE_TYPE.asciidoc[]
   | {cl_device_type_TYPE}
-      | The type or types of the OpenCL device.
+      | The type of the OpenCL device.
+        The device type is purely informational and has no semantic meaning.
+        The device must report a single device type, which must not be
+        {CL_DEVICE_TYPE_DEFAULT} or {CL_DEVICE_TYPE_ALL}.
 
         Please see the <<device-types-table, Device Types>> table
-        for supported device types and device type combinations.
+        for supported device types and device type descriptions.
 
 | {CL_DEVICE_VENDOR_ID_anchor} footnote:[{fn-vendor-id}]
 
@@ -561,7 +561,7 @@ include::{generated}/api/version-notes/CL_DEVICE_MAX_WORK_GROUP_SIZE.asciidoc[]
         If double precision is not supported,
         {CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE} must return 0.
 
-        If the `<<cl_khr_fp16>>` extension is not supported,
+        If the {cl_khr_fp16_EXT} extension is not supported,
         {CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF} must return 0.
 | {CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR_anchor}   +
   {CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT_anchor}  +
@@ -582,7 +582,7 @@ include::{generated}/api/version-notes/CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR.asciid
         If double precision is not supported,
         {CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE} must return 0.
 
-        If the `<<cl_khr_fp16>>` extension is not supported,
+        If the {cl_khr_fp16_EXT} extension is not supported,
         {CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF} must return 0.
 | {CL_DEVICE_MAX_CLOCK_FREQUENCY_anchor}
 
@@ -671,7 +671,7 @@ endif::cl_khr_il_program[]
         value must be `""` (an empty string).
 
 ifdef::cl_khr_il_program[]
-        A device that supports the `<<cl_khr_il_program>>` extension must
+        A device that supports the {cl_khr_il_program_EXT} extension must
         support the `"SPIR-V"` IL prefix.
 endif::cl_khr_il_program[]
 | {CL_DEVICE_ILS_WITH_VERSION_anchor}
@@ -770,7 +770,7 @@ include::{generated}/api/version-notes/CL_DEVICE_IMAGE_PITCH_ALIGNMENT.asciidoc[
 
 ifdef::cl_khr_image2d_from_buffer[]
 The equivalent {CL_DEVICE_IMAGE_PITCH_ALIGNMENT_KHR_anchor} may be used if
-the `<<cl_khr_image2d_from_buffer>>` extension is supported.
+the {cl_khr_image2d_from_buffer_EXT} extension is supported.
 endif::cl_khr_image2d_from_buffer[]
   | {cl_uint_TYPE}
       | The row pitch alignment size in pixels for 2D images created from a
@@ -786,8 +786,8 @@ endif::cl_khr_image2d_from_buffer[]
 include::{generated}/api/version-notes/CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT.asciidoc[]
 
 ifdef::cl_khr_image2d_from_buffer[]
-The equivalent {CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT_anchor} may be used
-if the `<<cl_khr_image2d_from_buffer>>` extension is supported.
+The equivalent {CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT_KHR_anchor} may be used
+if the {cl_khr_image2d_from_buffer_EXT} extension is supported.
 endif::cl_khr_image2d_from_buffer[]
   | {cl_uint_TYPE}
       | This query specifies the minimum alignment in pixels of the host_ptr
@@ -888,7 +888,7 @@ include::{generated}/api/version-notes/CL_DEVICE_SINGLE_FP_CONFIG.asciidoc[]
 
 include::{generated}/api/version-notes/CL_DEVICE_DOUBLE_FP_CONFIG.asciidoc[]
 
-Also see `<<cl_khr_fp64>>`.
+Also see {cl_khr_fp64_EXT}.
   | {cl_device_fp_config_TYPE}
       | Describes double precision floating-point capability of the OpenCL
         device.
@@ -1360,26 +1360,26 @@ include::{generated}/api/version-notes/CL_DEVICE_EXTENSIONS.asciidoc[]
         The following Khronos extension names must be returned by
         all devices that support OpenCL 1.1:
 
-        `<<cl_khr_byte_addressable_store>>` +
-        `<<cl_khr_global_int32_base_atomics>>` +
-        `<<cl_khr_global_int32_extended_atomics>>` +
-        `<<cl_khr_local_int32_base_atomics>>` +
-        `<<cl_khr_local_int32_extended_atomics*
+        {cl_khr_byte_addressable_store_EXT} +
+        {cl_khr_global_int32_base_atomics_EXT} +
+        {cl_khr_global_int32_extended_atomics_EXT} +
+        {cl_khr_local_int32_base_atomics_EXT} +
+        {cl_khr_local_int32_extended_atomics_EXT}
 
         Additionally, the following Khronos extension names must be returned
         by all devices that support OpenCL 1.2 when and only when the optional
         feature is supported:
 
-        `<<cl_khr_fp64>>`
+        {cl_khr_fp64_EXT}
 
         Additionally, the following Khronos extension names must be returned
         by all devices that support OpenCL 2.0, OpenCL 2.1, or OpenCL 2.2.
         For devices that support OpenCL 3.0, these extension names must
         be returned when and only when the optional feature is supported:
 
-        `<<cl_khr_3d_image_writes>>` +
-        `<<cl_khr_depth_images>>` +
-        `<<cl_khr_image2d_from_buffer>>`
+        {cl_khr_3d_image_writes_EXT} +
+        {cl_khr_depth_images_EXT} +
+        {cl_khr_image2d_from_buffer_EXT}
 
         Please refer to the OpenCL Extension Specification or vendor
         provided documentation for a detailed description of these extensions.
@@ -1577,7 +1577,7 @@ include::{generated}/api/version-notes/CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_P
         sub-groups, {CL_FALSE} otherwise.
 
         This query must return {CL_TRUE} for devices that support the
-        `<<cl_khr_subgroups>>` extension, and must return {CL_FALSE} for
+        {cl_khr_subgroups_EXT} extension, and must return {CL_FALSE} for
         devices that do not support sub-groups.
 
 | {CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES_anchor}
@@ -1813,6 +1813,8 @@ include::{generated}/api/version-notes/CL_DEVICE_UUID_KHR.asciidoc[]
 
         Device UUIDs must be immutable for a given device across processes,
         driver APIs, driver versions, and system reboots.
+
+        {CL_UUID_SIZE_KHR_anchor} is the size of the UUID, in bytes.
 | {CL_DRIVER_UUID_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_DRIVER_UUID_KHR.asciidoc[]
@@ -1820,6 +1822,8 @@ include::{generated}/api/version-notes/CL_DRIVER_UUID_KHR.asciidoc[]
   | {cl_uchar_TYPE}[{CL_UUID_SIZE_KHR}]
       | Returns a universally unique identifier (UUID) for the software driver
         for the device.
+
+        {CL_UUID_SIZE_KHR} is the size of the UUID, in bytes.
 | {CL_DEVICE_LUID_VALID_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_LUID_VALID_KHR.asciidoc[]
@@ -1843,6 +1847,8 @@ include::{generated}/api/version-notes/CL_DEVICE_LUID_KHR.asciidoc[]
         value can be cast to an `LUID` object and must be equal to the locally
         unique identifier of an `IDXGIAdapter1` object that corresponds to the
         OpenCL device.
+
+        {CL_LUID_SIZE_KHR_anchor} is the size of the LUID, in bytes.
 | {CL_DEVICE_NODE_MASK_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_NODE_MASK_KHR.asciidoc[]
@@ -1936,14 +1942,14 @@ include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIE
       | Returns the integer dot product capabilities supported by the
         device.
 
-        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR} is always
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR_anchor} is always
         set, indicating that all implementations that support
-        `<<cl_khr_integer_dot_product>>` must support dot product built-in
+        {cl_khr_integer_dot_product_EXT} must support dot product built-in
         functions and, when SPIR-V is supported, SPIR-V instructions that
         take four-component vectors of 8-bit integers packed into 32-bit
         integers as input.
 
-        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR} is set when dot
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR_anchor} is set when dot
         product built-in functions and, when SPIR-V is supported, SPIR-V
         instructions that take four-component of 8-bit elements as input are
         supported.
@@ -1978,6 +1984,26 @@ include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATIO
         {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR}
         is missing before version 2.0 of the extension.
 endif::cl_khr_integer_dot_product[]
+
+ifdef::cl_khr_kernel_clock[]
+| {CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR.asciidoc[]
+  | {cl_device_kernel_clock_capabilities_khr_TYPE}
+      | Returns the kernel clock capabilities of the device. +
+
+        {CL_DEVICE_KERNEL_CLOCK_SCOPE_DEVICE_KHR_anchor} is set when kernels are
+        allowed to call the `clock_read_device` and `clock_read_hilo_device`
+        OpenCL-C functions.
+
+        {CL_DEVICE_KERNEL_CLOCK_SCOPE_WORK_GROUP_KHR_anchor} is set when kernels
+        are allowed to call the `clock_read_work_group` and
+        `clock_read_hilo_work_group` OpenCL-C functions.
+
+        {CL_DEVICE_KERNEL_CLOCK_SCOPE_SUB_GROUP_KHR_anchor} is set when kernels
+        are allowed to call the `clock_read_sub_group` and
+        `clock_read_hilo_sub_group` OpenCL-C functions.
+endif::cl_khr_kernel_clock[]
 
 ifdef::cl_khr_pci_bus_info[]
 | {CL_DEVICE_PCI_BUS_INFO_KHR_anchor}
@@ -2057,6 +2083,15 @@ include::{generated}/api/version-notes/CL_DEVICE_TERMINATE_CAPABILITY_KHR.asciid
       {CL_DEVICE_TERMINATE_CAPABILITY_CONTEXT_KHR_anchor} - Indicates that
       context termination is supported.
 endif::cl_khr_terminate_context[]
+
+ifdef::cl_ext_cxx_for_opencl[]
+| {CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT.asciidoc[]
+  | {cl_version_TYPE}
+    | Returns the version of the C++ for OpenCL language supported by the
+      device compiler.
+endif::cl_ext_cxx_for_opencl[]
 |====
 
 ifdef::cl_khr_integer_dot_product[]
@@ -2068,11 +2103,28 @@ returned for {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR}:
 |====
 | Feature Bit | Feature Macro
 | {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR}
-  | `__opencl_c_integer_dot_product_input_4x8bit_packed`
+  | {opencl_c_integer_dot_product_input_4x8bit_packed}
 | {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR}
-  | `__opencl_c_integer_dot_product_input_4x8bit`
+  | {opencl_c_integer_dot_product_input_4x8bit}
 |====
 endif::cl_khr_integer_dot_product[]
+
+ifdef::cl_khr_kernel_clock[]
+OpenCL 3 devices must report the following feature macros via
+{CL_DEVICE_OPENCL_C_FEATURES} when the corresponding bit is set in the bitfield
+returned for {CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR}:
+
+[cols="1,1",options="header"]
+|====
+| Feature Bit | Feature Macro
+| {CL_DEVICE_KERNEL_CLOCK_SCOPE_DEVICE_KHR}
+  | {opencl_c_kernel_clock_scope_device}
+| {CL_DEVICE_KERNEL_CLOCK_SCOPE_WORK_GROUP_KHR}
+  | {opencl_c_kernel_clock_scope_work_group}
+| {CL_DEVICE_KERNEL_CLOCK_SCOPE_SUB_GROUP_KHR}
+  | {opencl_c_kernel_clock_scope_sub_group}
+|====
+endif::cl_khr_kernel_clock[]
 
 ifdef::cl_khr_external_semaphore[]
 One of the two queries {CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR} and
@@ -2587,6 +2639,7 @@ Otherwise it may return
 endif::cl_khr_d3d11_sharing[]
 
 
+[[platform-device-partitioning]]
 == Partitioning a Device
 
 NOTE: Partitioning devices is <<unified-spec, missing before>> version 1.2.
@@ -3074,7 +3127,7 @@ returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
 
 ifdef::cl_khr_dx9_media_sharing[]
-The following errors may be returned if the `<<cl_khr_dx9_media_sharing>>`
+The following errors may be returned if the {cl_khr_dx9_media_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_DX9_MEDIA_ADAPTER_KHR} if any of the values of the
@@ -3086,7 +3139,7 @@ extension is supported:
 endif::cl_khr_dx9_media_sharing[]
 
 ifdef::cl_khr_d3d10_sharing[]
-The following errors may be returned if the `<<cl_khr_d3d10_sharing>>`
+The following errors may be returned if the {cl_khr_d3d10_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_D3D10_DEVICE_KHR} if the value of the property
@@ -3099,7 +3152,7 @@ extension is supported:
 endif::cl_khr_d3d10_sharing[]
 
 ifdef::cl_khr_d3d11_sharing[]
-The following errors may be returned if the `<<cl_khr_d3d11_sharing>>`
+The following errors may be returned if the {cl_khr_d3d11_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_D3D11_DEVICE_KHR} if the value of the property
@@ -3112,7 +3165,7 @@ extension is supported:
 endif::cl_khr_d3d11_sharing[]
 
 ifdef::cl_khr_gl_sharing[]
-The following errors may be returned if the `<<cl_khr_gl_sharing>>`
+The following errors may be returned if the {cl_khr_gl_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a context was specified for
@@ -3143,15 +3196,15 @@ extension is supported:
   ** Any of the devices specified in the _devices_ argument cannot support
      OpenCL objects which share the data store of an OpenGL object.
   * {CL_INVALID_PROPERTY} if both {CL_CONTEXT_INTEROP_USER_SYNC}, and any of
-    the properties defined by the `<<cl_khr_gl_sharing>>` extension are
+    the properties defined by the {cl_khr_gl_sharing_EXT} extension are
     defined in _properties_.
 endif::cl_khr_gl_sharing[]
 
 ifdef::cl_khr_terminate_context[]
-The following errors may be returned if the `<<cl_khr_terminate_context>>`
+The following errors may be returned if the {cl_khr_terminate_context_EXT}
 extension is supported:
 
-  * {CL_INVALID_PROPERTY} if the `<<cl_khr_terminate_context>>` extension is
+  * {CL_INVALID_PROPERTY} if the {cl_khr_terminate_context_EXT} extension is
     supported and {CL_CONTEXT_TERMINATE_KHR} is set to {CL_TRUE} in
     _properties_, but not all of the devices associated with the context
     support the ability to support context termination (i.e.
@@ -3229,7 +3282,7 @@ returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
 
 ifdef::cl_khr_dx9_media_sharing[]
-The following errors may be returned if the `<<cl_khr_dx9_media_sharing>>`
+The following errors may be returned if the {cl_khr_dx9_media_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_DX9_MEDIA_ADAPTER_KHR} if any of the values of the
@@ -3241,7 +3294,7 @@ extension is supported:
 endif::cl_khr_dx9_media_sharing[]
 
 ifdef::cl_khr_d3d10_sharing[]
-The following errors may be returned if the `<<cl_khr_d3d10_sharing>>`
+The following errors may be returned if the {cl_khr_d3d10_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_D3D10_DEVICE_KHR} if the value of the property
@@ -3254,7 +3307,7 @@ extension is supported:
 endif::cl_khr_d3d10_sharing[]
 
 ifdef::cl_khr_d3d11_sharing[]
-The following errors may be returned if the `<<cl_khr_d3d11_sharing>>`
+The following errors may be returned if the {cl_khr_d3d11_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_D3D11_DEVICE_KHR} if the value of the property
@@ -3267,7 +3320,7 @@ extension is supported:
 endif::cl_khr_d3d11_sharing[]
 
 ifdef::cl_khr_gl_sharing[]
-The following errors may be returned if the `<<cl_khr_gl_sharing>>`
+The following errors may be returned if the {cl_khr_gl_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR} if a context was specified for
@@ -3298,7 +3351,7 @@ extension is supported:
   ** Any of the devices specified in the _devices_ argument cannot support
      OpenCL objects which share the data store of an OpenGL object.
   * {CL_INVALID_PROPERTY} if both {CL_CONTEXT_INTEROP_USER_SYNC}, and any of
-    the properties defined by the `<<cl_khr_gl_sharing>>` extension are
+    the properties defined by the {cl_khr_gl_sharing_EXT} extension are
     defined in _properties_.
 endif::cl_khr_gl_sharing[]
 

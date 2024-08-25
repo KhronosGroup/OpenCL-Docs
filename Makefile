@@ -14,6 +14,7 @@ EXTOPTIONS := $(foreach ext,$(EXTS),-extension $(ext))
 
 QUIET	    ?=
 VERYQUIET   ?= @
+PYTHON	    ?= python3
 ASCIIDOCTOR ?= asciidoctor
 RM	    = rm -f
 RMRF	    = rm -rf
@@ -72,8 +73,8 @@ SPECREVISION = $(shell echo `git describe --tags --dirty`)
 # This used to be a dependency in the spec html/pdf targets,
 # but that's likely to lead to merge conflicts. Just regenerate
 # when pushing a new spec for review to the sandbox.
-SPECREMARK = from git branch: $(shell echo `git symbolic-ref --short HEAD`) \
-	     commit: $(shell echo `git log -1 --format="%H"`)
+SPECREMARK = from git branch: $(shell echo `git symbolic-ref --short HEAD 2> /dev/null || echo Git branch not available`) \
+	     commit: $(shell echo `git log -1 --format="%H" 2> /dev/null || echo Git commit not available`)
 endif
 # The C++ for OpenCL document revision scheme is aligned with its release date.
 # Revision naming scheme is as follows:
@@ -116,7 +117,7 @@ ADOCCOMMONOPTS	      = -a apispec="$(CURDIR)/api" \
 			-a cspec="$(CURDIR)/c" \
 			-a images="$(CURDIR)/images" \
 			$(ATTRIBOPTS) $(NOTEOPTS) $(VERBOSE) $(ADOCEXTS)
-ADOCOPTS	      = -d book $(ADOCCOMMONOPTS)
+ADOCOPTS	      = --failure-level ERROR -d book $(ADOCCOMMONOPTS)
 
 # Asciidoctor options to build refpages
 #
@@ -459,7 +460,7 @@ $(REFPATH)/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(PYAPIMAP)
 	(cat $(MANDIR)/rewritehead ; \
 	 echo ; echo "# Aliases hard-coded in refpage markup" ; \
 	 sort < $(REFPATH)/rewritebody) > $(REFPATH)/.htaccess
-	echo $(CP) $(MANDIR)/static/*.txt $(REFPATH)
+	$(CP) $(MANDIR)/static/*.txt $(REFPATH)
 
 # These targets are HTML5 ref pages
 #
@@ -493,11 +494,12 @@ $(MANHTMLDIR)/%.html: $(REFPATH)/%.txt $(MANCOPYRIGHT) $(GENDEPENDS) $(KATEXINST
 	$(VERYQUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) \
 	    $(ADOCREFOPTS) -o $@ $<
 
+# This is not formatted as a refpage, so needs a different build rule
 $(MANHTMLDIR)/intro.html: $(REFPATH)/intro.txt $(MANCOPYRIGHT)
 	$(VERYQUIET)echo "Building $@ from $< using default options"
 	$(VERYQUIET)$(MKDIR) $(MANHTMLDIR)
 	$(VERYQUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) \
-	    $(ADOCREFOPTS) -o $@ $<
+	    -o $@ $<
 
 # Targets generated from the XML and registry processing scripts
 #   apimap.py - Python encoding of the registry
@@ -510,9 +512,11 @@ $(MANHTMLDIR)/intro.html: $(REFPATH)/intro.txt $(MANCOPYRIGHT)
 
 REGISTRY       = $(ROOTDIR)/xml
 APIXML	       = $(REGISTRY)/cl.xml
+CFEATURES      = c/features.txt
 GENSCRIPT      = $(SCRIPTS)/gencl.py
 DICTSCRIPT     = $(SCRIPTS)/gen_dictionaries.py
 VERSIONSCRIPT  = $(SCRIPTS)/gen_version_notes.py
+CFEATSCRIPT    = $(SCRIPTS)/gen_c_feature_dictionary.py
 GENSCRIPTOPTS  = $(VERSIONOPTIONS) $(EXTOPTIONS) $(GENSCRIPTEXTRA) -registry $(APIXML)
 GENSCRIPTEXTRA =
 
@@ -538,12 +542,14 @@ extinc: $(METADEPEND)
 $(METADEPEND): $(APIXML) $(GENSCRIPT)
 	$(QUIET)$(MKDIR) $(METAPATH)
 	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(METAPATH) extinc
+	$(QUIET)$(PYTHON) $(CFEATSCRIPT) -features $(CFEATURES) -o $(METAPATH)/c-feature-dictionary.asciidoc
 
 # This generates a single file containing asciidoc attributes for each
 # extension in the spec being built.
 attribs: $(ATTRIBFILE)
 
 $(ATTRIBFILE):
+	$(QUIET)$(MKDIR) $(dir $@)
 	for attrib in $(EXTS) ; do \
 	    echo ":$${attrib}:" ; \
 	done > $@

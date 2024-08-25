@@ -68,10 +68,6 @@ endif::cl_khr_create_command_queue[]
 
 include::{generated}/api/version-notes/CL_QUEUE_PROPERTIES.asciidoc[]
   | {cl_command_queue_properties_TYPE}
-
-ifdef::cl_khr_create_command_queue[]
-or {cl_bitfield_TYPE} if the `<<cl_khr_create_command_queue>>` extension is supported
-endif::cl_khr_create_command_queue[]
       | This is a bitfield and can be set to a combination of the following
         values:
 
@@ -188,12 +184,12 @@ returned in _errcode_ret_:
   * {CL_INVALID_QUEUE_PROPERTIES} if values specified in _properties_ are
     valid but are not supported by the device.
 ifdef::cl_khr_priority_hints[]
-  * {CL_INVALID_QUEUE_PROPERTIES} if the `<<cl_khr_priority_hints>>`
+  * {CL_INVALID_QUEUE_PROPERTIES} if the {cl_khr_priority_hints_EXT}
     extension is supported, the {CL_QUEUE_PRIORITY_KHR} property is
     specified, and the queue is a {CL_QUEUE_ON_DEVICE}.
 endif::cl_khr_priority_hints[]
 ifdef::cl_khr_throttle_hints[]
-  * {CL_INVALID_QUEUE_PROPERTIES} if the `<<cl_khr_throttle_hints>>`
+  * {CL_INVALID_QUEUE_PROPERTIES} if the {cl_khr_throttle_hints_EXT}
     extension is supported, the {CL_QUEUE_THROTTLE_KHR} property is
     specified, and the queue is a {CL_QUEUE_ON_DEVICE}.
 endif::cl_khr_throttle_hints[]
@@ -595,8 +591,8 @@ ifdef::cl_khr_external_memory[]
 include::{generated}/api/version-notes/CL_MEM_DEVICE_HANDLE_LIST_KHR.asciidoc[]
   | {cl_device_id_TYPE}[]
       | Specifies the list of OpenCL devices (terminated with
-        {CL_MEM_DEVICE_HANDLE_LIST_END_KHR}) to associate with the external
-        memory handle.
+        {CL_MEM_DEVICE_HANDLE_LIST_END_KHR_anchor}) to associate with the
+        external memory handle.
 endif::cl_khr_external_memory[]
 |====
 
@@ -632,8 +628,9 @@ returned in _errcode_ret_:
     in the <<memory-flags-table,Memory Flags>> table.
   * {CL_INVALID_BUFFER_SIZE} if _size_ is 0, or if _size_ is greater than
     {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for all devices in _context_, or if
-    {CL_MEM_USE_HOST_PTR} is set in _flags_ and _host_ptr_ is a pointer returned by
-    {clSVMAlloc} and _size_ is greater than the size passed to {clSVMAlloc}.
+    {CL_MEM_USE_HOST_PTR} or {CL_MEM_COPY_HOST_PTR} is set in _flags_ and
+    _host_ptr_ is a pointer returned by {clSVMAlloc} and _size_ is greater than
+    the size passed to {clSVMAlloc}.
   * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
     {CL_MEM_COPY_HOST_PTR} are set in _flags_ or if _host_ptr_ is not `NULL`
     but {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} are not set in _flags_.
@@ -2351,7 +2348,7 @@ include::{generated}/api/version-notes/CL_R.asciidoc[]
 include::{generated}/api/version-notes/CL_DEPTH.asciidoc[]
 
 ifdef::cl_khr_depth_images[]
-Also supported if the `<<cl_khr_depth_images>>` extension is supported.
+Also supported if the {cl_khr_depth_images_EXT} extension is supported.
 endif::cl_khr_depth_images[]
   | A single channel image format where the single channel represents a `DEPTH` component.
 | {CL_LUMINANCE_anchor}
@@ -2450,7 +2447,7 @@ include::{generated}/api/version-notes/CL_UNORM_INT8.asciidoc[]
 include::{generated}/api/version-notes/CL_UNORM_INT16.asciidoc[]
 
 ifdef::cl_khr_depth_images[]
-Also supported if the `<<cl_khr_depth_images>>` extension is supported.
+Also supported if the {cl_khr_depth_images_EXT} extension is supported.
 endif::cl_khr_depth_images[]
   | Each channel component is a normalized unsigned 16-bit integer value
 | {CL_UNORM_SHORT_565_anchor}
@@ -2514,7 +2511,7 @@ include::{generated}/api/version-notes/CL_HALF_FLOAT.asciidoc[]
 include::{generated}/api/version-notes/CL_FLOAT.asciidoc[]
 
 ifdef::cl_khr_depth_images[]
-Also supported if the `<<cl_khr_depth_images>>` extension is supported.
+Also supported if the {cl_khr_depth_images_EXT} extension is supported.
 endif::cl_khr_depth_images[]
   | Each channel component is a single precision floating-point value
 |====
@@ -2528,14 +2525,14 @@ The memory layout of this image format is described below:
 
 [width="60%",cols="<10%,<10%,<10%,<10%,<60%"]
 |====
-| R | G | B | A | ... |
+| R | G | B | A | ...
 |====
 
 with the corresponding byte offsets
 
 [width="60%",cols="<10%,<10%,<10%,<10%,<60%"]
 |====
-| 0 | 1 | 2 | 3 | ... |
+| 0 | 1 | 2 | 3 | ...
 |====
 
 Similar, if `image_channel_order` = {CL_RGBA} and `image_channel_data_type` =
@@ -2543,14 +2540,14 @@ Similar, if `image_channel_order` = {CL_RGBA} and `image_channel_data_type` =
 
 [width="60%",cols="<10%,<10%,<10%,<10%,<60%"]
 |====
-| R | G | B | A | ... |
+| R | G | B | A | ...
 |====
 
 with the corresponding byte offsets
 
 [width="60%",cols="<10%,<10%,<10%,<10%,<60%"]
 |====
-| 0 | 2 | 4 | 6 | ... |
+| 0 | 2 | 4 | 6 | ...
 |====
 
 `image_channel_data_type` values of {CL_UNORM_SHORT_565}, {CL_UNORM_SHORT_555},
@@ -2656,7 +2653,7 @@ endif::cl_khr_external_memory[]
   * _num_mip_levels_ must be
 ifndef::cl_khr_mipmap_image[0.]
 ifdef::cl_khr_mipmap_image[]
-    0 unless the `<<cl_khr_mipmap_image>>` extension is supported, in which
+    0 unless the {cl_khr_mipmap_image_EXT} extension is supported, in which
     case it must be a value greater than 1 specifying the number of mipmap
     levels in the image.
 endif::cl_khr_mipmap_image[]
@@ -2871,7 +2868,7 @@ is:
   | {CL_DEPTH} footnote:[{fn-depth-image-requirements}]
 
 ifdef::cl_khr_depth_images[]
-Also supported if the `<<cl_khr_depth_images>>` extension is supported.
+Also supported if the {cl_khr_depth_images_EXT} extension is supported.
 endif::cl_khr_depth_images[]
       | {CL_UNORM_INT16} +
         {CL_FLOAT}
@@ -3037,7 +3034,7 @@ image formats in that API and the corresponding OpenCL image format.
 ifdef::cl_khr_dx9_media_sharing[]
 ==== Image Formats for DirectX 9 Media Surface Sharing
 
-When the `<<cl_khr_dx9_media_sharing>>` extension is supported, image
+When the {cl_khr_dx9_media_sharing_EXT} extension is supported, image
 objects sharing storage with Direct3D 9 surfaces can be created.
 This section describes the Direct3D 9 surface formats that are supported
 when the adapter type is one of the Direct 3D lineage.
@@ -3109,7 +3106,7 @@ endif::cl_khr_dx9_media_sharing[]
 ifdef::cl_khr_d3d10_sharing,cl_khr_d3d11_sharing[]
 ==== Image Formats for Direct3D Texture Sharing
 
-When the `<<cl_khr_d3d10_sharing>>` or `<<cl_khr_d3d11_sharing>>` extensions
+When the {cl_khr_d3d10_sharing_EXT} or {cl_khr_d3d11_sharing_EXT} extensions
 are supported, image objects sharing storage with Direct3D 10 and Direct3D
 11 textures, respectively, can be created.
 The <<dxgi-image-formats-table, DXGI Formats and Corresponding OpenCL Image
@@ -3174,7 +3171,7 @@ endif::cl_khr_d3d10_sharing,cl_khr_d3d11_sharing[]
 ifdef::cl_khr_gl_sharing[]
 ==== Image Formats for OpenGL Texture and Renderbuffer Sharing
 
-When the `<<cl_khr_gl_sharing>>` extension is supported, image objects
+When the {cl_khr_gl_sharing_EXT} extension is supported, image objects
 sharing storage with OpenGL texture and renderbuffer objects can be created.
 The <<opengl-image-formats-table, OpenGL Internal Formats and Corresponding
 OpenCL Internal Formats>> table describes the supported OpenGL image
@@ -3412,7 +3409,7 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 ifdef::cl_khr_mipmap_image[]
-  * {CL_INVALID_MIP_LEVEL} if the `<<cl_khr_mipmap_image>>` extension is
+  * {CL_INVALID_MIP_LEVEL} if the {cl_khr_mipmap_image_EXT} extension is
     supported, and the mip level specified in _origin_ is not a valid level
     for _image_,
 endif::cl_khr_mipmap_image[]
@@ -3585,7 +3582,7 @@ Otherwise, it returns one of the following errors:
   * {CL_MEM_COPY_OVERLAP} if _src_image_ and _dst_image_ are the same image
     object and the source and destination regions overlap.
 ifdef::cl_khr_mipmap_image[]
-  * {CL_INVALID_MIP_LEVEL} if the `<<cl_khr_mipmap_image>>` extension is
+  * {CL_INVALID_MIP_LEVEL} if the {cl_khr_mipmap_image_EXT} extension is
     supported, and the mip level specified in _src_origin_ or _dst_origin_
     is not a valid level for the corresponding _src_image_ or _dst_image_,
 endif::cl_khr_mipmap_image[]
@@ -3706,7 +3703,7 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 ifdef::cl_khr_mipmap_image[]
-  * {CL_INVALID_MIP_LEVEL} if the `<<cl_khr_mipmap_image>>` extension is
+  * {CL_INVALID_MIP_LEVEL} if the {cl_khr_mipmap_image_EXT} extension is
     supported, and the mip level specified in _origin_ is not a valid level
     for _image_,
 endif::cl_khr_mipmap_image[]
@@ -3833,7 +3830,7 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 ifdef::cl_khr_mipmap_image[]
-  * {CL_INVALID_MIP_LEVEL} if the `<<cl_khr_mipmap_image>>` extension is
+  * {CL_INVALID_MIP_LEVEL} if the {cl_khr_mipmap_image_EXT} extension is
     supported, and the mip level specified in _src_origin_ is not a valid
     level for _src_image_,
 endif::cl_khr_mipmap_image[]
@@ -3960,7 +3957,7 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 ifdef::cl_khr_mipmap_image[]
-  * {CL_INVALID_MIP_LEVEL} if the `<<cl_khr_mipmap_image>>` extension is
+  * {CL_INVALID_MIP_LEVEL} if the {cl_khr_mipmap_image_EXT} extension is
     supported, and the mip level specified in _dst_origin_ is not a valid
     level for _dst_image_,
 endif::cl_khr_mipmap_image[]
@@ -4136,7 +4133,7 @@ ifdef::cl_khr_mipmap_image[]
 [[image-mipmap-access]]
 === Specifying Mipmap Levels to Image Operations
 
-When the `<<cl_khr_mipmap_image>>` extension is supported, the
+When the {cl_khr_mipmap_image_EXT} extension is supported, the
 {clEnqueueReadImage}, {clEnqueueWriteImage}, {clEnqueueMapImage},
 {clEnqueueCopyImage}, {clEnqueueCopyImageToBuffer},
 {clEnqueueCopyBufferToImage}, and {clEnqueueFillImage} functions described
@@ -4322,7 +4319,7 @@ Otherwise, it returns one of the following errors:
     required by the OpenCL implementation on the host.
 
 ifdef::cl_khr_dx9_media_sharing[]
-The following errors may be returned if the `<<cl_khr_dx9_media_sharing>>`
+The following errors may be returned if the {cl_khr_dx9_media_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_DX9_MEDIA_SURFACE_KHR} if _param_name_ is
@@ -4331,7 +4328,7 @@ extension is supported:
 endif::cl_khr_dx9_media_sharing[]
 
 ifdef::cl_khr_d3d10_sharing[]
-The following errors may be returned if the `<<cl_khr_d3d10_sharing>>`
+The following errors may be returned if the {cl_khr_d3d10_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_D3D10_RESOURCE_KHR} if _param_name_ is
@@ -4341,7 +4338,7 @@ extension is supported:
 endif::cl_khr_d3d10_sharing[]
 
 ifdef::cl_khr_d3d11_sharing[]
-The following errors may be returned if the `<<cl_khr_d3d11_sharing>>`
+The following errors may be returned if the {cl_khr_d3d11_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_D3D11_RESOURCE_KHR} if _param_name_ is
@@ -4727,19 +4724,19 @@ ifdef::cl_khr_egl_image[]
 
 [open,refpage='clCreateFromEGLImageKHR',desc='Create cl_mem target from EGLImage source',type='protos']
 --
-To create an `EGLImage` target of type {cl_mem} from the `EGLImage` source
+To create an `EGLImage` target of type {cl_mem_TYPE} from the `EGLImage` source
 provided as _image_, call the function
 
 include::{generated}/api/protos/clCreateFromEGLImageKHR.txt[]
 include::{generated}/api/version-notes/clCreateFromEGLImageKHR.asciidoc[]
 
   * _display_ should be of type `EGLDisplay`, cast into the type
-    {CLeglDisplayKHR}.
+    {CLeglDisplayKHR_TYPE}.
   * _image_ should be of type `EGLImageKHR`, cast into the type
     {CLeglImageKHR_TYPE}.
     Assuming no errors are generated in this function, the resulting image
     object will be an `EGLImage` target of the specified `EGLImage` _image_.
-    The resulting {cl_mem} is an image object which may be used normally by
+    The resulting {cl_mem_TYPE} is an image object which may be used normally by
     all OpenCL operations.
     This maps to an `image2d_t` type in OpenCL kernel code.
   * _flags_ is a bit-field that is used to specify usage information about
@@ -4763,7 +4760,7 @@ CL_MEM_READ_WRITE.
 If OpenCL 1.2 is supported, _flags_ also accepts {CL_MEM_HOST_WRITE_ONLY},
 {CL_MEM_HOST_READ_ONLY}, and {CL_MEM_HOST_NO_ACCESS}.
 
-`<<cl_khr_egl_image>>` only requires support for {CL_MEM_READ_ONLY}, and for
+{cl_khr_egl_image_EXT} only requires support for {CL_MEM_READ_ONLY}, and for
 CL_MEM_HOST_NO_ACCESS if OpenCL 1.2 or later is supported.
 For OpenCL 1.1, a {CL_INVALID_OPERATION} will be returned for images which
 do not support host mapping.
@@ -4786,7 +4783,7 @@ returned in _errcode_ret_:
     above.
   * {CL_INVALID_EGL_OBJECT_KHR} if _image_ is not a valid `EGLImage` object.
   * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if the OpenCL implementation is not able
-    to create a {cl_mem} compatible with the provided {CLeglImageKHR_TYPE}
+    to create a {cl_mem_TYPE} compatible with the provided {CLeglImageKHR_TYPE}
     for an implementation-dependent reason (this could be caused by, but not
     limited to, reasons such as unsupported texture formats, etc).
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -4831,7 +4828,7 @@ ifdef::cl_khr_gl_msaa_sharing[]
     `GL_TEXTURE_2D_MULTISAMPLE` and `GL_TEXTURE_2D_MULTISAMPLE_ARRAY` may be
     specified if an OpenGL implementation supporting multi-sample
     two-dimensional textures is supported, and the
-    `<<cl_khr_gl_msaa_sharing>>` extension is supported.
+    {cl_khr_gl_msaa_sharing_EXT} extension is supported.
     Refer to the <<restrictions-on-msaa-images, Restrictions on Multi-Sample
     Images>> section for more information on multi-sample images.
 endif::cl_khr_gl_msaa_sharing[]
@@ -4871,7 +4868,7 @@ endif::cl_khr_gl_msaa_sharing[]
   * an OpenCL 3D image object from an OpenGL 3D texture object.
 
 ifdef::cl_khr_mipmap_image[]
-If both the `<<cl_khr_mipmap_image>>` and `<<cl_khr_gl_sharing>>` extensions
+If both the {cl_khr_mipmap_image_EXT} and {cl_khr_gl_sharing_EXT} extensions
 are supported by the OpenCL device, {clCreateFromGLTexture} may also be used
 to create a mipmapped OpenCL image from a mipmapped OpenGL texture by
 specify a negative value for _miplevel_.
@@ -4944,7 +4941,7 @@ ifdef::cl_khr_gl_depth_images[]
 
 Depth images with an image channel order of {CL_DEPTH_STENCIL} can only be
 created using the {clCreateFromGLTexture} API, and only when the
-`<<cl_khr_gl_depth_images>>` extension is supported.
+{cl_khr_gl_depth_images_EXT} extension is supported.
 
 For the image format given by channel order of {CL_DEPTH_STENCIL} and
 channel data type of {CL_UNORM_INT24}, the depth is stored as an unsigned
@@ -5431,6 +5428,23 @@ handle is used by an OpenCL command queued to a command-queue without being
 acquired.
 This is to guarantee that the state of the memory objects is up-to-date and
 they are accessible to OpenCL.
+
+The following restrictions shall apply -
+  * Each memory object must be acquired only once. Acquiring a memory object 
+    multiple times without releasing it results in implementation-defined
+    behavior.
+  * The acquire must be performed on a command-queue associated with a device
+    that was one of the devices specified via {CL_MEM_DEVICE_HANDLE_LIST_KHR}
+    when the memory object was imported using {clCreateBufferWithProperties} or
+    {clCreateImageWithProperties}. If {CL_MEM_DEVICE_HANDLE_LIST_KHR} was not
+    specified, the acquire can be performed on a command-queue associated with
+    any device in the context.
+  * The memory object will be acquired for all devices specified
+    via {CL_MEM_DEVICE_HANDLE_LIST_KHR} when the memory object was imported
+    using {clCreateBufferWithProperties} or {clCreateImageWithProperties}.
+    If {CL_MEM_DEVICE_HANDLE_LIST_KHR} was not specified, the memory object
+    will be acquired for all devices in the context.
+ 
 See <<cl_khr_external_memory-Sample-Code, "`Example with Acquire /
 Release`">> for more details on how to use this API.
 
@@ -5507,6 +5521,23 @@ Applications must release the memory objects that are acquired using
 commands in the other API.
 This is to guarantee that the state of memory objects is up-to-date and they
 are accessible to the other API.
+
+The following restrictions shall apply -
+  * Each memory object must be released only once. Releasing a memory object 
+    multiple times without acquiring it results in implementation-defined
+    behavior.
+  * The release must be performed on a command-queue associated with a device
+    that was one of the devices specified via {CL_MEM_DEVICE_HANDLE_LIST_KHR}
+    when the memory object was imported using {clCreateBufferWithProperties} or
+    {clCreateImageWithProperties}. If {CL_MEM_DEVICE_HANDLE_LIST_KHR} was not
+    specified, the release can be performed on a command-queue associated with
+    any device in the context.
+  * The memory object will be released for all devices specified via
+    {CL_MEM_DEVICE_HANDLE_LIST_KHR} when the memory object was imported
+    using {clCreateBufferWithProperties} or {clCreateImageWithProperties}.
+    If {CL_MEM_DEVICE_HANDLE_LIST_KHR} was not specified, the memory object
+    will be released for all devices in the context.
+
 See "`Example with Acquire / Release`" provided in
 <<cl_khr_external_memory-Sample-Code>> for more details on how to use this
 API.
@@ -5563,12 +5594,12 @@ operation must create a distinct memory object.
 ==== File Descriptor Handle Types
 
 ifdef::cl_khr_external_memory_opaque_fd[]
-The `<<cl_khr_external_memory_opaque_fd>>` extension extends
+The {cl_khr_external_memory_opaque_fd_EXT} extension extends
 {cl_external_memory_handle_type_khr_TYPE} to support the following new types
 of handles, and adds as a property that may be specified when creating a
 buffer or an image memory object from an external handle:
 
-  * {CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR} specifies a POSIX file
+  * {CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR_anchor} specifies a POSIX file
     descriptor handle that has only limited valid usage outside of OpenCL
     and other compatible APIs.
     It must be compatible with the POSIX system calls `dup`, `dup2`,
@@ -5580,12 +5611,12 @@ buffer or an image memory object from an external handle:
 endif::cl_khr_external_memory_opaque_fd[]
 
 ifdef::cl_khr_external_memory_dma_buf[]
-The `<<cl_khr_external_memory_dma_buf>>` extension extends
+The {cl_khr_external_memory_dma_buf_EXT} extension extends
 {cl_external_memory_handle_type_khr_TYPE} to support the following types of
 handles, and adds as a property that may be specified when creating a buffer
 or an image memory object from an external handle:
 
-  * {CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR} is a file descriptor for a Linux
+  * {CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR_anchor} is a file descriptor for a Linux
     dma_buf.
     It owns a reference to the underlying memory resource represented by its
     memory object.
@@ -5601,39 +5632,13 @@ The imported memory object holds a reference to its payload.
 
 ==== NT Handle Types
 
-ifdef::cl_khr_external_memory_dx[]
-The `<<cl_khr_external_memory_dx>>` extension extends
-{cl_external_memory_handle_type_khr_TYPE} to support the following new types
-of handles, and adds as a property that may be specified when creating a
-buffer or an image memory object from an external handle:
-
-  * {CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR} specifies an NT handle
-    returned by `IDXGIResource1::CreateSharedHandle` referring to a Direct3D
-    10 or 11 texture resource.
-    It owns a reference to the memory used by the Direct3D resource.
-  * {CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR} specifies a global
-    share handle returned by `IDXGIResource::GetSharedHandle` referring to a
-    Direct3D 10 or 11 texture resource.
-    It does not own a reference to the underlying Direct3D resource, and
-    will therefore become invalid when all memory objects and Direct3D
-    resources associated with it are destroyed.
-  * {CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR} specifies an NT handle
-    returned by `ID3D12Device::CreateSharedHandle` referring to a Direct3D
-    12 heap resource.
-    It owns a reference to the resources used by the Direct3D heap.
-  * {CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR} specifies an NT handle
-    returned by `ID3D12Device::CreateSharedHandle` referring to a Direct3D
-    12 committed resource.
-    It owns a reference to the memory used by the Direct3D resource.
-endif::cl_khr_external_memory_dx[]
-
 ifdef::cl_khr_external_memory_win32[]
-The `<<cl_khr_external_memory_win32>>` extension extends
+The {cl_khr_external_memory_win32_EXT} extension extends
 {cl_external_memory_handle_type_khr_TYPE} to support the following new types
 of handles, and adds as a property that may be specified when creating a
 buffer or an image memory object from an external handle:
 
-  * {CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR} specifies an NT handle that
+  * {CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR_anchor} specifies an NT handle that
     has only limited valid usage outside of OpenCL and other compatible
     APIs.
     It must be compatible with the functions `DuplicateHandle`,
@@ -5641,7 +5646,7 @@ buffer or an image memory object from an external handle:
     `SetHandleInformation`.
     It owns a reference to the underlying memory resource represented by its
     memory object.
-  * {CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR} specifies a global
+  * {CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR_anchor} specifies a global
     share handle that has only limited valid usage outside of OpenCL and
     other compatible APIs.
     It is not compatible with any native APIs.
@@ -6142,7 +6147,7 @@ Otherwise, it returns one of the following errors:
     required by the OpenCL implementation on the host.
 
 ifdef::cl_khr_dx9_media_sharing[]
-The following errors may be returned if the `<<cl_khr_dx9_media_sharing>>`
+The following errors may be returned if the {cl_khr_dx9_media_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_DX9_MEDIA_SURFACE_KHR} if _param_name_ is
@@ -6151,7 +6156,7 @@ extension is supported:
 endif::cl_khr_dx9_media_sharing[]
 
 ifdef::cl_khr_d3d10_sharing[]
-The following errors may be returned if the `<<cl_khr_d3d10_sharing>>`
+The following errors may be returned if the {cl_khr_d3d10_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_D3D10_RESOURCE_KHR} if _param_name_ is
@@ -6161,7 +6166,7 @@ extension is supported:
 endif::cl_khr_d3d10_sharing[]
 
 ifdef::cl_khr_d3d11_sharing[]
-The following errors may be returned if the `<<cl_khr_d3d11_sharing>>`
+The following errors may be returned if the {cl_khr_d3d11_sharing_EXT}
 extension is supported:
 
   * {CL_INVALID_D3D11_RESOURCE_KHR} if _param_name_ is
@@ -6213,10 +6218,10 @@ include::{generated}/api/version-notes/clGetGLObjectInfo.asciidoc[]
 
   * _memobj_ is the memory object to query.
   * _gl_object_type_ returns the type of OpenGL object attached to _memobj_
-    and can be {CL_GL_OBJECT_BUFFER}, {CL_GL_OBJECT_TEXTURE2D},
-    {CL_GL_OBJECT_TEXTURE3D}, {CL_GL_OBJECT_TEXTURE2D_ARRAY},
-    {CL_GL_OBJECT_TEXTURE1D}, {CL_GL_OBJECT_TEXTURE1D_ARRAY},
-    {CL_GL_OBJECT_TEXTURE_BUFFER}, or {CL_GL_OBJECT_RENDERBUFFER}.
+    and can be {CL_GL_OBJECT_BUFFER_anchor}, {CL_GL_OBJECT_TEXTURE2D_anchor},
+    {CL_GL_OBJECT_TEXTURE3D_anchor}, {CL_GL_OBJECT_TEXTURE2D_ARRAY_anchor},
+    {CL_GL_OBJECT_TEXTURE1D_anchor}, {CL_GL_OBJECT_TEXTURE1D_ARRAY_anchor},
+    {CL_GL_OBJECT_TEXTURE_BUFFER_anchor}, or {CL_GL_OBJECT_RENDERBUFFER_anchor}.
     If _gl_object_type_ is `NULL`, it is ignored
   * _gl_object_name_ returns the OpenGL object name used to create _memobj_.
     If _gl_object_name_ is `NULL`, it is ignored.
@@ -6264,7 +6269,7 @@ include::{generated}/api/version-notes/clGetGLTextureInfo.asciidoc[]
 .OpenGL texture info that may be queried with {clGetGLTextureInfo}
 [cols=",,",options="header",]
 |====
-| {cl_gl_texture_info} | Return Type | Info. Returned in _param_value_
+| {cl_gl_texture_info_TYPE} | Return Type | Info. Returned in _param_value_
 | {CL_GL_TEXTURE_TARGET_anchor}
 
 include::{generated}/api/version-notes/CL_GL_TEXTURE_TARGET.asciidoc[]
@@ -7144,19 +7149,18 @@ Otherwise, it returns one of the following errors:
 ifdef::cl_khr_egl_image,cl_khr_gl_sharing[]
 ==== Synchronizing Access to Memory Objects Shared With EGL or OpenGL
 
-When sharing objects such as EGL images (if the `<<cl_khr_egl_image>>`
+When sharing objects such as EGL images (if the {cl_khr_egl_image_EXT}
 extension is supported) or OpenGL buffers, textures, and renderbuffers (if
-the `<<cl_khr_gl_sharing>>` extension is supported), in order to ensure data
+the {cl_khr_gl_sharing_EXT} extension is supported), in order to ensure data
 integrity, the application is responsible for synchronizing access to shared
 memory objects through the other API with which such objects are shared.
 
 Failure to provide such synchronization may result in race conditions and
 other undefined behavior including non-portability between implementations.
 
-Prior to acquiring objects shared with the other API via an appropriate
-{clEnqueueAcquire}*** call, the application must ensure that any pending
-operations in that API which accesses the objects specified in _mem_objects_
-have completed.
+Prior to acquiring objects shared with the other API, the application must
+ensure that any pending operations in that API which accesses the objects
+specified in _mem_objects_ have completed.
 
 Depending on the application and the implementation, there are two
 extensions which may be used to synchronize with other APIs:
@@ -7165,14 +7169,14 @@ extensions which may be used to synchronize with other APIs:
 ifdef::cl_khr_egl_image[]
 ===== Synchronization With EGL and EGL Client APIs
 
-When sharing with an EGL context via the `<<cl_khr_egl_image>>` extension,
-if the `<<cl_khr_egl_event>>` extension is supported, and the EGL context in
+When sharing with an EGL context via the {cl_khr_egl_image_EXT} extension,
+if the {cl_khr_egl_event_EXT} extension is supported, and the EGL context in
 question supports fence sync objects, _explicit synchronization_ with EGL or
 EGL client APIs can be achieved as described in the
 <<explicit-sync-using-egl-fences, Explicit Synchronization Using EGL Fence
 Sync Objects>> section.
 
-If the `<<cl_khr_egl_event>>` extension is not supported, completion of EGL
+If the {cl_khr_egl_event_EXT} extension is not supported, completion of EGL
 client API commands may be determined by issuing and waiting for completion
 of commands such as `glFinish` or `vgFinish` on all client API contexts with
 pending references to these objects.
@@ -7182,18 +7186,18 @@ endif::cl_khr_egl_image[]
 ifdef::cl_khr_gl_sharing[]
 ===== Synchronization With OpenGL
 
-When sharing with an OpenGL context via the `<<cl_khr_gl_sharing>>`
+When sharing with an OpenGL context via the {cl_khr_gl_sharing_EXT}
 extension, the OpenCL implementation will ensure that any such pending
 OpenGL operations are complete for an OpenGL context bound to the same
 thread as the OpenCL context. This is referred to as _implicit
 synchronization_.
 
-If the `<<cl_khr_gl_event>>` extension is supported, and the OpenGL context
+If the {cl_khr_gl_event_EXT} extension is supported, and the OpenGL context
 in question supports fence sync objects, _explicit synchronization_ with
 OpenGL can be achieved as described in the <<explicit-sync-using-gl-fences,
 Explicit Synchronization Using OpenGL Fence Sync Objects>> section.
 
-If the `<<cl_khr_gl_event>>` extension is not supported, completion of
+If the {cl_khr_gl_event_EXT} extension is not supported, completion of
 OpenGL commands may be determined by issuing and waiting for completion of a
 `glFinish` command on all OpenGL contexts with pending references to these
 objects.
@@ -7210,16 +7214,15 @@ Note that no synchronization method other than `glFinish` is portable
 between all OpenGL implementations and all OpenCL implementations.
 While this is the only way to ensure completion that is portable to all
 platforms, `glFinish` is an expensive operation and its use should be
-avoided if the `<<cl_khr_egl_event>>` or `<<cl_khr_gl_event>>` extensions
+avoided if the {cl_khr_egl_event_EXT} or {cl_khr_gl_event_EXT} extensions
 are supported on a platform.
 
 
 ===== Synchronizing OpenCL Operations With Other APIs
 
-After releasing a shared memory object via an appropriate
-{clEnqueueRelease}*** call, the application is responsible for ensuring that
-any pending OpenCL operations which access the objects specified in
-_mem_objects_ have completed prior to executing subsequent commands in the
+After releasing a shared memory object, the application is responsible for
+ensuring that any pending OpenCL operations which access the objects specified
+in _mem_objects_ have completed prior to executing subsequent commands in the
 other API which reference these objects.
 
 This may be accomplished portably by calling {clWaitForEvents} with the
@@ -8145,7 +8148,7 @@ endif::cl_khr_mipmap_image[]
 |====
 
 ifdef::cl_khr_mipmap_image[]
-NOTE: When the `<<cl_khr_mipmap_image>>` extension is supported, the sampler
+NOTE: When the {cl_khr_mipmap_image_EXT} extension is supported, the sampler
 properties {CL_SAMPLER_MIP_FILTER_MODE_KHR}, {CL_SAMPLER_LOD_MIN_KHR} and
 {CL_SAMPLER_LOD_MAX_KHR} cannot be specified with any samplers initialized
 in the OpenCL program source.
@@ -8394,7 +8397,7 @@ A program object encapsulates the following information:
 
 [open,refpage='clCreateProgramWithSource',desc='Creates a program object for a context, and loads source code specified by text strings into the program object.',type='protos']
 --
-To creates a program object for a context and load source code into that
+To create a program object for a context and load source code into that
 object, call the function
 
 include::{generated}/api/protos/clCreateProgramWithSource.txt[]
@@ -8424,6 +8427,10 @@ header or implementation-defined source for custom devices that support an
 online compiler.
 OpenCL {cpp} is not supported as an online-compiled kernel language through
 this interface.
+ifdef::cl_ext_cxx_for_opencl[]
+If the {cl_ext_cxx_for_opencl_EXT} extension is supported, the source code
+specified by _strings_ may also be a C++ for OpenCL program source or header.
+endif::cl_ext_cxx_for_opencl[]
 
 // refError
 
@@ -8553,7 +8560,7 @@ The cached executables can be read and loaded by the application, which can
 help significantly reduce the application initialization time.
 
 ifdef::cl_khr_spir[]
-If the `<<cl_khr_spir>>` extension is supported, {clCreateProgramWithBinary}
+If the {cl_khr_spir_EXT} extension is supported, {clCreateProgramWithBinary}
 can be used to load a SPIR binary.
 Once a program object has been created from a SPIR binary, {clBuildProgram}
 can be called to build a program executable or {clCompileProgram} can be
@@ -9087,7 +9094,7 @@ Otherwise, it returns one of the following errors:
 ifdef::cl_khr_il_program[or {clCreateProgramWithILKHR}]
 ifdef::cl_khr_spir[]
   ** {clCreateProgramWithBinary} where `-x spir` is present in _options_,
-     if the `<<cl_khr_spir>>` extension is supported.
+     if the {cl_khr_spir_EXT} extension is supported.
 endif::cl_khr_spir[]
   ** {clCreateProgramWithSource}
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
@@ -9516,6 +9523,13 @@ IMPORTANT: Debugging options are <<unified-spec, missing before>> version 2.0.
     built-in functions that allow you to enqueue commands on a device (refer
     to OpenCL kernel languages specifications).
 
+ifdef::cl_ext_cxx_for_opencl[]
+==== C++ for OpenCL
+
+Applications may pass `-cl-std=CLC\++` to {clCompileProgram} or {clBuildProgram}
+for programs created using {clCreateProgramFromSource} to request the program
+be built as C++ for OpenCL.
+endif::cl_ext_cxx_for_opencl[]
 
 [[linker-options]]
 === Linker Options
@@ -9573,7 +9587,7 @@ ifdef::cl_khr_spir[]
 [[spir-compilation-options]]
 ==== SPIR Compilation Options
 
-If the `<<cl_khr_spir>>` extension is supported, the compile option
+If the {cl_khr_spir_EXT} extension is supported, the compile option
 
 `-x spir`
 
@@ -10256,7 +10270,7 @@ If the argument is of type _queue_t_, the _arg_value_ entry must be a
 pointer to the device queue object.
 
 ifdef::cl_khr_gl_msaa_sharing[]
-If the `<<cl_khr_gl_msaa_sharing>>` extension is supported, then:
+If the {cl_khr_gl_msaa_sharing_EXT} extension is supported, then:
 If the argument is a multi-sample 2D image, the _arg_value_ entry must be a
 pointer to a multi-sample image object.
 If the argument is a multi-sample 2D depth image, the _arg_value_ entry must
@@ -10838,7 +10852,7 @@ To return information about a kernel object, call the function
 include::{generated}/api/protos/clGetKernelSubGroupInfo.txt[]
 include::{generated}/api/version-notes/clGetKernelSubGroupInfo.asciidoc[]
 
-Also see `<<cl_khr_subgroups>>`.
+Also see {cl_khr_subgroups_EXT}.
 
   * _kernel_ specifies the kernel object being queried.
   * _device_ identifies a specific device in the list of devices associated with
@@ -10877,7 +10891,10 @@ Also see `<<cl_khr_subgroups>>`.
 
 include::{generated}/api/version-notes/CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE.asciidoc[]
 
-Also see `<<cl_khr_subgroups>>`.
+ifdef::cl_khr_subgroups[]
+The equivalent {CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR_anchor} may be used if
+the {cl_khr_subgroups_EXT} extension is supported.
+endif::cl_khr_subgroups[]
   | {size_t_TYPE}*
       | {size_t_TYPE}
           | Returns the maximum sub-group size for this kernel.
@@ -10894,7 +10911,10 @@ Also see `<<cl_khr_subgroups>>`.
 
 include::{generated}/api/version-notes/CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE.asciidoc[]
 
-Also see `<<cl_khr_subgroups>>`.
+ifdef::cl_khr_subgroups[]
+The equivalent {CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR_anchor} may be used if
+the {cl_khr_subgroups_EXT} extension is supported.
+endif::cl_khr_subgroups[]
   | {size_t_TYPE}*
       | {size_t_TYPE}
           | Returns the number of sub-groups that will be present in each
@@ -10912,7 +10932,7 @@ Also see `<<cl_khr_subgroups>>`.
 
 include::{generated}/api/version-notes/CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT.asciidoc[]
 
-Also see `<<cl_khr_subgroups>>`.
+Also see {cl_khr_subgroups_EXT}.
   | {size_t_TYPE}
       | {size_t_TYPE}[]
           | Returns the local size that will generate the requested number
@@ -10933,7 +10953,7 @@ Also see `<<cl_khr_subgroups>>`.
 
 include::{generated}/api/version-notes/CL_KERNEL_MAX_NUM_SUB_GROUPS.asciidoc[]
 
-Also see `<<cl_khr_subgroups>>`.
+Also see {cl_khr_subgroups_EXT}.
   | ignored
       | {size_t_TYPE}
           | This provides a mechanism for the application to query the
@@ -10949,7 +10969,7 @@ Also see `<<cl_khr_subgroups>>`.
 
 include::{generated}/api/version-notes/CL_KERNEL_COMPILE_NUM_SUB_GROUPS.asciidoc[]
 
-Also see `<<cl_khr_subgroups>>`.
+Also see {cl_khr_subgroups_EXT}.
   | ignored
       | {size_t_TYPE}
           | Returns the number of sub-groups per work-group specified in the kernel
@@ -11016,7 +11036,7 @@ ifdef::cl_khr_spir[]
   * is created with {clCreateProgramWithBinary} and the program executable
     is built with the `-cl-kernel-arg-info` and `-x spir` options specified
     in the _options_ argument to {clBuildProgram} or {clCompileProgram}, if
-    the `<<cl_khr_spir>>` extension is supported; or,
+    the {cl_khr_spir_EXT} extension is supported; or,
 endif::cl_khr_spir[]
   * is created with {clCreateProgramWithSource} and the program executable
     is built with the `-cl-kernel-arg-info option` specified in the
@@ -11080,15 +11100,33 @@ include::{generated}/api/version-notes/CL_KERNEL_ARG_TYPE_QUALIFIER.asciidoc[]
         for the argument given by _arg_index_.
         The returned values can be:
 
-        {CL_KERNEL_ARG_TYPE_CONST_anchor}
-        footnote:[{fn-kernel-arg-type-qualifier}]
-        footnote:[{fn-kernel-arg-type-const-addr-space}] +
+        {CL_KERNEL_ARG_TYPE_CONST_anchor} +
         {CL_KERNEL_ARG_TYPE_RESTRICT_anchor} +
         {CL_KERNEL_ARG_TYPE_VOLATILE_anchor} +
         {CL_KERNEL_ARG_TYPE_PIPE_anchor}, or +
         {CL_KERNEL_ARG_TYPE_NONE_anchor}
 
-        {CL_KERNEL_ARG_TYPE_NONE} is returned for all parameters passed by
+        {CL_KERNEL_ARG_TYPE_CONST} is returned if the kernel argument is a
+        pointer and the referenced type is declared with the `const` qualifier.
+        For example, a kernel argument declared as `global int const*` returns
+        {CL_KERNEL_ARG_TYPE_CONST} but a kernel argument declared as `global
+        int* const` does not.
+        Additionally, {CL_KERNEL_ARG_TYPE_CONST} is returned if the kernel
+        argument is declared with the `constant` address space qualifier.
+
+        {CL_KERNEL_ARG_TYPE_RESTRICT} is returned if the pointer type is marked
+        `restrict`.
+        For example, `global int* restrict` returns
+        {CL_KERNEL_ARG_TYPE_RESTRICT}.
+
+        {CL_KERNEL_ARG_TYPE_VOLATILE} is returned for
+        {CL_KERNEL_ARG_TYPE_QUALIFIER} if the kernel argument is a pointer and
+        the referenced type is declared with the `volatile` qualifier.
+        For example, a kernel argument declared as `global int volatile*`
+        returns {CL_KERNEL_ARG_TYPE_VOLATILE} but a kernel argument declared as
+        `global int* volatile` does not.
+
+        {CL_KERNEL_ARG_TYPE_NONE} is returned for all kernel arguments passed by
         value.
 | {CL_KERNEL_ARG_NAME_anchor}
 
@@ -11813,7 +11851,7 @@ include::{generated}/api/version-notes/CL_EVENT_COMMAND_QUEUE.asciidoc[]
         For user event objects, a `NULL` value is returned.
 
 ifdef::cl_khr_command_buffer_multi_device[]
-        If the `<<cl_khr_command_buffer_multi_device>>` extension is
+        If the {cl_khr_command_buffer_multi_device_EXT} extension is
         supported, for events returned by a command-buffer enqueue operation
         to multiple command-queues, `NULL` is returned.
 endif::cl_khr_command_buffer_multi_device[]
@@ -11854,7 +11892,7 @@ include::{generated}/api/version-notes/CL_EVENT_COMMAND_EXECUTION_STATUS.asciido
         *errcode_ret* values.
 
 ifdef::cl_khr_command_buffer_multi_device[]
-        If the `<<cl_khr_command_buffer_multi_device>>` extension is
+        If the {cl_khr_command_buffer_multi_device_EXT} extension is
         supported, for events returned by a command-buffer enqueue operation
         to multiple command-queues the semantics of execution status is as
         follows:
@@ -12096,6 +12134,17 @@ ifdef::cl_khr_egl_event[]
 include::{generated}/api/version-notes/CL_COMMAND_EGL_FENCE_SYNC_OBJECT_KHR.asciidoc[]
 endif::cl_khr_egl_event[]
 
+ifdef::cl_khr_external_memory[]
+| {clEnqueueAcquireExternalMemObjectsKHR}
+  | {CL_COMMAND_ACQUIRE_EXTERNAL_MEM_OBJECTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_ACQUIRE_EXTERNAL_MEM_OBJECTS_KHR.asciidoc[]
+| {clEnqueueReleaseExternalMemObjectsKHR}
+  | {CL_COMMAND_RELEASE_EXTERNAL_MEM_OBJECTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_RELEASE_EXTERNAL_MEM_OBJECTS_KHR.asciidoc[]
+endif::cl_khr_external_memory[]
+
 ifdef::cl_khr_gl_sharing[]
 | {clEnqueueAcquireGLObjects}
   | {CL_COMMAND_ACQUIRE_GL_OBJECTS_anchor}
@@ -12113,6 +12162,17 @@ ifdef::cl_khr_gl_event[]
 
 include::{generated}/api/version-notes/CL_COMMAND_GL_FENCE_SYNC_OBJECT_KHR.asciidoc[]
 endif::cl_khr_gl_event[]
+
+ifdef::cl_khr_semaphore[]
+| {clEnqueueSignalSemaphoresKHR}
+  | {CL_COMMAND_SEMAPHORE_SIGNAL_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_SEMAPHORE_SIGNAL_KHR.asciidoc[]
+| {clEnqueueWaitSemaphoresKHR}
+  | {CL_COMMAND_SEMAPHORE_WAIT_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_COMMAND_SEMAPHORE_WAIT_KHR.asciidoc[]
+endif::cl_khr_semaphore[]
 
 |====
 
@@ -12317,7 +12377,7 @@ include::{generated}/api/protos/clCreateEventFromEGLSyncKHR.txt[]
 include::{generated}/api/version-notes/clCreateEventFromEGLSyncKHR.asciidoc[]
 
   * _context_ is a valid OpenCL context created from an OpenGL context or
-    share group, using the `<<cl_khr_gl_sharing>>` extension.
+    share group, using the {cl_khr_gl_sharing_EXT} extension.
   * _sync_ is the name of a sync object of type `EGL_SYNC_FENCE_KHR` created
     with respect to `EGLDisplay` _display_.
   * _display_ is the `EGLDisplay` handle.
@@ -12348,7 +12408,7 @@ When the event object is deleted, the reference will be removed from the EGL
 sync object.
 
 Events returned from {clCreateEventFromEGLSyncKHR} may only be consumed by
-{clEnqueueAcquire}*** commands.
+commands to acquire and release memory objects.
 Passing such events to any other CL API that enqueues commands will generate
 a {CL_INVALID_EVENT} error.
 
@@ -12371,7 +12431,7 @@ returned in _errcode_ret_:
 [[explicit-sync-using-egl-fences]]
 ===== Explicit Synchronization Using EGL Fence Sync Objects
 
-If the `<<cl_khr_egl_event>>` extension is supported, event objects created
+If the {cl_khr_egl_event_EXT} extension is supported, event objects created
 with {clCreateEventFromEGLsyncKHR} provide another method of coordinating
 sharing between EGL / EGL client API objects, and OpenCL.
 
@@ -12408,7 +12468,7 @@ include::{generated}/api/protos/clCreateEventFromGLsyncKHR.txt[]
 include::{generated}/api/version-notes/clCreateEventFromGLsyncKHR.asciidoc[]
 
   * _context_ is a valid OpenCL context created from an OpenGL context or
-    share group, using the `<<cl_khr_gl_sharing>>` extension.
+    share group, using the {cl_khr_gl_sharing_EXT} extension.
   * _sync_ is the name of a sync object in the GL share group associated
     with _context_.
   * _errcode_ret_ will return an appropriate error code.
@@ -12452,7 +12512,7 @@ sync object.
 
 Events returned from {clCreateEventFromGLsyncKHR} can be used in the
 _event_wait_list_ argument to {clEnqueueAcquireGLObjects} and CL APIs that
-take a {cl_event} as an argument but do not enqueue commands.
+take a {cl_event_TYPE} as an argument but do not enqueue commands.
 Passing such events to any other CL API that enqueues commands will generate
 a {CL_INVALID_EVENT} error.
 --
@@ -12461,7 +12521,7 @@ a {CL_INVALID_EVENT} error.
 [[explicit-sync-using-opengl-fences]]
 ===== Explicit Synchronization Using OpenGL Fence Sync Objects
 
-If the `<<cl_khr_gl_event>>` extension is supported, event objects created
+If the {cl_khr_gl_event_EXT} extension is supported, event objects created
 with {clCreateEventFromGLsyncKHR} provide another method of coordinating
 sharing of buffers and images between OpenGL and OpenCL.
 
@@ -12722,7 +12782,7 @@ ifdef::cl_khr_semaphore[]
 == Semaphores
 
 This section describes the semaphore types and functions defined by the
-`<<cl_khr_semaphore>>` extension.
+{cl_khr_semaphore_EXT} extension.
 
 === Semaphore Types
 
@@ -12731,14 +12791,15 @@ This section describes the semaphore types and functions defined by the
 
   * {cl_semaphore_type_khr_TYPE} represent the different types of
     semaphores.
-  ** It is mandatory to support {CL_SEMAPHORE_TYPE_BINARY_KHR}.
+// TODO: This isn't a very good anchor for {CL_SEMAPHORE_TYPE_BINARY_KHR}...
+  ** It is mandatory to support {CL_SEMAPHORE_TYPE_BINARY_KHR_anchor}.
   * {cl_semaphore_properties_khr_TYPE} represents properties associated with
     semaphores.
   ** {CL_SEMAPHORE_TYPE_KHR} must be supported.
   * {cl_semaphore_info_khr_TYPE} represents queries for additional
     information about semaphores.
   ** All enums described in the "`New API Enums`" section of the
-     `<<cl_khr_semaphore>>` extension for cl_semaphore_info_khr_TYPE} must
+     {cl_khr_semaphore_EXT} extension for {cl_semaphore_info_khr_TYPE} must
      be supported.
   * {cl_semaphore_payload_khr_TYPE} represents payload values of semaphores.
   * {cl_semaphore_khr_TYPE} represent semaphore objects.
@@ -12775,7 +12836,7 @@ properties by {cl_semaphore_properties_khr_TYPE} that can be passed to
 | {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR_anchor}
   | {cl_device_id_TYPE}[]
       | Specifies the list of OpenCL devices (terminated with
-        {CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR}) to associate with the
+        {CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR_anchor}) to associate with the
         semaphore.
         Only a single device is permitted in the list.
 
@@ -12785,7 +12846,7 @@ ifdef::cl_khr_external_semaphore[]
 include::{generated}/api/version-notes/CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR.asciidoc[]
   | {cl_external_semaphore_handle_type_khr_TYPE}[]
       | Specifies the list of semaphore handle type properties (terminated
-        with {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR}) that can be
+        with {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR_anchor}) that can be
         used to export the semaphore being created.
 endif::cl_khr_external_semaphore[]
 |====
@@ -12851,6 +12912,10 @@ ifdef::cl_khr_external_semaphore[]
 
 [open,refpage='clGetSemaphoreHandleForTypeKHR',desc='Export external handle from a semaphore',type='protos']
 --
+
+Export operations have the same transference as the specified handle type's import operations. Additionally, exporting a semaphore payload to a handle with copy transference has the same side effects on the source semaphore's payload as executing a semaphore wait operation.
+
+Please refer to handle specific documentation for more details on transference requirements per handle type.
 To export an external handle from a semaphore, call the function
 
 include::{generated}/api/protos/clGetSemaphoreHandleForTypeKHR.txt[]
@@ -12865,7 +12930,7 @@ include::{generated}/api/protos/clGetSemaphoreHandleForTypeKHR.txt[]
   * _handle_size_ specifies the size of memory pointed by _handle_ptr_.
   * _handle_ptr_ is a pointer to memory where the exported external handle
     is returned.
-    If _param_value_ is `NULL`, it is ignored.
+    If _handle_ptr_ is `NULL`, it is ignored.
   * _handle_size_ret_ returns the actual size in bytes for the external
     handle.
     If _handle_size_ret_ is `NULL`, it is ignored.
@@ -12904,53 +12969,19 @@ Otherwise, it returns one of the following errors:
 
 === Importing Semaphore External Handles
 
-Applications can import a semaphore payload into an existing semaphore using
-an external semaphore handle.
-The effects of the import operation will be either temporary or permanent,
-as specified by the application.
-If the import is temporary, the implementation must restore the semaphore to
-its prior permanent state after submitting the next semaphore wait
-operation.
-Performing a subsequent temporary import on a semaphore before performing a
-semaphore wait has no effect on this requirement; the next wait submitted on
-the semaphore must still restore its last permanent state.
-A permanent payload import behaves as if the target semaphore was destroyed,
-and a new semaphore was created with the same handle but the imported
-payload.
-Because importing a semaphore payload temporarily or permanently detaches
-the existing payload from a semaphore, similar usage restrictions to those
-applied to {clReleaseSemaphoreKHR} are applied to any command that imports a
-semaphore payload.
-Which of these import types is used is referred to as the import operation's
-permanence.
-Each handle type supports either one or both types of permanence.
+Applications can import a semaphore payload by creating a semaphore from an external handle. The
+implementation must perform the import operation by either referencing or copying the payload
+referred to by the specified external semaphore handle, depending on the handle's type. When using
+handle types with reference transference, importing a payload to a semaphore adds the semaphore to
+the set of all semaphores sharing that payload. This set includes the semaphore from which the payload
+was exported. Semaphore signaling and waiting operations performed on any semaphore in the set must
+behave as if the set were a single semaphore. Importing a payload using handle types with copy
+transference creates a duplicate copy of the payload at the time of import, but makes no further
+reference to it. Semaphore signaling and waiting operations performed on the target of copy imports
+must not affect any other semaphore or payload.
 
-The implementation must perform the import operation by either referencing
-or copying the payload referred to by the specified external semaphore
-handle, depending on the handle's type.
-The import method used is referred to as the handle type's transference.
-When using handle types with reference transference, importing a payload to
-a semaphore adds the semaphore to the set of all semaphores sharing that
-payload.
-This set includes the semaphore from which the payload was exported.
-Semaphore signaling and waiting operations performed on any semaphore in the
-set must behave as if the set were a single semaphore.
-Importing a payload using handle types with copy transference creates a
-duplicate copy of the payload at the time of import, but makes no further
-reference to it.
-Semaphore signaling and waiting operations performed on the target of copy
-imports must not affect any other semaphore or payload.
-
-Export operations have the same transference as the specified handle type's
-import operations.
-Additionally, exporting a semaphore payload to a handle with copy
-transference has the same side effects on the source semaphore's payload as
-executing a semaphore wait operation.
-If the semaphore was using a temporarily imported payload, the semaphore's
-prior permanent payload will be restored.
-
-Please refer to handle specific specifications for more details on
-transference and permanence requirements specific to handle type.
+Please refer to handle specific documentation for more details on transference requirements per
+handle type.
 
 
 === Descriptions of External Semaphore Handle Types
@@ -12970,7 +13001,7 @@ ifdef::cl_khr_external_semaphore_opaque_fd,cl_khr_external_semaphore_sync_fd[]
 
 ifdef::cl_khr_external_semaphore_opaque_fd[]
 
-The `<<cl_khr_external_semaphore_opaque_fd>>` extension extends
+The {cl_khr_external_semaphore_opaque_fd_EXT} extension extends
 {cl_external_semaphore_handle_type_khr_TYPE} to support the following new
 types of handles, and adds as a property that may be specified when creating
 a semaphore from an external handle:
@@ -12989,7 +13020,7 @@ endif::cl_khr_external_semaphore_opaque_fd[]
 
 ifdef::cl_khr_external_semaphore_sync_fd[]
 
-The `<<cl_khr_external_semaphore_sync_fd>>` extension extends
+The {cl_khr_external_semaphore_sync_fd_EXT} extension extends
 {cl_external_semaphore_handle_type_khr_TYPE} to support the following new
 types of handles, and adds as a property that may be specified when creating
 a semaphore from an external handle:
@@ -13019,17 +13050,16 @@ descriptor when exporting a {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} from a
 
 endif::cl_khr_external_semaphore_sync_fd[]
 
-.Transference and Permanence Properties for File Descriptor Handles
-[width="100%",cols="60%,<20%,<20%",options="header"]
+.Transference Properties for File Descriptor Handles
+[width="100%",cols="60%,<40%",options="header"]
 |====
-| Handle Type | Transference | Permanence
+| Handle Type | Transference
 
 ifdef::cl_khr_external_semaphore_opaque_fd[]
 | {CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR.asciidoc[]
   | Reference
-    | Temporary, Permanent
 endif::cl_khr_external_semaphore_opaque_fd[]
 
 ifdef::cl_khr_external_semaphore_sync_fd[]
@@ -13037,7 +13067,6 @@ ifdef::cl_khr_external_semaphore_sync_fd[]
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_SYNC_FD_KHR.asciidoc[]
   | Copy
-    | Temporary
 endif::cl_khr_external_semaphore_sync_fd[]
 |====
 
@@ -13049,14 +13078,17 @@ a successful import.
 ifdef::cl_khr_external_semaphore_sync_fd[]
 [open,refpage='clReImportSemaphoreSyncFdKHR',desc='Re-import sync fd handle into an existing semaphore',type='protos']
 --
-To re-imported a handle of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} into an
+To re-import a handle of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} into an
 existing semaphore, call the function:
 
 include::{generated}/api/protos/clReImportSemaphoreSyncFdKHR.txt[]
 
   * _sema_object_ specifies a valid semaphore object with importable
     properties.
-  * _reimport_props_ must be `NULL`, and is reserved for future use.
+  * _reimport_props_ is an optional list of properties that affect the
+   re-import behavior. The list is terminated with the special property `0`.
+   If no properties are required, _reimport_props_ may be `NULL`. This extension
+   does not define any optional properties.
   * _fd_ specifies an external file descriptor handle to import
 
 Calling {clReImportSemaphoreSyncFdKHR} is equivalent to destroying
@@ -13068,7 +13100,7 @@ of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR}.
 
 // refError
 
-{clGetSemaphoreHandleForTypeKHR} returns {CL_SUCCESS} if the semaphore
+{clReImportSemaphoreSyncFdKHR} returns {CL_SUCCESS} if the semaphore
 handle is re-imported successfully.
 Otherwise, it returns one of the following errors:
 
@@ -13087,45 +13119,13 @@ endif::cl_khr_external_semaphore_sync_fd[]
 endif::cl_khr_external_semaphore_opaque_fd,cl_khr_external_semaphore_sync_fd[]
 
 
-ifdef::cl_khr_external_semaphore_dx_fence,cl_khr_external_semaphore_win32[]
+ifdef::cl_khr_external_semaphore_win32[]
 
 ==== NT Handle Types
 
-ifdef::cl_khr_external_semaphore_dx_fence[]
-
-The `<<cl_khr_external_semaphore_dx_fence>>` extension extends
-{cl_external_semaphore_handle_type_khr_TYPE} to support the following new
-types of handles, and adds as a property that may be specified when creating
-a semaphore from an external handle:
-
-  * {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR} specifies an NT handle returned by
-    `ID3D12Device::CreateSharedHandle` referring to a Direct3D 12 fence, or
-    `ID3D11Device5::CreateFence` referring to a Direct3D 11 fence.
-    It owns a reference to the underlying synchronization primitive
-    associated with the Direct3D fence.
-
-When waiting on semaphores using {clEnqueueWaitSemaphoresKHR} or signaling
-semaphores using {clEnqueueSignalSemaphoresKHR}, the semaphore payload must
-be provided for semaphores created from
-{CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR}.
-
-  * If _sema_objects_ list has a mix of semaphores obtained from
-    {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR} and other handle types, then the
-    _sema_payload_list_ should point to a list of _num_sema_objects_ payload
-    values for each semaphore in _sema_objects_.
-    However, the payload values corresponding to semaphores with type
-    {CL_SEMAPHORE_TYPE_BINARY_KHR} can be set to 0 or will be ignored.
-
-{clEnqueueWaitSemaphoresKHR} and {clEnqueueSignalSemaphoresKHR} may return
-{CL_INVALID_VALUE} if _sema_objects_ list has one or more semaphores
-obtained from {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR} and _sema_payload_list_
-is NULL.
-
-endif::cl_khr_external_semaphore_dx_fence[]
-
 ifdef::cl_khr_external_semaphore_win32[]
 
-The `<<cl_khr_external_semaphore_win32>>` extension extends
+The {cl_khr_external_semaphore_win32_EXT} extension extends
 {cl_external_semaphore_handle_type_khr_TYPE} to support the following new
 types of handles, and adds as a property that may be specified when creating
 a semaphore from an external handle:
@@ -13147,30 +13147,20 @@ a semaphore from an external handle:
 
 endif::cl_khr_external_semaphore_win32[]
 
-.Transference and Permanence Properties for NT Handle Types
-[width="100%",cols="60%,<20%,<20%",options="header"]
+.Transference Properties for NT Handle Types
+[width="100%",cols="60%,<40%",options="header"]
 |====
-| Handle Type | Transference | Permanence
-
-ifdef::cl_khr_external_semaphore_dx_fence[]
-| {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR.asciidoc[]
-  | Reference
-    | Temporary, Permanent
-endif::cl_khr_external_semaphore_dx_fence[]
+| Handle Type | Transference
 
 ifdef::cl_khr_external_semaphore_win32[]
 | {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR.asciidoc[]
   | Reference
-    | Temporary, Permanent
 | {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR.asciidoc[]
   | Reference
-    | Temporary, Permanent
 endif::cl_khr_external_semaphore_win32[]
 |====
 
@@ -13182,7 +13172,7 @@ For handle types defined as NT handles, the application must release
 ownership using the `CloseHandle` system call when the handle is no longer
 needed.
 
-endif::cl_khr_external_semaphore_dx_fence,cl_khr_external_semaphore_win32[]
+endif::cl_khr_external_semaphore_win32[]
 
 endif::cl_khr_external_semaphore[]
 
@@ -13629,7 +13619,7 @@ include::{generated}/api/version-notes/CL_PROFILING_COMMAND_QUEUED.asciidoc[]
         command-queue by the host.
 
 ifdef::cl_khr_command_buffer_multi_device[]
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported,
     for events returned by a command-buffer enqueue operation to multiple
     command-queues, the host time when the command-buffer has been enqueued
     across the command-queues is used.
@@ -13645,7 +13635,7 @@ include::{generated}/api/version-notes/CL_PROFILING_COMMAND_SUBMIT.asciidoc[]
         command-queue.
 
 ifdef::cl_khr_command_buffer_multi_device[]
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported,
     for events returned by a command-buffer enqueue operation to multiple
     command-queues, the host time is used when command-buffer commands have
     been submitted to any command-queue.
@@ -13660,7 +13650,7 @@ include::{generated}/api/version-notes/CL_PROFILING_COMMAND_START.asciidoc[]
         the device.
 
 ifdef::cl_khr_command_buffer_multi_device[]
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported,
     for events returned by a command-buffer enqueue operation to multiple
     command-queues, the host time is used when any device starts executing a
     command-buffer command.
@@ -13675,7 +13665,7 @@ include::{generated}/api/version-notes/CL_PROFILING_COMMAND_END.asciidoc[]
         execution on the device.
 
 ifdef::cl_khr_command_buffer_multi_device[]
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported,
     for events returned by a command-buffer enqueue operation to multiple
     command-queues, the host time is used when the last command-buffer
     command finishes execution on any device.
@@ -13691,7 +13681,7 @@ include::{generated}/api/version-notes/CL_PROFILING_COMMAND_COMPLETE.asciidoc[]
         execution.
 
 ifdef::cl_khr_command_buffer_multi_device[]
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported,
     for events returned by a command-buffer enqueue operation to multiple
     command-queues, the host time is used when the command-buffer has
     completed execution across all command-queues.
@@ -13711,7 +13701,7 @@ incremented.
 ifdef::cl_khr_command_buffer_multi_device[]
 [NOTE]
 ====
-If the `<<cl_khr_command_buffer_multi_device>>` extension is supported, and
+If the {cl_khr_command_buffer_multi_device_EXT} extension is supported, and
 if no reliable device timer sources are available to inform the host side,
 or parallel runtime scheduling makes it impossible to identify a first/last
 command, then an implementation may fallback to reporting
@@ -13735,7 +13725,7 @@ Otherwise, it returns one of the following errors:
     {clEnqueueSvmFree}.
 ifdef::cl_khr_command_buffer_multi_device[]
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported,
     and if _event_ was created from a call to {clEnqueueCommandBufferKHR},
     {CL_PROFILING_INFO_NOT_AVAILABLE} is returned if all the queues passed
     do not have {CL_QUEUE_PROFILING_ENABLE} set.
@@ -13887,7 +13877,7 @@ Undefined behavior may result from the failure to follow this usage
 requirement for all the command-buffers an object is used as a kernel
 argument in.
 
-If using layered extension `<<cl_khr_command_buffer_mutable_dispatch>>`,
+If using layered extension {cl_khr_command_buffer_mutable_dispatch_EXT},
 <<mutable-dispatch-kernel-argument-safe-usage, see related note on safe
 usage>>.
 ====
@@ -13896,7 +13886,7 @@ usage>>.
 ifdef::cl_khr_command_buffer_multi_device[]
 === Command-Buffers and Multiple Devices
 
-If the `<<cl_khr_command_buffer_multi_device>>` extension is supported, a
+If the {cl_khr_command_buffer_multi_device_EXT} extension is supported, a
 command-buffer can contain commands recorded to the queues of different
 devices if a vendor provides support for inter-device
 {cl_sync_point_khr_TYPE} synchronization.
@@ -13985,7 +13975,7 @@ include::{generated}/api/protos/clCreateCommandBufferKHR.txt[]
 include::{generated}/api/version-notes/clCreateCommandBufferKHR.asciidoc[]
 
   * _num_queues_ is the number of command-queues listed in _queues_.
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is not
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not
     supported, this **must** be one.
   * _queues_ is a pointer to a list of command-queues that the
     command-buffer commands will be recorded to.
@@ -14004,7 +13994,7 @@ include::{generated}/api/version-notes/clCreateCommandBufferKHR.asciidoc[]
 +
 [[commandbuffer-properties]]
 .{clCreateCommandBufferKHR} properties
-[cols=",,",options="header",]
+[cols="2,1,3",options="header",]
 |====
 | Recording Properties | Property Value | Description
 
@@ -14035,7 +14025,7 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_DEVICE_SIDE_SYNC_KHR.as
 endif::cl_khr_command_buffer_multi_device[]
 
 ifdef::cl_khr_command_buffer_mutable_dispatch[]
-      {CL_COMMAND_BUFFER_MUTABLE_KHR} - Enables modification of the
+      {CL_COMMAND_BUFFER_MUTABLE_KHR_anchor} - Enables modification of the
       command-buffer, by default command-buffers are immutable.
       If set, commands in the command-buffer may be updated via
       {clUpdateMutableCommandsKHR}.
@@ -14068,7 +14058,7 @@ endif::cl_khr_command_buffer_mutable_dispatch[]
     If _errcode_ret_ is `NULL`, no error code is returned.
 
 ifdef::cl_khr_command_buffer_multi_device[]
-.Summary of command-buffer creation configurations, for the `<<cl_khr_command_buffer_multi_device>>` extension
+.Summary of command-buffer creation configurations, for the {cl_khr_command_buffer_multi_device_EXT} extension
 [width="100%",options="header"]
 |====
 | All Devices Associated With `Queues` can Device-side Sync | Platform Supports Universal Sync | Condition | Result
@@ -14129,7 +14119,10 @@ returned in _errcode_ret_:
     specified by {CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR}.
   * {CL_INVALID_CONTEXT} if all the command-queues in _queues_ do not have
     the same OpenCL context.
-  * {CL_INVALID_VALUE} if _num_queues_ is zero.
+  * {CL_INVALID_VALUE} if the {cl_khr_command_buffer_multi_device_EXT}
+    extension is supported and _num_queues_ is zero, or if the
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported
+    and _num_queues_ is not one.
   * {CL_INVALID_VALUE} if _queues_ is `NULL`.
   * {CL_INVALID_VALUE} if values specified in _properties_ are not valid, or
     if the same property name is specified more than once.
@@ -14142,7 +14135,7 @@ returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
 
 ifdef::cl_khr_command_buffer_multi_device[]
-If the `<<cl_khr_command_buffer_multi_device>>` extension is supported:
+If the {cl_khr_command_buffer_multi_device_EXT} extension is supported:
 
   * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if _queues_ includes more than one
     command-queue associated with a device that does not support capability
@@ -14337,10 +14330,17 @@ include::{generated}/api/protos/clCommandBarrierWithWaitListKHR.txt[]
 include::{generated}/api/version-notes/clCommandBarrierWithWaitListKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single
-    command-queue is supported, and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
     synchronization-points that need to complete before this particular
     command can be executed.
@@ -14388,11 +14388,20 @@ recorded after it do not execute until it completes.
 executed successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
   * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
     command-buffer.
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_ and
-    _command_buffer_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
   * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
   * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
   * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
@@ -14417,12 +14426,12 @@ include::{generated}/api/version-notes/clCommandCopyBufferKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded to.
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
     only a single command-queue is supported, and _command_queue_ must be
     `NULL`.
 ifdef::cl_khr_command_buffer_multi_device[]
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
     _command_queue_ is `NULL`, then only one command-queue must have been set on
     _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
 endif::cl_khr_command_buffer_multi_device[]
@@ -14464,18 +14473,22 @@ Otherwise, it returns the errors defined by {clEnqueueCopyBuffer} except:
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
     _command_queue_ is not `NULL`.
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
     either _command_queue_ is `NULL` and _command_buffer_ was created with
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, _src_buffer_, and _dst_buffer_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_,
+    _src_buffer_, and _dst_buffer_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -14504,12 +14517,12 @@ include::{generated}/api/version-notes/clCommandCopyBufferRectKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded to.
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
     only a single command-queue is supported, and _command_queue_ must be
     `NULL`.
 ifdef::cl_khr_command_buffer_multi_device[]
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
     _command_queue_ is `NULL`, then only one command-queue must have been set on
     _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
 endif::cl_khr_command_buffer_multi_device[]
@@ -14569,18 +14582,22 @@ except:
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
     _command_queue_ is not `NULL`.
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
     either _command_queue_ is `NULL` and _command_buffer_ was created with
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, _src_buffer_, and _dst_buffer_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_,
+    _src_buffer_, and _dst_buffer_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -14609,12 +14626,12 @@ include::{generated}/api/version-notes/clCommandCopyBufferToImageKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded to.
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
     only a single command-queue is supported, and _command_queue_ must be
     `NULL`.
 ifdef::cl_khr_command_buffer_multi_device[]
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
     _command_queue_ is `NULL`, then only one command-queue must have been set on
     _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
 endif::cl_khr_command_buffer_multi_device[]
@@ -14657,18 +14674,22 @@ except:
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
     _command_queue_ is not `NULL`.
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
     either _command_queue_ is `NULL` and _command_buffer_ was created with
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, _src_buffer_, and _dst_image_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_,
+    _src_buffer_, and _dst_image_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -14696,12 +14717,12 @@ include::{generated}/api/version-notes/clCommandCopyImageKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded to.
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
     only a single command-queue is supported, and _command_queue_ must be
     `NULL`.
 ifdef::cl_khr_command_buffer_multi_device[]
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
     _command_queue_ is `NULL`, then only one command-queue must have been set on
     _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
 endif::cl_khr_command_buffer_multi_device[]
@@ -14751,18 +14772,22 @@ Otherwise, it returns the errors defined by {clEnqueueCopyImage} except:
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
     _command_queue_ is not `NULL`.
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
     either _command_queue_ is `NULL` and _command_buffer_ was created with
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, _src_image_, and _dst_image_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_,
+    _src_image_, and _dst_image_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -14791,12 +14816,12 @@ include::{generated}/api/version-notes/clCommandCopyImageToBufferKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded to.
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
     only a single command-queue is supported, and _command_queue_ must be
     `NULL`.
 ifdef::cl_khr_command_buffer_multi_device[]
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
     _command_queue_ is `NULL`, then only one command-queue must have been set on
     _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
 endif::cl_khr_command_buffer_multi_device[]
@@ -14839,18 +14864,22 @@ except:
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
     _command_queue_ is not `NULL`.
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
     either _command_queue_ is `NULL` and _command_buffer_ was created with
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, _src_image_, and _dst_buffer_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_,
+    _src_image_, and _dst_buffer_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -14887,12 +14916,12 @@ value specified when _buffer_ is created is ignored by
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded to.
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
     only a single command-queue is supported, and _command_queue_ must be
     `NULL`.
 ifdef::cl_khr_command_buffer_multi_device[]
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
     _command_queue_ is `NULL`, then only one command-queue must have been set on
     _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
 endif::cl_khr_command_buffer_multi_device[]
@@ -14934,18 +14963,22 @@ Otherwise, it returns the errors defined by {clEnqueueFillBuffer} except:
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
     _command_queue_ is not `NULL`.
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
     either _command_queue_ is `NULL` and _command_buffer_ was created with
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, and _buffer_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_ and
+    _buffer_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -14981,12 +15014,12 @@ value specified when image is created is ignored by {clCommandFillImageKHR}.
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded to.
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
     only a single command-queue is supported, and _command_queue_ must be
     `NULL`.
 ifdef::cl_khr_command_buffer_multi_device[]
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
     _command_queue_ is `NULL`, then only one command-queue must have been set on
     _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
 endif::cl_khr_command_buffer_multi_device[]
@@ -15027,18 +15060,22 @@ Otherwise, it returns the errors defined by {clEnqueueFillImage} except:
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
     _command_queue_ is not `NULL`.
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
     either _command_queue_ is `NULL` and _command_buffer_ was created with
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, and _image_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_ and
+    _image_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -15066,12 +15103,12 @@ include::{generated}/api/version-notes/clCommandNDRangeKernelKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded to.
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
     only a single command-queue is supported, and _command_queue_ must be
     `NULL`.
 ifdef::cl_khr_command_buffer_multi_device[]
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
     _command_queue_ is `NULL`, then only one command-queue must have been set on
     _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
 endif::cl_khr_command_buffer_multi_device[]
@@ -15085,7 +15122,7 @@ ifdef::cl_khr_command_buffer_mutable_dispatch[]
     default value will be used.
     _properties_ may be `NULL`, in which case the default values for supported
     properties will be used.
-    The `<<cl_khr_command_buffer>>` extension does not define any
+    The {cl_khr_command_buffer_EXT} extension does not define any
     properties, but supported properties defined by extensions are defined
     in the <<ndrange-kernel-properties-table, List of supported properties
     by {clCommandNDRangeKernelKHR}>> table.
@@ -15125,7 +15162,7 @@ after the function returns.
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
 ifdef::cl_khr_command_buffer_mutable_dispatch[]
-    If the `<<cl_khr_command_buffer_mutable_dispatch>>` extension is
+    If the {cl_khr_command_buffer_mutable_dispatch_EXT} extension is
     supported, and _mutable_handle_ is not `NULL`, it can be used in the
     {cl_mutable_dispatch_config_khr_TYPE} struct to update the command
     configuration between recordings.
@@ -15133,13 +15170,13 @@ ifdef::cl_khr_command_buffer_mutable_dispatch[]
     that freeing the command-buffer will also free this handle.
 endif::cl_khr_command_buffer_mutable_dispatch[]
 ifndef::cl_khr_command_buffer_mutable_dispatch[]
-    If the `<<cl_khr_command_buffer_mutable_dispatch>>` extension is not
+    If the {cl_khr_command_buffer_mutable_dispatch_EXT} extension is not
     supported, this parameter is unused, and **must** be `NULL`.
 endif::cl_khr_command_buffer_mutable_dispatch[]
 
 [[ndrange-kernel-properties-table]]
 .List of supported properties by {clCommandNDRangeKernelKHR}
-[cols=",,",options="header",]
+[cols="3,2,10",options="header",]
 |====
 | Recording Properties | Property Value | Description
 
@@ -15160,7 +15197,9 @@ include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ASSERTS_KHR.asciidoc[
       _0_ to _work_dim - 1_ of
       _ceil(global_work_size[i]/local_work_size[i])_.
 
-include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR.asciidoc[]
+// Removed for now to reduce table cell size.
+// The extension dependency is captured in the property itself.
+//include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR.asciidoc[]
 
 | {CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR_anchor}
 
@@ -15178,7 +15217,9 @@ include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR.
       parameter.
       Otherwise, the _global_work_offset_ cannot be modified.
 
-include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR.asciidoc[]
+// Removed for now to reduce table cell size.
+// The extension dependency is captured in the property itself.
+//include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR.asciidoc[]
 
       {CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR_anchor} determines whether the
       _global_work_size_ of kernel execution can be modified after
@@ -15189,7 +15230,9 @@ include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_OFFSET_KHR.asc
       parameter.
       Otherwise, the _global_work_size_ cannot be modified.
 
-include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR.asciidoc[]
+// Removed for now to reduce table cell size.
+// The extension dependency is captured in the property itself.
+//include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR.asciidoc[]
 
       {CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR_anchor} determines whether the
       _local_work_size_ of kernel execution can be modified after recording.
@@ -15199,7 +15242,9 @@ include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_GLOBAL_SIZE_KHR.ascii
       parameter.
       Otherwise, the _local_work_size_ cannot be modified.
 
-include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR.asciidoc[]
+// Removed for now to reduce table cell size.
+// The extension dependency is captured in the property itself.
+//include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR.asciidoc[]
 
       {CL_MUTABLE_DISPATCH_ARGUMENTS_KHR_anchor} determines whether the
       kernel arguments set on _kernel_ can be updated between executions.
@@ -15210,7 +15255,9 @@ include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_LOCAL_SIZE_KHR.asciid
       parameter.
       Otherwise, the kernel arguments cannot be modified between executions.
 
-include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ARGUMENTS_KHR.asciidoc[]
+// Removed for now to reduce table cell size.
+// The extension dependency is captured in the property itself.
+//include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ARGUMENTS_KHR.asciidoc[]
 
       {CL_MUTABLE_DISPATCH_EXEC_INFO_KHR_anchor} determines whether the
       information passed to _kernel_ can be updated between executions.
@@ -15220,7 +15267,9 @@ include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ARGUMENTS_KHR.asciido
       parameter.
       Otherwise, the kernel execution information cannot be modified.
 
-include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_EXEC_INFO_KHR.asciidoc[]
+// Removed for now to reduce table cell size.
+// The extension dependency is captured in the property itself.
+//include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_EXEC_INFO_KHR.asciidoc[]
 
       If {CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR_anchor} is not specified
       then it defaults to the value returned by the
@@ -15259,18 +15308,22 @@ Otherwise, it returns the errors defined by {clEnqueueNDRangeKernel} except:
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
     _command_queue_ is not `NULL`.
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
     either _command_queue_ is `NULL` and _command_buffer_ was created with
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, and _kernel_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_ and
+    _kernel_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -15286,7 +15339,7 @@ New errors:
     command-buffer.
   * {CL_INVALID_VALUE} if values specified in _properties_ are not valid
   * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
-  * {CL_INVALID_VALUE} if the `<<cl_khr_command_buffer_mutable_dispatch>>`
+  * {CL_INVALID_VALUE} if the {cl_khr_command_buffer_mutable_dispatch_EXT}
     extension is not supported and _mutable_handle_ is not `NULL`.
   * {CL_INVALID_OPERATION} if the device associated with _command_queue_
     does not support {CL_COMMAND_BUFFER_CAPABILITY_KERNEL_PRINTF_KHR} and
@@ -15296,7 +15349,7 @@ New errors:
     and _kernel_ contains a kernel-enqueue call.
 
 ifdef::cl_khr_command_buffer_mutable_dispatch[]
-If the `<<cl_khr_command_buffer_mutable_dispatch>>` extension is supported:
+If the {cl_khr_command_buffer_mutable_dispatch_EXT} extension is supported:
 
   * {CL_INVALID_OPERATION} if the requested
     {CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR} properties are not reported
@@ -15325,12 +15378,12 @@ include::{generated}/api/version-notes/clCommandSVMMemcpyKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded to.
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
     only a single command-queue is supported, and _command_queue_ must be
     `NULL`.
 ifdef::cl_khr_command_buffer_multi_device[]
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
     _command_queue_ is `NULL`, then only one command-queue must have been set on
     _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
 endif::cl_khr_command_buffer_multi_device[]
@@ -15375,18 +15428,25 @@ Otherwise, it returns the errors defined by {clEnqueueSVMMemcpy} except:
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
     _command_queue_ is not `NULL`.
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
     either _command_queue_ is `NULL` and _command_buffer_ was created with
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
+ifdef::cl_khr_command_buffer_multi_device[]
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, and _kernel_ are not the same.
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+
+endif::cl_khr_command_buffer_multi_device[]
+
+ifndef::cl_khr_command_buffer_multi_device[]
+{CL_INVALID_CONTEXT} error case is removed.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -15415,12 +15475,12 @@ include::{generated}/api/version-notes/clCommandSVMMemFillKHR.asciidoc[]
   * _command_buffer_ refers to a valid command-buffer object.
   * _command_queue_ specifies the command-queue the command will be recorded to.
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is not supported,
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
     only a single command-queue is supported, and _command_queue_ must be
     `NULL`.
 ifdef::cl_khr_command_buffer_multi_device[]
     {empty} +
-    If the `<<cl_khr_command_buffer_multi_device>>` extension is supported and
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
     _command_queue_ is `NULL`, then only one command-queue must have been set on
     _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
 endif::cl_khr_command_buffer_multi_device[]
@@ -15481,18 +15541,24 @@ successfully. Otherwise, it returns the errors defined by
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is not supported and
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
     _command_queue_ is not `NULL`.
   * {CL_INVALID_COMMAND_QUEUE} if the
-    `<<cl_khr_command_buffer_multi_device>>` extension is supported; and
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
     either _command_queue_ is `NULL` and _command_buffer_ was created with
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
+ifdef::cl_khr_command_buffer_multi_device[]
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, and _kernel_ are not the same.
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
+
+ifndef::cl_khr_command_buffer_multi_device[]
+{CL_INVALID_CONTEXT} error case is removed.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -15514,7 +15580,7 @@ New errors:
 ifdef::cl_khr_command_buffer_multi_device[]
 === Remapping Command-Buffers
 
-If the `<<cl_khr_command_buffer_multi_device>>` extension is supported,
+If the {cl_khr_command_buffer_multi_device_EXT} extension is supported,
 platforms reporting the {CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR}
 capability support generating a deep copy of a command-buffer with its
 commands remapped to a list of command-queues that are potentially
@@ -15630,22 +15696,21 @@ endif::cl_khr_command_buffer_multi_device[]
 
 ifdef::cl_khr_command_buffer_mutable_dispatch[]
 [[mutable-commands]]
-=== Mutable Commands:
+=== Mutable Commands
 
 A generic {cl_mutable_command_khr_TYPE} handle is called a _mutable-command_
 object as it can be returned from any command recording entry-point in the
-`<<cl_khr_command_buffer>>` family of extensions.
+{cl_khr_command_buffer_EXT} family of extensions.
 The mutable-command handles returned by {clCommandNDRangeKernelKHR} in
 particular are referred to as _mutable-dispatch_ objects, and can be
 modified through the fields of {cl_mutable_dispatch_config_khr_TYPE}.
 
 Mutable-command handles are updated between enqueues using entry-point
 {clUpdateMutableCommandsKHR}.
-To enable performant usage, all aspects of mutation are encapsulated inside
-a single {cl_mutable_base_config_khr_TYPE} parameter.
-This means that the runtime has access to all the information about how the
-command-buffer will change, allowing the command-buffer to be rebuilt as
-efficiently as possible.
+To enable performant usage, all aspects of mutation can be passed in a single
+call using an array. This means that the runtime has access to all the
+information about how the command-buffer will change, allowing the
+command-buffer to be rebuilt as efficiently as possible.
 Any modifications to the arguments or execution info of a mutable-dispatch
 handle using {cl_mutable_dispatch_arg_khr_TYPE} or
 {cl_mutable_dispatch_exec_info_khr_TYPE} have no affect on the original
@@ -15655,7 +15720,7 @@ kernel object used when the command was recorded, and only influence the
 [[mutable-dispatch-kernel-argument-safe-usage]]
 [NOTE]
 ====
-The base `<<cl_khr_command_buffer>>` extension
+The base {cl_khr_command_buffer_EXT} extension
 <<command-buffer-kernel-argument-ref-counting, notes>> that a command-buffer
 does not update the reference count of objects set as arguments on kernels
 recorded into the command-buffer.
@@ -15686,8 +15751,13 @@ include::{generated}/api/protos/clUpdateMutableCommandsKHR.txt[]
 include::{generated}/api/version-notes/clUpdateMutableCommandsKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _mutable_config_ is a pointer to a {cl_mutable_base_config_khr_TYPE}
-    structure defining updates to make to mutable-commands.
+  * _num_configs_  Number of elements in the _config_types_ and _config_ arrays.
+  * _config_types_ An array of length _num_configs_ with each element identifying
+    the type of each config in _configs_ at the same array index.
+  * _configs_ An array of length _num_configs_ containing structs which define how a
+    mutable-command handle in _command_buffer_ is to be updated, each of which is
+    interpreted using _config_types_ at the same index with the mapping defined
+    in the <<update-config-mapping, Mutable Command Update Structs>> section.
 
 // refError
 
@@ -15701,16 +15771,13 @@ one of the errors below is returned:
   * {CL_INVALID_OPERATION} if _command_buffer_ has not been finalized.
   * {CL_INVALID_OPERATION} if _command_buffer_ was not created with the
     {CL_COMMAND_BUFFER_MUTABLE_KHR} flag.
-  * {CL_INVALID_VALUE} if the _type_ member of _mutable_config_ is not
-    {CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR}.
-  * {CL_INVALID_VALUE} if the _mutable_dispatch_list_ member of
-    _mutable_config_ is `NULL` and _num_mutable_dispatch_ > 0, or
-    _mutable_dispatch_list_ is not `NULL` and _num_mutable_dispatch_ is 0.
-  * {CL_INVALID_VALUE} if the _next_ member of _mutable_config_ is not
-    `NULL` and any iteration of the structure pointer chain does not contain
-    valid _type_ and _next_ members.
-  * {CL_INVALID_VALUE} if _mutable_config_ is `NULL`, or if both _next_ and
-    _mutable_dispatch_list_ members of _mutable_config_ are `NULL`.
+  * {CL_INVALID_VALUE} if _config_types_ is `NULL` and _num_configs_ > 0, or
+    _config_types_ is not `NULL` and _num_configs_ is 0.
+  * {CL_INVALID_VALUE} if _configs_ is `NULL` and _num_configs_ > 0, or
+    _configs_ is not `NULL` and _num_configs_ is 0.
+  * {CL_INVALID_VALUE} if any element of _config_types_ is not a valid
+    {cl_command_buffer_update_type_khr_TYPE} enum.
+  * {CL_INVALID_VALUE} if any element of _configs_ is NULL.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -15736,19 +15803,17 @@ parameters are updated so that the new number of work-groups exceeds the
 number when the ND-range command was recorded, the behavior is undefined.
 ====
 
-If the _mutable_dispatch_list_ member of _mutable_config_ is non-`NULL`,
-then errors defined by {clEnqueueNDRangeKernel}, {clSetKernelExecInfo},
-{clSetKernelArg}, and {clSetKernelArgSVMPointer} are returned by
-{clUpdateMutableCommandsKHR} if any of the array elements are set to an
-invalid value.
-Additionally, the following errors are returned if any
-{cl_mutable_dispatch_config_khr_TYPE} element of the array violates the
-defined conditions:
+If _configs_ is non-`NULL`, then for any {cl_mutable_dispatch_config_khr_TYPE}
+element of the array the errors defined by {clEnqueueNDRangeKernel},
+{clSetKernelExecInfo}, {clSetKernelArg}, and {clSetKernelArgSVMPointer} are
+returned by {clUpdateMutableCommandsKHR} if any of the struct elements are set
+to an invalid value. Additionally, the following errors are returned if any
+{cl_mutable_dispatch_config_khr_TYPE} element of the array violates the defined
+conditions:
 
   * {CL_INVALID_MUTABLE_COMMAND_KHR} if _command_ is not a valid mutable
-    command object, or created from _command_buffer_.
-  * {CL_INVALID_VALUE} if _type_ is not
-    {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}.
+    command object returned from {clCommandNDRangeKernelKHR}, or created from
+   _command_buffer_.
   * {CL_INVALID_OPERATION} if the values of _local_work_size_ and/or
     _global_work_size_ result in a change to work-group uniformity.
   * {CL_INVALID_OPERATION} if the _work_dim_ is different from the
@@ -15776,24 +15841,25 @@ defined conditions:
     0, or _exec_info_list_ is not `NULL` and _num_exec_infos_ is 0.
 --
 
-[open,refpage='cl_mutable_base_config_khr',desc='DESC',type='structs']
---
-The {cl_mutable_base_config_khr_TYPE} structure is TODO Add fuller
-description here and is defined as:
+[[mutable-commands-update-structs]]
+==== Mutable Command Update Structs
 
-include::{generated}/api/structs/cl_mutable_base_config_khr.txt[]
+The following table defines the mapping of
+{cl_command_buffer_update_type_khr_TYPE} values to the structs they define
+reinterpreting a void pointer as when passed to {clUpdateMutableCommandsKHR}.
 
-  * _type_ is the type of this structure, and must be
-    {CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR}
-  * _next_ is `NULL` or a pointer to an extending structure.
-  * _num_mutable_dispatch_ is the number of mutable-dispatch objects to
-    configure in this enqueue of the command-buffer.
-  * _mutable_dispatch_list_ is an array containing _num_mutable_dispatch_
-    elements describing the configurations of mutable kernel execution
-    commands in the command-buffer.
-    For a description of struct members making up each array element see
-    {cl_mutable_dispatch_config_khr_TYPE}.
---
+[[update-config-mapping]]
+[cols=",,",options="header",]
+|====
+| Enum Value | Struct Type | Entry Point
+
+| {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR_anchor}
+| {cl_mutable_dispatch_config_khr_TYPE}
+| {clCommandNDRangeKernelKHR}
+
+|====
+
+==== Kernel Command Update Structs
 
 [open,refpage='cl_mutable_dispatch_config_khr',desc='Set kernel configuration of a mutable clCommandNDRangeKernelKHR command',type='structs']
 --
@@ -15803,9 +15869,6 @@ The {cl_mutable_dispatch_arg_khr_TYPE} structure is passed to
 
 include::{generated}/api/structs/cl_mutable_dispatch_config_khr.txt[]
 
-  * _type_ is the type of this structure, and must be
-    {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}.
-  * _next_ is `NULL` or a pointer to an extending structure.
   * _command_ is a mutable-command object returned by
     {clCommandNDRangeKernelKHR} representing a kernel execution as part of a
     command-buffer.

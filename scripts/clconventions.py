@@ -1,4 +1,4 @@
-#!/usr/bin/python3 -i
+#!/usr/bin/env python3 -i
 #
 # Copyright 2013-2024 The Khronos Group Inc.
 # SPDX-License-Identifier: Apache-2.0
@@ -209,6 +209,7 @@ class OpenCLConventions(ConventionsBase):
             'include::{config}/opencl.asciidoc[]\n' + \
             'include::{config}/version-full-links.asciidoc[]\n' + \
             'include::{generated}/api/api-dictionary-no-links.asciidoc[]\n' + \
+            'include::{generated}/api/ext-dictionary-no-links.asciidoc[]\n' + \
             'include::{cspec}/feature-dictionary.asciidoc[]\n' + \
             'include::{apispec}/footnotes.asciidoc[]\n' + \
             'include::{cspec}/footnotes.asciidoc[]\n'

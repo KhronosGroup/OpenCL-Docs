@@ -120,6 +120,8 @@ module Rouge
         cl_profiling_info
         cl_sampler_properties
         cl_kernel_exec_info
+        cl_context_memory_initialize_khr
+        cl_device_terminate_capability_khr
         cl_device_unified_shared_memory_capabilities_intel
         cl_mem_properties_intel
         cl_mem_alloc_flags_intel
@@ -135,6 +137,7 @@ module Rouge
         cl_mem_alloc_flags_img
         cl_layer_info
         cl_layer_api_version
+        cl_icdl_info
         cl_icd_dispatch
         cl_device_scheduling_controls_capabilities_arm
         cl_device_controlled_termination_capabilities_arm
@@ -142,6 +145,7 @@ module Rouge
         cl_device_feature_capabilities_intel
         cl_device_integer_dot_product_capabilities_khr
         cl_semaphore_properties_khr
+        cl_semaphore_reimport_properties_khr
         cl_semaphore_info_khr
         cl_semaphore_type_khr
         cl_semaphore_payload_khr
@@ -153,7 +157,16 @@ module Rouge
         cl_command_buffer_info_khr
         cl_command_buffer_state_khr
         cl_command_buffer_properties_khr
+        cl_command_buffer_flags_khr
         cl_ndrange_kernel_command_properties_khr
+        cl_mutable_command_khr
+        cl_mutable_dispatch_fields_khr
+        cl_mutable_command_info_khr
+        cl_command_buffer_structure_type_khr
+        cl_device_fp_atomic_capabilities_ext
+        cl_image_requirements_info_ext
+        cl_platform_command_buffer_capabilities_khr
+        cl_mutable_dispatch_asserts_khr
         cl_dx9_surface_info_khr
         cl_motion_estimation_desc_intel
         cl_mem_ext_host_ptr
@@ -174,16 +187,10 @@ module Rouge
         CL_VERSION_PATCH_KHR
         CL_MAKE_VERSION_KHR
         cl_device_integer_dot_product_acceleration_properties_khr
-        cl_command_buffer_khr
-        cl_mutable_command_khr
-        cl_mutable_command_info_khr
-        cl_command_buffer_structure_type_khr
-        cl_mutable_base_config_khr
         cl_mutable_dispatch_arg_khr
-        cl_mutable_dispatch_config_khr
         cl_mutable_dispatch_exec_info_khr
-        cl_mutable_dispatch_fields_khr
-        cl_platform_command_buffer_capabilities_khr
+        cl_mutable_dispatch_config_khr
+        cl_mutable_base_config_khr
       )
 
       # Here are some interesting tokens

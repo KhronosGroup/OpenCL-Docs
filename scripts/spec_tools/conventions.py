@@ -1,4 +1,4 @@
-#!/usr/bin/python3 -i
+#!/usr/bin/env python3 -i
 #
 # Copyright 2013-2024 The Khronos Group Inc.
 #
@@ -101,6 +101,17 @@ class ConventionsBase(abc.ABC):
     def formatExtension(self, name):
         """Mark up an extension name as a link in the spec."""
         return '`<<{}>>`'.format(name)
+
+    def formatSPIRVlink(self, name):
+        """Mark up a SPIR-V extension name as an external link in the spec.
+           Since these are external links, the formatting probably will be
+           the same for all APIs creating such links, so long as they use
+           the asciidoctor {spirv} attribute for the base path to the SPIR-V
+           extensions."""
+
+        (vendor, _) = self.extension_name_split(name)
+
+        return f'{{spirv}}/{vendor}/{name}.html[{name}]'
 
     @property
     @abc.abstractmethod
@@ -285,7 +296,7 @@ class ConventionsBase(abc.ABC):
         Typically two uppercase letters followed by an underscore.
 
         Assumed to be the same as api_prefix, but some APIs use different
-        case convntions."""
+        case conventions."""
 
         return self.api_prefix
 
@@ -443,6 +454,16 @@ class ConventionsBase(abc.ABC):
            documentation includes."""
         return False
 
+    def extension_name_split(self, name):
+        """Split an extension name, returning (vendor, rest of name).
+           The API prefix of the name is ignored."""
+
+        match = EXT_NAME_DECOMPOSE_RE.match(name)
+        vendor = match.group('vendor')
+        bare_name = match.group('name')
+
+        return (vendor, bare_name)
+
     @abc.abstractmethod
     def extension_file_path(self, name):
         """Return file path to an extension appendix relative to a directory
@@ -527,3 +548,11 @@ class ConventionsBase(abc.ABC):
            blocks."""
 
         return 'c++'
+
+    @property
+    def docgen_source_options(self):
+        """Return block options to be used in docgenerator [source] blocks,
+           which are appended to the 'source' block type.
+           Can be empty."""
+
+        return '%unbreakable'
