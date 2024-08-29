@@ -8,46 +8,25 @@
 == Shared OpenCL Objects
 
 This section describes which objects can be shared across multiple
-command-queues created within a host process.
+command-queues.
+The command-queues can be created in one host thread or across multiple host
+threads within a host process.
 
-OpenCL memory objects, program objects and kernel objects are created using
-a context and can be shared across multiple command-queues created using the
-same context.
+OpenCL memory objects, program objects, and kernel objects are created using
+an OpenCL context and can be shared across multiple command-queues created using
+the same context.
 Event objects can be created when a command is queued to a command-queue.
 These event objects can be shared across multiple command-queues created
 using the same context.
 
-The application needs to implement appropriate synchronization across
-threads on the host processor to ensure that the changes to the state of a
-shared object (such as a command-queue object, memory object, program or
-kernel object) happen in the correct order (deemed correct by the
-application) when multiple command-queues in multiple threads are making
-changes to the state of a shared object.
+The application must implement appropriate synchronization to ensure that the
+changes to the state of a shared object (such as a command-queue object, memory
+object, program object, or kernel object) happen in the correct order (deemed
+correct by the application) when multiple host threads or command-queues change
+the state of a shared object.
 
-A command-queue can cache changes to the state of a memory object on the
-device associated with the command-queue.
-To synchronize changes to a memory object across command-queues, the
-application must do the following:
-
-In the command-queue that includes commands that modify the state of a
-memory object, the application must do the following:
-
-  * Get appropriate event objects for commands that modify the state of the
-    shared memory object.
-  * Call the {clFlush} (or {clFinish}) API to issue any outstanding commands
-    from this command-queue.
-
-In the command-queue that wants to synchronize to the latest state of a
-memory object, commands queued by the application must use the appropriate
-event objects that represent commands that modify the state of the shared
-memory object as event objects to wait on.
-This is to ensure that commands that use this shared memory object complete
-in the previous command-queue before the memory objects are used by commands
-executing in this command-queue.
-
-The results of modifying a shared resource in one command-queue while it is
-being used by another command-queue are undefined.
-
+The OpenCL <<memory-consistency-model, memory consistency model>> describes
+how to correctly order operations that change the state of a shared object.
 
 == Multiple Host Threads
 
