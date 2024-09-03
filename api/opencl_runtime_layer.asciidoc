@@ -628,8 +628,9 @@ returned in _errcode_ret_:
     in the <<memory-flags-table,Memory Flags>> table.
   * {CL_INVALID_BUFFER_SIZE} if _size_ is 0, or if _size_ is greater than
     {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for all devices in _context_, or if
-    {CL_MEM_USE_HOST_PTR} is set in _flags_ and _host_ptr_ is a pointer returned by
-    {clSVMAlloc} and _size_ is greater than the size passed to {clSVMAlloc}.
+    {CL_MEM_USE_HOST_PTR} or {CL_MEM_COPY_HOST_PTR} is set in _flags_ and
+    _host_ptr_ is a pointer returned by {clSVMAlloc} and _size_ is greater than
+    the size passed to {clSVMAlloc}.
   * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
     {CL_MEM_COPY_HOST_PTR} are set in _flags_ or if _host_ptr_ is not `NULL`
     but {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} are not set in _flags_.
@@ -1836,7 +1837,7 @@ include::{generated}/api/version-notes/clCreateFromGLBuffer.asciidoc[]
     Only the {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and {CL_MEM_READ_WRITE}
     flags specified in that table can be used.
   * _bufobj_ is the name of an OpenGL buffer object.
-    The data store of the OpenGL buffer object must have have been
+    The data store of the OpenGL buffer object must have been
     previously created by calling `glBufferData`, although its contents need
     not be initialized.
     The size of the data store will be used to determine the size of the
@@ -2524,14 +2525,14 @@ The memory layout of this image format is described below:
 
 [width="60%",cols="<10%,<10%,<10%,<10%,<60%"]
 |====
-| R | G | B | A | ... |
+| R | G | B | A | ...
 |====
 
 with the corresponding byte offsets
 
 [width="60%",cols="<10%,<10%,<10%,<10%,<60%"]
 |====
-| 0 | 1 | 2 | 3 | ... |
+| 0 | 1 | 2 | 3 | ...
 |====
 
 Similar, if `image_channel_order` = {CL_RGBA} and `image_channel_data_type` =
@@ -2539,14 +2540,14 @@ Similar, if `image_channel_order` = {CL_RGBA} and `image_channel_data_type` =
 
 [width="60%",cols="<10%,<10%,<10%,<10%,<60%"]
 |====
-| R | G | B | A | ... |
+| R | G | B | A | ...
 |====
 
 with the corresponding byte offsets
 
 [width="60%",cols="<10%,<10%,<10%,<10%,<60%"]
 |====
-| 0 | 2 | 4 | 6 | ... |
+| 0 | 2 | 4 | 6 | ...
 |====
 
 `image_channel_data_type` values of {CL_UNORM_SHORT_565}, {CL_UNORM_SHORT_555},
@@ -2645,7 +2646,7 @@ ifdef::cl_khr_external_memory[]
     If _image_slice_pitch_ is zero and the image is created from an external
     memory handle, then the image slice pitch is implementation-defined.
 endif::cl_khr_external_memory[]
-    The image slice pitch must be {geq} the image image row pitch {times}
+    The image slice pitch must be {geq} the image row pitch {times}
     _image_height_ for a 2D image array or a 3D image, must be {geq} the
     image row pitch for a 1D image array, and must be a multiple of the
     image row pitch.
@@ -5427,6 +5428,23 @@ handle is used by an OpenCL command queued to a command-queue without being
 acquired.
 This is to guarantee that the state of the memory objects is up-to-date and
 they are accessible to OpenCL.
+
+The following restrictions shall apply -
+  * Each memory object must be acquired only once. Acquiring a memory object 
+    multiple times without releasing it results in implementation-defined
+    behavior.
+  * The acquire must be performed on a command-queue associated with a device
+    that was one of the devices specified via {CL_MEM_DEVICE_HANDLE_LIST_KHR}
+    when the memory object was imported using {clCreateBufferWithProperties} or
+    {clCreateImageWithProperties}. If {CL_MEM_DEVICE_HANDLE_LIST_KHR} was not
+    specified, the acquire can be performed on a command-queue associated with
+    any device in the context.
+  * The memory object will be acquired for all devices specified
+    via {CL_MEM_DEVICE_HANDLE_LIST_KHR} when the memory object was imported
+    using {clCreateBufferWithProperties} or {clCreateImageWithProperties}.
+    If {CL_MEM_DEVICE_HANDLE_LIST_KHR} was not specified, the memory object
+    will be acquired for all devices in the context.
+ 
 See <<cl_khr_external_memory-Sample-Code, "`Example with Acquire /
 Release`">> for more details on how to use this API.
 
@@ -5450,9 +5468,9 @@ Otherwise, it returns one of the following errors:
   ** if _command_queue_ is not a valid command-queue, or
   ** if device associated with _command_queue_ is not one of the devices
      specified by {CL_MEM_DEVICE_HANDLE_LIST_KHR} at the time of creating
-     one or more of _mem_objects_, or ** if one or more of _mem_objects_
-     belong to a context that does not contain a device associated with
-     _command_queue_.
+     one or more of _mem_objects_, or
+  ** if one or more of _mem_objects_ belong to a context that does not
+     contain a device associated with _command_queue_.
   * {CL_INVALID_EVENT_WAIT_LIST}
   ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ is not 0,
      or
@@ -5503,6 +5521,23 @@ Applications must release the memory objects that are acquired using
 commands in the other API.
 This is to guarantee that the state of memory objects is up-to-date and they
 are accessible to the other API.
+
+The following restrictions shall apply -
+  * Each memory object must be released only once. Releasing a memory object 
+    multiple times without acquiring it results in implementation-defined
+    behavior.
+  * The release must be performed on a command-queue associated with a device
+    that was one of the devices specified via {CL_MEM_DEVICE_HANDLE_LIST_KHR}
+    when the memory object was imported using {clCreateBufferWithProperties} or
+    {clCreateImageWithProperties}. If {CL_MEM_DEVICE_HANDLE_LIST_KHR} was not
+    specified, the release can be performed on a command-queue associated with
+    any device in the context.
+  * The memory object will be released for all devices specified via
+    {CL_MEM_DEVICE_HANDLE_LIST_KHR} when the memory object was imported
+    using {clCreateBufferWithProperties} or {clCreateImageWithProperties}.
+    If {CL_MEM_DEVICE_HANDLE_LIST_KHR} was not specified, the memory object
+    will be released for all devices in the context.
+
 See "`Example with Acquire / Release`" provided in
 <<cl_khr_external_memory-Sample-Code>> for more details on how to use this
 API.
@@ -7063,7 +7098,7 @@ include::{generated}/api/version-notes/clEnqueueReleaseGLObjects.asciidoc[]
     to an element of the _event_wait_list_ array.
 
 ifdef::cl_khr_gl_event[]
-If an OpenGL context is bound to the current thread, then then any OpenGL
+If an OpenGL context is bound to the current thread, then any OpenGL
 commands which
 
   . affect or access the contents of the memory objects listed in the
@@ -8372,7 +8407,7 @@ A program object encapsulates the following information:
 
 [open,refpage='clCreateProgramWithSource',desc='Creates a program object for a context, and loads source code specified by text strings into the program object.',type='protos']
 --
-To creates a program object for a context and load source code into that
+To create a program object for a context and load source code into that
 object, call the function
 
 include::{generated}/api/protos/clCreateProgramWithSource.txt[]
@@ -8402,6 +8437,10 @@ header or implementation-defined source for custom devices that support an
 online compiler.
 OpenCL {cpp} is not supported as an online-compiled kernel language through
 this interface.
+ifdef::cl_ext_cxx_for_opencl[]
+If the {cl_ext_cxx_for_opencl_EXT} extension is supported, the source code
+specified by _strings_ may also be a C++ for OpenCL program source or header.
+endif::cl_ext_cxx_for_opencl[]
 
 // refError
 
@@ -9494,6 +9533,13 @@ IMPORTANT: Debugging options are <<unified-spec, missing before>> version 2.0.
     built-in functions that allow you to enqueue commands on a device (refer
     to OpenCL kernel languages specifications).
 
+ifdef::cl_ext_cxx_for_opencl[]
+==== C++ for OpenCL
+
+Applications may pass `-cl-std=CLC\++` to {clCompileProgram} or {clBuildProgram}
+for programs created using {clCreateProgramFromSource} to request the program
+be built as C++ for OpenCL.
+endif::cl_ext_cxx_for_opencl[]
 
 [[linker-options]]
 === Linker Options
@@ -12828,7 +12874,7 @@ _errcode_ret_ returns an appropriate error code.
 If _errcode_ret_ is `NULL`, no error code is returned.
 
 {clCreateSemaphoreWithPropertiesKHR} returns a valid semaphore object in an
-un-signaled state and and _errcode_ret_ is set to {CL_SUCCESS} if the
+un-signaled state and _errcode_ret_ is set to {CL_SUCCESS} if the
 function is executed successfully.
 Otherwise, it returns a `NULL` value with one of the following error values
 returned in _errcode_ret_:
@@ -12876,6 +12922,10 @@ ifdef::cl_khr_external_semaphore[]
 
 [open,refpage='clGetSemaphoreHandleForTypeKHR',desc='Export external handle from a semaphore',type='protos']
 --
+
+Export operations have the same transference as the specified handle type's import operations. Additionally, exporting a semaphore payload to a handle with copy transference has the same side effects on the source semaphore's payload as executing a semaphore wait operation.
+
+Please refer to handle specific documentation for more details on transference requirements per handle type.
 To export an external handle from a semaphore, call the function
 
 include::{generated}/api/protos/clGetSemaphoreHandleForTypeKHR.txt[]
@@ -12890,7 +12940,7 @@ include::{generated}/api/protos/clGetSemaphoreHandleForTypeKHR.txt[]
   * _handle_size_ specifies the size of memory pointed by _handle_ptr_.
   * _handle_ptr_ is a pointer to memory where the exported external handle
     is returned.
-    If _param_value_ is `NULL`, it is ignored.
+    If _handle_ptr_ is `NULL`, it is ignored.
   * _handle_size_ret_ returns the actual size in bytes for the external
     handle.
     If _handle_size_ret_ is `NULL`, it is ignored.
@@ -12929,53 +12979,19 @@ Otherwise, it returns one of the following errors:
 
 === Importing Semaphore External Handles
 
-Applications can import a semaphore payload into an existing semaphore using
-an external semaphore handle.
-The effects of the import operation will be either temporary or permanent,
-as specified by the application.
-If the import is temporary, the implementation must restore the semaphore to
-its prior permanent state after submitting the next semaphore wait
-operation.
-Performing a subsequent temporary import on a semaphore before performing a
-semaphore wait has no effect on this requirement; the next wait submitted on
-the semaphore must still restore its last permanent state.
-A permanent payload import behaves as if the target semaphore was destroyed,
-and a new semaphore was created with the same handle but the imported
-payload.
-Because importing a semaphore payload temporarily or permanently detaches
-the existing payload from a semaphore, similar usage restrictions to those
-applied to {clReleaseSemaphoreKHR} are applied to any command that imports a
-semaphore payload.
-Which of these import types is used is referred to as the import operation's
-permanence.
-Each handle type supports either one or both types of permanence.
+Applications can import a semaphore payload by creating a semaphore from an external handle. The
+implementation must perform the import operation by either referencing or copying the payload
+referred to by the specified external semaphore handle, depending on the handle's type. When using
+handle types with reference transference, importing a payload to a semaphore adds the semaphore to
+the set of all semaphores sharing that payload. This set includes the semaphore from which the payload
+was exported. Semaphore signaling and waiting operations performed on any semaphore in the set must
+behave as if the set were a single semaphore. Importing a payload using handle types with copy
+transference creates a duplicate copy of the payload at the time of import, but makes no further
+reference to it. Semaphore signaling and waiting operations performed on the target of copy imports
+must not affect any other semaphore or payload.
 
-The implementation must perform the import operation by either referencing
-or copying the payload referred to by the specified external semaphore
-handle, depending on the handle's type.
-The import method used is referred to as the handle type's transference.
-When using handle types with reference transference, importing a payload to
-a semaphore adds the semaphore to the set of all semaphores sharing that
-payload.
-This set includes the semaphore from which the payload was exported.
-Semaphore signaling and waiting operations performed on any semaphore in the
-set must behave as if the set were a single semaphore.
-Importing a payload using handle types with copy transference creates a
-duplicate copy of the payload at the time of import, but makes no further
-reference to it.
-Semaphore signaling and waiting operations performed on the target of copy
-imports must not affect any other semaphore or payload.
-
-Export operations have the same transference as the specified handle type's
-import operations.
-Additionally, exporting a semaphore payload to a handle with copy
-transference has the same side effects on the source semaphore's payload as
-executing a semaphore wait operation.
-If the semaphore was using a temporarily imported payload, the semaphore's
-prior permanent payload will be restored.
-
-Please refer to handle specific specifications for more details on
-transference and permanence requirements specific to handle type.
+Please refer to handle specific documentation for more details on transference requirements per
+handle type.
 
 
 === Descriptions of External Semaphore Handle Types
@@ -13044,17 +13060,16 @@ descriptor when exporting a {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} from a
 
 endif::cl_khr_external_semaphore_sync_fd[]
 
-.Transference and Permanence Properties for File Descriptor Handles
-[width="100%",cols="60%,<20%,<20%",options="header"]
+.Transference Properties for File Descriptor Handles
+[width="100%",cols="60%,<40%",options="header"]
 |====
-| Handle Type | Transference | Permanence
+| Handle Type | Transference
 
 ifdef::cl_khr_external_semaphore_opaque_fd[]
 | {CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR.asciidoc[]
   | Reference
-    | Temporary, Permanent
 endif::cl_khr_external_semaphore_opaque_fd[]
 
 ifdef::cl_khr_external_semaphore_sync_fd[]
@@ -13062,7 +13077,6 @@ ifdef::cl_khr_external_semaphore_sync_fd[]
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_SYNC_FD_KHR.asciidoc[]
   | Copy
-    | Temporary
 endif::cl_khr_external_semaphore_sync_fd[]
 |====
 
@@ -13074,14 +13088,17 @@ a successful import.
 ifdef::cl_khr_external_semaphore_sync_fd[]
 [open,refpage='clReImportSemaphoreSyncFdKHR',desc='Re-import sync fd handle into an existing semaphore',type='protos']
 --
-To re-imported a handle of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} into an
+To re-import a handle of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR} into an
 existing semaphore, call the function:
 
 include::{generated}/api/protos/clReImportSemaphoreSyncFdKHR.txt[]
 
   * _sema_object_ specifies a valid semaphore object with importable
     properties.
-  * _reimport_props_ must be `NULL`, and is reserved for future use.
+  * _reimport_props_ is an optional list of properties that affect the
+   re-import behavior. The list is terminated with the special property `0`.
+   If no properties are required, _reimport_props_ may be `NULL`. This extension
+   does not define any optional properties.
   * _fd_ specifies an external file descriptor handle to import
 
 Calling {clReImportSemaphoreSyncFdKHR} is equivalent to destroying
@@ -13093,7 +13110,7 @@ of type {CL_SEMAPHORE_HANDLE_SYNC_FD_KHR}.
 
 // refError
 
-{clGetSemaphoreHandleForTypeKHR} returns {CL_SUCCESS} if the semaphore
+{clReImportSemaphoreSyncFdKHR} returns {CL_SUCCESS} if the semaphore
 handle is re-imported successfully.
 Otherwise, it returns one of the following errors:
 
@@ -13148,26 +13165,26 @@ a semaphore from an external handle:
 
 endif::cl_khr_external_semaphore_win32[]
 
-.Transference and Permanence Properties for NT Handle Types
-[width="100%",cols="60%,<20%,<20%",options="header"]
+.Transference Properties for NT Handle Types
+[width="100%",cols="60%,<40%",options="header"]
 |====
-| Handle Type | Transference | Permanence
+| Handle Type | Transference
 
 ifdef::cl_khr_external_semaphore_win32[]
 | {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR.asciidoc[]
   | Reference
-    | Temporary, Permanent
 | {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR.asciidoc[]
   | Reference
-    | Temporary, Permanent
+
+| {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_NAMET_KHR_anchor}
 
 include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_NAME_KHR.asciidoc[]
   | Reference
-    | Temporary, Permanent
+    
 endif::cl_khr_external_semaphore_win32[]
 |====
 
@@ -14337,10 +14354,17 @@ include::{generated}/api/protos/clCommandBarrierWithWaitListKHR.txt[]
 include::{generated}/api/version-notes/clCommandBarrierWithWaitListKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _command_queue_ specifies the command-queue the command will be recorded
-    to.
-    This parameter is unused, as only a single
-    command-queue is supported, and **must** be `NULL`.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    {empty} +
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`.
+ifdef::cl_khr_command_buffer_multi_device[]
+    {empty} +
+    If the {cl_khr_command_buffer_multi_device_EXT} extension is supported and
+    _command_queue_ is `NULL`, then only one command-queue must have been set on
+    _command_buffer_ creation; otherwise, _command_queue_ must not be `NULL`.
+endif::cl_khr_command_buffer_multi_device[]
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
     synchronization-points that need to complete before this particular
     command can be executed.
@@ -14388,11 +14412,20 @@ recorded after it do not execute until it completes.
 executed successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    {cl_khr_command_buffer_multi_device_EXT} extension is not supported and
+    _command_queue_ is not `NULL`.
+  * {CL_INVALID_COMMAND_QUEUE} if the
+    {cl_khr_command_buffer_multi_device_EXT} extension is supported; and
+    either _command_queue_ is `NULL` and _command_buffer_ was created with
+    more than one queue, or _command_queue_ is not `NULL` and not a
+    command-queue listed on _command_buffer_ creation.
   * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
     command-buffer.
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_ and
-    _command_buffer_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
   * {CL_INVALID_OPERATION} if _command_buffer_ has been finalized.
   * {CL_INVALID_VALUE} if _mutable_handle_ is not `NULL`.
   * {CL_INVALID_SYNC_POINT_WAIT_LIST_KHR} if _sync_point_wait_list_ is
@@ -14474,8 +14507,12 @@ Otherwise, it returns the errors defined by {clEnqueueCopyBuffer} except:
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, _src_buffer_, and _dst_buffer_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_,
+    _src_buffer_, and _dst_buffer_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -14579,8 +14616,12 @@ except:
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, _src_buffer_, and _dst_buffer_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_,
+    _src_buffer_, and _dst_buffer_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -14667,8 +14708,12 @@ except:
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, _src_buffer_, and _dst_image_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_,
+    _src_buffer_, and _dst_image_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -14761,8 +14806,12 @@ Otherwise, it returns the errors defined by {clEnqueueCopyImage} except:
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, _src_image_, and _dst_image_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_,
+    _src_image_, and _dst_image_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -14849,8 +14898,12 @@ except:
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, _src_image_, and _dst_buffer_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_,
+    _src_image_, and _dst_buffer_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -14944,8 +14997,12 @@ Otherwise, it returns the errors defined by {clEnqueueFillBuffer} except:
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, and _buffer_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_ and
+    _buffer_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -15037,8 +15094,12 @@ Otherwise, it returns the errors defined by {clEnqueueFillImage} except:
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, and _image_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_ and
+    _image_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -15281,8 +15342,12 @@ Otherwise, it returns the errors defined by {clEnqueueNDRangeKernel} except:
 
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, and _kernel_ are not the same.
+  * {CL_INVALID_CONTEXT} if the context associated with _command_buffer_ and
+    _kernel_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -15395,10 +15460,17 @@ Otherwise, it returns the errors defined by {clEnqueueSVMMemcpy} except:
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
+ifdef::cl_khr_command_buffer_multi_device[]
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, and _kernel_ are not the same.
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+
+endif::cl_khr_command_buffer_multi_device[]
+
+ifndef::cl_khr_command_buffer_multi_device[]
+{CL_INVALID_CONTEXT} error case is removed.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -15501,10 +15573,16 @@ successfully. Otherwise, it returns the errors defined by
     more than one queue, or _command_queue_ is not `NULL` and not a
     command-queue listed on _command_buffer_ creation.
 
+ifdef::cl_khr_command_buffer_multi_device[]
 {CL_INVALID_CONTEXT} is replaced with:
 
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _command_buffer_, and _kernel_ are not the same.
+  * {CL_INVALID_CONTEXT} if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and _command_buffer_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
+
+ifndef::cl_khr_command_buffer_multi_device[]
+{CL_INVALID_CONTEXT} error case is removed.
+endif::cl_khr_command_buffer_multi_device[]
 
 {CL_INVALID_EVENT_WAIT_LIST} is replaced with:
 
@@ -15642,7 +15720,7 @@ endif::cl_khr_command_buffer_multi_device[]
 
 ifdef::cl_khr_command_buffer_mutable_dispatch[]
 [[mutable-commands]]
-=== Mutable Commands:
+=== Mutable Commands
 
 A generic {cl_mutable_command_khr_TYPE} handle is called a _mutable-command_
 object as it can be returned from any command recording entry-point in the
@@ -15653,11 +15731,10 @@ modified through the fields of {cl_mutable_dispatch_config_khr_TYPE}.
 
 Mutable-command handles are updated between enqueues using entry-point
 {clUpdateMutableCommandsKHR}.
-To enable performant usage, all aspects of mutation are encapsulated inside
-a single {cl_mutable_base_config_khr_TYPE} parameter.
-This means that the runtime has access to all the information about how the
-command-buffer will change, allowing the command-buffer to be rebuilt as
-efficiently as possible.
+To enable performant usage, all aspects of mutation can be passed in a single
+call using an array. This means that the runtime has access to all the
+information about how the command-buffer will change, allowing the
+command-buffer to be rebuilt as efficiently as possible.
 Any modifications to the arguments or execution info of a mutable-dispatch
 handle using {cl_mutable_dispatch_arg_khr_TYPE} or
 {cl_mutable_dispatch_exec_info_khr_TYPE} have no affect on the original
@@ -15698,8 +15775,13 @@ include::{generated}/api/protos/clUpdateMutableCommandsKHR.txt[]
 include::{generated}/api/version-notes/clUpdateMutableCommandsKHR.asciidoc[]
 
   * _command_buffer_ refers to a valid command-buffer object.
-  * _mutable_config_ is a pointer to a {cl_mutable_base_config_khr_TYPE}
-    structure defining updates to make to mutable-commands.
+  * _num_configs_  Number of elements in the _config_types_ and _config_ arrays.
+  * _config_types_ An array of length _num_configs_ with each element identifying
+    the type of each config in _configs_ at the same array index.
+  * _configs_ An array of length _num_configs_ containing structs which define how a
+    mutable-command handle in _command_buffer_ is to be updated, each of which is
+    interpreted using _config_types_ at the same index with the mapping defined
+    in the <<update-config-mapping, Mutable Command Update Structs>> section.
 
 // refError
 
@@ -15713,16 +15795,13 @@ one of the errors below is returned:
   * {CL_INVALID_OPERATION} if _command_buffer_ has not been finalized.
   * {CL_INVALID_OPERATION} if _command_buffer_ was not created with the
     {CL_COMMAND_BUFFER_MUTABLE_KHR} flag.
-  * {CL_INVALID_VALUE} if the _type_ member of _mutable_config_ is not
-    {CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR}.
-  * {CL_INVALID_VALUE} if the _mutable_dispatch_list_ member of
-    _mutable_config_ is `NULL` and _num_mutable_dispatch_ > 0, or
-    _mutable_dispatch_list_ is not `NULL` and _num_mutable_dispatch_ is 0.
-  * {CL_INVALID_VALUE} if the _next_ member of _mutable_config_ is not
-    `NULL` and any iteration of the structure pointer chain does not contain
-    valid _type_ and _next_ members.
-  * {CL_INVALID_VALUE} if _mutable_config_ is `NULL`, or if both _next_ and
-    _mutable_dispatch_list_ members of _mutable_config_ are `NULL`.
+  * {CL_INVALID_VALUE} if _config_types_ is `NULL` and _num_configs_ > 0, or
+    _config_types_ is not `NULL` and _num_configs_ is 0.
+  * {CL_INVALID_VALUE} if _configs_ is `NULL` and _num_configs_ > 0, or
+    _configs_ is not `NULL` and _num_configs_ is 0.
+  * {CL_INVALID_VALUE} if any element of _config_types_ is not a valid
+    {cl_command_buffer_update_type_khr_TYPE} enum.
+  * {CL_INVALID_VALUE} if any element of _configs_ is NULL.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -15748,19 +15827,17 @@ parameters are updated so that the new number of work-groups exceeds the
 number when the ND-range command was recorded, the behavior is undefined.
 ====
 
-If the _mutable_dispatch_list_ member of _mutable_config_ is non-`NULL`,
-then errors defined by {clEnqueueNDRangeKernel}, {clSetKernelExecInfo},
-{clSetKernelArg}, and {clSetKernelArgSVMPointer} are returned by
-{clUpdateMutableCommandsKHR} if any of the array elements are set to an
-invalid value.
-Additionally, the following errors are returned if any
-{cl_mutable_dispatch_config_khr_TYPE} element of the array violates the
-defined conditions:
+If _configs_ is non-`NULL`, then for any {cl_mutable_dispatch_config_khr_TYPE}
+element of the array the errors defined by {clEnqueueNDRangeKernel},
+{clSetKernelExecInfo}, {clSetKernelArg}, and {clSetKernelArgSVMPointer} are
+returned by {clUpdateMutableCommandsKHR} if any of the struct elements are set
+to an invalid value. Additionally, the following errors are returned if any
+{cl_mutable_dispatch_config_khr_TYPE} element of the array violates the defined
+conditions:
 
   * {CL_INVALID_MUTABLE_COMMAND_KHR} if _command_ is not a valid mutable
-    command object, or created from _command_buffer_.
-  * {CL_INVALID_VALUE} if _type_ is not
-    {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR}.
+    command object returned from {clCommandNDRangeKernelKHR}, or created from
+   _command_buffer_.
   * {CL_INVALID_OPERATION} if the values of _local_work_size_ and/or
     _global_work_size_ result in a change to work-group uniformity.
   * {CL_INVALID_OPERATION} if the _work_dim_ is different from the
@@ -15788,24 +15865,25 @@ defined conditions:
     0, or _exec_info_list_ is not `NULL` and _num_exec_infos_ is 0.
 --
 
-[open,refpage='cl_mutable_base_config_khr',desc='DESC',type='structs']
---
-The {cl_mutable_base_config_khr_TYPE} structure encapsulates all aspects of
-mutation and is defined as:
+[[mutable-commands-update-structs]]
+==== Mutable Command Update Structs
 
-include::{generated}/api/structs/cl_mutable_base_config_khr.txt[]
+The following table defines the mapping of
+{cl_command_buffer_update_type_khr_TYPE} values to the structs they define
+reinterpreting a void pointer as when passed to {clUpdateMutableCommandsKHR}.
 
-  * _type_ is the type of this structure, and must be
-    {CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR_anchor}
-  * _next_ is `NULL` or a pointer to an extending structure.
-  * _num_mutable_dispatch_ is the number of mutable-dispatch objects to
-    configure in this enqueue of the command-buffer.
-  * _mutable_dispatch_list_ is an array containing _num_mutable_dispatch_
-    elements describing the configurations of mutable kernel execution
-    commands in the command-buffer.
-    For a description of struct members making up each array element see
-    {cl_mutable_dispatch_config_khr_TYPE}.
---
+[[update-config-mapping]]
+[cols=",,",options="header",]
+|====
+| Enum Value | Struct Type | Entry Point
+
+| {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR_anchor}
+| {cl_mutable_dispatch_config_khr_TYPE}
+| {clCommandNDRangeKernelKHR}
+
+|====
+
+==== Kernel Command Update Structs
 
 [open,refpage='cl_mutable_dispatch_config_khr',desc='Set kernel configuration of a mutable clCommandNDRangeKernelKHR command',type='structs']
 --
@@ -15815,9 +15893,6 @@ The {cl_mutable_dispatch_arg_khr_TYPE} structure is passed to
 
 include::{generated}/api/structs/cl_mutable_dispatch_config_khr.txt[]
 
-  * _type_ is the type of this structure, and must be
-    {CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR_anchor}.
-  * _next_ is `NULL` or a pointer to an extending structure.
   * _command_ is a mutable-command object returned by
     {clCommandNDRangeKernelKHR} representing a kernel execution as part of a
     command-buffer.
