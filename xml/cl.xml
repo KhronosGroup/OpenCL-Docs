@@ -382,6 +382,15 @@ server's OpenCL/api-docs repository.
             <member>const <type>size_t</type>*                             <name>global_work_size</name></member>
             <member>const <type>size_t</type>*                             <name>local_work_size</name></member>
         </type>
+
+        <type category="define" requires="stdint" name="CL_ICD2_TAG_KHR" comment="ICD 2 tag, in cl_ext.h">
+#if INTPTR_MAX == INT32_MAX
+#define CL_ICD2_TAG_KHR ((intptr_t)0x434C3331)
+#else
+#define CL_ICD2_TAG_KHR ((intptr_t)0x4F50454E434C3331)
+#endif
+        </type>
+
     </types>
 
     <!-- SECTION: OpenCL enumerant (token) definitions. -->
@@ -2557,6 +2566,16 @@ server's OpenCL/api-docs repository.
             <param><type>cl_uint</type>                    <name>num_entries</name></param>
             <param><type>cl_platform_id</type>*            <name>platforms</name></param>
             <param><type>cl_uint</type>*                   <name>num_platforms</name></param>
+        </command>
+        <command>
+            <proto><type>void</type>*                      <name>clIcdGetFunctionAddressForPlatformKHR</name></proto>
+            <param><type>cl_platform_id</type>             <name>platform</name></param>
+            <param>const <type>char</type>*                <name>func_name</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                     <name>clIcdSetPlatformDispatchDataKHR</name></proto>
+            <param><type>cl_platform_id</type>             <name>platform</name></param>
+            <param><type>void</type>*                      <name>dispatch_data</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_2">
             <proto><type>cl_program</type>                 <name>clCreateProgramWithILKHR</name></proto>
@@ -5600,7 +5619,7 @@ server's OpenCL/api-docs repository.
                 <command name="clLogMessagesToStderrAPPLE"/>
             </require>
         </extension>
-        <extension name="cl_khr_icd" revision="1.0.0" supported="opencl" ratified="opencl">
+        <extension name="cl_khr_icd" revision="2.0.0" supported="opencl" ratified="opencl">
             <require>
                 <type name="CL/cl.h"/>
             </require>
@@ -5610,8 +5629,13 @@ server's OpenCL/api-docs repository.
             <require comment="Error codes">
                 <enum name="CL_PLATFORM_NOT_FOUND_KHR"/>
             </require>
+            <require comment="ICD 2 tag value">
+                <type name="CL_ICD2_TAG_KHR"/>
+            </require>
             <require>
                 <command name="clIcdGetPlatformIDsKHR"/>
+                <command name="clIcdGetFunctionAddressForPlatformKHR"/>
+                <command name="clIcdSetPlatformDispatchDataKHR"/>
             </require>
         </extension>
         <extension name="cl_loader_layers" revision="1.0.0" supported="opencl">
