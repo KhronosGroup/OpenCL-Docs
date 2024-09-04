@@ -97,6 +97,7 @@ COMMONATTRIBOPTS	= -a revdate="$(SPECDATE)" \
 			  -a stem=latexmath \
 			  -a generated=$(GENERATED) \
 			  -a sectnumlevels=5 \
+			  -a nofooter \
 			  -a refprefix
 
 ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
