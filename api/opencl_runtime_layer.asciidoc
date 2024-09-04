@@ -10433,10 +10433,9 @@ Otherwise, it returns one of the following errors:
     required by the OpenCL implementation on the host.
 --
 
-[open,refpage='clSetKernelExecInfo',desc='Set additional information specifying how a kernel will execute.',type='protos']
+[open,refpage='clSetKernelExecInfo',desc='Set additional execution information for a kernel.',type='protos']
 --
-To set additional information specifying how a kernel will execute, call
-the function
+To set additional execution information for a kernel, call the function
 
 include::{generated}/api/protos/clSetKernelExecInfo.txt[]
 include::{generated}/api/version-notes/clSetKernelExecInfo.asciidoc[]
@@ -10463,14 +10462,18 @@ include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_SVM_PTRS.asciidoc[]
       | Specifies a set of pointers to SVM allocations that may be accessed
         by the kernel in addition to those set directly as kernel arguments.
         Each of the pointers can be the pointer returned by {clSVMAlloc} or can
-        be a pointer offset into the SVM region.
-        It is sufficient to provide one pointer for each SVM allocation.
+        be a pointer to the middle of an SVM allocation.
+        It is sufficient to specify one pointer for each SVM allocation.
+
+        Behavior is undefined if the kernel accesses a coarse-grain or
+        fine-grain buffer SVM allocation that is not set as a kernel argument
+        and is not in the set specified by {CL_KERNEL_EXEC_INFO_SVM_PTRS}.
 
         The complete set of pointers is specified by each call to
         {clSetKernelExecInfo} and replaces any previously specified set of
         pointers.
         To specify that no SVM allocations will be accessed by a kernel other
-        than those passed as kernel arguments, specify an empty set by passing
+        than those set as kernel arguments, specify an empty set by passing
         _param_value_size_ equal to zero and _param_value_ equal to `NULL`.
 
         Non-argument pointers to SVM allocations must be specified for
@@ -10480,17 +10483,16 @@ include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_SVM_PTRS.asciidoc[]
 
 include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM.asciidoc[]
   | {cl_bool_TYPE}
-      | Specifies whether the kernel may use pointers to system allocations.
+      | Specifies whether the kernel may use pointers to system allocations
+        that are not set directly as kernel arguments.
 
-        When {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is {CL_FALSE}, the
-        OpenCL implementation may assume that system pointers are not passed as
-        kernel arguments and are not stored inside SVM allocations passed as
-        kernel arguments.
+        When {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is {CL_FALSE}, behavior
+        is undefined if the kernel acceses a system allocation that is not set as
+        a kernel argument.
 
         When {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is {CL_TRUE}, the
-        OpenCL implementation must assume that system pointers might be passed
-        as kernel arguments or stored inside SVM allocations passed as
-        kernel arguments.
+        kernel may access system allocations that are not set directly as kernel
+        arguments.
 
         If {clSetKernelExecInfo} has not been called with a value for
         {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM}, the default value is
