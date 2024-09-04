@@ -156,6 +156,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef struct _cl_event *            <name>cl_event</name>;</type>
         <type category="define">typedef struct _cl_sampler *          <name>cl_sampler</name>;</type>
         <type category="define">typedef struct _cl_semaphore_khr *    <name>cl_semaphore_khr</name>;</type>
+        <type category="define">typedef struct _cl_instance_khr *     <name>cl_instance_khr</name>;</type>
         <type category="define" comment="Unlike cl_platform.h types, not guaranteed to be the same size as kernel bool">typedef <type>cl_uint</type>          <name>cl_bool</name>;</type>
         <type category="define">typedef <type>cl_ulong</type>         <name>cl_bitfield</name>;</type>
         <type category="define">typedef <type>cl_ulong</type>         <name>cl_properties</name>;</type>
@@ -255,6 +256,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_platform_command_buffer_capabilities_khr</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_mutable_dispatch_asserts_khr</name></type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_kernel_clock_capabilities_khr</name>;</type>
+        <type category="define" requires="stdint">typedef <type>intptr_t</type> <name>cl_instance_properties_khr</name>;</type>
 
             <comment>Structure types</comment>
         <type category="struct" name="cl_dx9_surface_info_khr">
@@ -710,7 +712,10 @@ server's OpenCL/api-docs repository.
             <unused start="-1143" end="-1153"/>
     </enums>
 
-    <enums start="-1154" end="-9999" name="ErrorCodes.future" vendor="Khronos" comment="RESERVED FOR FUTURE ALLOCATIONS BY KHRONOS">
+    <enums start="-1154" end="-1154" name="ErrorCodes.1154" vendor="Khronos" comment="For cl_khr_icd">
+        <enum value="-1154"         name="CL_INVALID_INSTANCE_KHR"/>
+    </enums>
+    <enums start="-1155" end="-9999" name="ErrorCodes.future" vendor="Khronos" comment="RESERVED FOR FUTURE ALLOCATIONS BY KHRONOS">
             <unused start="-1154" end="-9999"/>
     </enums>
 
@@ -731,6 +736,7 @@ server's OpenCL/api-docs repository.
         <enum value="0"             name="CL_MEM_DEVICE_HANDLE_LIST_END_KHR"/>
         <enum value="0"             name="CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR"/>
         <enum value="0"             name="CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR"/>
+        <enum value="0"             name="CL_INSTANCE_PROPERTIES_LIST_END_KHR"/>
     </enums>
 
     <enums name="cl_affinity_domain_ext" vendor="IBM" comment="Property names for CL_DEVICE_PARTITION_BY_AFFINITY_DOMAIN_EXT. This is not a bitfield.">
@@ -2578,6 +2584,31 @@ server's OpenCL/api-docs repository.
             <proto><type>cl_int</type>                     <name>clIcdSetPlatformDispatchDataKHR</name></proto>
             <param><type>cl_platform_id</type>             <name>platform</name></param>
             <param><type>void</type>*                      <name>dispatch_data</name></param>
+        </command>
+        <command>
+            <proto><type>cl_platform_id</type>             <name>clIcdCreateInstancePlatformKHR</name></proto>
+            <param><type>cl_platform_id</type>             <name>platform</name></param>
+            <param><type>cl_int</type>*                    <name>errcode_ret</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                     <name>clIcdDestroyInstancePlatformKHR</name></proto>
+            <param><type>cl_platform_id</type>             <name>platform</name></param>
+        </command>
+        <command>
+            <proto><type>cl_instance_khr</type>                   <name>clCreateInstanceKHR</name></proto>
+            <param>const <type>cl_instance_properties_khr</type>* <name>properties</name></param>
+            <param><type>cl_int</type>*                           <name>errcode_ret</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                     <name>clDestroyInstanceKHR</name></proto>
+            <param><type>cl_instance_khr</type>            <name>instance</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                     <name>clGetPlatformIDsForInstanceKHR</name></proto>
+            <param><type>cl_instance_khr</type>            <name>instance</name></param>
+            <param><type>cl_uint</type>                    <name>num_entries</name></param>
+            <param><type>cl_platform_id</type>*            <name>platforms</name></param>
+            <param><type>cl_uint</type>*                   <name>num_platforms</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_2">
             <proto><type>cl_program</type>                 <name>clCreateProgramWithILKHR</name></proto>
@@ -5628,12 +5659,20 @@ server's OpenCL/api-docs repository.
             <require>
                 <type name="CL/cl.h"/>
             </require>
+            <require>
+                <type name="cl_instance_khr"/>
+                <type name="cl_instance_properties_khr"/>
+            </require>
             <require comment="cl_platform_info">
                 <enum name="CL_PLATFORM_ICD_SUFFIX_KHR"/>
                 <enum name="CL_PLATFORM_UNLOADABLE_KHR"/>
             </require>
+            <require comment="cl_instance_properties_khr">
+                <enum name="CL_INSTANCE_PROPERTIES_LIST_END_KHR"/>
+            </require>
             <require comment="Error codes">
                 <enum name="CL_PLATFORM_NOT_FOUND_KHR"/>
+                <enum name="CL_INVALID_INSTANCE_KHR"/>
             </require>
             <require comment="ICD 2 tag value">
                 <type name="CL_ICD2_TAG_KHR"/>
@@ -5642,6 +5681,11 @@ server's OpenCL/api-docs repository.
                 <command name="clIcdGetPlatformIDsKHR"/>
                 <command name="clIcdGetFunctionAddressForPlatformKHR"/>
                 <command name="clIcdSetPlatformDispatchDataKHR"/>
+                <command name="clIcdCreateInstancePlatformKHR"/>
+                <command name="clIcdDestroyInstancePlatformKHR"/>
+                <command name="clCreateInstanceKHR"/>
+                <command name="clDestroyInstanceKHR"/>
+                <command name="clGetPlatformIDsForInstanceKHR"/>
             </require>
         </extension>
         <extension name="cl_loader_layers" revision="2.0.0" supported="opencl">

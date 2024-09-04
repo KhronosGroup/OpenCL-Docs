@@ -94,6 +94,7 @@ include::{generated}/api/protos/clIcdGetFunctionAddressForPlatformKHR.txt[]
 include::{generated}/api/version-notes/clIcdGetFunctionAddressForPlatformKHR.asciidoc[]
 
   * _platform_ refers to the platform ID returned by {clIcdGetPlatformIDsKHR}
+    or by {clIcdCreateInstancePlatformKHR}
   * _func_name_ name of an API entry point
 
 {clIcdGetFunctionAddressForPlatformKHR} returns the address of the API entry
@@ -119,6 +120,115 @@ include::{generated}/api/version-notes/clIcdSetPlatformDispatchDataKHR.asciidoc[
 {clIcdSetPlatformDispatchDataKHR} returns {CL_SUCCESS} if the function is
 executed successfully.
 It returns {CL_INVALID_PLATFORM} if _platform_ is not a valid platform.
+--
+
+[open,refpage='clIcdCreateInstancePlatformKHR',desc='Create an instance of a platform',type='protos']
+--
+An instance platform can be created by the ICD Loader by using the following
+function:
+
+include::{generated}/api/protos/clIcdCreateInstancePlatformKHR.txt[]
+include::{generated}/api/version-notes/clIcdCreateInstancePlatformKHR.asciidoc[]
+
+  * _platform_ refers to the platform ID returned by {clIcdGetPlatformIDsKHR}
+
+  * _errcode_ret_ will return an appropriate error code as described below.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+{clIcdCreateInstancePlatformKHR} returns a valid non-zero OpenCL platform object
+and _errcode_ret_ is set to {CL_SUCCESS} if the instance platform object is
+created successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+    * {CL_INVALID_PLATFORM} if _platform_ is not a valid platform.
+    * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+      required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clIcdDestroyInstancePlatformKHR',desc='Destroy an instance of a platform',type='protos']
+--
+An instance platform can be destroyed by the ICD Loader by using the following
+function:
+
+include::{generated}/api/protos/clIcdDestroyInstancePlatformKHR.txt[]
+include::{generated}/api/version-notes/clIcdDestroyInstancePlatformKHR.asciidoc[]
+
+  * _platform_ refers to the instance platform object returned by
+    {clIcdCreateInstancePlatformKHR}
+
+{clIcdDestroyInstancePlatformKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+It returns {CL_INVALID_PLATFORM} if _platform_ is not a valid instance platform.
+--
+
+[open,refpage='clCreateInstanceKHR',desc='Create an OpenCL instance',type='protos']
+--
+An instance can be created by the user by using the following function:
+
+include::{generated}/api/protos/clCreateInstanceKHR.txt[]
+include::{generated}/api/version-notes/clCreateInstanceKHR.asciidoc[]
+
+  * _properties_ specifies additional instance properties in a
+    {CL_INSTANCE_PROPERTIES_LIST_END_KHR_anchor} terminated list.
+    Can be `NULL` if no properties are given.
+  * _errcode_ret_ will return an appropriate error code as described below.
+    If _errcode_ret_ is `NULL`, no error code is returned.
+
+{clCreateInstanceKHR} returns a valid non-zero OpenCL instance object
+and _errcode_ret_ is set to {CL_SUCCESS} if the instance object is
+created successfully.
+Otherwise, it returns a `NULL` value with one of the following error values
+returned in _errcode_ret_:
+
+    * {CL_INVALID_VALUE} if _properties_ contains an invalid value
+    * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+      required by the OpenCL implementation on the host.
+    * {CL_PLATFORM_NOT_FOUND_KHR} if zero instance platforms are available.
+--
+
+[open,refpage='clDestroyInstanceKHR',desc='Destroy an OpenCL instance',type='protos']
+--
+An instance can be destroyed by the user by using the following function:
+
+include::{generated}/api/protos/clDestroyInstanceKHR.txt[]
+include::{generated}/api/version-notes/clDestroyInstanceKHR.asciidoc[]
+
+  * _instance_ refers to the instance object returned by {clCreateInstanceKHR}.
+
+{clDestroyInstanceKHR} returns {CL_SUCCESS} if the function is executed
+successfully.
+It returns {CL_INVALID_INSTANCE_KHR} if _instance_ is not a valid instance
+object.
+--
+
+[open,refpage='clGetPlatformIDsForInstanceKHR',desc='Query list of available platforms in an instance',type='protos']
+--
+The list of platforms available in an instance can be obtained with the
+function:
+
+include::{generated}/api/protos/clGetPlatformIDsForInstanceKHR.txt[]
+include::{generated}/api/version-notes/clGetPlatformIDsForInstanceKHR.asciidoc[]
+
+  * _instance_ refers to the instance object returned by {clCreateInstanceKHR}.
+  * _num_entries_ is the number of {cl_platform_id_TYPE} entries that can
+    be added to _platforms_. If _platforms_ is not `NULL`, then _num_entries_
+    must be greater than zero.
+  * _platforms_ returns a list of OpenCL platforms available for access through
+    the _instance_. The {cl_platform_id_TYPE} values returned in _platforms_
+    can be used to identify a specific instance platform. If the _platforms_
+    argument is `NULL`, then this argument is ignored. The number of OpenCL
+    platforms returned is the minimum of the value specified by _num_entries_
+    or the number of instance platforms available.
+  * _num_platforms_ returns the number of instance platforms available.
+    If _num_platforms_ is `NULL`, then this argument is ignored.
+
+{clGetPlatformIDsForInstanceKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+It returns {CL_INVALID_INSTANCE_KHR} if _instance_ is not a valid instance object.
+It returns {CL_INVALID_VALUE} if _num_entries_ is equal to zero and
+_platforms_ is not `NULL` or if both _num_platforms_ and _platforms_ are
+`NULL`.
 --
 
 endif::cl_khr_icd[]
