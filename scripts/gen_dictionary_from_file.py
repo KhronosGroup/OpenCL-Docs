@@ -11,7 +11,7 @@ import sys
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-file', action='store',
+    parser.add_argument('-i', action='store',
                         default='',
                         help='Input file with dictionary source to generate, one per line, stdin is used if no file is provided.')
     parser.add_argument('-o', action='store', default='',
@@ -20,9 +20,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     entries = []
-    if len(args.file) > 0:
-        print('Generating dictionary from source file: ' + args.file)
-        with open(args.file) as f:
+    if args.i:
+        print('Generating dictionary from source file: ' + args.i)
+        with open(args.i) as f:
             entries = f.readlines()
     else:
         print('Generating dictionary from stdin.')

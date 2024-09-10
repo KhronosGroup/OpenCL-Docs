@@ -544,8 +544,8 @@ extinc: $(METADEPEND)
 $(METADEPEND): $(APIXML) $(GENSCRIPT)
 	$(QUIET)$(MKDIR) $(METAPATH)
 	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(METAPATH) extinc
-	$(QUIET)$(PYTHON) $(CFEATSCRIPT) -file $(CFEATURES) -o $(METAPATH)/c-feature-dictionary.asciidoc
-	$(QUIET)$(PYTHON) $(CFUNCSCRIPT) -file $(CFUNCTIONS) -o $(METAPATH)/c-function-dictionary.asciidoc
+	$(QUIET)$(PYTHON) $(CFEATSCRIPT) -i $(CFEATURES) -o $(METAPATH)/c-feature-dictionary.asciidoc
+	$(QUIET)$(PYTHON) $(CFUNCSCRIPT) -i $(CFUNCTIONS) -o $(METAPATH)/c-function-dictionary.asciidoc
 
 # This generates a single file containing asciidoc attributes for each
 # extension in the spec being built.
