@@ -11,40 +11,41 @@ import sys
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-features', action='store',
+    parser.add_argument('-i', action='store',
                         default='',
-                        help='File with OpenCL C features to generate, one per line')
+                        help='Input file with dictionary source to generate, one per line, stdin is used if no file is provided.')
     parser.add_argument('-o', action='store', default='',
-                        help='Output file in which to store the feature dictionary. stdout is used if no file is provided.')
+                        help='Output file in which to store the generated dictionary, stdout is used if no file is provided.')
 
     args = parser.parse_args()
 
-    features = []
-    if len(args.features) > 0:
-        print('Generating feature dictionaries from: ' + args.features)
-        with open(args.features) as f:
-            features = f.readlines()
+    entries = []
+    if args.i:
+        print('Generating dictionary from source file: ' + args.i)
+        with open(args.i) as f:
+            entries = f.readlines()
     else:
-        print('Reading feature dictionaries from stdin...')
+        print('Generating dictionary from stdin.')
         for line in sys.stdin:
-            features.append(line)
+            entries.append(line)
         print('Generating...\n')
 
     numberOfFeatures = 0
+    numberOfEntries = 0
 
     if args.o:
         outfile = open(args.o, 'w')
     else:
         outfile = sys.stdout
 
-    for name in features:
+    for name in entries:
         name = name.strip()
         if len(name) == 0:
             continue
 
         # OpenCL C features start with __opencl_c
         if name.startswith('__opencl_c'):
-            #print('found enum: ' + name)
+            #print('found feature: ' + name)
 
             # Create a variant of the name that precedes underscores with
             # "zero width" spaces.  This causes some long names to be
@@ -74,14 +75,24 @@ if __name__ == "__main__":
 
             numberOfFeatures = numberOfFeatures + 1
 
-        # everything else is a function
+        # everything else
         else:
-            print('Unexpected feature name: ' + name + ', features should start with __opencl_c!')
-            sys.exit(1)
+            htmlName = name[:4] + name[4:].replace("_", "_<wbr>")
+            otherName = name[:4] + name[4:].replace("_", "_&#8203;")
+
+            outfile.write('// ' + name + '\n')
+            outfile.write('ifdef::backend-html5[]\n')
+            outfile.write(':' + name + ': pass:q[' + htmlName + ']\n')
+            outfile.write('endif::[]\n')
+            outfile.write('ifndef::backend-html5[]\n')
+            outfile.write(':' + name + ': pass:q[' + otherName + ']\n')
+            outfile.write('endif::[]\n')
+
+            numberOfEntries = numberOfEntries + 1
 
         outfile.write('\n')
 
     if args.o:
         outfile.close()
 
-    print('Found ' + str(numberOfFeatures) + ' features.')
+    print('Found ' + str(numberOfFeatures) + ' OpenCL C features and ' + str(numberOfEntries) + ' other entries.')
