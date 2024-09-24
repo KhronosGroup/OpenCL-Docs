@@ -46,7 +46,7 @@ Draft.
 == Version
 
 Built On: {docdate} +
-Revision: 0.2.0
+Revision: 0.3.0
 
 == Dependencies
 
@@ -59,8 +59,6 @@ This extension requires OpenCL 1.0 or later.
 The basic cl_mem buffer API doesn't enable access to the underlying raw
 pointers in the device memory, preventing its use in host side
 data structures that need pointer references to objects.
-This API adds a minimal increment on top of cl_mem that provides such
-capabilities.
 
 Shared Virtual Memory (SVM) introduced in OpenCL 2.0 is the first feature
 that enables raw device side pointers in the OpenCL standard. Its coarse-grain
@@ -69,17 +67,18 @@ coherency requirements, but it requires mapping the buffer's address range
 to the host virtual address space although it might not be needed by the
 application. This is not an issue in systems which can provide virtual memory
 across the platform, but might provide implementation challenges in cases
-where the device presents a global memory with its disjoint address space
+where the device presents a global memory with a disjoint address space
 (that can also be a physical memory address space) or, for example, when
 a barebone embedded system lacks virtual memory support altogether.
 
 Various higher-level APIs present a memory allocation routine which can
 allocate device-only memory and provide raw pointers to it without guarentees
-of system-wide uniqueness: Minimal implementations of OpenMP's omp_target_alloc() and
-CUDA/HIP's cudaMalloc()/hipMalloc() do not require a shared
+of system-wide uniqueness: For example, minimal implementations of OpenMP's
+omp_target_alloc() and CUDA/HIP's cudaMalloc()/hipMalloc() do not require a shared
 address space between the host and the device. This extension is meant to
-provide a minimal set of features to implement such APIs without requiring
-a shared virtual address space between the host and the device.
+provide a minimal set of features to implement such APIs using the cl_mem
+buffers without requiring a shared virtual address space between the host and
+the device.
 
 === New API Function
 
@@ -92,8 +91,8 @@ Enums for enabling device pointer properties when creating a buffer
 
 [source]
 ----
-#define CL_MEM_DEVICE_ADDRESS_EXT (1ul << 31)
-#define CL_MEM_DEVICE_PRIVATE_EXT (1ul << 30)
+#define CL_MEM_DEVICE_SHARED_ADDRESS_EXT (1ul << 31)
+#define CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT (1ul << 30)
 ----
 
 Enums for querying the device pointer from the cl_mem <<clGetMemObjectInfo, the list of supported param_names table>>:
@@ -142,9 +141,9 @@ Add new allocation flags <<clCreateBuffer, List of supported memory flag values 
 [width="100%",cols="<50%,<50%",options="header"]
 |====
 | Memory Flags | Description
-| {CL_MEM_DEVICE_ADDRESS_EXT_anchor}
+| {CL_MEM_DEVICE_SHARED_ADDRESS_EXT_anchor}
 
-include::{generated}/api/version-notes/CL_MEM_DEVICE_ADDRESS_EXT.asciidoc[]
+include::{generated}/api/version-notes/CL_MEM_DEVICE_SHARED_ADDRESS_EXT.asciidoc[]
   | This flag specifies that the buffer must have a single fixed address
    for its lifetime and the address should be unique at least across the devices
    of the context, but not necessarily within the host (virtual) memory.
@@ -161,22 +160,22 @@ include::{generated}/api/version-notes/CL_MEM_DEVICE_ADDRESS_EXT.asciidoc[]
    client code. If all of the devices in the context do not support
    this type of allocations, an error (CL_INVALID_VALUE) is returned.
 
-   The device addresses of sub-buffers derived from CL_MEM_DEVICE_ADDRESS_EXT
+   The device addresses of sub-buffers derived from CL_MEM_DEVICE_SHARED_ADDRESS_EXT
    allocated buffers can be computed by adding the sub-buffer origin to the
    start address.
 
-| {CL_MEM_DEVICE_PRIVATE_EXT_anchor}
+| {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT_anchor}
 
-include::{generated}/api/version-notes/CL_MEM_DEVICE_PRIVATE_EXT.asciidoc[]
-  | If this flag is combined with CL_MEM_DEVICE_ADDRESS_EXT, each device in
-   the context can have their own (fixed) device-side address and a copy of
-   the created buffer which are synchronized implicitly by the runtime.
-   The main difference to a default cl_mem allocation in that case is then
-   that the addresses are queriable with CL_MEM_DEVICE_PTRS_EXT and the
-   per-device address is guaranteed to be the same for the entire lifetime
+include::{generated}/api/version-notes/CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT.asciidoc[]
+  | This flag specifies that the buffer must have a single fixed address
+   for its lifetime. Each device in the context can have their own (fixed)
+   device-side address and a copy of the created buffer which are synchronized
+   implicitly by the runtime. The main difference to a default cl_mem allocation
+   in that case is that the addresses are queriable with CL_MEM_DEVICE_PTRS_EXT
+   and the per-device address is guaranteed to be the same for the entire lifetime
    of the cl_mem.
 
-   The device addresses of sub-buffers derived from CL_MEM_DEVICE_PRIVATE_EXT
+   The device addresses of sub-buffers derived from CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT
    allocated buffers can be computed by adding the sub-buffer origin to the
    device-specific start address.
 
@@ -196,7 +195,7 @@ Add a new information type <<clGetMemObjectInfo, List of supported param_names t
 include::{generated}/api/version-notes/CL_MEM_DEVICE_PTR_EXT.asciidoc[]
   | {cl_mem_device_address_EXT_TYPE}
       | Returns the device address for a buffer allocated with
-   CL_MEM_DEVICE_ADDRESS_EXT. If the buffer was not created with the flag
+   CL_MEM_DEVICE_SHARED_ADDRESS_EXT. If the buffer was not created with the flag
    or there are multiple devices in the context and the buffer address is
    not the same for all of them, it returns CL_INVALID_MEM_OBJECT.
 
@@ -205,7 +204,7 @@ include::{generated}/api/version-notes/CL_MEM_DEVICE_PTRS_EXT.asciidoc[]
   | {cl_mem_device_address_pair_EXT_TYPE}
       | Returns the device-address pairs for all devices in the context.
       The per-device addresses might differ when the buffer was allocated
-      with the CL_MEM_DEVICE_PRIVATE_EXT enabled.
+      with the CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT enabled.
 |====
 
 
@@ -231,7 +230,7 @@ include::{generated}/api/version-notes/clSetKernelArgDevicePointerEXT.asciidoc[]
     value is changed by a call to {clSetKernelArgDevicePointer} for _kernel_.
     The device pointer can only be used for arguments that are declared to be a
     pointer to `global` memory allocated with clCreateBuffer() with the
-    CL_MEM_DEVICE_ADDRESS_EXT flag. The pointer value specified as the argument value
+    CL_MEM_DEVICE_SHARED_ADDRESS_EXT flag. The pointer value specified as the argument value
     can be the pointer to the beginning of the buffer or be a pointer offset into
     the buffer region. The device pointer value must be naturally aligned according to
     the argument's type.
@@ -299,6 +298,12 @@ None.
 [options="header"]
 |====
 | *Version* | *Date*       | *Author*                         | *Changes*
+| 0.3.0     | 2024-09-24   | Pekka Jääskeläinen, Karol Herbst |
+                           Made the allocation flags independent from each other and
+                           renamed them to CL_MEM_DEVICE_SHARED_ADDRESS_EXT and
+                           CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT. The first one guarantees the
+                           same address across all devices in the context, whereas the latter
+                           allows per-device addresses.
 | 0.2.0     | 2024-09-09   | Pekka Jääskeläinen, Karol Herbst |
                            Changed the CL_MEM_DEVICE_ADDRESS_EXT wording for multi-device
                            cases "all", not "any", covering a case where not all devices
