@@ -106,6 +106,7 @@ class ApiDependencies:
 
         self.allExts = set()
         self.khrExts = set()
+        self.extExts = set()
         self.ratifiedExts = set()
         self.graph = DiGraph()
         self.extensions = {}
@@ -133,6 +134,9 @@ class ApiDependencies:
                 if conventions.KHR_prefix in name:
                     self.khrExts.add(name)
 
+                if conventions.EXT_prefix in name:
+                    self.extExts.add(name)
+
                 if api_name in ratified.split(','):
                     self.ratifiedExts.add(name)
 
@@ -158,6 +162,10 @@ class ApiDependencies:
     def khrExtensions(self):
         """Returns a set of all KHR extensions in the graph"""
         return self.khrExts
+
+    def khrAndextExtensions(self):
+        """Returns a set of all KHR and EXT extensions in the graph"""
+        return self.khrExts | self.extExts
 
     def ratifiedExtensions(self):
         """Returns a set of all ratified extensions in the graph"""

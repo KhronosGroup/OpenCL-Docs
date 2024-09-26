@@ -97,6 +97,7 @@ COMMONATTRIBOPTS	= -a revdate="$(SPECDATE)" \
 			  -a stem=latexmath \
 			  -a generated=$(GENERATED) \
 			  -a sectnumlevels=5 \
+			  -a nofooter \
 			  -a refprefix
 
 ATTRIBOPTS   = -a revnumber="$(SPECREVISION)" \
@@ -512,9 +513,13 @@ $(MANHTMLDIR)/intro.html: $(REFPATH)/intro.txt $(MANCOPYRIGHT)
 
 REGISTRY       = $(ROOTDIR)/xml
 APIXML	       = $(REGISTRY)/cl.xml
+CFEATURES      = c/features.txt
+CFUNCTIONS     = c/functions.txt
 GENSCRIPT      = $(SCRIPTS)/gencl.py
 DICTSCRIPT     = $(SCRIPTS)/gen_dictionaries.py
 VERSIONSCRIPT  = $(SCRIPTS)/gen_version_notes.py
+CFEATSCRIPT    = $(SCRIPTS)/gen_dictionary_from_file.py
+CFUNCSCRIPT    = $(SCRIPTS)/gen_dictionary_from_file.py
 GENSCRIPTOPTS  = $(VERSIONOPTIONS) $(EXTOPTIONS) $(GENSCRIPTEXTRA) -registry $(APIXML)
 GENSCRIPTEXTRA =
 
@@ -540,6 +545,8 @@ extinc: $(METADEPEND)
 $(METADEPEND): $(APIXML) $(GENSCRIPT)
 	$(QUIET)$(MKDIR) $(METAPATH)
 	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(METAPATH) extinc
+	$(QUIET)$(PYTHON) $(CFEATSCRIPT) -i $(CFEATURES) -o $(METAPATH)/c-feature-dictionary.asciidoc
+	$(QUIET)$(PYTHON) $(CFUNCSCRIPT) -i $(CFUNCTIONS) -o $(METAPATH)/c-function-dictionary.asciidoc
 
 # This generates a single file containing asciidoc attributes for each
 # extension in the spec being built.
