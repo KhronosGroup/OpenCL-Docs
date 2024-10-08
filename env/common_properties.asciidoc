@@ -576,3 +576,85 @@ pointer is appropriately aligned as required by the _Type_ that the pointer
 points to.
 
 Behavior of an unaligned load or store is undefined.
+
+=== Printf Operands
+
+For the *printf* instruction in the *OpenCL.std*
+<<opencl-extended-instruction-set, extended instruction set for OpenCL>>, the
+format specifiers in the _format_ operand determine how to print the
+additional argument operands.
+
+Behavior is undefined unless the source operand type for an additional argument
+matches the supported operand types for the format specifier in the following
+table.
+
+[cols="1,1,1,3",options="header"]
+|====
+|*Vector Specifier*
+|*Length Modifier*
+|*Conversion Specifier*
+|*Supported Operand Type*
+
+// Scalar Integers:
+
+| (none)
+| *hh*, *h*, (none)
+| *d*, *i*, *o*, *u*, *x*, *X*
+  | *OpTypeInt* with _Width_ equal to 32
+
+| (none)
+| *l*
+| *d*, *i*, *o*, *u*, *x*, *X*
+  | *OpTypeInt* with _Width_ equal to 64
+
+// Scalar Floats:
+
+| (none)
+| (none)
+| *a*, *A*, *e*, *E*, *f*, *F*, *g*, *G*
+  | *OpTypeFloat* with _Width_ equal to 32
+    footnote:[This allows printing 16-bit `half` and 32-bit `float` values on
+    devices that both do and do not support the *Float64* capability for
+    double-precision floating-point.], +
+    *OpTypeFloat* with _Width_ equal to 64
+
+// Vector Integers:
+
+| **v**_n_
+| *hh*
+| *d*, *i*, *o*, *u*, *x*, *X*
+  | *OpTypeVector* with _n_ components of *OpTypeInt* with _Width_ equal to 8
+
+| **v**_n_
+| *h*
+| *d*, *i*, *o*, *u*, *x*, *X*
+  | *OpTypeVector* with _n_ components of *OpTypeInt* with _Width_ equal to 16
+
+| **v**_n_
+| *hl*
+| *d*, *i*, *o*, *u*, *x*, *X*
+  | *OpTypeVector* with _n_ components of *OpTypeInt* with _Width_ equal to 32
+
+| **v**_n_
+| *l*
+| *d*, *i*, *o*, *u*, *x*, *X*
+  | *OpTypeVector* with _n_ components of *OpTypeInt* with _Width_ equal to 64
+
+// Vector Floats:
+
+| **v**_n_
+| *h*
+| *a*, *A*, *e*, *E*, *f*, *F*, *g*, *G*
+  | *OpTypeVector* with _n_ components of *OpTypeFloat* with _Width_ equal to 16
+
+| **v**_n_
+| *hl*
+| *a*, *A*, *e*, *E*, *f*, *F*, *g*, *G*
+  | *OpTypeVector* with _n_ components of *OpTypeFloat* with _Width_ equal to 32
+
+| **v**_n_
+| *l*
+| *a*, *A*, *e*, *E*, *f*, *F*, *g*, *G*
+  | *OpTypeVector* with _n_ components of *OpTypeFloat* with _Width_ equal to 64
+
+|====
