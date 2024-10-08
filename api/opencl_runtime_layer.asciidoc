@@ -374,10 +374,10 @@ include::{generated}/api/version-notes/clGetCommandQueueInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<command-queue-param-table,Command-Queue Parameter>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<command-queue-info-table, Command-Queue Queries>> table.
     If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
@@ -385,9 +385,9 @@ include::{generated}/api/version-notes/clGetCommandQueueInfo.asciidoc[]
 
 The list of supported _param_name_ values and the information returned in
 _param_value_ by {clGetCommandQueueInfo} is described in the
-<<command-queue-param-table,Command-Queue Parameter>> table.
+<<command-queue-info-table,Command-Queue Queries>> table.
 
-[[command-queue-param-table]]
+[[command-queue-info-table]]
 .List of supported param_names by {clGetCommandQueueInfo}
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
@@ -463,10 +463,11 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
     command-queue, or if _command_queue_ is not a valid command-queue
     for _param_name_.
-  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values or
-    if size in bytes specified by _param_value_size_ is < size of return
-    type as specified in the <<command-queue-param-table,Command-Queue
-    Parameter>> table, and _param_value_ is not a `NULL` value.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<command-queue-info-table, Command-Queue Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -4194,10 +4195,11 @@ include::{generated}/api/version-notes/clGetImageInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<image-info-table,Image Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<image-info-table, Image Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -4322,11 +4324,12 @@ endif::cl_khr_d3d11_sharing[]
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<image-info-table,Image Object Queries>> table and _param_value_ is
-    not `NULL`.
   * {CL_INVALID_MEM_OBJECT} if _image_ is a not a valid image object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<image-info-table, Image Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -5181,28 +5184,14 @@ include::{generated}/api/version-notes/clGetPipeInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<pipe-info-table,Pipe Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<pipe-info-table, Pipe Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
-
-// refError
-
-{clGetPipeInfo} returns {CL_SUCCESS} if the function is executed successfully.
-Otherwise, it returns one of the following errors:
-
-  * {CL_INVALID_MEM_OBJECT} if _pipe_ is a not a valid pipe object.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<pipe-info-table,Pipe Object Queries>> table and _param_value_ is
-    not `NULL`.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
 
 [[pipe-info-table]]
 .List of supported param_names by {clGetPipeInfo}
@@ -5238,6 +5227,22 @@ include::{generated}/api/version-notes/CL_PIPE_PROPERTIES.asciidoc[]
         _param_value_size_ret_ equal to 0, indicating that there are no
         properties to be returned.
 |====
+
+// refError
+
+{clGetPipeInfo} returns {CL_SUCCESS} if the function is executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_MEM_OBJECT} if _pipe_ is a not a valid pipe object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<pipe-info-table, Pipe Object Queries>> table
+    and _param_value_ is not `NULL`.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 --
 
 
@@ -5970,14 +5975,15 @@ include::{generated}/api/version-notes/clGetMemObjectInfo.asciidoc[]
   * _param_name_ specifies the information to query.
     The list of supported _param_name_ types and the information returned in
     _param_value_ by {clGetMemObjectInfo} is described in the
-    <<mem-info-table,Memory Object Info>> table.
+    <<mem-info-table, Memory Object Queries>> table.
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<mem-info-table,Memory Object Info>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<mem-info-table, Memory Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -6160,10 +6166,11 @@ successfully.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_MEM_OBJECT} if _memobj_ is a not a valid memory object.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<mem-info-table,Memory Object Info>> table and _param_value_ is not
-    `NULL`.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<mem-info-table, Memory Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -6280,15 +6287,16 @@ include::{generated}/api/version-notes/clGetGLTextureInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the result being queried is
     returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory
-    pointed to by _param_value_.
-    This size must be >= size of return type as described in the table
-    below.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<gl-texture-info-table, OpenGL Texture Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data copied
     to _param_value_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
 
-[[gl-texture-info-queries-table]]
+[[gl-texture-info-table]]
 .OpenGL texture info that may be queried with {clGetGLTextureInfo}
 [cols=",,",options="header",]
 |====
@@ -6324,10 +6332,12 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_MEM_OBJECT} if _memobj_ is not a valid OpenCL memory object.
   * {CL_INVALID_GL_OBJECT} if there is no OpenGL texture object associated
     with _memobj_.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is less than the size of the return type
-    as described in the table above and _param_value_ is not `NULL`, or if
-    _param_value_ and _param_value_size_ret_ are `NULL`.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<gl-texture-info-table, OpenGL Texture Queries>> table
+    and _param_value_ is not `NULL`.
+  * {CL_INVALID_VALUE} if _param_value_ and _param_value_size_ret_ are `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -8316,10 +8326,11 @@ include::{generated}/api/version-notes/clGetSamplerInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<sampler-info-table,Sampler Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<sampler-info-table, Sampler Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -8385,11 +8396,12 @@ include::{generated}/api/version-notes/CL_SAMPLER_PROPERTIES.asciidoc[]
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<sampler-info-table,Sampler Object Queries>> table and
-    _param_value_ is not `NULL`.
   * {CL_INVALID_SAMPLER} if _sampler_ is a not a valid sampler object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<sampler-info-table, Sampler Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -9700,10 +9712,11 @@ include::{generated}/api/version-notes/clGetProgramInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<program-info-table,Program Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<program-info-table, Program Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -9881,11 +9894,12 @@ include::{generated}/api/version-notes/CL_PROGRAM_SCOPE_GLOBAL_DTORS_PRESENT.asc
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<program-info-table,Program Object Queries>> table and
-    _param_value_ is not `NULL`.
   * {CL_INVALID_PROGRAM} if _program_ is a not a valid program object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<program-info-table, Program Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_INVALID_PROGRAM_EXECUTABLE} if _param_name_ is
     {CL_PROGRAM_NUM_KERNELS}, {CL_PROGRAM_KERNEL_NAMES},
     {CL_PROGRAM_SCOPE_GLOBAL_CTORS_PRESENT}, or
@@ -9916,10 +9930,11 @@ include::{generated}/api/version-notes/clGetProgramBuildInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<program-build-info-table,Program Build Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<program-build-info-table, Program Build Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -10032,13 +10047,14 @@ include::{generated}/api/version-notes/CL_PROGRAM_BUILD_GLOBAL_VARIABLE_TOTAL_SI
 successfully.
 Otherwise, it returns one of the following errors:
 
+  * {CL_INVALID_PROGRAM} if _program_ is a not a valid program object.
   * {CL_INVALID_DEVICE} if _device_ is not in the list of devices associated
     with _program_.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<program-build-info-table,Program Build Queries>> table and
-    _param_value_ is not `NULL`.
-  * {CL_INVALID_PROGRAM} if _program_ is a not a valid program object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<program-build-info-table, Program Build Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -10660,10 +10676,11 @@ include::{generated}/api/version-notes/clGetKernelInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<kernel-info-table,Kernel Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<kernel-info-table, Kernel Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -10726,11 +10743,12 @@ include::{generated}/api/version-notes/CL_KERNEL_ATTRIBUTES.asciidoc[]
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<kernel-info-table,Kernel Object Queries>> table and _param_value_
-    is not `NULL`.
   * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<kernel-info-table, Kernel Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -10759,10 +10777,11 @@ include::{generated}/api/version-notes/clGetKernelWorkGroupInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<kernel-workgroup-info-table,Kernel Object Device Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<kernel-workgroup-info-table, Kernel Object Device Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -10777,12 +10796,12 @@ include::{generated}/api/version-notes/clGetKernelWorkGroupInfo.asciidoc[]
 include::{generated}/api/version-notes/CL_KERNEL_GLOBAL_WORK_SIZE.asciidoc[]
   | {size_t_TYPE}[3]
       | This provides a mechanism for the application to query the maximum
-        global size that can be used to execute a kernel (i.e.
+        global size that can be used to execute a kernel (i.e. the
         _global_work_size_ argument to {clEnqueueNDRangeKernel}) on a custom
-        device given by device or a built-in kernel on an OpenCL device
-        given by device.
+        device given by _device_ or a built-in kernel on an OpenCL device
+        given by _device_.
 
-        If device is not a custom device and kernel is not a built-in
+        If _device_ is not a custom device and _kernel_ is not a built-in
         kernel, {clGetKernelWorkGroupInfo} returns the error
         {CL_INVALID_VALUE}.
 | {CL_KERNEL_WORK_GROUP_SIZE_anchor}
@@ -10852,16 +10871,17 @@ include::{generated}/api/version-notes/CL_KERNEL_PRIVATE_MEM_SIZE.asciidoc[]
 successfully.
 Otherwise, it returns one of the following errors:
 
+  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_INVALID_DEVICE} if _device_ is not in the list of devices associated
     with _kernel_ or if _device_ is `NULL` but there is more than one device
     associated with _kernel_.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<kernel-workgroup-info-table,Kernel Object Device Queries>> table
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<kernel-workgroup-info-table, Kernel Object Device Queries>> table
     and _param_value_ is not `NULL`.
   * {CL_INVALID_VALUE} if _param_name_ is {CL_KERNEL_GLOBAL_WORK_SIZE} and
     _device_ is not a custom device and _kernel_ is not a built-in kernel.
-  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -10897,10 +10917,11 @@ Also see {cl_khr_subgroups_EXT}.
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<kernel-sub-group-info-table,Kernel Object Sub-group Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<kernel-sub-group-info-table, Kernel Object Sub-group Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -11005,20 +11026,21 @@ Also see {cl_khr_subgroups_EXT}.
 successfully.
 Otherwise, it returns one of the following errors:
 
+  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_INVALID_DEVICE} if _device_ is not in the list of devices associated
     with _kernel_ or if _device_ is `NULL` but there is more than one device
     associated with _kernel_.
   * {CL_INVALID_OPERATION} if _device_ does not support sub-groups.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<kernel-sub-group-info-table,Kernel Object Sub-group Queries>> table
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<kernel-sub-group-info-table, Kernel Object Sub-group Queries>> table
     and _param_value_ is not `NULL`.
   * {CL_INVALID_VALUE} if _param_name_ is
     {CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE},
     {CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE} or
     {CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT} and the size in bytes specified
     by _input_value_size_ is not valid or if _input_value_ is `NULL`.
-  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -11044,10 +11066,11 @@ include::{generated}/api/version-notes/clGetKernelArgInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be > size of return type as described in the
-    <<kernel-argument-info-table,Kernel Argument Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<kernel-argument-info-table, Kernel Argument Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -11162,14 +11185,19 @@ include::{generated}/api/version-notes/CL_KERNEL_ARG_NAME.asciidoc[]
 successfully.
 Otherwise, it returns one of the following errors:
 
+  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_INVALID_ARG_INDEX} if _arg_index_ is not a valid argument index.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_ size is < size of return type as described in
-    the <<kernel-argument-info-table,Kernel Argument Queries>> table and
-    _param_value_ is not `NULL`.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<kernel-argument-info-table, Kernel Argument Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_KERNEL_ARG_INFO_NOT_AVAILABLE} if the argument information is not
     available for kernel.
-  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 --
 
 ifdef::cl_khr_suggested_local_work_size[]
@@ -11853,10 +11881,11 @@ include::{generated}/api/version-notes/clGetEventInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<event-info-table,Event Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<event-info-table, Event Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -12211,13 +12240,14 @@ associated with _event_ will be visible to other enqueued commands.
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<kernel-argument-info-table,Kernel Argument Queries>> table and
-    _param_value_ is not `NULL`.
-  * {CL_INVALID_VALUE} if information to query given in _param_name_ cannot be
-    queried for _event_.
   * {CL_INVALID_EVENT} if _event_ is a not a valid event object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<event-info-table,Event Object Queries>> table
+    and _param_value_ is not `NULL`.
+  * {CL_INVALID_VALUE} if the information to query given in _param_name_ cannot be
+    queried for _event_.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -12959,9 +12989,13 @@ include::{generated}/api/version-notes/clGetSemaphoreHandleForTypeKHR.asciidoc[]
   * _handle_type_ specifies the type of semaphore handle that should be
     returned for this exportable _sema_object_, and must be one of the
     values specified when _sema_object_ was created.
-  * _handle_size_ specifies the size of memory pointed by _handle_ptr_.
   * _handle_ptr_ is a pointer to memory where the exported external handle
     is returned.
+    If _handle_ptr_ is `NULL`, it is ignored.
+  * _handle_size_ specifies the size in bytes of memory pointed to by
+    _handle_ptr_.
+    This size must be greater than or equal to the size of the handle type
+    specified by _handle_type_.
     If _handle_ptr_ is `NULL`, it is ignored.
   * _handle_size_ret_ returns the actual size in bytes for the external
     handle.
@@ -12973,10 +13007,7 @@ include::{generated}/api/version-notes/clGetSemaphoreHandleForTypeKHR.asciidoc[]
 handle is queried successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_SEMAPHORE_KHR}
-  ** if _sema_object_ is not a valid semaphore
-// This is redundant with the error below.
-  ** if _sema_object_ is not exportable
+  * {CL_INVALID_SEMAPHORE_KHR} if _sema_object_ is not a valid semaphore.
   * {CL_INVALID_DEVICE}
   ** if _device_ is not a valid device, or
   ** if _sema_object_ belongs to a context that is not associated with
@@ -12984,14 +13015,8 @@ Otherwise, it returns one of the following errors:
   ** if _sema_object_ can not be shared with _device_.
   * {CL_INVALID_VALUE} if the requested external semaphore handle type was
     not specified when _sema_object_ was created.
-  * {CL_INVALID_VALUE} if _handle_size_ is less than the size needed to
-    store the returned handle.
-// I don't think this can happen.  This would have been checked when the semaphore was created.
-//    ** if CL_SEMAPHORE_HANDLE_*_KHR is specified as one of the _sema_props_ and
-//    the property CL_SEMAPHORE_HANDLE_*_KHR does not identify a valid external
-//    memory handle poperty reported by
-//    {CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR} or
-//   {CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR} queries.
+  * {CL_INVALID_VALUE} if the size in bytes specified by _handle_size_ is
+    less than size of the requested handle and _handle_ptr_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -13496,21 +13521,21 @@ include::{generated}/api/version-notes/clGetSemaphoreInfoKHR.asciidoc[]
   * _sema_object_ specifies the semaphore object being queried.
   * _param_name_ is a constant that specifies the semaphore information to
     query, and must be one of the values shown in the
-    <<cl_khr_semaphore_info-table, Semaphore Queries>> table.
+    <<semaphore-info-table, Semaphore Queries>> table.
   * _param_value_ is a pointer to memory where the result of the query is
-    returned as described in the <<cl_khr_semaphore_info-table, Semaphore
+    returned as described in the <<semaphore-info-table, Semaphore
     Queries>> table.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ specifies the size in bytes of memory pointed to
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
     _param_value_.
     This size must be greater than or equal to the size of the return type
-    described in the <<cl_khr_semaphore_info-table, Semaphore Queries>>
-    table.
+    specified in the <<semaphore-info-table, Semaphore Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_value_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
 
-[[cl_khr_semaphore_info-table]]
+[[semaphore-info-table]]
 .List of parameter names supported by {clGetSemaphoreInfoKHR}
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
@@ -13562,14 +13587,12 @@ endif::cl_khr_external_semaphore[]
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_SEMAPHORE_KHR}
-  ** if _sema_object_ is not a valid semaphore
-  * {CL_INVALID_VALUE}
-  ** if _param_name_ is not one of the attribute defined in the
-     <<cl_khr_semaphore_info-table, Semaphore Queries>> table or
-  ** if _param_value_size_ is less than the size of Return Type of the
-     corresponding _param_name_ attribute as defined in the
-     <<cl_khr_semaphore_info-table, Semaphore Queries>> table.
+  * {CL_INVALID_SEMAPHORE_KHR} if _sema_object_ is not a valid semaphore.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<semaphore-info-table, Semaphore Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -13665,10 +13688,11 @@ include::{generated}/api/version-notes/clGetEventProfilingInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<event-profiling-info-table,Event Profiling Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<event-profiling-info-table, Event Profiling Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -13784,6 +13808,7 @@ endif::cl_khr_command_buffer_multi_device[]
 successfully and the profiling information has been recorded.
 Otherwise, it returns one of the following errors:
 
+  * {CL_INVALID_EVENT} if _event_ is a not a valid event object.
   * {CL_PROFILING_INFO_NOT_AVAILABLE} if the {CL_QUEUE_PROFILING_ENABLE} flag is
     not set for the command-queue, if the execution status of the command
     identified by _event_ is not {CL_COMPLETE} or if _event_ is a user event
@@ -13798,11 +13823,11 @@ ifdef::cl_khr_command_buffer_multi_device[]
     {CL_PROFILING_INFO_NOT_AVAILABLE} is returned if all the queues passed
     do not have {CL_QUEUE_PROFILING_ENABLE} set.
 endif::cl_khr_command_buffer_multi_device[]
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<event-profiling-info-table,Event Profiling Queries>> table and
-    _param_value_ is not `NULL`.
-  * {CL_INVALID_EVENT} if _event_ is a not a valid event object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<event-profiling-info-table,Event Profiling Queries>> table and _param_value_ is not
+    a `NULL` value.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -16081,13 +16106,13 @@ include::{generated}/api/version-notes/clGetCommandBufferInfoKHR.asciidoc[]
 
   * _command_buffer_ specifies the command-buffer being queried.
   * _param_name_ specifies the information to query.
-  * _param_value_size_ specifies the size in bytes of memory pointed to by
-    _param_value_.
-    This size must be {geq} size of return type as described in the table
-    below.
-    If _param_value_ is `NULL`, it is ignored.
   * _param_value_ is a pointer to a memory location where the appropriate
     result being queried is returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<command-buffer-info-table, Command-Buffer Queries>> table.
     If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_value_.
@@ -16096,6 +16121,7 @@ include::{generated}/api/version-notes/clGetCommandBufferInfoKHR.asciidoc[]
 The list of supported _param_name_ values and the information returned in
 _param_value_ by {clGetCommandBufferInfoKHR} is described in the table below.
 
+[[command-buffer-info-table]]
 .{clGetCommandBufferInfoKHR} values
 [cols=",,",options="header",]
 |====
@@ -16177,9 +16203,11 @@ Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
     command-buffer.
-  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values or
-    if size in bytes specified by _param_value_size_ is less than size of
-    return type and _param_value_ is not a `NULL` value.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<command-buffer-info-table, Command-Buffer Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -16198,21 +16226,21 @@ include::{generated}/api/version-notes/clGetMutableCommandInfoKHR.asciidoc[]
   * _param_name_ specifies the information to query.
     The list of supported _param_name_ types and the information returned in
     _param_value_ by {clGetMutableCommandInfoKHR} is described in the
-    <<mutable-command-object-queries, Mutable Command Object Queries>>
-    table.
-  * _param_value_size_ is used to specify the size in bytes of memory
-    pointed to by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<mutable-command-object-queries, Mutable Command Object Queries>>
+    <<mutable-command-info-table, Mutable Command Object Queries>>
     table.
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ is used to specify the size in bytes of memory
+    pointed to by _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<mutable-command-info-table, Mutable Command Object Queries>> table.
     If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
 
-[[mutable-command-object-queries]]
+[[mutable-command-info-table]]
 ._Mutable Command Object Queries_
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
@@ -16330,12 +16358,13 @@ include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR.a
 executed successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<mutable-command-object-queries, Mutable Command Object Queries>>
-    table and _param_value_ is not `NULL`.
   * {CL_INVALID_MUTABLE_COMMAND_KHR} if _command_ is not a valid mutable
     command object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<mutable-command-info-table, Mutable Command Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -16381,7 +16410,8 @@ include::{generated}/api/protos/clGetGLContextInfoKHR.txt[]
   * _param_value_size_ specifies the size in bytes of memory pointed to by
     _param_value_.
     This size must be greater than or equal to the size of the return type
-    described in the table below.
+    specified in the <<gl-context-info-table, Supported Device Types>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_value_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -16438,15 +16468,13 @@ Otherwise, it returns one of the following errors:
      to a non-default value.
   ** Both of the properties {CL_CGL_SHAREGROUP_KHR} and {CL_GL_CONTEXT_KHR}
      are set to non-default values.
-  ** Any of the devices specified in the <devices> argument cannot support
-     OpenCL objects which share the data store of an OpenGL object.
-  * {CL_INVALID_VALUE} if an property name other than those specified in
-    _table 4.5_ is specified in _properties_.
-  * {CL_INVALID_VALUE} if _param_name_ is not one of the values listed in
-    the <<gl-context-info-table, GL context information that can be
-    queried with_ {clGetGLContextInfoKHR}>> table, or if the size in bytes
-    specified by _param_value_size_ is less than the size of the return type
-    shown in the table and _param_value_ is not a `NULL` value
+  * {CL_INVALID_VALUE} if a property name specified in _properties_ is
+    invalid.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<gl-context-info-table, Supported Device Types>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
