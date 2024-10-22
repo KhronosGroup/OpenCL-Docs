@@ -10484,20 +10484,21 @@ include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_SVM_PTRS.asciidoc[]
 include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM.asciidoc[]
   | {cl_bool_TYPE}
       | Specifies whether the kernel may use pointers to system allocations
-        that are not set directly as kernel arguments.
+        that are not set directly as kernel arguments on devices that support
+        fine-grain system SVM allocations.
 
-        When {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is {CL_FALSE}, behavior
-        is undefined if the kernel accesses a system allocation that is not set as
-        a kernel argument.
+        When a device supports fine-grain system SVM allocations and
+        {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is {CL_TRUE}, the kernel may
+        access system allocations that are not set directly as kernel arguments.
 
-        When {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is {CL_TRUE}, the
-        kernel may access system allocations that are not set directly as kernel
-        arguments.
+        Otherwise, if a device does not support fine-grain system SVM
+        allocations or when {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is
+        {CL_FALSE}, behavior is undefined if the kernel accesses a system
+        allocation that is not set as a kernel argument.
 
         If {clSetKernelExecInfo} has not been called with a value for
         {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM}, the default value is
-        {CL_TRUE} if the device on which the kernel is enqueued supports
-        fine-grain system SVM, otherwise the default is {CL_FALSE}.
+        {CL_TRUE}.
 |====
 
 // refError
@@ -11396,9 +11397,7 @@ Otherwise, it returns one of the following errors:
     are not valid events.
   * {CL_INVALID_OPERATION} if SVM pointers are passed as arguments to a kernel
     and the device does not support SVM, or if system pointers are passed as
-    arguments to a kernel and the device does not support fine-grain system SVM,
-    or if {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is {CL_TRUE} and the device
-    does not support fine-grain system SVM.
+    arguments to a kernel and the device does not support fine-grain system SVM.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -11491,9 +11490,7 @@ Otherwise, it returns one of the following errors:
     are not valid events.
   * {CL_INVALID_OPERATION} if SVM pointers are passed as arguments to a kernel
     and the device does not support SVM, or if system pointers are passed as
-    arguments to a kernel and the device does not support fine-grain system SVM,
-    or if {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is {CL_TRUE} and the device
-    does not support fine-grain system SVM.
+    arguments to a kernel and the device does not support fine-grain system SVM.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
