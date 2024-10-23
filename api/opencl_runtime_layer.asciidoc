@@ -2665,14 +2665,17 @@ endif::cl_khr_external_memory[]
     _image_height_ for a 2D image array or a 3D image, must be {geq} the
     image row pitch for a 1D image array, and must be a multiple of the
     image row pitch.
-  * _num_mip_levels_ must be
-ifndef::cl_khr_mipmap_image[0.]
-ifdef::cl_khr_mipmap_image[]
-    0 unless the {cl_khr_mipmap_image_EXT} extension is supported, in which
-    case it may be a nonzero value specifying the number of mipmap
-    levels in the image.
+  * _num_mip_levels_ must be `0`, indicating that the image has a single
+ifndef::cl_khr_mipmap_image[]
+    mipmap level.
 endif::cl_khr_mipmap_image[]
-  * _num_samples_ must be 0.
+ifdef::cl_khr_mipmap_image[]
+    mipmap level, unless the {cl_khr_mipmap_image_EXT} extension is supported.
+    When the {cl_khr_mipmap_image_EXT} extension is supported, _num_mip_levels_
+    may additionally specify the total number of mipmap levels in the image,
+    including the base level footnote:[{fn-single-mipmap-level}].
+endif::cl_khr_mipmap_image[]
+  * _num_samples_ must be `0`.
   * _mem_object_ may refer to a valid buffer or image memory object.
     `mem_object` can be a buffer memory object if `image_type` is
     {CL_MEM_OBJECT_IMAGE1D_BUFFER} or
@@ -10472,16 +10475,15 @@ Otherwise, it returns one of the following errors:
     required by the OpenCL implementation on the host.
 --
 
-[open,refpage='clSetKernelExecInfo',desc='Pass additional information other than argument values to a kernel.',type='protos']
+[open,refpage='clSetKernelExecInfo',desc='Set additional execution information for a kernel.',type='protos']
 --
-To pass additional information other than argument values to a kernel, call
-the function
+To set additional execution information for a kernel, call the function
 
 include::{generated}/api/protos/clSetKernelExecInfo.txt[]
 include::{generated}/api/version-notes/clSetKernelExecInfo.asciidoc[]
 
-  * _kernel_ specifies the kernel object being queried.
-  * _param_name_ specifies the information to be passed to kernel.
+  * _kernel_ is a valid kernel object.
+  * _param_name_ specifies the type of information to set.
     The list of supported _param_name_ types and the corresponding values passed
     in _param_value_ is described in the <<kernel-exec-info-table,Kernel
     Execution Properties>> table.
@@ -10499,22 +10501,46 @@ include::{generated}/api/version-notes/clSetKernelExecInfo.asciidoc[]
 
 include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_SVM_PTRS.asciidoc[]
   | {void_TYPE}*[]
-      | SVM pointers must reference locations contained entirely within
-        buffers that are passed to kernel as arguments, or that are passed
-        through the execution information.
+      | Specifies a set of pointers to SVM allocations that may be accessed
+        by the kernel in addition to those set directly as kernel arguments.
+        Each of the pointers can be the pointer returned by {clSVMAlloc} or can
+        be a pointer to the middle of an SVM allocation.
+        It is sufficient to specify one pointer for each SVM allocation.
 
-        Non-argument SVM buffers must be specified by passing pointers to
-        those buffers via {clSetKernelExecInfo} for coarse-grain and
-        fine-grain buffer SVM allocations but not for finegrain system SVM
-        allocations.
+        Behavior is undefined if the kernel accesses a coarse-grain or
+        fine-grain buffer SVM allocation that is not set as a kernel argument
+        and is not in the set specified by {CL_KERNEL_EXEC_INFO_SVM_PTRS}.
+
+        The complete set of pointers is specified by each call to
+        {clSetKernelExecInfo} and replaces any previously specified set of
+        pointers.
+        To specify that no SVM allocations will be accessed by a kernel other
+        than those set as kernel arguments, specify an empty set by passing
+        _param_value_size_ equal to zero and _param_value_ equal to `NULL`.
+
+        Non-argument pointers to SVM allocations must be specified for
+        coarse-grain and fine-grain buffer SVM allocations, but not for
+        fine-grain system SVM allocations.
 | {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM_anchor}
 
 include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM.asciidoc[]
   | {cl_bool_TYPE}
-      | This flag indicates whether the kernel uses pointers that are fine
-        grain system SVM allocations.
-        These fine grain system SVM pointers may be passed as arguments or
-        defined in SVM buffers that are passed as arguments to _kernel_.
+      | Specifies whether the kernel may use pointers to system allocations
+        that are not set directly as kernel arguments on devices that support
+        fine-grain system SVM allocations.
+
+        When a device supports fine-grain system SVM allocations and
+        {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is {CL_TRUE}, the kernel may
+        access system allocations that are not set directly as kernel arguments.
+
+        Otherwise, if a device does not support fine-grain system SVM
+        allocations or when {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is
+        {CL_FALSE}, behavior is undefined if the kernel accesses a system
+        allocation that is not set as a kernel argument.
+
+        If {clSetKernelExecInfo} has not been called with a value for
+        {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM}, the default value is
+        {CL_TRUE}.
 |====
 
 // refError
@@ -10525,79 +10551,18 @@ Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_INVALID_OPERATION} if no devices in the context associated with _kernel_ support SVM.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, if _param_value_ is
-    `NULL` or if the size specified by _param_value_size_ is not valid.
   * {CL_INVALID_OPERATION} if _param_name_ is
     {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} and _param_value_ is {CL_TRUE}
-    but no devices in context associated with _kernel_ support fine-grain
+    and no devices in the context associated with _kernel_ support fine-grain
     system SVM allocations.
+  * {CL_INVALID_VALUE} if _param_name_ is not valid, if _param_value_ is
+    `NULL` and _param_value_size_ is greater than zero, or if the size specified
+    by _param_value_size_ is not valid.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 --
-
-[NOTE]
-====
-Coarse-grain or fine-grain buffer SVM pointers used by a kernel which
-are not passed as a kernel arguments must be specified using
-{clSetKernelExecInfo} with {CL_KERNEL_EXEC_INFO_SVM_PTRS}.
-For example, if SVM buffer A contains a pointer to another SVM buffer B,
-and the kernel dereferences that pointer, then a pointer to B must
-either be passed as an argument in the call to that kernel or it must be
-made available to the kernel using {clSetKernelExecInfo}.
-For example, we might pass extra SVM pointers as follows:
-
-[source,opencl]
-----
-clSetKernelExecInfo(kernel,
-                    CL_KERNEL_EXEC_INFO_SVM_PTRS,
-                    num_ptrs * sizeof(void *),
-                    extra_svm_ptr_list);
-----
-
-Here `num_ptrs` specifies the number of additional SVM pointers while
-`extra_svm_ptr_list` specifies a pointer to memory containing those SVM
-pointers.
-
-When calling {clSetKernelExecInfo} with {CL_KERNEL_EXEC_INFO_SVM_PTRS} to
-specify pointers to non-argument SVM buffers as extra arguments to a kernel,
-each of these pointers can be the SVM pointer returned by {clSVMAlloc} or
-can be a pointer + offset into the SVM region.
-It is sufficient to provide one pointer for each SVM buffer used.
-
-{CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is used to indicate whether
-SVM pointers used by a kernel will refer to system allocations or not.
-
-{CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} = {CL_FALSE} indicates that the
-OpenCL implementation may assume that system pointers are not passed as
-kernel arguments and are not stored inside SVM allocations passed as kernel
-arguments.
-
-{CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} = {CL_TRUE} indicates that the
-OpenCL implementation must assume that system pointers might be passed as
-kernel arguments and/or stored inside SVM allocations passed as kernel
-arguments.
-In this case, if the device to which the kernel is enqueued does not support
-system SVM pointers, {clEnqueueNDRangeKernel} and {clEnqueueTask} will return a
-{CL_INVALID_OPERATION} error.
-If none of the devices in the context associated with kernel support
-fine-grain system SVM allocations, {clSetKernelExecInfo} will return a
-{CL_INVALID_OPERATION} error.
-
-If {clSetKernelExecInfo} has not been called with a value for
-{CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM}, the default value is used for
-this kernel attribute.
-The default value depends on whether the device on which the kernel is
-enqueued supports fine-grain system SVM allocations.
-If so, the default value used is {CL_TRUE} (system pointers might be passed);
-otherwise, the default is {CL_FALSE}.
-
-A call to {clSetKernelExecInfo} for a given value of _param_name_
-replaces any prior value passed for that value of _param_name_.
-Only one _param_value_ will be stored for each value of _param_name_.
-====
-
 
 === Copying Kernel Objects
 
@@ -11485,10 +11450,8 @@ Otherwise, it returns one of the following errors:
     _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
     are not valid events.
   * {CL_INVALID_OPERATION} if SVM pointers are passed as arguments to a kernel
-    and the device does not support SVM or if system pointers are passed as
-    arguments to a kernel and/or stored inside SVM allocations passed as
-    kernel arguments and the device does not support fine grain system SVM
-    allocations.
+    and the device does not support SVM, or if system pointers are passed as
+    arguments to a kernel and the device does not support fine-grain system SVM.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -11580,10 +11543,8 @@ Otherwise, it returns one of the following errors:
     _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
     are not valid events.
   * {CL_INVALID_OPERATION} if SVM pointers are passed as arguments to a kernel
-    and the device does not support SVM or if system pointers are passed as
-    arguments to a kernel and/or stored inside SVM allocations passed as
-    kernel arguments and the device does not support fine grain system SVM
-    allocations.
+    and the device does not support SVM, or if system pointers are passed as
+    arguments to a kernel and the device does not support fine-grain system SVM.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
