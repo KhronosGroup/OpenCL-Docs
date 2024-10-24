@@ -403,6 +403,12 @@ Command = element command {
 #   <require> / <remove> contains features to require or remove in
 #                        this version
 #     profile - only require/remove when generated profile matches
+#     etype - can be "enum", "bitfield", "constants" or "OpenCL-C only"
+#               If omited, etype="enum" is assumed
+#     group - type name, dedicated to a select group of enums
+#               Only exists for "enum" and "bitfield" etype's
+#               Multiple <require> blocks can add enums to the same group
+#               In such cases, the same etype attribute has to be present
 #     comment - descriptive text with no semantic meaning
 Feature = element feature {
     attribute api { text } ,
@@ -415,6 +421,8 @@ Feature = element feature {
         element require {
             ProfileName ? ,
             Depends ? ,
+            GroupName ? ,
+            EType ? ,
             Comment ? ,
             (
                 InterfaceElement |
@@ -474,9 +482,15 @@ Extensions = element extensions {
 #       a special purpose of the extension. Tokens may include 'cadsupport',
 #       'd3demulation', 'devtools', 'debugging', and 'glemulation'. Others
 #       may be added in the future.
-# In addition, <require> / <remove> tags also support an api attribute:
+# In addition, <require> / <remove> tags also support attributes:
 #     api - only require/remove these features for the matching API.
 #       Not a regular expression.
+#     etype - can be "enum", "bitfield", "constants" or "OpenCL-C only"
+#               If omited, etype="enum" is assumed
+#     group - type name, dedicated to a select group of enums
+#               Only exists for "enum" and "bitfield" etype's
+#               Multiple <require> blocks can add enums to the same group
+#               In such cases, the same etype attribute has to be present
 Extension = element extension {
     Name ,
     attribute revision { text },
@@ -503,6 +517,8 @@ Extension = element extension {
             attribute condition { text } ? ,
             ProfileName ? ,
             Depends ? ,
+            GroupName ? ,
+            EType ? ,
             Comment ? ,
             (
                 InterfaceElement |
@@ -561,6 +577,8 @@ ExtensionName = attribute extension { text }
 # Boolean expression of core version and extension names using (),+ operators
 Depends = attribute depends { text }
 Vendor = attribute vendor { text }
+GroupName = attribute group { text }
+EType = attribute etype { text }
 Comment = attribute comment { text }
 Name = attribute name { text }
 
