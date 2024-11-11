@@ -35,7 +35,7 @@ Final Draft
 == Version
 
 Built On: {docdate} +
-Version: Major.Minor.Patch
+Version: 1.0.0
 
 == Dependencies
 
@@ -252,9 +252,9 @@ Requires that the `__opencl_img_matmul_1x2_2x2` feature macro is defined.
   int2 *img_matmul_char4_acc_1x2_2x2_sat*(char8 _a_, pass:[__local] char16 * _b_, int2 _acc_);
   int2 *img_matmul_char4_acc_1x2_2x2_sat*(char8 _a_, pass:[__local] uchar16 * _b_, int2 _acc_);
   int2 *img_matmul_char4_acc_1x2_2x2_sat*(uchar8 _a_, pass:[__local] char16 * _b_, int2 _acc_);
-    a| `img_matmul_uchar4_acc_1x2_2x2_sat` and `img_matmul_char4_acc_1x2_2x2_sat` perform the dual dot product operation with the accumulator `acc`
-    The input vectors of the first dot product are `a` and the vector containing the even-indexed *32-bit elements* of `b`. The result is stored into the first element of the output vector.
-    The input vectors of the second dot product are `a` and the vector containing the odd-indexed *32-bit elements* of `b`. The result is stored into the second element of the output vector.
+    a| `img_matmul_uchar4_acc_1x2_2x2_sat` and `img_matmul_char4_acc_1x2_2x2_sat` perform the dual dot product operation, add the accumulator `acc`, and saturate the result.
+    The input vectors of the first dot product are `a` and the vector containing the even-indexed *32-bit elements* of `b`. The result is saturated and stored into the first element of the output vector.
+    The input vectors of the second dot product are `a` and the vector containing the odd-indexed *32-bit elements* of `b`. The result is saturated and stored into the second element of the output vector.
 
 For example, given:
 ----
@@ -271,8 +271,11 @@ the output vector is:
 ----
 [res0 res1] = [a0 a1  a2  a3,  a4  a5  a6  a7] x [b0 b1  b2  b3,  b4  b5  b6  b7] + [acc0 acc1]
                                                  [b8 b9 b10 b11, b12 b13 b14 b15]
-res0 = (a0b0 + a1b1 + a2b2 + a3b3) + ( a4b8 +  a5b9 + a6b10 + a7b11) + acc0
-res1 = (a0b4 + a1b5 + a2b6 + a3b7) + (a4b12 + a5b13 + a6b14 + a7b15) + acc1
+product0 = (a0b0 + a1b1 + a2b2 + a3b3) + ( a4b8 +  a5b9 + a6b10 + a7b11)
+res0 = add_sat(product0, acc0)
+
+product1 = (a0b4 + a1b5 + a2b6 + a3b7) + (a4b12 + a5b13 + a6b14 + a7b15)
+res1 = add_sat(product1, acc1)
 
 Note: The parentheses are only used to help the reader see that the dot computation is a [1x2] x [2x2] with char4/uchar4 elements; they do not indicate the accumulation order.
 ----
@@ -498,4 +501,5 @@ printf("      [ %f %f %f %f ]\n", res.s4, res.s5, res.s6, res.s7);
 |====
 | Version | Date       | Author        | Changes
 | 1.0.0   | 2024-06-07 | Tomasz Platek | *Initial revision*
+| 1.0.0   | 2024-11-11 | CY Cheng      | Document 1x2_2x2 matrix functions
 |====
