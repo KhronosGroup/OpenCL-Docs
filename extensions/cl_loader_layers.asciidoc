@@ -21,6 +21,7 @@ interception layers (Layer ICDs) for OpenCL.
 |====
 | *Date*     | *Version* | *Description*
 | 2020-11-04 | 1.0.0     | First assigned version.
+| 2024-09-04 | 2.0.0     | Deinitialization support.
 |====
 
 ==== Contributors
@@ -45,6 +46,8 @@ cl_int clInitLayer(cl_uint                 num_entries,
                    const cl_icd_dispatch  *target_dispatch,
                    cl_uint                *num_entries_ret,
                    const cl_icd_dispatch **layer_dispatch_ret);
+
+cl_int clDeinitLayer(void);
 ----
 
 [[cl_loader_layers-new-api-types]]
@@ -72,12 +75,13 @@ Accepted as _param_name_ to the function *clGetLayerInfo*:
 === New API Tokens
 
 Returned by *clGetLayerInfo* when supplied *CL_LAYER_API_VERSION*
-and the corresponding layer implements version 1.0.0 of the layer
-API:
+and the corresponding layer implements version 1.0.0 or 2.0.0 of
+the layer API:
 
 [source,opencl]
 ----
 #define CL_LAYER_API_VERSION_100 100
+#define CL_LAYER_API_VERSION_200 200
 ----
 
 [[cl_loader_layers-new-environment-variables]]
@@ -172,6 +176,18 @@ Otherwise, it returns one of the following errors.
   * *CL_INVALID_VALUE* if _num_entries_ is insufficient for the layer or if
     _target_dispatch_ is a `NULL` value, or _num_entries_ret_ is a `NULL`
     value, or _layer_dispatch_ret_ is a `NULL` value.
+
+==== Layer Deinitialization
+
+[open,refpage='clDeinitLayer',desc='Deinitialize an OpenCL layer',type='protos']
+Deinitilization of a layer can be achieved with the function:
+[source,opencl]
+
+----
+cl_int clInitLayer(void);
+----
+
+*clDeinitLayer* returns *CL_SUCCESS* if the function is executed successfully.
 
 [[cl_loader_layers-source-code]]
 === Source Code
