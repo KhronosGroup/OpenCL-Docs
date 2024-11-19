@@ -35,7 +35,7 @@ Final Draft
 == Version
 
 Built On: {docdate} +
-Version: 1.0.0
+Version: 1.1.0
 
 == Dependencies
 
@@ -85,8 +85,8 @@ int2 img_matmul_char4_acc_1x2_2x2(uchar8 a, __local char16 * b, int2 acc);
 int2 img_matmul_char4_acc_1x2_2x2(char8 a, __local uchar16 * b, int2 acc);
 uint2 img_matmul_uchar4_acc_1x2_2x2_sat(uchar8 a, __local uchar16 * b, uint2 acc);
 int2 img_matmul_char4_acc_1x2_2x2_sat(char8 a, __local char16 * b, int2 acc);
-int2 img_matmul_char4_acc_1x2_2x2_sat(char8 a, __local uchar16 * b, int2 acc);
 int2 img_matmul_char4_acc_1x2_2x2_sat(uchar8 a, __local char16 * b, int2 acc);
+int2 img_matmul_char4_acc_1x2_2x2_sat(char8 a, __local uchar16 * b, int2 acc);
 ----
 
 Perform the matrix multiplication of a 2x4 matrix `a` with a 4x4 matrix `b`, adding the result to a 2x4 matrix `acc`:
@@ -250,8 +250,8 @@ Note: The parentheses are only used to help the reader see that the dot computat
 Requires that the `__opencl_img_matmul_1x2_2x2` feature macro is defined.
 | uint2 *img_matmul_uchar4_acc_1x2_2x2_sat*(uchar8 _a_, pass:[__local] uchar16 * _b_, uint2 _acc_);
   int2 *img_matmul_char4_acc_1x2_2x2_sat*(char8 _a_, pass:[__local] char16 * _b_, int2 _acc_);
-  int2 *img_matmul_char4_acc_1x2_2x2_sat*(char8 _a_, pass:[__local] uchar16 * _b_, int2 _acc_);
   int2 *img_matmul_char4_acc_1x2_2x2_sat*(uchar8 _a_, pass:[__local] char16 * _b_, int2 _acc_);
+  int2 *img_matmul_char4_acc_1x2_2x2_sat*(char8 _a_, pass:[__local] uchar16 * _b_, int2 _acc_);
     a| `img_matmul_uchar4_acc_1x2_2x2_sat` and `img_matmul_char4_acc_1x2_2x2_sat` perform the dual dot product operation, add the accumulator `acc`, and saturate the result.
     The input vectors of the first dot product are `a` and the vector containing the even-indexed *32-bit elements* of `b`. The result is saturated and stored into the first element of the output vector.
     The input vectors of the second dot product are `a` and the vector containing the odd-indexed *32-bit elements* of `b`. The result is saturated and stored into the second element of the output vector.
@@ -388,7 +388,7 @@ Requires that the `__opencl_img_matmul_2x4_4x4` feature macro is defined.
 == Coding Sample
 
 This coding sample shows how to initialize the input vectors, use the *img_dot_interleaved_acc* function, and access the output vector:
-[source]
+[source,c]
 ----
 float4 a = (float4) (1.0f, 1.0f, 1.0f, 1.0f);
 __local float8 b;
@@ -401,7 +401,7 @@ printf("res = [ %f %f ]\n", res.s0, res.s1);
 ----
 
 This coding sample shows how to use the *img_matmul_float_acc_1x2_2x2* function:
-[source]
+[source,c]
 ----
 __attribute__((reqd_work_group_size(128, 1, 1)))
 void __kernel f32Matmul(__global float2 *a, __global float4 *b, __global float2 *acc, int step) {
@@ -425,7 +425,7 @@ void __kernel f32Matmul(__global float2 *a, __global float4 *b, __global float2 
 ----
 
 This coding sample shows how to use the *img_matmul_half2_acc_1x2_2x2h* function:
-[source]
+[source,c]
 ----
 __attribute__((reqd_work_group_size(128, 1, 1)))
 void __kernel f16Matmul(__global half4 *a, __global half8 *b, __global half2 *acc, int step) {
@@ -449,7 +449,7 @@ void __kernel f16Matmul(__global half4 *a, __global half8 *b, __global half2 *ac
 ----
 
 This coding sample shows how to use the *img_matmul_char4_acc_1x2_2x2_sat* function:
-[source]
+[source,c]
 ----
 __attribute__((reqd_work_group_size(128, 1, 1)))
 void __kernel char4Matmul(__global char8 *a, __global char16 *b, __global int2 *acc, int step) {
@@ -473,7 +473,7 @@ void __kernel char4Matmul(__global char8 *a, __global char16 *b, __global int2 *
 ----
 
 This coding sample shows how to initialize the input vectors, use the *img_matmul_acc_2x4_4x4f* function, and access the output vector:
-[source]
+[source,c]
 ----
 half4  a0 = (half4) (1.0h, 0.0h, 0.0h, 0.0h);
 half4  a1 = (half4) (0.0h, 1.0h, 0.0h, 0.0h);
@@ -501,5 +501,5 @@ printf("      [ %f %f %f %f ]\n", res.s4, res.s5, res.s6, res.s7);
 |====
 | Version | Date       | Author        | Changes
 | 1.0.0   | 2024-06-07 | Tomasz Platek | *Initial revision*
-| 1.0.0   | 2024-11-11 | CY Cheng      | Document 1x2_2x2 matrix functions
+| 1.1.0   | 2024-11-11 | CY Cheng      | Document 1x2_2x2 matrix functions
 |====
