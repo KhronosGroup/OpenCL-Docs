@@ -311,7 +311,7 @@ Add to Table 5 - List of supported param_names by *clGetDeviceInfo*:
 | `CL_SVM_CAPABILITY_DEVICE_READ_KHR`
   | This type of SVM is accessible on the device for reading.
 | `CL_SVM_CAPABILITY_DEVICE_WRITE_KHR`
-  | This type of SVM is writeable on the device for writing.
+  | This type of SVM is accessible on the device for writing.
 | `CL_SVM_CAPABILITY_DEVICE_ATOMIC_ACCESS_KHR`
   | This type of SVM is accessible on the device using atomic built-in functions.
 | `CL_SVM_CAPABILITY_CONCURRENT_ACCESS_KHR`
@@ -922,7 +922,7 @@ If the shared USM allocation is from the same context this could be an error, su
 If the shared USM allocation is from a different context then behavior could be undefined.
 --
 
-. Can a pointer to a device, host, or shared USM allocation be passed to API functions to fill a `cl_mem`, SVM allocation, or USM allocation, such as *clEnqueueFillBuffer*?
+. Can a pointer to a device, host, or shared USM allocation be passed as the `pattern` argument to API functions to fill a `cl_mem`, SVM allocation, or USM allocation, such as *clEnqueueFillBuffer*?
 +
 --
 *UNRESOLVED*:
@@ -936,8 +936,7 @@ Trending "yes" for host USM allocations, both when the host USM allocation is fr
 . Should we support passing traditional `cl_mem_flags` via the USM allocation properties?
 +
 --
-*UNRESOLVED*:
-Trending "no", this functionality is better expressed by optional access properties.
+`RESOLVED`: We decided not to accept any `cl_mem_flags` or `cl_svm_mem_flags`, and added access properties instead.
 --
 
 . Exactly how do the additional SVM types affect the memory model?
@@ -1011,7 +1010,7 @@ Note: The following issues were added to the KHR USM extension:
 . Should we add a synchronous memadvise function?  Do we need to support memadvise at all?
 +
 --
-*RESOLVED*:
+`RESOLVED`:
 We decided not to support a memadvise function in the initial version of this specification.
 
 For reference, for other APIs:
@@ -1029,7 +1028,7 @@ For reference, for other APIs:
 . Should we move more of the *clSVMAllocWithProperties* arguments to properties?
 +
 --
-*RESOLVED*:
+`RESOLVED`:
 We moved the access flags and alignment to properties, so the only required arguments are now the properties, the SVM type index, and the SVM allocation size.
 --
 
@@ -1044,7 +1043,7 @@ This is especially important if the required SVM capabilities contains e.g. "dev
 . Should we support a mechanism to enable indirect access for all SVM allocation types with a single call?
 +
 --
-*RESOLVED*: Yes, we should.  We now have:
+`RESOLVED`: Yes, we should.  We now have:
 
 * `CL_KERNEL_EXEC_INFO_SVM_INDIRECT_ACCESS_KHR`, added by this extension, which enables indirect access for all SVM allocations made through the driver (by calling *clSVMAlloc* or *clSVMAllocWithPropertiesKHR*).
 Indirect access for these types of allocations is **disabled** by default.
@@ -1055,7 +1054,7 @@ Indirect access for these types of allocations is **enabled** by default, though
 . How should an SVM allocation with the access flag *NOWRITE* be initialized?
 +
 --
-*RESOLVED*: For this extension, if an allocation is created with the *HOST_NOWRITE* flag, then it can only be initialized on the device.
+`RESOLVED`: For this extension, if an allocation is created with the *HOST_NOWRITE* flag, then it can only be initialized on the device.
 If an allocation is created with the *DEVICE_NOWRITE* flag, then it can only be initialized on the host.
 This extension does not support initialize an allocation with both the *HOST_NOWRITE* and *DEVICE_NOWRITE* flags.
 
