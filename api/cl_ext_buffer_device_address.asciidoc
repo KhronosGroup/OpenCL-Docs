@@ -1,0 +1,96 @@
+// Copyright 2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_ext_buffer_device_address.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2024-12-06
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+  - Pekka Jääskeläinen, Intel +
+  - Karol Herbst, Red Hat +
+  - Henry Linjamäki, Intel +
+  - Kevin Petit, Arm +
+
+=== Description
+
+This extension provides access to raw device pointers for cl_mem buffers
+without requiring a shared virtual address space between the host and
+the device.
+
+==== Background
+
+Shared Virtual Memory (SVM) introduced in OpenCL 2.0 is the first feature
+that enables raw pointers in the OpenCL standard. Its coarse-grain
+variant is relatively simple to implement on various platforms in terms of
+coherency requirements, but it requires mapping the buffer's address range
+to the host virtual address space.
+However, various higher-level heterogeneous APIs present a memory allocation
+routine which can allocate device-only memory and provide raw addresses to
+it without guarentees of system-wide uniqueness. For example, minimal
+implementations of OpenMP's omp_target_alloc() and CUDA/HIP's
+cudaMalloc()/hipMalloc() do not require a shared address space between the host and the device.
+
+Host-device unified addressing might not be a major implementation issue in
+systems which can provide virtual memory across the platform, but might
+bring challenges in cases where the device presents a global memory with
+a disjoint address space (that can also be a physical memory address space) or,
+for example, when a barebone embedded system lacks virtual memory support altogether.
+This extension is targeted to complement the OpenCL SVM extension by providing
+an additional lower-end step in the spectrum of type of pointers/buffers OpenCL
+can allocate.
+
+=== New Command
+
+  * {clSetKernelArgDevicePointerEXT}
+
+=== New Types
+
+  * {cl_mem_device_address_EXT}
+
+=== New Enums
+
+  * {cl_mem_properties_TYPE}
+  ** {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT}
+  ** {CL_MEM_DEVICE_SHARED_ADDRESS_EXT}
+  * {cl_mem_info_TYPE}
+  ** {CL_MEM_DEVICE_ADDRESS_EXT}
+  * {cl_kernel_exec_info_TYPE}
+  ** {CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT}
+
+=== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| *Version* | *Date*       | *Author*                         | *Changes*
+| 0.9.0     | 2024-12-06   | Pekka Jääskeläinen, Kevin Petit  |
+                           Integrated to the main unified specification.
+                           Moved the functionality to clCreateBufferWithProperties,
+                           thus requiring 3.0+. Single memobj query for fetching the
+                           address(es). Also other smaller improvements pointed by Kevin.
+                           Candidate for final 1.0.0.
+| 0.3.0     | 2024-09-24   | Pekka Jääskeläinen, Karol Herbst |
+                           Made the allocation flags independent from each other and
+                           renamed them to CL_MEM_DEVICE_SHARED_ADDRESS_EXT and
+                           CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT. The first one guarantees the
+                           same address across all devices in the context, whereas the latter
+                           allows per-device addresses.
+| 0.2.0     | 2024-09-09   | Pekka Jääskeläinen, Karol Herbst |
+                           Changed the CL_MEM_DEVICE_ADDRESS_EXT wording for multi-device
+                           cases "all", not "any", covering a case where not all devices
+                           can ensure the same address across the context. In that case
+                           CL_INVALID_VALUE can be returned.  Defined sub-buffer address
+                           computation to be 'base_addr + origin'. Added error conditions
+                           for clSetKernelExecInfo when the device doesn't support
+                           device pointers.
+| 0.1.0     | 2024-05-07   | Pekka Jääskeläinen   | First draft text for feedback.
+                           This version describes the first API version that was prototyped
+                           in PoCL and RustiCL using temporary placeholder flag/enum values.
+                           The PoCL implementation and initial discussion on the extension
+                           can be found https://github.com/pocl/pocl/pull/1441[in this PR].
+|====
