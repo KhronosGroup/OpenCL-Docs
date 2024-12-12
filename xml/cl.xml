@@ -720,8 +720,6 @@ server's OpenCL/api-docs repository.
         <enum value="((cl_device_partition_property_ext)0 - 1)"    name="CL_PARTITION_BY_NAMES_LIST_END_EXT"/>
         <enum value="-1"            name="CL_PARTITION_BY_NAMES_LIST_END_INTEL"/>
         <enum value="0"             name="CL_MEM_DEVICE_HANDLE_LIST_END_KHR"/>
-        <enum value="1"             name="CL_MEM_DEVICE_SHARED_ADDRESS_EXT"/>
-        <enum value="2"             name="CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT"/>
         <enum value="0"             name="CL_SEMAPHORE_DEVICE_HANDLE_LIST_END_KHR"/>
         <enum value="0"             name="CL_SEMAPHORE_EXPORT_HANDLE_TYPES_LIST_END_KHR"/>
     </enums>
@@ -914,7 +912,7 @@ server's OpenCL/api-docs repository.
         <enum bitpos="38"           name="CL_MEM_RESERVED1_QCOM"/>
         <enum bitpos="39"           name="CL_MEM_RESERVED2_QCOM"/>
         <enum bitpos="40"           name="CL_MEM_RESERVED3_QCOM"/>
-            <unused start="43" end="63"/>
+            <unused start="41" end="63"/>
     </enums>
 
     <enums name="cl_map_flags" vendor="Khronos" type="bitmask">
@@ -1633,8 +1631,7 @@ server's OpenCL/api-docs repository.
         <enum value="0x1108"        name="CL_MEM_OFFSET"/>
         <enum value="0x1109"        name="CL_MEM_USES_SVM_POINTER"/>
         <enum value="0x110A"        name="CL_MEM_PROPERTIES"/>
-        <enum value="0x110B"        name="CL_MEM_DEVICE_ADDRESS_EXT"/>
-             <unused start="0x110D" end="0x110F" comment="Reserved for cl_mem_info"/>
+            <unused start="0x110B" end="0x110F" comment="Reserved for cl_mem_info"/>
         <enum value="0x1110"        name="CL_IMAGE_FORMAT"/>
         <enum value="0x1111"        name="CL_IMAGE_ELEMENT_SIZE"/>
         <enum value="0x1112"        name="CL_IMAGE_ROW_PITCH"/>
@@ -1727,8 +1724,7 @@ server's OpenCL/api-docs repository.
         <enum value="0x11B8"        name="CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT"/>
         <enum value="0x11B9"        name="CL_KERNEL_MAX_NUM_SUB_GROUPS"/>
         <enum value="0x11BA"        name="CL_KERNEL_COMPILE_NUM_SUB_GROUPS"/>
-        <enum value="0x11BB"        name="CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT"/>
-            <unused start="0x11BC" end="0x11CF" comment="Reserved for cl_kernel_info / cl_kernel_work_group_info / cl_kernel_exec_info / cl_kernel_sub_group_info"/>
+            <unused start="0x11BB" end="0x11CF" comment="Reserved for cl_kernel_info / cl_kernel_work_group_info / cl_kernel_exec_info / cl_kernel_sub_group_info"/>
         <enum value="0x11D0"        name="CL_EVENT_COMMAND_QUEUE"/>
         <enum value="0x11D1"        name="CL_EVENT_COMMAND_TYPE"/>
         <enum value="0x11D2"        name="CL_EVENT_REFERENCE_COUNT"/>
@@ -2318,6 +2314,12 @@ server's OpenCL/api-docs repository.
 
     <enums start="0x42B0" end="0x4FFF" name="enums.42B0" comment="Reserved for vendor extensions. Allocate in groups of 16.">
             <unused start="0x42B0" end="0x4FFF"/>
+    </enums>
+
+    <enums start="0x5000" end="0x500F" name="enums.5000" comment="For cl_ext_buffer_device_address">
+        <enum value="0x5000"        name="CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT"/>
+        <enum value="0x5001"        name="CL_MEM_DEVICE_ADDRESS_EXT"/>
+        <enum value="0x5002"        name="CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT"/>
     </enums>
 
     <enums start="0x10000" end="0x10FFF" name="enums.10000" vendor="Khronos" comment="Experimental range for internal development only. Do not allocate.">
@@ -3739,7 +3741,7 @@ server's OpenCL/api-docs repository.
             <proto><type>cl_int</type>                                  <name>clSetKernelArgDevicePointerEXT</name></proto>
             <param><type>cl_kernel</type>                               <name>kernel</name></param>
             <param><type>cl_uint</type>                                 <name>arg_index</name></param>
-            <param>const <type>void</type>*                             <name>arg_value</name></param>
+            <param>const <type>cl_mem_device_address_ext</type>*        <name>arg_value</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_2_0">
             <proto><type>cl_int</type>                                  <name>clSetKernelExecInfo</name></proto>
@@ -7202,12 +7204,14 @@ server's OpenCL/api-docs repository.
                 <command name="clSetContentSizeBufferPoCL"/>
             </require>
         </extension>
-        <extension name="cl_ext_buffer_device_address" revision="0.9.0" supported="opencl" depends="CL_VERSION_3_0" provisional="true">
+        <extension name="cl_ext_buffer_device_address" revision="0.9.1" supported="opencl" depends="CL_VERSION_3_0" provisional="true">
+            <require>
+                <type name="cl_mem_device_address_ext"/>
+            </require>
             <require>
                 <command name="clSetKernelArgDevicePointerEXT"/>
             </require>
             <require comment="cl_mem_properties">
-                <enum name="CL_MEM_DEVICE_SHARED_ADDRESS_EXT"/>
                 <enum name="CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT"/>
             </require>
             <require comment="cl_mem_info">
@@ -7215,9 +7219,6 @@ server's OpenCL/api-docs repository.
             </require>
             <require comment="cl_kernel_exec_info">
                 <enum name="CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT"/>
-            </require>
-            <require>
-                <type name="cl_mem_device_address_ext"/>
             </require>
         </extension>
         <extension name="cl_khr_command_buffer" revision="0.9.7" supported="opencl" depends="CL_VERSION_1_2" ratified="opencl" provisional="true">
