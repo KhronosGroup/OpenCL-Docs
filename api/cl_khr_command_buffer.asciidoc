@@ -43,16 +43,6 @@ Command-buffers enable a reduction in overhead when enqueuing the same
 workload multiple times. By separating the command-queue setup from dispatch,
 the ability to replay a set of previously created commands is introduced.
 
-Device-side _cl_sync_point_khr_ synchronization-points can be used within
-command-buffers to define command dependencies. This allows the commands of a
-command-buffer to execute out-of-order on a single <<compatible, compatible>>
-command-queue. The command-buffer itself has no inherent in-order/out-of-order
-property, this ordering is inferred from the command-queue used on command
-recording. Out-of-order enqueues without event dependencies of both regular
-commands, such as {clEnqueueFillBuffer}, and command-buffers are allowed to
-execute concurrently, and it is up to the user to express any dependencies using
-events.
-
 The command-queues a command-buffer will be executed on can be set on replay via
 parameters to {clEnqueueCommandBufferKHR}, provided they are
 <<compatible, compatible>> with the command-queues used on command-buffer
@@ -109,6 +99,29 @@ following reasons:
   command handles are used in this extension, but providing them facilitates
   other extensions layered on top to take advantage of them to provide additional
   mutable functionality.
+
+==== Command Synchronization
+
+Device-side {cl_sync_point_khr_TYPE} synchronization-points can be used within
+command-buffers to define command dependencies. This allows the commands of a
+command-buffer to execute out-of-order on a single <<compatible, compatible>>
+command-queue. The command-buffer itself has no inherent in-order/out-of-order
+property, this ordering is inferred from the command-queue used on command
+recording. {clEnqueueCommandBufferKHR} submissions to an out-of-order queue
+have the same execution semantics are other operations enqueued to an
+out-of-order queue, such as {clEnqueueFillBuffer}, where execution between
+enqueued operations may happen concurrently unless dependencies between the
+operations are expressed with events.
+
+The {cl_sync_point_khr_TYPE} type is defined as a `cl_uint`, giving a hard
+upper limit on the number of commands a command-buffer can hold as
+{CL_UINT_MAX}, at which point {CL_OUT_OF_RESOURCES} will be returned. However,
+it is likely an implementation will reach capacity before this threshold is
+hit.
+
+There are no gurantees made around the values of sync-points returned from
+adding commands to a command-buffer. Any semantics that a could be inferred
+from the sync-point values returned is implementation defined.
 
 ==== Simultaneous Use
 
@@ -420,6 +433,19 @@ features:
 --
 *UNRESOLVED*
 --
+. Give users more control over command-buffer command capacity via some or all
+  of the following mechanisms.
+  ** Provide a way for a user to query a command-buffer for the maximum number
+     of commands it can hold.
+  ** Guarantee a minimum command capacity that an implementation must support.
+  ** Provide a mechanism for users to reserve command-buffer capacity on
+     command-buffer creation.
+
++
+--
+*RESOLVED* - Mechanisms to achieve this could be provided as a layered extension.
+--
+
 
 === Version History
 
