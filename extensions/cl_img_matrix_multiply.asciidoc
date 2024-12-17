@@ -20,7 +20,9 @@ Tomasz Platek, Imagination Technologies (Tomasz.Platek 'at' imgtec.com)
 
 CY Cheng, Imagination Technologies. +
 Joe Molleson, Imagination Technologies. +
-Tomasz Platek, Imagination Technologies.
+Tomasz Platek, Imagination Technologies. +
+Szabolcs Csefalvay, Imagination Technologies. +
+David Welch, Imagination Technologies.
 
 == Notice
 
@@ -33,7 +35,7 @@ Final Draft
 == Version
 
 Built On: {docdate} +
-Version: 1.0.0
+Version: 1.1.0
 
 == Dependencies
 
@@ -50,6 +52,7 @@ This extension adds built-in functions that exercise hardware capabilities of Im
 [source,c]
 ----
 __opencl_img_dot_interleaved
+__opencl_img_matmul_1x2_2x2
 __opencl_img_matmul_2x4_4x4
 ----
 
@@ -69,7 +72,24 @@ float2 img_dot_interleaved_acc(float4 a,__local float8 * b, float2 acc);
 float2 img_dot_interleaved_acc(float8 a,__local float16 * b, float2 acc);
 ----
 
-Perform the matrix multiplication operation:
+Perform the matrix multiplication of a 1x2 matrix `a` with a 2x2 matrix `b`, adding the result to a 1x2 matrix `c`:
+
+[source,c]
+----
+float2 img_matmul_float_acc_1x2_2x2(float2 a, __local float4 * b, float2 acc)
+float2 img_matmul_half2_acc_1x2_2x2f(half4 a, __local half8 * b, float2 acc)
+half2 img_matmul_half2_acc_1x2_2x2h(half4 a, __local half8 * b, half2 acc)
+uint2 img_matmul_uchar4_acc_1x2_2x2(uchar8 a, __local uchar16 * b, uint2 acc);
+int2 img_matmul_char4_acc_1x2_2x2(char8 a, __local char16 * b, int2 acc);
+int2 img_matmul_char4_acc_1x2_2x2(uchar8 a, __local char16 * b, int2 acc);
+int2 img_matmul_char4_acc_1x2_2x2(char8 a, __local uchar16 * b, int2 acc);
+uint2 img_matmul_uchar4_acc_1x2_2x2_sat(uchar8 a, __local uchar16 * b, uint2 acc);
+int2 img_matmul_char4_acc_1x2_2x2_sat(char8 a, __local char16 * b, int2 acc);
+int2 img_matmul_char4_acc_1x2_2x2_sat(uchar8 a, __local char16 * b, int2 acc);
+int2 img_matmul_char4_acc_1x2_2x2_sat(char8 a, __local uchar16 * b, int2 acc);
+----
+
+Perform the matrix multiplication of a 2x4 matrix `a` with a 4x4 matrix `b`, adding the result to a 2x4 matrix `acc`:
 
 [source,c]
 ----
@@ -95,12 +115,12 @@ half8 img_matmul_acc_2x4_4x4transposedh(half4 a0, half4 a1,__local half16 * b, h
   float2 *img_dot_interleaved*(float2 _a_,pass:[__local] float4 * _b_) +
   float2 *img_dot_interleaved*(float4 _a_,pass:[__local] float8 * _b_) +
   float2 *img_dot_interleaved*(float8 _a_,pass:[__local] float16 * _b_)
-    a| `img_dot_interleaved` performs the dual dot product operation. 
+    a| `img_dot_interleaved` performs the dual dot product operation.
     The input vectors of the first dot product are `a` and the vector containing the even-indexed elements of `b`. The result is stored into the first element of the output vector.
     The input vectors of the second dot product are `a` and the vector containing the odd-indexed elements of `b`. The result is stored into the second element of the output vector.
-    
+
 For example, given:
- 
+
 ----
 a = [a0 a1]
 b = [b0 b1 b2 b3]
@@ -111,6 +131,9 @@ the output vector is:
 ----
 [res0 res1] = [a0 a1] x [b0 b1]
                         [b2 b3]
+
+res0 = a0b0 + a1b2
+res1 = a0b1 + a1b3
 ----
 
 Requires that the `__opencl_img_dot_interleaved` feature macro is defined.
@@ -118,7 +141,7 @@ Requires that the `__opencl_img_dot_interleaved` feature macro is defined.
   float2 *img_dot_interleaved_acc*(float2 _a_,pass:[__local] float4 * _b_, float2 _acc_) +
   float2 *img_dot_interleaved_acc*(float4 _a_,pass:[__local] float8 * _b_, float2 _acc_) +
   float2 *img_dot_interleaved_acc*(float8 _a_,pass:[__local] float16 * _b_, float2 _acc_)
-    a| `img_dot_interleaved_acc` performs the dual dot product operation with the accumulator `acc`. 
+    a| `img_dot_interleaved_acc` performs the dual dot product operation with the accumulator `acc`.
     The input vectors of the first dot product are `a` and the vector containing the even-indexed elements of `b`. The result is stored into the first element of the output vector.
     The input vectors of the second dot product are `a` and the vector containing the odd-indexed elements of `b`. The result is stored into the second element of the output vector.
 
@@ -135,9 +158,129 @@ the output vector is:
 ----
 [res0 res1] = [a0 a1] x [b0 b1] + [acc0 acc1]
                         [b2 b3]
+
+res0 = a0b0 + a1b2 + acc0
+res1 = a0b1 + a1b3 + acc1
 ----
 
 Requires that the `__opencl_img_dot_interleaved` feature macro is defined.
+| float2 *img_matmul_float_acc_1x2_2x2*(float2 _a_, pass:[__local] float4 * _b_, float2 _acc_)
+    a| `img_matmul_float_acc_1x2_2x2` performs the dual dot product operation with the accumulator `acc`
+    The input vectors of the first dot product are `a` and the vector containing the even-indexed elements of `b`. The result is stored into the first element of the output vector.
+    The input vectors of the second dot product are `a` and the vector containing the odd-indexed elements of `b`. The result is stored into the second element of the output vector.
+
+For example, given:
+----
+a = [a0 a1]
+b = [b0 b1 b2 b3]
+acc = [acc0 acc1]
+----
+
+the output vector is:
+
+----
+[res0 res1] = [a0 a1] x [b0 b1] + [acc0 acc1]
+                        [b2 b3]
+
+res0 = a0b0 + a1b2 + acc0
+res1 = a0b1 + a1b3 + acc1
+----
+
+Requires that the `__opencl_img_matmul_1x2_2x2` feature macro is defined.
+| float2 *img_matmul_half2_acc_1x2_2x2f*(half4 _a_, pass:[__local] half8 * _b_, float2 _acc_) +
+  half2 *img_matmul_half2_acc_1x2_2x2h*(half4 _a_, pass:[__local] half8 * _b_, half2 _acc_)
+    a| `img_matmul_half2_acc_1x2_2x2f` and `img_matmul_half2_acc_1x2_2x2h` perform the dual dot product operation with the accumulator `acc`
+    The input vectors of the first dot product are `a` and the vector containing the even-indexed *32-bit elements* of `b`. The result is stored into the first element of the output vector.
+    The input vectors of the second dot product are `a` and the vector containing the odd-indexed *32-bit elements* of `b`. The result is stored into the second element of the output vector.
+
+For example, given:
+----
+a = [a0 a1, a2 a3]
+b = [b0 b1, b2 b3]
+    [b4 b5, b6 b7]
+acc = [acc0 acc1]
+
+a's memory layout = LSB [a0 a1 a2 a3]
+b's memory layout = LSB [b0 b1 b2 b3 b4 b5 b6 b7]
+----
+
+the output vector is:
+
+----
+[res0 res1] = [a0 a1, a2 a3] x [b0 b1, b2 b3] + [acc0 acc1]
+                               [b4 b5, b6 b7]
+
+res0 = (a0b0 + a1b1) + (a2b4 + a3b5) + acc0
+res1 = (a0b2 + a1b3) + (a2b6 + a3b7) + acc1
+
+Note: The parentheses are only used to help the reader see that the dot computation is a [1x2] x [2x2] with half2 elements; they do not indicate the accumulation order.
+----
+
+Requires that the `__opencl_img_matmul_1x2_2x2` feature macro is defined.
+| uint2 *img_matmul_uchar4_acc_1x2_2x2*(uchar8 _a_, pass:[__local] uchar16 * _b_, uint2 _acc_);
+  int2 *img_matmul_char4_acc_1x2_2x2*(char8 _a_, pass:[__local] char16 * _b_, int2 _acc_);
+  int2 *img_matmul_char4_acc_1x2_2x2*(uchar8 _a_, pass:[__local] char16 * _b_, int2 _acc_);
+  int2 *img_matmul_char4_acc_1x2_2x2*(char8 _a_, pass:[__local] uchar16 * _b_, int2 _acc_);
+    a| `img_matmul_uchar4_acc_1x2_2x2` and `img_matmul_char4_acc_1x2_2x2` perform the dual dot product operation with the accumulator `acc`
+    The input vectors of the first dot product are `a` and the vector containing the even-indexed *32-bit elements* of `b`. The result is stored into the first element of the output vector.
+    The input vectors of the second dot product are `a` and the vector containing the odd-indexed *32-bit elements* of `b`. The result is stored into the second element of the output vector.
+
+For example, given:
+----
+a = [a0 a1  a2  a3,  a4  a5  a6  a7]
+b = [b0 b1  b2  b3,  b4  b5  b6  b7]
+    [b8 b9 b10 b11, b12 b13 b14 b15]
+acc = [acc0 acc1]
+
+a's memory layout = LSB [a0 a1 a2 a3]
+b's memory layout = LSB [b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15]
+----
+
+the output vector is:
+
+----
+[res0 res1] = [a0 a1  a2  a3,  a4  a5  a6  a7] x [b0 b1  b2  b3,  b4  b5  b6  b7] + [acc0 acc1]
+                                                 [b8 b9 b10 b11, b12 b13 b14 b15]
+res0 = (a0b0 + a1b1 + a2b2 + a3b3) + ( a4b8 +  a5b9 + a6b10 + a7b11) + acc0
+res1 = (a0b4 + a1b5 + a2b6 + a3b7) + (a4b12 + a5b13 + a6b14 + a7b15) + acc1
+
+Note: The parentheses are only used to help the reader see that the dot computation is a [1x2] x [2x2] with char4/uchar4 elements; they do not indicate the accumulation order.
+----
+
+Requires that the `__opencl_img_matmul_1x2_2x2` feature macro is defined.
+| uint2 *img_matmul_uchar4_acc_1x2_2x2_sat*(uchar8 _a_, pass:[__local] uchar16 * _b_, uint2 _acc_);
+  int2 *img_matmul_char4_acc_1x2_2x2_sat*(char8 _a_, pass:[__local] char16 * _b_, int2 _acc_);
+  int2 *img_matmul_char4_acc_1x2_2x2_sat*(uchar8 _a_, pass:[__local] char16 * _b_, int2 _acc_);
+  int2 *img_matmul_char4_acc_1x2_2x2_sat*(char8 _a_, pass:[__local] uchar16 * _b_, int2 _acc_);
+    a| `img_matmul_uchar4_acc_1x2_2x2_sat` and `img_matmul_char4_acc_1x2_2x2_sat` perform the dual dot product operation, add the accumulator `acc`, and saturate the result.
+    The input vectors of the first dot product are `a` and the vector containing the even-indexed *32-bit elements* of `b`. The result is saturated and stored into the first element of the output vector.
+    The input vectors of the second dot product are `a` and the vector containing the odd-indexed *32-bit elements* of `b`. The result is saturated and stored into the second element of the output vector.
+
+For example, given:
+----
+a = [a0 a1  a2  a3,  a4  a5  a6  a7]
+b = [b0 b1  b2  b3,  b4  b5  b6  b7]
+    [b8 b9 b10 b11, b12 b13 b14 b15]
+acc = [acc0 acc1]
+
+a's memory layout = LSB [a0 a1 a2 a3]
+b's memory layout = LSB [b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15]
+----
+
+the output vector is:
+----
+[res0 res1] = [a0 a1  a2  a3,  a4  a5  a6  a7] x [b0 b1  b2  b3,  b4  b5  b6  b7] + [acc0 acc1]
+                                                 [b8 b9 b10 b11, b12 b13 b14 b15]
+product0 = (a0b0 + a1b1 + a2b2 + a3b3) + ( a4b8 +  a5b9 + a6b10 + a7b11)
+res0 = add_sat(product0, acc0)
+
+product1 = (a0b4 + a1b5 + a2b6 + a3b7) + (a4b12 + a5b13 + a6b14 + a7b15)
+res1 = add_sat(product1, acc1)
+
+Note: The parentheses are only used to help the reader see that the dot computation is a [1x2] x [2x2] with char4/uchar4 elements; they do not indicate the accumulation order.
+----
+
+Requires that the `__opencl_img_matmul_1x2_2x2` feature macro is defined.
 | float8 *img_matmul_2x4_4x4f*(half4 _a0_, half4 _a1_,pass:[__local] half16 * _b_) +
   half8 *img_matmul_2x4_4x4h*(half4 _a0_, half4 _a1_,pass:[__local] half16 * _b_)
     a| `img_matmul_2x4_4x4f` and `img_matmul_2x4_4x4h` perform the matrix multiplication operation of matrices A and B of dimensions 2x4 and 4x4, where `a0` is the first row and `a1` is the second row of the matrix A.
@@ -158,7 +301,7 @@ the output vector is:
 
 ----
 [res0 res1 res2 res3] = A x B
-[res4 res5 res6 res7]                                                        
+[res4 res5 res6 res7]
 ----
 
 Requires that the `__opencl_img_matmul_2x4_4x4` feature macro is defined.
@@ -184,7 +327,7 @@ the output vector is:
 
 ----
 [res0 res1 res2 res3] = A x B + C
-[res4 res5 res6 res7]                                                   
+[res4 res5 res6 res7]
 ----
 
 Requires that the `__opencl_img_matmul_2x4_4x4` feature macro is defined.
@@ -209,7 +352,7 @@ the output vector is:
 
 ----
 [res0 res1 res2 res3] = A x BT
-[res4 res5 res6 res7]                                                        
+[res4 res5 res6 res7]
 ----
 
 Requires that the `__opencl_img_matmul_2x4_4x4` feature macro is defined.
@@ -228,14 +371,14 @@ BT = [b0 b4 b8  b12]
      [b2 b6 b10 b14]
      [b3 b7 b11 b15]
 C = [acc00 acc01 acc02 acc03]
-    [acc10 acc11 acc12 acc13]  
+    [acc10 acc11 acc12 acc13]
 ----
 
 the output vector is:
 
 ----
 [res0 res1 res2 res3] = A x BT + C
-[res4 res5 res6 res7]                                                       
+[res4 res5 res6 res7]
 ----
 
 Requires that the `__opencl_img_matmul_2x4_4x4` feature macro is defined.
@@ -245,7 +388,7 @@ Requires that the `__opencl_img_matmul_2x4_4x4` feature macro is defined.
 == Coding Sample
 
 This coding sample shows how to initialize the input vectors, use the *img_dot_interleaved_acc* function, and access the output vector:
-[source]
+[source,c]
 ----
 float4 a = (float4) (1.0f, 1.0f, 1.0f, 1.0f);
 __local float8 b;
@@ -257,14 +400,80 @@ float2 res = img_dot_interleaved_acc(a, &b, acc);
 printf("res = [ %f %f ]\n", res.s0, res.s1);
 ----
 
-Executing a work-item containing this code gives the following result:
-[source]
+This coding sample shows how to use the *img_matmul_float_acc_1x2_2x2* function:
+[source,c]
 ----
-res = [ 1.000000 5.000000 ]
+__attribute__((reqd_work_group_size(128, 1, 1)))
+void __kernel f32Matmul(__global float2 *a, __global float4 *b, __global float2 *acc, int step) {
+  __local float4 cachedB[..];
+  int id = ..;
+  // load data from the matrix b which is shared in a workgroup.
+  // We can let each thread copies the data or use async_work_group_copy:
+  //   cachedB[id] = ..;
+  //
+  //   event_t e = async_work_group_copy(cachedB, &b[group_id], .. /* num elements */, 0 /* event */);
+  //   wait_group_events(1, &e);
+
+  float2 results = acc[id];
+  for (int i = 0; i < step; ++i)
+    results = img_matmul_float_acc_1x2_2x2(a[id + i], &cachedB[i], results);
+
+  acc[id] = results;
+}
+
+// Note: It is preferable to use a workgroup size of 128 for optimal performance.
+----
+
+This coding sample shows how to use the *img_matmul_half2_acc_1x2_2x2h* function:
+[source,c]
+----
+__attribute__((reqd_work_group_size(128, 1, 1)))
+void __kernel f16Matmul(__global half4 *a, __global half8 *b, __global half2 *acc, int step) {
+  __local half8 cachedB[..];
+  int id = ..;
+  // load data from the matrix b which is shared in a workgroup.
+  // We can let each thread copies the data or use async_work_group_copy:
+  //   cachedB[id] = ..;
+  //
+  //   event_t e = async_work_group_copy(cachedB, &b[group_id], .. /* num elements */, 0 /* event */);
+  //   wait_group_events(1, &e);
+
+  half2 results = acc[id];
+  for (int i = 0; i < step; ++i)
+    results = img_matmul_half2_acc_1x2_2x2h(a[id + i], &cachedB[i], results);
+
+  acc[id] = results;
+}
+
+// Note: It is preferable to use a workgroup size of 128 for optimal performance.
+----
+
+This coding sample shows how to use the *img_matmul_char4_acc_1x2_2x2_sat* function:
+[source,c]
+----
+__attribute__((reqd_work_group_size(128, 1, 1)))
+void __kernel char4Matmul(__global char8 *a, __global char16 *b, __global int2 *acc, int step) {
+  __local char16 cachedB[..];
+  int id = ..;
+  // load data from the matrix b which is shared in a workgroup.
+  // We can let each thread copies the data or use async_work_group_copy:
+  //   cachedB[id] = ..;
+  //
+  //   event_t e = async_work_group_copy(cachedB, &b[group_id], .. /* num elements */, 0 /* event */);
+  //   wait_group_events(1, &e);
+
+  int2 results = acc[id];
+  for (int i = 0; i < step; ++i)
+    results = img_matmul_char4_acc_1x2_2x2_sat(a[id + i], &cachedB[i], results);
+
+  acc[id] = results;
+}
+
+// Note: It is preferable to use a workgroup size of 128 for optimal performance.
 ----
 
 This coding sample shows how to initialize the input vectors, use the *img_matmul_acc_2x4_4x4f* function, and access the output vector:
-[source]
+[source,c]
 ----
 half4  a0 = (half4) (1.0h, 0.0h, 0.0h, 0.0h);
 half4  a1 = (half4) (0.0h, 1.0h, 0.0h, 0.0h);
@@ -284,13 +493,6 @@ printf("res = [ %f %f %f %f ]\n", res.s0, res.s1, res.s2, res.s3);
 printf("      [ %f %f %f %f ]\n", res.s4, res.s5, res.s6, res.s7);
 ----
 
-Executing a work-item containing this code gives the following result:
-[source]
-----
-res = [ 1.000000 2.000000 3.000000 4.000000 ]
-      [ 5.000000 6.000000 7.000000 8.000000 ]
-----
-
 == Version History
 
 [cols="5,15,15,70"]
@@ -299,5 +501,5 @@ res = [ 1.000000 2.000000 3.000000 4.000000 ]
 |====
 | Version | Date       | Author        | Changes
 | 1.0.0   | 2024-06-07 | Tomasz Platek | *Initial revision*
+| 1.1.0   | 2024-11-11 | CY Cheng      | Document 1x2_2x2 matrix functions
 |====
-
