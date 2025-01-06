@@ -2102,6 +2102,39 @@ The following restrictions apply when mipmapped images are created with
     images, depth images or multi-sampled (i.e. msaa) images.
 endif::cl_khr_mipmap_image[]
 
+ifdef::cl_ext_image_tiling_control[]
+*Tiling Control*
+
+{CL_MEM_IMAGE_TILING_EXT_anchor} can be passed as part of the _properties_ parameter
+to {clCreateImageWithProperties} to control the tiling used for the image being
+created. The following values are accepted:
+
+  * {CL_IMAGE_TILING_LINEAR_EXT_anchor}, which is the default value used if
+    {CL_MEM_IMAGE_TILING_EXT} is not specified in the _properties_. Image data
+    is laid out in so-called raster order, one row after the other, one slice or
+    array layer after the other in memory according to the pitches provided by
+    the application or calculated.
+
+  * {CL_IMAGE_TILING_OPTIMAL_EXT_anchor} requires image data be laid out in an
+    implementation-defined format which can vary depending on the type of image,
+    its format and/or dimensions. The implementation will attempt to select the
+    best layout for the image.
+
+If {CL_MEM_IMAGE_TILING_EXT} is passed and set to a value different from
+{CL_IMAGE_TILING_LINEAR_EXT}, {CL_MEM_USE_HOST_PTR} must not be set in _mem_flags_.
+
+If {CL_MEM_IMAGE_TILING_EXT} is passed and set to a value different from
+{CL_IMAGE_TILING_LINEAR_EXT} and {CL_MEM_COPY_HOST_PTR} is set in _mem_flags_, the data
+pointed to by _host_ptr_ is laid out using linear tiling and its layout is described
+in the same way as for case whe {CL_MEM_IMAGE_TILING_EXT} is not set or set to
+{CL_IMAGE_TILING_LINEAR_EXT}.
+
+When creating an image from a buffer, _image_row_pitch_ and _image_slice_pitch_
+must both be `0` if {CL_MEM_IMAGE_TILING_EXT} is passed and set to
+{CL_IMAGE_TILING_OPTIMAL_EXT}. The data in the buffer and its underlying memory
+are reused as-is and the exact behaviour is implementation-defined.
+endif::cl_ext_image_tiling_control[]
+
 *Image Data in Host Memory*
 
 For a 3D image or 2D image array, the image data specified by _host_ptr_ is
@@ -4355,6 +4388,14 @@ execution status of the map command.
 When the map command is completed, the application can access the contents
 of the mapped region using the pointer returned by {clEnqueueMapImage}.
 
+ifdef::cl_ext_image_tiling_control[]
+If the image object is created with {CL_MEM_IMAGE_TILING_EXT} set to a value
+different from {CL_IMAGE_TILING_LINEAR_EXT}, the implementation may need to
+allocate memory and perform a copy as part of the map operation. The pointer
+returned to the application will always point to data in linear tiling
+laid out according to the returned _image_row_pitch_ and _image_slice_pitch_.
+endif::cl_ext_image_tiling_control[]
+
 // refError
 
 {clEnqueueMapImage} will return a pointer to the mapped region.
@@ -4613,7 +4654,26 @@ include::{generated}/api/version-notes/CL_IMAGE_D3D11_SUBRESOURCE_KHR.asciidoc[]
       specified when _image_ was created.
 endif::cl_khr_d3d11_sharing[]
 
+ifdef::cl_ext_image_tiling_control[]
+| {CL_IMAGE_TILING_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_TILING_EXT.asciidoc[]
+  | {cl_image_tiling_ext_TYPE}
+    | Return the tiling passed using the {CL_MEM_IMAGE_TILING_EXT} property or
+      {CL_IMAGE_TILING_LINEAR_EXT} if none was passed at image creation time.
+endif::cl_ext_image_tiling_control[]
+
 |====
+
+ifdef::cl_ext_image_tiling_control[]
+If the image object is created with {CL_MEM_IMAGE_TILING_EXT} set to a value
+different from {CL_IMAGE_TILING_LINEAR_EXT}, the value returned for
+
+* {CL_IMAGE_ROW_PITCH} is the value that would be returned as _image_row_pitch_
+  by {clEnqueueMapImage} when mapping the entire image.
+* {CL_IMAGE_SLICE_PITCH} is the value that would be returned as _image_slice_pitch_
+  by {clEnqueueMapImage} when mapping the entire image.
+endif::cl_ext_image_tiling_control[]
 
 // refError
 
