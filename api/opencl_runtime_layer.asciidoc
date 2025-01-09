@@ -2654,9 +2654,19 @@ endif::cl_khr_external_memory[]
     The image row pitch must be {geq} _image_width_ {times} the size of an
     image element in bytes, and must be a multiple of the size of an image
     element in bytes.
+ifndef::cl_ext_image_requirements_info[]
     For a 2D image created from a buffer the image row pitch must also be a
     multiple of the maximum of the {CL_DEVICE_IMAGE_PITCH_ALIGNMENT} value
     for all devices in the context that support images.
+endif::cl_ext_image_requirements_info[]
+ifdef::cl_ext_image_requirements_info[]
+    For a 2D image created from a buffer, the image row pitch must also
+    - Be a multiple of the {CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT} value
+    returned for parameters compatible with those used to create the image, if
+    the {cl_ext_image_requirements_info_EXT} extension is supported, or
+    - Be a multiple of the maximum of the {CL_DEVICE_IMAGE_PITCH_ALIGNMENT} value
+    for all devices in the context that support images, otherwise.
+endif::cl_ext_image_requirements_info[]
   * _image_slice_pitch_ is the size in bytes of each 2D slice in a 3D image,
     or the size in bytes of each image in a 1D or 2D image array.
     The _image_slice_pitch_ must be zero if _host_ptr_ is `NULL`
@@ -2718,12 +2728,26 @@ descriptor information associated with `mem_object`.
 Image elements are stored according to their image format as described in
 <<image-format-descriptor, Image Format Descriptor>>.
 
+ifndef::cl_ext_image_requirements_info[]
 If the buffer object specified by `mem_object` was created with
 {CL_MEM_USE_HOST_PTR}, the _host_ptr_ specified to {clCreateBuffer} or
 {clCreateBufferWithProperties} must be aligned to the maximum of the
 {CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT} value for all devices in the
 context associated with the buffer specified by `mem_object` that
 support images.
+endif::cl_ext_image_requirements_info[]
+ifdef::cl_ext_image_requirements_info[]
+If the buffer object specified by `mem_object` was created with
+{CL_MEM_USE_HOST_PTR}, the _host_ptr_ specified to {clCreateBuffer} or
+{clCreateBufferWithProperties} must
+
+  * Be aligned to the {CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT} value
+    for the returned for parameters compatible with those used to create the
+    image, if the {cl_ext_image_requirements_info_EXT} extension is supported, or
+  * Be aligned to the maximum of the {CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT}
+    value for all devices in the context associated with the buffer specified by
+    `mem_object` that support images, otherwise.
+endif::cl_ext_image_requirements_info[]
 
 Creating a 2D image object from another 2D image object creates a new
 2D image object that shares the image data store with `mem_object` but views
@@ -5112,6 +5136,171 @@ returned in _errcode_ret_:
 --
 endif::cl_khr_gl_sharing[]
 
+ifdef::cl_ext_image_requirements_info[]
+=== Querying Image Requirements
+
+[open,refpage='clGetImageRequirementsInfoEXT',desc='Get information on image requirements.',type='protos']
+--
+To get information specific to the requirements of an image before creating it call the function
+
+include::{generated}/api/protos/clGetImageRequirementsInfoEXT.txt[]
+include::{generated}/api/version-notes/clGetImageRequirementsInfoEXT.asciidoc[]
+
+  * _context_ is the OpenCL context in which the query will be performed.
+  * _properties_ is an optional list of properties for the image object and their
+    corresponding values. The list is terminated with the special property 0. If
+    no properties are required, properties may be `NULL`.
+  * _flags_ is a bit-field that is used to specify allocation and usage information
+    about the image format being queried and is described in the
+    <<memory-flags-table,Memory Flags>> table. _flags_ may be {CL_MEM_READ_WRITE} to
+    specialize the query for images that may be read from and written to by different
+    kernel instances when correctly ordered by event dependencies, or {CL_MEM_READ_ONLY}
+    to specialize the query for images that may be read from by a kernel, or
+    {CL_MEM_WRITE_ONLY} to specialiaze the query for images that may be written to by
+    a kernel, or {CL_MEM_KERNEL_READ_AND_WRITE} to specialize the query for images that
+    may be both read from and written to by the same kernel instance. When _flags_ is
+    `0` the value returned for the query must be correct for all possible values of _flags_.
+  * _image_format_ is a pointer to a structure describing the format of the image
+    for which requirements are being queried. Refer to the
+    <<image-format-descriptor, Image Format Descriptor>> section for a detailed
+    description.
+  * _image_desc_ is a pointer to a structure that describes type and dimensions of
+    the image for which requirements are being queried. Refer to the
+    <<image-descriptor, Image Descriptor>> section for a detailed description of
+    the image descriptor.
+  * _param_name_ specifies the information to query.
+    The list of supported _param_name_ types and the information returned in
+    _param_value_ by {clGetImageRequirementsInfoEXT} is described in the
+    <<image-requirements-info-table,Image Requirements Queries>> table.
+  * _param_value_ is a pointer to memory where the appropriate result being
+    queried is returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ is used to specify the size in bytes of memory pointed to
+    by _param_value_.
+    This size must be {geq} size of return type as described in the
+    <<image-requirements-info-table,Image Requirements Queries>> table.
+  * _param_value_size_ret_ returns the actual size in bytes of data being
+    queried by _param_name_.
+    If _param_value_size_ret_ is `NULL`, it is ignored.
+
+[[image-requirements-info-table]]
+.List of supported param_names by {clGetImageRequirementsInfoEXT}
+[cols="4,1,4",options="header"]
+|====
+| Image Format Info | Return type | Info. returned in _param_value_
+
+| {CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT_anchor}
+| `size_t`
+| Returns the minimum alignment in bytes required for the data store backing
+  an image created using the parameters passed to {clGetImageRequirementsInfoEXT}.
+  _image_format_ or _image_desc_ are allowed to be `NULL`. When either or both is
+  `NULL` the implementation will return an alignment that would be sufficient for
+  all possible values of the missing argument. +
+  The value returned is a power of two.
+
+|{CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT_anchor}
+| `size_t`
+| Returns the row pitch alignment required in bytes for images created from
+  a buffer with the parameters passed to {clGetImageRequirementsInfoEXT}.
+  The value returned is a power of two. _image_format_ or _image_desc_
+  are allowed to be `NULL`. When either or both is `NULL` the value returned is
+  the minimum row pitch alignment that works for all possible values of the missing
+  argument(s).
+
+| {CL_IMAGE_REQUIREMENTS_SIZE_EXT_anchor}
+| `size_t`
+| Returns the minimal size in bytes that a buffer would need to be to back an
+  image created using the parameters passed to {clGetImageRequirementsInfoEXT}.
+  +
+  Both _image_format_ and _image_desc_ must be non-`NULL`, otherwise
+  {CL_INVALID_VALUE} is returned.
+
+| {CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT_anchor}
+| `cl_uint`
+| Returns the max width supported for creating images with the parameters passed
+  to {clGetImageRequirementsInfoEXT}.
+  _image_format_ or _image_desc_ are allowed to be `NULL`. When either or both is
+  `NULL` the implementation will return a max width that would be supported for
+  all possible values of the missing argument(s). +
+  When _image_desc_ is not `NULL`, the value of its _image_width_ member is
+  ignored and has no effect on the value returned. The value of all other members,
+  except `mem_object` may be `0` to require that the value returned be supported
+  for all possible values of the members that are set to `0`. +
+// TODO: should we require _image_width_ to be `0`?
+
+| {CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT_anchor}
+| `cl_uint`
+| Returns the max height supported for creating images with the parameters passed
+  to {clGetImageRequirementsInfoEXT}.
+  _image_format_ or _image_desc_ are allowed to be `NULL`. When either or both is
+  `NULL` the implementation will return a max height that would be supported for
+  all possible values of the missing argument(s). +
+  When _image_desc_ is not `NULL`, the value of its _image_height_ member is
+  ignored and has no effect on the value returned. The value of all other members,
+  except `mem_object` may be `0` to require that the value returned be supported
+  for all possible values of the members that are set to `0`. +
+  If _image_desc_ is not `NULL`, then _image_type_ must be either `0`,
+  {CL_MEM_OBJECT_IMAGE2D}, {CL_MEM_OBJECT_IMAGE2D_ARRAY}, or {CL_MEM_OBJECT_IMAGE3D},
+  otherwise {CL_INVALID_IMAGE_DESCRIPTOR} is returned. +
+// TODO: should we require _image_height_ to be `0`?
+
+| {CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT_anchor}
+| `cl_uint`
+| Returns the max depth supported for creating images with the parameters passed
+  to {clGetImageRequirementsInfoEXT}.
+  _image_format_ or _image_desc_ are allowed to be `NULL`. When either or both is
+  `NULL` the implementation will return a max depth that would be supported for
+  all possible values of the missing argument(s). +
+  When _image_desc_ is not `NULL`, the value of its _image_depth_ member is
+  ignored and has no effect on the value returned. The value of all other members,
+  except `mem_object` may be `0` to require that the value returned be supported
+  for all possible values of the members that are set to `0`. +
+  If _image_desc_ is not `NULL`, then _image_type_ must be either `0` or
+  {CL_MEM_OBJECT_IMAGE3D}, otherwise {CL_INVALID_IMAGE_DESCRIPTOR} is returned. +
+// TODO: should we require _image_depth_ to be `0`?
+
+| {CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT_anchor}
+| `cl_uint`
+| Returns the max array size supported for creating images with the parameters passed
+  to {clGetImageRequirementsInfoEXT}.
+  _image_format_ or _image_desc_ are allowed to be `NULL`. When either or both is
+  `NULL` the implementation will return a max array size that would be supported for
+  all possible values of the missing argument(s). +
+  When _image_desc_ is not `NULL`, the value of its _image_array_size_ member is
+  ignored and has no effect on the value returned. The value of all other members,
+  except `mem_object` may be `0` to require that the value returned be supported
+  for all possible values of the members that are set to `0`. +
+  If _image_desc_ is not `NULL`, then _image_type_ must be either `0`,
+  {CL_MEM_OBJECT_IMAGE1D_ARRAY} or {CL_MEM_OBJECT_IMAGE2D_ARRAY}, otherwise
+  {CL_INVALID_IMAGE_DESCRIPTOR} is returned. +
+// TODO: should we require _image_array_size_ to be `0`?
+|====
+
+// refError
+
+{clGetImageRequirementsInfoEXT} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_CONTEXT} if _context_ if not a valid context.
+  * {CL_INVALID_PROPERTY} if a property name in properties is not a supported
+    property name, if the value specified for a supported property name is not
+    valid, or if the same property name is specified more than once.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if values specified in _image_format_
+    are not valid.
+  * {CL_INVALID_IMAGE_DESCRIPTOR} if values specified in _image_desc_
+    are not valid.
+  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
+    specified by _param_value_size_ is < size of return type as described in
+    the <<image-requirements-info-table,Image Requirements Queries>> table and
+    _param_value_ is not `NULL`.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_ext_image_requirements_info[]
 
 == Pipes
 
