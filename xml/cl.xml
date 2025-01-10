@@ -382,6 +382,15 @@ server's OpenCL/api-docs repository.
             <member>const <type>size_t</type>*                             <name>global_work_size</name></member>
             <member>const <type>size_t</type>*                             <name>local_work_size</name></member>
         </type>
+
+        <type category="define" requires="stdint" name="CL_ICD2_TAG_KHR" comment="ICD 2 tag, in cl_ext.h">
+#if INTPTR_MAX == INT32_MAX
+#define CL_ICD2_TAG_KHR ((intptr_t)0x434C3331)
+#else
+#define CL_ICD2_TAG_KHR ((intptr_t)0x4F50454E434C3331)
+#endif
+        </type>
+
     </types>
 
     <!-- SECTION: OpenCL enumerant (token) definitions. -->
@@ -513,6 +522,7 @@ server's OpenCL/api-docs repository.
 
     <enums name="Constants.cl_loader_layers" vendor="Khronos" comment="Defined Layer API version, in cl_layer.h">
         <enum value="100"           name="CL_LAYER_API_VERSION_100"/>
+        <enum value="200"           name="CL_LAYER_API_VERSION_200"/>
     </enums>
 
     <enums start="0" end="-999" name="ErrorCodes.0" vendor="Khronos" comment="Error codes start at 0 and decrease">
@@ -1413,7 +1423,8 @@ server's OpenCL/api-docs repository.
         <enum value="0x0908"        name="CL_PLATFORM_COMMAND_BUFFER_CAPABILITIES_KHR"/>
             <unused start="0x0909" end="0x091F" comment="Reserved to Khronos"/>
         <enum value="0x0920"        name="CL_PLATFORM_ICD_SUFFIX_KHR"/>
-            <unused start="0x0921" end="0x09FF" comment="Vendor extensions"/>
+        <enum value="0x0921"        name="CL_PLATFORM_UNLOADABLE_KHR"/>
+            <unused start="0x0922" end="0x09FF" comment="Vendor extensions"/>
     </enums>
 
     <enums start="0x1000" end="0x107F" name="cl_device_info" vendor="Khronos">
@@ -2564,6 +2575,16 @@ server's OpenCL/api-docs repository.
             <param><type>cl_uint</type>                    <name>num_entries</name></param>
             <param><type>cl_platform_id</type>*            <name>platforms</name></param>
             <param><type>cl_uint</type>*                   <name>num_platforms</name></param>
+        </command>
+        <command>
+            <proto><type>void</type>*                      <name>clIcdGetFunctionAddressForPlatformKHR</name></proto>
+            <param><type>cl_platform_id</type>             <name>platform</name></param>
+            <param>const <type>char</type>*                <name>func_name</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                     <name>clIcdSetPlatformDispatchDataKHR</name></proto>
+            <param><type>cl_platform_id</type>             <name>platform</name></param>
+            <param><type>void</type>*                      <name>dispatch_data</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_2">
             <proto><type>cl_program</type>                 <name>clCreateProgramWithILKHR</name></proto>
@@ -4245,6 +4266,9 @@ server's OpenCL/api-docs repository.
             <param>const <type>cl_icd_dispatch</type>**                 <name>layer_dispatch_ret</name></param>
         </command>
         <command>
+            <proto><type>cl_int</type>                                  <name>clDeinitLayer</name></proto>
+        </command>
+        <command>
             <proto><type>cl_int</type>                                  <name>clGetICDLoaderInfoOCLICD</name></proto>
             <param><type>cl_icdl_info</type>                            <name>param_name</name></param>
             <param><type>size_t</type>                                  <name>param_value_size</name></param>
@@ -5617,21 +5641,27 @@ server's OpenCL/api-docs repository.
                 <command name="clLogMessagesToStderrAPPLE"/>
             </require>
         </extension>
-        <extension name="cl_khr_icd" revision="1.0.0" supported="opencl" ratified="opencl">
+        <extension name="cl_khr_icd" revision="2.0.0" supported="opencl" ratified="opencl">
             <require>
                 <type name="CL/cl.h"/>
             </require>
             <require comment="cl_platform_info">
                 <enum name="CL_PLATFORM_ICD_SUFFIX_KHR"/>
+                <enum name="CL_PLATFORM_UNLOADABLE_KHR"/>
             </require>
             <require comment="Error codes">
                 <enum name="CL_PLATFORM_NOT_FOUND_KHR"/>
             </require>
+            <require comment="ICD 2 tag value">
+                <type name="CL_ICD2_TAG_KHR"/>
+            </require>
             <require>
                 <command name="clIcdGetPlatformIDsKHR"/>
+                <command name="clIcdGetFunctionAddressForPlatformKHR"/>
+                <command name="clIcdSetPlatformDispatchDataKHR"/>
             </require>
         </extension>
-        <extension name="cl_loader_layers" revision="1.0.0" supported="opencl">
+        <extension name="cl_loader_layers" revision="2.0.0" supported="opencl">
             <require>
                 <type name="CL/cl_icd.h"/>
             </require>
@@ -5645,10 +5675,12 @@ server's OpenCL/api-docs repository.
             </require>
             <require comment="Misc API enums">
                 <enum name="CL_LAYER_API_VERSION_100"/>
+                <enum name="CL_LAYER_API_VERSION_200"/>
             </require>
             <require>
                 <command name="clGetLayerInfo"/>
                 <command name="clInitLayer"/>
+                <command name="clDeinitLayer"/>
             </require>
         </extension>
         <extension name="cl_loader_info" revision="1.0.0" supported="opencl">
