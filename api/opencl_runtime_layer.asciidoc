@@ -1933,8 +1933,16 @@ include::{generated}/api/version-notes/clCreateImageWithProperties.asciidoc[]
     the <<memory-flags-table, supported memory flag values>> table.
   * _image_format_ is a pointer to a structure that describes format properties
     of the image to be allocated.
-    A 1D image buffer or 2D image can be created from a buffer by specifying a
-    buffer object in the __image_desc__->__mem_object__.
+    A 1D image buffer can be created from a buffer by specifying a buffer object
+    in __image_desc__->__mem_object__.
+    If the {cl_khr_image2d_from_buffer_EXT} extension is supported, a 2D image
+    can be created from a buffer by specifying a buffer object in
+    __image_desc__->__mem_object__.
+ifdef::cl_ext_image_from_buffer[]
+    If the {cl_ext_image_from_buffer_EXT} extension is supported, an image of
+    any type can be created from a buffer by specifying a buffer object in
+    __image_desc__->__mem_object__.
+endif::cl_ext_image_from_buffer[]
     A 2D image can be created from another 2D image object by specifying an
     image object in the __image_desc__->__mem_object__.
     Refer to the <<image-format-descriptor, Image Format Descriptor>> section
@@ -2071,9 +2079,23 @@ returned in _errcode_ret_:
   * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
   * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if values specified in _image_format_
     are not valid or if _image_format_ is `NULL`.
+ifndef::cl_ext_image_from_buffer[]
   * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if a 2D image is created from a
     buffer and the row pitch and base address alignment does not follow the
     rules described for creating a 2D image from a buffer.
+endif::cl_ext_image_from_buffer[]
+ifdef::cl_ext_image_from_buffer[]
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if an image is created from a
+    buffer and the row pitch, or slice pitch, if the
+    {cl_ext_image_from_buffer_EXT} extension is supported, or base address
+    alignment do not follow the rules described for creating an image from a
+    buffer.
+  * {CL_INVALID_IMAGE_SIZE} if the {cl_ext_image_from_buffer_EXT} extension is
+    supported and an image is created from a buffer and the buffer passed in
+    __image_desc__->__mem_object__ is too small to be used as a data store for the
+    image, e.g. if its size is smaller than the value returned for
+    {CL_IMAGE_REQUIREMENTS_SIZE_EXT} for the parameters used to create the image.
+endif::cl_ext_image_from_buffer[]
   * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if a 2D image is created from a 2D
     image object and the rules described above are not followed.
   * {CL_INVALID_IMAGE_DESCRIPTOR} if values specified in _image_desc_ are not
@@ -2660,9 +2682,9 @@ ifndef::cl_ext_image_requirements_info[]
     for all devices in the context that support images.
 endif::cl_ext_image_requirements_info[]
 ifdef::cl_ext_image_requirements_info[]
-    For a 2D image created from a buffer, the image row pitch must also
+    For an image created from a buffer, the image row pitch must also
     - Be a multiple of the {CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT} value
-    returned for parameters compatible with those used to create the image, if
+    for the _image_format_, _image_type_ and _flags_ used to create the image, if
     the {cl_ext_image_requirements_info_EXT} extension is supported, or
     - Be a multiple of the maximum of the {CL_DEVICE_IMAGE_PITCH_ALIGNMENT} value
     for all devices in the context that support images, otherwise.
@@ -2685,6 +2707,12 @@ endif::cl_khr_external_memory[]
     _image_height_ for a 2D image array or a 3D image, must be {geq} the
     image row pitch for a 1D image array, and must be a multiple of the
     image row pitch.
+ifdef::cl_ext_image_from_buffer[]
+    For an image created from a buffer, the image slice pitch must be a multiple
+    of the {CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT} value for the
+    _image_format_, _image_type_ and _flags_ used to create the image, if the
+    {cl_ext_image_from_buffer_EXT} extension is supported.
+endif::cl_ext_image_from_buffer[]
   * _num_mip_levels_ must be `0`, indicating that the image has a single
 ifndef::cl_khr_mipmap_image[]
     mipmap level.
@@ -2699,7 +2727,12 @@ endif::cl_khr_mipmap_image[]
   * _mem_object_ may refer to a valid buffer or image memory object.
     `mem_object` can be a buffer memory object if `image_type` is
     {CL_MEM_OBJECT_IMAGE1D_BUFFER} or
-    {CL_MEM_OBJECT_IMAGE2D} footnote:[{fn-image-from-buffer}].
+    {CL_MEM_OBJECT_IMAGE2D}
+ifdef::cl_ext_image_from_buffer[]
+    , or any other `image_type` if the {cl_ext_image_from_buffer_EXT} extension
+    is supported.
+endif::cl_ext_image_from_buffer[]
+    footnote:[{fn-image-from-buffer}]
     `mem_object` can be an image object if `image_type` is
     {CL_MEM_OBJECT_IMAGE2D} footnote:[{fn-image-from-image}].
     Otherwise it must be `NULL`.
@@ -2713,6 +2746,19 @@ size of element in bytes must be {leq} size of the buffer object.
 The image data in the buffer object is stored as a single scanline which is
 a linear sequence of adjacent elements.
 
+ifdef::cl_ext_image_from_buffer[]
+For a 1D image created from a buffer object, the `image_width` {times} size of
+element in bytes must be {leq} size of the buffer object. The image data in the
+buffer object is stored as a single scanline which is a linear sequence of
+adjacent elements.
+
+For a 1D image array created from a buffer object, the `image_slice_pitch` {times}
+`image_array_size` must be {leq} size of the buffer object specified by `mem_object`.
+The image data in the buffer object is stored as a linear sequence of adjacent 1D
+slices. Each slice is a single scanline padded to `image_slice_pitch` bytes.
+Each scanline is a linear sequence of image elements.
+endif::cl_ext_image_from_buffer[]
+
 For a 2D image created from a buffer object, the `image_row_pitch` {times}
 `image_height` must be {leq} size of the buffer object specified by
 `mem_object`.
@@ -2720,6 +2766,22 @@ The image data in the buffer object is stored as a linear sequence of
 adjacent scanlines.
 Each scanline is a linear sequence of image elements padded to
 `image_row_pitch` bytes.
+
+ifdef::cl_ext_image_from_buffer[]
+For a 2D image array created from a buffer object, the `image_slice_pitch` {times}
+`image_array_size` must be {leq} size of the buffer object specified by `mem_object`.
+The image data in the buffer object is stored as a linear sequence of adjacent 2D
+slices. Each slice is a linear sequence of adjacent scanlines padded to
+`image_slice_pitch` bytes. Each scanline is a linear sequence of image elements padded
+to `image_row_pitch` bytes.
+
+For a 3D image created from a buffer object, the `image_slice_pitch` {times}
+`image_depth` must be {leq} size of the buffer object specified by `mem_object`.
+The image data in the buffer object is stored as a linear sequence of adjacent 2D
+slices padded to `image_slice_pitch` bytes. Each slice is a linear sequence of adjacent
+scanlines. Each scanline is a linear sequence of image elements padded to
+`image_row_pitch` bytes.
+endif::cl_ext_image_from_buffer[]
 
 For an image object created from another image object, the values specified
 in the image descriptor except for `mem_object` must match the image
@@ -2796,10 +2858,9 @@ stored in the image can be accessed as linear RGB or sRGB values.
 [NOTE]
 ====
 Concurrent reading from, writing to and copying between both a buffer object
-and 1D image buffer or 2D image object associated with the buffer object is
-undefined.
-Only reading from both a buffer object and 1D image buffer or 2D image
-object associated with the buffer object is defined.
+and buffer or image object associated with the buffer object is undefined.
+Only reading from both a buffer object and buffer or image object associated
+with the buffer object is defined.
 
 Writing to an image created from a buffer and then reading from this buffer
 in a kernel even if appropriate synchronization operations (such as a
@@ -5190,6 +5251,8 @@ include::{generated}/api/version-notes/clGetImageRequirementsInfoEXT.asciidoc[]
 | Image Format Info | Return type | Info. returned in _param_value_
 
 | {CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT.asciidoc[]
 | `size_t`
 | Returns the minimum alignment in bytes required for the data store backing
   an image created using the parameters passed to {clGetImageRequirementsInfoEXT}.
@@ -5199,6 +5262,8 @@ include::{generated}/api/version-notes/clGetImageRequirementsInfoEXT.asciidoc[]
   The value returned is a power of two.
 
 |{CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT.asciidoc[]
 | `size_t`
 | Returns the row pitch alignment required in bytes for images created from
   a buffer with the parameters passed to {clGetImageRequirementsInfoEXT}.
@@ -5208,6 +5273,8 @@ include::{generated}/api/version-notes/clGetImageRequirementsInfoEXT.asciidoc[]
   argument(s).
 
 | {CL_IMAGE_REQUIREMENTS_SIZE_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_SIZE_EXT.asciidoc[]
 | `size_t`
 | Returns the minimal size in bytes that a buffer would need to be to back an
   image created using the parameters passed to {clGetImageRequirementsInfoEXT}.
@@ -5216,6 +5283,8 @@ include::{generated}/api/version-notes/clGetImageRequirementsInfoEXT.asciidoc[]
   {CL_INVALID_VALUE} is returned.
 
 | {CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT.asciidoc[]
 | `cl_uint`
 | Returns the max width supported for creating images with the parameters passed
   to {clGetImageRequirementsInfoEXT}.
@@ -5229,6 +5298,8 @@ include::{generated}/api/version-notes/clGetImageRequirementsInfoEXT.asciidoc[]
 // TODO: should we require _image_width_ to be `0`?
 
 | {CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT.asciidoc[]
 | `cl_uint`
 | Returns the max height supported for creating images with the parameters passed
   to {clGetImageRequirementsInfoEXT}.
@@ -5245,6 +5316,8 @@ include::{generated}/api/version-notes/clGetImageRequirementsInfoEXT.asciidoc[]
 // TODO: should we require _image_height_ to be `0`?
 
 | {CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT.asciidoc[]
 | `cl_uint`
 | Returns the max depth supported for creating images with the parameters passed
   to {clGetImageRequirementsInfoEXT}.
@@ -5260,6 +5333,8 @@ include::{generated}/api/version-notes/clGetImageRequirementsInfoEXT.asciidoc[]
 // TODO: should we require _image_depth_ to be `0`?
 
 | {CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT.asciidoc[]
 | `cl_uint`
 | Returns the max array size supported for creating images with the parameters passed
   to {clGetImageRequirementsInfoEXT}.
@@ -5274,6 +5349,20 @@ include::{generated}/api/version-notes/clGetImageRequirementsInfoEXT.asciidoc[]
   {CL_MEM_OBJECT_IMAGE1D_ARRAY} or {CL_MEM_OBJECT_IMAGE2D_ARRAY}, otherwise
   {CL_INVALID_IMAGE_DESCRIPTOR} is returned. +
 // TODO: should we require _image_array_size_ to be `0`?
+
+ifdef::cl_ext_image_from_buffer[]
+| {CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT.asciidoc[]
+| `size_t`
+| Returns the slice pitch alignment required in bytes for images created from
+  a buffer with the parameters passed to {clGetImageRequirementsInfoEXT}.
+  The value returned is a power of two. _image_format_ and _image_desc_ are
+  allowed to be `NULL`. When either or both is `NULL` the value returned is
+  the minimum slice pitch alignment that is supported for all possible values
+  of the missing argument(s).
+endif::cl_ext_image_from_buffer[]
+
 |====
 
 // refError

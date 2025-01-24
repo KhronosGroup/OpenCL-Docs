@@ -1,4 +1,4 @@
-// Copyright 2018-2024 The Khronos Group Inc.
+// Copyright 2018-2025 The Khronos Group Inc.
 // SPDX-License-Identifier: CC-BY-4.0
 
 include::{generated}/meta/{refprefix}cl_ext_image_from_buffer.txt[]
@@ -6,14 +6,73 @@ include::{generated}/meta/{refprefix}cl_ext_image_from_buffer.txt[]
 === Other Extension Metadata
 
 *Last Modified Date*::
-    2022-01-25
+    2025-01-15
 *IP Status*::
     No known IP claims.
+*Contributors*::
+  - Kevin Petit, Arm Ltd.
+  - Jeremy Kemp, Imagination Technologies
+  - Alastair Murray, Codeplay Software Ltd.
+  - Balaji Calidas, Qualcomm
 
 === Description
 
-The latest published specification for this extension is available on
-the https://registry.khronos.org/OpenCL/extensions/ext/cl_ext_image_from_buffer.html[OpenCL registry].
+This extension enables all types of images to be created from an existing buffer
+object.
+
+=== New Enums
+
+  * {cl_image_requirements_info_ext_TYPE}
+  ** {CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT}
+
+=== Conformance tests
+
+. Test access from kernel
+  - For all image types
+  - For a few/all image formats
+  - For several values of row/slice pitch
+  - With or without a host_ptr
+    - Create buffer and fill with data
+    - Optionally create a sub-buffer with a randomly selected offset?
+    - Create an image from the buffer
+    - Read the image from a kernel and compare with values read using the buffer and direct addressing. They must match.
+
+//. TODO Test access via read/write/map commands?
+
+//. TODO Test copy to/from buffer?
+
+//. TODO Test fill?
+
+//. TODO Test copy to/from another image?
+
+. Test clGetImageInfo
+  - For all image types (one format per element size)
+  - For a few different row/pitch sizes (image dimensions being equal or not)
+    - Create an image from a buffer
+    - Check that the returned values for {CL_IMAGE_ROW_PITCH} and {CL_IMAGE_SLICE_PITCH} are correct.
+
+. Test clGetMemObjectInfo
+  - For all image types (1 format only)
+    - Create an image from a buffer
+    - Check that {CL_MEM_ASSOCIATED_MEMOBJECT} correctly returns the buffer that was used.
+
+. Negative testing for {clCreateImage} (alignment)
+  - For a few/all image formats
+        - For all image types
+            - Query row pitch, slice pitch and base image address alignment for the format
+            - Create an image from a buffer with invalid row pitch (not a multiple of required alignment) and check that {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} is returned.
+            - Create an image from a buffer with invalid slice pitch (not a multiple of required alignment) and check that {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} is returned.
+            - Create an image from a buffer with invalid base address alignment (not a multiple of required alignment) and check that {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} is returned.
+
+. Negative testing for {clCreateImage} (buffer size)
+  - For a few image formats (at least smallest and biggest element types)
+    - For all image types
+      - Create a buffer too small
+      - Check that image creation from that buffer is rejected with {CL_INVALID_IMAGE_SIZE}
+
+=== Issues
+
+None.
 
 === Version History
 
