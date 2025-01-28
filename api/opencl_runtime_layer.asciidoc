@@ -14193,16 +14193,34 @@ of 0 or 1.
 The simultaneous use capability removes this restriction and allows
 command-buffers to have a <<pending_count, Pending Count>> greater than 1.
 
-[[compatible]]
 Command-buffers are created using an ordered list of command-queues that
-commands are recorded to and execute on by default.
-These command-queues can be replaced on command-buffer enqueue with
-different command-queues, provided for each element in the replacement list
-the substitute command-queue is compatible with the command-queue used on
-command-buffer creation.
-A _compatible_ command-queue is defined as a command-queue with
-identical properties targeting the same device and in the same OpenCL
-context.
+commands are recorded to and execute on by default. All these queue objects
+must share the same context, but may be associated with different devices when
+the {cl_khr_command_buffer_multi_device_EXT} extension is supported.
+
+When constructing a command-buffer by appending commands, the queue parameter
+passed for the command being created is used to set the device with which the
+command will be associated with, and also inform the scheduling of the command.
+If the queue is an in-order queue, then an additional dependency is created on the
+last command appended to the command-buffer using the same queue parameter. If
+the queue is an out-of-order queue, then no extra dependencies on previous
+commands using the same queue are created. All queue properties other than
+{CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE} are ignored for the purposes of command
+creation, with the exception of any vendor extension defined queue properties
+that explicitly define semantics for this purpose.
+
+When enqueuing a command-buffer, a list of command-queues to execute the
+command-buffer on can be passed by the user, otherwise the command-queues set
+on command-buffer creation are used by default for execution. A user passed
+list may contain different command-queues, provided for each element the
+substitute command-queue matches the device and context of the command-queue
+used on command-buffer creation. Each command-queue in the enqueue list must
+also have the minimum properties defined by
+{CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR} and no properties
+which are not reported by
+{CL_DEVICE_COMMAND_BUFFER_SUPPORTED_QUEUE_PROPERTIES_KHR}. These queue
+properties have the same execution semantics for {clEnqueueCommandBufferKHR}
+as other operations enqueued to the queue.
 
 While constructing a command-buffer it is valid for the user to interleave
 calls to the same queue which create commands, such as
@@ -14266,7 +14284,7 @@ target the same device.
 
 Commands recorded to different command-queues in the same command-buffer may
 be executed concurrently to each other unless synchronized explicitly with
-sync-points.
+sync-points, barrier commands, or in-order queue implicit dependencies.
 Ordering of other commands submitted to the same command-queues as used to
 enqueue a command-buffer is the responsibility of the programmer.
 A command-buffer enqueue spanning multiple queues can return an event to use
@@ -14467,12 +14485,6 @@ returned in _errcode_ret_:
 
   * {CL_INVALID_COMMAND_QUEUE} if any command-queue in _queues_ is not a
     valid command-queue.
-  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the properties of any command-queue
-    in _queues_ contains a property not specified by
-    {CL_DEVICE_COMMAND_BUFFER_SUPPORTED_QUEUE_PROPERTIES_KHR}.
-  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the properties of any
-    command-queue in _queues_ does not contain the minimum properties
-    specified by {CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR}.
   * {CL_INVALID_CONTEXT} if all the command-queues in _queues_ do not have
     the same OpenCL context.
   * {CL_INVALID_VALUE} if the {cl_khr_command_buffer_multi_device_EXT}
@@ -14605,10 +14617,10 @@ include::{generated}/api/protos/clEnqueueCommandBufferKHR.txt[]
 include::{generated}/api/version-notes/clEnqueueCommandBufferKHR.asciidoc[]
 
   * _num_queues_ is the number of command-queues listed in _queues_.
-  * _queues_ is a pointer to an ordered list of command-queues <<compatible,
-    compatible>> with the command-queues used on recording.
-    _queues_ can be `NULL`, in which case the default command-queues used on
-    command-buffer creation are used and _num_queues_ must be 0.
+  * _queues_ is a pointer to an ordered list of command-queues to execute the
+    command-buffer on. _queues_ can be `NULL`, in which case the default
+    command-queues used on command-buffer creation are used and _num_queues_
+    must be 0.
   * _command_buffer_ refers to a valid command-buffer object.
   * _event_wait_list_, _num_events_in_wait_list_ specify events that need to
     complete before this particular command can be executed.
@@ -14653,9 +14665,15 @@ execution was successfully queued, or one of the errors below:
     _num_queues_ set on _command_buffer_ creation.
   * {CL_INVALID_COMMAND_QUEUE} if any element of _queues_ is not a valid
     command-queue.
-  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if any element of _queues_ is not
-    <<compatible, compatible>> with the command-queue set on
-    _command_buffer_ creation at the same list index.
+  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the properties of any command-queue
+    in _queues_ contains a property not specified by
+    {CL_DEVICE_COMMAND_BUFFER_SUPPORTED_QUEUE_PROPERTIES_KHR}.
+  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the properties of any
+    command-queue in _queues_ does not contain the minimum properties
+    specified by {CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR}.
+  * {CL_INVALID_DEVICE} if any element of _queues_ does not have the same
+    device as the command-queue set on _command_buffer_ creation at the
+    same list index.
   * {CL_INVALID_CONTEXT} if any element of _queues_ does not have the same
     context as the command-queue set on _command_buffer_ creation at the
     same list index.
@@ -16039,22 +16057,18 @@ ifdef::cl_khr_command_buffer_multi_device[]
 If the {cl_khr_command_buffer_multi_device_EXT} extension is supported,
 platforms reporting the {CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR}
 capability support generating a deep copy of a command-buffer with its
-commands remapped to a list of command-queues that are potentially
-<<compatible, incompatible>> with the queues used to create the
-command-buffer.
-That is, the remapped command-buffer can execute on queues that differ in
-terms of properties and/or associated device from the original
+commands remapped to different devices than the devices used to create the
+commands. That is, the remapped command-buffer can execute on queues that
+differ in terms of properties and/or associated device from the original
 command-buffer queues.
 
 This functionality is invoked through a new synchronous entry-point
 {clRemapCommandBufferKHR} which takes a list of queues to which the commands
-should now target.
-It then returns a command-buffer containing the same commands as the
-original, with the same command dependencies, but targeting different
-queues.
-A list of command handles may also be passed to the entry-point, which
-allows handles to the equivalent commands in the remapped command-buffer to
-be returned by an output parameter.
+should now target the associated devices of. It then returns a command-buffer
+containing the same commands as the original, with the same command
+dependencies, but targeting different devices. A list of command handles may
+also be passed to the entry-point, which allows handles to the equivalent
+commands in the remapped command-buffer to be returned by an output parameter.
 
 Device properties restrict remapping possibilities, as existing commands can
 have a configuration which is not supported by another device, and so
@@ -16077,7 +16091,7 @@ appear and disappear during runtime.
 [open,refpage='clRemapCommandBufferKHR',desc='Create copy of a command-buffer remapped to specified command-queues',type='protos']
 --
 To create a deep copy of the input command-buffer with the copied commands
-remapped to target the passed command-queues, call the function
+remapped to target devices of the passed command-queues, call the function
 
 include::{generated}/api/protos/clRemapCommandBufferKHR.txt[]
 include::{generated}/api/version-notes/clRemapCommandBufferKHR.asciidoc[]
@@ -16136,8 +16150,6 @@ one of the following error values returned in _errcode_ret_:
   * {CL_INVALID_OPERATION} if the platform does not support the
     {CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR} flag and _automatic_ is
     {CL_TRUE}.
-  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if such an error would be returned
-    by passing _queues_ to {clCreateCommandBufferKHR}.
   * Any error relating to device support that can be returned by a command
     recording entry-point may also be returned.
     As a command in _command_buffer_ can have a configuration that is not
