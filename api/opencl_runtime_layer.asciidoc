@@ -602,7 +602,7 @@ ifdef::cl_ext_buffer_device_address[]
 
 include::{generated}/api/version-notes/CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT.asciidoc[]
   | {cl_bool_TYPE}
-      | When set to CL_TRUE, specifies that the buffer must have a single fixed
+      | When set to {CL_TRUE}, specifies that the buffer must have a single fixed
       device-side address for its lifetime, and the address can be queried via {clGetMemObjectInfo}.
 
    Each device in the context can have their own (fixed) device-side address and
@@ -692,9 +692,10 @@ ifdef::cl_khr_external_memory[]
   ** if _properties_ includes more than one external memory handle.
 endif::cl_khr_external_memory[]
 ifdef::cl_ext_buffer_device_address[]
-  * {CL_INVALID_DEVICE}
+  * {CL_INVALID_OPERATION}
   ** If _properties_ includes {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT} and there
-  is at least one device in the context that doesn't support such allocation.
+  are no devices in the context that support the {cl_ext_buffer_device_address_EXT}
+  extension.
 endif::cl_ext_buffer_device_address[]
 
 [[memory-flags-table]]
@@ -6503,9 +6504,10 @@ ifdef::cl_ext_buffer_device_address[]
 include::{generated}/api/version-notes/CL_MEM_DEVICE_ADDRESS_EXT.asciidoc[]
   |  {cl_mem_device_address_EXT_TYPE}[]
     | If _memobj_ was created using {clCreateBufferWithProperties} with
-      the {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT} property set to CL_TRUE,
+      the {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT} property set to {CL_TRUE},
       returns a list of device addresses for the buffer, one for each
-      device in the context.
+      device in the context in the same order as the list of devices
+      passed to {clCreateContext}.
 
 endif::cl_ext_buffer_device_address[]
 
@@ -6519,16 +6521,16 @@ successfully.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_MEM_OBJECT} if _memobj_ is a not a valid memory object.
+ifdef::cl_ext_buffer_device_address[]
+  * {CL_INVALID_OPERATION} is returned for the {CL_MEM_DEVICE_ADDRESS_EXT} query if
+     the {cl_ext_buffer_device_address_EXT} is not supported or if the
+     buffer was not allocated with {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT}.
+endif::cl_ext_buffer_device_address[]
   * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
     if the size in bytes specified by _param_value_size_ is less than size of
     the return type specified in the
     <<mem-info-table, Memory Object Queries>> table
     and _param_value_ is not `NULL`.
-ifdef::cl_ext_buffer_device_address[]
-  ** Returned for the {CL_MEM_DEVICE_ADDRESS_EXT} query if
-     the {cl_ext_buffer_device_address_EXT} is not supported or if the
-     buffer was not allocated with {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT}.
-endif::cl_ext_buffer_device_address[]
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -10854,16 +10856,17 @@ include::{generated}/api/version-notes/clSetKernelArgDevicePointerEXT.asciidoc[]
     the {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT} property. The pointer value specified as
     the argument value can be the pointer to the beginning of the buffer or any offset into
     the buffer region. The device pointer value must be naturally aligned according to
-    the argument's type.
+    the argument's type. It should be noted that it's legal to pass invalid
+    pointers as the value (similarly to C/C++ function calls with pointer arguments) as
+    long as the kernel doesn't dereference the pointer.
 
 {clSetKernelArgDevicePointerEXT} returns {CL_SUCCESS} if the argument was set
 successfully. Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_KERNEL} if _kernel_ is not a valid kernel object.
   * {CL_INVALID_OPERATION} if no devices in the context associated with _kernel_ support
-    the device pointer.
+    the {cl_ext_buffer_device_address_EXT} extension.
   * {CL_INVALID_ARG_INDEX} if _arg_index_ is not a valid argument index.
-  * {CL_INVALID_ARG_VALUE} if _arg_value_ specified is not a valid value.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -10964,7 +10967,8 @@ Otherwise, it returns one of the following errors:
      the context associated with _kernel_ support SVM.
 ifdef::cl_ext_buffer_device_address[]
   * {CL_INVALID_OPERATION} for {CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT} if no
-  device in the context associated with _kernel_ support device pointers.
+  device in the context associated with _kernel_ support the {cl_ext_buffer_device_address_EXT}
+  extension.
 endif::cl_ext_buffer_device_address[]
   * {CL_INVALID_VALUE} if _param_name_ is not valid, if _param_value_ is
     `NULL` or if the size specified by _param_value_size_ is not valid.
