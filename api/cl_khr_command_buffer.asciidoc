@@ -12,7 +12,7 @@ include::{generated}/meta/{refprefix}cl_khr_command_buffer.txt[]
 === Other Extension Metadata
 
 *Last Modified Date*::
-    2024-10-02
+    2024-12-13
 *IP Status*::
     No known IP claims.
 *Contributors*::
@@ -43,11 +43,6 @@ Command-buffers enable a reduction in overhead when enqueuing the same
 workload multiple times. By separating the command-queue setup from dispatch,
 the ability to replay a set of previously created commands is introduced.
 
-The command-queues a command-buffer will be executed on can be set on replay via
-parameters to {clEnqueueCommandBufferKHR}, provided they are
-<<compatible, compatible>> with the command-queues used on command-buffer
-recording.
-
 ==== Background
 
 On embedded devices where building a command stream accounts for a significant
@@ -74,7 +69,7 @@ or writes memory objects; or enqueues a native kernel, is not available for
 command-buffer recording. Finally commands recorded into a command buffer do
 not wait for or return event objects, these are instead replaced with
 device-side synchronization-point identifiers which enable out-of-order
-execution when enqueued on <<compatible, compatible>> command-queues.
+execution of the command-buffer commands.
 
 Adding new entry-points for individual commands, rather than recording existing
 command-queue APIs with begin/end markers was a design decision made for the
@@ -102,16 +97,22 @@ following reasons:
 
 ==== Command Synchronization
 
-Device-side {cl_sync_point_khr_TYPE} synchronization-points can be used within
-command-buffers to define command dependencies. This allows the commands of a
-command-buffer to execute out-of-order on a single <<compatible, compatible>>
-command-queue. The command-buffer itself has no inherent in-order/out-of-order
-property, this ordering is inferred from the command-queue used on command
-recording. {clEnqueueCommandBufferKHR} submissions to an out-of-order queue
-have the same execution semantics are other operations enqueued to an
-out-of-order queue, such as {clEnqueueFillBuffer}, where execution between
-enqueued operations may happen concurrently unless dependencies between the
-operations are expressed with events.
+The command-buffer object has no in-order/out-of-order property set on creation,
+it is out-of-order, and command ordering is defined by the dependencies set when
+commands are created. Command dependencies can be defined in 3 ways:
+
+1. Device-side {cl_sync_point_khr_TYPE} synchronization-points, providing an
+   explicit list of the commands to depend on.
+2. Appending a {clCommandBarrierWithWaitListKHR} barrier command.
+3. Passing an in-order queue when creating the command, creating an implicit
+   dependency on the previous command created in the command-buffer using
+   the same queue.
+
+{clEnqueueCommandBufferKHR} submissions to an out-of-order queue have the same
+execution semantics as other operations enqueued to an out-of-order queue,
+such as {clEnqueueFillBuffer}, where execution between enqueued operations may
+happen concurrently unless dependencies between the operations are expressed
+with events.
 
 The {cl_sync_point_khr_TYPE} type is defined as a `cl_uint`, giving a hard
 upper limit on the number of commands a command-buffer can hold as
@@ -466,3 +467,6 @@ features:
      (provisional).
   * 0.9.6, 2024-10-02
   ** Add device query for supported queue properties (provisional).
+  * 0.9.7, 2024-12-13
+  ** Refactor queue compatability between command-buffer creation and enqueue
+     (provisional).
