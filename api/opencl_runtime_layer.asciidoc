@@ -641,6 +641,17 @@ include {CL_MEM_USE_HOST_PTR}, {CL_MEM_ALLOC_HOST_PTR}, or
 {CL_MEM_COPY_HOST_PTR}, and the _host_ptr_ argument must be `NULL`.
 endif::cl_khr_external_memory[]
 
+ifdef::cl_ext_immutable_memory_objects[]
+If {CL_MEM_IMMUTABLE_EXT} is set in _flags_, the buffer created is
+an _immutable memory object_ that cannot be modified by the implementation
+after creation, and one and only one of the following conditions must be met:
+
+  * Either {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} must be set in _flags_.
+ifdef::cl_khr_external_memory[]
+  * An external memory handle must be included in _properties_.
+endif::cl_khr_external_memory[]
+endif::cl_ext_immutable_memory_objects[]
+
 // refError
 
 {clCreateBuffer} and {clCreateBufferWithProperties} returns a valid non-zero
@@ -697,6 +708,17 @@ ifdef::cl_ext_buffer_device_address[]
   are no devices in the context that support the {cl_ext_buffer_device_address_EXT}
   extension.
 endif::cl_ext_buffer_device_address[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and
+    {CL_MEM_READ_WRITE}, {CL_MEM_WRITE_ONLY}, or {CL_MEM_HOST_WRITE_ONLY}
+    is set in _flags_.
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and none
+    of the following conditions are met
+  ** {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} is set in _flags_.
+ifdef::cl_khr_external_memory[]
+  ** _properties_ includes an external memory handle.
+endif::cl_khr_external_memory[]
+endif::cl_ext_immutable_memory_objects[]
 
 [[memory-flags-table]]
 .List of supported memory flag values
@@ -806,6 +828,14 @@ include::{generated}/api/version-notes/CL_MEM_KERNEL_READ_AND_WRITE.asciidoc[]
     instance.
     To create a memory object that may be read from and written to use
     {CL_MEM_READ_WRITE}.
+
+ifdef::cl_ext_immutable_memory_objects[]
+| {CL_MEM_IMMUTABLE_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_IMMUTABLE_EXT.asciidoc[]
+  | This flag specifies that the contents of the memory object cannot be altered
+    by the implementation after creation.
+endif::cl_ext_immutable_memory_objects[]
 |====
 --
 
@@ -821,7 +851,11 @@ include::{generated}/api/version-notes/clCreateSubBuffer.asciidoc[]
   * _flags_ is a bit-field that is used to specify allocation and usage
     information about the sub-buffer memory object being created and is
     described in the <<memory-flags-table,Memory Flags>> table.
-    If the {CL_MEM_READ_WRITE}, {CL_MEM_READ_ONLY}, or {CL_MEM_WRITE_ONLY} values are
+    If the {CL_MEM_READ_WRITE}, {CL_MEM_READ_ONLY},
+ifdef::cl_ext_immutable_memory_objects[]
+    {CL_MEM_IMMUTABLE_EXT},
+endif::cl_ext_immutable_memory_objects[]
+    or {CL_MEM_WRITE_ONLY} values are
     not specified in _flags_, they are inherited from the corresponding memory
     access qualifiers associated with _buffer_.
     The {CL_MEM_USE_HOST_PTR}, {CL_MEM_ALLOC_HOST_PTR}, and {CL_MEM_COPY_HOST_PTR}
@@ -899,6 +933,11 @@ Otherwise, it returns one of the following errors in _errcode_ret_:
     associated with _buffer_ for which the _origin_ field of the
     {cl_buffer_region_TYPE} structure passed in _buffer_create_info_ is
     aligned to the {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if _buffer_ was created with {CL_MEM_IMMUTABLE_EXT}
+    and _flags_ specifies {CL_MEM_READ_WRITE}, {CL_MEM_WRITE_ONLY}, or
+    {CL_MEM_HOST_WRITE_ONLY}.
+endif::cl_ext_immutable_memory_objects[]
 
 [NOTE]
 ====
@@ -1040,6 +1079,10 @@ Otherwise, they return one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if {clEnqueueWriteBuffer} is called on _buffer_
+    which has been created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 [open,refpage='clEnqueueReadBufferRect',desc='Enqueue command to read from a 2D or 3D rectangular region from a buffer object to host memory.',type='protos',alias='clEnqueueWriteBufferRect']
@@ -1197,6 +1240,10 @@ Otherwise, they return one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if {clEnqueueWriteBufferRect} is called on _buffer_
+    which has been created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 
 [NOTE]
 ====
@@ -1340,6 +1387,10 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _dst_buffer_ was created with
+    {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 [open,refpage='clEnqueueCopyBufferRect',desc='Enqueues a command to copy a 2D or 3D rectangular region from a buffer object to another buffer object.',type='protos']
@@ -1487,6 +1538,10 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _dst_buffer_ was created with
+    {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -1583,6 +1638,9 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _buffer_ was created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -1691,6 +1749,11 @@ values returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
   * {CL_INVALID_OPERATION} if mapping would lead to overlapping regions being
     mapped for writing.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _buffer_ was created with {CL_MEM_IMMUTABLE_EXT}
+    in _flags_ and {CL_MAP_WRITE} or {CL_MAP_WRITE_INVALIDATE_REGION} is set
+    in _map_flags_.
+endif::cl_ext_immutable_memory_objects[]
 
 The pointer returned maps a region starting at _offset_ and is at least
 _size_ bytes in size.
@@ -2098,6 +2161,21 @@ When such information is acquired at image creation time, it is used for the
 lifetime of the image object.
 endif::cl_khr_external_memory[]
 
+ifdef::cl_ext_immutable_memory_objects[]
+If {CL_MEM_IMMUTABLE_EXT} is set in _flags_, the image created is
+an _immutable memory object_ that cannot be modified by the implementation
+after creation, and one and only one of the following conditions must be met:
+
+  * Either {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} must be set in _flags_.
+ifdef::cl_khr_external_memory[]
+  * An external memory handle must be included in _properties_.
+endif::cl_khr_external_memory[]
+
+If the image being created is created from another memory object and that memory
+object is an _immutable memory object_, then {CL_MEM_IMMUTABLE_EXT} must be set
+in _flags_.
+endif::cl_ext_immutable_memory_objects[]
+
 // refError
 
 {clCreateImage} and {clCreateImageWithProperties} returns a valid non-zero
@@ -2188,6 +2266,19 @@ ifdef::cl_khr_external_memory[]
      {CL_MEM_DEVICE_HANDLE_LIST_KHR} is specified as part of _properties_.
   ** if _properties_ includes more than one external memory handle.
 endif::cl_khr_external_memory[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and
+    {CL_MEM_READ_WRITE}, {CL_MEM_WRITE_ONLY}, or {CL_MEM_HOST_WRITE_ONLY}
+    is set in _flags_.
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is not set in _flags_ and
+    _mem_object_ was created with {CL_MEM_IMMUTABLE_EXT}.
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and none
+    of the following conditions are met
+  ** {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} is set in _flags_.
+ifdef::cl_khr_external_memory[]
+  ** _properties_ includes an external memory handle.
+endif::cl_khr_external_memory[]
+endif::cl_ext_immutable_memory_objects[]
 
 [[host-ptr-buffer-size-table]]
 .Required _host_ptr_ buffer sizes for images
@@ -2263,6 +2354,13 @@ include::{generated}/api/version-notes/clCreateImage2D.asciidoc[]
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
+ifdef::cl_ext_immutable_memory_objects[]
+If {CL_MEM_IMMUTABLE_EXT} is set in _flags_, the image created is
+an _immutable memory object_ that cannot be modified by the implementation
+after creation, and {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} must be set
+in _flags_.
+endif::cl_ext_immutable_memory_objects[]
+
 // refError
 
 {clCreateImage2D} returns a valid non-zero image object created and the
@@ -2294,6 +2392,10 @@ returned in _errcode_ret_:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and neither
+    {CL_MEM_COPY_HOST_PTR} nor {CL_MEM_USE_HOST_PTR} is set in _flags_.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 [open,refpage='clCreateImage3D',desc='Creates a 3D image.',type='protos']
@@ -2347,6 +2449,13 @@ include::{generated}/api/version-notes/clCreateImage3D.asciidoc[]
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
+ifdef::cl_ext_immutable_memory_objects[]
+If {CL_MEM_IMMUTABLE_EXT} is set in _flags_, the image created is
+an _immutable memory object_ that cannot be modified by the implementation
+after creation, and {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} must be set
+in _flags_.
+endif::cl_ext_immutable_memory_objects[]
+
 // refError
 
 {clCreateImage3D} returns a valid non-zero image object created and the
@@ -2379,6 +2488,10 @@ returned in _errcode_ret_:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and neither
+    {CL_MEM_COPY_HOST_PTR} nor {CL_MEM_USE_HOST_PTR} is set in _flags_.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -2929,6 +3042,10 @@ include::{generated}/api/version-notes/clGetSupportedImageFormats.asciidoc[]
     may be written to by a kernel, or {CL_MEM_KERNEL_READ_AND_WRITE} to query
     image formats that may be both read from and written to by the same kernel
     instance.
+ifdef::cl_ext_immutable_memory_objects[]
+    _flags_ may also be {CL_MEM_IMMUTABLE_EXT} to query image formats that
+    may be used to create immutable images.
+endif::cl_ext_immutable_memory_objects[]
     Please see <<image-format-mapping, Image Format Mapping>> for clarification.
   * _image_type_ describes the image type and must be either
     {CL_MEM_OBJECT_IMAGE1D}, {CL_MEM_OBJECT_IMAGE1D_BUFFER}, {CL_MEM_OBJECT_IMAGE2D},
@@ -3158,6 +3275,10 @@ parameter and any other image parameter.
   | {CL_MEM_READ_ONLY}, +
     {CL_MEM_READ_WRITE}, +
     {CL_MEM_KERNEL_READ_AND_WRITE}
+ifdef::cl_ext_immutable_memory_objects[]
+    Additionally, if the {cl_ext_immutable_memory_objects_EXT} extension is supported:
+    {CL_MEM_IMMUTABLE_EXT}
+endif::cl_ext_immutable_memory_objects[]
 | `write_only`
   | {CL_MEM_WRITE_ONLY}, +
     {CL_MEM_READ_WRITE}, +
@@ -3561,6 +3682,10 @@ ifdef::cl_khr_mipmap_image[]
     supported, and the mip level specified in _origin_ is not a valid level
     for _image_,
 endif::cl_khr_mipmap_image[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if {clEnqueueWriteImage} is called on _image_ which
+    has been created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 
 [NOTE]
 ====
@@ -3739,6 +3864,9 @@ ifdef::cl_khr_mipmap_image[]
     supported, and the mip level specified in _src_origin_ or _dst_origin_
     is not a valid level for the corresponding _src_image_ or _dst_image_,
 endif::cl_khr_mipmap_image[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _dst_image_ was created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -3860,6 +3988,9 @@ ifdef::cl_khr_mipmap_image[]
     supported, and the mip level specified in _origin_ is not a valid level
     for _image_,
 endif::cl_khr_mipmap_image[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _image_ was created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -3992,6 +4123,9 @@ ifdef::cl_khr_mipmap_image[]
     supported, and the mip level specified in _src_origin_ is not a valid
     level for _src_image_,
 endif::cl_khr_mipmap_image[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _dst_buffer_ was created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -4124,6 +4258,9 @@ ifdef::cl_khr_mipmap_image[]
     supported, and the mip level specified in _dst_origin_ is not a valid
     level for _dst_image_,
 endif::cl_khr_mipmap_image[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _dst_image_ was created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -4268,6 +4405,11 @@ values returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
   * {CL_INVALID_OPERATION} if mapping would lead to overlapping regions being
     mapped for writing.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _image_ was created with {CL_MEM_IMMUTABLE_EXT}
+    in _flags_ and {CL_MAP_WRITE} or {CL_MAP_WRITE_INVALIDATE_REGION} is set
+    in _map_flags_.
+endif::cl_ext_immutable_memory_objects[]
 
 The pointer returned maps a 1D, 2D or 3D region starting at _origin_ and is
 at least _region_[0] pixels in size for a 1D image, 1D image buffer or 1D
@@ -4920,19 +5062,28 @@ include::{generated}/api/version-notes/clCreateFromEGLImageKHR.asciidoc[]
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
-Accepted for _flags_ are {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and
-CL_MEM_READ_WRITE.
+Accepted for _flags_ are {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY},
+ifdef::cl_ext_immutable_memory_objects[]
+{CL_MEM_IMMUTABLE_EXT},
+endif::cl_ext_immutable_memory_objects[]
+and {CL_MEM_READ_WRITE}.
 If OpenCL 1.2 is supported, _flags_ also accepts {CL_MEM_HOST_WRITE_ONLY},
 {CL_MEM_HOST_READ_ONLY}, and {CL_MEM_HOST_NO_ACCESS}.
 
 {cl_khr_egl_image_EXT} only requires support for {CL_MEM_READ_ONLY}, and for
-CL_MEM_HOST_NO_ACCESS if OpenCL 1.2 or later is supported.
+{CL_MEM_HOST_NO_ACCESS} if OpenCL 1.2 or later is supported.
 For OpenCL 1.1, a {CL_INVALID_OPERATION} will be returned for images which
 do not support host mapping.
 
 If the value passed in _flags_ is not supported by the OpenCL
 implementation, it will return {CL_INVALID_VALUE}.
 The accepted _flags_ may be dependent upon the texture format used.
+
+ifdef::cl_ext_immutable_memory_objects[]
+If {CL_MEM_IMMUTABLE_EXT} is set in _flags_, the image created is
+an _immutable memory object_ that cannot be modified by the implementation
+after creation.
+endif::cl_ext_immutable_memory_objects[]
 
 // refError
 
@@ -4959,6 +5110,11 @@ returned in _errcode_ret_:
     images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in table 4.3 is
     {CL_FALSE}) or if the flags passed are not supported for that image
     type.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and
+    {CL_MEM_READ_WRITE}, {CL_MEM_WRITE_ONLY}, or {CL_MEM_HOST_WRITE_ONLY}
+    is set in _flags_.
+endif::cl_ext_immutable_memory_objects[]
 --
 endif::cl_khr_egl_image[]
 
@@ -5495,6 +5651,9 @@ returned in _errcode_ret_:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_.
+endif::cl_ext_immutable_memory_objects[]
 
 Pipes follow the same memory consistency model as defined for buffer and
 image objects.
@@ -7845,6 +8004,9 @@ Otherwise, like *malloc*, it returns a `NULL` pointer value.
   * _context_ is not a valid context, or no devices in _context_ support SVM.
   * _flags_ does not contain {CL_MEM_SVM_FINE_GRAIN_BUFFER} but does contain
     {CL_MEM_SVM_ATOMICS}.
+ifdef::cl_ext_immutable_memory_objects[]
+  * _flags_ contains {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
   * Values specified in _flags_ do not follow rules described for supported
     values in the <<svm-flags-table,SVM Memory Flags>> table.
   * {CL_MEM_SVM_FINE_GRAIN_BUFFER} or {CL_MEM_SVM_ATOMICS} is specified in
