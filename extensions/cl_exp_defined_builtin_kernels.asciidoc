@@ -1,0 +1,937 @@
+// Copyright 2018-2022 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+:stem:
+
+= cl_exp_defined_builtin_kernels
+
+The purpose of this extension is to provide a standardized set of built-in
+kernels with well-defined semantics useful for accelerating applications
+from various domains.  The extension specification is designed to rapidly
+expand and "live" via addition of new well-defined built-in kernel
+definitions and updating of previously defined ones.
+
+[float]
+== XXX - Not complete yet!!!
+
+
+== Name Strings
+
+`cl_exp_defined_builtin_kernels`
+
+== Contact
+
+TODO
+
+== Contributors
+
+Pekka Jääskeläinen, Intel and Tampere University. +
+Topi Leppänen, Tampere University. +
+Jan Solanti, Tampere University. +
+Ben Ashbaugh, Intel. +
+Henry Linjamäki, Intel. +
+
+== Notice
+
+TODO
+
+== Status
+
+Draft spec, NOT APPROVED!!
+
+== Version
+Built On: {docdate} +
+Version: 0.3.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification version 3.0.12.
+
+This extension requires OpenCL 1.2 or later.
+
+This extension requires cl_exp_tensor.
+
+== Overview
+
+OpenCL 1.2 specifies a built-in kernel as a kernel that is executed on
+an OpenCL device or custom device by fixed-function hardware or in firmware.
+Applications can query the built-in kernels supported by a device or custom
+device.
+
+Built-in kernels are referred to by a name (a C string) without any
+semantics attached to the functionality. The semantics behind the name
+is completely device specific, typically documented in vendor-specific
+extension specifications.
+
+The goal for this extension is to lower the bar for utilizing hardware
+accelerated functions in drivers by providing a library of
+well-defined built-in kernel with good coverage for common acceleration needs
+and which is designed to easily evolve over time.
+
+The device drivers that implement this extension can freely choose which
+subset of defined built-in-kernels (DBKs) they implement and advertise to the clients. The
+clients can use the DBKs to accelerate their applications by manually
+executing invoking the DBKs. The extension is designed to also support using
+automated task graph lowering tooling later.
+
+=== Background
+
+ASIC-based coarse-grained hardware accelerators are specialized logic meant to
+speed up execution of workloads of interest, or to provide improvements in
+energy-efficiency. Examples of contemporary workloads that are beneficially hardware
+accelerated over software-based implementations include video coding, deep learning,
+cryptography, software-defined radio and graphics rendering.
+
+FPGAs form a special case somewhere between instruction-set architectures and fixed
+function hardware accelerators. While advances in high-level synthesis tools
+have attempted to bridge the programmability gap between GPU and FPGA programming,
+FPGAs are still considered as devices which are challenging to achieve efficient
+implementations with. Due to extensive manual optimization work required for efficient
+implementations of the accelerated functionality, defining FPGA designs as
+a system of "hardware accelerator IPs" is still a widely used "application abstraction".
+FPGAs can be thus seen as a platform that can realize and integrate any
+hardware accelerator implementable with the programmable fabric.
+
+The means to utilize hardware accelerators have typically been
+vendor-specific and abstracted behind domain-specific libraries.
+The overhead with the "bunch of libraries"-approach is seen in the lowest level
+of integration: The libraries utilize a low level library (typically
+vendor-specific) to interface with the actual hardware, and thus does not
+integrate efficiently with other libraries or software-programmable processors
+that might be available on the same chip.
+
+=== Rationale
+
+OpenCL's built-in kernel abstraction allows pushing both hardware
+accelerated and software defined kernels to the same command-queues,
+providing a powerful means for asynchronous execution of heterogeneous
+task graphs on diverse heterogeneous platforms. The ability to invoke hardware
+accelerators while being able to synchronize and optimize data transfers at
+the lowest levels of the driver stack can provide significant latency benefits,
+especially when combined with the command-buffering mechanism.
+
+However, the built-in kernel abstraction works well only when it is widely adopted by
+vendors, and when multiple vendors implement the same definitions. Otherwise
+each vendor specifies and implements their own built-in kernels closely matching their
+own hardware accelerator properties, resulting in lack of cross-vendor
+portability in the API abstraction presented to the upper layers of
+heterogeneous computing software stacks.
+
+This extension standardizes a set of well-defined built-in kernels the
+clients can call from higher level programming stacks built with
+different languages and multiple libraries, possibly mix accelerator
+calls with calls to software kernel commands, and rely on the driver
+stack to optimize the execution (especially the synchronization and
+communication) as a low level heterogeneous task graph.  The
+heterogeneous task graph can be described using multiple
+command-queues and optionally cached using the command buffer
+extension (cl_khr_command_buffer).  It aims to promote the use of
+built-in kernels as a programming model for hardware accelerated
+functionality, to improve cross-vendor portability of hardware
+accelerated computing.
+
+
+== New API Functions
+
+[source,c]
+----
+#define CL_MAX_DBK_PROPERTIES 16
+
+clCreateProgramWithDefinedBuiltInKernels(
+    cl_context           context,
+    cl_uint              num_devices,
+    const cl_device_id*  device_list,
+    cl_uint              num_kernels,
+    const char**         kernel_names,
+    const cl_dbk_id_exp* kernel_ids,
+    const void**         kernel_attributes,
+    cl_int*              device_support_ret,
+    cl_int*              errcode_ret);
+----
+
+== New API Types
+
+[source,c]
+----
+typedef cl_uint       cl_dbk_id_exp;
+typedef cl_properties cl_dbk_properties_exp;
+
+typedef union {
+    cl_char    sc;
+    cl_uchar   uc;
+    cl_short   ss;
+    cl_ushort  us;
+    cl_int     si;
+    cl_uint    ui;
+    cl_long    sl;
+    cl_ulong   ul;
+    cl_half    fh;
+    cl_float   ff;
+    cl_double  fd;
+    void*      raw;
+} cl_tensor_datatype_union_exp;
+
+typedef struct cl_dbk_attributes_matmul_exp {
+    cl_tensor_desc                a;
+    cl_tensor_desc                b;
+    cl_tensor_desc                c;
+    cl_int                        trans_a;
+    cl_int                        trans_b;
+    cl_dbk_properties_exp         kernel_props[CL_MAX_DBK_PROPERTIES];
+} cl_dbk_attributes_matmul_exp;
+
+typedef struct cl_dbk_attributes_gemm_exp {
+    cl_tensor_desc                a;
+    cl_tensor_desc                b;
+    cl_tensor_desc                c_in;
+    cl_tensor_desc                c_out;
+    cl_bool                       trans_a;
+    cl_bool                       trans_b;
+    cl_tensor_datatype_union_exp  alpha;
+    cl_tensor_datatype_union_exp  beta;
+    cl_dbk_properties_exp         kernel_props[CL_MAX_DBK_PROPERTIES];
+} cl_dbk_attributes_gemm_exp;
+
+typedef struct cl_dbk_attributes_leaky_relu_exp {
+   cl_tensor_datatype_union_exp   coefficient;
+   cl_dbk_properties_exp          kernel_props[CL_MAX_DBK_PROPERTIES];
+} cl_dbk_attributes_leaky_relu_exp;
+----
+
+== New API Enums
+
+
+Accepted values to *cl_dbk_id_exp*:
+[source,c]
+----
+CL_DBK_MATMUL_EXP      0x????
+CL_DBK_GEMM_EXP        0x????
+CL_DBK_LEAKY_RELU_EXP  0x????
+----
+
+accepted values to *cl_dbk_properties_exp*:
+
+[source,c]
+----
+CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP  0x????
+CL_DBK_PROPERTY_NON_DETERMINISTIC_EXP   0x????
+----
+
+New error codes:
+
+[source,c]
+----
+CL_DBK_UNSUPPORTED_EXP                0x????
+CL_DBK_UNSUPPORTED_PROPERTY_EXP       0x????
+CL_DBK_INVALID_ATTRIBUTE_EXP          0x????
+CL_DBK_UNMET_MAX_RELATIVE_ERROR_EXP   0x????
+----
+
+== Modifications to the OpenCL Specification
+
+(Add the following to section 5.8.1, *Creating Program Objects*) ::
++
+--
+
+To create a program object for a context and to load the information
+related to the defined built-in kernels into that object, call the
+function:
+
+[source,c]
+----
+clCreateProgramWithDefinedBuiltInKernels(
+    cl_context          context,
+    cl_uint             num_devices,
+    const cl_device_id* device_list,
+    cl_uint             num_kernels,
+    const cl_dbk_id*    kernel_ids,
+    const char**        kernel_names,
+    const void**        kernel_attributes,
+    cl_int*             device_errcode_ret,
+    cl_int*             errcode_ret);
+----
+
+* _context_ must be a valid OpenCL context.
+
+* _num_devices_ is the number of elements in _device_list_ and
+  _device_errcode_ret_ lists.
+
+* _device_list_ is a pointer to a list of devices that are in
+  _context_. _device_list_ must be a non-NULL value. The defined built-in
+  kernels are loaded for devices specified in this list.
+
+* _num_kernels_ is the number of elements in _kernel_ids_,
+  _kernel_attributes_, _kernel_names_ret_ and _device_errcode_ret_ lists.
+
+* _kernel_ids_ is the list of defined built-in kernels to
+  be loaded into the program.
+
+* _kernel_names_ is a list of names given for each kernel listed in
+  _kernel_ids_. Each string in the list must be non-NULL and unique.
+
+* _kernel_attributes_ is a list of pointers that point to the
+  respective attribute structure of each defined built-in kernel in
+  the _kernel_ids_ list.  The respective attribute structures for each
+  kernel identifiers are listed in <<appendix-dbk,Appendix TODO>>.
+
+* _device_errcode_ret_ will return an appropriate error code per
+  device. if _device_errcode_ret_ is NULL, no error code is returned.
+
+* _errcode_ret_ will return an appropriate error code. If
+  _errcode_ret_ is NULL, no error code is returned.
+
+The devices associated with the program object will be the list of
+devices specified by _device_list_ or subset of it. The list of
+devices specified by _device_list_ must be devices associated with
+_context_.
+
+*clCreateProgramWithDefinedBuiltInKernels* returns a valid non-zero
+program object and _errcode_ret_ is set to *CL_SUCCESS* if the program
+object is created successfully. The returned program is created for
+the devices that supports the requested built-in kernels indicated by
+*CL_SUCCESS* in the _device_errcode_ret_ list. In case of a failure to
+create program for a device, one of the following errors code is set
+in _device_errcode_ret_ list for the respective device:
+
+* *CL_DBK_UNSUPPORTED_EXP* if the device does not support one of the
+   built-in kernels listed in _kernel_ids_.
+
+* *CL_INVALID_PROPERTY* if a property list for a defined built-in
+   kernel description is invalid.
+
+* *CL_DBK_UNMET_MAX_RELATIVE_ERROR_EXP* if a defined built-in kernel
+   does not meet the requested precision.
+
+* *CL_OUT_OF_RESOURCES* if there is a failure to allocate resources
+  required by the OpenCL implementation on the device.
+
+// TODO: if _device_errcode_ret_ is NULL should should an error be
+//       returned in _errcode_ret_ if a kernel is not supported in any
+//       device?
+
+If a program object is not created,
+*clCreateProgramWithDefinedBuiltInKernels* returns a NULL value with
+one of the following error codes returned in _errcode_ret_:
+
+* *CL_INVALID_CONTEXT* if _context_ is not a valid context.
+
+* *CL_INVALID_VALUE* if _device_list_ is NULL or _num_devices_ is zero.
+
+* *CL_INVALID_VALUE* if a kernel name is not unique within _kernel_names_.
+
+* *CL_INVALID_VALUE* if there is a NULL value in _kernel_names_.
+
+* *CL_INVALID_DBK_ID_EXP* if any value in the _kernel_ids_ is not a known
+   identifier for a built-in kernel.
+
+* *CL_INVALID_DBK_ATTRIBUTE_EXP* if a kernel attribute structure is
+   invalid for a built-in kernel.
+
+* *CL_DBK_UNSUPPORTED_EXP* if _device_errcode_ret_ is NULL and any
+   device in _device_list_ does not support a defined built-in kernel.
+
+* *CL_DBK_UNSUPPORTED_EXP* if _device_errcode_ret_ is non-NULL and all
+   devices in _device_list_ does not support a defined built-in kernel.
+
+* *CL_DBK_UNSUPPORTED_PROPERTY_EXP* If a kernel does not accept a
+   valid kernel property.
+
+* *CL_INVALID_DEVICE* if any device in _device_list_ is not in the list of
+  devices associated with _context_.
+
+* *CL_OUT_OF_RESOURCES* if there is a failure to allocate resources
+  required by the OpenCL implementation on the device.
+
+* *CL_OUT_OF_HOST_MEMORY* if there is a failure to allocate resources
+  required by the OpenCL implementation on the host.
+
+--
+// End (Add the following to section 5.8.1, *Creating Program Objects*)
+
+(Modify section 5.10, *Executing Kernels*) ::
++
+--
+
+(Add following to *clEnqueueNDRangeKernel*) ::
++
+--
+For defined built-in kernels _work_dim_, _global_work_offset_,
+_global_work_size_ and _local_work_size_ parameters are meaningless
+and must be set to zero and NULL, respectively. OpenCL implementations
+decide how they distribute the workloads of the defined built-in
+kernels.
+--
+
+(Add the following to the list of error codes returned by *clEnqueueNDRangeKernel*) ::
++
+--
+
+* *CL_INVALID_GLOBAL_WORK_SIZE* if the _kernel_ is a defined built-in
+   kernel and _global_work_size_ is not NULL.
+
+* *CL_INVALID_GLOBAL_WORK_OFFSET* if the _kernel_ is a defined built-in
+   kernel and _global_work_offset_ is not NULL.
+
+* *CL_INVALID_LOCAL_WORK_SIZE* if the _kernel_ is a defined built-in
+   kernel and _local_work_size_ is not NULL.
+--
+--
+// End (Modify section 5.10, *Executing Kernels*)
+
+
+[[appendix-dbk]]
+=== Add new appendix "Defined Built-in Kernels" to OpenCL API Specification
+
+This chapter describes standard defined built-in kernels (DBK) with
+well-defined semantics. They are loaded into a program using
+*clCreateProgramWithDefinedBuiltinKernels* and the kernels in it are
+launched using *clEnqueueNDRangeKernel* with _work_dim_ set to zero
+and _global_work_offset_, _global_work_size_ and _local_work_size_ set
+to NULL.
+
+The general client-side abstraction of the DBKs is similar to a call
+to a C function of which implementation is hidden. The device driver
+are free to implement a DBK by invoking one or more coarse and fine-grained hardware accelerators combined with
+firmware to implement the semantics as efficiently as possible.
+
+It is the driver's responsibility to handle efficient synchronization and communication
+to the hardware accelerator, the internal accelerator state management and resource sharing
+across multiple OpenCL contexts.
+
+==== Reproducibility
+
+Identical DBKs or the same DBKs executed repeatedly with identical inputs are
+guaranteed to produce identical results, unless otherwise stated in
+the DBK's description, when:
+
+* enqueued to the same device,
+
+* on the same platform,
+
+* on the same vendor with the same driver version and
+
+* CL_DBK_PROPERTY_NON_DETERMINISTIC_EXP property is not set on.
+
+In other cases, the DBKs may produce different results. Two DBKs for a
+device are considered identical if they are created using identical
+kernel identifier, kernel attributes and kernel properties. The result
+difference may occur because of different algorithms being used across
+devices, for example.
+
+DBKs may produce approximated results and the error, respect to
+infinitely precise result, can be optionally controlled by
+CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP when the property name is listed in
+the DBK's description. When the precision is not controlled by the
+application using CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP, the OpenCL
+precision of results are
+
+* chosen by the implementation for floating-point based tasks.
+
+* exact for integer based tasks.
+
+==== Kernel Interface
+
+DBKs operates on tensor objects, created with
+*clCreateBufferWithProperties* using `CL_MEM_TENSOR` property,
+generally in single-static assignment fashion. the Kernel arguments
+used for reading and writing tensors may not reference the same tensor
+object unless otherwise stated in the <<dbk-description-table,DBK descriptions>>.
+
+==== The Defined Built-in Kernels
+
+The list of recognized defined built-in kernels are listed in the
+following <<dbk-description-table,table>>. It is expected to be
+expanded and updated over the versions of this extensions, while
+preserving backwards compatibility.
+
+Each defined built-in kernel entry is organized as follows:
+
+* *Name*: Name of the defined built-in kernel (an enumeration).
+
+* *Kernel attributes*: The kernel attributes required for creating the
+  defined built-in kernel via
+  *clCreateProgramWithDefinedBuiltinKernels*. Attribute values are
+  immutable.
+
+* *Kernel arguments*: The kernel arguments.
+
+* *Description*: The description of the kernel in detail.
+
+* *Attribute validation rules*: Conditions of the kernel attribute for
+  the kernel. Implementation must return CL_DBK_INVALID_ATTRIBUTE_EXP on
+  *clCreateProgramWithDefinedBuiltinKernels* call if any of the conditions
+  are violated.
+
+* *Kernel mode properties*: List of <<dbk-property-table,kernel properties>>
+   (`cl_dbk_properties_exp`) the kernel may accept. The properties can
+   be used to tweak certain implementation details and behaviors in
+   the kernel execution. If a property not listed in the DBK
+   description is fed to *clCreateProgramWithDefinedBuiltinKernels*
+   call, then implementation must return
+   `CL_DBK_UNSUPPORTED_PROPERTY_EXP`.
+
+[[dbk-propery-table]]
+.Table of defined built-in kernel properties
+[cols="2,1,2",stripes=odd]
+|===
+| *DBK Mode Property* | *Property Value* | *Description*
+
+| CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP | float
+
+a| Require that the DBK produces the results which do not deviate more
+than the given amount value of ULPs (units in the last place) respect
+to infnitely precise result.
+
+| CL_DBK_PROPERTY_NON_DETERMINISTIC_EXP | cl_bool
+
+a| Allow results of the kernel to be non-reproducible. This allows
+implementation to switch algorithm of the kernel on each launch for
+possibly better performance.
+// Idea from https://pytorch.org/docs/stable/notes/randomness.html#cuda-convolution-benchmarking
+
+|===
+
+
+[[dbk-description-table]]
+.Standard Built-in Kernels and Their Semantics. *The table has been populated with a small set of non-trivial example entries which are subject to change and the list to expand during drafting.*
+|===
+| Name: *CL_DBK_GEMM_EXP*
+| *Kernel Attributes*
+a|
+
+[source,c]
+----
+typedef struct cl_dbk_attributes_gemm_exp {
+    cl_tensor_desc a;
+    cl_tensor_desc b;
+    cl_tensor_desc c_in;
+    cl_tensor_desc c_out;
+    cl_bool trans_a;
+    cl_bool trans_b;
+    cl_tensor_datatype_union_exp alpha;
+    cl_tensor_datatype_union_exp beta;
+    cl_dbk_properties kernel_props[CL_MAX_DBK_PROPERTIES];
+} cl_dbk_attributes_gemm_exp;
+----
+
+* _a_ is a tensor description for input matrix A.
+
+* _b_ is a tensor description for input matrix B.
+
+* _c_in_ is a tensor description for output matrix CIN.
+
+* _c_out_ is a tensor description for output matrix COUT.
+
+* _trans_a_ instruct to transpose the A matrix if the value is CL_TRUE.
+
+* _trans_b_ instruct to transpose the B matrix if the value is CL_TRUE.
+
+* _alpha_ is a value or pointer to value corresponponding to the
+  element type of _c_out_.
+
+* _beta_ is a value or pointer to value corresponponding to the
+  element type of _c_out_.
+
+* _kernel_props_ defined additional kernel properties.
+
+| *Kernel Arguments*
+a|
+. cl_mem: a tensor object for matrix A (read only).
+. cl_mem: a tensor object for matrix B (read only).
+. cl_mem: a tensor object for matrix C_IN (read only).
+. cl_mem: a tensor object for matrix C_OUT (write only).
+
+| *Description* a| Performs (batched) general matrix multiplication:
+
+[stem]
+++++
+bb"COUT"_(b,m,n) = "beta" * bb"CIN"_(b,m,n) + "alpha" * sum_(k)trans(bb"A", "trans_a")_(b,m,k)trans(bb"B", "trans_b") _(b,k,n)
+++++
+
+Where:
+
+[stem]
+++++
+trans(X_(b,i,j), tr) = {(X_(b,j,i), "if tr" = "CL_TRUE"), (X_(b,i,j), "otherwise") :}
+++++
+
+Second degree tensors of shape `(a, b)` are treated as third degree
+tensors of shape `(1, a, b)`.
+
+Operations of the matrix muliplication are performed in the precision
+of the `elementof(COUT)`.
+
+If an overflow occurs in the accumulation of the products, then `R`
+tensor's result will be undefined.
+
+`CIN` and `COUT` tensors may be the same object.
+
+| *Attribute validation rules*
+a|
+
+* `rankof(A) == rankof(B) == rankof(CIN) == rankof(COUT)`.
+* Let `shapeof(A~t~) == (b..., m, k)` and `shapeof(B~t~) = (b..., k,
+  n)` of tensors `A` and `B`, respectively, after possible tranposing.
+  `shapeof(COUT)` must be `(b..., m, n)`.
+* `shapeof(CIN) == shapeof(COUT)`.
+* `elementof(A) == elementof(B)`.
+* `elemkindof(COUT) == elemkindof(A)`.
+* `elementof(COUT) == elementof(A)` or `elementof(A)` is promotable to
+  `elementof(COUT)` without a loss of meaning.
+// E.g. cl_int -> cl_uint: loses meaning of negative values.
+| *Kernel mode properties*
+a|
+This DBK accepts the following kernel properties:
+
+* CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP
+* CL_DBK_PROPERTY_NON_DETERMINISTIC_EXP
+|
+
+| Name: *CL_DBK_MATMUL_EXP*
+| *Kernel Attributes*
+a|
+
+[source,c]
+----
+typedef struct cl_dbk_attributes_matmul_exp {
+    cl_tensor_desc a;
+    cl_tensor_desc b;
+    cl_tensor_desc c;
+    cl_bool trans_a;
+    cl_bool trans_b;
+    cl_dbk_properties kernel_props[CL_MAX_DBK_PROPERTIES];
+} cl_dbk_attributes_matmul_exp;
+----
+
+* _a_ is a tensor description for input matrix A.
+
+* _b_ is a tensor description for input matrix B.
+
+* _c_ is a tensor description for output matrix C.
+
+* _trans_a_ instruct to transpose the A matrix if the value is CL_TRUE.
+
+* _trans_b_ instruct to transpose the B matrix if the value is CL_TRUE.
+
+* _kernel_props_ defined additional kernel properties.
+
+| *Kernel Arguments*
+a|
+. cl_mem: a tensor object for matrix A (read only).
+. cl_mem: a tensor object for matrix B (read only).
+. cl_mem: a tensor object for matrix C (write only).
+
+| *Description* a| Performs (batched) matrix multiplication:
+
+[stem]
+++++
+bb"C"_(b,m,n) = sum_(k)trans(bb"A", "trans_a")_(b,m,k)trans(bb"B", "trans_b") _(b,k,n)
+++++
+
+Where:
+
+[stem]
+++++
+trans(X_(b,i,j), tr) = {(X_(b,j,i), "if tr" = "CL_TRUE"), (X_(b,i,j), "otherwise") :}
+++++
+
+Second degree tensors of shape `(a, b)` are treated as third degree
+tensors of shape `(1, a, b)`.
+
+Operations of the matrix muliplication are performed in the precision
+of the `elementof(COUT)`.
+
+If an overflow occurs in the accumulation of the products, then `R`
+tensor's result will be undefined.
+
+| *Attribute validation rules*
+a|
+
+* `rankof(A) == rankof(B) == rankof\(C)`.
+* Let `shapeof(A~t~) == (b..., m, k)` and `shapeof(B~t~) = (b..., k,
+  n)` of tensors `A` and `B`, respectively, after possible tranposing.
+  `shapeof\(C)` must be `(b..., m, n)`.
+* `elementof(A) == elementof(B)`.
+* `elemkindof\(C) == elemkindof(A)`.
+* `elementof\(C) == elementof(A)` or `elementof(A)` is promotable to
+  `elementof\(C)` without a loss of meaning.
+// E.g. cl_int -> cl_uint: loses meaning of negative values.
+| *Kernel mode properties*
+a|
+This DBK accepts the following kernel properties:
+
+* CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP
+|
+
+| Name: *CL_DBK_LEAKY_RELU_DBK*
+| *Kernel Attributes*
+a|
+
+[source,c]
+----
+typedef struct cl_dbk_attributes_leaky_relu_exp {
+   cl_tensor_datatype_union_exp coefficient;
+   cl_dbk_properties kernel_props[CL_MAX_DBK_PROPERTIES];
+} cl_dbk_attributes_leaky_relu_exp;
+----
+* _alpha_ is a coefficient of leakage, a positive value.
+| *Kernel arguments*
+a|
+. cl_mem: a tensor object IN for input values.
+. cl_mem: a tensor object OUT for output value.
+| *Description*
+a|
+
+This element-wise built-in kernel performs a leaky ReLU operation as followed:
+
+[stem]
+++++
+"OUT"_(i) = {( -"alpha" * "IN"_(i), "if IN"_(i) \lt 0), ("IN"_(i), " otherwise") :}
+++++
+
+If target device does not support denormals, then the `alpha` value is
+flushed to zero before the operation is applied. This DBK accepts
+tensors of arbitrary rank.
+
+The `IN` and `OUT` tensors may be the same object.
+
+| *Kernel mode properties*
+| This DBK accepts the following kernel properties:
+
+* CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP
+* CL_DBK_PROPERTY_NON_DETERMINISTIC_EXP
+
+| *Attribute validation rules*
+a|
+* `shapeof(in) == shapeof(out)`.
+* `elementof(in) == elementof(out)`.
+* `coefficient` must be a positive, finite value.
+|===
+
+==== Launching DBKs from the Device Side
+
+DBKs are primarily meant to be launched as kernel commands via
+host-side command queues.  Optionally, they can be callable from
+device-side via `enqueue_kernel`:
+
+TBC. This probably needs device-side function corresponding to
+*clCreateProgramWithDefinedBuiltinKernels*.
+
+== Sample Code
+
+[source,c]
+----
+constexpr size_t b = 64, m = 100, n = 200, k = 50;
+cl_int err;
+
+std::vector<float> lhs_data = ...;
+std::vector<float> rhs_data = ...;
+std::vector<float> bias_data = ...;
+std::vector<float> out_data(b * m * n);
+
+cl_tensor_layout_blas_exp row_major;
+row_major.leading_dims[0] = 2,
+row_major.leading_dims[1] = 1,
+
+cl_tensor_desc_exp lhs_desc;
+lhs_desc.rank = 3;
+lhs_desc.dtype = CL_TENSOR_FP32_EXP;
+lhs_desc.properties[0] = 0;
+lhs_desc.shape[0] = b;
+lhs_desc.shape[1] = m;
+lhs_desc.shape[2] = k;
+lhs_desc.layout_type = CL_TENSOR_LAYOUT_BLAS_EXP;
+lhs_desc.layout = &row_major;
+
+cl_tensor_desc_exp rhs_desc;
+rhs_desc.rank = 3;
+rhs_desc.dtype = CL_TENSOR_FP32_EXP;
+rhs_desc.properties[0] = 0;
+rhs_desc.shape[0] = b;
+rhs_desc.shape[1] = k;
+rhs_desc.shape[2] = n;
+rhs_desc.layout_type = CL_TENSOR_LAYOUT_BLAS_EXP;
+rhs_desc.layout = &row_major;
+
+cl_tensor_desc_exp out_desc;
+out_desc.rank = 3;
+out_desc.dtype = CL_TENSOR_FP32_EXP;
+out_desc.properties[0] = 0;
+out_desc.shape[0] = b;
+out_desc.shape[1] = m;
+out_desc.shape[2] = n;
+out_desc.layout_type = CL_TENSOR_LAYOUT_BLAS_EXP;
+out_desc.layout = &row_major;
+
+cl_mem lhs_tensor = clCreateBufferWithProperties(
+  ctx, {CL_MEM_TENSOR_EXP, lhs_desc, 0},
+  CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, 0, lhs_data.data(), &err);
+cl_mem rhs_tensor = clCreateBufferWithProperties(
+  ctx, {CL_MEM_TENSOR_EXP, rhs_desc, 0},
+  CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, 0, rhs_data.data(), &err);
+cl_mem bias_tensor = clCreateBufferWithProperties(
+  ctx, {CL_MEM_TENSOR_EXP, out_desc, 0},
+  CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, 0, rhs_data.data(), &err);
+cl_mem out_tensor = clCreateBufferWithProperties(
+  ctx, {CL_MEM_TENSOR_EXP, out_desc, 0},
+  CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, 0, out_data.data(), &err);
+
+cl_tensor_datatype_union_exp alpha, beta, relu_coeff;
+alpha.sf = 2.0f;
+beta.sf = -1.0f;
+relu_coeff.sf = 0.01f;
+
+cl_dkb_attributes_gemm_exp gemm_attrs = {
+  lhs_desc, rhs_desc, out_desc, out_desc, 0, 0, alpha, beta, {}
+};
+gemm_attrs.kernel_props[0] = CL_DBK_PROPERTY_MAX_RELATIVE_ERROR_EXP;
+gemm_attrs.kernel_props[1] = 100; // in ILPs
+gemm_attrs.kernel_props[2] = 0;
+
+cl_dkb_attributes_leaky_relu_exp relu_attrs = {
+  out_desc, out_desc, relu_coeffs, {0}
+};
+
+cl_device_id target_devices[2] = {dev1, dev2};
+cl_int device_errcodes[2];
+auto prog = clCreateProgramWithDefinedBuiltInKernels(
+  ctx, 2, target_devices, 2,
+  {CL_DBK_GEMM_EXP, CL_DBK_LEAKY_RELU_EXP}, {"my_gemm", "my_relu"},
+  {&gemm_attrs, &relu_attrs}, &device_errcodes, &err);
+
+std::vector<cl_device_id> supported_devs;
+for (unsigned i = 0; i < 2; i++) {
+  if (device_errcodes[i] == CL_SUCCESS) {
+    supported_devs.push_back(target_devices[i]);
+  } else {
+     // Handle errors. Possible error cases (non-exhaustive):
+     //
+     // * CL_DBK_UNSUPPORTED_EXP: The DBK is not supported on the device.
+     // * CL_DBK_UNMET_MAX_RELATIVE_ERROR_EXP The DBK implementation does not
+     //   meet the requested precision.
+  }
+}
+
+err = clBuildProgram(
+  prog, supported_devs.size(), supported_devs.data(), "", nullptr, nullptr);
+
+auto gemm_kernel = clCreateKernel(prog, "my_gemm", &err);
+clSetKernelArg(gemm_kernel, 0, sizeof(cl_mem), &lhs_tensor);
+clSetKernelArg(gemm_kernel, 1, sizeof(cl_mem), &rhs_tensor);
+clSetKernelArg(gemm_kernel, 2, sizeof(cl_mem), &bias_tensor);
+clSetKernelArg(gemm_kernel, 3, sizeof(cl_mem), &out_tensor);
+
+auto relu_kernel = clCreateKernel(prog, "my_relu", &err);
+clSetKernelArg(relu_kernel, 0, sizeof(cl_mem), &out_tensor);
+clSetKernelArg(relu_kernel, 1, sizeof(cl_mem), &out_tensor);
+
+cmq_q = /* Create an in-order command queue. */;
+
+clEnqueueNDRangeKernel(
+  cmd_q, 0, nullptr, nullptr, nullptr, gemm_kernel, 0, nullptr, nullptr);
+clEnqueueNDRangeKernel(
+  cmd_q, 0, nullptr, nullptr, nullptr, relu_kernel, 0, nullptr, nullptr);
+clEnqueueMapBuffer(
+  cmd_q, out_tensor, CL_TRUE, CL_MAP_READ, 0, b * m * n, 0, nullptr, nullptr);
+----
+
+=== Open questions
+
+. Should we enable launching DBKs from the device side without requiring device-side enqueue? The main problem is those with NDRange as they are not simple single-WI helper functions.
++
+--
+*UNRESOLVED*
+
+--
+
+. Should the NDRange be used at all in DBKs? It feels sort of unnatural as typically the NDRange is used to imply SPMD parallelism while the hardware/firmware is free to choose whatever parallelization strategy to implement the function. On the other hand, similar applies to software kernel launches as the NDRange-launched work-items can be executed serially if adhering to barrier semantics.
++
+--
+*RESOLVED*. Decided to go forward without NDRange (and global offset
+ as consequence), as there are currently no known uses for the
+ NDRange, and let OpenCL implementations decide the parallelization
+ strategy.
+
+--
+
+. Different accelerators prefer different channel orders (NHWC vs. NCHW...) for the processed data. Should the channel order be passed as a DBK argument (like in the example GEMM's row/column order) or is it better to have different DBK variations for each?
++
+--
+*RESOLVED*. The memory layout information is a property of the tensors so
+ there is no need for DBK arguments for the layout or DBK variants.
+
+--
+
+. How to denote tensors' memory layout preference? Some of the DBKs are more efficient on a given device as they map more naturally to the underlying HW accelerator, but the slower variations (for example, with unoptimal channel order in NN accelerators) might be still beneficially accelerated.
++
+--
+*UNRESOLVED*.
+
+--
+
+. Since the defined built-in kernel concept is basically just a C-like API inside another API, should it be made more generic and thus directly usable for SYCL and Vulkan as well?
++
+--
+*UNRESOLVED*
+
+--
+
+. What other DBK mode properties we should have? Here are some ideas:
+** Perform accumulation with saturation.
+** Finite math only
+** Flush denormals to zero.
+
++
+--
+*UNRESOLVED*
+--
+
+. Should we reuse (and remove "deprecation" status on) clEnqueueTask
+for launching DBKs as DBKs don't make use of global offset and size
+and local size parameters?
++
+--
+*UNRESOLVED*
+--
+
+== Version History
+
+[cols="5,10,15,40",options="header",grid="rows"]
+|====
+| *Version* | *Date*     | *Author* | *Description*
+| 0.1.0     | 2022-12-13 |
+Pekka Jääskeläinen +
+Ben Ashbaugh a|
+First formulation as an extension specification like proposed by Ben Ashbaugh.
+
+| 0.2.0     | 2023-11-23 |
+Henry Linjamäki +
+Pekka Jääskeläinen +
+Ben Ashbaugh
+a|
+Add APIs for defined built-in kernel (DBK) creation. Model DBKs on
+tensor type. Add sample code.
+
+| 0.3.0     | 2024-8-20  |
+Henry Linjamäki +
+Pekka Jääskeläinen +
+Freddie Witherden a|
+* Rework document structure match to the cl_exp_extension_template.
+* Reflect changes of the `cl_exp_tensor` extension here.
+* Add "Kernel Interface" section into the DBK Appendix.
+* Add GEMM DBK.
+* Change DBK creation interface.
+
+| 0.3.1     | 2024-8-22  |
+Henry Linjamäki +
+Pekka Jääskekäinen +
+RABijl (@GitHub) a|
+* Rename extension name from 'khr' to 'exp'.
+* Resolve two open questions.
+* Small fixes.
+|====
