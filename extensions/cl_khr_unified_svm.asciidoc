@@ -198,23 +198,19 @@ typedef cl_bitfield cl_svm_alloc_access_flags_khr;
 ----
 
 Type to describe optional SVM free properties.
-No free properties are added by this extension:
+No SVM free properties are added by this extension:
 
 [source]
 ----
 typedef cl_properties cl_svm_free_properties_khr;
 ----
 
-Type to describe SVM free flags, and SVM free flags added by this extension:
+Type to describe SVM free flags.
+No SVM free flags are added by this extension:
 
 [source]
 ----
-// TODO: should this be a bitfield, or is this an enum?
-// If it is an enum, it should be renamed.
 typedef cl_bitfield         cl_svm_free_flags_khr;
-
-/* cl_svm_free_flags_khr */
-#define CL_SVM_FREE_BLOCKING_KHR                        (1 << 0)
 ----
 
 Enumeration type and values for the _param_name_ parameter to *clGetSVMPointerInfoKHR* to query information about an SVM allocation.
@@ -522,10 +518,12 @@ If no free properties are required, _properties_ may be `NULL`.
 This extension does not define any free properties.
 
 _flags_ is used to specify how the SVM allocation is freed.
-Please refer to the <<svm-free-flags-table,SVM free flags>> table for valid SVM free flags and their description.
+This extension does not define any free flags.
 
 _ptr_ is the SVM allocation to free.
 It must be a value returned by *clSVMAlloc*, *clSVMAllocWithPropertiesKHR*, or a `NULL` pointer.
+It is the responsibility of the application to make sure enqueued commands that use _ptr_ are complete before freeing _ptr_.
+Behavior is undefined if a previously enqueued command that may be using _ptr_ is still executing.
 If _ptr_ is `NULL` then no action occurs.
 
 *clSVMFreeWithPropertiesKHR* will return `CL_SUCCESS` if the function executes successfully.
@@ -538,21 +536,11 @@ Otherwise, it returns one of the following errors:
 * `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
 * `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host.
 
-By default, *clSVMFreeWithPropertiesKHR* does not wait for previously enqueued commands that may be using _ptr_ to finish before freeing _ptr_.
-It is the responsibility of the application to make sure enqueued commands that use _ptr_ are complete before freeing _ptr_.
-Behavior is undefined if a previously enqueued command that may be using _ptr_ is still executing.
-Applications should take particular care freeing memory allocations with kernels that may access memory indirectly, since a kernel that accesses memory indirectly may be using any memory allocation of the specified type or types.
-To wait for previously enqueued commands to finish that may be using _ptr_ before freeing _ptr_, use the flag `CL_SVM_FREE_BLOCKING_KHR`.
-
-[[svm-free-flags-table]]
-[caption="Table 40. "]
-.List of supported SVM free flag values
-[width="100%",cols="1,1",options="header"]
-|====
-| SVM Free Flags | Description
-| `CL_SVM_FREE_BLOCKING_KHR`
-    | Waits for all previously executing commands fo finish that may be using the SVM allocation before freeing the SVM allocation.
-|====
+[NOTE]
+====
+Whether *clSVMFree* or *clSVMFreeWithPropertiesKHR* is blocking or non-blocking is unspecified.
+Applications should not rely on *clSVMFree* or *clSVMFreeWithPropertiesKHR* for synchronization, nor assume that *clSVMFree* or *clVMFreeWithPropertiesKHR* cannot cause deadlocks.
+====
 
 ===== Querying SVM Allocations
 
