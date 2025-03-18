@@ -1,4 +1,4 @@
-// Copyright 2017-2024 The Khronos Group Inc.
+// Copyright 2017-2025 The Khronos Group Inc.
 // SPDX-License-Identifier: CC-BY-4.0
 
 [[opencl-platform-layer]]
@@ -240,8 +240,7 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_PLATFORM_UNIVERSAL_SYNC
 
       {CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR_anchor} - Platform
       supports the ability to create a deep copy of an existing
-      command-buffer with the commands explicitly remapped to different,
-      potentially <<compatible, incompatible>>, queues.
+      command-buffer with the commands explicitly remapped to different queues.
 
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR.asciidoc[]
 
@@ -784,6 +783,16 @@ endif::cl_khr_image2d_from_buffer[]
         or 2.2 device if {CL_DEVICE_IMAGE_SUPPORT} is {CL_TRUE}.
 
         This value must be 0 for devices that do not support 2D images created from a buffer.
+
+ifdef::cl_ext_image_requirements_info+cl_khr_image2d_from_buffer[]
+        If the {cl_khr_image2d_from_buffer_EXT} and {cl_ext_image_requirements_info_EXT}
+        extensions are supported, the value returned by {CL_DEVICE_IMAGE_PITCH_ALIGNMENT}
+        after converting in bytes for the supported format with the biggest element size
+        (channel data type size {times} number of channels) must be greater than or equal to
+        the value returned by {CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT} for any
+        supported format.
+endif::cl_ext_image_requirements_info+cl_khr_image2d_from_buffer[]
+
 | {CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT.asciidoc[]
@@ -802,6 +811,17 @@ endif::cl_khr_image2d_from_buffer[]
         or 2.2 device if {CL_DEVICE_IMAGE_SUPPORT} is {CL_TRUE}.
 
         This value must be 0 for devices that do not support 2D images created from a buffer.
+
+ifdef::cl_ext_image_requirements_info+cl_khr_image2d_from_buffer[]
+        If the {cl_khr_image2d_from_buffer_EXT} and {cl_ext_image_requirements_info_EXT}
+        extensions are supported, the value returned by
+        {CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT} after converting in bytes for the
+        supported format with the biggest element size
+        (channel data type size {times} number of channels) must be greater than or equal to
+        the value returned by {CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT} for any
+        supported format.
+endif::cl_ext_image_requirements_info+cl_khr_image2d_from_buffer[]
+
 | {CL_DEVICE_MAX_PIPE_ARGS_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_MAX_PIPE_ARGS.asciidoc[]
@@ -1721,12 +1741,6 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_
 
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR.asciidoc[]
 
-        {CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR_anchor} Device
-        supports the ability to record command-buffers to out-of-order
-        command-queues.
-
-include::{generated}/api/version-notes/CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR.asciidoc[]
-
 ifdef::cl_khr_command_buffer_multi_device[]
         {CL_COMMAND_BUFFER_CAPABILITY_MULTIPLE_QUEUE_KHR_anchor} Device
         supports the ability to record commands to more than one
@@ -1745,6 +1759,18 @@ include::{generated}/api/version-notes/CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_P
         It is valid for a command-queue to be created with extra properties
         in addition to this base requirement and still be compatible with
         command-buffer execution.
+
+| {CL_DEVICE_COMMAND_BUFFER_SUPPORTED_QUEUE_PROPERTIES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_COMMAND_BUFFER_SUPPORTED_QUEUE_PROPERTIES_KHR.asciidoc[]
+
+  | {cl_command_queue_properties_TYPE}
+      | Bitmask of the supported properties with which a command-queue may be
+        created to allow a command-buffer to be executed on it. It is invalid
+        for a command-queue to be created with a property not reported and
+        still be compatible with command-buffer execution.
+
+        The mandated minimum capability is: {CL_QUEUE_PROFILING_ENABLE}.
 endif::cl_khr_command_buffer[]
 
 ifdef::cl_khr_command_buffer_multi_device[]

@@ -1,4 +1,4 @@
-// Copyright 2018-2024 The Khronos Group Inc.
+// Copyright 2018-2025 The Khronos Group Inc.
 // SPDX-License-Identifier: CC-BY-4.0
 
 include::{generated}/meta/{refprefix}cl_ext_image_requirements_info.txt[]
@@ -6,14 +6,99 @@ include::{generated}/meta/{refprefix}cl_ext_image_requirements_info.txt[]
 === Other Extension Metadata
 
 *Last Modified Date*::
-    2022-01-18
+    2025-01-06
 *IP Status*::
     No known IP claims.
+*Interactions and External Dependencies*::
+  - This extension interacts with {cl_khr_image2d_from_buffer_EXT}
+*Contributors*::
+  - Kevin Petit, Arm Ltd.
+  - Jeremy Kemp, Imagination Technologies
+  - Alastair Murray, Codeplay Software Ltd.
+  - Balaji Calidas, Qualcomm
 
 === Description
 
-The latest published specification for this extension is available on
-the https://registry.khronos.org/OpenCL/extensions/ext/cl_ext_image_requirements_info.html[OpenCL registry].
+This extension enables applications to query requirements for an image without
+having to create the image.
+
+=== New Commands
+
+  * {clGetImageRequirementsInfoEXT}
+
+=== New Types
+
+  * {cl_image_requirements_info_ext_TYPE}
+
+=== New Enums
+
+  * {cl_image_requirements_info_ext_TYPE}
+  ** {CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT}
+  ** {CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT}
+  ** {CL_IMAGE_REQUIREMENTS_SIZE_EXT}
+  ** {CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT}
+  ** {CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT}
+  ** {CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT}
+  ** {CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT}
+
+=== Conformance tests
+
+. Basic checks for {CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT} and {CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT}
+* For all image formats and types
+** Check that the {CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT} and {CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT} queries can be performed successfully and that the values returned are a power of two.
+
+. Check consistency with `cl_khr_image2d_from_buffer`
+* When `cl_khr_image2d_from_buffer` is supported, check that the value returned by {CL_DEVICE_IMAGE_PITCH_ALIGNMENT} after converting in bytes for the supported format with the biggest element size (channel data type size * number of channels) is greater than or equal to the value returned by {CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT} for all supported formats.
+* When `cl_khr_image2d_from_buffer` is supported, check that the value returned by {CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT} after converting in bytes for the supported format with the biggest element size (channel data type size * number of channels) is greater than or equal to the value returned by {CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT} for all supported formats.
+
+. Negative tests for {CL_IMAGE_REQUIREMENTS_SIZE_EXT}
+* Check that attempting to perform the {CL_IMAGE_REQUIREMENTS_SIZE_EXT} query without specifying the _image_format_ results in {CL_INVALID_VALUE} being returned.
+* Check that attempting to perform the {CL_IMAGE_REQUIREMENTS_SIZE_EXT} query without specifying the _image_desc_ results in {CL_INVALID_VALUE} being returned.
+
+. Consistency checks for {CL_IMAGE_REQUIREMENTS_SIZE_EXT}
+* When creating 2D images from a buffer is supported, for all formats and a selection of image dimensions
+** Check that the {CL_IMAGE_REQUIREMENTS_SIZE_EXT} query can be performed successfully.
+** Create a buffer with the size returned and check that an image can successfully be created from the buffer.
+** Check that the value returned for {CL_MEM_SIZE} for the image is the same as the value returned for {CL_IMAGE_REQUIREMENTS_SIZE_EXT}.
+
+. Consistency checks for {CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT}
+* For all image formats, image types and a selection of values for other members in _image_desc_ (that MUST include `0`)
+** Check that the {CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT} query can be performed successfully
+** Check that the value is smaller than or equal to the value returned for {CL_DEVICE_IMAGE_MAX_BUFFER_SIZE} for images of {CL_MEM_OBJECT_IMAGE1D_BUFFER} type or smaller than or equal to the value returned for {CL_DEVICE_IMAGE3D_MAX_WIDTH} for images of {CL_MEM_OBJECT_IMAGE3D} type or smaller than or equal to the value returned for {CL_DEVICE_IMAGE2D_MAX_WIDTH} for all other image types.
+
+. Negative tests for {CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT}
+* Attempt to perform the {CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT} query on all image types for which it is not valid
+* Check that {CL_INVALID_IMAGE_DESCRIPTOR} is returned in all cases.
+
+. Consistency checks for {CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT}
+* For all image formats, valid image types and a selection of values for other members in _image_desc_ (that MUST include `0`)
+** Check that the {CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT} query can be performed successfully
+** Check that the value is smaller than or equal to the value returned for {CL_DEVICE_IMAGE2D_MAX_HEIGHT} for 2D or 2D array images or {CL_DEVICE_IMAGE3D_MAX_HEIGHT} for 3D images.
+
+. Negative testing for {CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT}
+* Attempt to perform the {CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT} query on all image types for which it is not valid
+* Check that {CL_INVALID_IMAGE_DESCRIPTOR} is returned in all cases.
+
+. Consistency checks for {CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT}
+* For all image formats, valid image types and a selection of values for other members in _image_desc_ (that MUST include `0`)
+** Check that the {CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT} query can be performed successfully
+** Check that the value is smaller than or equal to the value returned for {CL_DEVICE_IMAGE3D_MAX_DEPTH}.
+
+. Negative testing for {CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT}
+* Attempt to perform the {CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT} query on all image types for which it is not valid
+* Check that {CL_INVALID_IMAGE_DESCRIPTOR} is returned in all cases.
+
+. Consistency checks for {CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT}
+* For all image formats, valid image types and a selection of values for other members in _image_desc_ (that MUST include `0`)
+** Check that the {CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT} query can be performed successfully
+** Check that the value is smaller than or equal to the value returned for {CL_DEVICE_IMAGE_MAX_ARRAY_SIZE}.
+
+. General negative testing for {clGetImageRequirementsInfoEXT}
+** Write tests for all possible testable generic error codes.
+
+=== Issues
+
+None.
 
 === Version History
 

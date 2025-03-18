@@ -1,0 +1,80 @@
+// Copyright 2024 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_ext_buffer_device_address.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2025-02-04
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+  - Pekka Jääskeläinen, Intel +
+  - Karol Herbst, Red Hat +
+  - Ben Ashbaugh, Intel +
+  - Kevin Petit, Arm +
+  - Henry Linjamäki, Intel +
+
+=== Description
+
+This extension provides access to raw device pointers for cl_mem buffers
+without requiring a shared virtual address space between the host and
+the device.
+
+==== Background
+
+Shared Virtual Memory (SVM) introduced in OpenCL 2.0 is the first feature
+that enables raw pointers in the OpenCL standard. Its coarse-grain
+variant is relatively simple to implement on various platforms in terms of
+coherency requirements, but it requires mapping the buffer's address range
+to the host virtual address space.
+However, various higher-level heterogeneous APIs present a memory allocation
+routine which can allocate device-only memory and provide raw addresses to
+it without guarentees of system-wide uniqueness. For example, minimal
+implementations of OpenMP's omp_target_alloc() and CUDA/HIP's
+cudaMalloc()/hipMalloc() do not require a shared address space between the host and the device.
+
+Host-device unified addressing might not be a major implementation issue in
+systems which can provide virtual memory across the platform, but might
+bring challenges in cases where the device presents a global memory with
+a disjoint address space (that can also be a physical memory address space) or,
+for example, when a barebone embedded system lacks virtual memory support altogether.
+This extension is targeted to complement the OpenCL SVM extension by providing
+an additional lower-end step in the spectrum of type of pointers/buffers OpenCL
+can allocate.
+
+=== New Command
+
+  * {clSetKernelArgDevicePointerEXT}
+
+=== New Types
+
+  * {cl_mem_device_address_EXT}
+
+=== New Enums
+
+  * {cl_mem_properties_TYPE}
+  ** {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT}
+  * {cl_mem_info_TYPE}
+  ** {CL_MEM_DEVICE_ADDRESS_EXT}
+  * {cl_kernel_exec_info_TYPE}
+  ** {CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT}
+
+=== Version History
+
+  * Revision 1.0.0, 2025-01-15
+  ** Initial version for detailed review.
+  * Revision 1.0.1, 2025-01-28
+  ** Made it explicit that passing illegal pointers is legal as long as they are
+     not referenced. Removed CL_INVALID_ARG_VALUE as a possible error in
+     clSetKernelArgDevicePointerEXT() as there are no illegal pointer
+     cases when calling this function. Return CL_INVALID_OPERATION for
+     clGetMemObjectInfo() if the pointer is not a buffer device pointer.
+     clSetKernelExecInfo() and clSetKernelArgDevicePointerEXT() now only
+     error out if no devices in the context associated with kernel support
+     device pointers.
+  * Revision 1.0.2, 2025-02-04
+  ** Converted the clSetKernelArgDevicePointerEXT() address parameter to
+     a value instead of a pointer to the value.
+

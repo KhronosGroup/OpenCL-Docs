@@ -1,4 +1,4 @@
-// Copyright 2017-2024 The Khronos Group.
+// Copyright 2017-2025 The Khronos Group.
 // SPDX-License-Identifier: CC-BY-4.0
 
 // Extensions to enable
@@ -3336,7 +3336,7 @@ constant int *cp;
 
 int *p;
 gp = (global int *)lp;  // illegal to cast between named address spaces
-p = (int *)lp;          // legal to cast from global to generic
+p = (int *)gp;          // legal to cast from global to generic
 gp = (global int*)p;    // legal to cast from generic to global
 ----------
 
@@ -5368,6 +5368,7 @@ endif::cl_khr_fp16[]
   double__n__ *ldexp*(double__n__ _x_, int__n__ _k_) +
   double__n__ *ldexp*(double__n__ _x_, int _k_) +
   double *ldexp*(double _x_, int _k_)
+
 ifdef::cl_khr_fp16[]
   half__n__ *ldexp*(half__n__ _x_, int__n__ _k_) +
   half__n__ *ldexp*(half__n__ _x_, int _k_) +
@@ -6484,11 +6485,10 @@ ifdef::cl_khr_fp16[gentypeh *min*(gentypeh _x_, half _y_)]
 ifdef::cl_khr_fp16[gentypeh *mix*(gentypeh _x_, gentypeh _y_, half _a_)]
    a| Returns the linear blend of _x_ and _y_ implemented as:
 
-      _x_ + (_y_ - _x_) * _a_
+_x_ + (_y_ - _x_) * _a_
 
-      _a_ must be a value in the range [0.0, 1.0].
-      If _a_ is not in the range [0.0, 1.0], the return values are
-      undefined.
+_a_ must be a value in the range [0.0, 1.0]. If _a_ is not in the range [0.0,
+1.0], the return values are undefined.
 
 ifdef::cl_khr_fp16[]
 NOTE: The half-precision *mix* function can be implemented using
@@ -15950,11 +15950,13 @@ requires>> support for OpenCL C 2.0 or newer.
 
 | 1.0 / _x_
     | {leq} 2.5 ulp for _x_ in the domain of 2^-126^ to 2^126^ for the full
-      profile, and {leq} 3 ulp for the embedded profile.
+      profile, and {leq} 3 ulp for _x_ in the domain of 2^-126^ to 2^126^ for
+      the embedded profile.
 
 | _x_ / _y_
     | {leq} 2.5 ulp for _x_ in the domain of 2^-62^ to 2^62^ and _y_ in the
-      domain of 2^-62^ to 2^62^ for the full profile, and {leq} 3 ulp for
+      domain of 2^-62^ to 2^62^ for the full profile, and {leq} 3 ulp for _x_ in
+      the domain of 2^-62^ to 2^62^ and _y_ in the domain of 2^-62^ to 2^62^ for
       the embedded profile.
 
 | *acos*(_x_)
@@ -16022,11 +16024,11 @@ requires>> support for OpenCL C 2.0 or newer.
 
 | *exp*(_x_)
     | {leq} 3 + *floor*(*fabs*(2 * _x_)) ulp for the full profile, and {leq}
-      4 ulp for the embedded profile.
+      4 + *floor*(*fabs*(2 * _x_)) ulp for the embedded profile.
 
 | *exp2*(_x_)
     | {leq} 3 + *floor*(*fabs*(2 * _x_)) ulp for the full profile, and {leq}
-      4 ulp for the embedded profile.
+      4 + *floor*(*fabs*(2 * _x_)) ulp for the embedded profile.
 
 | *exp10*(_x_)
     | Derived implementations may implement as *exp2*(_x_ * *log2*(10)).
@@ -16288,8 +16290,8 @@ is the infinitely precise result.
 | *_x_ + _y_*   | Correctly rounded             | Correctly rounded
 | *_x_ - _y_*   | Correctly rounded             | Correctly rounded
 | *_x_ * _y_*   | Correctly rounded             | Correctly rounded
-| *1.0 / _x_*   | Correctly rounded             | \<= 1 ulp
-| *_x_ / _y_*   | Correctly rounded             | \<= 1 ulp
+| *1.0 / _x_*   | \<= 1 ulp                     | \<= 1 ulp
+| *_x_ / _y_*   | \<= 1 ulp                     | \<= 1 ulp
 | | |
 | *acos*        | \<= 2 ulp                     | \<= 3 ulp
 | *acosh*       | \<= 2 ulp                     | \<= 3 ulp
