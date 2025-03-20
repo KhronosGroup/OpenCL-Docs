@@ -488,6 +488,12 @@ class ConventionsBase(abc.ABC):
         return True
 
     @property
+    def experimental_extension_warning(self):
+        """Return True if a warning should be included in extension
+           appendices for experimental extensions."""
+        return True
+
+    @property
     def generated_include_path(self):
         """Return path relative to the generated reference pages, to the
            generated API include files."""
