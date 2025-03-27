@@ -1,0 +1,1211 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+
+= cl_intel_subgroup_2d_block_io
+
+== Name Strings
+
+`cl_intel_subgroup_2d_block_io`
+
+== Contributors
+
+// spell-checker: disable
+Andrzej Ratajewski, Intel +
+Bartosz Kościelak, Intel +
+Ben Ashbaugh, Intel +
+Fangwen Fu, Intel +
+Grzegorz Kluczek, Intel +
+Junjie Gu, Intel +
+Lukasz Towarek, Intel +
+Roland Schulz, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2025 Intel Corporation.  All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: 2025-02-28 +
+Version: 1.1.0
+
+== Dependencies
+
+This extension is written against the OpenCL 3.0 C Language specification, V3.0.17.
+
+This extension requires support for subgroups.
+
+This extension depends on `cl_intel_required_subgroup_size` to query the subgroup sizes supported by a device or to require a subgroup size for a kernel.
+
+== Overview
+
+This extension adds additional sub-group functions to read or prefetch two-dimensional blocks of data from a two-dimensional region of memory, or to write two-dimensional blocks of data to a two dimensional region of memory.
+This is an important operation for many machine learning algorithms, which operate on two-dimensional matrix data as part of a matrix multiplication algorithm.
+
+This extension additionally adds support for two pre-processing operations that may be performed when reading a two-dimensional block of data:
+
+1. The two-dimensional block may be _transposed_ after reading and before it is written to the instruction's destination.
+2. The two-dimensional block may be _transformed_ after reading and before it is written to the instruction's destination.
+The _transform_ operation converts the two-dimensional block from a _row-major_ layout to a _packed_ layout by combining data elements from multiple block rows into 32-bit values.
+This layout is used by some matrix multiplication functions.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+None.
+
+== New OpenCL C Enums
+
+None.
+
+== New OpenCL C Functions
+
+[NOTE]
+====
+These functions are available to devices where the minimum subgroup
+size is 16.  For these devices, the subgroup size must be 16 (the
+minimum supported subgroup size).  Calling these functions on other
+devices or from kernels with a different subgroup size is undefined
+behavior.
+====
+
+Add 2d block read functions: ::
++
+--
+[source, opencl_c]
+----
+// 8-bit data, rows in [1, 2, 4, 8, 16, 32], columns in [32]:
+
+void intel_sub_group_2d_block_read_8b_1r32x1c(      // reads one ushort
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_2r32x1c(      // reads two ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_4r32x1c(      // reads four ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_8r32x1c(      // reads eight ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_16r32x1c(     // reads 16 ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_32r32x1c(     // reads 32 ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+
+// 16-bit data, rows in [1, 2, 4, 8, 16, 32], columns in [16]:
+
+void intel_sub_group_2d_block_read_16b_1r16x1c(     // reads one ushort
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_2r16x1c(     // reads two ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_4r16x1c(     // reads four ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_8r16x1c(     // reads eight ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_16r16x1c(    // reads 16 ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_32r16x1c(    // reads 32 ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+
+// 32-bit data, rows in [1, 2, 4, 8, 16, 32], columns in [8, 16]:
+
+void intel_sub_group_2d_block_read_32b_1r8x1c(      // reads one uint
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_2r8x1c(      // reads one uint
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_4r8x1c(      // reads two uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_8r8x1c(      // reads four uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_16r8x1c(     // reads eight uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_32r8x1c(     // reads 16 uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+
+void intel_sub_group_2d_block_read_32b_1r16x1c(     // reads one uint
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_2r16x1c(     // reads two uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_4r16x1c(     // reads four uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_8r16x1c(     // reads eight uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_16r16x1c(    // reads 16 uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_32r16x1c(    // reads 32 uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+
+// 8-bit data, rows in [1, 2, 4, 8, 16, 32], columns in [32x2]:
+
+void intel_sub_group_2d_block_read_8b_1r32x2c(      // reads two ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_2r32x2c(      // reads four ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_4r32x2c(      // reads eight ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_8r32x2c(      // reads 16 ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_16r32x2c(     // reads 32 ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_32r32x2c(     // reads 64 ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+
+// 16-bit data, rows in [1, 2, 4, 8, 16, 32], columns in [16x2]:
+
+void intel_sub_group_2d_block_read_16b_1r16x2c(     // reads two ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_2r16x2c(     // reads four ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_4r16x2c(     // reads eight ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_8r16x2c(     // reads 16 ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_16r16x2c(    // reads 32 ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_32r16x2c(    // reads 64 ushorts
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private ushort* destination);
+
+// 32-bit data, rows in [1, 2, 4, 8, 16, 32], columns in [8x2]:
+
+void intel_sub_group_2d_block_read_32b_1r8x2c(      // reads two uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_2r8x2c(      // reads two uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_4r8x2c(      // reads four uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_8r8x2c(      // reads eight uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_16r8x2c(     // reads 16 uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_32r8x2c(     // reads 32 uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+
+// 8-bit data, rows in [8, 16, 32], columns in [16x4]:
+
+void intel_sub_group_2d_block_read_8b_8r16x4c(      // reads 32 uchars
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uchar* destination);
+void intel_sub_group_2d_block_read_8b_16r16x4c(     // reads 64 uchars
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uchar* destination);
+void intel_sub_group_2d_block_read_8b_32r16x4c(     // reads 128 uchars
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uchar* destination);
+
+// 8-bit data with transform, rows in [32], columns in [16, 16x2, 16x4]:
+
+void intel_sub_group_2d_block_read_transform_8b_32r16x1c(   // reads eight uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_transform_8b_32r16x2c(   // reads 16 uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_transform_8b_32r16x4c(   // reads 32 uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+
+// 16-bit data with transform, rows in [16, 32], columns in [16, 16x2]:
+
+void intel_sub_group_2d_block_read_transform_16b_16r16x1c(  // reads eight uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_transform_16b_16r16x2c(  // reads 16 uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_transform_16b_32r16x1c(  // reads 16 uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_transform_16b_32r16x2c(  // reads 32 uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+
+// 32-bit data with transpose, rows in [16, 32], columns in [8]:
+
+void intel_sub_group_2d_block_read_transpose_32b_16r8x1c(   // reads eight uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_transpose_32b_32r8x1c(   // reads 16 uints
+    global void* base_address,
+    int width, int height, int pitch, int2 coord, private uint* destination);
+----
+--
+
+Add 2d block write functions: ::
++
+--
+[source, opencl_c]
+----
+// 8-bit data, rows in [1, 2, 4, 8], columns in [16, 32]:
+
+void intel_sub_group_2d_block_write_8b_1r16x1c(     // stores one uchar
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private uchar* value);
+void intel_sub_group_2d_block_write_8b_2r16x1c(     // stores two uchars
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private uchar* value);
+void intel_sub_group_2d_block_write_8b_4r16x1c(     // stores four uchars
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private uchar* value);
+void intel_sub_group_2d_block_write_8b_8r16x1c(     // stores eight uchars
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private uchar* value);
+
+void intel_sub_group_2d_block_write_8b_1r32x1c(     // stores two uchars
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private ushort* value);
+void intel_sub_group_2d_block_write_8b_2r32x1c(     // stores four uchars
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private ushort* value);
+void intel_sub_group_2d_block_write_8b_4r32x1c(     // stores eight uchars
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private ushort* value);
+void intel_sub_group_2d_block_write_8b_8r32x1c(     // stores 16 uchars
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private ushort* value);
+
+// 16-bit data, rows in [1, 2, 4, 8], columns in [16]:
+
+void intel_sub_group_2d_block_write_16b_1r16x1c(    // stores one ushort
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private ushort*  value);
+void intel_sub_group_2d_block_write_16b_2r16x1c(    // stores two ushorts
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private ushort* value);
+void intel_sub_group_2d_block_write_16b_4r16x1c(    // stores four ushorts
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private ushort* value);
+void intel_sub_group_2d_block_write_16b_8r16x1c(    // stores eight ushorts
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private ushort* value);
+
+// 32-bit data, rows in [1, 2, 4, 8], columns in [16]:
+
+void intel_sub_group_2d_block_write_32b_1r16x1c(    // stores one uint
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private uint*  value);
+void intel_sub_group_2d_block_write_32b_2r16x1c(    // stores two uints
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private uint* value);
+void intel_sub_group_2d_block_write_32b_4r16x1c(    // stores four uints
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private uint* value);
+void intel_sub_group_2d_block_write_32b_8r16x1c(    // stores eight uints
+    global void *base_address,
+    int width, int height, int pitch, int2 coord, private uint* value);
+----
+--
+
+Add 2d block prefetch functions: ::
++
+--
+[source, opencl_c]
+----
+// 8-bit data, rows in [1, 2, 4, 8, 16, 32], columns in [32, 32x2]:
+
+void intel_sub_group_2d_block_prefetch_8b_1r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_2r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_4r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_8r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_16r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_32r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+void intel_sub_group_2d_block_prefetch_8b_1r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_2r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_4r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_8r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_16r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_32r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+// 8-bit data, rows in [32], columns in [16, 16x2]:
+
+void intel_sub_group_2d_block_prefetch_8b_32r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_32r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+// 8-bit data, rows in [8, 16, 32], columns in [16x4]:
+
+void intel_sub_group_2d_block_prefetch_8b_8r16x4c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_16r16x4c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_32r16x4c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+// 16-bit data, rows in [1, 2, 4, 8, 16, 32], columns in [16, 16x2]:
+
+void intel_sub_group_2d_block_prefetch_16b_1r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_2r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_4r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_8r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_16r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_32r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+void intel_sub_group_2d_block_prefetch_16b_1r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_2r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_4r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_8r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_16r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_32r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+// 32-bit data, rows in [1, 2, 4, 8, 16, 32], columns in [8, 16, 8x2]:
+
+void intel_sub_group_2d_block_prefetch_32b_1r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_2r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_4r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_8r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_16r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_32r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+void intel_sub_group_2d_block_prefetch_32b_1r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_2r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_4r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_8r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_16r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_32r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+void intel_sub_group_2d_block_prefetch_32b_1r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_2r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_4r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_8r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_16r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_32r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+----
+--
+
+== Modifications to the OpenCL C Specification
+
+=== Add a new Section 6.13.X. "Sub-Group 2D Block IO Functions": 
+
+==== Section 6.13.X.1 Sub-Group 2D Block Read Functions
+
+These functions read one or more 2D blocks of data from a 2D row-major region of global memory.
+The 2D blocks of data are read collectively, as a sub-group operation.
+Please refer to the `SPV_INTEL_2d_block_io` extension for information how the 2D block data is assigned to work-items in the sub-group.
+
+[cols="3a,2",options="header"]
+|====
+|*Function*
+|*Description*
+
+|[source]
+----
+void intel_sub_group_2d_block_read_8b_1r32x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_2r32x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_4r32x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_8r32x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_16r32x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_32r32x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_1r32x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_2r32x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_4r32x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_8r32x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_16r32x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_8b_32r32x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+----
+
+| Reads one or more row by column blocks of data from the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation.
+The region of memory to read from is specified by _base_address_, _width_, _height_, and _pitch_.
+
+The blocks of data are adjacent horizontally, so the total number of columns read is number of columns in one block multiplied by number of blocks.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 32 columns, each work item reads two data elements per block row, and packs them into a `ushort`.
+Each work item in the sub-group reads 16-bits of data from each row for each block.
+
+|[source]
+----
+void intel_sub_group_2d_block_read_8b_8r16x4c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uchar* destination);
+void intel_sub_group_2d_block_read_8b_16r16x4c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uchar* destination);
+void intel_sub_group_2d_block_read_8b_32r16x4c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uchar* destination);
+----
+
+| Reads one or more row by column blocks of data from the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation.
+The region of memory to read from is specified by _base_address_, _width_, _height_, and _pitch_.
+
+The blocks of data are read horizontally, so the total number of columns read is the number of columns in one block multiplied by the number of blocks.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 16 columns, each work item reads one data element per block row.
+Each work item in the sub-group reads 8-bits of data from each row, from each block.
+
+|[source]
+----
+void intel_sub_group_2d_block_read_16b_1r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_2r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_4r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_8r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_16r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_32r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_1r16x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_2r16x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_4r16x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_8r16x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_16r16x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+void intel_sub_group_2d_block_read_16b_32r16x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private ushort* destination);
+----
+
+| Reads one or more row by column blocks of data from the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation.
+The region of memory to read from is specified by _base_address_, _width_, _height_, and _pitch_.
+
+The blocks of data are read horizontally, so the total number of columns read is the number of columns in one block multiplied by the number of blocks.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 16 columns, each work item reads one data element per block row.
+For each block, each work item in the sub-group reads one data element from each row, from each block.
+
+|[source]
+----
+void intel_sub_group_2d_block_read_32b_1r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_2r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_4r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_8r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_16r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_32r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+----
+
+| Reads one or more row by column blocks of data from the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation.
+The region of memory to read from is specified by _base_address_, _width_, _height_, and _pitch_.
+
+The blocks of data are read horizontally, so the total number of columns read is the number of columns in one block multiplied by the number of blocks.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 16 columns, each work item reads one data element per block row.
+For each block, each work item in the sub-group reads one data element per block row, from each block.
+
+|[source]
+----
+void intel_sub_group_2d_block_read_32b_1r8x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_2r8x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_4r8x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_8r8x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_16r8x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_32r8x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_1r8x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_2r8x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_4r8x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_8r8x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_16r8x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_32b_32r8x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+----
+
+| Reads one or more row by column blocks of data from the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation.
+The region of memory to read from is specified by _base_address_, _width_, _height_, and _pitch_.
+
+The blocks of data are read horizontally, so the total number of columns read is the number of columns in one block multiplied by the number of blocks.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 8 columns, the first eight work items receives data from odd rows, and the next eight work-items receives data from even rows.
+If there is only one row, the data assigned to the last eight work-items is undefined.
+
+|[source]
+----
+void intel_sub_group_2d_block_read_transform_8b_32r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_transform_8b_32r16x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+----
+
+| Reads one or more row by column blocks of data from the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation and performs a packing transformation.
+The region of memory to read from is specified by _base_address_, _width_, _height_, and _pitch_.
+
+The blocks of data are read horizontally, so the total number of columns read is the number of columns in one block multiplied by the number of blocks.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 16 columns, each work item in the sub-group reads one column of data.
+Values from first four rows of data are packed into the first component of the return value, then values from next four rows, and so on.
+
+|[source]
+----
+void intel_sub_group_2d_block_read_transform_16b_16r16x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_transform_16b_16r16x2c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+----
+
+| Reads one or more row by column blocks of data from the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation and performs a packing transformation.
+The region of memory to read from is specified by _base_address_, _width_, _height_, and _pitch_.
+
+The blocks of data are read horizontally, so the total number of columns read is the number of columns in one block multiplied by the number of blocks.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 16 columns, each work item in the sub-group reads one column of data.
+Values from first two rows of data are packed into the first component of the return value, then values from next two rows, and so on.
+
+|[source]
+----
+void intel_sub_group_2d_block_read_transpose_32b_16r8x1c(
+    global void* base_address,
+    int width, int height, int pitch,
+    int2 coord, private uint* destination);
+void intel_sub_group_2d_block_read_transpose_32b_32r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord,
+    private uint* destination);
+----
+
+| Reads a row by column blocks of data from the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation and transposes the data before assigning to work-items.
+The region of memory to read from is specified by _base_address_, _width_, _height_, and _pitch_.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 16 or 32 rows pre-transpose, which becomes 16 or 32 columns of data post-transpose, each work-item in the subgroup reads one or two columns of data.
+
+|====
+
+==== Section 6.13.X.2 Sub-Group 2D Block Prefetch Functions
+
+[cols="3a,2",options="header"]
+|====
+|*Function*
+|*Description*
+
+|[source]
+----
+void intel_sub_group_2d_block_prefetch_8b_1r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_2r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_4r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_8r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_16r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_32r32x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+void intel_sub_group_2d_block_prefetch_8b_1r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_2r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_4r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_8r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_16r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_32r32x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+void intel_sub_group_2d_block_prefetch_8b_32r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_32r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+void intel_sub_group_2d_block_prefetch_8b_8r16x4c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_16r16x4c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_8b_32r16x4c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+
+void intel_sub_group_2d_block_prefetch_16b_1r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_2r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_4r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_8r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_16r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_32r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+void intel_sub_group_2d_block_prefetch_16b_1r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_2r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_4r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_8r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_16r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_16b_32r16x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+void intel_sub_group_2d_block_prefetch_32b_1r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_2r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_4r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_8r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_16r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_32r16x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+void intel_sub_group_2d_block_prefetch_32b_1r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_2r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_4r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_8r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_16r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_32r8x1c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+
+void intel_sub_group_2d_block_prefetch_32b_1r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_2r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_4r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_8r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_16r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+void intel_sub_group_2d_block_prefetch_32b_32r8x2c(
+    global void* base_address,
+    int width, int height, int pitch, int2 coord);
+----
+
+| Prefetches one or more row by column blocks of data from the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation and performs a packing transformation.
+Prefetching does not affect the functionality of a kernel but may change its performance characteristics.
+The region of memory to prefetch from is specified by _base_address_, _width_, _height_, and _pitch_.
+
+The blocks of data are prefetched horizontally, so the total number of columns prefetched is the number of columns in one block multiplied by the number of blocks.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+|====
+
+==== Section 6.13.X.3 Sub-Group 2D Block Write Functions
+
+[cols="3a,2",options="header"]
+|====
+|*Function*
+|*Description*
+
+|[source]
+----
+void intel_sub_group_2d_block_write_8b_1r32x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private ushort* value);
+void intel_sub_group_2d_block_write_8b_2r32x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private ushort* value);
+void intel_sub_group_2d_block_write_8b_4r32x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private ushort* value);
+void intel_sub_group_2d_block_write_8b_8r32x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private ushort* value);
+----
+
+| Writes a row by column block of data to the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation.
+The region of memory to write to is specified by _base_address_, _width_, _height_, and _pitch_.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 32 columns, each work-item writes two data elements per block row.
+
+|[source]
+----
+void intel_sub_group_2d_block_write_8b_1r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private uchar* value);
+void intel_sub_group_2d_block_write_8b_2r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private uchar* value);
+void intel_sub_group_2d_block_write_8b_4r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private uchar* value);
+void intel_sub_group_2d_block_write_8b_8r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private uchar* value);
+----
+
+| Writes a row by column block of data to the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation.
+The region of memory to write to is specified by _base_address_, _width_, _height_, and _pitch_.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 16 columns, each work-item writes one data element per block row.
+
+|[source]
+----
+void intel_sub_group_2d_block_write_16b_1r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private ushort*  value);
+void intel_sub_group_2d_block_write_16b_2r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private ushort* value);
+void intel_sub_group_2d_block_write_16b_4r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private ushort* value);
+void intel_sub_group_2d_block_write_16b_8r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private ushort* value);
+----
+
+| Writes a row by column block of data to the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation.
+The region of memory to write to is specified by _base_address_, _width_, _height_, and _pitch_.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 16 columns, each work-item writes one data element per block row.
+
+|[source]
+----
+void intel_sub_group_2d_block_write_32b_1r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private uint*  value);
+void intel_sub_group_2d_block_write_32b_2r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private uint* value);
+void intel_sub_group_2d_block_write_32b_4r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private uint* value);
+void intel_sub_group_2d_block_write_32b_8r16x1c(
+    global void *base_address, int width, int height,
+    int pitch, int2 coord, private uint* value);
+----
+
+| Writes a row by column block of data to the specified region of global memory at the coordinate specified by _coord_ as a sub-group operation.
+The region of memory to write to is specified by _base_address_, _width_, _height_, and _pitch_.
+
+Note that _coord_ is provided in elements, while _width_ and _pitch_ are provided in bytes.
+
+Since the block has 16 columns, each work-item writes one data element per block row.
+
+|====
+
+[[Restrictions]]*6.13.X.6 Restrictions*
+
+The following restrictions apply to the sub-group 2d block read, write, and prefetch functions added by this extension:
+
+Behavior is undefined unless:
+
+ * the sub-group size is 16.
+ * the first component of `coord` is a multiple of four for 8-bit data, or a multiple of two for 16-bit data.
+ * the per-subgroup `base_address` is cache-line aligned (64 Bytes).
+ * the `width` is greater than or equal 64 Bytes and less than or equal to 2^24^ bytes.
+ * the `width` is a multiple of four for 8-bit or 16-bit data, or a multiple of the data size otherwise.
+ * the `height` is greater than zero and less than or equal to 2^24^.
+ * the `pitch` is greater than or equal to the `width` and a multiple of 16 bytes.
+ * the sub-group size is equal to the maximum sub-group size; in other words, this is a full sub-group.
+
+== Modifications to the OpenCL SPIR-V Environment Specification
+
+[NOTE]
+====
+SPIR-V support was added in extension version 1.1.0.
+====
+
+=== Add a new section 5.2.X - `cl_intel_subgroup_2d_block_io`
+
+If the OpenCL environment supports the extension `cl_intel_subgroup_2d_block_io` then the environment must accept modules that declare use of the extension `SPV_INTEL_2d_block_io` and that declare the following SPIR-V capabilities:
+
+  * *Subgroup2DBlockIOINTEL*
+  * *Subgroup2DBlockTransformINTEL*
+  * *Subgroup2DBlockTransposeINTEL*
+
+The table below describes valid 2D block load and store dimensions for different element sizes:
+
+[cols="1,5*^,4",width="100%"]
+[options="header"]
+|=====
+| Instruction | Pointer Type | Element Size (Bytes) | Block Width (Elements) | Block Height (Rows) | Block Count | Notes
+
+7+| *Block Loads:*
+
+| *OpSubgroup2DBlockLoadINTEL* | `uint8_t`, `void` (untyped) | 1 | 32 | 1, 2, 4, 8, 16, 32 | 1, 2 |
+| *OpSubgroup2DBlockLoadINTEL* | `uint8_t`, `void` (untyped) | 1 | 16 | 8, 16, 32 | 4 | For loading 8-bit data then up-converting.
+
+| *OpSubgroup2DBlockLoadINTEL* | `uint16_t`, `void` (untyped) | 2 | 16 | 1, 2, 4, 8, 16, 32 | 1, 2 |
+
+| *OpSubgroup2DBlockLoadINTEL* | `uint32_t`, `void` (untyped) | 4 | 8 | 1, 2, 4, 8, 16, 32 | 1, 2 |
+| *OpSubgroup2DBlockLoadINTEL* | `uint32_t`, `void` (untyped) | 4 | 16 | 1, 2, 4, 8, 16, 32 | 1 |
+
+7+| *Block Loads with Transform:*
+
+| *OpSubgroup2DBlockLoadTransformINTEL* | `uint8_t`, `void` (untyped) | 1 | 16 | 32 | 1, 2, 4 |
+
+| *OpSubgroup2DBlockLoadTransformINTEL* | `uint16_t`, `void` (untyped) | 2 | 16 | 16, 32 | 1, 2 |
+
+7+| *Block Loads with Transpose:*
+
+| *OpSubgroup2DBlockLoadTransposeINTEL* | `uint32_t`, `void` (untyped) | 4 | 8 | 16, 32 | 1 | Dimensions are in memory, pre-transpose.
+
+7+| *Block Stores:*
+
+| *OpSubgroup2DBlockStoreINTEL* | `uint8_t`, `void` (untyped) | 1 | 16, 32 | 1, 2, 4, 8 | 1 |
+
+| *OpSubgroup2DBlockStoreINTEL* | `uint16_t`, `void` (untyped) | 2 | 16 | 1, 2, 4, 8 | 1 |
+
+| *OpSubgroup2DBlockStoreINTEL* | `uint32_t`, `void` (untyped) | 4 | 16 | 1, 2, 4, 8 | 1 |
+
+7+| *Block Prefetch:*
+
+| *OpSubgroup2DBlockPrefetchINTEL* | `uint8_t`, `void` (untyped) | 1 | 32 | 1, 2, 4, 8, 16, 32 | 1, 2 |
+| *OpSubgroup2DBlockPrefetchINTEL* | `uint8_t`, `void` (untyped) | 1 | 16 | 32 | 1, 2 |
+| *OpSubgroup2DBlockPrefetchINTEL* | `uint8_t`, `void` (untyped) | 1 | 16 | 8, 16, 32 | 4 |
+
+| *OpSubgroup2DBlockPrefetchINTEL* | `uint16_t`, `void` (untyped) | 2 | 16 | 1, 2, 4, 8, 16, 32 | 1, 2 |
+
+| *OpSubgroup2DBlockPrefetchINTEL* | `uint32_t`, `void` (untyped) | 4 | 8 | 1, 2, 4, 8, 16, 32 | 1, 2 |
+| *OpSubgroup2DBlockPrefetchINTEL* | `uint32_t`, `void` (untyped) | 4 | 16 | 1, 2, 4, 8, 16, 32 | 1 |
+
+|=====
+
+For all instructions:
+
+* The _Memory Width_, _Memory Height_, and _Memory Pitch_ operands must be 32-bit integer type scalars.
+* The _Coordinate_ must be a vector of two 32-bit integer type components.
+
+== Issues
+
+None.
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1.0.0|2024-12-03|Bartosz Kościelak|*Initial revision*
+|1.1.0|2024-02-28|Ben Ashbaugh|Added SPIR-V support.
+|========================================
