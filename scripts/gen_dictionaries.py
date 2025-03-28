@@ -249,7 +249,7 @@ if __name__ == "__main__":
                 addLink = True
                 name = type.get('name')
             elif category == 'define':
-                if type.text and type.text.startswith("#define"):
+                if type.text and (type.text.startswith("#define") or type.text.strip().startswith("#if")):
                     continue
                 name = type.find('name').text
             else:
