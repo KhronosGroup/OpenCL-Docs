@@ -1,10 +1,18 @@
-:data-uri:
-:icons: font
-include::../config/attribs.txt[]
-include::{generated}/api/api-dictionary.asciidoc[]
-:source-highlighter: coderay
-
 = cl_qcom_perf_hint
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
 
 == Name Strings
 
@@ -12,7 +20,7 @@ include::{generated}/api/api-dictionary.asciidoc[]
 
 == Contact
 
-sharidas at quicinc dot com
+Sreelakshmi Haridas Maruthur, Qualcomm Innovation Center, Inc. (sharidas at quicinc dot com)
 
 == Contributors
 
@@ -23,8 +31,6 @@ Sreelakshmi Haridas Maruthur, Qualcomm Innovation Center, Inc.
 Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 
 All rights reserved.
-
-Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 == Status
 
@@ -59,7 +65,7 @@ updated using a separate API at any point during the context’s lifetime.
 ----
 cl_int clSetPerfHintQCOM(
         cl_context context,
-        cl_perf_hint perf_hint);
+        cl_perf_hint_qcom perf_hint);
 
 ----
 
@@ -67,7 +73,7 @@ cl_int clSetPerfHintQCOM(
 
 [source,c]
 ----
-typedef cl_uint cl_perf_hint;
+typedef cl_uint cl_perf_hint_qcom;
 
 ----
 
@@ -78,7 +84,7 @@ Added to the list of supported properties by clCreateContext
 
 [source,c]
 ----
-CL_CONTEXT_PERF_HINT_QCOM     0x40C2
+#define CL_CONTEXT_PERF_HINT_QCOM     0x40C2
 ----
 
 New list of supported values for CL_CONTEXT_PERF_HINT_QCOM property
@@ -86,9 +92,9 @@ New list of supported values for CL_CONTEXT_PERF_HINT_QCOM property
 
 [source,c]
 ----
-CL_PERF_HINT_HIGH_QCOM       0x40C3
-CL_PERF_HINT_NORMAL_QCOM     0x40C4
-CL_PERF_HINT_LOW_QCOM        0x40C5
+#define CL_PERF_HINT_HIGH_QCOM       0x40C3
+#define CL_PERF_HINT_NORMAL_QCOM     0x40C4
+#define CL_PERF_HINT_LOW_QCOM        0x40C5
 ----
 
 
@@ -110,7 +116,7 @@ Add to Table 13. List of supported context creation properties by clCreateContex
 | Description
 
 | `CL_CONTEXT_PERF_HINT_QCOM`
-| `cl_perf_hint`
+| `cl_perf_hint_qcom`
 | Specifies the performance hint for this context.
 
 |====
@@ -127,14 +133,14 @@ Add to Table 13. List of supported context creation properties by clCreateContex
 
 [width="100%",cols="<20%,<80%,options="header"]
 |====
-| cl_perf_hint
+| `cl_perf_hint_qcom`
 | Description
 
-| CL_PERF_HINT_HIGH_QCOM
+| `CL_PERF_HINT_HIGH_QCOM`
 | Requests the highest performance level from device. This is the default setting for devices in an OpenCL context.
-| CL_PERF_HINT_NORMAL_QCOM
+| `CL_PERF_HINT_NORMAL_QCOM`
 | Requests a balanced performance setting that is set dynamically by the GPU frequency and power management.
-| CL_PERF_HINT_LOW_QCOM
+| `CL_PERF_HINT_LOW_QCOM`
 | Requests a performance setting that prioritizes lower power consumption
 
 |====
@@ -145,7 +151,7 @@ Add to Table 13. List of supported context creation properties by clCreateContex
 
  Add the following error descriptions for clCreateContext ::
 
-CL_INVALID_PROPERTY if the the context property CL_CONTEXT_PERF_HINT_QCOM is specified and at least one of the devices
+CL_INVALID_PROPERTY if the the context property `CL_CONTEXT_PERF_HINT_QCOM` is specified and at least one of the devices
 in <devices> does not support the performance hint property
 
 Add to Table 14. List of supported param_names by clGetContextInfo append to the entry for CL_CONTEXT_PROPERTIES ::
@@ -161,7 +167,7 @@ Add to Table 14. List of supported param_names by clGetContextInfo append to the
 
 | `CL_CONTEXT_PROPERTIES`
 | `cl_context_properties[]`
-| If a CL_CONTEXT_PERF_HINT_QCOM
+| If a `CL_CONTEXT_PERF_HINT_QCOM`
 property was set using clSetPerfHintQCOM, the properties argument returned will be populated
 with this property, even if the property was not specified in clCreateContext or
 clCreateContextFromType.
@@ -177,7 +183,7 @@ The function
 ----
 
 cl_int clSetPerfHintQCOM(cl_context context,
-                        cl_perf_hint perf_hint);
+                        cl_perf_hint_qcom perf_hint);
 
 ----
 
@@ -190,7 +196,7 @@ specified at context time as one of the context properties.
 * _context_ must be a valid OpenCL context
 * _perf_hint_ identifies the hint being set. It has to be one of the values in Table 13a
 
-*clSetPerfHintQCOM* returns `CL_SUCCESS` if the property
+`clSetPerfHintQCOM` returns `CL_SUCCESS` if the property
 `CL_CONTEXT_PERF_HINT_QCOM` was set to the provided value. Otherwise, it
 returns one of the following errors:
 
@@ -208,11 +214,11 @@ returns one of the following errors:
 * `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources
   required by the OpenCL implementation on the host
 
-The effect of *clSetPerfHintQCOM* on commands that are in flight is
+The effect of `clSetPerfHintQCOM` on commands that are in flight is
 undefined. These commands may be executed at either of the existing or
 new performance levels. If the user desires to complete all pending work
 at the existing level and execute all subsequent commands at the new
-level, a clFinish must be added before calling *clSetPerfHintQCOM* to set
+level, a clFinish must be added before calling `clSetPerfHintQCOM` to set
 the new level.
 
 --
@@ -229,7 +235,7 @@ cl_context_properties properties[] = {CL_CONTEXT_PERF_HINT_QCOM,
     CL_PERF_HINT_LOW_QCOM, 0};
 clCreateContext(properties, 1, &device_id, NULL, NULL, NULL);
 
-2) Set perfomrnace hint for an existing CL context:
+2) Set performance hint for an existing CL context:
 
 [source,c]
 
