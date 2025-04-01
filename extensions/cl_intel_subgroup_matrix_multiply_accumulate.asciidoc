@@ -36,8 +36,8 @@ Complete
 
 == Version
 
-Built On: {docdate} +
-Revision: 1.0.0
+Built On: 2025-01-07 +
+Revision: 1.1.0
 
 == Dependencies
 
@@ -343,6 +343,177 @@ int2 intel_sub_group_i8_i8_matrix_mad_k32(int2  a, int8  b, int2 acc)
 }
 ----
 
+== Modifications to the OpenCL SPIR-V Environment Specification
+
+[NOTE]
+====
+SPIR-V support was added in extension version 1.1.0.
+====
+
+=== Add a new section 5.2.X - `cl_intel_subgroup_matrix_multiply_accumulate`
+
+If the OpenCL environment supports the extension `cl_intel_subgroup_matrix_multiply_accumulate` then the environment must accept modules that declare use of the extension `SPV_INTEL_subgroup_matrix_multiply_accumulate` and that declare the SPIR-V capability *SubgroupMatrixMultiplyAccumulateINTEL*.
+
+For devices where the minimum subgroup size is 8, the following matrix dimensions and types are supported.
+For these devices, the subgroup size must be 8 (the minimum subgroup size).
+Behavior is undefined if these functions are called on other devices or from kernels with a different subgroup size:
+
+[cols="^1,^1,^1,^2,^2,^2,^2",width="100%"]
+[options="header"]
+|=====
+| M Dimension | N Dimension | K Dimension | Result Type | Matrix A Type | Matrix B Type | Matrix C Type
+
+// i32 = i8 x i8 + i32
+// i32 = i8 x u8 + i32
+// i32 = u8 x i8 + i32
+// i32 = u8 x u8 + i32
+7+<| *8-bit integer matrix sources (signed and unsigned), 32-bit integer accumulator*: +
+| 1, 2, 4, 8 | 8 | 32 | `M x int32_t`
+| `M x int32_t` with *MatrixAPackedInt8INTEL* and *MatrixASignedComponentsINTEL*
+| `8 x int32_t` with *MatrixBPackedInt8INTEL* and *MatrixBSignedComponentsINTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 8 | 32 | `M x int32_t`
+| `M x int32_t` with *MatrixAPackedInt8INTEL* and *MatrixASignedComponentsINTEL*
+| `8 x int32_t` with *MatrixBPackedInt8INTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 8 | 32 | `M x int32_t`
+| `M x int32_t` with *MatrixAPackedInt8INTEL*
+| `8 x int32_t` with *MatrixBPackedInt8INTEL* and *MatrixBSignedComponentsINTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 8 | 32 | `M x int32_t`
+| `M x int32_t` with *MatrixAPackedInt8INTEL*
+| `8 x int32_t` with *MatrixBPackedInt8INTEL*
+| `M x int32_t`
+
+// i32 = i4 x i4 + i32
+// i32 = i4 x u4 + i32
+// i32 = u4 x i4 + i32
+// i32 = u4 x u4 + i32
+7+<| *4-bit integer matrix sources (signed and unsigned), 32-bit integer accumulator*: +
+| 1, 2, 4, 8 | 8 | 64 | `M x int32_t`
+| `M x int32_t` with *MatrixAPackedInt4INTEL* and *MatrixASignedComponentsINTEL*
+| `8 x int32_t` with *MatrixBPackedInt4INTEL* and *MatrixBSignedComponentsINTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 8 | 64 | `M x int32_t`
+| `M x int32_t` with *MatrixAPackedInt4INTEL* and *MatrixASignedComponentsINTEL*
+| `8 x int32_t` with *MatrixBPackedInt4INTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 8 | 64 | `M x int32_t`
+| `M x int32_t` with *MatrixAPackedInt4INTEL*
+| `8 x int32_t` with *MatrixBPackedInt4INTEL* and *MatrixBSignedComponentsINTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 8 | 64 | `M x int32_t`
+| `M x int32_t` with *MatrixAPackedInt4INTEL*
+| `8 x int32_t` with *MatrixBPackedInt4INTEL*
+| `M x int32_t`
+
+// f32 = f16 x f16 + f32
+7+<| *fp16 matrix sources, fp32 accumulator*:
+| 1, 2, 4, 8 | 8 | 16 | `M x float32_t` | `M x int32_t` with *MatrixAPackedFloat16INTEL* | `8 x int32_t` with *MatrixBPackedFloat16INTEL* | `M x float32_t`
+
+// f32 = bf16 x bf16 + f32
+7+<| *bf16 matrix sources, fp32 accumulator*:
+| 1, 2, 4, 8 | 8 | 16 | `M x float32_t` | `M x int32_t` with *MatrixAPackedBFloat16INTEL* | `8 x int32_t` with *MatrixBPackedBFloat16INTEL* | `M x float32_t`
+
+|=====
+
+For devices where the minimum subgroup size is 16, the following matrix dimensions and types are supported.
+For these devices, the subgroup size must be 16 (the minimum subgroup size).
+Behavior is undefined if these functions are called on other devices or from kernels with a different subgroup size:
+
+[cols="^1,^1,^1,^2,^2,^2,^2",width="100%"]
+[options="header"]
+|=====
+| M Dimension | N Dimension | K Dimension | Result Type | Matrix A Type | Matrix B Type | Matrix C Type
+
+// i32 = i8 x i8 + i32
+// i32 = i8 x u8 + i32
+// i32 = u8 x i8 + i32
+// i32 = u8 x u8 + i32
+7+<| *8-bit integer matrix sources (signed and unsigned), 32-bit integer accumulator*: +
+| 1, 2, 4, 8 | 16 | 32 | `M x int32_t`
+| `M x int16_t` with *MatrixAPackedInt8INTEL* and *MatrixASignedComponentsINTEL*
+| `8 x int32_t` with *MatrixBPackedInt8INTEL* and *MatrixBSignedComponentsINTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 16 | 32 | `M x int32_t`
+| `M x int16_t` with *MatrixAPackedInt8INTEL* and *MatrixASignedComponentsINTEL*
+| `8 x int32_t` with *MatrixBPackedInt8INTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 16 | 32 | `M x int32_t`
+| `M x int16_t` with *MatrixAPackedInt8INTEL*
+| `8 x int32_t` with *MatrixBPackedInt8INTEL* and *MatrixBSignedComponentsINTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 16 | 32 | `M x int32_t`
+| `M x int16_t` with *MatrixAPackedInt8INTEL*
+| `8 x int32_t` with *MatrixBPackedInt8INTEL*
+| `M x int32_t`
+
+// i32 = i4 x i4 + i32
+// i32 = i4 x u4 + i32
+// i32 = u4 x i4 + i32
+// i32 = u4 x u4 + i32
+7+<| *4-bit integer matrix sources (signed and unsigned), 32-bit integer accumulator*: +
+| 1, 2, 4, 8 | 16 | 64 | `M x int32_t`
+| `M x int16_t` with *MatrixAPackedInt4INTEL* and *MatrixASignedComponentsINTEL*
+| `8 x int32_t` with *MatrixBPackedInt4INTEL* and *MatrixBSignedComponentsINTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 16 | 64 | `M x int32_t`
+| `M x int16_t` with *MatrixAPackedInt4INTEL* and *MatrixASignedComponentsINTEL*
+| `8 x int32_t` with *MatrixBPackedInt4INTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 16 | 64 | `M x int32_t`
+| `M x int16_t` with *MatrixAPackedInt4INTEL*
+| `8 x int32_t` with *MatrixBPackedInt4INTEL* and *MatrixBSignedComponentsINTEL*
+| `M x int32_t`
+
+| 1, 2, 4, 8 | 16 | 64 | `M x int32_t`
+| `M x int16_t` with *MatrixAPackedInt4INTEL*
+| `8 x int32_t` with *MatrixBPackedInt4INTEL*
+| `M x int32_t`
+
+// f32 = f16 x f16 + f32
+7+<| *fp16 matrix sources, fp32 accumulator*:
+| 1, 2, 4, 8 | 16 | 16 | `M x float32_t`
+| `M x int16_t` with *MatrixAPackedFloat16INTEL*
+| `8 x int32_t` with *MatrixBPackedFloat16INTEL*
+| `M x float32_t`
+
+// f32 = bf16 x bf16 + f32
+7+<| *bf16 matrix sources, fp32 accumulator*:
+| 1, 2, 4, 8 | 16 | 16 | `M x float32_t`
+| `M x int16_t` with *MatrixAPackedBFloat16INTEL*
+| `8 x int32_t` with *MatrixBPackedBFloat16INTEL*
+| `M x float32_t`
+
+// f16 = f16 x f16 + f16
+7+<| *fp16 matrix sources, fp16 accumulator*:
+| 1, 2, 4, 8 | 16 | 16 | `M x float16_t`
+| `M x int16_t` with *MatrixAPackedFloat16INTEL*
+| `8 x int32_t` with *MatrixBPackedFloat16INTEL*
+| `M x float16_t`
+
+// bf16 = bf16 x bf16 + bf16
+7+<| *bf16 matrix sources, bf16 accumulator*:
+| 1, 2, 4, 8 | 16 | 16 | `M x int16_t` with *MatrixResultBFloat16INTEL*
+| `M x int16_t` with *MatrixAPackedBFloat16INTEL*
+| `8 x int32_t` with *MatrixBPackedBFloat16INTEL*
+| `M x int16_t` with *MatrixCBFloat16INTEL*
+
+// Note: other types (e.g. tf32) will be described in their respective extension documents.
+
+|=====
+
 == Issues
 
 . Should this extension use signed or unsigned types to represent fp16 and bf16 data?
@@ -362,6 +533,7 @@ Applications are encouraged to use `as_type` to reinterpret unsigned data as sig
 |Rev|Date|Author|Changes
 |1.0.0|2022-05-18|Ben Ashbaugh|*Initial public revision*
 |1.0.0|2024-06-06|Ben Ashbaugh|Document additional functions.
+|1.1.0|2025-01-07|Ben Ashbaugh|Added SPIR-V support.
 |========================================
 
 //************************************************************************
