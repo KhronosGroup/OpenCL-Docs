@@ -680,7 +680,7 @@ _size_ is the size in bytes for the suggestion.
 If  _size_ is `0`, it is ignored.
 
 _suggested_svm_type_index_ is a pointer that will contain the result of the query.
-The suggested SVM type may be `CL_UINT_MAX`, indicating that there is no SVM allocation type for the _context_ and devices in _device_list_ that support the _required_capabilities_.
+The suggested SVM type may be `CL_UINT_MAX`, indicating that there is no SVM allocation type for the _context_ and devices in _device_list_ that support the _required_capabilities_ and _properties_.
 
 *clGetSuggestedSVMTypeKHR* returns `CL_SUCCESS` if the query executed successfully.  Otherwise, it returns one of the following errors:
 
@@ -737,6 +737,7 @@ Interactions with command buffers?
 *UNRESOLVED*:
 Need to solve now.
 Check the Vulkan query for `nonCoherentAtomSize`.
+Basic idea: Add a device query like `CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR` and concurrent access is allowed if the memory type allows it and the concurrent access is to two different blocks defined by the device query.
 --
 
 . What other SVM allocation properties should we support?
@@ -789,9 +790,19 @@ The initial version of this extension will only support allocating host memory.
 *UNRESOLVED*:
 Need to close on:
 
-* Can a device "fill" another device's allocation?  (Recommendation: Yes, if accessible.)
-* Can a device "fill" arbitrary host memory?  (Recommendation: Maybe?)
-* Can a device "fill" a USM allocation from another context?  (Recommendation: No.)
+* Can a device "fill" another device's allocation?  (Recommendation: Yes, but finalize as part of multi-device support.)
+* Can a device "fill" arbitrary host memory?  (No, undefined behavior unless system SVM is supported.)
+* Can a device "fill" a USM allocation from another context?  (No, contexts provide isolation, this will need export and import.)
+
+Three possibilities for filling arbitrary host memory:
+
+1. Allocated using clSVMAlloc from the same context --> good.
+2. Allocated using clSVMAlloc from a different context --> undefined behavior.
+3. Not allocated using clSVMAlloc --> good iff supports system SVM, else undefined behavior.
+
+Check whether the existing CTS test supports clEnqueueSVMMemFill on an arbitrary host allocation before resolving.
+
+Need to reword the existing spec text because it's confusing.
 --
 
 . What are the restrictions for the _src_ptr_ and _dst_ptr_ values that can be passed to the "memcpy" API?
@@ -800,13 +811,15 @@ Need to close on:
 *UNRESOLVED*:
 Need to close on:
 
-* Can a device "memcpy" from another device's allocation?
-* Can a device "memcpy" to another device's allocation?
-* Can a device "memcpy" to or from a USM allocation in another context?  (Recommendation: No?)
-* Can a device "memcpy" to arbitrary host memory?  (Recommendation: Yes.)
-* Can a device "memcpy" from arbitrary host memory?  (Recommendation: Yes.)
-* Can a device "memcpy" from arbitrary host memory to arbitrary host memory?  (Recommendation: Yes.)
-* Can the memory region to copy to overlap the memory region to copy from?  (Recommendation: No.)
+* Can a device "memcpy" from another device's allocation?  (Recommendation: Yes, but finalize as part of multi-device support.)
+* Can a device "memcpy" to another device's allocation?  (Recommendation: Yes, but finalize as part of multi-device support.)
+* Can a device "memcpy" to or from a SVM allocation in another context?  (No, undefined behavior.)
+* Can a device "memcpy" to arbitrary host memory?  (Yes, we already have tests.)
+* Can a device "memcpy" from arbitrary host memory?  (Yes, we already have tests.)
+* Can a device "memcpy" from arbitrary host memory to arbitrary host memory?  (Yes, we already have tests.)
+* Can the memory region to copy to overlap the memory region to copy from?  (No, already an error.)
+
+Check whether we have a negative test for overlapping regions before resolving.
 --
 
 . Do we want to support migrating to devices other than the device associated with _command_queue_?
@@ -837,9 +850,10 @@ The initial version of this extension will not extend *clEnqueueSVMMigrateMem*, 
 . Should we add explicit mem alloc flags for `CACHED` and `UNCACHED`?
 +
 --
-*UNRESOLVED*:
-Could be specific capabilities rather than mem alloc flags.
-Solve (or at least have explored a layered extension) for the final spec.
+`RESOLVED`:
+Recommend to solve by adding cacheability properties to a layered extension.
+Cacheability properties are preferred vs. capabilities to avoid a combinatorial explosion.
+Could have separate cacheability properties for host vs. device, or even for specific cache levels, if desired.
 --
 
 . At least for HOST and SHARED allocations, should we have separate mem alloc flags for the host and the device?
