@@ -1,0 +1,261 @@
+= cl_qcom_perf_hint
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
+
+== Name Strings
+
+`cl_qcom_perf_hint`
+
+== Contact
+
+Sreelakshmi Haridas Maruthur, Qualcomm Innovation Center, Inc. (sharidas at quicinc dot com)
+
+== Contributors
+
+Sreelakshmi Haridas Maruthur, Qualcomm Innovation Center, Inc.
+
+== Notice
+
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.5
+
+
+== Dependencies
+
+OpenCL 1.1 or later is required.
+
+This extension is written against the OpenCL API specification Version 3.0.17.
+
+
+== Overview
+
+This extension allows applications to request the
+performance level desired for device(s) on an OpenCL context.
+
+Higher performance implies higher frequencies on the device.
+
+The hint may be provided at context creation as a context property and/or
+updated using a separate API at any point during the context’s lifetime.
+
+== New API Functions
+
+[source,c]
+----
+cl_int clSetPerfHintQCOM(
+        cl_context context,
+        cl_perf_hint_qcom perf_hint);
+
+----
+
+== New API Types
+
+[source,c]
+----
+typedef cl_uint cl_perf_hint_qcom;
+
+----
+
+
+== New API Enums
+
+Added to the list of supported properties by clCreateContext
+
+[source,c]
+----
+#define CL_CONTEXT_PERF_HINT_QCOM     0x40C2
+----
+
+New list of supported values for CL_CONTEXT_PERF_HINT_QCOM property
+
+
+[source,c]
+----
+#define CL_PERF_HINT_HIGH_QCOM       0x40C3
+#define CL_PERF_HINT_NORMAL_QCOM     0x40C4
+#define CL_PERF_HINT_LOW_QCOM        0x40C5
+----
+
+
+
+== Modifications to the OpenCL API Specification
+
+
+=== Additions to Section 4.4 - "Contexts"
+
+Add to Table 13. List of supported context creation properties by clCreateContext ::
++
+--
+
+
+[width="100%",cols="<34%,<33%,<33%",options="header"]
+|====
+| Context Property
+| Property Value
+| Description
+
+| `CL_CONTEXT_PERF_HINT_QCOM`
+| `cl_perf_hint_qcom`
+| Specifies the performance hint for this context.
+
+|====
+
+--
+--
+
+
+ Table 13a List of supported performance hint values and their effect on performance ::
++
+--
+
+
+
+[width="100%",cols="<20%,<80%,options="header"]
+|====
+| `cl_perf_hint_qcom`
+| Description
+
+| `CL_PERF_HINT_HIGH_QCOM`
+| Requests the highest performance level from device. This is the default setting for devices in an OpenCL context.
+| `CL_PERF_HINT_NORMAL_QCOM`
+| Requests a balanced performance setting that is set dynamically by the GPU frequency and power management.
+| `CL_PERF_HINT_LOW_QCOM`
+| Requests a performance setting that prioritizes lower power consumption
+
+|====
+
+--
+--
+
+
+ Add the following error descriptions for clCreateContext ::
+
+CL_INVALID_PROPERTY if the the context property `CL_CONTEXT_PERF_HINT_QCOM` is specified and at least one of the devices
+in <devices> does not support the performance hint property
+
+Add to Table 14. List of supported param_names by clGetContextInfo append to the entry for CL_CONTEXT_PROPERTIES ::
+--
+
+
+[width="100%",cols="<25%,<25%,<50%",options="header"]
+|====
+| cl_context_info
+| Return Type
+| Information returned in param_value
+
+
+| `CL_CONTEXT_PROPERTIES`
+| `cl_context_properties[]`
+| If a `CL_CONTEXT_PERF_HINT_QCOM`
+property was set using clSetPerfHintQCOM, the properties argument returned will be populated
+with this property, even if the property was not specified in clCreateContext or
+clCreateContextFromType.
+
+|====
+
+--
+Add the following new function::
++
+--
+The function
+
+----
+
+cl_int clSetPerfHintQCOM(cl_context context,
+                        cl_perf_hint_qcom perf_hint);
+
+----
+
+can be used to set the value of CL_CONTEXT_PERF_HINT_QCOM property on a
+context This function can be used to set or update the
+CL_CONTEXT_PERF_HINT_QCOM property irrespective of whether it was
+specified at context time as one of the context properties.
+
+
+* _context_ must be a valid OpenCL context
+* _perf_hint_ identifies the hint being set. It has to be one of the values in Table 13a
+
+`clSetPerfHintQCOM` returns `CL_SUCCESS` if the property
+`CL_CONTEXT_PERF_HINT_QCOM` was set to the provided value. Otherwise, it
+returns one of the following errors:
+
+* `CL_INVALID_CONTEXT` if _context_ is not a valid context
+
+* `CL_INVALID_PROPERTY` if least one of the devices in the context does
+  not support the performance hint property
+
+* `CL_INVALID_VALUE` if the value of _perf_hint_ is not one of the supported
+  values as specified in Table 13a.
+
+* `CL_OUT_OF_RESOURCES` if there is a failure to set the _perf-hint_ on any
+  device in the _context_
+
+* `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources
+  required by the OpenCL implementation on the host
+
+The effect of `clSetPerfHintQCOM` on commands that are in flight is
+undefined. These commands may be executed at either of the existing or
+new performance levels. If the user desires to complete all pending work
+at the existing level and execute all subsequent commands at the new
+level, a clFinish must be added before calling `clSetPerfHintQCOM` to set
+the new level.
+
+--
+
+== Sample Code
+
+
+
+1) Set performance hint at time of CL context creation:
+
+[source,c]
+
+cl_context_properties properties[] = {CL_CONTEXT_PERF_HINT_QCOM,
+    CL_PERF_HINT_LOW_QCOM, 0};
+clCreateContext(properties, 1, &device_id, NULL, NULL, NULL);
+
+2) Set performance hint for an existing CL context:
+
+[source,c]
+
+clSetPerfHintQCOM(context, CL_PERF_HINT_NORMAL_QCOM);
+
+
+== Version History
+
+[cols="5,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+
+
+| Version | Date       |  Changes
+| 0.1.0   | 2014-05-20 | *Initial revision*
+| 0.2.0   | 2017-06-16 | Clean up. No functional changes.
+| 0.3.0   | 2017-11-13 | Clean up. No functional changes.
+| 0.4.0   | 2018-01-19 | Formatting and misc changes. No functional changes.
+| 1.0.5   | 2025-04-01 | Converted to asciidoc.
+|====
+
+

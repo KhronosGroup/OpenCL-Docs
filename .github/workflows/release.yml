@@ -1,0 +1,53 @@
+name: release
+
+permissions:
+  contents: read
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build and Release Spec PDFs
+    runs-on: ubuntu-latest
+    # Refer to the build container by its SHA instead of the name, to
+    # prevent caching problems when updating the image.
+    # container: khronosgroup/docker-images:asciidoctor-spec.20240702
+    container: khronosgroup/docker-images@sha256:4aab96a03ef292439c9bd0f972adfa29cdf838d0909b1cb4ec2a6d7b2d14a37f
+
+    permissions:
+      contents: write
+  
+    steps:
+      - name: Get Spec Source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
+          # If fetch-depth: 0 is not specified, then
+          #     git describe --tags --dirty
+          # below fails.
+          # This could also affect SPECREVISION in the Makefile.
+          fetch-depth: 0
+
+      # Ownerships in the working directory are odd.
+      # . is owned by UID 1001, while repo files are owned by root.
+      # This leads to many odd messages like
+      #     fatal: detected dubious ownership in repository at '/__w/OpenCL-Docs/OpenCL-Docs'
+      # The 'git config' is a brute-force workaround.
+      - name: Git safe directory workaround
+        run: |
+            git config --global --add safe.directory '*'
+            ls -lda . .. .git Makefile
+
+      - name: Build Specs
+        run: |
+            python3 makeSpec -clean -spec core OUTDIR=out.release -j 5 api c env ext cxx4opencl
+
+      - name: Release Specs
+        uses: softprops/action-gh-release@c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda # v2.2.1
+        with:
+            draft: true
+            files: |
+                out.release/pdf/*
