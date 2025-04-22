@@ -174,6 +174,14 @@ Accepted value for the _param_name_ parameter to *clGetDeviceInfo* to query comb
 #define CL_DEVICE_SVM_TYPE_CAPABILITIES_KHR             0x1077
 ----
 
+Accepted value for the _param_name_ parameter to *clGetDeviceInfo* to query the size and alignment for concurrent access to SVM allocations:
+
+[source]
+----
+/* cl_device_info */
+#define CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR  0x1078
+----
+
 Type to describe optional SVM allocation properties, and allocation properties added by this extension:
 
 [source]
@@ -275,6 +283,13 @@ Add to Table 5 - List of supported param_names by *clGetDeviceInfo*:
         Each entry in the returned array must be either a super-set of the entry in the array returned by the platform query `CL_PLATFORM_SVM_TYPE_CAPABILITIES_KHR`, indicating that the SVM type is supported by the device, or zero, indicating that the SVM type is not supported by this device.
 
         Please refer to the <<svm-capabilities-table,SVM capabilities>> table for valid capability values and their description.
+| `CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR`
+  | `size_t`
+      | Queries the size and alignment in bytes that bound concurrent access to SVM allocations.
+        The returned value must be zero or a power of two.
+
+        If the device does not support concurrent access to SVM allocations, then the query must return `0`, indicating that concurrent access is not supported.
+        If the query for `CL_DEVICE_SVM_CAPABILITIES` includes `CL_DEVICE_SVM_FINE_GRAIN_BUFFER` or `CL_DEVICE_SVM_FINE_GRAIN_SYSTEM`, then the query must return one, indicating that concurrent access occurs at the granularity of individual bytes within allocations.
 |====
 
 [[svm-capabilities-table]]
@@ -312,6 +327,7 @@ Add to Table 5 - List of supported param_names by *clGetDeviceInfo*:
   | This type of SVM is accessible on the device using atomic built-in functions.
 | `CL_SVM_CAPABILITY_CONCURRENT_ACCESS_KHR`
   | This type of SVM supports concurrent access from the host and a device, or from multiple devices.
+    Use `CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR` to determine the supported granularity for concurrent access.
 | `CL_SVM_CAPABILITY_CONCURRENT_ATOMIC_ACCESS_KHR`
   | This type of SVM supports concurrent atomic access from the host and a device, or from multiple devices.
 | `CL_SVM_CAPABILITY_INDIRECT_ACCESS_KHR`
@@ -735,9 +751,14 @@ Interactions with command buffers?
 +
 --
 *UNRESOLVED*:
-Need to solve now.
-Check the Vulkan query for `nonCoherentAtomSize`.
-Basic idea: Add a device query like `CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR` and concurrent access is allowed if the memory type allows it and the concurrent access is to two different blocks defined by the device query.
+Added a device query for `CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR`.
+
+Still TODO:
+
+* What should the return type be for this query?  Specifically, should it be a `size_t` or a `cl_uint`?
+* Do we want to distinguish between host concurrent access and device concurrent access, even if the only query we define for now is for host concurrent access?
+* Are we OK with a single query for all types of SVM, or do we need a separate query for each SVM type?
+* Is this only for concurrent access without atomic access?
 --
 
 . What other SVM allocation properties should we support?
@@ -787,29 +808,19 @@ The initial version of this extension will only support allocating host memory.
 . What are the restrictions for the _dst_ptr_ values that can be passed to the "fill" API?
 +
 --
-*UNRESOLVED*:
-Need to close on:
+`RESOLVED`:
 
 * Can a device "fill" another device's allocation?  (Recommendation: Yes, but finalize as part of multi-device support.)
 * Can a device "fill" arbitrary host memory?  (No, undefined behavior unless system SVM is supported.)
-* Can a device "fill" a USM allocation from another context?  (No, contexts provide isolation, this will need export and import.)
+* Can a device "fill" a USM allocation from another context?  (No, undefined behavior.)
 
-Three possibilities for filling arbitrary host memory:
-
-1. Allocated using clSVMAlloc from the same context --> good.
-2. Allocated using clSVMAlloc from a different context --> undefined behavior.
-3. Not allocated using clSVMAlloc --> good iff supports system SVM, else undefined behavior.
-
-Check whether the existing CTS test supports clEnqueueSVMMemFill on an arbitrary host allocation before resolving.
-
-Need to reword the existing spec text because it's confusing.
+Note, there are no existing CTS tests that pass an arbitrary host allocation to *clEnqueueSVMMemFill*.
 --
 
 . What are the restrictions for the _src_ptr_ and _dst_ptr_ values that can be passed to the "memcpy" API?
 +
 --
-*UNRESOLVED*:
-Need to close on:
+`RESOLVED`:
 
 * Can a device "memcpy" from another device's allocation?  (Recommendation: Yes, but finalize as part of multi-device support.)
 * Can a device "memcpy" to another device's allocation?  (Recommendation: Yes, but finalize as part of multi-device support.)
@@ -818,14 +829,12 @@ Need to close on:
 * Can a device "memcpy" from arbitrary host memory?  (Yes, we already have tests.)
 * Can a device "memcpy" from arbitrary host memory to arbitrary host memory?  (Yes, we already have tests.)
 * Can the memory region to copy to overlap the memory region to copy from?  (No, already an error.)
-
-Check whether we have a negative test for overlapping regions before resolving.
 --
 
 . Do we want to support migrating to devices other than the device associated with _command_queue_?
 +
 --
-`RESOLVED`*:
+`RESOLVED`:
 The initial version of this extension will not extend *clEnqueueSVMMigrateMem*, and hence will only support migrating to the device or to the host.
 --
 
@@ -851,9 +860,9 @@ The initial version of this extension will not extend *clEnqueueSVMMigrateMem*, 
 +
 --
 `RESOLVED`:
-Recommend to solve by adding cacheability properties to a layered extension.
-Cacheability properties are preferred vs. capabilities to avoid a combinatorial explosion.
-Could have separate cacheability properties for host vs. device, or even for specific cache levels, if desired.
+Support for cacheability controls will not be included in this extension but they can be supported in a layered extension, if desired.
+In a layered extension, we recommend adding cacheability properties instead of cacheability capabilities to avoid an explosion of capability combinations.
+The layered extension could add coarse `CACHED` and `UNCACHED` properties, or separate properties for host vs. device, or even separate properties for specific cache levels.
 --
 
 . At least for HOST and SHARED allocations, should we have separate mem alloc flags for the host and the device?
@@ -869,6 +878,22 @@ Is `size` equal to zero valid?
 +
 --
 *UNRESOLVED*:
+
+Possible resolutions:
+
+* A `size` equal to zero is valid.  This appears to be the specified behavior for the C `memcpy` and `memset` functions.
+* A `size` equal to zero is undefined behavior.
+* A `size` equal to zero is an error.
+
+* A `ptr` equal to `NULL` is valid if and only if `size` is equal to zero, otherwise it is an error.
+* A `ptr` equal to `NULL` is undefined behavior.  This appears to be the specified behavior for the C `memcpy` and `memset` functions.
+* A `ptr` equal to `NULL` is an error.
+
+Having this be either valid or undefined behavior provides the most flexibility for other language runtimes built on top of OpenCL, although disallowing these cases reduces testing surface area and could be handled with an enqueued marker.
+
+In the current OpenCL spec, it is unconditionally a `CL_INVALID_VALUE` error to pass a `NULL` `ptr` to *clEnqueueSVMMigrateMem*, *clEnqueueSVMMemcpy*, or *clEnqueueSVMMemFill*.
+
+There is no defined error behavior for `size` equal to zero.
 --
 
 . Should we add a device query for a maximum supported SVM alignment, or should the maximum supported alignment implicitly be defined by the size of the largest data type supported by the device?
@@ -881,7 +906,8 @@ Note that supported alignments should always be a power of two.
 
 Note that there are no maximum supported alignments defined for `posix_memalign` or `_aligned_alloc`, and supported alignments for the standard `aligned_alloc` and `std::aligned_alloc` are implementation-defined.
 
-Suggest adding a device query and use it to determine the maximum supported alignment error code.
+Suggest adding a device query, perhaps as a layered extension, and use it to determine the maximum supported alignment error code.
+See internal merge request 198.
 --
 
 . Should we add a device query for a maximum supported SVM fill pattern size, or should the maximum supported fill pattern size implicitly be defined by the size of the largest data type supported by the device?
