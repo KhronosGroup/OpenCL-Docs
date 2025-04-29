@@ -894,6 +894,8 @@ Having this be either valid or undefined behavior provides the most flexibility 
 In the current OpenCL spec, it is unconditionally a `CL_INVALID_VALUE` error to pass a `NULL` `ptr` to *clEnqueueSVMMigrateMem*, *clEnqueueSVMMemcpy*, or *clEnqueueSVMMemFill*.
 
 There is no defined error behavior for `size` equal to zero.
+
+Whether we allow a `NULL` `ptr` could be dependent on the behavior when allocating zero bytes, see below.
 --
 
 . Should we add a device query for a maximum supported SVM alignment, or should the maximum supported alignment implicitly be defined by the size of the largest data type supported by the device?
@@ -1026,10 +1028,11 @@ If a unique non-null pointer is returned then it cannot be dereferenced.
 
 Possible resolutions:
 
-* Allow zero-sized allocations and require returning a non-null pointer that must be freed.
-* Allow zero-sized allocations but allow returning a `NULL` pointer.  No error would be generated, even if a `NULL` pointer is returned.
-* Specify that this case is implementation-defined.
-* Do nothing and keep the existing error behavior.
+.. Allow zero-sized allocations and require returning a non-null pointer that must be freed.
+.. Allow zero-sized allocations and require returning a `NULL` pointer.  Note, it is not currently an error to free a `NULL` pointer.
+.. Allow zero-sized allocations but allow returning a `NULL` pointer.  No error would be generated, even if a `NULL` pointer is returned.
+.. Specify that this case is implementation-defined.
+.. Do nothing and keep the existing error behavior.
 --
 
 Note: The following issues were added to the KHR USM extension:
@@ -1044,7 +1047,6 @@ We decided not to support a memadvise function in the initial version of this sp
 For reference, for other APIs:
 * The Level Zero memadvise function `zeCommandListAppendMemAdvise` appears to be asynchronous, but the implementation actually seems to be synchronous.
 * It is unclear whether the CUDA memadvise functions `cudaMemAdvise` / `cuMemAdvise` are synchronous or asynchronous.
-
 --
 
 . What about devices and sub-devices?
