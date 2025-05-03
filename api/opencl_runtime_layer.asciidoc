@@ -702,6 +702,15 @@ ifdef::cl_khr_external_memory[]
      {CL_MEM_DEVICE_HANDLE_LIST_KHR} is specified as part of _properties_.
   ** if _properties_ includes more than one external memory handle.
 endif::cl_khr_external_memory[]
+ifdef::cl_khr_external_memory_android_hardware_buffer[]
+  * {CL_INVALID_BUFFER_SIZE} 
+  ** if _size_ is non-zero and greater than the AHardwareBuffer when importing external memory 
+     using {cl_khr_external_memory_android_hardware_buffer_EXT}.
+  * {CL_INVALID_OPERATION}
+  ** if the AHardwareBuffer format is not `AHARDWAREBUFFER_FORMAT_BLOB`.
+  * {CL_INVALID_HOST_PTR}
+  ** if _host_ptr_ is not `NULL`.
+endif::cl_khr_external_memory_android_hardware_buffer[]
 ifdef::cl_ext_buffer_device_address[]
   * {CL_INVALID_OPERATION}
   ** If _properties_ includes {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT} and there
@@ -2266,6 +2275,21 @@ ifdef::cl_khr_external_memory[]
      {CL_MEM_DEVICE_HANDLE_LIST_KHR} is specified as part of _properties_.
   ** if _properties_ includes more than one external memory handle.
 endif::cl_khr_external_memory[]
+
+ifdef::cl_khr_external_memory_android_hardware_buffer[]
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} 
+  ** if _image_format_ is not `NULL` when using {cl_khr_external_memory_android_hardware_buffer_EXT}.
+
+  * {CL_INVALID_IMAGE_DESCRIPTOR}
+  ** if _image_desc_ is not `NULL` when using {cl_khr_external_memory_android_hardware_buffer_EXT}.
+
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED}
+  ** if the AHardwareBuffer format is not supported.
+
+  * {CL_INVALID_HOST_PTR} 
+  ** if _host_ptr_ is not `NULL`.
+endif::cl_khr_external_memory_android_hardware_buffer[]
+
 ifdef::cl_ext_immutable_memory_objects[]
   * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and
     {CL_MEM_READ_WRITE}, {CL_MEM_WRITE_ONLY}, or {CL_MEM_HOST_WRITE_ONLY}
@@ -6152,6 +6176,24 @@ or an image memory object from an external handle:
     It owns a reference to the underlying memory resource represented by its
     memory object.
 endif::cl_khr_external_memory_dma_buf[]
+
+ifdef::cl_khr_external_memory_android_hardware_buffer[]
+The {cl_khr_external_memory_android_hardware_buffer_EXT} extension extends
+{cl_external_memory_handle_type_khr_TYPE} to support the following
+new handle type, and adds as a property that may be specified
+when creating a buffer or an image memory object from an
+external handle:
+
+  * {CL_EXTERNAL_MEMORY_HANDLE_ANDROID_HARDWARE_BUFFER_KHR_anchor} specifies an Android
+    AHardwareBuffer object. If importing as a buffer, the implementation will infer the size
+    of the buffer.  If importing as an image, the implementation will
+    infer the image format, dimensions, and data layout. The application is responsible for 
+    verifying that the AHardwareBuffer_UsageFlags are compatible with the OpenCL device, and 
+    _flags_ passed to {clCreateImageWithProperties} and {clCreateBufferWithProperties}.
+    The memory object created by importing an AHardwareBuffer will
+    increment the reference count on the AHardwareBuffer, and decrement
+    the reference count once the memory object is deleted.
+endif::cl_khr_external_memory_android_hardware_buffer[]
 
 For these extensions, importing memory from a file descriptor transfers
 ownership of the file descriptor from the application to the OpenCL
