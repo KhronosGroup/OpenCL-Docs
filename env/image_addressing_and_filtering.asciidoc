@@ -398,9 +398,24 @@ In this section we discuss converting normalized integer channel data types to h
 [[converting-normalized-integer-channel-data-types-to-half-precision-floating-point-values]]
 ===== Converting Normalized Integer Channel Data Types to Half Precision Floating-point Values
 
-For images created with image channel data type of {CL_UNORM_INT8} and {CL_UNORM_INT16}, image read instructions will convert the channel values from an 8-bit or 16-bit unsigned integer to normalized half precision floating-point values in the range [0.0h ... 1.0h].
+For images created with any of the following image channel data types, image read
+instructions will convert the channel values from an unsigned integer to
+normalized half precision floating-point values in the range [0.0h ... 1.0h].
 
-For images created with image channel data type of {CL_SNORM_INT8} and {CL_SNORM_INT16}, image read instructions will convert the channel values from an 8-bit or 16-bit signed integer to normalized half precision floating-point values in the range [-1.0h ... 1.0h].
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the following image channel data types, image read
+instructions will convert the channel values from a signed integer to normalized
+half precision floating-point values in the range [-1.0h ... 1.0h].
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 These conversions are performed as follows:
 
@@ -424,6 +439,29 @@ normalized\_half\_value(x)=round\_to\_half(\frac{x}{1023})
 ++++
 normalized\_half\_value(x)=round\_to\_half(\frac{x}{65535})
 ++++
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+* {CL_UNORM_INT10X6_EXT} (10-bit unsigned integer) -> `half`
++
+[latexmath]
+++++
+normalized\_half\_value(x)=round\_to\_half(\frac{x}{1023})
+++++
+
+* {CL_UNORM_INT12X4_EXT} (12-bit unsigned integer) -> `half`
++
+[latexmath]
+++++
+normalized\_half\_value(x)=round\_to\_half(\frac{x}{4095})
+++++
+
+* {CL_UNORM_INT14X2_EXT} (14-bit unsigned integer) -> `half`
++
+[latexmath]
+++++
+normalized\_half\_value(x)=round\_to\_half(\frac{x}{16383})
+++++
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 * {CL_SNORM_INT8} (8-bit signed integer) -> `half`
 +
@@ -456,6 +494,23 @@ For {CL_UNORM_INT16}:
   * 0 must convert to 0.0h, and
   * 65535 must convert to 1.0h
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+For {CL_UNORM_INT10X6_EXT}:
+
+  * 0 must convert to 0.0h, and
+  * 1023 must convert to 1.0h
+
+For {CL_UNORM_INT12X4_EXT}:
+
+  * 0 must convert to 0.0h, and
+  * 4095 must convert to 1.0h
+
+For {CL_UNORM_INT14X2_EXT}:
+
+  * 0 must convert to 0.0h, and
+  * 16383 must convert to 1.0h
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 For {CL_SNORM_INT8}:
 
   * -128 and -127 must convert to -1.0h,
@@ -468,12 +523,28 @@ For {CL_SNORM_INT16}:
   * 0 must convert to 0.0h, and
   * 32767 must convert to 1.0h
 
+
 [[converting-half-precision-floating-point-values-to-normalized-integer-channel-data-types]]
 ===== Converting Half Precision Floating-point Values to Normalized Integer Channel Data Types
 
-For images created with image channel data type of {CL_UNORM_INT8} and {CL_UNORM_INT16}, image write instructions will convert the half precision floating-point color value to an 8-bit or 16-bit unsigned integer.
+For images created with any of the following image channel data types, image
+write instructions will convert the half precision floating-point color value to
+an unsigned integer.
 
-For images created with image channel data type of {CL_SNORM_INT8} and {CL_SNORM_INT16}, image write instructions will convert the half precision floating-point color value to an 8-bit or 16-bit signed integer.
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the follozing image channel data types, image
+write instructions will convert the half precision floating-point color value to
+a signed integer.
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 OpenCL implementations may choose to approximate the rounding mode used in the conversions described below.
 When approximate rounding is used instead of the preferred rounding, the result of the conversion must satisfy the bound given below.
@@ -524,6 +595,74 @@ The conversions from half precision floating-point values to normalized integer 
 \end{aligned}
 ++++
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * `half` -> {CL_UNORM_INT10X6_EXT} (10-bit unsigned integer)
++
+[latexmath]
+++++
+\begin{aligned}
+& f(x)=max(0,min(1023,1023 \times x))\\
+\\
+& f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint10(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+& f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint10(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+& |f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+  * `half` -> {CL_UNORM_INT12X4_EXT} (12-bit unsigned integer)
++
+[latexmath]
+++++
+\begin{aligned}
+& f(x)=max(0,min(4095,4095 \times x))\\
+\\
+& f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint12(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+& f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint12(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+& |f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+  * `half` -> {CL_UNORM_INT14X2_EXT} (14-bit unsigned integer)
++
+[latexmath]
+++++
+\begin{aligned}
+& f(x)=max(0,min(16383,16383 \times x))\\
+\\
+& f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint14(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+& f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint14(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+& |f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
   * `half` -> {CL_SNORM_INT8} (8-bit signed integer)
 +
 [latexmath]
@@ -571,9 +710,24 @@ The conversions from half precision floating-point values to normalized integer 
 [[converting-normalized-integer-channel-data-types-to-floating-point-values]]
 ===== Converting Normalized Integer Channel Data Types to Floating-point Values
 
-For images created with image channel data type of {CL_UNORM_INT8} and {CL_UNORM_INT16}, image read instructions will convert the channel values from an 8-bit or 16-bit unsigned integer to normalized floating-point values in the range [0.0f ... 1.0f].
+For images created with any of the following image channel data types, image read
+instructions will convert the channel values from an unsigned integer to
+normalized floating-point values in the range [0.0f ... 1.0f].
 
-For images created with image channel data type of {CL_SNORM_INT8} and {CL_SNORM_INT16}, image read instructions will convert the channel values from an 8-bit or 16-bit signed integer to normalized floating-point values in the range [-1.0f ... 1.0f].
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the following image channel data types, image read
+instructions will convert the channel values from a signed integer to normalized
+floating-point values in the range [-1.0f ... 1.0f].
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 These conversions are performed as follows:
 
@@ -598,6 +752,29 @@ normalized\_float\_value(x)=round\_to\_float(\frac{x}{1023})
 normalized\_float\_value(x)=round\_to\_float(\frac{x}{65535})
 ++++
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+* {CL_UNORM_INT10X6_EXT} (10-bit unsigned integer) -> `float`
++
+[latexmath]
+++++
+normalized\_float\_value(x)=round\_to\_float(\frac{x}{1023})
+++++
+
+* {CL_UNORM_INT12X4_EXT} (12-bit unsigned integer) -> `float`
++
+[latexmath]
+++++
+normalized\_float\_value(x)=round\_to\_float(\frac{x}{4095})
+++++
+
+* {CL_UNORM_INT14X2_EXT} (14-bit unsigned integer) -> `float`
++
+[latexmath]
+++++
+normalized\_float\_value(x)=round\_to\_float(\frac{x}{16383})
+++++
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
   * {CL_SNORM_INT8} (8-bit signed integer) -> `float`
 +
 [latexmath]
@@ -611,6 +788,7 @@ normalized\_float\_value(x)=max(-1.0f, round\_to\_float(\frac{x}{127}))
 ++++
 normalized\_float\_value(x)=max(-1.0f, round\_to\_float(\frac{x}{32767}))
 ++++
+
 
 The precision of the above conversions is \<= 1.5 ulp except for the following cases.
 
@@ -629,6 +807,23 @@ For {CL_UNORM_INT16}:
   * 0 must convert to 0.0f, and
   * 65535 must convert to 1.0f
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+For {CL_UNORM_INT10X6_EXT}:
+
+  * 0 must convert to 0.0f, and
+  * 1023 must convert to 1.0f
+
+For {CL_UNORM_INT12X4_EXT}:
+
+  * 0 must convert to 0.0f, and
+  * 4095 must convert to 1.0f
+
+For {CL_UNORM_INT14X2_EXT}:
+
+  * 0 must convert to 0.0f, and
+  * 16383 must convert to 1.0f
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 For {CL_SNORM_INT8}:
 
   * -128 and -127 must convert to -1.0f,
@@ -644,9 +839,24 @@ For {CL_SNORM_INT16}:
 [[converting-floating-point-values-to-normalized-integer-channel-data-types]]
 ===== Converting Floating-point Values to Normalized Integer Channel Data Types
 
-For images created with image channel data type of {CL_UNORM_INT8} and {CL_UNORM_INT16}, image write instructions will convert the floating-point color value to an 8-bit or 16-bit unsigned integer.
+For images created with any of the following image channel data types, image
+write instructions will convert the floating-point color value to an unsigned
+integer.
 
-For images created with image channel data type of {CL_SNORM_INT8} and {CL_SNORM_INT16}, image write instructions will convert the floating-point color value to an 8-bit or 16-bit signed integer.
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the following image channel data types, image
+write instructions will convert the floating-point color value to a signed
+integer.
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 OpenCL implementations may choose to approximate the rounding mode used in the conversions described below.
 When approximate rounding is used instead of the preferred rounding, the result of the conversion must satisfy the bound given below.
@@ -719,6 +929,74 @@ The conversions from single precision floating-point values to normalized intege
 \end{aligned}
 ++++
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * `float` -> {CL_UNORM_INT10X6_EXT} (10-bit unsigned integer)
++
+[latexmath]
+++++
+\begin{aligned}
+& f(x)=max(0,min(1023,1023 \times x))\\
+\\
+& f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint10(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+& f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint10(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+& |f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+  * `float` -> {CL_UNORM_INT12X4_EXT} (12-bit unsigned integer)
++
+[latexmath]
+++++
+\begin{aligned}
+& f(x)=max(0,min(4095,4095 \times x))\\
+\\
+& f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint12(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+& f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint12(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+& |f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+
+  * `float` -> {CL_UNORM_INT14X2_EXT} (14-bit unsigned integer)
++
+[latexmath]
+++++
+\begin{aligned}
+& f(x)=max(0,min(16383,16383 \times x))\\
+\\
+& f_{preferred}(x) =
+\begin{cases}
+ round\_to\_nearest\_even\_uint14(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+& f_{approx}(x) =
+\begin{cases}
+ round\_to\_impl\_uint14(f(x)) & x \neq \infty \text{ and } x \neq NaN\\
+ \text{implementation-defined} & x = \infty \text{ or } x = NaN
+\end{cases}\\
+\\
+& |f(x) - f_{approx}(x)|\leq 0.6, x \neq \infty \text{ and } x \neq NaN
+\end{aligned}
+++++
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
   * `float` -> {CL_SNORM_INT8} (8-bit signed integer)
 +
 [latexmath]
@@ -781,18 +1059,31 @@ The following rules apply for reading and writing images created with channel da
 *  Denorms can be flushed to zero.
 *  All other values must be preserved.
 
-[[conversion-rules-for-signed-and-unsigned-8-bit-16-bit-and-32-bit-integer-channel-data-types]]
-==== Conversion Rules for Signed and Unsigned 8-bit, 16-bit and 32-bit Integer Channel Data Types
+[[conversion-rules-for-signed-and-unsigned-integer-channel-data-types]]
+==== Conversion Rules for Signed and Unsigned Integer Channel Data Types
 
-For images created with image channel data type of {CL_SIGNED_INT8},
-{CL_SIGNED_INT16} and {CL_SIGNED_INT32}, image read instructions will
-return the integer values stored in the image at specified location, after
-sign extension to 32 bits for integer values smaller than 32 bits.
+For images created with any of the following image channel data types, image
+read instructions will return the integer values stored in the
+image at specified location, after sign extension to 32 bits for integer
+values smaller than 32 bits.
 
-Likewise, for images created with image channel data type of {CL_UNSIGNED_INT8},
-{CL_UNSIGNED_INT16} and {CL_UNSIGNED_INT32}, image read instructions will return
-the integer values stored in the image at specified location, after
-zero extension to 32 bits for integer values smaller than 32 bits.
+  * {CL_SIGNED_INT8}
+  * {CL_SIGNED_INT16}
+  * {CL_SIGNED_INT32}
+
+Likewise, for images created with any of the following image channel data types,
+image read instructions will return the integer values stored in the image at
+specified location, after zero extension to 32 bits for integer values smaller
+than 32 bits.
+
+  * {CL_UNSIGNED_INT8}
+  * {CL_UNSIGNED_INT16}
+  * {CL_UNSIGNED_INT32}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNSIGNED_INT10X6_EXT}
+  * {CL_UNSIGNED_INT12X4_EXT}
+  * {CL_UNSIGNED_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 Image write instructions will perform one of the following conversions:
 
@@ -837,6 +1128,29 @@ uint16\_value(x) = clamp(x, 0, 65535)
 ++++
 uint32\_value(x) = x \quad \text{(no conversion)}
 ++++
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+* 32 bit unsigned integer -> {CL_UNSIGNED_INT10X6_EXT} (10-bit unsigned integer):
++
+[latexmath]
+++++
+uint10\_value(x) = clamp(x, 0, 1023)
+++++
+
+* 32 bit unsigned integer -> {CL_UNSIGNED_INT12X4_EXT} (12-bit unsigned integer):
++
+[latexmath]
+++++
+uint12\_value(x) = clamp(x, 0, 4095)
+++++
+
+* 32 bit unsigned integer -> {CL_UNSIGNED_INT14X2_EXT} (14-bit unsigned integer):
++
+[latexmath]
+++++
+uint14\_value(x) = clamp(x, 0, 16383)
+++++
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 The conversions described in this section must be correctly saturated.
 
@@ -1168,6 +1482,11 @@ Additionally if the {cl_ext_image_unorm_int_2_101010_EXT} extension is
 supported: `UnormInt2_101010EXT`
 endif::cl_ext_image_unorm_int_2_101010[]
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+Additionally if the {cl_ext_image_unsigned_10x6_12x4_14x2_EXT} extension is
+supported: `UnormInt10X6EXT`,`UnormInt12X4EXT`,`UnormInt14X2EXT`
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 |*OpTypeFloat*, with _Width_ equal to 16 or 32.
 
 |`SignedInt8`,
@@ -1176,6 +1495,12 @@ endif::cl_ext_image_unorm_int_2_101010[]
 `UnsignedInt8`,
 `UnsignedInt16`,
 `UnsignedInt32`
+ +
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+Additionally if the {cl_ext_image_unsigned_10x6_12x4_14x2_EXT} extension is
+supported: `UnsignedInt10X6EXT`,`UnsignedInt12X4EXT`, `UnsignedInt14X2EXT`
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 |*OpTypeInt*, with _Width_ equal to 32.
 
 |====
