@@ -881,19 +881,24 @@ Is `size` equal to zero valid?
 
 Possible resolutions:
 
-* A `size` equal to zero is valid.  This appears to be the specified behavior for the C `memcpy` and `memset` functions.
-* A `size` equal to zero is undefined behavior.
-* A `size` equal to zero is an error.
-
-* A `ptr` equal to `NULL` is valid if and only if `size` is equal to zero, otherwise it is an error.
-* A `ptr` equal to `NULL` is undefined behavior.  This appears to be the specified behavior for the C `memcpy` and `memset` functions.
-* A `ptr` equal to `NULL` is an error.
+.. A `size` equal to zero is valid.  This appears to be the specified behavior for the C `memcpy` and `memset` functions.
+.. [.line-through]#A `size` equal to zero is undefined behavior.#
+.. A `size` equal to zero is an error.
+.. A `ptr` equal to `NULL` is valid if and only if `size` is equal to zero, otherwise it is an error.
+.. [.line-through]#A `ptr` equal to `NULL` is undefined behavior.  This appears to be the specified behavior for the C `memcpy` and `memset` functions.#
+.. A `ptr` equal to `NULL` is an error.
 
 Having this be either valid or undefined behavior provides the most flexibility for other language runtimes built on top of OpenCL, although disallowing these cases reduces testing surface area and could be handled with an enqueued marker.
 
 In the current OpenCL spec, it is unconditionally a `CL_INVALID_VALUE` error to pass a `NULL` `ptr` to *clEnqueueSVMMigrateMem*, *clEnqueueSVMMemcpy*, or *clEnqueueSVMMemFill*.
 
 There is no defined error behavior for `size` equal to zero.
+
+We are leaning towards some kind of defined behavior, though we have not decided which defined behavior we prefer.
+In practice, if it is an error then the application needs to check the size and the pointer and enqueue a marker, whereas if it is valid then the implementation needs to check the size and pointer and enqueue the equivalent of a marker.
+
+If we allow a size of zero as valid, could there be a problem mutating a memory fill or a copy in a command buffer from a nonzero size to a size of zero, or vice versa?
+This is not a problem today, but it could be a problem when we have the proposed `cl_khr_command_buffer_muatble_memory_commands` extension.
 
 Whether we allow a `NULL` `ptr` could be dependent on the behavior when allocating zero bytes, see below.
 --
@@ -1028,11 +1033,14 @@ If a unique non-null pointer is returned then it cannot be dereferenced.
 
 Possible resolutions:
 
-.. Allow zero-sized allocations and require returning a non-null pointer that must be freed.
+.. [.line-through]#Allow zero-sized allocations and require returning a non-null pointer that must be freed.#
 .. Allow zero-sized allocations and require returning a `NULL` pointer.  Note, it is not currently an error to free a `NULL` pointer.
-.. Allow zero-sized allocations but allow returning a `NULL` pointer.  No error would be generated, even if a `NULL` pointer is returned.
-.. Specify that this case is implementation-defined.
+.. [.line-through]#Allow zero-sized allocations but allow returning a `NULL` pointer.  No error would be generated, even if a `NULL` pointer is returned.#
+.. [.line-through]#Specify that this case is implementation-defined.#
 .. Do nothing and keep the existing error behavior.
+
+We are leaning towards returning `NULL` for a zero-byte allocation, but we are still deciding whether it should be an error.
+In practice, the main difference is that if it is an error then a well-behaving application would be required to check the size.
 --
 
 Note: The following issues were added to the KHR USM extension:
@@ -1045,6 +1053,7 @@ Note: The following issues were added to the KHR USM extension:
 We decided not to support a memadvise function in the initial version of this specification.
 
 For reference, for other APIs:
+
 * The Level Zero memadvise function `zeCommandListAppendMemAdvise` appears to be asynchronous, but the implementation actually seems to be synchronous.
 * It is unclear whether the CUDA memadvise functions `cudaMemAdvise` / `cuMemAdvise` are synchronous or asynchronous.
 --
