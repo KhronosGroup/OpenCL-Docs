@@ -482,9 +482,9 @@ class ConventionsBase(abc.ABC):
                 self.extension_file_path(name))
 
     @property
-    def provisional_extension_warning(self):
+    def experimental_extension_warning(self):
         """Return True if a warning should be included in extension
-           appendices for provisional extensions."""
+           appendices for experimental extensions."""
         return True
 
     @property
