@@ -16329,6 +16329,39 @@ command-buffer must complete before any modification occurs.
 
 [open,refpage='clUpdateMutableCommandsKHR',desc='Modify configuration of mutable-command handles to update behavior for future enqueues',type='protos']
 --
+
+==== Update to Command-Buffer Lifecycle
+
+If this extention is supported, the command-buffer lifecycle is extended to
+include a new state named **Finalized**.
+
+// Image generated from the following mermaid diagram description using
+// https://mermaid.live:
+// ---
+// config:
+//  theme: default
+//  look: classic
+// ---
+// stateDiagram-v2
+//  state if_state <<choice>>
+//  if_state: All ND-range kernels commands' arguments set?
+//  [*] --> Recording: Create
+//  Recording --> if_state: Finalize
+//  if_state --> Finalized: No
+//  if_state --> Executable : Yes
+//  Finalized --> if_state: Update mutable commands     
+//  Executable --> Pending: Enqueue
+//  Pending --> Executable: Completion
+
+image::images/mutable_commandbuffer_lifecycle.png[align="center",
+  title="Lifecycle of a mutable command-buffer."]
+
+When recording an ND-range kernel command, the kernel's arguments do not have to
+be set, and setting them may be postponed to after the command buffer's
+finalization (in which case, the command buffer is in Finalized state). Of
+course, all the arguments must be set before the command buffer can be enqueued
+for execution (Executable state).
+
 To modify the configuration of mutable-command handles returned during
 _command_buffer_ recording, updating the behavior of those commands in
 future enqueues of _command_buffer_, call the function
