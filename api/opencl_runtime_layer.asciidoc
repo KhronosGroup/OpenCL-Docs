@@ -726,7 +726,7 @@ ifdef::cl_khr_external_memory_android_hardware_buffer[]
     the AHardwareBuffer format is not `AHARDWAREBUFFER_FORMAT_BLOB`
 endif::cl_khr_external_memory_android_hardware_buffer[]
 ifdef::cl_ext_buffer_device_address[]
-    ** of _properties_ includes {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT} and there
+    ** if _properties_ includes {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT} and there
     are no devices in the context that support the
     {cl_ext_buffer_device_address_EXT} extension
 endif::cl_ext_buffer_device_address[]
@@ -2205,6 +2205,10 @@ returned in _errcode_ret_:
 
   * {CL_INVALID_CONTEXT}
     ** if _context_ is not a valid context
+  * {CL_INVALID_OPERATION}
+    ** if there are no devices in _context_ that support images (i.e.
+    {CL_DEVICE_IMAGE_SUPPORT} specified in the
+    <<device-queries-table,Device Queries>> table is {CL_FALSE})
   * {CL_INVALID_PROPERTY}
     ** if a property name in _properties_ is not a supported property name
     ** if the value specified for a supported property name is not valid
@@ -2217,12 +2221,12 @@ endif::cl_khr_external_memory[]
 ifdef::cl_khr_external_memory[]
   * {CL_INVALID_DEVICE}
     ** if a device identified by the property {CL_MEM_DEVICE_HANDLE_LIST_KHR}
-    is not a valid device or is not associated with _context_, or
+    is not a valid device or is not associated with _context_
     ** if a device identified by property {CL_MEM_DEVICE_HANDLE_LIST_KHR}
-    cannot import the requested external memory object type, or
+    cannot import the requested external memory object type
     ** if {CL_MEM_DEVICE_HANDLE_LIST_KHR} is not specified as part of
     _properties_ and one or more devices in _context_ cannot import the
-    requested external memory object type.
+    requested external memory object type
 endif::cl_khr_external_memory[]
   * {CL_INVALID_VALUE}
     ** if values specified in _flags_ are not valid as defined in the
@@ -2242,7 +2246,7 @@ endif::cl_khr_external_memory[]
     specifies {CL_MEM_HOST_READ_ONLY} or {CL_MEM_HOST_WRITE_ONLY}
 ifdef::cl_khr_external_memory[]
     ** if _properties_ includes a supported external memory handle and _flags_
-    includes {CL_MEM_USE_HOST_PTR}, {CL_MEM_ALLOC_HOST_PTR}, or {CL_MEM_COPY_HOST_PTR}.
+    includes {CL_MEM_USE_HOST_PTR}, {CL_MEM_ALLOC_HOST_PTR}, or {CL_MEM_COPY_HOST_PTR}
 endif::cl_khr_external_memory[]
 ifdef::cl_ext_immutable_memory_objects[]
     ** if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and {CL_MEM_READ_WRITE},
@@ -2251,6 +2255,7 @@ ifdef::cl_ext_immutable_memory_objects[]
     created with {CL_MEM_IMMUTABLE_EXT}
     ** if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and none of the following conditions are met:
     *** {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} is set in _flags_
+    // TODO: What about creating an image from a buffer or another image?
 ifdef::cl_khr_external_memory[]
     *** _properties_ includes an external memory handle
 endif::cl_khr_external_memory[]
@@ -2259,9 +2264,11 @@ endif::cl_ext_immutable_memory_objects[]
     ** if _image_format_ is `NULL`
     ** if values specified in _image_format_ are not valid
 ifdef::cl_khr_external_memory_android_hardware_buffer[]
-    ** if _image_format_ is not `NULL` when using {cl_khr_external_memory_android_hardware_buffer_EXT}.
+    ** if _properties_ includes an AHardwareBuffer external memory handle and
+    _image_format_ is not `NULL`
 endif::cl_khr_external_memory_android_hardware_buffer[]
 ifndef::cl_ext_image_from_buffer[]
+    // TODO: It seems like this error condition should be invalid image descriptor instead.
     ** if a 2D image is created from a buffer and the row pitch and base address
     alignment does not follow the rules described for creating a 2D image from a
     buffer
@@ -2269,6 +2276,11 @@ endif::cl_ext_image_from_buffer[]
 ifdef::cl_ext_image_from_buffer[]
     ** if an image is created from a buffer and the row pitch, or slice pitch, if the {cl_ext_image_from_buffer_EXT} extension is supported, or base address alignment do not follow the rules described for creating an image from a buffer
 endif::cl_ext_image_from_buffer[]
+ifdef::cl_khr_external_memory_android_hardware_buffer[]
+  * {CL_INVALID_IMAGE_DESCRIPTOR}
+    ** if _properties_ includes an AHardwareBuffer external memory handle and
+    _image_desc_ is not `NULL`
+endif::cl_khr_external_memory_android_hardware_buffer[]
   * {CL_INVALID_IMAGE_SIZE}
     ** if the image dimensions specified in _image_desc_ are not valid or exceed
     the maximum image dimensions described in the
@@ -2276,7 +2288,7 @@ endif::cl_ext_image_from_buffer[]
 ifdef::cl_ext_image_from_buffer[]
     ** if the {cl_ext_image_from_buffer_EXT} extension is supported and an image
     is created from a buffer and the buffer passed in
-    __image_desc__->__mem_object__ is too small to be used as a data store for the
+    _mem_object_ is too small to be used as a data store for the
     image, e.g. if its size is smaller than the value returned for
     {CL_IMAGE_REQUIREMENTS_SIZE_EXT} for the parameters used to create the image
 endif::cl_ext_image_from_buffer[]
@@ -2288,20 +2300,14 @@ ifdef::cl_khr_external_memory[]
     _host_ptr_ is not `NULL`
 endif::cl_khr_external_memory[]
 ifdef::cl_khr_external_memory_android_hardware_buffer[]
-  ** if _host_ptr_ is not `NULL`.
+    ** if _properties_ includes an AHardwareBuffer external memory handle and
+    _host_ptr_ is not `NULL`
 endif::cl_khr_external_memory_android_hardware_buffer[]
   * {CL_IMAGE_FORMAT_NOT_SUPPORTED}
     ** if there are no devices in _context_ that support _image_format_
 ifdef::cl_khr_external_memory_android_hardware_buffer[]
-    ** if the AHardwareBuffer format is not supported.
-endif::cl_khr_external_memory_android_hardware_buffer[]
-  * {CL_INVALID_OPERATION}
-    ** if there are no devices in _context_ that support images (i.e.
-    {CL_DEVICE_IMAGE_SUPPORT} specified in the
-    <<device-queries-table,Device Queries>> table is {CL_FALSE})
-ifdef::cl_khr_external_memory_android_hardware_buffer[]
-  * {CL_INVALID_IMAGE_DESCRIPTOR}
-  ** if _image_desc_ is not `NULL` when using {cl_khr_external_memory_android_hardware_buffer_EXT}.
+    ** if _properties_ includes an AHardwareBuffer external memory handle and
+    the AHardwareBuffer format is not supported
 endif::cl_khr_external_memory_android_hardware_buffer[]
   * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
     ** if there is a failure to allocate memory for the image object
