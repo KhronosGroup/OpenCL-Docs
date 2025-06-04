@@ -32,7 +32,7 @@ class Extension:
                  promotedTo,
                  deprecatedBy,
                  obsoletedBy,
-                 provisional,
+                 experimental,
                  revision,
                  specialuse,
                  ratified
@@ -53,7 +53,7 @@ class Extension:
         self.promotedTo = promotedTo
         self.deprecatedBy = deprecatedBy
         self.obsoletedBy = obsoletedBy
-        self.provisional = provisional
+        self.experimental = experimental
         self.revision = revision
         self.specialuse = specialuse
         self.ratified = ratified
@@ -301,13 +301,13 @@ class Extension:
             # here to avoid formatting trouble.
             self.writeTag(None, 'None', isRefpage, fp)
 
-        if self.provisional == 'true' and self.conventions.provisional_extension_warning:
-            write('  * *This is a _provisional_ extension and must: be used with caution.', file=fp)
+        if self.experimental == 'true' and self.conventions.experimental_extension_warning:
+            write('  * *This is a _experimental_ extension and must: be used with caution.', file=fp)
             write('    See the ' +
-                  self.specLink(xrefName = 'boilerplate-provisional-header',
+                  self.specLink(xrefName = 'boilerplate-experimental-header',
                                 xrefText = 'description',
                                 isRefpage = isRefpage) +
-                  ' of provisional header files for enablement and stability details.*', file=fp)
+                  ' of experimental header files for enablement and stability details.*', file=fp)
         write('', file=fp)
 
         # Determine version and extension interactions from 'depends'
@@ -475,7 +475,7 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
                     or empty string if deprecated without replacement
     - obsoletedBy   extension or API version which obsoleted this extension,
                     or empty string if obsoleted without replacement
-    - provisional   'true' if this extension is released provisionally"""
+    - experimental   'true' if this extension is released experimentally"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -607,7 +607,7 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
             promoted_extensions_fp.close()
 
         # Generate include directives for the extensions appendix, grouping
-        # extensions by status (current, deprecated, provisional, etc.)
+        # extensions by status (current, deprecated, experimental, etc.)
         with self.newFile(self.directory + '/current_extensions_appendix' + self.file_suffix) as current_extensions_appendix_fp, \
                 self.newFile(self.directory + '/deprecated_extensions_appendix' + self.file_suffix) as deprecated_extensions_appendix_fp, \
                 self.newFile(self.directory + '/current_extension_appendices' + self.file_suffix) as current_extension_appendices_fp, \
@@ -615,10 +615,10 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
                 self.newFile(self.directory + '/deprecated_extension_appendices' + self.file_suffix) as deprecated_extension_appendices_fp, \
                 self.newFile(self.directory + '/deprecated_extension_appendices_toc' + self.file_suffix) as deprecated_extension_appendices_toc_fp, \
                 self.newFile(self.directory + '/deprecated_extensions_guard_macro' + self.file_suffix) as deprecated_extensions_guard_macro_fp, \
-                self.newFile(self.directory + '/provisional_extensions_appendix' + self.file_suffix) as provisional_extensions_appendix_fp, \
-                self.newFile(self.directory + '/provisional_extension_appendices' + self.file_suffix) as provisional_extension_appendices_fp, \
-                self.newFile(self.directory + '/provisional_extension_appendices_toc' + self.file_suffix) as provisional_extension_appendices_toc_fp, \
-                self.newFile(self.directory + '/provisional_extensions_guard_macro' + self.file_suffix) as provisional_extensions_guard_macro_fp:
+                self.newFile(self.directory + '/experimental_extensions_appendix' + self.file_suffix) as experimental_extensions_appendix_fp, \
+                self.newFile(self.directory + '/experimental_extension_appendices' + self.file_suffix) as experimental_extension_appendices_fp, \
+                self.newFile(self.directory + '/experimental_extension_appendices_toc' + self.file_suffix) as experimental_extension_appendices_toc_fp, \
+                self.newFile(self.directory + '/experimental_extensions_guard_macro' + self.file_suffix) as experimental_extensions_guard_macro_fp:
 
             # Note: there is a hardwired assumption in creating the
             # include:: directives below that all of these files are located
@@ -664,21 +664,21 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
             # add include guards to allow multiple includes
             write('ifndef::DEPRECATED_EXTENSIONS_GUARD_MACRO_INCLUDE_GUARD[]', file=deprecated_extensions_guard_macro_fp)
             write(':DEPRECATED_EXTENSIONS_GUARD_MACRO_INCLUDE_GUARD:\n', file=deprecated_extensions_guard_macro_fp)
-            write('ifndef::PROVISIONAL_EXTENSIONS_GUARD_MACRO_INCLUDE_GUARD[]', file=provisional_extensions_guard_macro_fp)
-            write(':PROVISIONAL_EXTENSIONS_GUARD_MACRO_INCLUDE_GUARD:\n', file=provisional_extensions_guard_macro_fp)
+            write('ifndef::EXPERIMENTAL_EXTENSIONS_GUARD_MACRO_INCLUDE_GUARD[]', file=experimental_extensions_guard_macro_fp)
+            write(':EXPERIMENTAL_EXTENSIONS_GUARD_MACRO_INCLUDE_GUARD:\n', file=experimental_extensions_guard_macro_fp)
 
-            write('', file=provisional_extensions_appendix_fp)
-            write('include::{generated}/meta/provisional_extensions_guard_macro' + self.file_suffix + '[]', file=provisional_extensions_appendix_fp)
-            write('', file=provisional_extensions_appendix_fp)
-            write('ifdef::HAS_PROVISIONAL_EXTENSIONS[]', file=provisional_extensions_appendix_fp)
-            write('[[provisional-extension-appendices-list]]', file=provisional_extensions_appendix_fp)
-            write('== List of Provisional Extensions', file=provisional_extensions_appendix_fp)
-            write('ifndef::site-gen-antora[]', file=provisional_extensions_appendix_fp)
-            write('include::{generated}/meta/provisional_extension_appendices_toc' + self.file_suffix + '[]', file=provisional_extensions_appendix_fp)
-            write('endif::site-gen-antora[]', file=provisional_extensions_appendix_fp)
-            write('\n<<<\n', file=provisional_extensions_appendix_fp)
-            write('include::{generated}/meta/provisional_extension_appendices' + self.file_suffix + '[]', file=provisional_extensions_appendix_fp)
-            write('endif::HAS_PROVISIONAL_EXTENSIONS[]', file=provisional_extensions_appendix_fp)
+            write('', file=experimental_extensions_appendix_fp)
+            write('include::{generated}/meta/experimental_extensions_guard_macro' + self.file_suffix + '[]', file=experimental_extensions_appendix_fp)
+            write('', file=experimental_extensions_appendix_fp)
+            write('ifdef::HAS_EXPERIMENTAL_EXTENSIONS[]', file=experimental_extensions_appendix_fp)
+            write('[[experimental-extension-appendices-list]]', file=experimental_extensions_appendix_fp)
+            write('== List of Experimental Extensions', file=experimental_extensions_appendix_fp)
+            write('ifndef::site-gen-antora[]', file=experimental_extensions_appendix_fp)
+            write('include::{generated}/meta/experimental_extension_appendices_toc' + self.file_suffix + '[]', file=experimental_extensions_appendix_fp)
+            write('endif::site-gen-antora[]', file=experimental_extensions_appendix_fp)
+            write('\n<<<\n', file=experimental_extensions_appendix_fp)
+            write('include::{generated}/meta/experimental_extension_appendices' + self.file_suffix + '[]', file=experimental_extensions_appendix_fp)
+            write('endif::HAS_EXPERIMENTAL_EXTENSIONS[]', file=experimental_extensions_appendix_fp)
 
             # Emit extensions in author ID order
             sorted_keys = sorted(self.extensions.keys(), key=makeSortKey)
@@ -693,10 +693,10 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
 
                 link = '  * ' + self.conventions.formatExtension(ext.name)
 
-                if ext.provisional == 'true':
-                    write(self.conditionalExt(ext.name, include), file=provisional_extension_appendices_fp)
-                    write(self.conditionalExt(ext.name, link), file=provisional_extension_appendices_toc_fp)
-                    write(self.conditionalExt(ext.name, ':HAS_PROVISIONAL_EXTENSIONS:'), file=provisional_extensions_guard_macro_fp)
+                if ext.experimental == 'true':
+                    write(self.conditionalExt(ext.name, include), file=experimental_extension_appendices_fp)
+                    write(self.conditionalExt(ext.name, link), file=experimental_extension_appendices_toc_fp)
+                    write(self.conditionalExt(ext.name, ':HAS_EXPERIMENTAL_EXTENSIONS:'), file=experimental_extensions_guard_macro_fp)
                 elif ext.deprecationType is None:
                     write(self.conditionalExt(ext.name, include), file=current_extension_appendices_fp)
                     write(self.conditionalExt(ext.name, link), file=current_extension_appendices_toc_fp)
@@ -712,7 +712,7 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
                     write(self.conditionalExt(ext.name, ':HAS_DEPRECATED_EXTENSIONS:', 'ifdef', condition), file=deprecated_extensions_guard_macro_fp)
 
             write('endif::DEPRECATED_EXTENSIONS_GUARD_MACRO_INCLUDE_GUARD[]', file=deprecated_extensions_guard_macro_fp)
-            write('endif::PROVISIONAL_EXTENSIONS_GUARD_MACRO_INCLUDE_GUARD[]', file=provisional_extensions_guard_macro_fp)
+            write('endif::EXPERIMENTAL_EXTENSIONS_GUARD_MACRO_INCLUDE_GUARD[]', file=experimental_extensions_guard_macro_fp)
 
         OutputGenerator.endFile(self)
 
@@ -743,7 +743,7 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
         promotedTo = self.getAttrib(interface, 'promotedto', OPTIONAL)
         deprecatedBy = self.getAttrib(interface, 'deprecatedby', OPTIONAL)
         obsoletedBy = self.getAttrib(interface, 'obsoletedby', OPTIONAL)
-        provisional = self.getAttrib(interface, 'provisional', OPTIONAL, 'false')
+        experimental = self.getAttrib(interface, 'experimental', OPTIONAL, 'false')
         specialuse = self.getAttrib(interface, 'specialuse', OPTIONAL)
         ratified = self.getAttrib(interface, 'ratified', OPTIONAL, '')
 
@@ -761,7 +761,7 @@ class ExtensionMetaDocOutputGenerator(OutputGenerator):
             promotedTo = promotedTo,
             deprecatedBy = deprecatedBy,
             obsoletedBy = obsoletedBy,
-            provisional = provisional,
+            experimental = experimental,
             revision = revision,
             specialuse = specialuse,
             ratified = ratified)
