@@ -14686,9 +14686,16 @@ A command-buffer is always in one of the following states:
 Recording:: Initial state of a command-buffer on creation, where commands can be
 recorded to the command-buffer.
 
+[[finalized]]
+Finalized:: State after command recording has finished with
+{clFinalizeCommandBufferKHR}, but there is at least one ND-range kernel command
+for which not all arguments have been set (this is a valid state only for
+mutable command buffers).
+
 [[executable]]
 Executable:: State after command recording has finished with
-{clFinalizeCommandBufferKHR} and the command-buffer may be enqueued.
+{clFinalizeCommandBufferKHR} and all the kernel arguments of all ND-range kernel
+commands have been set. In this state the command-buffer may be enqueued.
 
 [[pending]]
 Pending:: Once a command-buffer has been enqueued to a command-queue it enters
@@ -14698,15 +14705,22 @@ the Pending state until completion, at which point it moves back to the
 // Image generated from the following mermaid diagram description using https://mermaid.live
 // Ideally we'd use the asciidoctor-diagram extension to generate the rendered diagram, but
 // there are issues installing the gem with ruby 2.3.3
-//
-// [mermaid, "Lifecycle of a command-buffer", png]
-// ....
-// stateDiagram-v2
-//     [*] --> Recording: Create
-//     Recording -->Executable: Finalize
-//     Executable --> Pending: Enqueue
-//     Pending --> Executable: Completion
-// ....
+// ---
+// config:
+//   theme: default
+//   look: neo
+//   layout: dagre
+// ---
+// stateDiagram
+//   direction TB
+//   state if_state <<choice>>
+//   [*] --> Recording:Create
+//   Recording --> if_state:Finalize
+//   if_state --> Finalized:Not all kernel arguments set
+//   if_state --> Executable:All kernel arguments set
+//   Finalized --> if_state:Update mutable commands
+//   Executable --> Pending:Enqueue
+//   Pending --> Executable:Completion// ....
 
 image::images/commandbuffer_lifecycle.png[align="center", title="Lifecycle of a command-buffer."]
 
@@ -14968,9 +14982,10 @@ include::{generated}/api/version-notes/clFinalizeCommandBufferKHR.asciidoc[]
 
 [NOTE]
 ====
-{clFinalizeCommandBufferKHR} places the command-buffer in the
-<<executable, Executable>> state where commands can no longer be recorded, at
-this point the command-buffer is ready to be enqueued.
+{clFinalizeCommandBufferKHR} places the command-buffer either in the
+<<finalized, Finalized>> or <<executable, Executable>> states where commands can
+no longer be recorded. If the new state is <<executable, Executable>>, the
+command-buffer is ready to be enqueued.
 ====
 
 // refError
@@ -15035,7 +15050,7 @@ execution was successfully queued, or one of the errors below:
 
   * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
     command-buffer.
-  * {CL_INVALID_OPERATION} if _command_buffer_ has not been finalized.
+  * {CL_INVALID_OPERATION} if _command_buffer_ is not in the Executable state.
   * {CL_INVALID_OPERATION} if _command_buffer_ was not created with the
     {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} flag and is in the <<pending,
     Pending>> state.
@@ -15969,7 +15984,8 @@ ifdef::cl_khr_command_buffer_mutable_dispatch[]
     in the <<ndrange-kernel-properties-table, List of supported properties
     by clCommandNDRangeKernelKHR>> table.
 endif::cl_khr_command_buffer_mutable_dispatch[]
-  * _kernel_ is a valid kernel object which **must** have its arguments set.
+  * _kernel_ is a valid kernel object which **must** have its arguments set only
+    if the command is immutable (see description of argument _mutable_handle_).
     Any changes to _kernel_ after calling {clCommandNDRangeKernelKHR}, such
     as with {clSetKernelArg} or {clSetKernelExecInfo}, have no effect on the
     recorded command.
@@ -16589,32 +16605,6 @@ device occupancy high by avoiding blocking in host code.
 
 [open,refpage='clUpdateMutableCommandsKHR',desc='Modify configuration of mutable-command handles to update behavior for future enqueues',type='protos']
 --
-
-==== Update to Command-Buffer Lifecycle
-
-If this extention is supported, the command-buffer lifecycle is extended to
-include a new state named **Finalized**.
-
-// Image generated from the following mermaid diagram description using
-// https://mermaid.live:
-// ---
-// config:
-//  theme: default
-//  look: classic
-// ---
-// stateDiagram-v2
-//  state if_state <<choice>>
-//  if_state: All ND-range kernels commands' arguments set?
-//  [*] --> Recording: Create
-//  Recording --> if_state: Finalize
-//  if_state --> Finalized: No
-//  if_state --> Executable : Yes
-//  Finalized --> if_state: Update mutable commands     
-//  Executable --> Pending: Enqueue
-//  Pending --> Executable: Completion
-
-image::images/mutable_commandbuffer_lifecycle.png[align="center",
-  title="Lifecycle of a mutable command-buffer."]
 
 When recording an ND-range kernel command, the kernel's arguments do not have to
 be set, and setting them may be postponed to after the command buffer's
