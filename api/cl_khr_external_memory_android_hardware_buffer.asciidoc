@@ -82,12 +82,14 @@ cl_mem_properties props[] = {
     (cl_mem_properties) ahb_handle,
     0};
 cl_mem imported_buffer = clCreateBufferWithProperties(context, props, CL_MEM_READ_WRITE,
-                            NULL, &error);
+                            size, NULL, &error);
 If (error == CL_SUCCESS)
 {
-     clEnqueueCopyBuffer(queue, imported_buffer, ...);
+    clEnqueueAcquireExternalMemObjectsKHR(queue, 1, &imported_buffer, ...);
+    clEnqueueCopyBuffer(queue, imported_buffer, ...);
+    clEnqueueReleaseExternalMemObjectsKHR(queue, 1, &imported_buffer, ...);
 }
-clReleaseMemObj(imported_buffer);
+clReleaseMemObject(imported_buffer);
 ----
 --
 
@@ -104,7 +106,7 @@ cl_mem_properties props[] = {
     (cl_mem_properties) ahb_handle,
     0};
 cl_mem imported_image = clCreateImageWithProperties(context, props, CL_MEM_READ_WRITE,
-                             NULL, NULL,  NULL, &error);
+                             NULL, NULL, NULL, &error);
 if (error == CL_SUCCESS)
 {
      clGetImageInfo(imported_image, ...);
