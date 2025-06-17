@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2019-2024 The Khronos Group Inc.
+# Copyright 2019-2025 The Khronos Group Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 from collections import OrderedDict
@@ -23,7 +23,7 @@ def parse_xml(path):
 
 # File Header:
 def GetHeader():
-    return """// Copyright 2017-2024 The Khronos Group.
+    return """// Copyright 2017-2025 The Khronos Group.
 // SPDX-License-Identifier: CC-BY-4.0
 """
 

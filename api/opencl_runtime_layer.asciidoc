@@ -1,4 +1,4 @@
-// Copyright 2017-2024 The Khronos Group Inc.
+// Copyright 2017-2025 The Khronos Group Inc.
 // SPDX-License-Identifier: CC-BY-4.0
 
 [[opencl-runtime]]
@@ -374,10 +374,10 @@ include::{generated}/api/version-notes/clGetCommandQueueInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<command-queue-param-table,Command-Queue Parameter>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<command-queue-info-table, Command-Queue Queries>> table.
     If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
@@ -385,9 +385,9 @@ include::{generated}/api/version-notes/clGetCommandQueueInfo.asciidoc[]
 
 The list of supported _param_name_ values and the information returned in
 _param_value_ by {clGetCommandQueueInfo} is described in the
-<<command-queue-param-table,Command-Queue Parameter>> table.
+<<command-queue-info-table,Command-Queue Queries>> table.
 
-[[command-queue-param-table]]
+[[command-queue-info-table]]
 .List of supported param_names by {clGetCommandQueueInfo}
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
@@ -463,10 +463,11 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid
     command-queue, or if _command_queue_ is not a valid command-queue
     for _param_name_.
-  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values or
-    if size in bytes specified by _param_value_size_ is < size of return
-    type as specified in the <<command-queue-param-table,Command-Queue
-    Parameter>> table, and _param_value_ is not a `NULL` value.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<command-queue-info-table, Command-Queue Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -594,12 +595,41 @@ include::{generated}/api/version-notes/CL_MEM_DEVICE_HANDLE_LIST_KHR.asciidoc[]
         {CL_MEM_DEVICE_HANDLE_LIST_END_KHR_anchor}) to associate with the
         external memory handle.
 endif::cl_khr_external_memory[]
+
+ifdef::cl_ext_buffer_device_address[]
+
+| {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT.asciidoc[]
+  | {cl_bool_TYPE}
+      | When set to {CL_TRUE}, specifies that the buffer must have a single fixed
+      device-side address for its lifetime, and the address can be queried via {clGetMemObjectInfo}.
+
+   Each device in the context can have their own (fixed) device-side address and
+   a copy of the created buffer which are synchronized
+   implicitly by the runtime.
+
+   The flag might imply that the buffer will be "pinned" permanently to
+   a device's memory, but might not be necessarily so, as long as the address
+   range of the buffer remains constant.
+
+   The device addresses of sub-buffers derived from {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT}
+   allocated buffers can be computed by adding the sub-buffer origin to the
+   device-specific start address.
+
+   If the device supports SVM and {clCreateBufferWithProperties} is called with a pointer
+   returned by {clSVMAlloc} as its _host_ptr_ argument, and {CL_MEM_USE_HOST_PTR} is
+   set in its _flags_ argument, the device-side address is guaranteed to match
+   the _host_ptr_.
+
+endif::cl_ext_buffer_device_address[]
+
 |====
 
 ifdef::cl_khr_external_memory[]
 If {CL_MEM_DEVICE_HANDLE_LIST_KHR} is not specified as part of _properties_,
 the memory object created by {clCreateBufferWithProperties} or
-{clCreateImageWithProperties} is by default accessible to all devices in the
+{clCreateImageWithProperties} is by default associated with all devices in the
 _context_.
 
 The properties used to create a buffer from an external memory handle are
@@ -610,6 +640,17 @@ _flags_ used to specify usage information for the buffer must not
 include {CL_MEM_USE_HOST_PTR}, {CL_MEM_ALLOC_HOST_PTR}, or
 {CL_MEM_COPY_HOST_PTR}, and the _host_ptr_ argument must be `NULL`.
 endif::cl_khr_external_memory[]
+
+ifdef::cl_ext_immutable_memory_objects[]
+If {CL_MEM_IMMUTABLE_EXT} is set in _flags_, the buffer created is
+an _immutable memory object_ that cannot be modified by the implementation
+after creation, and one and only one of the following conditions must be met:
+
+  * Either {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} must be set in _flags_.
+ifdef::cl_khr_external_memory[]
+  * An external memory handle must be included in _properties_.
+endif::cl_khr_external_memory[]
+endif::cl_ext_immutable_memory_objects[]
 
 // refError
 
@@ -659,7 +700,25 @@ ifdef::cl_khr_external_memory[]
   * {CL_INVALID_PROPERTY}
   ** if _properties_ does not include a supported external memory handle and
      {CL_MEM_DEVICE_HANDLE_LIST_KHR} is specified as part of _properties_.
+  ** if _properties_ includes more than one external memory handle.
 endif::cl_khr_external_memory[]
+ifdef::cl_ext_buffer_device_address[]
+  * {CL_INVALID_OPERATION}
+  ** If _properties_ includes {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT} and there
+  are no devices in the context that support the {cl_ext_buffer_device_address_EXT}
+  extension.
+endif::cl_ext_buffer_device_address[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and
+    {CL_MEM_READ_WRITE}, {CL_MEM_WRITE_ONLY}, or {CL_MEM_HOST_WRITE_ONLY}
+    is set in _flags_.
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and none
+    of the following conditions are met
+  ** {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} is set in _flags_.
+ifdef::cl_khr_external_memory[]
+  ** _properties_ includes an external memory handle.
+endif::cl_khr_external_memory[]
+endif::cl_ext_immutable_memory_objects[]
 
 [[memory-flags-table]]
 .List of supported memory flag values
@@ -769,6 +828,14 @@ include::{generated}/api/version-notes/CL_MEM_KERNEL_READ_AND_WRITE.asciidoc[]
     instance.
     To create a memory object that may be read from and written to use
     {CL_MEM_READ_WRITE}.
+
+ifdef::cl_ext_immutable_memory_objects[]
+| {CL_MEM_IMMUTABLE_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_IMMUTABLE_EXT.asciidoc[]
+  | This flag specifies that the contents of the memory object cannot be altered
+    by the implementation after creation.
+endif::cl_ext_immutable_memory_objects[]
 |====
 --
 
@@ -784,7 +851,11 @@ include::{generated}/api/version-notes/clCreateSubBuffer.asciidoc[]
   * _flags_ is a bit-field that is used to specify allocation and usage
     information about the sub-buffer memory object being created and is
     described in the <<memory-flags-table,Memory Flags>> table.
-    If the {CL_MEM_READ_WRITE}, {CL_MEM_READ_ONLY}, or {CL_MEM_WRITE_ONLY} values are
+    If the {CL_MEM_READ_WRITE}, {CL_MEM_READ_ONLY},
+ifdef::cl_ext_immutable_memory_objects[]
+    {CL_MEM_IMMUTABLE_EXT},
+endif::cl_ext_immutable_memory_objects[]
+    or {CL_MEM_WRITE_ONLY} values are
     not specified in _flags_, they are inherited from the corresponding memory
     access qualifiers associated with _buffer_.
     The {CL_MEM_USE_HOST_PTR}, {CL_MEM_ALLOC_HOST_PTR}, and {CL_MEM_COPY_HOST_PTR}
@@ -862,6 +933,11 @@ Otherwise, it returns one of the following errors in _errcode_ret_:
     associated with _buffer_ for which the _origin_ field of the
     {cl_buffer_region_TYPE} structure passed in _buffer_create_info_ is
     aligned to the {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if _buffer_ was created with {CL_MEM_IMMUTABLE_EXT}
+    and _flags_ specifies {CL_MEM_READ_WRITE}, {CL_MEM_WRITE_ONLY}, or
+    {CL_MEM_HOST_WRITE_ONLY}.
+endif::cl_ext_immutable_memory_objects[]
 
 [NOTE]
 ====
@@ -1003,6 +1079,10 @@ Otherwise, they return one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if {clEnqueueWriteBuffer} is called on _buffer_
+    which has been created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 [open,refpage='clEnqueueReadBufferRect',desc='Enqueue command to read from a 2D or 3D rectangular region from a buffer object to host memory.',type='protos',alias='clEnqueueWriteBufferRect']
@@ -1160,6 +1240,10 @@ Otherwise, they return one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if {clEnqueueWriteBufferRect} is called on _buffer_
+    which has been created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 
 [NOTE]
 ====
@@ -1254,6 +1338,11 @@ include::{generated}/api/version-notes/clEnqueueCopyBuffer.asciidoc[]
     If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
     to an element of the _event_wait_list_ array.
 
+The usage information which indicates whether the memory object can be read
+or written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE}
+argument value specified when _src_buffer_ or _dst_buffer is created is ignored by
+{clEnqueueCopyBuffer}.
+
 // refError
 
 {clEnqueueCopyBuffer} returns {CL_SUCCESS} if the function is executed
@@ -1298,6 +1387,10 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _dst_buffer_ was created with
+    {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 [open,refpage='clEnqueueCopyBufferRect',desc='Enqueues a command to copy a 2D or 3D rectangular region from a buffer object to another buffer object.',type='protos']
@@ -1381,6 +1474,11 @@ must equal _dst_row_pitch_ and _src_slice_pitch_ must equal
 _dst_slice_pitch_.
 ====
 
+The usage information which indicates whether the memory object can be read
+or written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE}
+argument value specified when _src_buffer_ or _dst_buffer_ is created is ignored by
+{clEnqueueCopyBufferRect}.
+
 // refError
 
 {clEnqueueCopyBufferRect} returns {CL_SUCCESS} if the function is executed
@@ -1440,6 +1538,10 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _dst_buffer_ was created with
+    {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -1536,6 +1638,9 @@ Otherwise, it returns one of the following errors:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _buffer_ was created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -1644,6 +1749,11 @@ values returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
   * {CL_INVALID_OPERATION} if mapping would lead to overlapping regions being
     mapped for writing.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _buffer_ was created with {CL_MEM_IMMUTABLE_EXT}
+    in _flags_ and {CL_MAP_WRITE} or {CL_MAP_WRITE_INVALIDATE_REGION} is set
+    in _map_flags_.
+endif::cl_ext_immutable_memory_objects[]
 
 The pointer returned maps a region starting at _offset_ and is at least
 _size_ bytes in size.
@@ -1921,8 +2031,16 @@ include::{generated}/api/version-notes/clCreateImageWithProperties.asciidoc[]
     the <<memory-flags-table, supported memory flag values>> table.
   * _image_format_ is a pointer to a structure that describes format properties
     of the image to be allocated.
-    A 1D image buffer or 2D image can be created from a buffer by specifying a
-    buffer object in the __image_desc__->__mem_object__.
+    A 1D image buffer can be created from a buffer by specifying a buffer object
+    in __image_desc__->__mem_object__.
+    If the {cl_khr_image2d_from_buffer_EXT} extension is supported, a 2D image
+    can be created from a buffer by specifying a buffer object in
+    __image_desc__->__mem_object__.
+ifdef::cl_ext_image_from_buffer[]
+    If the {cl_ext_image_from_buffer_EXT} extension is supported, an image of
+    any type can be created from a buffer by specifying a buffer object in
+    __image_desc__->__mem_object__.
+endif::cl_ext_image_from_buffer[]
     A 2D image can be created from another 2D image object by specifying an
     image object in the __image_desc__->__mem_object__.
     Refer to the <<image-format-descriptor, Image Format Descriptor>> section
@@ -2026,7 +2144,7 @@ endif::cl_khr_external_memory[]
 ifdef::cl_khr_external_memory[]
 If {CL_MEM_DEVICE_HANDLE_LIST_KHR} is not specified as part of _properties_,
 the memory object created by {clCreateBufferWithProperties} or
-{clCreateImageWithProperties} is by default accessible to all devices in the
+{clCreateImageWithProperties} is by default associated with all devices in the
 _context_.
 
 The properties used to create an image from an external memory handle are
@@ -2042,6 +2160,21 @@ time of creation.
 When such information is acquired at image creation time, it is used for the
 lifetime of the image object.
 endif::cl_khr_external_memory[]
+
+ifdef::cl_ext_immutable_memory_objects[]
+If {CL_MEM_IMMUTABLE_EXT} is set in _flags_, the image created is
+an _immutable memory object_ that cannot be modified by the implementation
+after creation, and one and only one of the following conditions must be met:
+
+  * Either {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} must be set in _flags_.
+ifdef::cl_khr_external_memory[]
+  * An external memory handle must be included in _properties_.
+endif::cl_khr_external_memory[]
+
+If the image being created is created from another memory object and that memory
+object is an _immutable memory object_, then {CL_MEM_IMMUTABLE_EXT} must be set
+in _flags_.
+endif::cl_ext_immutable_memory_objects[]
 
 // refError
 
@@ -2059,15 +2192,29 @@ returned in _errcode_ret_:
   * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
   * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if values specified in _image_format_
     are not valid or if _image_format_ is `NULL`.
+ifndef::cl_ext_image_from_buffer[]
   * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if a 2D image is created from a
     buffer and the row pitch and base address alignment does not follow the
     rules described for creating a 2D image from a buffer.
+endif::cl_ext_image_from_buffer[]
+ifdef::cl_ext_image_from_buffer[]
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if an image is created from a
+    buffer and the row pitch, or slice pitch, if the
+    {cl_ext_image_from_buffer_EXT} extension is supported, or base address
+    alignment do not follow the rules described for creating an image from a
+    buffer.
+  * {CL_INVALID_IMAGE_SIZE} if the {cl_ext_image_from_buffer_EXT} extension is
+    supported and an image is created from a buffer and the buffer passed in
+    __image_desc__->__mem_object__ is too small to be used as a data store for the
+    image, e.g. if its size is smaller than the value returned for
+    {CL_IMAGE_REQUIREMENTS_SIZE_EXT} for the parameters used to create the image.
+endif::cl_ext_image_from_buffer[]
   * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if a 2D image is created from a 2D
     image object and the rules described above are not followed.
   * {CL_INVALID_IMAGE_DESCRIPTOR} if values specified in _image_desc_ are not
     valid or if _image_desc_ is `NULL`.
-  * {CL_INVALID_IMAGE_SIZE} if image dimensions specified in _image_desc_
-    exceed the maximum image dimensions described in the
+  * {CL_INVALID_IMAGE_SIZE} if the image dimensions specified in _image_desc_
+    are not valid or exceed the maximum image dimensions described in the
     <<device-queries-table,Device Queries>> table for all devices
     in _context_.
   * {CL_INVALID_HOST_PTR} if _host_ptr_ is `NULL` and {CL_MEM_USE_HOST_PTR} or
@@ -2117,7 +2264,21 @@ ifdef::cl_khr_external_memory[]
   * {CL_INVALID_PROPERTY}
   ** if _properties_ does not include a supported external memory handle and
      {CL_MEM_DEVICE_HANDLE_LIST_KHR} is specified as part of _properties_.
+  ** if _properties_ includes more than one external memory handle.
 endif::cl_khr_external_memory[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and
+    {CL_MEM_READ_WRITE}, {CL_MEM_WRITE_ONLY}, or {CL_MEM_HOST_WRITE_ONLY}
+    is set in _flags_.
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is not set in _flags_ and
+    _mem_object_ was created with {CL_MEM_IMMUTABLE_EXT}.
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and none
+    of the following conditions are met
+  ** {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} is set in _flags_.
+ifdef::cl_khr_external_memory[]
+  ** _properties_ includes an external memory handle.
+endif::cl_khr_external_memory[]
+endif::cl_ext_immutable_memory_objects[]
 
 [[host-ptr-buffer-size-table]]
 .Required _host_ptr_ buffer sizes for images
@@ -2193,6 +2354,13 @@ include::{generated}/api/version-notes/clCreateImage2D.asciidoc[]
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
+ifdef::cl_ext_immutable_memory_objects[]
+If {CL_MEM_IMMUTABLE_EXT} is set in _flags_, the image created is
+an _immutable memory object_ that cannot be modified by the implementation
+after creation, and {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} must be set
+in _flags_.
+endif::cl_ext_immutable_memory_objects[]
+
 // refError
 
 {clCreateImage2D} returns a valid non-zero image object created and the
@@ -2224,6 +2392,10 @@ returned in _errcode_ret_:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and neither
+    {CL_MEM_COPY_HOST_PTR} nor {CL_MEM_USE_HOST_PTR} is set in _flags_.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 [open,refpage='clCreateImage3D',desc='Creates a 3D image.',type='protos']
@@ -2277,6 +2449,13 @@ include::{generated}/api/version-notes/clCreateImage3D.asciidoc[]
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
+ifdef::cl_ext_immutable_memory_objects[]
+If {CL_MEM_IMMUTABLE_EXT} is set in _flags_, the image created is
+an _immutable memory object_ that cannot be modified by the implementation
+after creation, and {CL_MEM_COPY_HOST_PTR} or {CL_MEM_USE_HOST_PTR} must be set
+in _flags_.
+endif::cl_ext_immutable_memory_objects[]
+
 // refError
 
 {clCreateImage3D} returns a valid non-zero image object created and the
@@ -2309,6 +2488,10 @@ returned in _errcode_ret_:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and neither
+    {CL_MEM_COPY_HOST_PTR} nor {CL_MEM_USE_HOST_PTR} is set in _flags_.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -2522,6 +2705,50 @@ ifdef::cl_khr_depth_images[]
 Also supported if the {cl_khr_depth_images_EXT} extension is supported.
 endif::cl_khr_depth_images[]
   | Each channel component is a single precision floating-point value
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+| {CL_UNSIGNED_INT10X6_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_UNSIGNED_INT10X6_EXT.asciidoc[]
+  | Each channel component is an unnormalized unsigned 10-bit integer value
+    stored in bits 15:6 of a 16-bit location.
+    The channel order must be {CL_R}, {CL_RG}, or {CL_RGBA}.
+
+| {CL_UNSIGNED_INT12X4_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_UNSIGNED_INT12X4_EXT.asciidoc[]
+  | Each channel component is an unnormalized unsigned 12-bit integer value
+    stored in bits 15:4 of a 16-bit location.
+    The channel order must be {CL_R}, {CL_RG}, or {CL_RGBA}.
+
+| {CL_UNSIGNED_INT14X2_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_UNSIGNED_INT14X2_EXT.asciidoc[]
+  | Each channel component is an unnormalized unsigned 14-bit integer value
+    stored in bits 15:2 of a 16-bit location.
+    The channel order must be {CL_R}, {CL_RG}, or {CL_RGBA}.
+
+| {CL_UNORM_INT10X6_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_UNORM_INT10X6_EXT.asciidoc[]
+  | Each channel component is a normalized unsigned 10-bit integer value
+    stored in bits 15:6 of a 16-bit location.
+    The channel order must be {CL_R}, {CL_RG}, or {CL_RGBA}.
+
+| {CL_UNORM_INT12X4_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_UNORM_INT12X4_EXT.asciidoc[]
+  | Each channel component is a normalized unsigned 12-bit integer value
+    stored in bits 15:4 of a 16-bit location.
+    The channel order must be {CL_R}, {CL_RG}, or {CL_RGBA}.
+| {CL_UNORM_INT14X2_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_UNORM_INT14X2_EXT.asciidoc[]
+  | Each channel component is a normalized unsigned 14-bit integer value
+    stored in bits 15:2 of a 16-bit location.
+    The channel order must be {CL_R}, {CL_RG}, or {CL_RGBA}.
+
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 |====
 
 For example, to specify a normalized unsigned 8-bit / channel RGBA image,
@@ -2603,47 +2830,64 @@ include::{generated}/api/structs/cl_image_desc.txt[]
     {CL_MEM_OBJECT_IMAGE1D_ARRAY}, {CL_MEM_OBJECT_IMAGE2D},
     {CL_MEM_OBJECT_IMAGE2D_ARRAY}, or {CL_MEM_OBJECT_IMAGE3D}.
   * _image_width_ is the width of the image in pixels.
-    For a 2D image and image array, the image width must be a value {geq} 1 and
-    {leq} {CL_DEVICE_IMAGE2D_MAX_WIDTH}.
-    For a 3D image, the image width must be a value {geq} 1 and {leq}
-    {CL_DEVICE_IMAGE3D_MAX_WIDTH}.
-    For a 1D image buffer, the image width must be a value {geq} 1 and {leq}
-    {CL_DEVICE_IMAGE_MAX_BUFFER_SIZE}.
-    For a 1D image and 1D image array, the image width must be a value {geq} 1
-    and {leq} {CL_DEVICE_IMAGE2D_MAX_WIDTH}.
+    For a 1D image, 1D image array, 2D image, or 2D image array, the image width
+    must be greater than or equal to one and less than or equal to the
+    value returned for {CL_DEVICE_IMAGE2D_MAX_WIDTH} for all devices in the
+    context.
+    For a 3D image, the image width must be greater than or equal to one and
+    less than or equal to the value returned for {CL_DEVICE_IMAGE3D_MAX_WIDTH}
+    for all devices in the context.
+    For a 1D image buffer, the image width must be greater than or equal
+    to one and less than or equal to the value returned for
+    {CL_DEVICE_IMAGE_MAX_BUFFER_SIZE} for all devices in the context.
   * _image_height_ is the height of the image in pixels.
-    This is only used if the image is a 2D or 3D image, or a 2D image array.
-    For a 2D image or image array, the image height must be a value {geq} 1 and
-    {leq} {CL_DEVICE_IMAGE2D_MAX_HEIGHT}.
-    For a 3D image, the image height must be a value {geq} 1 and {leq}
-    {CL_DEVICE_IMAGE3D_MAX_HEIGHT}.
+    It is only used if the image is a 2D image, 2D image array, or 3D image.
+    For a 2D image or 2D image array, the image height must greater than or
+    equal to one and less than or equal to the value returned for
+    {CL_DEVICE_IMAGE2D_MAX_HEIGHT} for all devices in the context.
+    For a 3D image, the image height must be greater than or equal to one and
+    less than or equal to the value returned for {CL_DEVICE_IMAGE3D_MAX_HEIGHT}
+    for all devices in the context.
   * _image_depth_ is the depth of the image in pixels.
-    This is only used if the image is a 3D image and must be a value {geq} 1 and
-    {leq} {CL_DEVICE_IMAGE3D_MAX_DEPTH}.
+    It is only used if the image is a 3D image.
+    For a 3D image, the image depth must be greater than or equal to one and
+    less than or equal to the value returned for {CL_DEVICE_IMAGE3D_MAX_DEPTH}
+    for all devices in the context.
   * _image_array_size_ footnote:[{fn-image-array-performance}] is the number of
     images in the image array.
-    This is only used if the image is a 1D or 2D image array.
-    The values for `image_array_size`, if specified, must be a value {geq} 1 and
-    {leq} {CL_DEVICE_IMAGE_MAX_ARRAY_SIZE}.
+    It is only used if the image is a 1D image array or 2D image array.
+    For a 1D image array or 2D image array, the image array size must be
+    greater than or equal to one and less than or equal to the value returned
+    for {CL_DEVICE_IMAGE_MAX_ARRAY_SIZE} for all devices in the context.
   * _image_row_pitch_ is the scan-line pitch in bytes.
     The _image_row_pitch_ must be zero if _host_ptr_ is `NULL`,
 ifdef::cl_khr_external_memory[]
     the image is not an image created from an external memory handle,
 endif::cl_khr_external_memory[]
-    and the image is not a 2D image created from a buffer,
+    and the image is not a 2D image created from a buffer. +
     If _image_row_pitch_ is zero and _host_ptr_ is not `NULL`, then the
-    image row pitch is calculated as _image_width_ {times} the size of an
-    image element in bytes.
+    image row pitch is calculated as _image_width_ times the size of an
+    image element in bytes. +
 ifdef::cl_khr_external_memory[]
     If _image_row_pitch_ is zero and the image is created from an external
-    memory handle, then the image row pitch is implementation-defined.
+    memory handle, then the image row pitch is implementation-defined. +
 endif::cl_khr_external_memory[]
-    The image row pitch must be {geq} _image_width_ {times} the size of an
-    image element in bytes, and must be a multiple of the size of an image
-    element in bytes.
-    For a 2D image created from a buffer the image row pitch must also be a
+    If _image_row_pitch_ is non-zero, then it must be greater than or equal to
+    the _image_width_ times the size of an image element in bytes, and must be a
+    multiple of the size of an image element in bytes. +
+ifndef::cl_ext_image_requirements_info[]
+    For a 2D image created from a buffer the _image_row_pitch_ must also be a
     multiple of the maximum of the {CL_DEVICE_IMAGE_PITCH_ALIGNMENT} value
     for all devices in the context that support images.
+endif::cl_ext_image_requirements_info[]
+ifdef::cl_ext_image_requirements_info[]
+    For an image created from a buffer, the _image_row_pitch_ must also:
+    ** be a multiple of the {CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT} value
+    for the _image_format_, _image_type_, and _flags_ used to create the image, if
+    the {cl_ext_image_requirements_info_EXT} extension is supported, or
+    ** be a multiple of the maximum of the {CL_DEVICE_IMAGE_PITCH_ALIGNMENT} value
+    for all devices in the context that support images, otherwise.
+endif::cl_ext_image_requirements_info[]
   * _image_slice_pitch_ is the size in bytes of each 2D slice in a 3D image,
     or the size in bytes of each image in a 1D or 2D image array.
     The _image_slice_pitch_ must be zero if _host_ptr_ is `NULL`
@@ -2662,18 +2906,32 @@ endif::cl_khr_external_memory[]
     _image_height_ for a 2D image array or a 3D image, must be {geq} the
     image row pitch for a 1D image array, and must be a multiple of the
     image row pitch.
-  * _num_mip_levels_ must be
-ifndef::cl_khr_mipmap_image[0.]
-ifdef::cl_khr_mipmap_image[]
-    0 unless the {cl_khr_mipmap_image_EXT} extension is supported, in which
-    case it may be a nonzero value specifying the number of mipmap
-    levels in the image.
+ifdef::cl_ext_image_from_buffer[]
+    For an image created from a buffer, the image slice pitch must be a multiple
+    of the {CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT} value for the
+    _image_format_, _image_type_ and _flags_ used to create the image, if the
+    {cl_ext_image_from_buffer_EXT} extension is supported.
+endif::cl_ext_image_from_buffer[]
+  * _num_mip_levels_ must be `0`, indicating that the image has a single
+ifndef::cl_khr_mipmap_image[]
+    mipmap level.
 endif::cl_khr_mipmap_image[]
-  * _num_samples_ must be 0.
+ifdef::cl_khr_mipmap_image[]
+    mipmap level, unless the {cl_khr_mipmap_image_EXT} extension is supported.
+    When the {cl_khr_mipmap_image_EXT} extension is supported, _num_mip_levels_
+    may additionally specify the total number of mipmap levels in the image,
+    including the base level footnote:[{fn-single-mipmap-level}].
+endif::cl_khr_mipmap_image[]
+  * _num_samples_ must be `0`.
   * _mem_object_ may refer to a valid buffer or image memory object.
     `mem_object` can be a buffer memory object if `image_type` is
     {CL_MEM_OBJECT_IMAGE1D_BUFFER} or
-    {CL_MEM_OBJECT_IMAGE2D} footnote:[{fn-image-from-buffer}].
+    {CL_MEM_OBJECT_IMAGE2D}
+ifdef::cl_ext_image_from_buffer[]
+    , or any other `image_type` if the {cl_ext_image_from_buffer_EXT} extension
+    is supported.
+endif::cl_ext_image_from_buffer[]
+    footnote:[{fn-image-from-buffer}]
     `mem_object` can be an image object if `image_type` is
     {CL_MEM_OBJECT_IMAGE2D} footnote:[{fn-image-from-image}].
     Otherwise it must be `NULL`.
@@ -2687,6 +2945,19 @@ size of element in bytes must be {leq} size of the buffer object.
 The image data in the buffer object is stored as a single scanline which is
 a linear sequence of adjacent elements.
 
+ifdef::cl_ext_image_from_buffer[]
+For a 1D image created from a buffer object, the `image_width` {times} size of
+element in bytes must be {leq} size of the buffer object. The image data in the
+buffer object is stored as a single scanline which is a linear sequence of
+adjacent elements.
+
+For a 1D image array created from a buffer object, the `image_slice_pitch` {times}
+`image_array_size` must be {leq} size of the buffer object specified by `mem_object`.
+The image data in the buffer object is stored as a linear sequence of adjacent 1D
+slices. Each slice is a single scanline padded to `image_slice_pitch` bytes.
+Each scanline is a linear sequence of image elements.
+endif::cl_ext_image_from_buffer[]
+
 For a 2D image created from a buffer object, the `image_row_pitch` {times}
 `image_height` must be {leq} size of the buffer object specified by
 `mem_object`.
@@ -2695,6 +2966,22 @@ adjacent scanlines.
 Each scanline is a linear sequence of image elements padded to
 `image_row_pitch` bytes.
 
+ifdef::cl_ext_image_from_buffer[]
+For a 2D image array created from a buffer object, the `image_slice_pitch` {times}
+`image_array_size` must be {leq} size of the buffer object specified by `mem_object`.
+The image data in the buffer object is stored as a linear sequence of adjacent 2D
+slices. Each slice is a linear sequence of adjacent scanlines padded to
+`image_slice_pitch` bytes. Each scanline is a linear sequence of image elements padded
+to `image_row_pitch` bytes.
+
+For a 3D image created from a buffer object, the `image_slice_pitch` {times}
+`image_depth` must be {leq} size of the buffer object specified by `mem_object`.
+The image data in the buffer object is stored as a linear sequence of adjacent 2D
+slices padded to `image_slice_pitch` bytes. Each slice is a linear sequence of adjacent
+scanlines. Each scanline is a linear sequence of image elements padded to
+`image_row_pitch` bytes.
+endif::cl_ext_image_from_buffer[]
+
 For an image object created from another image object, the values specified
 in the image descriptor except for `mem_object` must match the image
 descriptor information associated with `mem_object`.
@@ -2702,12 +2989,26 @@ descriptor information associated with `mem_object`.
 Image elements are stored according to their image format as described in
 <<image-format-descriptor, Image Format Descriptor>>.
 
+ifndef::cl_ext_image_requirements_info[]
 If the buffer object specified by `mem_object` was created with
 {CL_MEM_USE_HOST_PTR}, the _host_ptr_ specified to {clCreateBuffer} or
 {clCreateBufferWithProperties} must be aligned to the maximum of the
 {CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT} value for all devices in the
 context associated with the buffer specified by `mem_object` that
 support images.
+endif::cl_ext_image_requirements_info[]
+ifdef::cl_ext_image_requirements_info[]
+If the buffer object specified by `mem_object` was created with
+{CL_MEM_USE_HOST_PTR}, the _host_ptr_ specified to {clCreateBuffer} or
+{clCreateBufferWithProperties} must
+
+  * Be aligned to the {CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT} value
+    for the returned for parameters compatible with those used to create the
+    image, if the {cl_ext_image_requirements_info_EXT} extension is supported, or
+  * Be aligned to the maximum of the {CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT}
+    value for all devices in the context associated with the buffer specified by
+    `mem_object` that support images, otherwise.
+endif::cl_ext_image_requirements_info[]
 
 Creating a 2D image object from another 2D image object creates a new
 2D image object that shares the image data store with `mem_object` but views
@@ -2756,10 +3057,9 @@ stored in the image can be accessed as linear RGB or sRGB values.
 [NOTE]
 ====
 Concurrent reading from, writing to and copying between both a buffer object
-and 1D image buffer or 2D image object associated with the buffer object is
-undefined.
-Only reading from both a buffer object and 1D image buffer or 2D image
-object associated with the buffer object is defined.
+and buffer or image object associated with the buffer object is undefined.
+Only reading from both a buffer object and buffer or image object associated
+with the buffer object is defined.
 
 Writing to an image created from a buffer and then reading from this buffer
 in a kernel even if appropriate synchronization operations (such as a
@@ -2793,6 +3093,10 @@ include::{generated}/api/version-notes/clGetSupportedImageFormats.asciidoc[]
     may be written to by a kernel, or {CL_MEM_KERNEL_READ_AND_WRITE} to query
     image formats that may be both read from and written to by the same kernel
     instance.
+ifdef::cl_ext_immutable_memory_objects[]
+    _flags_ may also be {CL_MEM_IMMUTABLE_EXT} to query image formats that
+    may be used to create immutable images.
+endif::cl_ext_immutable_memory_objects[]
     Please see <<image-format-mapping, Image Format Mapping>> for clarification.
   * _image_type_ describes the image type and must be either
     {CL_MEM_OBJECT_IMAGE1D}, {CL_MEM_OBJECT_IMAGE1D_BUFFER}, {CL_MEM_OBJECT_IMAGE2D},
@@ -3009,9 +3313,6 @@ For each access qualifier, only images whose format is in the list of
 formats returned by {clGetSupportedImageFormats} with the given flag
 arguments in the <<image-format-mapping-table,Image Format Mapping>> table
 are permitted.
-It is not valid to pass an image supporting writing as both a `read_only`
-image and a `write_only` image parameter, or to a `read_write` image
-parameter and any other image parameter.
 
 [[image-format-mapping-table]]
 .Mapping from format flags passed to {clGetSupportedImageFormats} to OpenCL kernel language image access qualifiers
@@ -3022,6 +3323,10 @@ parameter and any other image parameter.
   | {CL_MEM_READ_ONLY}, +
     {CL_MEM_READ_WRITE}, +
     {CL_MEM_KERNEL_READ_AND_WRITE}
+ifdef::cl_ext_immutable_memory_objects[]
+    Additionally, if the {cl_ext_immutable_memory_objects_EXT} extension is supported:
+    {CL_MEM_IMMUTABLE_EXT}
+endif::cl_ext_immutable_memory_objects[]
 | `write_only`
   | {CL_MEM_WRITE_ONLY}, +
     {CL_MEM_READ_WRITE}, +
@@ -3425,6 +3730,10 @@ ifdef::cl_khr_mipmap_image[]
     supported, and the mip level specified in _origin_ is not a valid level
     for _image_,
 endif::cl_khr_mipmap_image[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if {clEnqueueWriteImage} is called on _image_ which
+    has been created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 
 [NOTE]
 ====
@@ -3547,6 +3856,11 @@ memory objects for {clEnqueueCopyImage} must have the exact same image
 format (i.e. the {cl_image_format_TYPE} descriptor specified when _src_image_ and
 _dst_image_ are created must match).
 
+The usage information which indicates whether the memory object can be read
+or written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE}
+argument value specified when _src_image_ or _dst_image_ is created is ignored by
+{clEnqueueCopyImage}.
+
 // refError
 
 {clEnqueueCopyImage} returns {CL_SUCCESS} if the function is executed
@@ -3598,6 +3912,9 @@ ifdef::cl_khr_mipmap_image[]
     supported, and the mip level specified in _src_origin_ or _dst_origin_
     is not a valid level for the corresponding _src_image_ or _dst_image_,
 endif::cl_khr_mipmap_image[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _dst_image_ was created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -3719,6 +4036,9 @@ ifdef::cl_khr_mipmap_image[]
     supported, and the mip level specified in _origin_ is not a valid level
     for _image_,
 endif::cl_khr_mipmap_image[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _image_ was created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -3794,6 +4114,11 @@ endif::cl_khr_mipmap_image[]
     If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
     to an element of the _event_wait_list_ array.
 
+The usage information which indicates whether the memory object can be read
+or written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE}
+argument value specified when _src_image_ or _dst_buffer_ is created is ignored by
+{clEnqueueCopyImageToBuffer}.
+
 // refError
 
 {clEnqueueCopyImageToBuffer} returns {CL_SUCCESS} if the function is executed
@@ -3846,6 +4171,9 @@ ifdef::cl_khr_mipmap_image[]
     supported, and the mip level specified in _src_origin_ is not a valid
     level for _src_image_,
 endif::cl_khr_mipmap_image[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _dst_buffer_ was created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -3921,6 +4249,11 @@ image or 1D image buffer object and is computed as _width_ {times}
 _arraysize_ {times} _bytes/image element_ if _dst_image_ is a 1D image array
 object.
 
+The usage information which indicates whether the memory object can be read
+or written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE}
+argument value specified when _src_buffer_ or _dst_image_ is created is ignored by
+{clEnqueueCopyBufferToImage}.
+
 // refError
 
 {clEnqueueCopyBufferToImage} returns {CL_SUCCESS} if the function is executed
@@ -3973,6 +4306,9 @@ ifdef::cl_khr_mipmap_image[]
     supported, and the mip level specified in _dst_origin_ is not a valid
     level for _dst_image_,
 endif::cl_khr_mipmap_image[]
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _dst_image_ was created with {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
 --
 
 
@@ -4117,6 +4453,11 @@ values returned in _errcode_ret_:
     required by the OpenCL implementation on the host.
   * {CL_INVALID_OPERATION} if mapping would lead to overlapping regions being
     mapped for writing.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_OPERATION} if _image_ was created with {CL_MEM_IMMUTABLE_EXT}
+    in _flags_ and {CL_MAP_WRITE} or {CL_MAP_WRITE_INVALIDATE_REGION} is set
+    in _map_flags_.
+endif::cl_ext_immutable_memory_objects[]
 
 The pointer returned maps a 1D, 2D or 3D region starting at _origin_ and is
 at least _region_[0] pixels in size for a 1D image, 1D image buffer or 1D
@@ -4192,10 +4533,11 @@ include::{generated}/api/version-notes/clGetImageInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<image-info-table,Image Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<image-info-table, Image Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -4320,11 +4662,12 @@ endif::cl_khr_d3d11_sharing[]
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<image-info-table,Image Object Queries>> table and _param_value_ is
-    not `NULL`.
   * {CL_INVALID_MEM_OBJECT} if _image_ is a not a valid image object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<image-info-table, Image Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -4583,11 +4926,10 @@ returned in _errcode_ret_:
     _subresource_ is not a valid subresource index for _resource_.
   * {CL_INVALID_D3D10_RESOURCE_KHR} if _resource_ is not a Direct3D 10
     texture resource, if _resource_ was created with the D3D10_USAGE flag
-    D3D10_USAGE_IMMUTABLE, if _resource_ is a multisampled texture, if a
-    {cl_mem_TYPE} from subresource _subresource_ of _resource_ has already
-    been created using {clCreateFromD3D10Texture3DKHR}, or if _context_ was
-    not created against the same Direct3D 10 device from which _resource_
-    was created.
+    D3D10_USAGE_IMMUTABLE, if a {cl_mem_TYPE} from subresource _subresource_ of
+    _resource_ has already been created using {clCreateFromD3D10Texture3DKHR},
+    or if _context_ was not created against the same Direct3D 10 device from
+    which _resource_ was created.
   * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the Direct3D 10 texture format
     of _resource_ is not listed in the <<dxgi-image-formats-table, DXGI
     Formats and Corresponding OpenCL Image Formats>> table or if the
@@ -4715,11 +5057,10 @@ returned in _errcode_ret_:
     _subresource_ is not a valid subresource index for _resource_.
   * {CL_INVALID_D3D11_RESOURCE_KHR} if _resource_ is not a Direct3D 11
     texture resource, if _resource_ was created with the D3D11_USAGE flag
-    D3D11_USAGE_IMMUTABLE, if _resource_ is a multisampled texture, if a
-    {cl_mem_TYPE} from subresource _subresource_ of _resource_ has already
-    been created using {clCreateFromD3D11Texture3DKHR}, or if _context_ was
-    not created against the same Direct3D 11 device from which _resource_
-    was created.
+    D3D11_USAGE_IMMUTABLE, if a {cl_mem_TYPE} from subresource _subresource_ of
+    _resource_ has already been created using {clCreateFromD3D11Texture3DKHR},
+    or if _context_ was not created against the same Direct3D 11 device from
+    which _resource_ was created.
   * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if the Direct3D 11 texture format
     of _resource_ is not listed in the <<dxgi-image-formats-table, DXGI
     Formats and Corresponding OpenCL Image Formats>> table or if the
@@ -4767,19 +5108,28 @@ include::{generated}/api/version-notes/clCreateFromEGLImageKHR.asciidoc[]
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
-Accepted for _flags_ are {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY} and
-CL_MEM_READ_WRITE.
+Accepted for _flags_ are {CL_MEM_READ_ONLY}, {CL_MEM_WRITE_ONLY},
+ifdef::cl_ext_immutable_memory_objects[]
+{CL_MEM_IMMUTABLE_EXT},
+endif::cl_ext_immutable_memory_objects[]
+and {CL_MEM_READ_WRITE}.
 If OpenCL 1.2 is supported, _flags_ also accepts {CL_MEM_HOST_WRITE_ONLY},
 {CL_MEM_HOST_READ_ONLY}, and {CL_MEM_HOST_NO_ACCESS}.
 
 {cl_khr_egl_image_EXT} only requires support for {CL_MEM_READ_ONLY}, and for
-CL_MEM_HOST_NO_ACCESS if OpenCL 1.2 or later is supported.
+{CL_MEM_HOST_NO_ACCESS} if OpenCL 1.2 or later is supported.
 For OpenCL 1.1, a {CL_INVALID_OPERATION} will be returned for images which
 do not support host mapping.
 
 If the value passed in _flags_ is not supported by the OpenCL
 implementation, it will return {CL_INVALID_VALUE}.
 The accepted _flags_ may be dependent upon the texture format used.
+
+ifdef::cl_ext_immutable_memory_objects[]
+If {CL_MEM_IMMUTABLE_EXT} is set in _flags_, the image created is
+an _immutable memory object_ that cannot be modified by the implementation
+after creation.
+endif::cl_ext_immutable_memory_objects[]
 
 // refError
 
@@ -4806,6 +5156,11 @@ returned in _errcode_ret_:
     images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in table 4.3 is
     {CL_FALSE}) or if the flags passed are not supported for that image
     type.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_ and
+    {CL_MEM_READ_WRITE}, {CL_MEM_WRITE_ONLY}, or {CL_MEM_HOST_WRITE_ONLY}
+    is set in _flags_.
+endif::cl_ext_immutable_memory_objects[]
 --
 endif::cl_khr_egl_image[]
 
@@ -5079,6 +5434,199 @@ returned in _errcode_ret_:
 --
 endif::cl_khr_gl_sharing[]
 
+ifdef::cl_ext_image_requirements_info[]
+=== Querying Image Requirements
+
+[open,refpage='clGetImageRequirementsInfoEXT',desc='Get information on image requirements.',type='protos']
+--
+To get information specific to the requirements of an image before creating it call the function
+
+include::{generated}/api/protos/clGetImageRequirementsInfoEXT.txt[]
+include::{generated}/api/version-notes/clGetImageRequirementsInfoEXT.asciidoc[]
+
+  * _context_ is the OpenCL context in which the query will be performed.
+  * _properties_ is an optional list of properties for the image object and their
+    corresponding values. The list is terminated with the special property 0. If
+    no properties are required, properties may be `NULL`.
+  * _flags_ is a bit-field that is used to specify allocation and usage information
+    about the image format being queried and is described in the
+    <<memory-flags-table,Memory Flags>> table. _flags_ may be {CL_MEM_READ_WRITE} to
+    specialize the query for images that may be read from and written to by different
+    kernel instances when correctly ordered by event dependencies, or {CL_MEM_READ_ONLY}
+    to specialize the query for images that may be read from by a kernel, or
+    {CL_MEM_WRITE_ONLY} to specialiaze the query for images that may be written to by
+    a kernel, or {CL_MEM_KERNEL_READ_AND_WRITE} to specialize the query for images that
+    may be both read from and written to by the same kernel instance. When _flags_ is
+    `0` the value returned for the query must be correct for all possible values of _flags_.
+  * _image_format_ is a pointer to a structure describing the format of the image
+    for which requirements are being queried. Refer to the
+    <<image-format-descriptor, Image Format Descriptor>> section for a detailed
+    description.
+  * _image_desc_ is a pointer to a structure that describes type and dimensions of
+    the image for which requirements are being queried. Refer to the
+    <<image-descriptor, Image Descriptor>> section for a detailed description of
+    the image descriptor.
+  * _param_name_ specifies the information to query.
+    The list of supported _param_name_ types and the information returned in
+    _param_value_ by {clGetImageRequirementsInfoEXT} is described in the
+    <<image-requirements-info-table,Image Requirements Queries>> table.
+  * _param_value_ is a pointer to memory where the appropriate result being
+    queried is returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ is used to specify the size in bytes of memory pointed to
+    by _param_value_.
+    This size must be {geq} size of return type as described in the
+    <<image-requirements-info-table,Image Requirements Queries>> table.
+  * _param_value_size_ret_ returns the actual size in bytes of data being
+    queried by _param_name_.
+    If _param_value_size_ret_ is `NULL`, it is ignored.
+
+[[image-requirements-info-table]]
+.List of supported param_names by {clGetImageRequirementsInfoEXT}
+[cols="4,1,4",options="header"]
+|====
+| Image Format Info | Return type | Info. returned in _param_value_
+
+| {CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT.asciidoc[]
+| `size_t`
+| Returns the minimum alignment in bytes required for the data store backing
+  an image created using the parameters passed to {clGetImageRequirementsInfoEXT}.
+  _image_format_ or _image_desc_ are allowed to be `NULL`. When either or both is
+  `NULL` the implementation will return an alignment that would be sufficient for
+  all possible values of the missing argument. +
+  The value returned is a power of two.
+
+|{CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT.asciidoc[]
+| `size_t`
+| Returns the row pitch alignment required in bytes for images created from
+  a buffer with the parameters passed to {clGetImageRequirementsInfoEXT}.
+  The value returned is a power of two. _image_format_ or _image_desc_
+  are allowed to be `NULL`. When either or both is `NULL` the value returned is
+  the minimum row pitch alignment that works for all possible values of the missing
+  argument(s).
+
+| {CL_IMAGE_REQUIREMENTS_SIZE_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_SIZE_EXT.asciidoc[]
+| `size_t`
+| Returns the minimal size in bytes that a buffer would need to be to back an
+  image created using the parameters passed to {clGetImageRequirementsInfoEXT}.
+  +
+  Both _image_format_ and _image_desc_ must be non-`NULL`, otherwise
+  {CL_INVALID_VALUE} is returned.
+
+| {CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT.asciidoc[]
+| `cl_uint`
+| Returns the max width supported for creating images with the parameters passed
+  to {clGetImageRequirementsInfoEXT}.
+  _image_format_ or _image_desc_ are allowed to be `NULL`. When either or both is
+  `NULL` the implementation will return a max width that would be supported for
+  all possible values of the missing argument(s). +
+  When _image_desc_ is not `NULL`, the value of its _image_width_ member is
+  ignored and has no effect on the value returned. The value of all other members,
+  except `mem_object` may be `0` to require that the value returned be supported
+  for all possible values of the members that are set to `0`. +
+// TODO: should we require _image_width_ to be `0`?
+
+| {CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT.asciidoc[]
+| `cl_uint`
+| Returns the max height supported for creating images with the parameters passed
+  to {clGetImageRequirementsInfoEXT}.
+  _image_format_ or _image_desc_ are allowed to be `NULL`. When either or both is
+  `NULL` the implementation will return a max height that would be supported for
+  all possible values of the missing argument(s). +
+  When _image_desc_ is not `NULL`, the value of its _image_height_ member is
+  ignored and has no effect on the value returned. The value of all other members,
+  except `mem_object` may be `0` to require that the value returned be supported
+  for all possible values of the members that are set to `0`. +
+  If _image_desc_ is not `NULL`, then _image_type_ must be either `0`,
+  {CL_MEM_OBJECT_IMAGE2D}, {CL_MEM_OBJECT_IMAGE2D_ARRAY}, or {CL_MEM_OBJECT_IMAGE3D},
+  otherwise {CL_INVALID_IMAGE_DESCRIPTOR} is returned. +
+// TODO: should we require _image_height_ to be `0`?
+
+| {CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT.asciidoc[]
+| `cl_uint`
+| Returns the max depth supported for creating images with the parameters passed
+  to {clGetImageRequirementsInfoEXT}.
+  _image_format_ or _image_desc_ are allowed to be `NULL`. When either or both is
+  `NULL` the implementation will return a max depth that would be supported for
+  all possible values of the missing argument(s). +
+  When _image_desc_ is not `NULL`, the value of its _image_depth_ member is
+  ignored and has no effect on the value returned. The value of all other members,
+  except `mem_object` may be `0` to require that the value returned be supported
+  for all possible values of the members that are set to `0`. +
+  If _image_desc_ is not `NULL`, then _image_type_ must be either `0` or
+  {CL_MEM_OBJECT_IMAGE3D}, otherwise {CL_INVALID_IMAGE_DESCRIPTOR} is returned. +
+// TODO: should we require _image_depth_ to be `0`?
+
+| {CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT.asciidoc[]
+| `cl_uint`
+| Returns the max array size supported for creating images with the parameters passed
+  to {clGetImageRequirementsInfoEXT}.
+  _image_format_ or _image_desc_ are allowed to be `NULL`. When either or both is
+  `NULL` the implementation will return a max array size that would be supported for
+  all possible values of the missing argument(s). +
+  When _image_desc_ is not `NULL`, the value of its _image_array_size_ member is
+  ignored and has no effect on the value returned. The value of all other members,
+  except `mem_object` may be `0` to require that the value returned be supported
+  for all possible values of the members that are set to `0`. +
+  If _image_desc_ is not `NULL`, then _image_type_ must be either `0`,
+  {CL_MEM_OBJECT_IMAGE1D_ARRAY} or {CL_MEM_OBJECT_IMAGE2D_ARRAY}, otherwise
+  {CL_INVALID_IMAGE_DESCRIPTOR} is returned. +
+// TODO: should we require _image_array_size_ to be `0`?
+
+ifdef::cl_ext_image_from_buffer[]
+| {CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT.asciidoc[]
+| `size_t`
+| Returns the slice pitch alignment required in bytes for images created from
+  a buffer with the parameters passed to {clGetImageRequirementsInfoEXT}.
+  The value returned is a power of two. _image_format_ and _image_desc_ are
+  allowed to be `NULL`. When either or both is `NULL` the value returned is
+  the minimum slice pitch alignment that is supported for all possible values
+  of the missing argument(s).
+endif::cl_ext_image_from_buffer[]
+
+|====
+
+// refError
+
+{clGetImageRequirementsInfoEXT} returns {CL_SUCCESS} if the function is executed
+successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_CONTEXT} if _context_ if not a valid context.
+  * {CL_INVALID_PROPERTY} if a property name in properties is not a supported
+    property name, if the value specified for a supported property name is not
+    valid, or if the same property name is specified more than once.
+  * {CL_INVALID_VALUE} if values specified in _flags_ are not valid.
+  * {CL_INVALID_IMAGE_FORMAT_DESCRIPTOR} if values specified in _image_format_
+    are not valid.
+  * {CL_INVALID_IMAGE_DESCRIPTOR} if values specified in _image_desc_
+    are not valid.
+  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
+    specified by _param_value_size_ is < size of return type as described in
+    the <<image-requirements-info-table,Image Requirements Queries>> table and
+    _param_value_ is not `NULL`.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_ext_image_requirements_info[]
 
 == Pipes
 
@@ -5149,6 +5697,9 @@ returned in _errcode_ret_:
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+ifdef::cl_ext_immutable_memory_objects[]
+  * {CL_INVALID_VALUE} if {CL_MEM_IMMUTABLE_EXT} is set in _flags_.
+endif::cl_ext_immutable_memory_objects[]
 
 Pipes follow the same memory consistency model as defined for buffer and
 image objects.
@@ -5179,28 +5730,14 @@ include::{generated}/api/version-notes/clGetPipeInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<pipe-info-table,Pipe Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<pipe-info-table, Pipe Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
-
-// refError
-
-{clGetPipeInfo} returns {CL_SUCCESS} if the function is executed successfully.
-Otherwise, it returns one of the following errors:
-
-  * {CL_INVALID_MEM_OBJECT} if _pipe_ is a not a valid pipe object.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<pipe-info-table,Pipe Object Queries>> table and _param_value_ is
-    not `NULL`.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
 
 [[pipe-info-table]]
 .List of supported param_names by {clGetPipeInfo}
@@ -5236,6 +5773,22 @@ include::{generated}/api/version-notes/CL_PIPE_PROPERTIES.asciidoc[]
         _param_value_size_ret_ equal to 0, indicating that there are no
         properties to be returned.
 |====
+
+// refError
+
+{clGetPipeInfo} returns {CL_SUCCESS} if the function is executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_MEM_OBJECT} if _pipe_ is a not a valid pipe object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<pipe-info-table, Pipe Object Queries>> table
+    and _param_value_ is not `NULL`.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 --
 
 
@@ -5351,6 +5904,7 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 
+[[callback-functions]]
 [NOTE]
 ====
 When the user callback function is called by the implementation, the
@@ -5526,11 +6080,13 @@ include::{generated}/api/protos/clEnqueueReleaseExternalMemObjectsKHR.txt[]
     application to query the status of this command or queue a wait for this
     command to complete.
 
-Applications must release the memory objects that are acquired using
-{clEnqueueReleaseExternalMemObjectsKHR} before using them through any
-commands in the other API.
-This is to guarantee that the state of memory objects is up-to-date and they
-are accessible to the other API.
+Applications must release memory objects that were acquired using
+{clEnqueueReleaseExternalMemObjectsKHR} before using any external memory
+handles that were specified when the memory objects were created or accessing
+the external memory that these handles represent outside of OpenCL, otherwise
+behavior is undefined.
+This is to guarantee that the state of memory objects is up-to-date and that
+they are accessible outside of OpenCL.
 
 The following restrictions shall apply:
 
@@ -5628,7 +6184,12 @@ handles, and adds as a property that may be specified when creating a buffer
 or an image memory object from an external handle:
 
   * {CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR_anchor} is a file descriptor for a Linux
-    dma_buf.
+    dma_buf. Once a memory object created from a dma_buf has been acquired with 
+    {clEnqueueAcquireExternalMemObjectsKHR}, all access, including host access should 
+    be done through OpenCL, until a call to {clEnqueueReleaseExternalMemObjectsKHR} has completed.
+    Any operations external to OpenCL on the dma_buf while it is acquired 
+    may result in undefined behavior.
+    
     It owns a reference to the underlying memory resource represented by its
     memory object.
 endif::cl_khr_external_memory_dma_buf[]
@@ -5907,7 +6468,7 @@ This also permits an application to overlap the placement of memory objects
 with other unrelated operations before these memory objects are needed
 potentially hiding transfer latencies.
 Once the event, returned from {clEnqueueMigrateMemObjects}, has been marked
-CL_COMPLETE the memory objects specified in _mem_objects_ have been
+{CL_COMPLETE} the memory objects specified in _mem_objects_ have been
 successfully migrated to the device associated with _command_queue_.
 The migrated memory object shall remain resident on the device until another
 command is enqueued that either implicitly or explicitly migrates it away.
@@ -5968,14 +6529,15 @@ include::{generated}/api/version-notes/clGetMemObjectInfo.asciidoc[]
   * _param_name_ specifies the information to query.
     The list of supported _param_name_ types and the information returned in
     _param_value_ by {clGetMemObjectInfo} is described in the
-    <<mem-info-table,Memory Object Info>> table.
+    <<mem-info-table, Memory Object Queries>> table.
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<mem-info-table,Memory Object Info>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<mem-info-table, Memory Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -6149,6 +6711,20 @@ include::{generated}/api/version-notes/CL_MEM_D3D11_RESOURCE_KHR.asciidoc[]
       returns the _resource_ argument specified when _memobj_ was created.
 endif::cl_khr_d3d11_sharing[]
 
+ifdef::cl_ext_buffer_device_address[]
+| {CL_MEM_DEVICE_ADDRESS_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_MEM_DEVICE_ADDRESS_EXT.asciidoc[]
+  |  {cl_mem_device_address_ext_TYPE}[]
+    | If _memobj_ was created using {clCreateBufferWithProperties} with
+      the {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT} property set to {CL_TRUE},
+      returns a list of device addresses for the buffer, one for each
+      device in the context in the same order as the list of devices
+      passed to {clCreateContext}.
+
+endif::cl_ext_buffer_device_address[]
+
+
 |====
 
 // refError
@@ -6158,10 +6734,16 @@ successfully.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_MEM_OBJECT} if _memobj_ is a not a valid memory object.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<mem-info-table,Memory Object Info>> table and _param_value_ is not
-    `NULL`.
+ifdef::cl_ext_buffer_device_address[]
+  * {CL_INVALID_OPERATION} is returned for the {CL_MEM_DEVICE_ADDRESS_EXT} query if
+     the {cl_ext_buffer_device_address_EXT} is not supported or if the
+     buffer was not allocated with {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT}.
+endif::cl_ext_buffer_device_address[]
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<mem-info-table, Memory Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -6278,15 +6860,16 @@ include::{generated}/api/version-notes/clGetGLTextureInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the result being queried is
     returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory
-    pointed to by _param_value_.
-    This size must be >= size of return type as described in the table
-    below.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<gl-texture-info-table, OpenGL Texture Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data copied
     to _param_value_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
 
-[[gl-texture-info-queries-table]]
+[[gl-texture-info-table]]
 .OpenGL texture info that may be queried with {clGetGLTextureInfo}
 [cols=",,",options="header",]
 |====
@@ -6322,10 +6905,12 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_MEM_OBJECT} if _memobj_ is not a valid OpenCL memory object.
   * {CL_INVALID_GL_OBJECT} if there is no OpenGL texture object associated
     with _memobj_.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is less than the size of the return type
-    as described in the table above and _param_value_ is not `NULL`, or if
-    _param_value_ and _param_value_size_ret_ are `NULL`.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<gl-texture-info-table, OpenGL Texture Queries>> table
+    and _param_value_ is not `NULL`.
+  * {CL_INVALID_VALUE} if _param_value_ and _param_value_size_ret_ are `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -7247,7 +7832,7 @@ in _mem_objects_ have completed prior to executing subsequent commands in the
 other API which reference these objects.
 
 This may be accomplished portably by calling {clWaitForEvents} with the
-event object returned by *clEnqueueReleaseGLObjects,* or by calling
+event object returned by {clEnqueueReleaseGLObjects}, or by calling
 {clFinish}.
 As above, some implementations may offer more efficient methods.
 
@@ -7473,6 +8058,9 @@ Otherwise, like *malloc*, it returns a `NULL` pointer value.
   * _context_ is not a valid context, or no devices in _context_ support SVM.
   * _flags_ does not contain {CL_MEM_SVM_FINE_GRAIN_BUFFER} but does contain
     {CL_MEM_SVM_ATOMICS}.
+ifdef::cl_ext_immutable_memory_objects[]
+  * _flags_ contains {CL_MEM_IMMUTABLE_EXT}.
+endif::cl_ext_immutable_memory_objects[]
   * Values specified in _flags_ do not follow rules described for supported
     values in the <<svm-flags-table,SVM Memory Flags>> table.
   * {CL_MEM_SVM_FINE_GRAIN_BUFFER} or {CL_MEM_SVM_ATOMICS} is specified in
@@ -8314,10 +8902,11 @@ include::{generated}/api/version-notes/clGetSamplerInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<sampler-info-table,Sampler Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<sampler-info-table, Sampler Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -8383,11 +8972,12 @@ include::{generated}/api/version-notes/CL_SAMPLER_PROPERTIES.asciidoc[]
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<sampler-info-table,Sampler Object Queries>> table and
-    _param_value_ is not `NULL`.
   * {CL_INVALID_SAMPLER} if _sampler_ is a not a valid sampler object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<sampler-info-table, Sampler Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -9547,8 +10137,8 @@ IMPORTANT: Debugging options are <<unified-spec, missing before>> version 2.0.
 ifdef::cl_ext_cxx_for_opencl[]
 ==== C++ for OpenCL
 
-Applications may pass `-cl-std=CLC\++` to {clCompileProgram} or {clBuildProgram}
-for programs created using {clCreateProgramFromSource} to request the program
+Applications may pass `-cl-std=CLC{pp}` to {clCompileProgram} or {clBuildProgram}
+for programs created using {clCreateProgramWithSource} to request the program
 be built as C++ for OpenCL.
 endif::cl_ext_cxx_for_opencl[]
 
@@ -9698,10 +10288,11 @@ include::{generated}/api/version-notes/clGetProgramInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<program-info-table,Program Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<program-info-table, Program Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -9879,11 +10470,12 @@ include::{generated}/api/version-notes/CL_PROGRAM_SCOPE_GLOBAL_DTORS_PRESENT.asc
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<program-info-table,Program Object Queries>> table and
-    _param_value_ is not `NULL`.
   * {CL_INVALID_PROGRAM} if _program_ is a not a valid program object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<program-info-table, Program Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_INVALID_PROGRAM_EXECUTABLE} if _param_name_ is
     {CL_PROGRAM_NUM_KERNELS}, {CL_PROGRAM_KERNEL_NAMES},
     {CL_PROGRAM_SCOPE_GLOBAL_CTORS_PRESENT}, or
@@ -9914,10 +10506,11 @@ include::{generated}/api/version-notes/clGetProgramBuildInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<program-build-info-table,Program Build Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<program-build-info-table, Program Build Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -10030,13 +10623,14 @@ include::{generated}/api/version-notes/CL_PROGRAM_BUILD_GLOBAL_VARIABLE_TOTAL_SI
 successfully.
 Otherwise, it returns one of the following errors:
 
+  * {CL_INVALID_PROGRAM} if _program_ is a not a valid program object.
   * {CL_INVALID_DEVICE} if _device_ is not in the list of devices associated
     with _program_.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<program-build-info-table,Program Build Queries>> table and
-    _param_value_ is not `NULL`.
-  * {CL_INVALID_PROGRAM} if _program_ is a not a valid program object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<program-build-info-table, Program Build Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -10333,6 +10927,10 @@ The memory object specified as argument value must be a 2D image array
 object with image channel order = {CL_DEPTH} if argument is declared to be of
 type _image2d_array_depth_t_.
 
+Behavior is undefined if the same memory object is passed as both a `read_only`
+image and a `write_only` image, or as a `read_write` image and either a
+`read_only` image or a `write_only` image.
+
 For all other kernel arguments, the _arg_value_ entry must be a pointer to
 the actual data to be used as argument value.
 
@@ -10380,22 +10978,25 @@ endif::cl_khr_depth_images,cl_khr_gl_msaa_sharing[]
   * {CL_INVALID_DEVICE_QUEUE} for an argument declared to be of type _queue_t_
     when the specified _arg_value_ is not a valid device queue object.
     This error code is <<unified-spec, missing before>> version 2.0.
-  * {CL_INVALID_ARG_SIZE} if _arg_size_ does not match the size of the data
-    type for an argument that is not a memory object or if the argument is a
-    memory object and _arg_size_ != `sizeof({cl_mem_TYPE})` or if _arg_size_ is
-    zero and the argument is declared with the local qualifier or if the
-    argument is a sampler and _arg_size_ != `sizeof({cl_sampler_TYPE})`.
+  * {CL_INVALID_ARG_SIZE}
+  ** if _arg_size_ does not match the size of the data type for an argument
+     that is not a memory object, or
+  ** if the argument is a memory object and _arg_size_ != `sizeof({cl_mem_TYPE})`, or
+  ** if _arg_size_ is zero and the argument is declared with the `local` qualifier, or
+  ** if the argument is a sampler and _arg_size_ != `sizeof({cl_sampler_TYPE})`.
   * {CL_MAX_SIZE_RESTRICTION_EXCEEDED} if the size in bytes of the memory
     object (if the argument is a memory object) or _arg_size_ (if the
     argument is declared with `local` qualifier) exceeds a language-
     specified maximum size restriction for this argument, such as the
     *MaxByteOffset* SPIR-V decoration.
     This error code is <<unified-spec, missing before>> version 2.2.
-  * {CL_INVALID_ARG_VALUE} if the argument is an image declared with the
-    `read_only` qualifier and _arg_value_ refers to an image object created
-    with _cl_mem_flags_ of {CL_MEM_WRITE_ONLY} or if the image argument is
-    declared with the `write_only` qualifier and _arg_value_ refers to an
-    image object created with _cl_mem_flags_ of {CL_MEM_READ_ONLY}.
+  * {CL_INVALID_ARG_VALUE}
+  ** if the argument is an image declared with the `read_only` qualifier and
+     _arg_value_ refers to an image object created with _cl_mem_flags_ of
+     {CL_MEM_WRITE_ONLY}, or
+  ** if the image argument is declared with the `write_only` qualifier and
+     _arg_value_ refers to an image object created with _cl_mem_flags_ of
+     {CL_MEM_READ_ONLY}.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -10454,16 +11055,57 @@ Otherwise, it returns one of the following errors:
     required by the OpenCL implementation on the host.
 --
 
-[open,refpage='clSetKernelExecInfo',desc='Pass additional information other than argument values to a kernel.',type='protos']
+ifdef::cl_ext_buffer_device_address[]
+[open,refpage='clSetKernelArgDevicePointerEXT',desc='Set a device pointer as the argument value for a specific argument of a kernel.',type='protos']
 --
-To pass additional information other than argument values to a kernel, call
-the function
+To set a device pointer as the argument value for a specific argument of a
+kernel, call the function
+
+include::{generated}/api/protos/clSetKernelArgDevicePointerEXT.txt[]
+include::{generated}/api/version-notes/clSetKernelArgDevicePointerEXT.asciidoc[]
+
+  * _kernel_ is a valid kernel object.
+  * _arg_index_ is the argument index.
+    Arguments to the kernel are referred by indices that go from 0 for the
+    leftmost argument to _n_ - 1, where _n_ is the total number of arguments
+    declared by a kernel.
+  * _arg_value_ is the device pointer that should be used as the argument value for
+    argument specified by _arg_index_.
+    The device pointer specified is the value used by all API calls that enqueue
+    _kernel_ ({clEnqueueNDRangeKernel} and {clEnqueueTask}) until the argument
+    value is changed by a call to {clSetKernelArgDevicePointerEXT} for _kernel_.
+    The device pointer can only be used for arguments that are declared to be a
+    pointer to `global` memory allocated with {clCreateBufferWithProperties} with
+    the {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT} property. The pointer value specified as
+    the argument value can be the pointer to the beginning of the buffer or any offset into
+    the buffer region. The device pointer value must be naturally aligned according to
+    the argument's type. It should be noted that it's legal to pass invalid
+    pointers as the value (similarly to C/C++ function calls with pointer arguments) as
+    long as the kernel doesn't dereference the pointer.
+
+{clSetKernelArgDevicePointerEXT} returns {CL_SUCCESS} if the argument was set
+successfully. Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_KERNEL} if _kernel_ is not a valid kernel object.
+  * {CL_INVALID_OPERATION} if no devices in the context associated with _kernel_ support
+    the {cl_ext_buffer_device_address_EXT} extension.
+  * {CL_INVALID_ARG_INDEX} if _arg_index_ is not a valid argument index.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+endif::cl_ext_buffer_device_address[]
+
+[open,refpage='clSetKernelExecInfo',desc='Set additional execution information for a kernel.',type='protos']
+--
+To set additional execution information for a kernel, call the function
 
 include::{generated}/api/protos/clSetKernelExecInfo.txt[]
 include::{generated}/api/version-notes/clSetKernelExecInfo.asciidoc[]
 
-  * _kernel_ specifies the kernel object being queried.
-  * _param_name_ specifies the information to be passed to kernel.
+  * _kernel_ is a valid kernel object.
+  * _param_name_ specifies the type of information to set.
     The list of supported _param_name_ types and the corresponding values passed
     in _param_value_ is described in the <<kernel-exec-info-table,Kernel
     Execution Properties>> table.
@@ -10481,22 +11123,59 @@ include::{generated}/api/version-notes/clSetKernelExecInfo.asciidoc[]
 
 include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_SVM_PTRS.asciidoc[]
   | {void_TYPE}*[]
-      | SVM pointers must reference locations contained entirely within
-        buffers that are passed to kernel as arguments, or that are passed
-        through the execution information.
+      | Specifies a set of pointers to SVM allocations that may be accessed
+        by the kernel in addition to those set directly as kernel arguments.
+        Each of the pointers can be the pointer returned by {clSVMAlloc} or can
+        be a pointer to the middle of an SVM allocation.
+        It is sufficient to specify one pointer for each SVM allocation.
 
-        Non-argument SVM buffers must be specified by passing pointers to
-        those buffers via {clSetKernelExecInfo} for coarse-grain and
-        fine-grain buffer SVM allocations but not for finegrain system SVM
-        allocations.
+        Behavior is undefined if the kernel accesses a coarse-grain or
+        fine-grain buffer SVM allocation that is not set as a kernel argument
+        and is not in the set specified by {CL_KERNEL_EXEC_INFO_SVM_PTRS}.
+
+        The complete set of pointers is specified by each call to
+        {clSetKernelExecInfo} and replaces any previously specified set of
+        pointers.
+        To specify that no SVM allocations will be accessed by a kernel other
+        than those set as kernel arguments, specify an empty set by passing
+        _param_value_size_ equal to zero and _param_value_ equal to `NULL`.
+
+        Non-argument pointers to SVM allocations must be specified for
+        coarse-grain and fine-grain buffer SVM allocations, but not for
+        fine-grain system SVM allocations.
 | {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM_anchor}
 
 include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM.asciidoc[]
   | {cl_bool_TYPE}
-      | This flag indicates whether the kernel uses pointers that are fine
-        grain system SVM allocations.
-        These fine grain system SVM pointers may be passed as arguments or
-        defined in SVM buffers that are passed as arguments to _kernel_.
+      | Specifies whether the kernel may use pointers to system allocations
+        that are not set directly as kernel arguments on devices that support
+        fine-grain system SVM allocations.
+
+        When a device supports fine-grain system SVM allocations and
+        {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is {CL_TRUE}, the kernel may
+        access system allocations that are not set directly as kernel arguments.
+
+        Otherwise, if a device does not support fine-grain system SVM
+        allocations or when {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is
+        {CL_FALSE}, behavior is undefined if the kernel accesses a system
+        allocation that is not set as a kernel argument.
+
+        If {clSetKernelExecInfo} has not been called with a value for
+        {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM}, the default value is
+        {CL_TRUE}.
+
+ifdef::cl_ext_buffer_device_address[]
+| {CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT_anchor}
+
+include::{generated}/api/version-notes/CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT.asciidoc[]
+  | {cl_mem_device_address_ext_TYPE}[]
+      | Device pointers must reference locations contained entirely within
+        buffers that are passed to kernel as arguments, or that are passed
+        through the execution information. Non-argument device pointers accessed
+        by the kernel must be specified by passing pointers to those buffers
+        via this {clSetKernelExecInfo} option.
+endif::cl_ext_buffer_device_address[]
+
 |====
 
 // refError
@@ -10506,80 +11185,28 @@ successfully.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
-  * {CL_INVALID_OPERATION} if no devices in the context associated with _kernel_ support SVM.
+  * {CL_INVALID_OPERATION} for {CL_KERNEL_EXEC_INFO_SVM_PTRS} and
+     {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} if no devices in
+     the context associated with _kernel_ support SVM.
+ifdef::cl_ext_buffer_device_address[]
+  * {CL_INVALID_OPERATION} for {CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT} if no
+  device in the context associated with _kernel_ support the {cl_ext_buffer_device_address_EXT}
+  extension.
+endif::cl_ext_buffer_device_address[]
   * {CL_INVALID_VALUE} if _param_name_ is not valid, if _param_value_ is
     `NULL` or if the size specified by _param_value_size_ is not valid.
   * {CL_INVALID_OPERATION} if _param_name_ is
     {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} and _param_value_ is {CL_TRUE}
-    but no devices in context associated with _kernel_ support fine-grain
+    and no devices in the context associated with _kernel_ support fine-grain
     system SVM allocations.
+  * {CL_INVALID_VALUE} if _param_name_ is not valid, if _param_value_ is
+    `NULL` and _param_value_size_ is greater than zero, or if the size specified
+    by _param_value_size_ is not valid.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
 --
-
-[NOTE]
-====
-Coarse-grain or fine-grain buffer SVM pointers used by a kernel which
-are not passed as a kernel arguments must be specified using
-{clSetKernelExecInfo} with {CL_KERNEL_EXEC_INFO_SVM_PTRS}.
-For example, if SVM buffer A contains a pointer to another SVM buffer B,
-and the kernel dereferences that pointer, then a pointer to B must
-either be passed as an argument in the call to that kernel or it must be
-made available to the kernel using {clSetKernelExecInfo}.
-For example, we might pass extra SVM pointers as follows:
-
-[source,opencl]
-----
-clSetKernelExecInfo(kernel,
-                    CL_KERNEL_EXEC_INFO_SVM_PTRS,
-                    num_ptrs * sizeof(void *),
-                    extra_svm_ptr_list);
-----
-
-Here `num_ptrs` specifies the number of additional SVM pointers while
-`extra_svm_ptr_list` specifies a pointer to memory containing those SVM
-pointers.
-
-When calling {clSetKernelExecInfo} with {CL_KERNEL_EXEC_INFO_SVM_PTRS} to
-specify pointers to non-argument SVM buffers as extra arguments to a kernel,
-each of these pointers can be the SVM pointer returned by {clSVMAlloc} or
-can be a pointer + offset into the SVM region.
-It is sufficient to provide one pointer for each SVM buffer used.
-
-{CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} is used to indicate whether
-SVM pointers used by a kernel will refer to system allocations or not.
-
-{CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} = {CL_FALSE} indicates that the
-OpenCL implementation may assume that system pointers are not passed as
-kernel arguments and are not stored inside SVM allocations passed as kernel
-arguments.
-
-{CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} = {CL_TRUE} indicates that the
-OpenCL implementation must assume that system pointers might be passed as
-kernel arguments and/or stored inside SVM allocations passed as kernel
-arguments.
-In this case, if the device to which the kernel is enqueued does not support
-system SVM pointers, {clEnqueueNDRangeKernel} and {clEnqueueTask} will return a
-{CL_INVALID_OPERATION} error.
-If none of the devices in the context associated with kernel support
-fine-grain system SVM allocations, {clSetKernelExecInfo} will return a
-{CL_INVALID_OPERATION} error.
-
-If {clSetKernelExecInfo} has not been called with a value for
-{CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM}, the default value is used for
-this kernel attribute.
-The default value depends on whether the device on which the kernel is
-enqueued supports fine-grain system SVM allocations.
-If so, the default value used is {CL_TRUE} (system pointers might be passed);
-otherwise, the default is {CL_FALSE}.
-
-A call to {clSetKernelExecInfo} for a given value of _param_name_
-replaces any prior value passed for that value of _param_name_.
-Only one _param_value_ will be stored for each value of _param_name_.
-====
-
 
 === Copying Kernel Objects
 
@@ -10658,10 +11285,11 @@ include::{generated}/api/version-notes/clGetKernelInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<kernel-info-table,Kernel Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<kernel-info-table, Kernel Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -10724,11 +11352,12 @@ include::{generated}/api/version-notes/CL_KERNEL_ATTRIBUTES.asciidoc[]
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<kernel-info-table,Kernel Object Queries>> table and _param_value_
-    is not `NULL`.
   * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<kernel-info-table, Kernel Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -10757,10 +11386,11 @@ include::{generated}/api/version-notes/clGetKernelWorkGroupInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<kernel-workgroup-info-table,Kernel Object Device Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<kernel-workgroup-info-table, Kernel Object Device Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -10775,12 +11405,12 @@ include::{generated}/api/version-notes/clGetKernelWorkGroupInfo.asciidoc[]
 include::{generated}/api/version-notes/CL_KERNEL_GLOBAL_WORK_SIZE.asciidoc[]
   | {size_t_TYPE}[3]
       | This provides a mechanism for the application to query the maximum
-        global size that can be used to execute a kernel (i.e.
+        global size that can be used to execute a kernel (i.e. the
         _global_work_size_ argument to {clEnqueueNDRangeKernel}) on a custom
-        device given by device or a built-in kernel on an OpenCL device
-        given by device.
+        device given by _device_ or a built-in kernel on an OpenCL device
+        given by _device_.
 
-        If device is not a custom device and kernel is not a built-in
+        If _device_ is not a custom device and _kernel_ is not a built-in
         kernel, {clGetKernelWorkGroupInfo} returns the error
         {CL_INVALID_VALUE}.
 | {CL_KERNEL_WORK_GROUP_SIZE_anchor}
@@ -10850,16 +11480,17 @@ include::{generated}/api/version-notes/CL_KERNEL_PRIVATE_MEM_SIZE.asciidoc[]
 successfully.
 Otherwise, it returns one of the following errors:
 
+  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_INVALID_DEVICE} if _device_ is not in the list of devices associated
     with _kernel_ or if _device_ is `NULL` but there is more than one device
     associated with _kernel_.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<kernel-workgroup-info-table,Kernel Object Device Queries>> table
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<kernel-workgroup-info-table, Kernel Object Device Queries>> table
     and _param_value_ is not `NULL`.
   * {CL_INVALID_VALUE} if _param_name_ is {CL_KERNEL_GLOBAL_WORK_SIZE} and
     _device_ is not a custom device and _kernel_ is not a built-in kernel.
-  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -10895,10 +11526,11 @@ Also see {cl_khr_subgroups_EXT}.
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<kernel-sub-group-info-table,Kernel Object Sub-group Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<kernel-sub-group-info-table, Kernel Object Sub-group Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -11003,20 +11635,21 @@ Also see {cl_khr_subgroups_EXT}.
 successfully.
 Otherwise, it returns one of the following errors:
 
+  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_INVALID_DEVICE} if _device_ is not in the list of devices associated
     with _kernel_ or if _device_ is `NULL` but there is more than one device
     associated with _kernel_.
   * {CL_INVALID_OPERATION} if _device_ does not support sub-groups.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<kernel-sub-group-info-table,Kernel Object Sub-group Queries>> table
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<kernel-sub-group-info-table, Kernel Object Sub-group Queries>> table
     and _param_value_ is not `NULL`.
   * {CL_INVALID_VALUE} if _param_name_ is
     {CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE},
     {CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE} or
     {CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT} and the size in bytes specified
     by _input_value_size_ is not valid or if _input_value_ is `NULL`.
-  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -11042,10 +11675,11 @@ include::{generated}/api/version-notes/clGetKernelArgInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be > size of return type as described in the
-    <<kernel-argument-info-table,Kernel Argument Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<kernel-argument-info-table, Kernel Argument Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -11160,14 +11794,19 @@ include::{generated}/api/version-notes/CL_KERNEL_ARG_NAME.asciidoc[]
 successfully.
 Otherwise, it returns one of the following errors:
 
+  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
   * {CL_INVALID_ARG_INDEX} if _arg_index_ is not a valid argument index.
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_ size is < size of return type as described in
-    the <<kernel-argument-info-table,Kernel Argument Queries>> table and
-    _param_value_ is not `NULL`.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<kernel-argument-info-table, Kernel Argument Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_KERNEL_ARG_INFO_NOT_AVAILABLE} if the argument information is not
     available for kernel.
-  * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
+  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
 --
 
 ifdef::cl_khr_suggested_local_work_size[]
@@ -11271,12 +11910,6 @@ include::{generated}/api/version-notes/clEnqueueNDRangeKernel.asciidoc[]
     and work-items in the work-group.
     _work_dim_ must be greater than zero and less than or equal to
     {CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS}.
-    If _global_work_size_ is `NULL`, or the value in any passed dimension is 0
-    then the kernel command will trivially succeed after its event dependencies
-    are satisfied and subsequently update its completion event.
-    The behavior in this situation is similar to that of an enqueued marker,
-    except that unlike a marker, an enqueued kernel with no events passed to
-    _event_wait_list_ may run at any time.
   * _global_work_offset_ can be used to specify an array of _work_dim_ unsigned
     values that describe the offset used to calculate the global ID of a
     work-item.
@@ -11287,6 +11920,14 @@ include::{generated}/api/version-notes/clEnqueueNDRangeKernel.asciidoc[]
     execute the kernel function.
     The total number of global work-items is computed as _global_work_size_[0]
     {times} ... {times} _global_work_size_[_work_dim_ - 1].
+    If the device associated with _command_queue_ is an OpenCL 2.1 or newer
+    device, and _global_work_size_ is `NULL` or the value in any passed
+    dimension is zero,
+    then the kernel command will trivially succeed after its event dependencies
+    are satisfied and subsequently update its completion event.
+    The behavior in this situation is similar to that of an enqueued marker,
+    except that unlike a marker, an enqueued kernel with no events passed to
+    _event_wait_list_ may run at any time.
   * _local_work_size_ points to an array of _work_dim_ unsigned values that
     describe the number of work-items that make up a work-group (also referred
     to as the size of the work-group) that will execute the kernel specified by
@@ -11378,7 +12019,7 @@ successfully queued.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_PROGRAM_EXECUTABLE} if there is no successfully built program
-    executable available for device associated with _command_queue_.
+    executable available for the device associated with _command_queue_.
   * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
     command-queue.
   * {CL_INVALID_KERNEL} if _kernel_ is not a valid kernel object.
@@ -11391,9 +12032,9 @@ Otherwise, it returns one of the following errors:
     value between 1 and {CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS}).
   * {CL_INVALID_GLOBAL_WORK_SIZE} if _global_work_size_ is NULL or if any of
     the values specified in _global_work_size_[0], ...
-    _global_work_size_[_work_dim_ - 1] are 0.
-    Returning this error code under these circumstances is  <<unified-spec,
-    deprecated by>> version 2.1.
+    _global_work_size_[_work_dim_ - 1] are zero.
+    This error condition does not apply when the device associated with
+    _command_queue_ supports OpenCL 2.1 or newer.
   * {CL_INVALID_GLOBAL_WORK_SIZE} if any of the values specified in
     _global_work_size_[0], ... _global_work_size_[_work_dim_ - 1] exceed the
     maximum value representable by {size_t_TYPE} on the device on which the
@@ -11455,10 +12096,8 @@ Otherwise, it returns one of the following errors:
     _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
     are not valid events.
   * {CL_INVALID_OPERATION} if SVM pointers are passed as arguments to a kernel
-    and the device does not support SVM or if system pointers are passed as
-    arguments to a kernel and/or stored inside SVM allocations passed as
-    kernel arguments and the device does not support fine grain system SVM
-    allocations.
+    and the device does not support SVM, or if system pointers are passed as
+    arguments to a kernel and the device does not support fine-grain system SVM.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -11550,10 +12189,8 @@ Otherwise, it returns one of the following errors:
     _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
     are not valid events.
   * {CL_INVALID_OPERATION} if SVM pointers are passed as arguments to a kernel
-    and the device does not support SVM or if system pointers are passed as
-    arguments to a kernel and/or stored inside SVM allocations passed as
-    kernel arguments and the device does not support fine grain system SVM
-    allocations.
+    and the device does not support SVM, or if system pointers are passed as
+    arguments to a kernel and the device does not support fine-grain system SVM.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -11851,10 +12488,11 @@ include::{generated}/api/version-notes/clGetEventInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<event-info-table,Event Object Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<event-info-table, Event Object Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -12209,13 +12847,14 @@ associated with _event_ will be visible to other enqueued commands.
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<kernel-argument-info-table,Kernel Argument Queries>> table and
-    _param_value_ is not `NULL`.
-  * {CL_INVALID_VALUE} if information to query given in _param_name_ cannot be
-    queried for _event_.
   * {CL_INVALID_EVENT} if _event_ is a not a valid event object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<event-info-table,Event Object Queries>> table
+    and _param_value_ is not `NULL`.
+  * {CL_INVALID_VALUE} if the information to query given in _param_name_ cannot be
+    queried for _event_.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -12874,10 +13513,16 @@ endif::cl_khr_external_semaphore[]
 
 If {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} is not specified as part of
 _sema_props_, the semaphore object created by
-{clCreateSemaphoreWithPropertiesKHR} is by default accessible to all devices
+{clCreateSemaphoreWithPropertiesKHR} is by default associated with all devices
 in the _context_.
 For a multi-device context {CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR} must be
 specified in _sema_props_.
+
+ifdef::cl_khr_external_semaphore[]
+The properties used to create a semaphore from an external semaphore handle are
+<<external-semaphore-handle-types, described for the corresponding
+extensions>>.
+endif::cl_khr_external_semaphore[]
 
 // refError
 
@@ -12924,6 +13569,8 @@ ifdef::cl_khr_external_semaphore[]
     well as {CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR}. Exporting a semaphore
     handle from a semaphore that was created by importing an external
     semaphore handle is not permitted.
+  * {CL_INVALID_PROPERTY} if _sema_props_ includes more than one external
+    semaphore handle.
 endif::cl_khr_external_semaphore[]
 --
 
@@ -12949,9 +13596,13 @@ include::{generated}/api/version-notes/clGetSemaphoreHandleForTypeKHR.asciidoc[]
   * _handle_type_ specifies the type of semaphore handle that should be
     returned for this exportable _sema_object_, and must be one of the
     values specified when _sema_object_ was created.
-  * _handle_size_ specifies the size of memory pointed by _handle_ptr_.
   * _handle_ptr_ is a pointer to memory where the exported external handle
     is returned.
+    If _handle_ptr_ is `NULL`, it is ignored.
+  * _handle_size_ specifies the size in bytes of memory pointed to by
+    _handle_ptr_.
+    This size must be greater than or equal to the size of the handle type
+    specified by _handle_type_.
     If _handle_ptr_ is `NULL`, it is ignored.
   * _handle_size_ret_ returns the actual size in bytes for the external
     handle.
@@ -12963,10 +13614,7 @@ include::{generated}/api/version-notes/clGetSemaphoreHandleForTypeKHR.asciidoc[]
 handle is queried successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_SEMAPHORE_KHR}
-  ** if _sema_object_ is not a valid semaphore
-// This is redundant with the error below.
-  ** if _sema_object_ is not exportable
+  * {CL_INVALID_SEMAPHORE_KHR} if _sema_object_ is not a valid semaphore.
   * {CL_INVALID_DEVICE}
   ** if _device_ is not a valid device, or
   ** if _sema_object_ belongs to a context that is not associated with
@@ -12974,14 +13622,8 @@ Otherwise, it returns one of the following errors:
   ** if _sema_object_ can not be shared with _device_.
   * {CL_INVALID_VALUE} if the requested external semaphore handle type was
     not specified when _sema_object_ was created.
-  * {CL_INVALID_VALUE} if _handle_size_ is less than the size needed to
-    store the returned handle.
-// I don't think this can happen.  This would have been checked when the semaphore was created.
-//    ** if CL_SEMAPHORE_HANDLE_*_KHR is specified as one of the _sema_props_ and
-//    the property CL_SEMAPHORE_HANDLE_*_KHR does not identify a valid external
-//    memory handle poperty reported by
-//    {CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR} or
-//   {CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR} queries.
+  * {CL_INVALID_VALUE} if the size in bytes specified by _handle_size_ is
+    less than size of the requested handle and _handle_ptr_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -13006,6 +13648,7 @@ Please refer to handle specific documentation for more details on transference r
 handle type.
 
 
+[[external-semaphore-handle-types]]
 === Descriptions of External Semaphore Handle Types
 
 This section describes the external semaphore handle types that are added by
@@ -13141,9 +13784,41 @@ endif::cl_khr_external_semaphore_sync_fd[]
 endif::cl_khr_external_semaphore_opaque_fd,cl_khr_external_semaphore_sync_fd[]
 
 
-ifdef::cl_khr_external_semaphore_win32[]
+ifdef::cl_khr_external_semaphore_dx_fence,cl_khr_external_semaphore_win32[]
 
 ==== NT Handle Types
+
+ifdef::cl_khr_external_semaphore_dx_fence[]
+
+The {cl_khr_external_semaphore_dx_fence_EXT} extension extends
+{cl_external_semaphore_handle_type_khr_TYPE} to support the following new
+types of handles, and adds as a property that may be specified when creating
+a semaphore from an external handle:
+
+  * {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR} specifies an NT handle returned by
+    `ID3D12Device::CreateSharedHandle` referring to a Direct3D 12 fence, or
+    `ID3D11Fence::CreateSharedHandle` referring to a Direct3D 11 fence.
+    It owns a reference to the underlying synchronization primitive
+    associated with the Direct3D fence.
+
+When waiting on semaphores using {clEnqueueWaitSemaphoresKHR} or signaling
+semaphores using {clEnqueueSignalSemaphoresKHR}, the semaphore payload must
+be provided for semaphores created from
+{CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR}.
+
+  * If _sema_objects_ list has a mix of semaphores obtained from
+    {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR} and other handle types, then the
+    _sema_payload_list_ should point to a list of _num_sema_objects_ payload
+    values for each semaphore in _sema_objects_.
+    However, the payload values corresponding to semaphores that do not require
+    a payload will be ignored.
+
+{clEnqueueWaitSemaphoresKHR} and {clEnqueueSignalSemaphoresKHR} may return
+{CL_INVALID_VALUE} if _sema_objects_ list has one or more semaphores
+obtained from {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR} and _sema_payload_list_
+is NULL.
+
+endif::cl_khr_external_semaphore_dx_fence[]
 
 ifdef::cl_khr_external_semaphore_win32[]
 
@@ -13182,6 +13857,14 @@ endif::cl_khr_external_semaphore_win32[]
 |====
 | Handle Type | Transference
 
+ifdef::cl_khr_external_semaphore_dx_fence[]
+| {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR.asciidoc[]
+  | Reference
+
+endif::cl_khr_external_semaphore_dx_fence[]
+
 ifdef::cl_khr_external_semaphore_win32[]
 | {CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR_anchor}
 
@@ -13208,7 +13891,7 @@ For handle types defined as NT handles, the application must release
 ownership using the `CloseHandle` system call when the handle is no longer
 needed.
 
-endif::cl_khr_external_semaphore_win32[]
+endif::cl_khr_external_semaphore_dx_fence,cl_khr_external_semaphore_win32[]
 
 endif::cl_khr_external_semaphore[]
 
@@ -13229,8 +13912,8 @@ include::{generated}/api/version-notes/clEnqueueWaitSemaphoresKHR.asciidoc[]
   * _sema_payload_list_ points to the list of values of type
     {cl_semaphore_payload_khr_TYPE} containing valid semaphore payload
     values to wait on.
-    This can be set to `NULL` or will be ignored when all semaphores in the
-    list of _sema_objects_ are of type {CL_SEMAPHORE_TYPE_BINARY_KHR}.
+    This can be set to `NULL` or will be ignored if no semaphores in the
+    list of _sema_objects_ require a payload.
   * _num_events_in_wait_list_ specifies the number of events in
     _event_wait_list_.
   * _event_wait_list_ specifies list of events that need to complete before
@@ -13326,8 +14009,8 @@ include::{generated}/api/version-notes/clEnqueueSignalSemaphoresKHR.asciidoc[]
   * _sema_payload_list_ points to the list of values of type
     {cl_semaphore_payload_khr_TYPE} containing semaphore payload values to
     signal.
-    This can be set to `NULL` or will be ignored when all semaphores in the
-    list of _sema_objects_ are of type {CL_SEMAPHORE_TYPE_BINARY_KHR}.
+    This can be set to `NULL` or will be ignored if no semaphores in the
+    list of _sema_objects_ require a payload.
   * _num_events_in_wait_list_ specifies the number of events in
   * _event_wait_list_ points to the list of events that need to complete
     before {clEnqueueSignalSemaphoresKHR} can be executed.
@@ -13485,21 +14168,21 @@ include::{generated}/api/version-notes/clGetSemaphoreInfoKHR.asciidoc[]
   * _sema_object_ specifies the semaphore object being queried.
   * _param_name_ is a constant that specifies the semaphore information to
     query, and must be one of the values shown in the
-    <<cl_khr_semaphore_info-table, Semaphore Queries>> table.
+    <<semaphore-info-table, Semaphore Queries>> table.
   * _param_value_ is a pointer to memory where the result of the query is
-    returned as described in the <<cl_khr_semaphore_info-table, Semaphore
+    returned as described in the <<semaphore-info-table, Semaphore
     Queries>> table.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ specifies the size in bytes of memory pointed to
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
     _param_value_.
     This size must be greater than or equal to the size of the return type
-    described in the <<cl_khr_semaphore_info-table, Semaphore Queries>>
-    table.
+    specified in the <<semaphore-info-table, Semaphore Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_value_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
 
-[[cl_khr_semaphore_info-table]]
+[[semaphore-info-table]]
 .List of parameter names supported by {clGetSemaphoreInfoKHR}
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
@@ -13551,14 +14234,12 @@ endif::cl_khr_external_semaphore[]
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_SEMAPHORE_KHR}
-  ** if _sema_object_ is not a valid semaphore
-  * {CL_INVALID_VALUE}
-  ** if _param_name_ is not one of the attribute defined in the
-     <<cl_khr_semaphore_info-table, Semaphore Queries>> table or
-  ** if _param_value_size_ is less than the size of Return Type of the
-     corresponding _param_name_ attribute as defined in the
-     <<cl_khr_semaphore_info-table, Semaphore Queries>> table.
+  * {CL_INVALID_SEMAPHORE_KHR} if _sema_object_ is not a valid semaphore.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<semaphore-info-table, Semaphore Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -13654,10 +14335,11 @@ include::{generated}/api/version-notes/clGetEventProfilingInfo.asciidoc[]
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
     If _param_value_ is `NULL`, it is ignored.
-  * _param_value_size_ is used to specify the size in bytes of memory pointed to
-    by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<event-profiling-info-table,Event Profiling Queries>> table.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<event-profiling-info-table, Event Profiling Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -13773,6 +14455,7 @@ endif::cl_khr_command_buffer_multi_device[]
 successfully and the profiling information has been recorded.
 Otherwise, it returns one of the following errors:
 
+  * {CL_INVALID_EVENT} if _event_ is a not a valid event object.
   * {CL_PROFILING_INFO_NOT_AVAILABLE} if the {CL_QUEUE_PROFILING_ENABLE} flag is
     not set for the command-queue, if the execution status of the command
     identified by _event_ is not {CL_COMPLETE} or if _event_ is a user event
@@ -13787,11 +14470,11 @@ ifdef::cl_khr_command_buffer_multi_device[]
     {CL_PROFILING_INFO_NOT_AVAILABLE} is returned if all the queues passed
     do not have {CL_QUEUE_PROFILING_ENABLE} set.
 endif::cl_khr_command_buffer_multi_device[]
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<event-profiling-info-table,Event Profiling Queries>> table and
-    _param_value_ is not `NULL`.
-  * {CL_INVALID_EVENT} if _event_ is a not a valid event object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<event-profiling-info-table,Event Profiling Queries>> table and _param_value_ is not
+    a `NULL` value.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -13893,16 +14576,34 @@ of 0 or 1.
 The simultaneous use capability removes this restriction and allows
 command-buffers to have a <<pending_count, Pending Count>> greater than 1.
 
-[[compatible]]
 Command-buffers are created using an ordered list of command-queues that
-commands are recorded to and execute on by default.
-These command-queues can be replaced on command-buffer enqueue with
-different command-queues, provided for each element in the replacement list
-the substitute command-queue is compatible with the command-queue used on
-command-buffer creation.
-A _compatible_ command-queue is defined as a command-queue with
-identical properties targeting the same device and in the same OpenCL
-context.
+commands are recorded to and execute on by default. All these queue objects
+must share the same context, but may be associated with different devices when
+the {cl_khr_command_buffer_multi_device_EXT} extension is supported.
+
+When constructing a command-buffer by appending commands, the queue parameter
+passed for the command being created is used to set the device with which the
+command will be associated with, and also inform the scheduling of the command.
+If the queue is an in-order queue, then an additional dependency is created on the
+last command appended to the command-buffer using the same queue parameter. If
+the queue is an out-of-order queue, then no extra dependencies on previous
+commands using the same queue are created. All queue properties other than
+{CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE} are ignored for the purposes of command
+creation, with the exception of any vendor extension defined queue properties
+that explicitly define semantics for this purpose.
+
+When enqueuing a command-buffer, a list of command-queues to execute the
+command-buffer on can be passed by the user, otherwise the command-queues set
+on command-buffer creation are used by default for execution. A user passed
+list may contain different command-queues, provided for each element the
+substitute command-queue matches the device and context of the command-queue
+used on command-buffer creation. Each command-queue in the enqueue list must
+also have the minimum properties defined by
+{CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR} and no properties
+which are not reported by
+{CL_DEVICE_COMMAND_BUFFER_SUPPORTED_QUEUE_PROPERTIES_KHR}. These queue
+properties have the same execution semantics for {clEnqueueCommandBufferKHR}
+as other operations enqueued to the queue.
 
 While constructing a command-buffer it is valid for the user to interleave
 calls to the same queue which create commands, such as
@@ -13966,7 +14667,7 @@ target the same device.
 
 Commands recorded to different command-queues in the same command-buffer may
 be executed concurrently to each other unless synchronized explicitly with
-sync-points.
+sync-points, barrier commands, or in-order queue implicit dependencies.
 Ordering of other commands submitted to the same command-queues as used to
 enqueue a command-buffer is the responsibility of the programmer.
 A command-buffer enqueue spanning multiple queues can return an event to use
@@ -14115,8 +14816,8 @@ endif::cl_khr_command_buffer_mutable_dispatch[]
     If _errcode_ret_ is `NULL`, no error code is returned.
 
 ifdef::cl_khr_command_buffer_multi_device[]
-.Summary of command-buffer creation configurations, for the {cl_khr_command_buffer_multi_device_EXT} extension
-[width="100%",options="header"]
+.Summary of multi-device command-buffer creation configurations
+[width="100%",cols="1,1,3,3",options="header"]
 |====
 | All Devices Associated With `Queues` can Device-side Sync | Platform Supports Universal Sync | Condition | Result
 .3+| Yes
@@ -14167,13 +14868,6 @@ returned in _errcode_ret_:
 
   * {CL_INVALID_COMMAND_QUEUE} if any command-queue in _queues_ is not a
     valid command-queue.
-  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if any command-queue in _queues_ is
-    an out-of-order command-queue and the device associated with the
-    command-queue does not support the
-    {CL_COMMAND_BUFFER_CAPABILITY_OUT_OF_ORDER_KHR} capability.
-  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the properties of any
-    command-queue in _queues_ does not contain the minimum properties
-    specified by {CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR}.
   * {CL_INVALID_CONTEXT} if all the command-queues in _queues_ do not have
     the same OpenCL context.
   * {CL_INVALID_VALUE} if the {cl_khr_command_buffer_multi_device_EXT}
@@ -14306,10 +15000,10 @@ include::{generated}/api/protos/clEnqueueCommandBufferKHR.txt[]
 include::{generated}/api/version-notes/clEnqueueCommandBufferKHR.asciidoc[]
 
   * _num_queues_ is the number of command-queues listed in _queues_.
-  * _queues_ is a pointer to an ordered list of command-queues <<compatible,
-    compatible>> with the command-queues used on recording.
-    _queues_ can be `NULL`, in which case the default command-queues used on
-    command-buffer creation are used and _num_queues_ must be 0.
+  * _queues_ is a pointer to an ordered list of command-queues to execute the
+    command-buffer on. _queues_ can be `NULL`, in which case the default
+    command-queues used on command-buffer creation are used and _num_queues_
+    must be 0.
   * _command_buffer_ refers to a valid command-buffer object.
   * _event_wait_list_, _num_events_in_wait_list_ specify events that need to
     complete before this particular command can be executed.
@@ -14354,9 +15048,15 @@ execution was successfully queued, or one of the errors below:
     _num_queues_ set on _command_buffer_ creation.
   * {CL_INVALID_COMMAND_QUEUE} if any element of _queues_ is not a valid
     command-queue.
-  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if any element of _queues_ is not
-    <<compatible, compatible>> with the command-queue set on
-    _command_buffer_ creation at the same list index.
+  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the properties of any command-queue
+    in _queues_ contains a property not specified by
+    {CL_DEVICE_COMMAND_BUFFER_SUPPORTED_QUEUE_PROPERTIES_KHR}.
+  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if the properties of any
+    command-queue in _queues_ does not contain the minimum properties
+    specified by {CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR}.
+  * {CL_INVALID_DEVICE} if any element of _queues_ does not have the same
+    device as the command-queue set on _command_buffer_ creation at the
+    same list index.
   * {CL_INVALID_CONTEXT} if any element of _queues_ does not have the same
     context as the command-queue set on _command_buffer_ creation at the
     same list index.
@@ -14532,6 +15232,14 @@ after the function returns.
   * _mutable_handle_ returns a handle to the command.
     This parameter is unused, and **must** be `NULL`.
 
+[NOTE]
+====
+The usage information which indicates whether the memory object can be read or
+written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE} argument
+value specified when _src_buffer_ or _dst_buffer_ is created is ignored by
+{clCommandCopyBufferKHR}.
+====
+
 // refError
 
 {clCommandCopyBufferKHR} returns {CL_SUCCESS} if the function is executed
@@ -14646,6 +15354,14 @@ After copying each 2D rectangle, the source and destination offsets are
 incremented by their respective source and destination slice pitches.
 ====
 
+[NOTE]
+====
+The usage information which indicates whether the memory object can be read or
+written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE} argument
+value specified when _src_buffer_ or _dst_buffer_ is created is ignored by
+{clCommandCopyBufferRectKHR}.
+====
+
 // refError
 
 {clCommandCopyBufferRectKHR} returns {CL_SUCCESS} if the function is
@@ -14743,6 +15459,14 @@ after the function returns.
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
     This parameter is unused, and **must** be `NULL`.
+
+[NOTE]
+====
+The usage information which indicates whether the memory object can be read or
+written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE} argument
+value specified when _src_buffer_ or _dst_image_ is created is ignored by
+{clCommandCopyBufferToImageKHR}.
+====
 
 // refError
 
@@ -14849,6 +15573,14 @@ format, i.e. the {cl_image_format_TYPE} descriptor specified when
 _src_image_ and _dst_image_ are created must match.
 ====
 
+[NOTE]
+====
+The usage information which indicates whether the memory object can be read or
+written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE} argument
+value specified when _src_image_ or _dst_image_ is created is ignored by
+{clCommandCopyImageKHR}.
+====
+
 // refError
 
 {clCommandCopyImageKHR} returns {CL_SUCCESS} if the function is executed
@@ -14945,6 +15677,14 @@ after the function returns.
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
     This parameter is unused, and **must** be `NULL`.
+
+[NOTE]
+====
+The usage information which indicates whether the memory object can be read or
+written by a kernel and/or the host and is given by the {cl_mem_flags_TYPE} argument
+value specified when _src_image_ or _dst_buffer_ is created is ignored by
+{clCommandCopyImageToBufferKHR}.
+====
 
 // refError
 
@@ -15700,22 +16440,18 @@ ifdef::cl_khr_command_buffer_multi_device[]
 If the {cl_khr_command_buffer_multi_device_EXT} extension is supported,
 platforms reporting the {CL_COMMAND_BUFFER_PLATFORM_REMAP_QUEUES_KHR}
 capability support generating a deep copy of a command-buffer with its
-commands remapped to a list of command-queues that are potentially
-<<compatible, incompatible>> with the queues used to create the
-command-buffer.
-That is, the remapped command-buffer can execute on queues that differ in
-terms of properties and/or associated device from the original
+commands remapped to different devices than the devices used to create the
+commands. That is, the remapped command-buffer can execute on queues that
+differ in terms of properties and/or associated device from the original
 command-buffer queues.
 
 This functionality is invoked through a new synchronous entry-point
 {clRemapCommandBufferKHR} which takes a list of queues to which the commands
-should now target.
-It then returns a command-buffer containing the same commands as the
-original, with the same command dependencies, but targeting different
-queues.
-A list of command handles may also be passed to the entry-point, which
-allows handles to the equivalent commands in the remapped command-buffer to
-be returned by an output parameter.
+should now target the associated devices of. It then returns a command-buffer
+containing the same commands as the original, with the same command
+dependencies, but targeting different devices. A list of command handles may
+also be passed to the entry-point, which allows handles to the equivalent
+commands in the remapped command-buffer to be returned by an output parameter.
 
 Device properties restrict remapping possibilities, as existing commands can
 have a configuration which is not supported by another device, and so
@@ -15738,7 +16474,7 @@ appear and disappear during runtime.
 [open,refpage='clRemapCommandBufferKHR',desc='Create copy of a command-buffer remapped to specified command-queues',type='protos']
 --
 To create a deep copy of the input command-buffer with the copied commands
-remapped to target the passed command-queues, call the function
+remapped to target devices of the passed command-queues, call the function
 
 include::{generated}/api/protos/clRemapCommandBufferKHR.txt[]
 include::{generated}/api/version-notes/clRemapCommandBufferKHR.asciidoc[]
@@ -15797,8 +16533,6 @@ one of the following error values returned in _errcode_ret_:
   * {CL_INVALID_OPERATION} if the platform does not support the
     {CL_COMMAND_BUFFER_PLATFORM_AUTOMATIC_REMAP_KHR} flag and _automatic_ is
     {CL_TRUE}.
-  * {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR} if such an error would be returned
-    by passing _queues_ to {clCreateCommandBufferKHR}.
   * Any error relating to device support that can be returned by a command
     recording entry-point may also be returned.
     As a command in _command_buffer_ can have a configuration that is not
@@ -15848,15 +16582,13 @@ kernel commands using that object as an argument have had their arguments
 replaced with a different object.
 ====
 
-To facilitate performant usage for pipelined work flows, where applications
-repeatedly call command-buffer update then enqueue, implementations may
-defer some of the work to allow {clUpdateMutableCommandsKHR} to return
-immediately.
-Deferring any recompilation until {clEnqueueCommandBufferKHR} avoids
-blocking in host code and keeps device occupancy high.
-This is only possible with a command-buffer created with the
-{CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} flag, as without this the enqueued
-command-buffer must complete before any modification occurs.
+[NOTE]
+====
+Implementations may defer some of the work to allow {clUpdateMutableCommandsKHR}
+to return immediately, provided the user observable behavior in subsequent
+command-buffer usage is specification conformant. Deferring work helps keep
+device occupancy high by avoiding blocking in host code.
+====
 
 [open,refpage='clUpdateMutableCommandsKHR',desc='Modify configuration of mutable-command handles to update behavior for future enqueues',type='protos']
 --
@@ -16070,13 +16802,13 @@ include::{generated}/api/version-notes/clGetCommandBufferInfoKHR.asciidoc[]
 
   * _command_buffer_ specifies the command-buffer being queried.
   * _param_name_ specifies the information to query.
-  * _param_value_size_ specifies the size in bytes of memory pointed to by
-    _param_value_.
-    This size must be {geq} size of return type as described in the table
-    below.
-    If _param_value_ is `NULL`, it is ignored.
   * _param_value_ is a pointer to a memory location where the appropriate
     result being queried is returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<command-buffer-info-table, Command-Buffer Queries>> table.
     If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_value_.
@@ -16085,6 +16817,7 @@ include::{generated}/api/version-notes/clGetCommandBufferInfoKHR.asciidoc[]
 The list of supported _param_name_ values and the information returned in
 _param_value_ by {clGetCommandBufferInfoKHR} is described in the table below.
 
+[[command-buffer-info-table]]
 .{clGetCommandBufferInfoKHR} values
 [cols=",,",options="header",]
 |====
@@ -16166,9 +16899,11 @@ Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
     command-buffer.
-  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values or
-    if size in bytes specified by _param_value_size_ is less than size of
-    return type and _param_value_ is not a `NULL` value.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<command-buffer-info-table, Command-Buffer Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -16187,21 +16922,21 @@ include::{generated}/api/version-notes/clGetMutableCommandInfoKHR.asciidoc[]
   * _param_name_ specifies the information to query.
     The list of supported _param_name_ types and the information returned in
     _param_value_ by {clGetMutableCommandInfoKHR} is described in the
-    <<mutable-command-object-queries, Mutable Command Object Queries>>
-    table.
-  * _param_value_size_ is used to specify the size in bytes of memory
-    pointed to by _param_value_.
-    This size must be {geq} size of return type as described in the
-    <<mutable-command-object-queries, Mutable Command Object Queries>>
+    <<mutable-command-info-table, Mutable Command Object Queries>>
     table.
   * _param_value_ is a pointer to memory where the appropriate result being
     queried is returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ is used to specify the size in bytes of memory
+    pointed to by _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<mutable-command-info-table, Mutable Command Object Queries>> table.
     If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_name_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
 
-[[mutable-command-object-queries]]
+[[mutable-command-info-table]]
 ._Mutable Command Object Queries_
 [width="100%",cols="<33%,<17%,<50%",options="header"]
 |====
@@ -16319,12 +17054,13 @@ include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR.a
 executed successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, or if size in bytes
-    specified by _param_value_size_ is < size of return type as described in
-    the <<mutable-command-object-queries, Mutable Command Object Queries>>
-    table and _param_value_ is not `NULL`.
   * {CL_INVALID_MUTABLE_COMMAND_KHR} if _command_ is not a valid mutable
     command object.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<mutable-command-info-table, Mutable Command Object Queries>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
@@ -16370,7 +17106,8 @@ include::{generated}/api/protos/clGetGLContextInfoKHR.txt[]
   * _param_value_size_ specifies the size in bytes of memory pointed to by
     _param_value_.
     This size must be greater than or equal to the size of the return type
-    described in the table below.
+    specified in the <<gl-context-info-table, Supported Device Types>> table.
+    If _param_value_ is `NULL`, it is ignored.
   * _param_value_size_ret_ returns the actual size in bytes of data being
     queried by _param_value_.
     If _param_value_size_ret_ is `NULL`, it is ignored.
@@ -16427,15 +17164,13 @@ Otherwise, it returns one of the following errors:
      to a non-default value.
   ** Both of the properties {CL_CGL_SHAREGROUP_KHR} and {CL_GL_CONTEXT_KHR}
      are set to non-default values.
-  ** Any of the devices specified in the <devices> argument cannot support
-     OpenCL objects which share the data store of an OpenGL object.
-  * {CL_INVALID_VALUE} if an property name other than those specified in
-    _table 4.5_ is specified in _properties_.
-  * {CL_INVALID_VALUE} if _param_name_ is not one of the values listed in
-    the <<gl-context-info-table, GL context information that can be
-    queried with_ {clGetGLContextInfoKHR}>> table, or if the size in bytes
-    specified by _param_value_size_ is less than the size of the return type
-    shown in the table and _param_value_ is not a `NULL` value
+  * {CL_INVALID_VALUE} if a property name specified in _properties_ is
+    invalid.
+  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
+    if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<gl-context-info-table, Supported Device Types>> table
+    and _param_value_ is not `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
