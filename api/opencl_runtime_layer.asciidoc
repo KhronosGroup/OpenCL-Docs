@@ -14688,8 +14688,8 @@ recorded to the command-buffer.
 
 [[finalized]]
 Finalized:: State after command recording has finished with
-{clFinalizeCommandBufferKHR}, but there is at least one ND-range kernel command
-for which not all arguments have been set (this is a valid state only for
+{clFinalizeCommandBufferKHR}, but there is at least one command for which not
+all arguments or parameters have been set (this is a valid state only for
 mutable command buffers).
 
 [[executable]]
@@ -15984,8 +15984,14 @@ ifdef::cl_khr_command_buffer_mutable_dispatch[]
     in the <<ndrange-kernel-properties-table, List of supported properties
     by clCommandNDRangeKernelKHR>> table.
 endif::cl_khr_command_buffer_mutable_dispatch[]
-  * _kernel_ is a valid kernel object which **must** have its arguments set only
-    if the command is immutable (see description of argument _mutable_handle_).
+ifndef::cl_khr_command_buffer_mutable_dispatch[]
+  * _kernel_ is a valid kernel object which **must** have its arguments set.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+  * _kernel_ is a valid kernel object which **must** have its arguments set
+    unless the command has the {CL_MUTABLE_DISPATCH_ARGUMENTS_KHR} property is
+    set on the command (see description of argument _mutable_handle_).
+endif::cl_khr_command_buffer_mutable_dispatch[]
     Any changes to _kernel_ after calling {clCommandNDRangeKernelKHR}, such
     as with {clSetKernelArg} or {clSetKernelExecInfo}, have no effect on the
     recorded command.
