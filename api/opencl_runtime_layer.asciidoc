@@ -930,43 +930,38 @@ include::{generated}/api/version-notes/CL_BUFFER_CREATE_TYPE_REGION.asciidoc[]
 successfully.
 Otherwise, it returns one of the following errors in _errcode_ret_:
 
-  * {CL_INVALID_MEM_OBJECT} if _buffer_ is not a valid buffer object or is a
-    sub-buffer object.
-  * {CL_INVALID_VALUE} if _buffer_ was created with {CL_MEM_WRITE_ONLY} and
-    _flags_ specifies {CL_MEM_READ_WRITE} or {CL_MEM_READ_ONLY}, or if _buffer_
-    was created with {CL_MEM_READ_ONLY} and _flags_ specifies
-    {CL_MEM_READ_WRITE} or {CL_MEM_WRITE_ONLY}, or if _flags_ specifies
-    {CL_MEM_USE_HOST_PTR} or {CL_MEM_ALLOC_HOST_PTR} or {CL_MEM_COPY_HOST_PTR}.
-  * {CL_INVALID_VALUE} if _buffer_ was created with {CL_MEM_HOST_WRITE_ONLY} and
-    _flags_ specify {CL_MEM_HOST_READ_ONLY}, or if _buffer_ was created with
-    {CL_MEM_HOST_READ_ONLY} and _flags_ specify {CL_MEM_HOST_WRITE_ONLY}, or if
-    _buffer_ was created with {CL_MEM_HOST_NO_ACCESS} and _flags_ specify
-    {CL_MEM_HOST_READ_ONLY} or {CL_MEM_HOST_WRITE_ONLY}.
-  * {CL_INVALID_VALUE} if the value specified in _buffer_create_type_ is not
-    valid.
-  * {CL_INVALID_VALUE} if value(s) specified in _buffer_create_info_ (for a
-    given _buffer_create_type_) is not valid or if _buffer_create_info_ is
-    `NULL`.
-  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
-    memory for sub-buffer object.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
-// These errors are specific to the {CL_BUFFER_CREATE_TYPE_REGION} parameter
-  * {CL_INVALID_VALUE} if the region specified by the {cl_buffer_region_TYPE}
-    structure passed in _buffer_create_info_ is out of bounds in _buffer_.
-  * {CL_INVALID_BUFFER_SIZE} if the _size_ field of the {cl_buffer_region_TYPE}
-    structure passed in _buffer_create_info_ is 0.
-  * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if there are no devices in _context_
-    associated with _buffer_ for which the _origin_ field of the
-    {cl_buffer_region_TYPE} structure passed in _buffer_create_info_ is
-    aligned to the {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value.
+  * {CL_INVALID_MEM_OBJECT} 
+    ** if _buffer_ is not a valid buffer object
+    ** if _buffer_ is a sub-buffer object
+  * {CL_INVALID_VALUE}
+    ** if _buffer_ was created with {CL_MEM_WRITE_ONLY} and _flags_ specifies {CL_MEM_READ_WRITE} or {CL_MEM_READ_ONLY}
+    ** if _buffer_ was created with {CL_MEM_READ_ONLY} and _flags_ specifies {CL_MEM_READ_WRITE} or {CL_MEM_WRITE_ONLY}
+    ** if _buffer_ was created with {CL_MEM_HOST_WRITE_ONLY} and _flags_ specify {CL_MEM_HOST_READ_ONLY}
+    ** if _buffer_ was created with {CL_MEM_HOST_READ_ONLY} and _flags_ specify {CL_MEM_HOST_WRITE_ONLY}
+    ** if _buffer_ was created with {CL_MEM_HOST_NO_ACCESS} and _flags_ specify {CL_MEM_HOST_READ_ONLY} or {CL_MEM_HOST_WRITE_ONLY}
 ifdef::cl_ext_immutable_memory_objects[]
-  * {CL_INVALID_VALUE} if _buffer_ was created with {CL_MEM_IMMUTABLE_EXT}
-    and _flags_ specifies {CL_MEM_READ_WRITE}, {CL_MEM_WRITE_ONLY}, or
-    {CL_MEM_HOST_WRITE_ONLY}.
+    ** if _buffer_ was created with {CL_MEM_IMMUTABLE_EXT} and _flags_ specifies {CL_MEM_READ_WRITE}, {CL_MEM_WRITE_ONLY}, or {CL_MEM_HOST_WRITE_ONLY}
 endif::cl_ext_immutable_memory_objects[]
+    ** if _flags_ specifies {CL_MEM_USE_HOST_PTR} or {CL_MEM_ALLOC_HOST_PTR} or {CL_MEM_COPY_HOST_PTR}
+    ** if the value specified in _buffer_create_type_ is not valid
+    ** if _buffer_create_info_ is `NULL`
+    ** if a value specified in _buffer_create_info_ for a given _buffer_create_type_ is not valid
+    ** if the region specified by the {cl_buffer_region_TYPE} structure passed in _buffer_create_info_ is out of bounds in _buffer_
+  * {CL_INVALID_BUFFER_SIZE}
+    ** if the _size_ field of the {cl_buffer_region_TYPE} structure passed in _buffer_create_info_ is zero
+  * {CL_MISALIGNED_SUB_BUFFER_OFFSET}
+    ** if there are no devices in _context_ associated with _buffer_ for which
+    the _origin_ field of the {cl_buffer_region_TYPE} structure passed in
+    _buffer_create_info_ is aligned to the {CL_DEVICE_MEM_BASE_ADDR_ALIGN}
+    value.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
+    ** if there is a failure to allocate memory for sub-buffer object
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 
 [NOTE]
 ====
@@ -1075,43 +1070,44 @@ then be reused by the application.
 function is executed successfully.
 Otherwise, they return one of the following errors:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
-    command-queue.
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_ and
-    _buffer_ are not the same or if the context associated with
-    _command_queue_ and events in _event_wait_list_ are not the same.
-  * {CL_INVALID_MEM_OBJECT} if _buffer_ is not a valid buffer object.
-  * {CL_INVALID_VALUE} if the region being read or written specified by
-    (_offset_, _size_) is out of bounds or if _ptr_ is a `NULL` value.
-  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
-    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
-    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
-    are not valid events.
-  * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if _buffer_ is a sub-buffer object and
-    _offset_ specified when the sub-buffer object is created is not aligned
-    to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated with
-    _queue_.
+  * {CL_INVALID_COMMAND_QUEUE}
+    ** if _command_queue_ is not a valid host command-queue
+  * {CL_INVALID_CONTEXT}
+    ** if the context associated with _command_queue_ and _buffer_ are not the same
+    ** if the context associated with _command_queue_ and events in _event_wait_list_ are not the same.
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _buffer_ is not a valid buffer object
+  * {CL_INVALID_VALUE}
+    ** if the region being read or written specified by _offset_ and _size_ is out of bounds
+    ** if _ptr_ is `NULL`
+  * {CL_INVALID_EVENT_WAIT_LIST}
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+  * {CL_MISALIGNED_SUB_BUFFER_OFFSET}
+    ** if _buffer_ is a sub-buffer object and the offset specified when the
+    sub-buffer object was created is not aligned to the
+    {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for the device associated with
+    _command_queue_.
     This error code is <<unified-spec, missing before>> version 1.1.
-  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the read and write
-    operations are blocking and the execution status of any of the events in
-    _event_wait_list_ is a negative integer value.
+  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST}
+    ** if the read or write operations are blocking and the execution status of
+    any of the events in _event_wait_list_ is a negative integer value indicating an error.
     This error code is <<unified-spec, missing before>> version 1.1.
-  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
-    memory for data store associated with _buffer_.
-  * {CL_INVALID_OPERATION} if {clEnqueueReadBuffer} is called on _buffer_
-    which has been created with {CL_MEM_HOST_WRITE_ONLY} or
-    {CL_MEM_HOST_NO_ACCESS}.
-  * {CL_INVALID_OPERATION} if {clEnqueueWriteBuffer} is called on _buffer_
-    which has been created with {CL_MEM_HOST_READ_ONLY} or
-    {CL_MEM_HOST_NO_ACCESS}.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
+    ** if there is a failure to allocate memory for data store associated with _buffer_.
+  * {CL_INVALID_OPERATION}
+    ** if {clEnqueueReadBuffer} is called on _buffer_ which has been created with {CL_MEM_HOST_WRITE_ONLY} or {CL_MEM_HOST_NO_ACCESS}
+    ** if {clEnqueueWriteBuffer} is called on _buffer_ which has been created with {CL_MEM_HOST_READ_ONLY} or {CL_MEM_HOST_NO_ACCESS}
 ifdef::cl_ext_immutable_memory_objects[]
-  * {CL_INVALID_OPERATION} if {clEnqueueWriteBuffer} is called on _buffer_
-    which has been created with {CL_MEM_IMMUTABLE_EXT}.
+    ** if {clEnqueueWriteBuffer} is called on _buffer_ which has been created with {CL_MEM_IMMUTABLE_EXT}
 endif::cl_ext_immutable_memory_objects[]
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 --
 
 [open,refpage='clEnqueueReadBufferRect',desc='Enqueue command to read from a 2D or 3D rectangular region from a buffer object to host memory.',type='protos',alias='clEnqueueWriteBufferRect']
@@ -1222,57 +1218,52 @@ then be reused by the application.
 if the function is executed successfully.
 Otherwise, they return one of the following errors:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
-    command-queue.
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_ and
-    _buffer_ are not the same or if the context associated with
-    _command_queue_ and events in _event_wait_list_ are not the same.
-  * {CL_INVALID_MEM_OBJECT} if _buffer_ is not a valid buffer object.
-  * {CL_INVALID_VALUE} if _buffer_origin_, _host_origin_, or _region_ is `NULL`.
-  * {CL_INVALID_VALUE} if the region being read or written specified by
-    (_buffer_origin_, _region_, _buffer_row_pitch_, _buffer_slice_pitch_) is
-    out of bounds.
-  * {CL_INVALID_VALUE} if any _region_ array element is 0.
-  * {CL_INVALID_VALUE} if _buffer_row_pitch_ is not 0 and is less than
-    _region_[0].
-  * {CL_INVALID_VALUE} if _host_row_pitch_ is not 0 and is less than
-    _region_[0].
-  * {CL_INVALID_VALUE} if _buffer_slice_pitch_ is not 0 and is less than
-    _region_[1] {times} _buffer_row_pitch_ and not a multiple of
-    _buffer_row_pitch_.
-  * {CL_INVALID_VALUE} if _host_slice_pitch_ is not 0 and is less than
-    _region_[1] {times} _host_row_pitch_ and not a multiple of
-    _host_row_pitch_.
-  * {CL_INVALID_VALUE} if _ptr_ is `NULL`.
-  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
-    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
-    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
-    are not valid events.
-  * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if _buffer_ is a sub-buffer object and
-    _offset_ specified when the sub-buffer object is created is not aligned
-    to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated with
-    _queue_.
+  * {CL_INVALID_COMMAND_QUEUE}
+    ** if _command_queue_ is not a valid host command-queue
+  * {CL_INVALID_CONTEXT}
+    ** if the context associated with _command_queue_ and _buffer_ are not the same
+    ** if the context associated with _command_queue_ and events in _event_wait_list_ are not the same
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _buffer_ is not a valid buffer object
+  * {CL_INVALID_VALUE}
+    ** if _buffer_origin_, _host_origin_, or _region_ is `NULL`
+    ** if the region being read or written specified by _buffer_origin_, _region_, _buffer_row_pitch_, and _buffer_slice_pitch_ is out of bounds
+    ** if any _region_ array element is zero
+    ** if _buffer_row_pitch_ is not equal to zero and is less than _region_[0].
+    ** if _buffer_slice_pitch_ is not equal to zero and is less than the_region_[1] times _buffer_row_pitch_
+    ** if _buffer_slice_pitch_ is not equal to zero and is not a multiple of _buffer_row_pitch_
+    ** if _host_row_pitch_ is not equal to zero and is less than _region_[0]
+    ** if _host_slice_pitch_ is not equal to zero and is less than _region_[1] times _host_row_pitch_
+    ** if _host_slice_pitch_ is not equal to zero and is not a multiple of _host_row_pitch_
+    ** if _ptr_ is `NULL`
+  * {CL_INVALID_EVENT_WAIT_LIST}
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+  * {CL_MISALIGNED_SUB_BUFFER_OFFSET}
+    ** if _buffer_ is a sub-buffer object and the offset specified when the
+    sub-buffer object is created is not aligned to the
+    {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for the device associated with
+    _command_queue_.
     This error code is <<unified-spec, missing before>> version 1.1.
-  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the read and write
-    operations are blocking and the execution status of any of the events in
-    _event_wait_list_ is a negative integer value.
+  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST}
+    ** if the read or write operations are blocking and the execution status of
+    any of the events in _event_wait_list_ is a negative integer value indicating an error.
     This error code is <<unified-spec, missing before>> version 1.1.
-  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
-    memory for data store associated with _buffer_.
-  * {CL_INVALID_OPERATION} if {clEnqueueReadBufferRect} is called on _buffer_
-    which has been created with {CL_MEM_HOST_WRITE_ONLY} or
-    {CL_MEM_HOST_NO_ACCESS}.
-  * {CL_INVALID_OPERATION} if {clEnqueueWriteBufferRect} is called on _buffer_
-    which has been created with {CL_MEM_HOST_READ_ONLY} or
-    {CL_MEM_HOST_NO_ACCESS}.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
+    ** if there is a failure to allocate memory for data store associated with _buffer_.
+  * {CL_INVALID_OPERATION}
+    ** if {clEnqueueReadBufferRect} is called on _buffer_ which has been created with {CL_MEM_HOST_WRITE_ONLY} or {CL_MEM_HOST_NO_ACCESS}
+    ** if {clEnqueueWriteBufferRect} is called on _buffer_ which has been created with {CL_MEM_HOST_READ_ONLY} or {CL_MEM_HOST_NO_ACCESS}
 ifdef::cl_ext_immutable_memory_objects[]
-  * {CL_INVALID_OPERATION} if {clEnqueueWriteBufferRect} is called on _buffer_
-    which has been created with {CL_MEM_IMMUTABLE_EXT}.
+    ** if {clEnqueueWriteBufferRect} is called on _buffer_ which has been created with {CL_MEM_IMMUTABLE_EXT}
 endif::cl_ext_immutable_memory_objects[]
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 
 [NOTE]
 ====
@@ -1378,48 +1369,49 @@ argument value specified when _src_buffer_ or _dst_buffer is created is ignored 
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
-    command-queue.
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _src_buffer_ and _dst_buffer_ are not the same or if the context
-    associated with _command_queue_ and events in _event_wait_list_ are not
-    the same.
-  * {CL_INVALID_MEM_OBJECT} if _src_buffer_ and _dst_buffer_ are not valid
-    buffer objects.
-  * {CL_INVALID_VALUE} if _src_offset_, _dst_offset_, _size_, _src_offset_
-    {plus} _size_ or _dst_offset_ + _size_ require accessing elements
-    outside the _src_buffer_ and _dst_buffer_ buffer objects respectively.
-  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
-    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
-    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
-    are not valid events.
-  * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if _src_buffer_ is a sub-buffer object
-    and _offset_ specified when the sub-buffer object is created is not
-    aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
-    with _queue_.
+  * {CL_INVALID_COMMAND_QUEUE}
+    ** if _command_queue_ is not a valid host command-queue
+  * {CL_INVALID_CONTEXT}
+    ** if the context associated with _command_queue_ and _buffer_ are not the same
+    ** if the context associated with _command_queue_ and events in _event_wait_list_ are not the same.
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _src_buffer_ is not a valid buffer object
+    ** if _dst_buffer_ is not a valid buffer object
+  * {CL_MISALIGNED_SUB_BUFFER_OFFSET}
+    ** if _src_buffer_ is a sub-buffer object and the offset specified when the
+    sub-buffer object was created is not aligned to the
+    {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for the device associated
+    with _command_queue_.
     This error code is <<unified-spec, missing before>> version 1.1.
-  * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if _dst_buffer_ is a sub-buffer object
-    and _offset_ specified when the sub-buffer object is created is not
-    aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
-    with _queue_.
+    ** if _dst_buffer_ is a sub-buffer object and the offset specified when the
+    sub-buffer object was created is not aligned to the
+    {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for the device associated
+    with _command_queue_.
     This error code is <<unified-spec, missing before>> version 1.1.
-  * {CL_MEM_COPY_OVERLAP} if _src_buffer_ and _dst_buffer_ are the same buffer
-    or sub-buffer object and the source and destination regions overlap or
-    if _src_buffer_ and _dst_buffer_ are different sub-buffers of the same
-    associated buffer object and they overlap.
-    The regions overlap if _src_offset_ {leq} _dst_offset_ {leq}
-    _src_offset_ + _size_ - 1 or if _dst_offset_ {leq} _src_offset_ {leq}
-    _dst_offset_ + _size_ - 1.
-  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
-    memory for data store associated with _src_buffer_ or _dst_buffer_.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+  * {CL_INVALID_VALUE}
+    ** if the region specified by _src_offset_ and _size_ is out of bounds of _src_buffer_
+    ** if the region specified by _dst_offset_ and _size_ is out of bounds of _dst_buffer_
+  * {CL_INVALID_EVENT_WAIT_LIST}
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+  * {CL_MEM_COPY_OVERLAP}
+    ** if _src_buffer_ and _dst_buffer_ are the same buffer or sub-buffer object and the source and destination regions overlap.
+    ** if _src_buffer_ and _dst_buffer_ are different sub-buffers of the same associated buffer object and they overlap
+    ** Refer to <<check-copy-overlap, Checking for Memory Copy Overlap>> for
+    details on how to determine if source and destination regions overlap.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
+    ** if there is a failure to allocate memory for data store associated with _src_buffer_ or _dst_buffer_
 ifdef::cl_ext_immutable_memory_objects[]
-  * {CL_INVALID_OPERATION} if _dst_buffer_ was created with
-    {CL_MEM_IMMUTABLE_EXT}.
+  * {CL_INVALID_OPERATION}
+    ** if _dst_buffer_ was created with {CL_MEM_IMMUTABLE_EXT}
 endif::cl_ext_immutable_memory_objects[]
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 --
 
 [open,refpage='clEnqueueCopyBufferRect',desc='Enqueues a command to copy a 2D or 3D rectangular region from a buffer object to another buffer object.',type='protos']
@@ -1514,63 +1506,59 @@ argument value specified when _src_buffer_ or _dst_buffer_ is created is ignored
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
-    command-queue.
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _src_buffer_ and _dst_buffer_ are not the same or if the context
-    associated with _command_queue_ and events in _event_wait_list_ are not
-    the same.
-  * {CL_INVALID_MEM_OBJECT} if _src_buffer_ and _dst_buffer_ are not valid
-    buffer objects.
-  * {CL_INVALID_VALUE} if _src_origin_, _dst_origin_, or _region_ is `NULL`.
-  * {CL_INVALID_VALUE} if (_src_origin_, _region_, _src_row_pitch_,
-    _src_slice_pitch_) or (_dst_origin_, _region_, _dst_row_pitch_,
-    _dst_slice_pitch_) require accessing elements outside the _src_buffer_
-    and _dst_buffer_ buffer objects respectively.
-  * {CL_INVALID_VALUE} if any _region_ array element is 0.
-  * {CL_INVALID_VALUE} if _src_row_pitch_ is not 0 and is less than
-    _region_[0].
-  * {CL_INVALID_VALUE} if _dst_row_pitch_ is not 0 and is less than
-    _region_[0].
-  * {CL_INVALID_VALUE} if _src_slice_pitch_ is not 0 and is less than
-    _region_[1] {times} _src_row_pitch_ or if _src_slice_pitch_ is not 0 and
-    is not a multiple of _src_row_pitch_.
-  * {CL_INVALID_VALUE} if _dst_slice_pitch_ is not 0 and is less than
-    _region_[1] {times} _dst_row_pitch_ or if _dst_slice_pitch_ is not 0 and
-    is not a multiple of _dst_row_pitch_.
-  * {CL_INVALID_VALUE} if _src_buffer_ and _dst_buffer_ are the same buffer
-    object and _src_slice_pitch_ is not equal to _dst_slice_pitch_ and
-    _src_row_pitch_ is not equal to _dst_row_pitch_.
-  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
-    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
-    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
-    are not valid events.
-  * {CL_MEM_COPY_OVERLAP} if _src_buffer_ and _dst_buffer_ are the same buffer
-    or sub-buffer object and the source and destination regions overlap or
-    if _src_buffer_ and _dst_buffer_ are different sub-buffers of the same
-    associated buffer object and they overlap.
-    Refer to <<check-copy-overlap, Checking for Memory Copy Overlap>> for
+  * {CL_INVALID_COMMAND_QUEUE}
+    ** if _command_queue_ is not a valid host command-queue
+  * {CL_INVALID_CONTEXT}
+    ** if the context associated with _command_queue_ and _buffer_ are not the same
+    ** if the context associated with _command_queue_ and events in _event_wait_list_ are not the same.
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _src_buffer_ is not a valid buffer object
+    ** if _dst_buffer_ is not a valid buffer object
+  * {CL_MISALIGNED_SUB_BUFFER_OFFSET}
+    ** if _src_buffer_ is a sub-buffer object and the offset specified when the
+    sub-buffer object was created is not aligned to the
+    {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for the device associated
+    with _command_queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
+    ** if _dst_buffer_ is a sub-buffer object and the offset specified when the
+    sub-buffer object was created is not aligned to the
+    {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for the device associated
+    with _command_queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
+  * {CL_INVALID_VALUE}
+    ** if _src_origin_, _dst_origin_, or _region_ is `NULL`
+    ** if the region specified by _src_origin_, _region_, _src_row_pitch_, and _src_slice_pitch_ is out of bounds of _src_buffer_
+    ** if the region specified by _dst_origin_, _region_, _dst_row_pitch_, and _dst_slice_pitch_ is out of bounds of _dst_buffer_
+    ** if any _region_ array element is zero
+    ** if _src_row_pitch_ is not equal to zero and is less than _region_[0]
+    ** if _src_slice_pitch_ is not equal to zero and is less than _region_[1] times _src_row_pitch_
+    ** if _src_slice_pitch_ is not equal to zero and is not a multiple of _src_row_pitch_
+    ** if _dst_row_pitch_ is not equal to zero and is less than _region_[0]
+    ** if _dst_slice_pitch_ is not equal to zero and is less than _region_[1] times _dst_row_pitch_
+    ** if _dst_slice_pitch_ is not equal to zero and is not a multiple of _dst_row_pitch_
+    ** if _src_buffer_ and _dst_buffer_ are the same buffer object and _src_row_pitch_ is not equal to _dst_row_pitch_
+    ** if _src_buffer_ and _dst_buffer_ are the same buffer object and _src_slice_pitch_ is not equal to _dst_slice_pitch_
+  * {CL_INVALID_EVENT_WAIT_LIST}
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+  * {CL_MEM_COPY_OVERLAP}
+    ** if _src_buffer_ and _dst_buffer_ are the same buffer or sub-buffer object and the source and destination regions overlap.
+    ** if _src_buffer_ and _dst_buffer_ are different sub-buffers of the same associated buffer object and they overlap
+    ** Refer to <<check-copy-overlap, Checking for Memory Copy Overlap>> for
     details on how to determine if source and destination regions overlap.
-  * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if _src_buffer_ is a sub-buffer object
-    and _offset_ specified when the sub-buffer object is created is not
-    aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
-    with _queue_.
-    This error code is <<unified-spec, missing before>> version 1.1.
-  * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if _dst_buffer_ is a sub-buffer object
-    and _offset_ specified when the sub-buffer object is created is not
-    aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
-    with _queue_.
-    This error code is <<unified-spec, missing before>> version 1.1.
-  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
-    memory for data store associated with _src_buffer_ or _dst_buffer_.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
+    ** if there is a failure to allocate memory for data store associated with _src_buffer_ or _dst_buffer_
 ifdef::cl_ext_immutable_memory_objects[]
-  * {CL_INVALID_OPERATION} if _dst_buffer_ was created with
-    {CL_MEM_IMMUTABLE_EXT}.
+  * {CL_INVALID_OPERATION}
+    ** if _dst_buffer_ was created with {CL_MEM_IMMUTABLE_EXT}
 endif::cl_ext_immutable_memory_objects[]
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 --
 
 
