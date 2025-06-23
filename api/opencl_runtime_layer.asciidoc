@@ -4449,60 +4449,62 @@ The _errcode_ret_ is set to {CL_SUCCESS}.
 A `NULL` pointer is returned otherwise with one of the following error
 values returned in _errcode_ret_:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
-    command-queue.
-  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ and
-    _image_ are not the same or if context associated with _command_queue_
-    and events in _event_wait_list_ are not the same.
-  * {CL_INVALID_MEM_OBJECT} if _image_ is not a valid image object.
-  * {CL_INVALID_VALUE} if _origin_ or _region_ is `NULL`.
-  * {CL_INVALID_VALUE} if region being mapped given by (_origin_,
-    _origin_ + _region_) is out of bounds or if values specified in _map_flags_
-    are not valid.
-  * {CL_INVALID_VALUE} if values in _origin_ and _region_ do not follow rules
-    described in the argument description for _origin_ and _region_.
-  * {CL_INVALID_VALUE} if _image_row_pitch_ is `NULL`.
-  * {CL_INVALID_VALUE} if _image_ is a 3D image, 1D or 2D image array object
-    and _image_slice_pitch_ is `NULL`.
-  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
-    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
-    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
-    are not valid events.
-  * {CL_INVALID_IMAGE_SIZE} if image dimensions (image width, height,
-    specified or compute row and/or slice pitch) for _image_ are not
-    supported by device associated with _queue_.
-  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if image format (image channel order and
-    data type) for _image_ are not supported by device associated with
-    _queue_.
-  * {CL_MAP_FAILURE} if there is a failure to map the requested region into
+  * {CL_INVALID_COMMAND_QUEUE}
+    ** if _command_queue_ is not a valid host command-queue
+  * {CL_INVALID_CONTEXT}
+    ** if the context associated with _command_queue_ and _image_ are not the same
+    ** if the context associated with _command_queue_ and events in _event_wait_list_ are not the same
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _image_ is not a valid image object
+  * {CL_INVALID_VALUE}
+    ** if _origin_ is `NULL`
+    ** if _region_ is `NULL`
+    ** if the region being mapped specified by _origin_ and _region_ is out of bounds
+    ** if values specified in _map_flags_ are not valid
+    ** if values in _origin_ and _region_ do not follow the rules described in the argument description for _origin_ and _region_
+    ** if _image_row_pitch_ is `NULL`.
+    ** if _image_ is a 1D or 2D image array object and _image_slice_pitch_ is `NULL`
+    ** if _image_ is a 3D and _image_slice_pitch_ is `NULL`
+ifdef::cl_khr_mipmap_image[]
+  * {CL_INVALID_MIP_LEVEL}
+    ** if the {cl_khr_mipmap_image_EXT} extension is supported and the mip level specified in _origin_ is not a valid level for _image_
+endif::cl_khr_mipmap_image[]
+  * {CL_INVALID_EVENT_WAIT_LIST}
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+  * {CL_INVALID_IMAGE_SIZE}
+    ** if the dimensions for _image_, such as the image width or image height,
+    are not supported by the device associated with _command_queue_
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED}
+    ** if the format for _image_, such as the image channel order or image
+    channel data type, are not supported by the device associated with
+    _command_queue_
+  * {CL_MAP_FAILURE}
+    ** if there is a failure to map the requested region into
     the host address space.
     This error cannot occur for image objects created with
     {CL_MEM_USE_HOST_PTR} or {CL_MEM_ALLOC_HOST_PTR}.
-  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the map operation is
-    blocking and the execution status of any of the events in
-    _event_wait_list_ is a negative integer value.
+  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST}
+    ** if the map operations is blocking and the execution status of
+    any of the events in _event_wait_list_ is a negative integer value indicating an error.
     This error code is <<unified-spec, missing before>> version 1.1.
-  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
-    memory for data store associated with _image_.
-  * {CL_INVALID_OPERATION} if the device associated with _command_queue_ does
-    not support images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in the
-    <<device-queries-table,Device Queries>> table is {CL_FALSE}).
-  * {CL_INVALID_OPERATION} if _image_ has been created with
-    {CL_MEM_HOST_WRITE_ONLY} or {CL_MEM_HOST_NO_ACCESS} and {CL_MAP_READ} is set
-    in _map_flags_ or if _image_ has been created with {CL_MEM_HOST_READ_ONLY}
-    or {CL_MEM_HOST_NO_ACCESS} and {CL_MAP_WRITE} or
-    {CL_MAP_WRITE_INVALIDATE_REGION} is set in _map_flags_.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
-  * {CL_INVALID_OPERATION} if mapping would lead to overlapping regions being
-    mapped for writing.
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
+    ** if there is a failure to allocate memory for data store associated with _image_
+  * {CL_INVALID_OPERATION}
+    ** if the device associated with _command_queue_ does not support images (the query for {CL_DEVICE_IMAGE_SUPPORT} returns {CL_FALSE})
+    ** if _image_ has been created with {CL_MEM_HOST_WRITE_ONLY} or {CL_MEM_HOST_NO_ACCESS} and {CL_MAP_READ} is set in _map_flags_
+    ** if _image_ has been created with {CL_MEM_HOST_READ_ONLY} or {CL_MEM_HOST_NO_ACCESS} and {CL_MAP_WRITE} or {CL_MAP_WRITE_INVALIDATE_REGION} is set in _map_flags_
 ifdef::cl_ext_immutable_memory_objects[]
-  * {CL_INVALID_OPERATION} if _image_ was created with {CL_MEM_IMMUTABLE_EXT}
-    in _flags_ and {CL_MAP_WRITE} or {CL_MAP_WRITE_INVALIDATE_REGION} is set
-    in _map_flags_.
+    ** if _image_ was created with {CL_MEM_IMMUTABLE_EXT} in _flags_ and {CL_MAP_WRITE} or {CL_MAP_WRITE_INVALIDATE_REGION} is set in _map_flags_
 endif::cl_ext_immutable_memory_objects[]
+    ** if mapping would lead to overlapping regions being mapped for writing
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 
 The pointer returned maps a 1D, 2D or 3D region starting at _origin_ and is
 at least _region_[0] pixels in size for a 1D image, 1D image buffer or 1D
