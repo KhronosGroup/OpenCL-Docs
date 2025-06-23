@@ -954,6 +954,7 @@ endif::cl_ext_immutable_memory_objects[]
     the _origin_ field of the {cl_buffer_region_TYPE} structure passed in
     _buffer_create_info_ is aligned to the {CL_DEVICE_MEM_BASE_ADDR_ALIGN}
     value.
+    This error code is <<unified-spec, missing before>> version 1.1.
   * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
     ** if there is a failure to allocate memory for sub-buffer object
   * {CL_OUT_OF_RESOURCES}
@@ -4068,8 +4069,9 @@ endif::cl_khr_mipmap_image[]
     _command_queue_
   * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
     ** if there is a failure to allocate memory for data store associated with _image_
-ifdef::cl_ext_immutable_memory_objects[]
   * {CL_INVALID_OPERATION}
+    ** if the device associated with _command_queue_ does not support images (the query for {CL_DEVICE_IMAGE_SUPPORT} returns {CL_FALSE})
+ifdef::cl_ext_immutable_memory_objects[]
     ** if _image_ was created with {CL_MEM_IMMUTABLE_EXT}
 endif::cl_ext_immutable_memory_objects[]
   * {CL_OUT_OF_RESOURCES}
@@ -4164,55 +4166,57 @@ argument value specified when _src_image_ or _dst_buffer_ is created is ignored 
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
-    command-queue.
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _src_image_ and _dst_buffer_ are not the same or if the context
-    associated with _command_queue_ and events in _event_wait_list_ are not
-    the same.
-  * {CL_INVALID_MEM_OBJECT} if _src_image_ is not a valid image object or
-    _dst_buffer_ is not a valid buffer object or if _src_image_ is a 1D
-    image buffer object created from _dst_buffer_.
-  * {CL_INVALID_VALUE} if _src_origin_ or _region_ is `NULL`.
-  * {CL_INVALID_VALUE} if the 1D, 2D or 3D rectangular region specified by
-    _src_origin_ and _src_origin_ + _region_ refers to a region outside
-    _src_image_, or if the region specified by _dst_offset_ and _dst_offset_
-    + _dst_cb_ to a region outside _dst_buffer_.
-  * {CL_INVALID_VALUE} if values in _src_origin_ and _region_ do not follow
-    rules described in the argument description for _src_origin_ and
-    _region_.
-  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
-    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
-    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
-    are not valid events.
-  * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if _dst_buffer_ is a sub-buffer object
-    and _offset_ specified when the sub-buffer object is created is not
-    aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
-    with _queue_.
-    This error code is <<unified-spec, missing before>> version 1.1.
-  * {CL_INVALID_IMAGE_SIZE} if image dimensions (image width, height,
-    specified or compute row and/or slice pitch) for _src_image_ are not
-    supported by device associated with _queue_.
-  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if image format (image channel order and
-    data type) for _src_image_ are not supported by device associated with
-    _queue_.
-  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
-    memory for data store associated with _src_image_ or _dst_buffer_.
-  * {CL_INVALID_OPERATION} if the device associated with _command_queue_ does
-    not support images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in the
-    <<device-queries-table,Device Queries>> table is {CL_FALSE}).
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+  * {CL_INVALID_COMMAND_QUEUE}
+    ** if _command_queue_ is not a valid host command-queue
+  * {CL_INVALID_CONTEXT}
+    ** if the context associated with _command_queue_ and _src_image_ are not the same
+    ** if the context associated with _command_queue_ and _dst_buffer_ are not the same
+    ** if the context associated with _command_queue_ and events in _event_wait_list_ are not the same
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _src_image_ is not a valid image object
+    ** if _dst_buffer_ is not a valid buffer object
+    ** if _src_image_ is a 1D image buffer object created from _dst_buffer_
+  * {CL_INVALID_VALUE}
+    ** if _src_origin_ is `NULL`
+    ** if _region_ is `NULL`
+    ** if the 1D, 2D or 3D rectangular region specified by _src_origin_ and _region_ is out of bounds of _src_image_
+    ** if the region specified by _dst_offset_ and the computed _dst_cb_ is out of bounds of _dst_buffer_
+    ** if values in _src_origin_ and _region_ do not follow the rules described in the argument description for _src_origin_ and _region_
 ifdef::cl_khr_mipmap_image[]
-  * {CL_INVALID_MIP_LEVEL} if the {cl_khr_mipmap_image_EXT} extension is
-    supported, and the mip level specified in _src_origin_ is not a valid
-    level for _src_image_,
+  * {CL_INVALID_MIP_LEVEL}
+    ** if the {cl_khr_mipmap_image_EXT} extension is supported and the mip level specified in _src_origin_ is not a valid level for _src_image_
 endif::cl_khr_mipmap_image[]
+  * {CL_INVALID_EVENT_WAIT_LIST}
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+  * {CL_MISALIGNED_SUB_BUFFER_OFFSET}
+    ** if _dst_buffer_ is a sub-buffer object and the offset specified when the
+    sub-buffer object was created is not aligned to the
+    {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for the device associated
+    with _command_queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
+  * {CL_INVALID_IMAGE_SIZE}
+    ** if the dimensions for _src_image_, such as the image width or image height,
+    are not supported by the device associated with _command_queue_
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED}
+    ** if the format for _src_image_, such as the image channel order or image
+    channel data type, are not supported by the device associated with
+    _command_queue_
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
+    ** if there is a failure to allocate memory for data store associated with _src_image_
+    ** if there is a failure to allocate memory for data store associated with _dst_buffer_
+  * {CL_INVALID_OPERATION}
+    ** if the device associated with _command_queue_ does not support images (the query for {CL_DEVICE_IMAGE_SUPPORT} returns {CL_FALSE})
 ifdef::cl_ext_immutable_memory_objects[]
-  * {CL_INVALID_OPERATION} if _dst_buffer_ was created with {CL_MEM_IMMUTABLE_EXT}.
+    ** if _dst_buffer_ was created with {CL_MEM_IMMUTABLE_EXT}
 endif::cl_ext_immutable_memory_objects[]
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 --
 
 
@@ -4299,55 +4303,57 @@ argument value specified when _src_buffer_ or _dst_image_ is created is ignored 
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
-    command-queue.
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_,
-    _src_buffer_ and _dst_image_ are not the same or if the context
-    associated with _command_queue_ and events in _event_wait_list_ are not
-    the same.
-  * {CL_INVALID_MEM_OBJECT} if _src_buffer_ is not a valid buffer object or
-    _dst_image_ is not a valid image object or if _dst_image_ is a 1D image
-    buffer object created from _src_buffer_.
-  * {CL_INVALID_VALUE} if _dst_origin_ or _region_ is `NULL`.
-  * {CL_INVALID_VALUE} if the 1D, 2D or 3D rectangular region specified by
-    _dst_origin_ and _dst_origin_ + _region_ refer to a region outside
-    _dst_image_, or if the region specified by _src_offset_ and _src_offset_
-    + _src_cb_ refer to a region outside _src_buffer_.
-  * {CL_INVALID_VALUE} if values in _dst_origin_ and _region_ do not follow
-    rules described in the argument description for _dst_origin_ and
-    _region_.
-  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
-    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
-    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
-    are not valid events.
-  * {CL_MISALIGNED_SUB_BUFFER_OFFSET} if _src_buffer_ is a sub-buffer object
-    and _offset_ specified when the sub-buffer object is created is not
-    aligned to {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for device associated
-    with _queue_.
-    This error code is <<unified-spec, missing before>> version 1.1.
-  * {CL_INVALID_IMAGE_SIZE} if image dimensions (image width, height,
-    specified or compute row and/or slice pitch) for _dst_image_ are not
-    supported by device associated with _queue_.
-  * {CL_IMAGE_FORMAT_NOT_SUPPORTED} if image format (image channel order and
-    data type) for _dst_image_ are not supported by device associated with
-    _queue_.
-  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
-    memory for data store associated with _src_buffer_ or _dst_image_.
-  * {CL_INVALID_OPERATION} if the device associated with _command_queue_ does
-    not support images (i.e. {CL_DEVICE_IMAGE_SUPPORT} specified in the
-    <<device-queries-table,Device Queries>> table is {CL_FALSE}).
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+  * {CL_INVALID_COMMAND_QUEUE}
+    ** if _command_queue_ is not a valid host command-queue
+  * {CL_INVALID_CONTEXT}
+    ** if the context associated with _command_queue_ and _src_buffer_ are not the same
+    ** if the context associated with _command_queue_ and _dst_image_ are not the same
+    ** if the context associated with _command_queue_ and events in _event_wait_list_ are not the same
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _src_buffer_ is not a valid buffer object
+    ** if _dst_image_ is not a valid image object
+    ** if _dst_image_ is a 1D image buffer object created from _src_buffer_
+  * {CL_INVALID_VALUE}
+    ** if _dst_origin_ is `NULL`
+    ** if _region_ is `NULL`
+    ** if the region specified by _src_offset_ and the computed _src_cb_ is out of bounds of _src_buffer_
+    ** if the 1D, 2D or 3D rectangular region specified by _dst_origin_ and _region_ is out of bounds of _dst_image_
+    ** if values in _dst_origin_ and _region_ do not follow rules described in the argument description for _dst_origin_ and _region_
 ifdef::cl_khr_mipmap_image[]
-  * {CL_INVALID_MIP_LEVEL} if the {cl_khr_mipmap_image_EXT} extension is
-    supported, and the mip level specified in _dst_origin_ is not a valid
-    level for _dst_image_,
+  * {CL_INVALID_MIP_LEVEL}
+    ** if the {cl_khr_mipmap_image_EXT} extension is supported and the mip level specified in _dst_origin_ is not a valid level for _dst_image_
 endif::cl_khr_mipmap_image[]
+  * {CL_INVALID_EVENT_WAIT_LIST}
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+  * {CL_MISALIGNED_SUB_BUFFER_OFFSET}
+    ** if _src_buffer_ is a sub-buffer object and the offset specified when the
+    sub-buffer object was created is not aligned to the
+    {CL_DEVICE_MEM_BASE_ADDR_ALIGN} value for the device associated
+    with _command_queue_.
+    This error code is <<unified-spec, missing before>> version 1.1.
+  * {CL_INVALID_IMAGE_SIZE}
+    ** if the dimensions for _dst_image_, such as the image width or image height,
+    are not supported by the device associated with _command_queue_
+  * {CL_IMAGE_FORMAT_NOT_SUPPORTED}
+    ** if the format for _dst_image_, such as the image channel order or image
+    channel data type, are not supported by the device associated with
+    _command_queue_
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
+    ** if there is a failure to allocate memory for data store associated with _src_buffer_
+    ** if there is a failure to allocate memory for data store associated with _dst_image_
+  * {CL_INVALID_OPERATION}
+    ** if the device associated with _command_queue_ does not support images (the query for {CL_DEVICE_IMAGE_SUPPORT} returns {CL_FALSE})
 ifdef::cl_ext_immutable_memory_objects[]
-  * {CL_INVALID_OPERATION} if _dst_image_ was created with {CL_MEM_IMMUTABLE_EXT}.
+    ** if _dst_image_ was created with {CL_MEM_IMMUTABLE_EXT}
 endif::cl_ext_immutable_memory_objects[]
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 --
 
 
