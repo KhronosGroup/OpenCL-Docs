@@ -30,22 +30,44 @@ how to correctly order operations that change the state of a shared object.
 
 == Multiple Host Threads
 
-All OpenCL API calls are thread-safe footnote:[{fn-thread-safe}] except those
-that modify the state of {cl_kernel_TYPE} objects: {clSetKernelArg},
+OpenCL calls that modify the state of {cl_kernel_TYPE} objects are not
+thread-safe footnote:[{fn-thread-safe}]: {clSetKernelArg},
 {clSetKernelArgSVMPointer}, {clSetKernelExecInfo} and {clCloneKernel}.
-{clSetKernelArg}, {clSetKernelArgSVMPointer}, {clSetKernelExecInfo} and
-{clCloneKernel} are safe to call from any host thread, and safe to call
-re-entrantly so long as concurrent calls to any combination of these API
-calls operate on different {cl_kernel_TYPE} objects.
-The state of the {cl_kernel_TYPE} object is undefined if {clSetKernelArg},
-{clSetKernelArgSVMPointer}, {clSetKernelExecInfo} or {clCloneKernel} are
-called from multiple host threads on the same {cl_kernel_TYPE} object at the same
-time footnote:[{fn-race-condition}].
+These APIs are safe to call from any host thread so long as concurrent calls
+operate on different {cl_kernel_TYPE} objects.
+The state of a {cl_kernel_TYPE} object is undefined if {clSetKernelArg},
+{clSetKernelArgSVMPointer}, {clSetKernelExecInfo} or {clCloneKernel} are called
+from multiple host threads on the same {cl_kernel_TYPE} object at the same time
+footnote:[{fn-race-condition}].
+
+ifdef::cl_khr_command_buffer[]
+Additionally, OpenCL calls that modify the state of {cl_command_buffer_khr_TYPE}
+objects are not thread-safe:
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+{clFinalizeCommandBufferKHR} and {clUpdateMutableCommandsKHR}.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+ifndef::cl_khr_command_buffer_mutable_dispatch[]
+{clFinalizeCommandBufferKHR}.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+These APIs are safe to call from any host thread so long as concurrent calls
+operate on different {cl_command_buffer_khr_TYPE} objects.
+The state of the {cl_command_buffer_khr_TYPE} object is undefined if
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+{clFinalizeCommandBufferKHR} or {clUpdateMutableCommandsKHR} are
+endif::cl_khr_command_buffer_mutable_dispatch[]
+ifndef::cl_khr_command_buffer_mutable_dispatch[]
+{clFinalizeCommandBufferKHR} is
+endif::cl_khr_command_buffer_mutable_dispatch[]
+called from multiple host threads on the same {cl_command_buffer_khr_TYPE}
+object at the same time.
+endif::cl_khr_command_buffer[]
+
+All other OpenCL API calls are thread-safe.
 Please note that there are additional limitations as to which OpenCL APIs
-may be called from <<event-objects,OpenCL callback functions>>.
+may be called from <<callback-functions,OpenCL callback functions>>.
 
 The behavior of OpenCL APIs called from an interrupt or signal handler is
-implementation-defined
+implementation-defined.
 
 The OpenCL implementation should be able to create multiple command-queues
 for a given OpenCL context and multiple OpenCL contexts in an application

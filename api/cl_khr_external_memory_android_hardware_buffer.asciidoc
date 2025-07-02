@@ -1,0 +1,122 @@
+// Copyright 2025 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/{refprefix}cl_khr_external_memory_android_hardware_buffer.txt[]
+
+=== Other Extension Metadata
+
+*Last Modified Date*::
+    2025-05-02
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+ - Joshua Kelly, QUALCOMM
+ - Balaji Calidas, QUALCOMM
+ - Kevin Petit, ARM
+ - Jeremy Kemp, GOOGLE
+ - Paul Fradgley, IMAGINATION
+
+=== Description
+
+{cl_khr_external_memory_android_hardware_buffer_EXT} extends the functionality provided by {cl_khr_external_memory_EXT}.
+It enables an application to create an OpenCL image or buffer object from an AHardwareBuffer.
+When creating an image, the implementation will infer the image format and dimensions from the AHardwareBuffer.
+When creating a buffer from an AHardwareBuffer, the format must be AHARDWAREBUFFER_FORMAT_BLOB.
+
+AHardwareBuffers are reference counted objects.
+The OpenCL implementation will increment the reference count on the AHardwareBuffer when the image or buffer is created, and decrement the reference count when the corresponding {cl_mem_TYPE} object is deleted.
+
+Applications should use {clEnqueueMapBuffer}/{clEnqueueMapImage} for host access to the imported {cl_mem_TYPE} object.
+If a {clEnqueueMapBuffer}/{clEnqueueMapImage} command on the imported cl_mem object has completed, the corresponding {clEnqueueUnmapMemObject} command must also complete before AHardwareBuffer_lock may be called.
+Conversely, if an application has called AHardwareBuffer_lock on an AHardwareBuffer, it must also call AHardwareBuffer_unlock before any {clEnqueueMapBuffer}/{clEnqueueMapImage} command on the imported {cl_mem_TYPE} object reaches the running, ended, or completed state.
+
+=== New API Enums
+
+=== New Enums
+  * {cl_external_memory_handle_type_khr_TYPE}
+  ** {CL_EXTERNAL_MEMORY_HANDLE_ANDROID_HARDWARE_BUFFER_KHR}
+
+List of minimum supported AHardwareBuffer formats and the corresponding OpenCL formats:
+
+[[cl_khr_external_memory_android_hardware_buffer-mapping-of-image-formats]]
+.Minimum list of AHardwareBuffer formats and corresponding OpenCL formats
+[width="100%",cols="3,1,1,1",options="header"]
+|===
+| AHardwareBuffer Format | OpenCL Image Channel Order | OpenCL Image Channel Data Type | OpenCL Memory Object Type
+
+| `AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM`
+| {CL_RGBA}
+| {CL_UNORM_INT8}
+| Image, e.g. {CL_MEM_OBJECT_IMAGE2D}
+
+| `AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT`
+| {CL_RGBA}
+| {CL_HALF_FLOAT}
+| Image, e.g. {CL_MEM_OBJECT_IMAGE2D}
+
+| `AHARDWAREBUFFER_FORMAT_R8_UNORM`
+| {CL_R}
+| {CL_UNORM_INT8}
+| Image, e.g. {CL_MEM_OBJECT_IMAGE2D}
+
+| `AHARDWAREBUFFER_FORMAT_BLOB`
+| `N/A`
+| `N/A`
+| {CL_MEM_OBJECT_BUFFER}
+|===
+
+[[cl_khr_external_memory_android_hardware_buffer-Sample-Code]]
+=== Sample Code
+
+. Using the extension for CL buffer objects
++
+--
+[source,c]
+----
+// Create AHB
+const AHardwareBuffer_Desc desc = {, AHARDWAREBUFFER_FORMAT_BLOB, .....};
+AHardwareBuffer *ahb_handle = NULL;
+AHardwareBuffer_allocate(&desc,  &ahb_handle);
+cl_mem_properties props[] = {
+    (cl_mem_properties) CL_EXTERNAL_MEMORY_HANDLE_ANDROID_HARDWARE_BUFFER_KHR,
+    (cl_mem_properties) ahb_handle,
+    0};
+cl_mem imported_buffer = clCreateBufferWithProperties(context, props, CL_MEM_READ_WRITE,
+                            0 /* size */, NULL, &error);
+If (error == CL_SUCCESS)
+{
+    clEnqueueAcquireExternalMemObjectsKHR(queue, 1, &imported_buffer, ...);
+    clEnqueueCopyBuffer(queue, imported_buffer, ...);
+    clEnqueueReleaseExternalMemObjectsKHR(queue, 1, &imported_buffer, ...);
+}
+clReleaseMemObject(imported_buffer);
+----
+--
+
+. Using the extension for CL image objects
++
+--
+[source, c]
+----
+const AHardwareBuffer_Desc desc = {, AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM, .....};
+AHardwareBuffer *ahb_handle = NULL;
+AHardwareBuffer_allocate(&desc,  &ahb_handle);
+cl_mem_properties props[] = {
+    (cl_mem_properties) CL_EXTERNAL_MEMORY_HANDLE_ANDROID_HARDWARE_BUFFER_KHR,
+    (cl_mem_properties) ahb_handle,
+    0};
+cl_mem imported_image = clCreateImageWithProperties(context, props, CL_MEM_READ_WRITE,
+                             NULL, NULL, NULL, &error);
+if (error == CL_SUCCESS)
+{
+     clGetImageInfo(imported_image, ...);
+}
+----
+--
+
+==== Version History
+
+  * Revision 0.9.0, 2025-03-13
+  ** First assigned version (provisional).
+  * Revision 0.9.2  2025-05-02
+  ** Reduced required formats, first published version (provisional).
