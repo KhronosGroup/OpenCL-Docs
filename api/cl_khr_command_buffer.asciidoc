@@ -4,7 +4,7 @@
 include::{generated}/meta/{refprefix}cl_khr_command_buffer.txt[]
 
 // *Revision*::
-//    0.9.6
+//    0.9.7
 // *Extension and Version Dependencies*::
 //     This extension requires OpenCL 1.2 or later.
 //     Buffering of SVM commands requires OpenCL 2.0 or later.
@@ -12,7 +12,7 @@ include::{generated}/meta/{refprefix}cl_khr_command_buffer.txt[]
 === Other Extension Metadata
 
 *Last Modified Date*::
-    2024-12-13
+    2025-07-10
 *IP Status*::
     No known IP claims.
 *Contributors*::
@@ -126,11 +126,16 @@ from the sync-point values returned is implementation defined.
 
 ==== Simultaneous Use
 
-The optional simultaneous use capability was added to the extension so that
-vendors can support pipelined workflows, where command-buffers are repeatedly
-enqueued without blocking in user code. However, simultaneous use may result in
-command-buffers being more expensive to enqueue than in a sequential model, so
-the capability is optional to enable optimizations on command-buffer recording.
+The optional <<simultaneous-use, simultaneous use>> capability was added to the
+extension so that vendors could support concurrent execution of the same
+command-buffer. However, simultaneous use may result in command-buffers having
+a larger overhead to implement, so the capability is optional to enable
+optimizations when this usage isn't required by a user.
+
+Instead the goal for the base level of functionality provided by the extension
+is to support pipelined workflows. Where a command-buffer is repeatedly
+enqueued, with each enqueue expressing dependencies on any previous submissions,
+without the enqueue calls blocking in user code.
 
 === Interactions With Other Extensions
 
@@ -257,7 +262,6 @@ features:
   * {cl_command_buffer_state_khr_TYPE}
   ** {CL_COMMAND_BUFFER_STATE_RECORDING_KHR}
   ** {CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR}
-  ** {CL_COMMAND_BUFFER_STATE_PENDING_KHR}
   * {cl_command_type_TYPE}
   ** {CL_COMMAND_COMMAND_BUFFER_KHR}
   * New Error Codes
@@ -469,4 +473,7 @@ features:
   ** Add device query for supported queue properties (experimental).
   * 0.9.7, 2024-12-13
   ** Refactor queue compatability between command-buffer creation and enqueue
+     (experimental).
+  * 0.9.8, 2025-07-10
+  ** Rework simultaneous use definition and remove pending state
      (experimental).
