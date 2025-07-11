@@ -14618,13 +14618,14 @@ on one or more command-queues without any application code interaction.
 Grouping the operations together allows efficient enqueuing of repetitive
 operations, as well as enabling driver optimizations.
 
-Command-buffers are _sequential use_ by default, but may also be set to
-_simultaneous use_ on creation if the device optionally supports this
-capability.
-A sequential use command-buffer must have a <<pending_count, Pending Count>>
-of 0 or 1.
-The simultaneous use capability removes this restriction and allows
-command-buffers to have a <<pending_count, Pending Count>> greater than 1.
+Upon creation a command-buffer is defined as being in the <<recording,
+Recording>> state, in order for the command-buffer to be enqueued
+it must first be finalized using {clFinalizeCommandBufferKHR} after which no
+further commands can be recorded. A command-buffer is submitted for execution
+on command-queues with a call to {clEnqueueCommandBufferKHR}. It is
+always valid to call {clEnqueueCommandBufferKHR} with a command-buffer that
+has previously been enqueued, provided the call doesn't violate the definition
+of <<simultaneous-use, simultaneous use>>.
 
 Command-buffers are created using an ordered list of command-queues that
 commands are recorded to and execute on by default. All these queue objects
@@ -14690,6 +14691,24 @@ If using layered extension {cl_khr_command_buffer_mutable_dispatch_EXT},
 usage>>.
 ====
 
+Simultaneous use is defined using the _prerequisite_ terminology from the
+<<_execution_model, execution model>>, and is an optional feature for devices
+to support concurrent executions of a command-buffer. A command-buffer must
+be created with {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} to avoid undefined
+behavior if a simultaneous use usage pattern occurs.
+
+[[simultaneous-use]]
+Simultaneous Use:: When a command-buffer is submitted for
+execution without a prerequisite on all the previous submissions of the same
+command-buffer which are not in the {CL_COMPLETE} state.
+
+An example of simultaneous use would be two submissions of the same
+command-buffer to a single out-of-order queue, without any events or barriers
+used to express a dependency between the two enqueue calls. Using a single
+in-order queue, events, or barriers to express dependencies between submissions
+of the same command-buffer would each be ways to avoid simultaneous use and are
+valid usage of command-buffers created without the
+{CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} flag.
 
 ifdef::cl_khr_command_buffer_multi_device[]
 === Command-Buffers and Multiple Devices
@@ -14733,7 +14752,9 @@ endif::cl_khr_command_buffer_multi_device[]
 
 === Command-Buffer Lifecycle
 
-A command-buffer is always in one of the following states:
+A command-buffer is created in the recording state and transitions to the
+executable state when finalized, at which point it cannot move back to
+the recording state.
 
 [[recording]]
 Recording:: Initial state of a command-buffer on creation, where commands can be
@@ -14742,11 +14763,6 @@ recorded to the command-buffer.
 [[executable]]
 Executable:: State after command recording has finished with
 {clFinalizeCommandBufferKHR} and the command-buffer may be enqueued.
-
-[[pending]]
-Pending:: Once a command-buffer has been enqueued to a command-queue it enters
-the Pending state until completion, at which point it moves back to the
-<<executable, Executable>> state.
 
 // Image generated from the following mermaid diagram description using https://mermaid.live
 // Ideally we'd use the asciidoctor-diagram extension to generate the rendered diagram, but
@@ -14757,20 +14773,9 @@ the Pending state until completion, at which point it moves back to the
 // stateDiagram-v2
 //     [*] --> Recording: Create
 //     Recording -->Executable: Finalize
-//     Executable --> Pending: Enqueue
-//     Pending --> Executable: Completion
 // ....
 
 image::images/commandbuffer_lifecycle.png[align="center", title="Lifecycle of a command-buffer."]
-
-[[pending_count]]
-The Pending Count is the number of copies of the command
-buffer in the <<pending, Pending>> state.
-By default a command-buffer's Pending Count must be 0 or 1.
-If the command-buffer was created with
-{CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} then the command-buffer may have a
-Pending Count greater than 1.
-
 
 === Creating Command-Buffer Objects
 
@@ -14813,9 +14818,9 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_FLAGS_KHR.asciidoc[]
       | This is a bitfield and can be set to a combination of the following values:
 
         {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR_anchor} - Allow multiple
-        instances of the command-buffer to be submitted to the device for
-        execution.
-        If set, devices must support
+        instances of the command-buffer to be scheduled for execution on the
+        device in a usage pattern that exhibits <<simultaneous-use,
+        simultaneous use>>. If set, devices must support
         {CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR}.
 
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR.asciidoc[]
@@ -14897,16 +14902,6 @@ ifdef::cl_khr_command_buffer_multi_device[]
 | Error - {CL_INCOMPATIBLE_COMMAND_QUEUE_KHR}
 |====
 endif::cl_khr_command_buffer_multi_device[]
-
-[NOTE]
-====
-Upon creation the command-buffer is defined as being in the
-<<recording, Recording>> state, in order for the command-buffer to be enqueued
-it must first be finalized using {clFinalizeCommandBufferKHR} after which no
-further commands can be recorded.
-A command-buffer is submitted for execution on command-queues with a call to
-{clEnqueueCommandBufferKHR}.
-====
 
 // refError
 
@@ -15089,9 +15084,6 @@ execution was successfully queued, or one of the errors below:
   * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
     command-buffer.
   * {CL_INVALID_OPERATION} if _command_buffer_ has not been finalized.
-  * {CL_INVALID_OPERATION} if _command_buffer_ was not created with the
-    {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} flag and is in the <<pending,
-    Pending>> state.
   * {CL_INVALID_VALUE} if _queues_ is `NULL` and _num_queues_ is > 0, or
     _queues_ is not `NULL` and _num_queues_ is 0.
   * {CL_INVALID_VALUE} if _num_queues_ is > 0 and not the same value as
@@ -15125,6 +15117,10 @@ execution was successfully queued, or one of the errors below:
     required by the OpenCL implementation on the host.
 --
 
+Calling {clEnqueueCommandBufferKHR} in a usage pattern that exhbits
+<<simultaneous-use, simultaneous use>> when _command_buffer_ was not created
+with the {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} flag results in undefined
+behavior.
 
 === Recording Commands to a Command-Buffer
 
@@ -16553,8 +16549,7 @@ include::{generated}/api/version-notes/clRemapCommandBufferKHR.asciidoc[]
   * _errcode_ret_ returns an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
-The returned command-buffer has the same state as the input command-buffer,
-unless the input command-buffer is in the <<pending, Pending>> state, in
+The returned command-buffer has the same state as the input command-buffer.
 which case the returned command-buffer has state <<executable, Executable>>.
 
 // refError
@@ -16681,10 +16676,6 @@ one of the errors below is returned:
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
-
-Using this function when _command_buffer_ is in the <<pending, pending>>
-state and not created with the {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} flag
-causes undefined behavior.
 
 [NOTE]
 ====
@@ -16903,17 +16894,9 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_KHR.asciidoc[]
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_RECORDING_KHR.asciidoc[]
 
         {CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR_anchor} is returned when
-        _command_buffer_ has been finalized and there is not a <<pending,
-        Pending>> instance of _command_buffer_ awaiting completion on a
-        command_queue.
+        _command_buffer_ has been finalized.
 
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR.asciidoc[]
-
-        {CL_COMMAND_BUFFER_STATE_PENDING_KHR_anchor} is returned when an
-        instance of _command_buffer_ has been enqueued for execution but not
-        yet completed.
-
-include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_PENDING_KHR.asciidoc[]
 
 | {CL_COMMAND_BUFFER_PROPERTIES_ARRAY_KHR_anchor}
 
