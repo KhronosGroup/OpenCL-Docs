@@ -1,0 +1,227 @@
+// Copyright 2018-2025 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+= cl_img_safety_mechanisms
+
+== Name Strings
+
+`cl_img_safety_mechanisms` +
+`cl_img_workgroup_protection` +
+`cl_img_enhanced_event_execution_status`
+
+`cl_img_safety_mechanisms` will be reported if `cl_img_workgroup_protection` or `cl_img_enhanced_event_execution_status` is present.
+
+== Contact
+
+Imagination Technologies Developer Forum: +
+https://forums.imgtec.com/
+
+Ahmed Amrani Akdi, Imagination Technologies (Ahmed.Akdi 'at' imgtec.com)
+
+== Contributors
+
+Jeremy Kemp, Imagination Technologies
+Ahmed Amrani Akdi, Imagination Technologies
+
+== Notice
+
+Copyright (c) 2020-2025 Imagination Technologies Ltd. All Rights Reserved.
+
+== Status
+
+Shipping.
+
+== Version
+
+Built On: {docdate} +
+Version: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification
+Version 3.0.5.
+
+This extension requires OpenCL 3.0 or later.
+
+== Overview
+
+This extension allows applications to enable safety features to help detect and recover from faults that may result in unexpected behaviour.
+
+== New API Types
+
+[source,c]
+----
+typedef cl_bitfield cl_context_safety_properties_img;
+----
+
+== New API Enums
+
+Additional _properties_ values that can be passed to `clCreateContext` or `clCreateContextFromType`:
+
+[source,c]
+----
+#define CL_CONTEXT_SAFETY_PROPERTIES_IMG 0x40D9
+----
+
+Valid property values for `cl_context_safety_properties_img` where _properties_ is `CL_CONTEXT_SAFETY_PROPERTIES_IMG` when passed to `clCreateContext` or `clCreateContextFromType`:
+
+[source,c]
+----
+#define CL_CONTEXT_WORKGROUP_PROTECTION_IMG            (1 << 0)
+#define CL_CONTEXT_ENHANCED_EVENT_EXECUTION_STATUS_IMG (1 << 1)
+----
+
+Additional _param_name_ values that can be passed to `clGetDeviceInfo`:
+[source,c]
+----
+#define CL_DEVICE_WORKGROUP_PROTECTION_SVM_CAPABILITIES_IMG            0x40DA
+#define CL_DEVICE_WORKGROUP_PROTECTION_DEVICE_ENQUEUE_CAPABILITIES_IMG 0x40DB
+#define CL_DEVICE_SAFETY_MEM_SIZE_IMG                                  0x40DC
+----
+
+Additional values that can be returned in _param_value_ when *clGetEventInfo* is called with `CL_EVENT_COMMAND_EXECUTION_STATUS` given as _param_name_:
+
+[source,c]
+----
+#define CL_ECC_RECOVERED_IMG   0x40DD
+#define CL_PAGE_FAULT_IMG      -1127
+#define CL_SAFETY_FAULT_IMG    -1128
+#define CL_GENERAL_FAULT_IMG   -1129
+#define CL_ECC_UNRECOVERED_IMG -1130
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 4.2, *Querying Devices*) ::
++
+--
+(Add the following to Table 5. List of supported _param_names_ by `clGetDeviceInfo`) ::
++
+[cols="1,1,4",options="header"]
+|====
+| Device Info
+| Return Type
+| Description
+
+| `CL_DEVICE_WORKGROUP_PROTECTION_SVM_CAPABILITIES_IMG`
+Missing before version 2.0.
+| `cl_device_svm_capabilities`
+
+| Describes the various shared virtual memory (SVM) memory allocation types the device supports when operating with workgroup protection enabled. Contexts created with the `CL_CONTEXT_WORKGROUP_PROTECTION_IMG` property value are considered to have workgroup protection enabled. This parameter is present when the `cl_img_workgroup_protection` extension is present. This is a bit-field that describes a combination of the following values:
+
+`CL_DEVICE_SVM_COARSE_GRAIN_BUFFER` - Support for coarse-grain buffer sharing using `clSVMAlloc`. Memory consistency is guaranteed at synchronization points and the host must use calls to clEnqueueMapBuffer and `clEnqueueUnmapMemObject`.
+`CL_DEVICE_SVM_FINE_GRAIN_BUFFER` - Support for fine-grain buffer sharing using `clSVMAlloc`. Memory consistency is guaranteed at synchronization points without need for clEnqueueMapBuffer and `clEnqueueUnmapMemObject`.
+`CL_DEVICE_SVM_FINE_GRAIN_SYSTEM` - Support for sharing the host’s entire virtual memory including memory allocated using `malloc`. Memory consistency is guaranteed at synchronization points.
+`CL_DEVICE_SVM_ATOMICS` - Support for the OpenCL 2.0 atomic operations that provide memory consistency across the host and all OpenCL devices supporting fine-grain SVM allocations.
+
+The mandated minimum capability for an OpenCL 2.0, 2.1, or 2.2 device is `CL_DEVICE_SVM_COARSE_GRAIN_BUFFER`.
+
+For other device versions there is no mandated minimum capability.
+
+|`CL_DEVICE_WORKGROUP_PROTECTION_DEVICE_ENQUEUE_CAPABILITIES_IMG`
+
+|`cl_device_device_enqueue_capabilities`
+| May return 0, indicating that device does not support device-side enqueue and on-device queues when operating with workgroup protection enabled. Otherwise, describes device-side enqueue capabilities of the device. This is a bit-field that describes one or more of the following values:
+
+`CL_DEVICE_QUEUE_SUPPORTED` - Device supports device-side enqueue and on-device queues.
+`CL_DEVICE_QUEUE_REPLACEABLE_DEFAULT` - Device supports a replaceable default on-device queue.
+
+If `CL_DEVICE_QUEUE_REPLACEABLE_DEFAULT` is set, `CL_DEVICE_QUEUE_SUPPORTED` must also be set.
+
+Devices that set `CL_DEVICE_QUEUE_SUPPORTED` for `CL_DEVICE_WORKGROUP_PROTECTION_DEVICE_ENQUEUE_CAPABILITIES_IMG` must also return `CL_TRUE` for `CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT`.
+
+|`CL_DEVICE_SAFETY_MEM_SIZE_IMG`
+
+|`cl_ulong`
+
+| May return 0, indicating that device does not support workgroup protection. Otherwise, returns the size of the memory where memory objects are allocated when operating with workgroup protection enabled.
+|====
+--
+
+(Modify Section 4.4, *Contexts*) ::
++
+--
+
+(Add the following to Table 7. List of supported context creation properties by `clCreateContext`) ::
++
+[cols="1,1,4",options="header"]
+|====
+| Context Property
+| Property Value
+| Description
+
+| `CL_CONTEXT_SAFETY_PROPERTIES_IMG`
+| `cl_context_safety_properties_img`
+| This bitfield allows a context to be created with a range of safety mechanisms that will apply to all commands enqueued to the context when the `cl_img_safety_mechanisms` extension is present.
+
+  If `CL_CONTEXT_WORKGROUP_PROTECTION_IMG` is specified, all kernel commands enqueued to this context will enable error checking at the workgroup level to verify that all memory operations within each workgroup workgroup perform as expected. This may effect performance. This property requires the `cl_img_workgroup_protection` extension to be present.
+
+  If `CL_CONTEXT_ENHANCED_EVENT_EXECUTION_STATUS_IMG` is specified, additional event execution status' will be available. This property requires the `cl_img_enhanced_event_execution_status` extension to be present.
+--
+
+(Modify Section 5.11, *Event Objects*) ::
++
+--
+
+(Add the following to the second paragraph) ::
++
+When the `cl_img_safety_mechanisms` extension is present, an event object must be passed to _event_ for every clEnqueue* call where the _context_ associated with _command_queue_ was created with the `CL_CONTEXT_WORKGROUP_PROTECTION_IMG` property value. It is strongly recommended that the execution state of every event object is queried to check for completeness or errors. Not passing a valid event object to _event_ will to cause `clEnqueue*` to return `CL_INVALID_EVENT`.
+
+(Add the following bullets to _The execution status of an enqueued command at any given point in time can be one of the following:_) ::
++
+* `CL_PAGE_FAULT_IMG` This indicates that the command was present during execution that resulted in a page fault and is an error code. This status can only be reported if the `cl_img_enhanced_event_execution_status` extension is present.
+* `CL_SAFETY_FAULT_IMG` This indicates that the command was present during execution that resulted in workgroup protection identifying an error with the command and is an error code. This status can only be reported if the the associated _context_ was created with the `CL_CONTEXT_WORKGROUP_PROTECTION_IMG` property value, and the `cl_img_enhanced_event_execution_status` and `cl_img_workgroup_protection` extensions are present.
+* `CL_GENERAL_FAULT_IMG` This indicates that the command was present during execution that resulted in an error with the command and is an error code. This status can only be reported if the `cl_img_enhanced_event_execution_status` extension is present.
+* `CL_ECC_RECOVERED_IMG` This indicates that the command has successfully completed and is considered to have the same semantics as `CL_COMPLETE`. It also indicates that the command was present during execution that resulted in an ECC event where memory was successfully self-corrected. This status can only be reported when `CL_DEVICE_ERROR_CORRECTION_SUPPORT` is `CL_TRUE` and the `cl_img_enhanced_event_execution_status` extension is present. This is not an error code.
+* `CL_ECC_UNRECOVERED_IMG` This indicates that the command was present during execution that resulted in an ECC event where memory was not successfully self-corrected and is an error code. This status can only be reported when `CL_DEVICE_ERROR_CORRECTION_SUPPORT` is `CL_TRUE` and the `cl_img_enhanced_event_execution_status` extension is present.
+
+(Add the following to Table 36. List of supported param_names by clGetEventInfo) ::
++
+[cols="1,1,4",options="header"]
+|====
+| Event Info
+| Return Type
+| Info. returned in _param_value_
+
+| `CL_EVENT_COMMAND_EXECUTION_STATUS`
+| `cl_int`
+| `CL_PAGE_FAULT_IMG` (during execution, the command was present during a page fault and should be considered to have failed execution)
+
+`CL_SAFETY_FAULT_IMG` (during execution, this command was present when workgroup protection detected an error and should be considered to have failed execution)
+
+`CL_GENERAL_FAULT_IMG` (during execution, the command was present during a general fault and should be considered to have failed execution)
+
+`CL_ECC_RECOVERED_IMG` (during execution, the command was present during an ECC event where the memory successfully self-corrected. This can be considered to have the same semantics as `CL_COMPLETE` and should not be considered to have failed execution)
+
+`CL_ECC_UNRECOVERED_IMG` (during execution, the command was present during an ECC event where the memory did not successfully self-correct and should be considered to have failed execution)
+|====
+--
+
+== Interactions with Other Extensions
+
+If `cl_khr_priority_hints` is supported then any command queue created with either `clCreateCommandQueue` or `clCreateCommandQueueWithProperties` where _context_ has the `CL_CONTEXT_SAFETY_PROPERTIES_IMG` and `CL_QUEUE_PRIORITY_KHR` properties then the requested priority will be ignored.
+
+== Issues
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author             | Changes
+| 1.0.0   | 2025-07-08 | Ahmed Amrani Akdi  | *Updated to 1.0.0 version for publishing.*
+| 0.6.0   | 2025-05-02 | Ahmed Amrani Akdi  | *Added `CL_DEVICE_SAFETY_MEM_SIZE_IMG`*
+| 0.5.0   | 2022-01-17 | Jeremy Kemp        | *Added `CL_DEVICE_WORKGROUP_PROTECTION_DEVICE_ENQUEUE_CAPABILITIES_IMG`*
+| 0.4.0   | 2020-12-03 | Jeremy Kemp        | *Added event execution status as extension. Tidy up*
+| 0.3.0   | 2020-11-25 | Jeremy Kemp        | *Added SVM queries. Added new event status codes. Lots of additional updates and fixes*
+| 0.2.1   | 2020-11-06 | Jeremy Kemp        | *Resolved Issue 3. Removed `cl_arm_import_memory` restriction*
+| 0.2.0   | 2020-10-09 | Jeremy Kemp        | *Resolved Issue 3. Removed `cl_img_command_status_query`. Typo fixes*
+| 0.1.0   | 2020-10-02 | Jeremy Kemp        | *Initial revision*
+|====
