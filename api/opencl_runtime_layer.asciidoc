@@ -14692,10 +14692,17 @@ usage>>.
 ====
 
 Simultaneous use is defined using the _prerequisite_ terminology from the
-<<_execution_model, execution model>>, and is an optional feature for devices
-to support concurrent executions of a command-buffer. A command-buffer must
-be created with {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} to avoid undefined
-behavior if a simultaneous use usage pattern occurs.
+<<_execution_model, execution model>>.
+ifndef::cl_khr_command_buffer_multi_device[]
+A command-buffer exhibits undefined behavior if a simultaneous use usage
+pattern occurs.
+endif::cl_khr_command_buffer_multi_device[]
+ifdef::cl_khr_command_buffer_multi_device[]
+Simultaneous use is an optional feature for devices to support concurrent
+executions of a command-buffer which have been updated between submissions.
+A command-buffer must be created with {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR}
+to avoid undefined behavior if a simultaneous use usage pattern occurs.
+endif::cl_khr_command_buffer_multi_device[]
 
 [[simultaneous-use]]
 Simultaneous Use:: When a command-buffer is submitted for
@@ -14708,9 +14715,7 @@ An example of simultaneous use would be two submissions of the same
 command-buffer to a single out-of-order queue, without any events or barriers
 used to express a dependency between the two enqueue calls. Using a single
 in-order queue, events, or barriers to express dependencies between submissions
-of the same command-buffer would each be ways to avoid simultaneous use and are
-valid usage of command-buffers created without the
-{CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} flag.
+of the same command-buffer would each be ways to avoid simultaneous use.
 ====
 
 ifdef::cl_khr_command_buffer_multi_device[]
@@ -14820,6 +14825,7 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_FLAGS_KHR.asciidoc[]
   | {cl_command_buffer_flags_khr_TYPE}
       | This is a bitfield and can be set to a combination of the following values:
 
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
         {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR_anchor} - Allow multiple
         instances of the command-buffer to be scheduled for execution on the
         device in a usage pattern that exhibits <<simultaneous-use,
@@ -14827,6 +14833,7 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_FLAGS_KHR.asciidoc[]
         {CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR}.
 
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR.asciidoc[]
+endif::cl_khr_command_buffer_mutable_dispatch[]
 
 ifdef::cl_khr_command_buffer_multi_device[]
       {CL_COMMAND_BUFFER_DEVICE_SIDE_SYNC_KHR_anchor} - All commands in the
@@ -15120,10 +15127,17 @@ execution was successfully queued, or one of the errors below:
     required by the OpenCL implementation on the host.
 --
 
+ifndef::cl_khr_command_buffer_mutable_dispatch[]
+Calling {clEnqueueCommandBufferKHR} in a usage pattern that exhbits
+<<simultaneous-use, simultaneous use>> results in undefined behavior.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
 Calling {clEnqueueCommandBufferKHR} in a usage pattern that exhbits
 <<simultaneous-use, simultaneous use>> when _command_buffer_ was not created
 with the {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} flag results in undefined
 behavior.
+endif::cl_khr_command_buffer_mutable_dispatch[]
 
 === Recording Commands to a Command-Buffer
 
