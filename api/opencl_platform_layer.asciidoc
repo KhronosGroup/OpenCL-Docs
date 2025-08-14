@@ -80,7 +80,7 @@ include::{generated}/api/version-notes/clIcdGetPlatformIDsKHR.asciidoc[]
 // refError
 
 {clIcdGetPlatformIDsKHR} returns {CL_SUCCESS} if the function is executed
-successfully and there are a non zero number of platforms available.
+successfully and there are a non-zero number of platforms available.
 Otherwise, it returns one of the following errors:
 
   * {CL_PLATFORM_NOT_FOUND_KHR}
@@ -205,7 +205,7 @@ include::{generated}/api/version-notes/CL_PLATFORM_VERSION.asciidoc[]
         information>_
 
         The _major_version.minor_version_ value returned will be one of 1.0,
-        1.1, 1.2, 2.0, 2.1, 2.2 or 3.0.
+        1.1, 1.2, 2.0, 2.1, 2.2, 3.0 or 3.1.
 
 | {CL_PLATFORM_NUMERIC_VERSION_anchor}
 
@@ -587,30 +587,39 @@ include::{generated}/api/version-notes/CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS.asciid
         used by the data parallel execution model. (Refer to
         {clEnqueueNDRangeKernel}).
         The minimum value is 3.
+
+| {CL_DEVICE_MAX_WORK_GROUP_SIZES_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_MAX_WORK_GROUP_SIZES.asciidoc[]
+  | {size_t_TYPE}[]
+      | The maximum number of work-items that can be specified in each dimension
+        of a work-group to {clEnqueueNDRangeKernel}.
+
+        Returns _n_ {size_t_TYPE} values, where _n_ is the value returned by the
+        query for {CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS}.
+
+        The minimum value is (1, 1, 1).
+
 | {CL_DEVICE_MAX_WORK_ITEM_SIZES_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_MAX_WORK_ITEM_SIZES.asciidoc[]
   | {size_t_TYPE}[]
-      | Maximum number of work-items that can be specified in each dimension
-        of the work-group to {clEnqueueNDRangeKernel}.
+      | See description of {CL_DEVICE_MAX_WORK_GROUP_SIZES}.
 
-        Returns _n_ {size_t_TYPE} entries, where _n_ is the value returned by the
-        query for {CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS}.
-
-        The minimum value is (1, 1, 1).
 | {CL_DEVICE_MAX_WORK_GROUP_SIZE_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_MAX_WORK_GROUP_SIZE.asciidoc[]
   | {size_t_TYPE}
-      | Maximum number of work-items in a work-group that a device is
-        capable of executing on a single compute unit, for any given
-        kernel-instance running on the device. (Refer also to
-        {clEnqueueNDRangeKernel} and {CL_KERNEL_WORK_GROUP_SIZE} ).
-        The minimum value is 1.
+      | The maximum total number of work-items that can be specified for a
+        work-group to {clEnqueueNDRangeKernel}.
         The returned value is an upper limit and will not necessarily
         maximize performance.
-        This maximum may be larger than supported by a specific kernel
-        (refer to the {CL_KERNEL_WORK_GROUP_SIZE} query of {clGetKernelWorkGroupInfo}).
+        Additionally, this maximum for the device may be larger than the maximum
+        supported for a specific kernel, refer to the per-kernel query
+        {CL_KERNEL_WORK_GROUP_SIZE}.
+
+        The minimum value is 1.
+
 | {CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR_anchor}   +
   {CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT_anchor}  +
   {CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT_anchor}    +
@@ -729,21 +738,28 @@ or
 include::{generated}/api/version-notes/CL_DEVICE_IL_VERSION_KHR.asciidoc[]
 endif::cl_khr_il_program[]
   | {char_TYPE}[]
-      | The intermediate languages that can be supported by
+      | The intermediate languages that are supported by
         {clCreateProgramWithIL} for this device.
-        Returns a space-separated list of IL version strings of the form
+        Returns a space-separated list of intermediate language version strings
+        of the form:
 
         <IL_Prefix>_<Major_Version>.<Minor_Version>
 
-        For an OpenCL 2.1 or 2.2 device, SPIR-V is a required IL prefix.
+        An OpenCL 2.1 device 
+ifdef::cl_khr_il_program[]
+        or a device that supports the {cl_khr_il_program_EXT} extension
+endif::cl_khr_il_program[]
+        must support at least SPIR-V 1.0.
+
+        An OpenCL 2.2 device must support at least SPIR-V 1.0, SPIR-V 1.1, and
+        SPIR-V 1.2.
+
+        An OpenCL 3.1 device must support at least SPIR-V 1.0, SPIR-V 1.1,
+        SPIR-V 1.2, SPIR-V 1.3, and SPIR-V 1.4.
 
         If the device does not support intermediate language programs, the
-        value must be `""` (an empty string).
+        returned value must be `""` (an empty string).
 
-ifdef::cl_khr_il_program[]
-        A device that supports the {cl_khr_il_program_EXT} extension must
-        support the `"SPIR-V"` IL prefix.
-endif::cl_khr_il_program[]
 | {CL_DEVICE_ILS_WITH_VERSION_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_ILS_WITH_VERSION.asciidoc[]
@@ -765,33 +781,6 @@ ifdef::cl_khr_extended_versioning[or {cl_name_version_khr_TYPE}[]]
         reported once.
         The list of intermediate languages reported must match the list
         reported via {CL_DEVICE_IL_VERSION}.
-
-        For an OpenCL 2.1 or 2.2 device, at least one version of SPIR-V must
-        be reported.
-
-ifdef::cl_khr_spirv_queries[]
-| {CL_DEVICE_SPIRV_EXTENDED_INSTRUCTION_SETS_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_SPIRV_EXTENDED_INSTRUCTION_SETS_KHR.asciidoc[]
-  | const {char_TYPE}*[]
-      | Returns an array of null-terminated strings, where each string describes
-        a SPIR-V extended instruction set that is supported by the device.
-
-| {CL_DEVICE_SPIRV_EXTENSIONS_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_SPIRV_EXTENSIONS_KHR.asciidoc[]
-  | const {char_TYPE}*[]
-      | Returns an array of null-terminated strings, where each string describes
-        a SPIR-V extension that is supported by the device.
-
-| {CL_DEVICE_SPIRV_CAPABILITIES_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_SPIRV_CAPABILITIES_KHR.asciidoc[]
-  | {cl_uint_TYPE}[]
-      | Returns an array of SPIR-V token values, where each value describes a
-        SPIR-V capability that is supported by the device.
-
-endif::cl_khr_spirv_queries[]
 
 | {CL_DEVICE_IMAGE2D_MAX_WIDTH_anchor}
 
@@ -1128,7 +1117,7 @@ include::{generated}/api/version-notes/CL_DEVICE_ERROR_CORRECTION_SUPPORT.asciid
 include::{generated}/api/version-notes/CL_DEVICE_HOST_UNIFIED_MEMORY.asciidoc[]
   | {cl_bool_TYPE}
       | Is {CL_TRUE} if the device and the host have a unified memory subsystem
-        and is {CL_FALSE} otherwise.
+        and is {CL_FALSE} otherwise. footnote:[{fn-host-unified-memory}]
 | {CL_DEVICE_PROFILING_TIMER_RESOLUTION_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_PROFILING_TIMER_RESOLUTION.asciidoc[]
@@ -1341,8 +1330,9 @@ include::{generated}/api/version-notes/CL_DEVICE_VERSION.asciidoc[]
         _OpenCL<space><major_version.minor_version><space><vendor-specific
         information>_
 
-        The major_version.minor_version value returned will be one of 1.0,
-        1.1, 1.2, 2.0, 2.1, 2.2, or 3.0.
+        The _major_version.minor_version_ value returned will be one of 1.0,
+        1.1, 1.2, 2.0, 2.1, 2.2, 3.0 or 3.1.
+
 | {CL_DEVICE_NUMERIC_VERSION_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_NUMERIC_VERSION.asciidoc[]
@@ -1376,9 +1366,9 @@ include::{generated}/api/version-notes/CL_DEVICE_OPENCL_C_VERSION.asciidoc[]
 
         For devices that support compilation from OpenCL C source:
 
-        Because OpenCL 3.0 is backwards compatible with OpenCL C 1.2,
-        an OpenCL 3.0 device must support at least OpenCL C 1.2.
-        An OpenCL 3.0 device may return an OpenCL C version newer
+        Because OpenCL 3.0 and newer is backwards compatible with OpenCL 1.2,
+        an OpenCL 3.0 or newer device must support at least OpenCL C 1.2.
+        An OpenCL 3.0 or newer device may return an OpenCL C version newer
         than OpenCL C 1.2 if and only if all optional OpenCL C
         features are supported by the device for the newer version.
 
@@ -1415,10 +1405,13 @@ include::{generated}/api/version-notes/CL_DEVICE_OPENCL_C_ALL_VERSIONS.asciidoc[
 
         For devices that support compilation from OpenCL C source:
 
-        Because OpenCL 3.0 is backwards compatible with OpenCL C 1.2,
-        and OpenCL C 1.2 is backwards compatible with OpenCL C 1.1 and
-        OpenCL C 1.0, support for at least OpenCL C 3.0, OpenCL C 1.2,
+        Because OpenCL 3.0 is backwards compatible with OpenCL 1.2,
+        and OpenCL 1.2 is backwards compatible with OpenCL 1.1 and
+        OpenCL 1.0, support for at least OpenCL C 3.0, OpenCL C 1.2,
         OpenCL C 1.1, and OpenCL C 1.0 is required for an OpenCL 3.0 device.
+
+        Support for at least OpenCL C 3.1, OpenCL C 3.0, OpenCL C 1.2, OpenCL C
+        1.1, and OpenCL C 1.0 is required for an OpenCL 3.1 device.
 
         Support for OpenCL C 2.0, OpenCL C 1.2, OpenCL C 1.1, and OpenCL C
         1.0 is required for an OpenCL 2.0, OpenCL 2.1, or OpenCL 2.2 device.
@@ -1471,29 +1464,9 @@ include::{generated}/api/version-notes/CL_DEVICE_EXTENSIONS.asciidoc[]
         The list of extension names may include Khronos approved extension
         names and vendor specified extension names.
 
-        The following Khronos extension names must be returned by
-        all devices that support OpenCL 1.1:
-
-        {cl_khr_byte_addressable_store_EXT} +
-        {cl_khr_global_int32_base_atomics_EXT} +
-        {cl_khr_global_int32_extended_atomics_EXT} +
-        {cl_khr_local_int32_base_atomics_EXT} +
-        {cl_khr_local_int32_extended_atomics_EXT}
-
-        Additionally, the following Khronos extension names must be returned
-        by all devices that support OpenCL 1.2 when and only when the optional
-        feature is supported:
-
-        {cl_khr_fp64_EXT}
-
-        Additionally, the following Khronos extension names must be returned
-        by all devices that support OpenCL 2.0, OpenCL 2.1, or OpenCL 2.2.
-        For devices that support OpenCL 3.0, these extension names must
-        be returned when and only when the optional feature is supported:
-
-        {cl_khr_3d_image_writes_EXT} +
-        {cl_khr_depth_images_EXT} +
-        {cl_khr_image2d_from_buffer_EXT}
+        Please refer to <<required-opencl-extensions, Required OpenCL
+        Extensions>> for a list of OpenCL extensions that must be supported for
+        each OpenCL version.
 
         Please refer to the OpenCL Specification or vendor-provided
         documentation for a detailed description of these extensions.
@@ -1679,9 +1652,9 @@ include::{generated}/api/version-notes/CL_DEVICE_MAX_NUM_SUB_GROUPS.asciidoc[]
 
         The minimum value is 1 if the device supports sub-groups, and must be
         0 for devices that do not support sub-groups.
-        Support for sub-groups is required for an OpenCL 2.1 or 2.2 device.
+        Support for sub-groups is required for an OpenCL 2.1, OpenCL 2.2, or
+        OpenCL 3.1 device.
 
-        (Refer also to {clGetKernelSubGroupInfo}.)
 | {CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS_anchor}
 
 // Note: This sub-group property is not in cl_khr_subgroups.
@@ -1741,24 +1714,18 @@ include::{generated}/api/version-notes/CL_DEVICE_ATOMIC_FENCE_CAPABILITIES.ascii
 include::{generated}/api/version-notes/CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT.asciidoc[]
   | {cl_bool_TYPE}
       | Is {CL_TRUE} if the device supports non-uniform work-groups, and {CL_FALSE} otherwise.
-// This query didn't exist pre-OpenCL 3.0, but:
-//Support for non-uniform work-groups is required for an OpenCL 2.0, 2.1, or 2.2 device.
 
 | {CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT.asciidoc[]
   | {cl_bool_TYPE}
       | Is {CL_TRUE} if the device supports work-group collective functions e.g. `work_group_broadcast`, `work_group_reduce`, and `work_group_scan`, and {CL_FALSE} otherwise.
-// This query didn't exist pre-OpenCL 3.0, but:
-//Support for work-group collective functions is required for an OpenCL 2.0, 2.1, or 2.2 device.
 
 | {CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT.asciidoc[]
   | {cl_bool_TYPE}
       | Is {CL_TRUE} if the device supports the generic address space and its associated built-in functions, and {CL_FALSE} otherwise.
-// This query didn't exist pre-OpenCL 3.0, but:
-//Support for the generic address space is required for an OpenCL 2.0, 2.1, or 2.2 device.
 
 | {CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES_anchor}
 
@@ -1775,9 +1742,6 @@ include::{generated}/api/version-notes/CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES.asc
 
         Devices that set {CL_DEVICE_QUEUE_SUPPORTED} for {CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES} must also return {CL_TRUE} for {CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT}.
 
-// This query didn't exist pre-OpenCL 3.0, but:
-//Support for device-side enqueue and on-device queues is required for an OpenCL 2.0, 2.1, or 2.2 device.
-
 | {CL_DEVICE_PIPE_SUPPORT_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_PIPE_SUPPORT.asciidoc[]
@@ -1785,8 +1749,6 @@ include::{generated}/api/version-notes/CL_DEVICE_PIPE_SUPPORT.asciidoc[]
       | Is {CL_TRUE} if the device supports pipes, and {CL_FALSE} otherwise.
 
       Devices that return {CL_TRUE} for {CL_DEVICE_PIPE_SUPPORT} must also return {CL_TRUE} for {CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT}.
-// This query didn't exist pre-OpenCL 3.0, but:
-//Support for pipes is required for an OpenCL 2.0, 2.1, or 2.2 device.
 
 | {CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE_anchor}
 
@@ -1804,6 +1766,258 @@ include::{generated}/api/version-notes/CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASS
   | {char_TYPE}[]
       | Returns the latest version of the conformance test suite that this device
         has fully passed in accordance with the official conformance process.
+
+| {CL_DEVICE_UUID_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_UUID.asciidoc[]
+
+ifdef::cl_khr_device_uuid[]
+or
+
+{CL_DEVICE_UUID_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_UUID_KHR.asciidoc[]
+endif::cl_khr_device_uuid[]
+  | {cl_uchar_TYPE}[{CL_UUID_SIZE}]
+
+ifdef::cl_khr_device_uuid[or {cl_uchar_TYPE}[{CL_UUID_SIZE_KHR}]]
+      | Returns a universally unique identifier (UUID) for the device.
+
+        Device UUIDs must be immutable for a given device across processes,
+        driver APIs, driver versions, and system reboots.
+
+        {CL_UUID_SIZE_anchor}
+ifdef::cl_khr_device_uuid[or {CL_UUID_SIZE_KHR_anchor}]
+        is the size of the UUID, in bytes.
+| {CL_DRIVER_UUID_anchor}
+
+include::{generated}/api/version-notes/CL_DRIVER_UUID.asciidoc[]
+
+ifdef::cl_khr_device_uuid[]
+or
+
+{CL_DRIVER_UUID_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DRIVER_UUID_KHR.asciidoc[]
+endif::cl_khr_device_uuid[]
+  | {cl_uchar_TYPE}[{CL_UUID_SIZE}]
+
+ifdef::cl_khr_device_uuid[or {cl_uchar_TYPE}[{CL_UUID_SIZE_KHR}]]
+      | Returns a universally unique identifier (UUID) for the software driver
+        for the device.
+
+        {CL_UUID_SIZE_anchor}
+ifdef::cl_khr_device_uuid[or {CL_UUID_SIZE_KHR_anchor}]
+        is the size of the UUID, in bytes.
+| {CL_DEVICE_LUID_VALID_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_LUID_VALID.asciidoc[]
+
+ifdef::cl_khr_device_uuid[]
+or
+
+{CL_DEVICE_LUID_VALID_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_LUID_VALID_KHR.asciidoc[]
+endif::cl_khr_device_uuid[]
+  | {cl_bool_TYPE}
+      | Returns {CL_TRUE} if the device has a valid LUID and {CL_FALSE}
+        otherwise.
+| {CL_DEVICE_LUID_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_LUID.asciidoc[]
+
+ifdef::cl_khr_device_uuid[]
+or
+
+{CL_DEVICE_LUID_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_LUID_KHR.asciidoc[]
+endif::cl_khr_device_uuid[]
+  | {cl_uchar_TYPE}[{CL_LUID_SIZE}]
+
+ifdef::cl_khr_device_uuid[or {cl_uchar_TYPE}[{CL_LUID_SIZE_KHR}]]
+      | Returns a locally unique identifier (LUID) for the device.
+
+        It is not an error to query {CL_DEVICE_LUID}
+ifdef::cl_khr_device_uuid[or {CL_DEVICE_LUID_KHR}]
+        when {CL_DEVICE_LUID_VALID}
+ifdef::cl_khr_device_uuid[or {CL_DEVICE_LUID_VALID_KHR}]
+        returns {CL_FALSE}, but in this case the returned LUID value is
+        undefined.
+
+        When {CL_DEVICE_LUID_VALID_KHR}
+ifdef::cl_khr_device_uuid[or {CL_DEVICE_LUID_VALID_KHR}]
+        returns {CL_TRUE}, and the OpenCL device is running on the Windows
+        operating system, the returned LUID value can be cast to an `LUID`
+        object and must be equal to the locally unique identifier of an
+        `IDXGIAdapter1` object that corresponds to the OpenCL device.
+
+        {CL_LUID_SIZE_KHR_anchor}
+ifdef::cl_khr_device_uuid[or {CL_LUID_SIZE_KHR_anchor}]
+        is the size of the LUID, in bytes.
+| {CL_DEVICE_NODE_MASK_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_NODE_MASK.asciidoc[]
+
+ifdef::cl_khr_device_uuid[]
+or
+
+{CL_DEVICE_NODE_MASK_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_NODE_MASK_KHR.asciidoc[]
+endif::cl_khr_device_uuid[]
+  | {cl_uint_TYPE}
+      | Returns a node mask for the device.
+
+        It is not an error to query {CL_DEVICE_NODE_MASK}
+ifdef::cl_khr_device_uuid[or {CL_DEVICE_NODE_MASK_KHR}]
+        when {CL_DEVICE_LUID_VALID}
+ifdef::cl_khr_device_uuid[or {CL_DEVICE_LUID_VALID_KHR}]
+        returns {CL_FALSE}, but in this case the returned node mask is
+        undefined.
+
+        When {CL_DEVICE_LUID_VALID_KHR}
+ifdef::cl_khr_device_uuid[or {CL_DEVICE_LUID_VALID_KHR}]
+        returns {CL_TRUE}, the returned node mask must contain exactly one bit.
+        If the OpenCL device is running on an operating system that supports
+        the Direct3D 12 API and the OpenCL device corresponds to an individual
+        device in a linked device adapter, the returned node mask identifies
+        the Direct3D 12 node corresponding to the OpenCL device.
+        Otherwise, the returned node mask must be `1`.
+
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES.asciidoc[]
+
+ifdef::cl_khr_integer_dot_product[]
+or
+
+{CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR.asciidoc[]
+endif::cl_khr_integer_dot_product[]
+  | {cl_device_integer_dot_product_capabilities_TYPE}
+
+ifdef::cl_khr_integer_dot_product[or {cl_device_integer_dot_product_capabilities_khr_TYPE}]
+      | Returns the integer dot product capabilities supported by the
+        device.
+
+        All implementations that support OpenCL C 3.1
+ifdef::cl_khr_integer_dot_product[or {cl_khr_integer_dot_product_EXT}]
+        must support {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_anchor}
+ifdef::cl_khr_integer_dot_product[or {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR_anchor}]
+        to indicate support for dot product built-in functions and, when SPIR-V
+        is supported, SPIR-V instructions that take four-component vectors of
+        8-bit integers packed into 32-bit integers as input.
+
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_anchor}
+ifdef::cl_khr_integer_dot_product[or {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR_anchor}]
+        may be set to indicate support for dot product built-in functions and,
+        when SPIR-V is supported, SPIR-V instructions that take four-component
+        of 8-bit elements as input are supported.
+ifdef::cl_khr_integer_dot_product[]
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR} must be set when
+        version 2.0 or higher of the {cl_khr_integer_dot_product_EXT} extension
+        is supported.
+endif::cl_khr_integer_dot_product[]
+
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT.asciidoc[]
+
+ifdef::cl_khr_integer_dot_product[]
+or
+
+{CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR.asciidoc[]
+endif::cl_khr_integer_dot_product[]
+  | {cl_device_integer_dot_product_acceleration_properties_TYPE}
+
+ifdef::cl_khr_integer_dot_product[or {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}]
+      | Returns a structure describing the exact 8-bit dot product
+        combinations that are <<integer-dot-product-acceleration-properties,
+        accelerated>> on the device.
+        Each member is {CL_TRUE} if the combination it corresponds to is
+        accelerated, {CL_FALSE} otherwise.
+
+ifdef::cl_khr_integer_dot_product[]
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR} is
+        missing before version 2.0 of the {cl_khr_integer_dot_product_EXT}
+        extension.
+endif::cl_khr_integer_dot_product[]
+
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED.asciidoc[]
+
+ifdef::cl_khr_integer_dot_product[]
+or
+
+{CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR.asciidoc[]
+endif::cl_khr_integer_dot_product[]
+  | {cl_device_integer_dot_product_acceleration_properties_TYPE}
+
+ifdef::cl_khr_integer_dot_product[or {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}]
+      | Returns a structure describing the exact 4x8-bit packed dot product
+        combinations that are <<integer-dot-product-acceleration-properties,
+        accelerated>> on the device.
+        Each member is {CL_TRUE} if the combination it corresponds to is
+        accelerated, {CL_FALSE} otherwise.
+
+ifdef::cl_khr_integer_dot_product[]
+        {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR} is
+        missing before version 2.0 of the {cl_khr_integer_dot_product_EXT}
+        extension.
+endif::cl_khr_integer_dot_product[]
+
+| {CL_DEVICE_SPIRV_EXTENDED_INSTRUCTION_SETS_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_SPIRV_EXTENDED_INSTRUCTION_SETS.asciidoc[]
+
+ifdef::cl_khr_spirv_queries[]
+or
+
+{CL_DEVICE_SPIRV_EXTENDED_INSTRUCTION_SETS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_SPIRV_EXTENDED_INSTRUCTION_SETS_KHR.asciidoc[]
+endif::cl_khr_spirv_queries[]
+  | const {char_TYPE}*[]
+      | Returns an array of null-terminated strings, where each string describes
+        a SPIR-V extended instruction set that is supported by the device.
+
+| {CL_DEVICE_SPIRV_EXTENSIONS_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_SPIRV_EXTENSIONS.asciidoc[]
+
+ifdef::cl_khr_spirv_queries[]
+or
+
+{CL_DEVICE_SPIRV_EXTENSIONS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_SPIRV_EXTENSIONS_KHR.asciidoc[]
+endif::cl_khr_spirv_queries[]
+  | const {char_TYPE}*[]
+      | Returns an array of null-terminated strings, where each string describes
+        a SPIR-V extension that is supported by the device.
+
+| {CL_DEVICE_SPIRV_CAPABILITIES_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_SPIRV_CAPABILITIES.asciidoc[]
+
+ifdef::cl_khr_spirv_queries[]
+or
+
+{CL_DEVICE_SPIRV_CAPABILITIES_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_SPIRV_CAPABILITIES_KHR.asciidoc[]
+endif::cl_khr_spirv_queries[]
+  | {cl_uint_TYPE}[]
+      | Returns an array of SPIR-V token values, where each value describes a
+        SPIR-V capability that is supported by the device.
 
 ifdef::cl_khr_command_buffer[]
 | {CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR_anchor}
@@ -1928,72 +2142,6 @@ include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_ARGUMENTS_KHR.asciido
 include::{generated}/api/version-notes/CL_MUTABLE_DISPATCH_EXEC_INFO_KHR.asciidoc[]
 endif::cl_khr_command_buffer_mutable_dispatch[]
 
-ifdef::cl_khr_device_uuid[]
-| {CL_DEVICE_UUID_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_UUID_KHR.asciidoc[]
-
-  | {cl_uchar_TYPE}[{CL_UUID_SIZE_KHR}]
-      | Returns a universally unique identifier (UUID) for the device.
-
-        Device UUIDs must be immutable for a given device across processes,
-        driver APIs, driver versions, and system reboots.
-
-        {CL_UUID_SIZE_KHR_anchor} is the size of the UUID, in bytes.
-| {CL_DRIVER_UUID_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DRIVER_UUID_KHR.asciidoc[]
-
-  | {cl_uchar_TYPE}[{CL_UUID_SIZE_KHR}]
-      | Returns a universally unique identifier (UUID) for the software driver
-        for the device.
-
-        {CL_UUID_SIZE_KHR} is the size of the UUID, in bytes.
-| {CL_DEVICE_LUID_VALID_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_LUID_VALID_KHR.asciidoc[]
-
-  | {cl_bool_TYPE}
-      | Returns {CL_TRUE} if the device has a valid LUID and {CL_FALSE}
-        otherwise.
-| {CL_DEVICE_LUID_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_LUID_KHR.asciidoc[]
-
-  | {cl_uchar_TYPE}[{CL_LUID_SIZE_KHR}]
-      | Returns a locally unique identifier (LUID) for the device.
-
-        It is not an error to query {CL_DEVICE_LUID_KHR} when
-        {CL_DEVICE_LUID_VALID_KHR} returns {CL_FALSE}, but in this case the
-        returned LUID value is undefined.
-
-        When {CL_DEVICE_LUID_VALID_KHR} returns {CL_TRUE}, and the OpenCL
-        device is running on the Windows operating system, the returned LUID
-        value can be cast to an `LUID` object and must be equal to the locally
-        unique identifier of an `IDXGIAdapter1` object that corresponds to the
-        OpenCL device.
-
-        {CL_LUID_SIZE_KHR_anchor} is the size of the LUID, in bytes.
-| {CL_DEVICE_NODE_MASK_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_NODE_MASK_KHR.asciidoc[]
-
-  | {cl_uint_TYPE}
-      | Returns a node mask for the device.
-
-        It is not an error to query {CL_DEVICE_NODE_MASK_KHR} when
-        {CL_DEVICE_LUID_VALID_KHR} returns {CL_FALSE}, but in this case the
-        returned node mask is undefined.
-
-        When {CL_DEVICE_LUID_VALID_KHR} returns {CL_TRUE}, the returned node
-        mask must contain exactly one bit.
-        If the OpenCL device is running on an operating system that supports
-        the Direct3D 12 API and the OpenCL device corresponds to an individual
-        device in a linked device adapter, the returned node mask identifies
-        the Direct3D 12 node corresponding to the OpenCL device.
-        Otherwise, the returned node mask must be `1`.
-endif::cl_khr_device_uuid[]
-
 ifdef::cl_khr_external_memory[]
 | {CL_DEVICE_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR_anchor}
 
@@ -2058,57 +2206,6 @@ include::{generated}/api/version-notes/CL_DEVICE_HALF_FP_CONFIG.asciidoc[]
         {CL_FP_ROUND_TO_NEAREST} \| +
         {CL_FP_INF_NAN}.
 endif::cl_khr_fp16[]
-
-ifdef::cl_khr_integer_dot_product[]
-| {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR.asciidoc[]
-  | {cl_device_integer_dot_product_capabilities_khr_type}
-      | Returns the integer dot product capabilities supported by the
-        device.
-
-        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR_anchor} is always
-        set, indicating that all implementations that support
-        {cl_khr_integer_dot_product_EXT} must support dot product built-in
-        functions and, when SPIR-V is supported, SPIR-V instructions that
-        take four-component vectors of 8-bit integers packed into 32-bit
-        integers as input.
-
-        {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR_anchor} is set when dot
-        product built-in functions and, when SPIR-V is supported, SPIR-V
-        instructions that take four-component of 8-bit elements as input are
-        supported.
-        NOTE: {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR}
-        must be set in version 2.x of the extension.
-
-| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR.asciidoc[]
-
-  | {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
-      | Returns a structure describing the exact 8-bit dot product
-        combinations that are <<integer-dot-product-acceleration-properties,
-        accelerated>> on the device.
-        Each member is {CL_TRUE} if the combination it corresponds to is
-        accelerated, {CL_FALSE} otherwise.
-        NOTE:
-        {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR} is
-        missing before version 2.0 of the extension.
-
-| {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR_anchor}
-
-include::{generated}/api/version-notes/CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR.asciidoc[]
-
-  | {cl_device_integer_dot_product_acceleration_properties_khr_TYPE}
-      | Returns a structure describing the exact 4x8-bit packed dot product
-        combinations that are <<integer-dot-product-acceleration-properties,
-        accelerated>> on the device.
-        Each member is {CL_TRUE} if the combination it corresponds to is
-        accelerated, {CL_FALSE} otherwise.
-        NOTE:
-        {CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR}
-        is missing before version 2.0 of the extension.
-endif::cl_khr_integer_dot_product[]
 
 ifdef::cl_khr_kernel_clock[]
 | {CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR_anchor}
@@ -2219,23 +2316,27 @@ include::{generated}/api/version-notes/CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_
 endif::cl_ext_cxx_for_opencl[]
 |====
 
-ifdef::cl_khr_integer_dot_product[]
-OpenCL 3 devices must report the following feature macros via
+OpenCL 3.0 or newer devices must report the following feature macros via
 {CL_DEVICE_OPENCL_C_FEATURES} when the corresponding bit is set in the bitfield
-returned for {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR}:
+returned for {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES}
+ifdef::cl_khr_integer_dot_product[or {CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR}:]
+ifndef::cl_khr_integer_dot_product[:]
 
 [cols="1,1",options="header"]
 |====
 | Feature Bit | Feature Macro
-| {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR}
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED}
+
+ifdef::cl_khr_integer_dot_product[or {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_PACKED_KHR}]
   | {opencl_c_integer_dot_product_input_4x8bit_packed}
-| {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR}
+| {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT}
+
+ifdef::cl_khr_integer_dot_product[or {CL_DEVICE_INTEGER_DOT_PRODUCT_INPUT_4x8BIT_KHR}]
   | {opencl_c_integer_dot_product_input_4x8bit}
 |====
-endif::cl_khr_integer_dot_product[]
 
 ifdef::cl_khr_kernel_clock[]
-OpenCL 3 devices must report the following feature macros via
+OpenCL 3.0 devices must report the following feature macros via
 {CL_DEVICE_OPENCL_C_FEATURES} when the corresponding bit is set in the bitfield
 returned for {CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR}:
 
@@ -2298,14 +2399,20 @@ Otherwise, it returns one of the following errors:
     implementation on the host
 --
 
-ifdef::cl_khr_integer_dot_product[]
-[open,refpage='cl_device_integer_dot_product_acceleration_properties_khr',desc='Structure describing supported dot product operations',type='structs']
+[open,refpage='cl_device_integer_dot_product_acceleration_properties',desc='Structure describing supported dot product operations',type='structs',alias='cl_device_integer_dot_product_acceleration_properties_khr']
 --
 [[integer-dot-product-acceleration-properties]]
-The {cl_device_integer_dot_product_acceleration_properties_khr_TYPE} structure
-describes the exact dot product operations that are accelerated on the device:
+The {cl_device_integer_dot_product_acceleration_properties_TYPE} structure:
+
+include::{generated}/api/structs/cl_device_integer_dot_product_acceleration_properties.txt[]
+
+ifdef::cl_khr_integer_dot_product[]
+or the equivalent {cl_device_integer_dot_product_acceleration_properties_khr_TYPE} structure:
 
 include::{generated}/api/structs/cl_device_integer_dot_product_acceleration_properties_khr.txt[]
+endif::cl_khr_integer_dot_product[]
+
+describes the exact dot product operations that are accelerated on the device.
 
  * _signed_accelerated_ is {CL_TRUE} when signed dot product operations are
    accelerated, {CL_FALSE} otherwise.
@@ -2330,7 +2437,6 @@ implementation uses optimized machine code sequences whose generation from
 application-provided code cannot be guaranteed or because it uses hardware
 features that cannot otherwise be targeted from application-provided code.
 --
-endif::cl_khr_integer_dot_product[]
 
 ifdef::cl_khr_pci_bus_info[]
 [open,refpage='cl_device_pci_bus_info_khr',desc='Structure describing PCI bus information',type='structs']
@@ -2445,6 +2551,52 @@ Otherwise, it returns one of the following errors:
     ** if there is a failure to allocate resources required by the OpenCL
     implementation on the host
 --
+
+[[required-opencl-extensions]]
+=== Required OpenCL Extensions
+
+Some OpenCL features were originally OpenCL extensions before adoption into the
+core OpenCL standard.
+This section describes the OpenCL extensions that must be reported by a device
+through {CL_DEVICE_EXTENSIONS} or {CL_DEVICE_EXTENSIONS_WITH_VERSION} for the
+OpenCL version reported by {CL_DEVICE_VERSION}.
+
+The following Khronos extension names must be returned by all devices that
+support OpenCL 1.1 or newer:
+
+{cl_khr_byte_addressable_store_EXT} +
+{cl_khr_global_int32_base_atomics_EXT} +
+{cl_khr_global_int32_extended_atomics_EXT} +
+{cl_khr_local_int32_base_atomics_EXT} +
+{cl_khr_local_int32_extended_atomics_EXT}
+
+The following Khronos extension names must be returned by all devices that
+support OpenCL 1.2 or newer when and only when the optional feature is
+supported:
+
+{cl_khr_fp64_EXT}
+
+The following Khronos extension names must be returned by all devices that
+support OpenCL 2.0, OpenCL 2.1, or OpenCL 2.2.
+For devices that support OpenCL 3.0 or newer, these extension names must be
+returned when and only when the optional feature is supported:
+
+{cl_khr_3d_image_writes_EXT} +
+{cl_khr_depth_images_EXT} +
+{cl_khr_image2d_from_buffer_EXT}
+
+The following Khronos extension names must be returned by all devices that
+support OpenCL 3.1 or newer:
+
+{cl_khr_device_uuid_EXT} +
+{cl_khr_extended_bit_ops_EXT} +
+{cl_khr_integer_dot_product_EXT} +
+{cl_khr_spirv_queries_EXT} +
+{cl_khr_subgroup_extended_types_EXT} +
+{cl_khr_subgroup_rotate_EXT} +
+{cl_khr_subgroup_shuffle_EXT} +
+{cl_khr_subgroup_shuffle_relative_EXT} +
+{cl_khr_suggested_local_work_size_EXT}
 
 ifdef::cl_khr_dx9_media_sharing[]
 === Sharing DirectX9 Media Surfaces With OpenCL Images
