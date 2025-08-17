@@ -1,4 +1,4 @@
-// Copyright 2017-2024 The Khronos Group. This work is licensed under a
+// Copyright 2017-2025 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -196,7 +196,7 @@ given as ULP values for the full profile.
 | *OpFDiv*
 | Correctly rounded
 | \<= 2.5 ulp
-| Correctly rounded
+| \<= 1 ulp
 
 | *OpExtInst* *acos*
 | \<= 4 ulp
@@ -586,7 +586,7 @@ given as ULP values for the full profile.
 | *OpExtInst* *sqrt*
 | Correctly rounded
 | \<= 3 ulp
-| Correctly rounded
+| \<= 1.5 ulp
 
 | *OpExtInst* *step*
 | 0 ulp
@@ -596,7 +596,7 @@ given as ULP values for the full profile.
 | *OpExtInst* *tan*
 | \<= 5 ulp
 | \<= 5 ulp
-| \<= 2 ulp
+| \<= 2.5 ulp
 
 | *OpExtInst* *tanh*
 | \<= 5 ulp
@@ -1188,7 +1188,7 @@ given as ULP values for the embedded profile.
 | *OpExtInst* *sqrt*
 | \<= 4 ulp
 | \<= 4 ulp
-| \<= 1 ulp
+| \<= 1.5 ulp
 
 | *OpExtInst* *step*
 | 0 ulp
@@ -1407,11 +1407,13 @@ profile.
 
 | *OpFDiv* for 1.0 / _x_
     | {leq} 2.5 ulp for _x_ in the domain of 2^-126^ to 2^126^ for the full
-      profile, and {leq} 3 ulp for the embedded profile.
+      profile, and {leq} 3 ulp for _x_ in the domain of 2^-126^ to 2^126^ for
+      the embedded profile.
 
 | *OpFDiv* for _x_ / _y_
     | {leq} 2.5 ulp for _x_ in the domain of 2^-62^ to 2^62^ and _y_ in the
-      domain of 2^-62^ to 2^62^ for the full profile, and {leq} 3 ulp for
+      domain of 2^-62^ to 2^62^ for the full profile, and {leq} 3 ulp for _x_ in
+      the domain of 2^-62^ to 2^62^ and _y_ in the domain of 2^-62^ to 2^62^ for
       the embedded profile.
 
 | *OpExtInst* *acos*
@@ -1454,6 +1456,7 @@ profile.
     | Derived implementations may implement as *atan*(_y_ / _x_) for _x_ > 0,
       *atan*(_y_ / _x_) + `M_PI_F` for _x_ < 0 and _y_ > 0, and
       *atan*(_y_ / _x_) - `M_PI_F` for _x_ < 0 and _y_ < 0.
+      For non-derived implementations, the error is {leq} 8192 ulp.
 
 | *OpExtInst* *atan2pi*
     | Derived implementations may implement as *atan2*(_y_, _x_) * `M_1_PI_F`.
@@ -1478,11 +1481,11 @@ profile.
 
 | *OpExtInst* *exp*
     | {leq} 3 + *floor*(*fabs*(2 * _x_)) ulp for the full profile, and {leq}
-      4 ulp for the embedded profile.
+      4  + *floor*(*fabs*(2 * _x_)) ulp for the embedded profile.
 
 | *OpExtInst* *exp2*
     | {leq} 3 + *floor*(*fabs*(2 * _x_)) ulp for the full profile, and {leq}
-      4 ulp for the embedded profile.
+      4 + *floor*(*fabs*(2 * _x_)) ulp for the embedded profile.
 
 | *OpExtInst* *exp10*
     | Derived implementations may implement as *exp2*(_x_ * *log2*(10)).

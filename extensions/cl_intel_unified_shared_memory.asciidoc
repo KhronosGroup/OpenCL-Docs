@@ -43,7 +43,7 @@ Lukasz Towarek, Intel
 
 == Notice
 
-Copyright (c) 2021-2024 Intel Corporation.  All rights reserved.
+Copyright (c) 2021-2025 Intel Corporation.  All rights reserved.
 
 == Status
 
@@ -52,7 +52,7 @@ Shipping
 == Version
 
 Built On: {docdate} +
-Revision: 1.0.0
+Revision: 1.1.0
 
 == Dependencies
 
@@ -743,9 +743,19 @@ Arguments to the kernel are referred to by indices that go from 0 for the leftmo
 
 _arg_value_ is the pointer value that should be used as the argument specified by _arg_index_.
 The pointer value will be used as the argument by all API calls that enqueue a kernel until the argument value is set to a different pointer value by a subsequent call.
-A pointer into Unified Shared Memory allocation may only be set as an argument value for an argument declared to be a pointer to `global` or `constant` memory.
+A pointer may only be set as an argument value for an argument declared to be a pointer to `global` or `constant` memory.
+
+[[valid-usm-pointer-argument-definition]]
+The definition of a valid pointer value was changed in extension version 1.1.0:
+
+* For extension versions prior to version 1.1.0:
 For devices supporting shared system allocations, any pointer value is valid.
 Otherwise, the pointer value must be `NULL` or must point into a Unified Shared Memory allocation returned by *clHostMemAllocINTEL*, *clDeviceMemAllocINTEL*, or *clSharedMemAllocINTEL*.
+* For extension versions 1.1.0 and newer:
+For all devices, any pointer value is valid and may be set as an argument to a kernel.
+
+In this definition, a valid pointer value means that the function will not return an error.
+It still may not be valid to dereference the pointer inside of a kernel if the memory that the pointer points to is not accessible on the device.
 
 *clSetKernelArgMemPointerINTEL* returns `CL_SUCCESS` if the function is executed successfully.
 Otherwise, it will return one of the following errors:
@@ -794,6 +804,8 @@ The following errors may be returned by *clSetKernelExecInfo* for these new _par
 * `CL_INVALID_OPERATION` if _param_name_ is `CL_KERNEL_EXEC_INFO_INDIRECT_HOST_ACCESS_INTEL` and no devices in the context associated with _kernel_ support host Unified Shared Memory allocations.
 * `CL_INVALID_OPERATION` if _param_name_ is `CL_KERNEL_EXEC_INFO_INDIRECT_DEVICE_ACCESS_INTEL` and no devices in the context associated with _kernel_ support device Unified Shared Memory allocations.
 * `CL_INVALID_OPERATION` if _param_name_ is `CL_KERNEL_EXEC_INFO_INDIRECT_SHARED_ACCESS_INTEL` and no devices in the context associated with _kernel_ support shared Unified Shared Memory allocations.
+
+The <<valid-usm-pointer-argument-definition,definition of a valid pointer value>> specified using `CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL` was changed in extension version 1.1.0.
 
 ==== Filling and Copying Unified Shared Memory
 
@@ -941,6 +953,7 @@ _ptr_ is a pointer to the start of the shared Unified Shared Memory allocation t
 _size_ describes the size of the memory region to migrate.
 
 _flags_ is a bit-field that is used to specify memory migration options.
+The set of supported memory migration flags is described in the https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#migration-flags-table[Memory Migration Flags] table.
 
 _event_wait_list_ and _num_events_in_wait_list_ specify events that need to complete before this command can be executed.
 If _event_wait_list_ is `NULL`, then this command does not wait on any event to complete.
@@ -954,13 +967,21 @@ _event_ returns a unique event object that identifies this command.
 If _event_ is `NULL`, no event will be created and therefore it will not be possible to query or wait for this command.
 If the _event_wait_list_ and the _event_ arguments are not `NULL`, the _event_ argument must not refer to an element of the _event_wait_list_ array.
 
+[[valid-migration-flags-definition]]
+The definition of valid _flags_ was changed in extension version 1.2.0:
+
+* For extension versions prior to version 1.2.0:
+_flags_ equal to zero was considered invalid.
+* For extension versions 1.2.0 and newer:
+_flags_ equal to zero is valid and indicates that the memory should be migrated to the device associated with _command_queue_, similar to *clEnqueueMigrateMemObjects* and *clEnqueueSVMMigrateMem*.
+
 *clEnqueueMigrateMemINTEL* returns CL_SUCCESS if the command is queued successfully.
 Otherwise, it will return one of the following errors:
 
 * `CL_INVALID_COMMAND_QUEUE` if _command_queue_ is not a valid host command-queue.
 * `CL_INVALID_CONTEXT` if the context associated with _command_queue_ and events in _event_wait_list_ are not the same.
-* `CL_INVALID_VALUE` **TODO**, are any values of _ptr_ and _size_ considered invalid?
-* `CL_INVALID_VALUE` if _flags_ is zero or is not a supported combination of memory migration flags.
+//* `CL_INVALID_VALUE` **TODO**, are any values of _ptr_ and _size_ considered invalid?
+* `CL_INVALID_VALUE` if _flags_ is not a supported combination of memory migration flags.
 * `CL_INVALID_EVENT_WAIT_LIST` if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ is greater than zero, or if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero, or if event objects in _event_wait_list_ are not valid events.
 * `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required by the OpenCL implementation on the device.
 * `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources required by the OpenCL implementation on the host.
@@ -1243,21 +1264,27 @@ Note that some flags will not be valid, such as `CL_MEM_USE_HOST_PTR`.
 . Should it be an error to set an unknown pointer as a kernel argument using *clSetKernelArgMemPointerINTEL* if no devices support shared system allocations?
 +
 --
-*UNRESOLVED*:
-Returning an error for an unknown pointer is helpful to identify and diagnose possible programming errors sooner, but passing a pointer to arbitrary memory to a function on the host is not an error until the pointer is dereferenced.
+`RESOLVED`:
+The behavior of *clSetKernelArgMemPointerINTEL* was changed in version 1.1.0 of this extension.
 
-If we relax the error condition for *clSetKernelArgMemPointerINTEL* then we could also consider relaxing the error condition for *clSetKernelExecInfo*(`CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL`) similarly.
+Prior to version 1.1.0, it was considered an error to set an arbitrary pointer value as an argument to a kernel if no devices support system USM.
+This was helpful to identify possible programming errors, however it did not match the behavior of passing a pointer to a function on the host, where it is only a programming error if an invalid pointer is dereferenced.
+To provide a similar programming experience, the error condition was relaxed in version 1.1.0, and any arbitrary pointer value may be passed to a kernel.
 
-Note that if the error condition is removed we can still check for possible programming errors via optional USM checking layers, such as the https://github.com/intel/opencl-intercept-layer/blob/master/docs/controls.md#usmchecking-bool[USMChecking] functionality in the https://github.com/intel/opencl-intercept-layer[OpenCL Intercept Layer].
+The behavior was also changed for *clSetKernelExecInfo*(`CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL`), similarly.
+
+If desired, additional checks to identify possible programming errors may still be provided via optional USM checking layers, such as the https://github.com/intel/opencl-intercept-layer/blob/master/docs/controls.md#usmchecking-bool[USMChecking] functionality in the https://github.com/intel/opencl-intercept-layer[OpenCL Intercept Layer].
 --
 
-. Should we support a "rect" memcpy similar to *clEnqueueCopyBufferRect*?
+. Should we support a 2D "rect" memcpy similar to *clEnqueueCopyBufferRect*?
 +
 --
 *UNRESOLVED*:
 This would be a fairly straightforward addition if it is useful.
 
-Note that there is no similar SVM "rect" memcpy.
+Note that there is no similar 2D "rect" memcpy for SVM.
+
+We could also support a 2D "rect" fill or memset, though there are no similar functions for `cl_mem` buffers or SVM.
 --
 
 . Should there be an upper limit on the size of an allocation using *clHostMemAllocINTEL*?
@@ -1278,6 +1305,40 @@ For some devices, this query will return the same value as `CL_DEVICE_MAX_MEM_AL
 * Do nothing and keep the existing error behavior.
 --
 
+. Should it be an error to allocate zero bytes?
++
+--
+*UNRESOLVED*:
+Currently, attempting to allocate zero bytes fails and returns `CL_INVALID_BUFFER_SIZE`.
+This is consistent with SVM, where *clSVMAlloc* fails and returns a `NULL` pointer if the size to allocate is zero.
+It is also consistent with CUDA, where *cuMemAlloc*, etc. returns an error if the size to allocate is zero.
+
+However, it is not necessarily consistent with other memory allocation functions.  For example:
+
+* The result of calling `malloc(0)` is implementation-defined: it can either return a `NULL` pointer or a unique non-null pointer that must be freed.
+If a `NULL` pointer is returned then `errno` may be set to an implementation-defined value.
+If a unique non-null pointer is returned then it cannot be dereferenced.
+* Allocating an array of zero elements using `new` must return a non-null pointer, though dereferencing the pointer is undefined.
+
+Possible resolutions:
+
+* Allow zero-sized allocations and require returning a non-null pointer that must be freed.
+* Allow zero-sized allocations but allow returning a `NULL` pointer.  No error would be generated, even if a `NULL` pointer is returned.
+* Specify that this case is implementation-defined.
+* Do nothing and keep the existing error behavior.
+--
+
+. Can a device USM allocation for a parent device be accessed by its sub-devices?
+Can a single device shared USM allocation associated with a parent device be accessed by its sub-devices?
++
+--
+*UNRESOLVED*:
+Since a sub-device is a partition of a parent device a USM allocation against a parent device should be accessible by its sub-devices.
+We could document this expectation explicitly in this extension if it is not already covered by the main OpenCL specification.
+
+Note that a USM allocation against a sub-device need not be accessible by its parent device or by other sibling sub-devices, though some implementations may support this, just like some implementations optionally support access to USM allocations from other devices.
+--
+
 == Revision History
 
 [cols="5,15,15,70"]
@@ -1285,28 +1346,11 @@ For some devices, this query will return the same value as `CL_DEVICE_MAX_MEM_AL
 [options="header"]
 |========================================
 |Rev|Date|Author|Changes
-|A|2019-01-18|Ben Ashbaugh|*Initial revision*
-|B|2019-03-25|Ben Ashbaugh|Minor name changes.
-|C|2019-06-18|Ben Ashbaugh|Moved flags argument into properties.
-|D|2019-07-19|Ben Ashbaugh|Editorial fixes.
-|E|2019-07-22|Ben Ashbaugh|Allocation properties should be const.
-|F|2019-07-26|Ben Ashbaugh|Removed DEFAULT mem alloc flag.
-|G|2019-08-23|Ben Ashbaugh|Added mem alloc query for associated device.
-|H|2019-10-11|Ben Ashbaugh|Added initial list and description of error codes.
-|I|2019-11-14|Ben Ashbaugh|Switched from a memset to a memfill API.
-|J|2019-11-18|Ben Ashbaugh|Updated a few more error conditions.
-|K|2019-12-18|Krzysztof Gibala|Updated write combine description.
-|L|2020-01-15|Ben Ashbaugh|Added invalid arg case to setkernelarg API.
-|M|2020-01-17|Ben Ashbaugh|Minor name changes, removed const from memfree API.
-|N|2020-01-22|Ben Ashbaugh|Updated write combine description.
-|O|2020-01-23|Ben Ashbaugh|Added aliases for USM migration flags.
-|P|2020-02-28|Ben Ashbaugh|Added blocking memfree API.
-|Q|2020-03-12|Ben Ashbaugh|Name tweak for blocking memfree API, added comparison to SVM, allow zero memory advice.
-|R|2020-08-21|Ben Ashbaugh|Fixed enum name typo in table.
-|S|2020-08-26|Maciej Dziuban|Added initial placement flags for shared allocations.
 |1.0.0|2021-11-07|Ben Ashbaugh|Added version and other minor updates prior to posting on the OpenCL registry.
 |1.0.0|2022-11-08|Ben Ashbaugh|Added new issues regarding error behavior for clSetKernelArgMemPointerINTEL and rect copies.
 |1.0.1|2023-08-28|Ben Ashbaugh|Documented error conditions for clSetKernelExecInfo.
+|1.1.0|2024-07-30|Ben Ashbaugh|Modified error behavior for clSetKernelArgMemPointerINTEL and clSetKernelExecInfo.
+|1.2.0|2025-07-07|Ben Ashbaugh|Modified error behavior for clEnqueueMigrateMemINTEL when the migration flags are zero.
 |========================================
 
 //************************************************************************

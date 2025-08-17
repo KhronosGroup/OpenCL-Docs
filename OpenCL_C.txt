@@ -1,4 +1,4 @@
-// Copyright 2017-2024 The Khronos Group.
+// Copyright 2017-2025 The Khronos Group.
 // SPDX-License-Identifier: CC-BY-4.0
 
 // Extensions to enable
@@ -246,6 +246,19 @@ clock shared by all work-items executing in the same work-group.
 clock shared by all work-items executing in the same sub-group.
 endif::cl_khr_kernel_clock[]
 
+ifdef::cl_ext_image_unorm_int_2_101010[]
+| {opencl_c_ext_image_unorm_int_2_101010}
+| The OpenCL C compiler supports `CLK_UNORM_INT_2_101010_EXT` and returning it
+from `get_image_channel_data_type`.
+endif::cl_ext_image_unorm_int_2_101010[]
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+| {opencl_c_ext_image_unsigned_10x6_12x4_14x2}
+| The OpenCL C compiler supports returning `CLK_UNSIGNED_INT10X6_EXT`,
+`CLK_UNSIGNED_INT12X4_EXT`, `CLK_UNSIGNED_INT14X2_EXT`, `CLK_UNORM_10X6_EXT`,
+`CLK_UNORM_12X4_EXT`, or `CLK_UNORM_14X2_EXT` from `get_image_channel_data_type`.
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 |====
 
 In OpenCL C 3.0 or newer, feature macros must expand to the value `1` if the
@@ -370,10 +383,8 @@ ifdef::cl_khr_fp16[]
 [[cl_khr_fp16,cl_khr_fp16]]
 ==== Half-Precision Floating-Point
 
-The {cl_khr_fp16_EXT} extension was promoted to OpenCL C 1.2 as an optional
-feature, and to OpenCL 3.0 as the optional {cl_khr_fp16_EXT} feature.
-The extension provides 16-bit precision scalar and vector floating-point
-data types and extends many functions to accept these types.
+The {cl_khr_fp16_EXT} extension provides 16-bit half-precision scalar and vector
+floating-point data types and extends many functions to accept these types.
 endif::cl_khr_fp16[]
 
 
@@ -382,9 +393,9 @@ ifdef::cl_khr_fp64[]
 ==== Double-Precision Floating-Point
 
 The {cl_khr_fp64_EXT} extension was promoted to OpenCL C 1.2 as an optional
-feature, and to OpenCL 3.0 as the optional {cl_khr_fp64_EXT} feature.
-The extension provides double-precision scalar and vector floating-point
-data types and extends many functions to accept these types.
+feature.
+It provides double-precision scalar and vector floating-point data types and
+extends many functions to accept these types.
 endif::cl_khr_fp64[]
 
 
@@ -1682,11 +1693,16 @@ convert_destType(sourceType)
 
 suite of functions.
 These provide a full set of type conversions between supported
-<<built-in-scalar-data-types,scalar>>,
-<<built-in-vector-data-types,vector>>, and
-<<other-built-in-data-types,other>> data types except for the following
-types: `bool`, `half`, `size_t`, `ptrdiff_t`, `intptr_t`, `uintptr_t`, and
-`void`.
+<<built-in-scalar-data-types,scalar>> and
+<<built-in-vector-data-types,vector>> data types:
+
+* `char`, `char__n__`, `uchar`, `uchar__n__`
+* `short`, `short__n__`, `ushort`, `ushort__n__`
+* `int`, `int__n__`, `uint`, `uint__n__`
+* `long` footnote:[{fn-int64-supported}], `long__n__`, `ulong`, `ulong__n__`
+* `float`, `float__n__`
+* `half` footnote:[{fn-half-supported}], `half__n__`
+* `double` footnote:[{fn-double-supported}], `double__n__`
 
 The number of elements in the source and destination vectors must match.
 
@@ -1789,7 +1805,7 @@ When converting from a floating-point type to integer type, the behavior is
 implementation-defined.
 
 Conversions to integer type may opt to convert using the optional saturated
-mode by appending the _sat modifier to the conversion function name.
+mode by appending the `_sat` modifier to the conversion function name.
 When in saturated mode, values that are outside the representable range
 shall clamp to the nearest representable value in the destination format.
 (NaN should be converted to 0).
@@ -3330,7 +3346,7 @@ constant int *cp;
 
 int *p;
 gp = (global int *)lp;  // illegal to cast between named address spaces
-p = (int *)lp;          // legal to cast from global to generic
+p = (int *)gp;          // legal to cast from global to generic
 gp = (global int*)p;    // legal to cast from generic to global
 ----------
 
@@ -5362,6 +5378,7 @@ endif::cl_khr_fp16[]
   double__n__ *ldexp*(double__n__ _x_, int__n__ _k_) +
   double__n__ *ldexp*(double__n__ _x_, int _k_) +
   double *ldexp*(double _x_, int _k_)
+
 ifdef::cl_khr_fp16[]
   half__n__ *ldexp*(half__n__ _x_, int__n__ _k_) +
   half__n__ *ldexp*(half__n__ _x_, int _k_) +
@@ -5617,7 +5634,7 @@ endif::cl_khr_fp16[]
 The following table describes the following functions:
 
   * A subset of functions from <<table-builtin-math,Built-in Scalar and Vector
-    Argument Math Functions>> that are defined with the half_ prefix .
+    Argument Math Functions>> that are defined with the half_ prefix.
     These functions are implemented with a minimum of 10-bits of accuracy,
     i.e. the maximum error value \<= 8192 ulp.
   * A subset of functions from <<table-builtin-math,Built-in Scalar and Vector
@@ -6478,11 +6495,10 @@ ifdef::cl_khr_fp16[gentypeh *min*(gentypeh _x_, half _y_)]
 ifdef::cl_khr_fp16[gentypeh *mix*(gentypeh _x_, gentypeh _y_, half _a_)]
    a| Returns the linear blend of _x_ and _y_ implemented as:
 
-      _x_ + (_y_ - _x_) * _a_
+_x_ + (_y_ - _x_) * _a_
 
-      _a_ must be a value in the range [0.0, 1.0].
-      If _a_ is not in the range [0.0, 1.0], the return values are
-      undefined.
+_a_ must be a value in the range [0.0, 1.0]. If _a_ is not in the range [0.0,
+1.0], the return values are undefined.
 
 ifdef::cl_khr_fp16[]
 NOTE: The half-precision *mix* function can be implemented using
@@ -6608,7 +6624,7 @@ ifdef::cl_khr_fp16[half *length*(gentypeh _p_)]
 ifdef::cl_khr_fp16[gentypeh *normalize*(gentypeh _p_)]
     | Returns a vector in the same direction as _p_ but with a length of 1.
 | |
-| float *fast_distance*(float _p0_, float__n__ _p1_)
+| float *fast_distance*(float__n__ _p0_, float__n__ _p1_)
     | Returns *fast_length*(_p0_ - _p1_).
 | float *fast_length*(float__n__ _p_)
     | Returns the length of vector _p_ computed as:
@@ -6763,7 +6779,7 @@ ifdef::cl_khr_fp16[]
   int *islessgreater*(half _x_, half _y_) +
   short__n__ *islessgreater*(half__n__ _x_, half__n__ _y_)
 endif::cl_khr_fp16[]
-    | Returns the component-wise compare of (_x_ < _y_) \|\| (_x_ > _y_) .
+    | Returns the component-wise compare of (_x_ < _y_) \|\| (_x_ > _y_).
 | |
 | int *isfinite*(float) +
   int__n__ *isfinite*(float__n__) +
@@ -11588,9 +11604,9 @@ uint4 read_imageui(
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-        * {CL_SIGNED_INT8},
-        * {CL_SIGNED_INT16}, and
-        * {CL_SIGNED_INT32}.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -11598,9 +11614,9 @@ uint4 read_imageui(
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-        * {CL_UNSIGNED_INT8},
-        * {CL_UNSIGNED_INT16}, and
-        * {CL_UNSIGNED_INT32}.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -11659,9 +11675,9 @@ uint4 read_imageui(
       *read_imagei* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-        * {CL_SIGNED_INT8},
-        * {CL_SIGNED_INT16}, and
-        * {CL_SIGNED_INT32}.
+      {CL_SIGNED_INT8}, +
+      {CL_SIGNED_INT16} and +
+      {CL_SIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imagei* are undefined.
@@ -11669,9 +11685,9 @@ uint4 read_imageui(
       *read_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
-        * {CL_UNSIGNED_INT8},
-        * {CL_UNSIGNED_INT16}, and
-        * {CL_UNSIGNED_INT32}.
+      {CL_UNSIGNED_INT8}, +
+      {CL_UNSIGNED_INT16} and +
+      {CL_UNSIGNED_INT32}.
 
       If the _image_channel_data_type_ is not one of the above values, the
       values returned by *read_imageui* are undefined.
@@ -11703,11 +11719,12 @@ float read_imagef(
       <<unified-spec, Requires>> support for the
       {cl_khr_gl_msaa_sharing_EXT} extension macro.
 a|
-[source,c]
+[source,opencl_c]
 ----
-float read_imagef(image2d_array_msaaa_depth_t image,
-                  int4 coord,
-                  int sample)
+float read_imagef(
+  image2d_array_msaa_depth_t image,
+  int4 coord,
+  int sample)
 ----
     | Use _coord.xy_ and _sample_ to do an element lookup in the 2D image
       identified by _coord.z_ in the 2D depth image array specified by
@@ -12146,14 +12163,14 @@ ifdef::cl_khr_fp16[and *write_imageh*]
       _image_channel_data_type_ set to one of the following values:
 
       {CL_SIGNED_INT8}, +
-      {CL_SIGNED_INT16}, or +
+      {CL_SIGNED_INT16} and +
       {CL_SIGNED_INT32}.
 
       *write_imageui* can only be used with image objects created with
       _image_channel_data_type_ set to one of the following values:
 
       {CL_UNSIGNED_INT8}, +
-      {CL_UNSIGNED_INT16}, or +
+      {CL_UNSIGNED_INT16} and +
       {CL_UNSIGNED_INT32}.
 
       The behavior of *write_imagef*,
@@ -12482,6 +12499,27 @@ endif::cl_khr_gl_msaa_sharing[]
       Additionally, for OpenCL C 3.0 or newer:
 
       `CLK_UNORM_INT_101010_2` footnote:[{fn-CLK_UNORM_INT_101010_2}]
+
+ifdef::cl_ext_image_unorm_int_2_101010[]
+      Additionally, if the {opencl_c_ext_image_unorm_int_2_101010} feature is
+      supported:
+
+      `CLK_UNORM_INT_2_101010_EXT`
+
+endif::cl_ext_image_unorm_int_2_101010[]
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+      Additionally, if the {opencl_c_ext_image_unsigned_10x6_12x4_14x2} feature
+      macro is supported:
+
+      `CLK_UNSIGNED_INT10X6_EXT` +
+      `CLK_UNSIGNED_INT12X4_EXT` +
+      `CLK_UNSIGNED_INT14X2_EXT` +
+      `CLK_UNORM_INT10X6_EXT` +
+      `CLK_UNORM_INT12X4_EXT` +
+      `CLK_UNORM_INT14X2_EXT` +
+
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 | int *get_image_channel_order*(_aQual_ image2d_t _image_) +
   int *get_image_channel_order*(_aQual_ image3d_t _image_)
@@ -13557,7 +13595,7 @@ host enqueues the first instance of the nd-range kernel (dp_func_A).
 The kernel dp_func_A will launch a kernel (evaluate_dp_work_A) that will
 determine if new nd-range work needs to be performed.
 If new nd-range work does need to be performed, then evaluate_dp_work_A will
-enqueue a new instance of dp_func_A .
+enqueue a new instance of dp_func_A.
 This process is repeated until all the work is completed.
 
 [source,opencl_c]
@@ -13676,10 +13714,6 @@ execution.
 [[built-in-functions-kernel-query-functions]]
 ==== Built-in Functions - Kernel Query Functions
 
-// Note: the Unicode "zero width space" (&#8203;) is used in some places to
-// cause long function names to break much more sensibly.
-// Probably the asciidoc built-in {zwsp} should be used instead.
-
 [open,refpage='kernelQueryFunctions',desc='Built-in Functions - Kernel Query Functions',type='freeform',spec='clang',anchor='built-in-functions-kernel-query-functions',xrefs='enqueue_kernel',alias='get_kernel_preferred get_kernel_work_group_size']
 --
 [[table-builtin-kernel-query]]
@@ -13693,9 +13727,9 @@ execution.
       can be used to execute a block on a specific device given by _device_.
 
       _block_ specifies the block to be enqueued.
-| uint *get_kernel_preferred_&#8203;work_group_size_multiple*(
+| uint *{get_kernel_preferred_work_group_size_multiple}*(
   void (^block)(void)) +
-  uint *get_kernel_preferred_&#8203;work_group_size_multiple*(
+  uint *{get_kernel_preferred_work_group_size_multiple}*(
   void (^block)(local {localArgType} *, ...))
     | Returns the preferred multiple of work-group size for launch.
       This is a performance hint.
@@ -14975,138 +15009,138 @@ This section is informational and non-normative.
 
 3+| For OpenCL 2.1 or {cl_khr_subgroups_EXT}:
 
-| `get_&#8203;sub_&#8203;group_&#8203;size`
+| `{get_sub_group_size}`
        | *SubgroupSize*
             | *Kernel*
-| `get_&#8203;max_&#8203;sub_&#8203;group_&#8203;size`
+| `{get_max_sub_group_size}`
        | *SubgroupMaxSize*
             | *Kernel*
-| `get_&#8203;num_&#8203;sub_&#8203;groups`
+| `{get_num_sub_groups}`
         | *NumSubgroups*
             | *Kernel*
-| `get_&#8203;enqueued_&#8203;num_&#8203;sub_&#8203;groups`
+| `{get_enqueued_num_sub_groups}`
         | *NumEnqueuedSubgroups*
             | *Kernel*
-| `get_&#8203;sub_&#8203;group_&#8203;id`
+| `{get_sub_group_id}`
         | *SubgroupId*
             | *Kernel*
-| `get_&#8203;sub_&#8203;group_&#8203;local_&#8203;id`
+| `{get_sub_group_local_id}`
         | *SubgroupLocalInvocationId*
             | *Kernel*
 
-| `sub_&#8203;group_&#8203;barrier`
+| `{sub_group_barrier}`
         | *OpControlBarrier*
             | None Needed
 
-| `sub_&#8203;group_&#8203;all`
+| `{sub_group_all}`
         | *OpGroupAll*
             | *Groups*
-| `sub_&#8203;group_&#8203;any`
+| `{sub_group_any}`
         | *OpGroupAny*
             | *Groups*
 
-| `sub_&#8203;group_&#8203;broadcast`
+| `{sub_group_broadcast}`
         | *OpGroupBroadcast*
             | *Groups*
 
-| `sub_&#8203;group_&#8203;reduce_&#8203;add`
+| `{sub_group_reduce_add}`
         | *OpGroupIAdd*, *OpGroupFAdd*
             | *Groups*
-| `sub_&#8203;group_&#8203;reduce_&#8203;min`
+| `{sub_group_reduce_min}`
         | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
             | *Groups*
-| `sub_&#8203;group_&#8203;reduce_&#8203;max`
+| `{sub_group_reduce_max}`
         | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
             | *Groups*
 
-| `sub_&#8203;group_&#8203;scan_&#8203;exclusive_&#8203;add`
+| `{sub_group_scan_exclusive_add}`
         | *OpGroupIAdd*, *OpGroupFAdd*
             | *Groups*
-| `sub_&#8203;group_&#8203;scan_&#8203;exclusive_&#8203;min`
+| `{sub_group_scan_exclusive_min}`
         | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
             | *Groups*
-| `sub_&#8203;group_&#8203;scan_&#8203;exclusive_&#8203;max`
+| `{sub_group_scan_exclusive_max}`
         | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
             | *Groups*
 
-| `sub_&#8203;group_&#8203;scan_&#8203;inclusive_&#8203;add`
+| `{sub_group_scan_inclusive_add}`
         | *OpGroupIAdd*, *OpGroupFAdd*
             | *Groups*
-| `sub_&#8203;group_&#8203;scan_&#8203;inclusive_&#8203;min`
+| `{sub_group_scan_inclusive_min}`
         | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
             | *Groups*
-| `sub_&#8203;group_&#8203;scan_&#8203;inclusive_&#8203;max`
+| `{sub_group_scan_inclusive_max}`
         | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
             | *Groups*
 
-| `sub_&#8203;group_&#8203;reserve_&#8203;read_&#8203;pipe`
+| `{sub_group_reserve_read_pipe}`
         | *OpGroupReserveReadPipePackets*
             | *Pipes*
-| `sub_&#8203;group_&#8203;reserve_&#8203;write_&#8203;pipe`
+| `{sub_group_reserve_write_pipe}`
         | *OpGroupReserveReadWritePackets*
             | *Pipes*
-| `sub_&#8203;group_&#8203;commit_&#8203;read_&#8203;pipe`
+| `{sub_group_commit_read_pipe}`
         | *OpGroupCommitReadPipe*
             | *Pipes*
-| `sub_&#8203;group_&#8203;commit_&#8203;write_&#8203;pipe`
+| `{sub_group_commit_write_pipe}`
         | *OpGroupCommitWritePipe*
             | *Pipes*
 
-| `get_&#8203;kernel_&#8203;sub_&#8203;group_&#8203;count_&#8203;for_&#8203;ndrange`
+| `{get_kernel_sub_group_count_for_ndrange}`
         | *OpGetKernelNDrangeSubGroupCount*
             | *DeviceEnqueue*
-| `get_&#8203;kernel_&#8203;max_&#8203;sub_&#8203;group_&#8203;size_&#8203;for_&#8203;ndrange`
+| `{get_kernel_max_sub_group_size_for_ndrange}`
         | *OpGetKernelNDrangeMaxSubGroupSize*
             | *DeviceEnqueue*
 
 ifdef::cl_khr_subgroup_ballot[]
 3+| For {cl_khr_subgroup_ballot_EXT}:
 
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;broadcast`
+| `{sub_group_non_uniform_broadcast}`
         | *OpGroupNonUniformBroadcast*
             | *GroupNonUniformBallot*
-| `sub_&#8203;group_&#8203;broadcast_&#8203;first`
+| `{sub_group_broadcast_first}`
         | *OpGroupNonUniformBroadcastFirst*
             | *GroupNonUniformBallot*
 
-| `sub_&#8203;group_&#8203;ballot`
+| `{sub_group_ballot}`
         | *OpGroupNonUniformBallot*
             | *GroupNonUniformBallot*
-| `sub_&#8203;group_&#8203;inverse_&#8203;ballot`
+| `{sub_group_inverse_ballot}`
         | *OpGroupNonUniformInverseBallot*
             | *GroupNonUniformBallot*
-| `sub_&#8203;group_&#8203;ballot_&#8203;bit_&#8203;extract`
+| `{sub_group_ballot_bit_extract}`
         | *OpGroupNonUniformBallotBitExtract*
             | *GroupNonUniformBallot*
-| `sub_&#8203;group_&#8203;ballot_&#8203;bit_&#8203;count`
+| `{sub_group_ballot_bit_count}`
         | *OpGroupNonUniformBallotBitCount*
             | *GroupNonUniformBallot*
-| `sub_&#8203;group_&#8203;ballot_&#8203;inclusive_&#8203;scan`
+| `{sub_group_ballot_inclusive_scan}`
         | *OpGroupNonUniformBallotBitCount*
             | *GroupNonUniformBallot*
-| `sub_&#8203;group_&#8203;ballot_&#8203;exclusive_&#8203;scan`
+| `{sub_group_ballot_exclusive_scan}`
         | *OpGroupNonUniformBallotBitCount*
             | *GroupNonUniformBallot*
-| `sub_&#8203;group_&#8203;ballot_&#8203;find_&#8203;lsb`
+| `{sub_group_ballot_find_lsb}`
         | *OpGroupNonUniformBallotFindLSB*
             | *GroupNonUniformBallot*
-| `sub_&#8203;group_&#8203;ballot_&#8203;find_&#8203;msb`
+| `{sub_group_ballot_find_msb}`
         | *OpGroupNonUniformBallotFindMSB*
             | *GroupNonUniformBallot*
 
-| `get_&#8203;sub_&#8203;group_&#8203;eq_&#8203;mask`
+| `{get_sub_group_eq_mask}`
         | *SubgroupEqMask*
             | *GroupNonUniformBallot*
-| `get_&#8203;sub_&#8203;group_&#8203;ge_&#8203;mask`
+| `{get_sub_group_ge_mask}`
         | *SubgroupGeMask*
             | *GroupNonUniformBallot*
-| `get_&#8203;sub_&#8203;group_&#8203;gt_&#8203;mask`
+| `{get_sub_group_gt_mask}`
         | *SubgroupGtMask*
             | *GroupNonUniformBallot*
-| `get_&#8203;sub_&#8203;group_&#8203;le_&#8203;mask`
+| `{get_sub_group_le_mask}`
         | *SubgroupLeMask*
             | *GroupNonUniformBallot*
-| `get_&#8203;sub_&#8203;group_&#8203;lt_&#8203;mask`
+| `{get_sub_group_lt_mask}`
         | *SubgroupLtMask*
             | *GroupNonUniformBallot*
 endif::cl_khr_subgroup_ballot[]
@@ -15114,34 +15148,34 @@ endif::cl_khr_subgroup_ballot[]
 ifdef::cl_khr_subgroup_clustered_reduce[]
 3+| For {cl_khr_subgroup_clustered_reduce_EXT}:
 
-| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;add`
+| `{sub_group_clustered_reduce_add}`
         | *OpGroupNonUniformIAdd*, *OpGroupNonUniformFAdd*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;mul`
+| `{sub_group_clustered_reduce_mul}`
         | *OpGroupNonUniformIMul*, *OpGroupNonUniformFMul*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;min`
+| `{sub_group_clustered_reduce_min}`
         | *OpGroupNonUniformSMin*, *OpGroupNonUniformUMin*, *OpGroupNonUniformFMin*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;max`
+| `{sub_group_clustered_reduce_max}`
         | *OpGroupNonUniformSMax*, *OpGroupNonUniformUMax*, *OpGroupNonUniformFMax*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;and`
+| `{sub_group_clustered_reduce_and}`
         | *OpGroupNonUniformBitwiseAnd*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;or`
+| `{sub_group_clustered_reduce_or}`
         | *OpGroupNonUniformBitwiseOr*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;xor`
+| `{sub_group_clustered_reduce_xor}`
         | *OpGroupNonUniformBitwiseXor*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;logical_&#8203;and`
+| `{sub_group_clustered_reduce_logical_and}`
         | *OpGroupNonUniformLogicalAnd*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;logical_&#8203;or`
+| `{sub_group_clustered_reduce_logical_or}`
         | *OpGroupNonUniformLogicalOr*
             | *GroupNonUniformClustered*
-| `sub_&#8203;group_&#8203;clustered_&#8203;reduce_&#8203;logical_&#8203;xor`
+| `{sub_group_clustered_reduce_logical_xor}`
         | *OpGroupNonUniformLogicalXor*
             | *GroupNonUniformClustered*
 endif::cl_khr_subgroup_clustered_reduce[]
@@ -15150,37 +15184,37 @@ ifdef::cl_khr_subgroup_extended_types[]
 3+| For {cl_khr_subgroup_extended_types_EXT}: +
     Note: This extension adds new types to uniform sub-group operations.
 
-| `sub_&#8203;group_&#8203;broadcast`
+| `{sub_group_broadcast}`
         | *OpGroupBroadcast*
             | *Groups*
 
-| `sub_&#8203;group_&#8203;reduce_&#8203;add`
+| `{sub_group_reduce_add}`
         | *OpGroupIAdd*, *OpGroupFAdd*
             | *Groups*
-| `sub_&#8203;group_&#8203;reduce_&#8203;min`
+| `{sub_group_reduce_min}`
         | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
             | *Groups*
-| `sub_&#8203;group_&#8203;reduce_&#8203;max`
+| `{sub_group_reduce_max}`
         | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
             | *Groups*
 
-| `sub_&#8203;group_&#8203;scan_&#8203;exclusive_&#8203;add`
+| `{sub_group_scan_exclusive_add}`
         | *OpGroupIAdd*, *OpGroupFAdd*
             | *Groups*
-| `sub_&#8203;group_&#8203;scan_&#8203;exclusive_&#8203;min`
+| `{sub_group_scan_exclusive_min}`
         | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
             | *Groups*
-| `sub_&#8203;group_&#8203;scan_&#8203;exclusive_&#8203;max`
+| `{sub_group_scan_exclusive_max}`
         | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
             | *Groups*
 
-| `sub_&#8203;group_&#8203;scan_&#8203;inclusive_&#8203;add`
+| `{sub_group_scan_inclusive_add}`
         | *OpGroupIAdd*, *OpGroupFAdd*
             | *Groups*
-| `sub_&#8203;group_&#8203;scan_&#8203;inclusive_&#8203;min`
+| `{sub_group_scan_inclusive_min}`
         | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
             | *Groups*
-| `sub_&#8203;group_&#8203;scan_&#8203;inclusive_&#8203;max`
+| `{sub_group_scan_inclusive_max}`
         | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
             | *Groups*
 endif::cl_khr_subgroup_extended_types[]
@@ -15188,96 +15222,96 @@ endif::cl_khr_subgroup_extended_types[]
 ifdef::cl_khr_subgroup_non_uniform_arithmetic[]
 3+| For {cl_khr_subgroup_non_uniform_arithmetic_EXT}:
 
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;add`
+| `{sub_group_non_uniform_reduce_add}`
         | *OpGroupNonUniformIAdd*, *OpGroupNonUniformFAdd*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;mul`
+| `{sub_group_non_uniform_reduce_mul}`
         | *OpGroupNonUniformIMul*, *OpGroupNonUniformFMul*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;min`
+| `{sub_group_non_uniform_reduce_min}`
         | *OpGroupNonUniformSMin*, *OpGroupNonUniformUMin*, *OpGroupNonUniformFMin*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;max`
+| `{sub_group_non_uniform_reduce_max}`
         | *OpGroupNonUniformSMax*, *OpGroupNonUniformUMax*, *OpGroupNonUniformFMax*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;and`
+| `{sub_group_non_uniform_reduce_and}`
         | *OpGroupNonUniformBitwiseAnd*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;or`
+| `{sub_group_non_uniform_reduce_or}`
         | *OpGroupNonUniformBitwiseOr*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;xor`
+| `{sub_group_non_uniform_reduce_xor}`
         | *OpGroupNonUniformBitwiseXor*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;logical_&#8203;and`
+| `{sub_group_non_uniform_reduce_logical_and}`
         | *OpGroupNonUniformLogicalAnd*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;logical_&#8203;or`
+| `{sub_group_non_uniform_reduce_logical_or}`
         | *OpGroupNonUniformLogicalOr*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;reduce_&#8203;logical_&#8203;xor`
+| `{sub_group_non_uniform_reduce_logical_xor}`
         | *OpGroupNonUniformLogicalXor*
             | *GroupNonUniformArithmetic*
 
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;add`
+| `{sub_group_non_uniform_scan_inclusive_add}`
         | *OpGroupNonUniformIAdd*, *OpGroupNonUniformFAdd*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;mul`
+| `{sub_group_non_uniform_scan_inclusive_mul}`
         | *OpGroupNonUniformIMul*, *OpGroupNonUniformFMul*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;min`
+| `{sub_group_non_uniform_scan_inclusive_min}`
         | *OpGroupNonUniformSMin*, *OpGroupNonUniformUMin*, *OpGroupNonUniformFMin*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;max`
+| `{sub_group_non_uniform_scan_inclusive_max}`
         | *OpGroupNonUniformSMax*, *OpGroupNonUniformUMax*, *OpGroupNonUniformFMax*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;and`
+| `{sub_group_non_uniform_scan_inclusive_and}`
         | *OpGroupNonUniformBitwiseAnd*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;or`
+| `{sub_group_non_uniform_scan_inclusive_or}`
         | *OpGroupNonUniformBitwiseOr*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;xor`
+| `{sub_group_non_uniform_scan_inclusive_xor}`
         | *OpGroupNonUniformBitwiseXor*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;logical_&#8203;and`
+| `{sub_group_non_uniform_scan_inclusive_logical_and}`
         | *OpGroupNonUniformLogicalAnd*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;logical_&#8203;or`
+| `{sub_group_non_uniform_scan_inclusive_logical_or}`
         | *OpGroupNonUniformLogicalOr*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;inclusive_&#8203;logical_&#8203;xor`
+| `{sub_group_non_uniform_scan_inclusive_logical_xor}`
         | *OpGroupNonUniformLogicalXor*
             | *GroupNonUniformArithmetic*
 
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;exclusive_&#8203;add`
+| `{sub_group_non_uniform_scan_exclusive_add}`
         | *OpGroupNonUniformIAdd*, *OpGroupNonUniformFAdd*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;exclusive_&#8203;mul`
+| `{sub_group_non_uniform_scan_exclusive_mul}`
         | *OpGroupNonUniformIMul*, *OpGroupNonUniformFMul*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;scan_&#8203;exclusive_&#8203;min`
+| `{sub_group_non_uniform_scan_exclusive_min}`
         | *OpGroupNonUniformSMin*, *OpGroupNonUniformUMin*, *OpGroupNonUniformFMin*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;max`
+| `{sub_group_non_uniform_scan_exclusive_max}`
         | *OpGroupNonUniformSMax*, *OpGroupNonUniformUMax*, *OpGroupNonUniformFMax*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;and`
+| `{sub_group_non_uniform_scan_exclusive_and}`
         | *OpGroupNonUniformBitwiseAnd*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;or`
+| `{sub_group_non_uniform_scan_exclusive_or}`
         | *OpGroupNonUniformBitwiseOr*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;xor`
+| `{sub_group_non_uniform_scan_exclusive_xor}`
         | *OpGroupNonUniformBitwiseXor*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;logical_&#8203;and`
+| `{sub_group_non_uniform_scan_exclusive_logical_and}`
         | *OpGroupNonUniformLogicalAnd*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;logical_&#8203;or`
+| `{sub_group_non_uniform_scan_exclusive_logical_or}`
         | *OpGroupNonUniformLogicalOr*
             | *GroupNonUniformArithmetic*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;&#8203;scan_&#8203;exclusive_&#8203;logical_&#8203;xor`
+| `{sub_group_non_uniform_scan_exclusive_logical_xor}`
         | *OpGroupNonUniformLogicalXor*
             | *GroupNonUniformArithmetic*
 endif::cl_khr_subgroup_non_uniform_arithmetic[]
@@ -15285,16 +15319,16 @@ endif::cl_khr_subgroup_non_uniform_arithmetic[]
 ifdef::cl_khr_subgroup_non_uniform_vote[]
 3+| For {cl_khr_subgroup_non_uniform_vote_EXT}:
 
-| `sub_&#8203;group_&#8203;elect`
+| `{sub_group_elect}`
         | *OpGroupNonUniformElect*
             | *GroupNonUniform*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;all`
+| `{sub_group_non_uniform_all}`
         | *OpGroupNonUniformAll*
             | *GroupNonUniformVote*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;any`
+| `{sub_group_non_uniform_any}`
         | *OpGroupNonUniformAny*
             | *GroupNonUniformVote*
-| `sub_&#8203;group_&#8203;non_&#8203;uniform_&#8203;all_&#8203;equal`
+| `{sub_group_non_uniform_all_equal}`
         | *OpGroupNonUniformAllEqual*
             | *GroupNonUniformVote*
 endif::cl_khr_subgroup_non_uniform_vote[]
@@ -15302,10 +15336,10 @@ endif::cl_khr_subgroup_non_uniform_vote[]
 ifdef::cl_khr_subgroup_shuffle[]
 3+| For {cl_khr_subgroup_shuffle_EXT}:
 
-| `sub_&#8203;group_&#8203;shuffle`
+| `{sub_group_shuffle}`
         | *OpGroupNonUniformShuffle*
             | *GroupNonUniformShuffle*
-| `sub_&#8203;group_&#8203;shuffle_&#8203;xor`
+| `{sub_group_shuffle_xor}`
         | *OpGroupNonUniformShuffleXor*
             | *GroupNonUniformShuffle*
 endif::cl_khr_subgroup_shuffle[]
@@ -15313,10 +15347,10 @@ endif::cl_khr_subgroup_shuffle[]
 ifdef::cl_khr_subgroup_shuffle_relative[]
 3+| For {cl_khr_subgroup_shuffle_relative_EXT}:
 
-| `sub_&#8203;group_&#8203;shuffle_&#8203;up`
+| `{sub_group_shuffle_up}`
         | *OpGroupNonUniformShuffleUp*
             | *GroupNonUniformShuffleRelative*
-| `sub_&#8203;group_&#8203;shuffle_&#8203;down`
+| `{sub_group_shuffle_down}`
         | *OpGroupNonUniformShuffleDown*
             | *GroupNonUniformShuffleRelative*
 endif::cl_khr_subgroup_shuffle_relative[]
@@ -15940,11 +15974,13 @@ requires>> support for OpenCL C 2.0 or newer.
 
 | 1.0 / _x_
     | {leq} 2.5 ulp for _x_ in the domain of 2^-126^ to 2^126^ for the full
-      profile, and {leq} 3 ulp for the embedded profile.
+      profile, and {leq} 3 ulp for _x_ in the domain of 2^-126^ to 2^126^ for
+      the embedded profile.
 
 | _x_ / _y_
     | {leq} 2.5 ulp for _x_ in the domain of 2^-62^ to 2^62^ and _y_ in the
-      domain of 2^-62^ to 2^62^ for the full profile, and {leq} 3 ulp for
+      domain of 2^-62^ to 2^62^ for the full profile, and {leq} 3 ulp for _x_ in
+      the domain of 2^-62^ to 2^62^ and _y_ in the domain of 2^-62^ to 2^62^ for
       the embedded profile.
 
 | *acos*(_x_)
@@ -15987,6 +16023,7 @@ requires>> support for OpenCL C 2.0 or newer.
     | Derived implementations may implement as *atan*(_y_ / _x_) for _x_ > 0,
       *atan*(_y_ / _x_) + `M_PI_F` for _x_ < 0 and _y_ > 0, and
       *atan*(_y_ / _x_) - `M_PI_F` for _x_ < 0 and _y_ < 0.
+      For non-derived implementations, the error is {leq} 8192 ulp.
 
 | *atan2pi*(_y_, _x_)
     | Derived implementations may implement as *atan2*(_y_, _x_) * `M_1_PI_F`.
@@ -16011,11 +16048,11 @@ requires>> support for OpenCL C 2.0 or newer.
 
 | *exp*(_x_)
     | {leq} 3 + *floor*(*fabs*(2 * _x_)) ulp for the full profile, and {leq}
-      4 ulp for the embedded profile.
+      4 + *floor*(*fabs*(2 * _x_)) ulp for the embedded profile.
 
 | *exp2*(_x_)
     | {leq} 3 + *floor*(*fabs*(2 * _x_)) ulp for the full profile, and {leq}
-      4 ulp for the embedded profile.
+      4 + *floor*(*fabs*(2 * _x_)) ulp for the embedded profile.
 
 | *exp10*(_x_)
     | Derived implementations may implement as *exp2*(_x_ * *log2*(10)).
@@ -16252,7 +16289,7 @@ is the infinitely precise result.
 | *sinpi*           | {leq} 4 ulp
 | *smoothstep*      | Implementation-defined
 | *step*            | 0 ulp
-| *fsqrt*           | Correctly rounded
+| *sqrt*            | Correctly rounded
 | *tan*             | {leq} 5 ulp
 | *tanh*            | {leq} 5 ulp
 | *tanpi*           | {leq} 6 ulp
@@ -16277,8 +16314,8 @@ is the infinitely precise result.
 | *_x_ + _y_*   | Correctly rounded             | Correctly rounded
 | *_x_ - _y_*   | Correctly rounded             | Correctly rounded
 | *_x_ * _y_*   | Correctly rounded             | Correctly rounded
-| *1.0 / _x_*   | Correctly rounded             | \<= 1 ulp
-| *_x_ / _y_*   | Correctly rounded             | \<= 1 ulp
+| *1.0 / _x_*   | \<= 1 ulp                     | \<= 1 ulp
+| *_x_ / _y_*   | \<= 1 ulp                     | \<= 1 ulp
 | | |
 | *acos*        | \<= 2 ulp                     | \<= 3 ulp
 | *acosh*       | \<= 2 ulp                     | \<= 3 ulp
@@ -16402,9 +16439,9 @@ is the infinitely precise result.
 | *sinh*        | \<= 2 ulp                     | \<= 3 ulp
 | *sinpi*       | \<= 2 ulp                     | \<= 2 ulp
 | *smoothstep*  | Implementation-defined        | Implementation-defined
-| *sqrt*        | Correctly rounded             | \<= 1 ulp
+| *sqrt*        | \<= 1.5 ulp                   | \<= 1.5 ulp
 | *step*        | 0 ulp                         | 0 ulp
-| *tan*         | \<= 2 ulp                     | \<= 3 ulp
+| *tan*         | \<= 2.5 ulp                   | \<= 3 ulp
 | *tanh*        | \<= 2 ulp                     | \<= 3 ulp
 | *tanpi*       | \<= 2 ulp                     | \<= 3 ulp
 | *tgamma*      | \<= 4 ulp                     | \<= 4 ulp
@@ -16617,8 +16654,8 @@ footnote:[{fn-min-float-constants}].
 Let w~t~, h~t~ and d~t~ be the width, height (or image array size for a 1D
 image array) and depth (or image array size for a 2D image array) of the
 image in pixels.
-Let _coord.xy_ (also referred to as (_s_,_t_)) or _coord.xyz_ (also referred
-to as (_s_,_t_,_r_)) be the coordinates specified to *read_image{f|i|ui}*.
+Let _coord.xy_ (also referred to as (_s_, _t_)) or _coord.xyz_ (also referred
+to as (_s_, _t_, _r_)) be the coordinates specified to *read_image{f|i|ui}*.
 The sampler specified in *read_image{f|i|ui}* is used to determine how to
 sample the image and return an appropriate color.
 
@@ -16635,7 +16672,7 @@ For image arrays, the image array coordinate (i.e. _t_ if it is a 1D image
 array or _r_ if it is a 2D image array) specified to *read_image{f|i|ui}*
 must always be the un-normalized image coordinate value.
 
-Let (_u_,_v_,_w_) represent the unnormalized image coordinate values.
+Let (_u_, _v_, _w_) represent the unnormalized image coordinate values.
 
 
 [[addressing-and-filter-modes]]
@@ -16646,19 +16683,19 @@ generate the appropriate sample locations to read from the image if the
 addressing mode is not `CLK_ADDRESS_REPEAT` nor
 `CLK_ADDRESS_MIRRORED_REPEAT`.
 
-After generating the image coordinate (_u_,_v_,_w_) we apply the appropriate
+After generating the image coordinate (_u_, _v_, _w_) we apply the appropriate
 addressing and filter mode to generate the appropriate sample locations to
 read from the image.
 
-If values in (_u_,_v_,_w_) are `INF` or NaN, the behavior of
+If values in (_u_, _v_, _w_) are `INF` or NaN, the behavior of
 *read_image{f|i|ui}* is undefined.
 
 *Filter Mode* `CLK_FILTER_NEAREST`
 
 When filter mode is `CLK_FILTER_NEAREST`, the image element in the image
-that is nearest (in Manhattan distance) to that specified by (_u_,_v_,_w_)
+that is nearest (in Manhattan distance) to that specified by (_u_, _v_, _w_)
 is obtained.
-This means the image element at location (_i_,_j_,_k_) becomes the image
+This means the image element at location (_i_, _j_, _k_) becomes the image
 element value, where
 
 [source,opencl_c]
@@ -16668,9 +16705,9 @@ j = address_mode((int)floor(v))
 k = address_mode((int)floor(w))
 ----------
 
-For a 3D image, the image element at location (_i_,_j_,_k_) becomes the
+For a 3D image, the image element at location (_i_, _j_, _k_) becomes the
 color value.
-For a 2D image, the image element at location (_i_,_j_) becomes the color
+For a 2D image, the image element at location (_i_, _j_) becomes the color
 value.
 
 The following table describes the address_mode function.
@@ -16695,7 +16732,7 @@ The `clamp` function used in this table is defined as:
 clamp(a, b, c) = return (a < b) ? b : ((a > c) ? c : a)
 ----------
 
-If the selected texel location (_i_,_j_,_k_) refers to a location outside
+If the selected texel location (_i_, _j_, _k_) refers to a location outside
 the image, the border color is used as the color value for this texel.
 
 *Filter Mode* `CLK_FILTER_LINEAR`
@@ -16737,7 +16774,7 @@ T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * b * c * T_i1j1k1
 ----------
 
-where `T_ijk` is the image element at location (_i_,_j_,_k_) in the 3D image.
+where `T_ijk` is the image element at location (_i_, _j_, _k_) in the 3D image.
 
 For a 2D image, the image element value is found as
 
@@ -16749,7 +16786,7 @@ T = (1 - a) * (1 - b) * T_i0j0
     + a * b * T_i1j1
 ----------
 
-where `T_ij` is the image element at location (_i_,_j_) in the 2D image.
+where `T_ij` is the image element at location (_i_, _j_) in the 2D image.
 
 If any of the selected `T_ijk` or `T_ij` in the above equations refers to a
 location outside the image, the border color is used as the color value for
@@ -16763,13 +16800,13 @@ We now discuss how the addressing and filter modes are applied to generate
 the appropriate sample locations to read from the image if the addressing
 mode is `CLK_ADDRESS_REPEAT`.
 
-If values in (_s_,_t_,_r_) are `INF` or NaN, the behavior of the built-in
+If values in (_s_, _t_, _r_) are `INF` or NaN, the behavior of the built-in
 image read functions is undefined.
 
 *Filter Mode* `CLK_FILTER_NEAREST`
 
 When filter mode is `CLK_FILTER_NEAREST`, the image element at location
-(_i_,_j_,_k_) becomes the image element value, with _i_, _j_, and _k_
+(_i_, _j_, _k_) becomes the image element value, with _i_, _j_, and _k_
 computed as
 
 [source,opencl_c]
@@ -16791,9 +16828,9 @@ if (k > d_t - 1)
 ----------
 
 
-For a 3D image, the image element at location (_i_,_j_,_k_) becomes the
+For a 3D image, the image element at location (_i_, _j_, _k_) becomes the
 color value.
-For a 2D image, the image element at location (_i_,_j_) becomes the color
+For a 2D image, the image element at location (_i_, _j_) becomes the color
 value.
 
 *Filter Mode* `CLK_FILTER_LINEAR`
@@ -16853,7 +16890,7 @@ T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * b * c * T_i1j1k1
 ----------
 
-where `T_ijk` is the image element at location (_i_,_j_,_k_) in the 3D image.
+where `T_ijk` is the image element at location (_i_, _j_, _k_) in the 3D image.
 
 For a 2D image, the image element value is found as
 
@@ -16865,7 +16902,7 @@ T = (1 - a) * (1 - b) * T_i0j0
     + a * b * T_i1j1
 ----------
 
-where `T_ij` is the image element at location (_i_,_j_) in the 2D image.
+where `T_ij` is the image element at location (_i_, _j_) in the 2D image.
 
 If the image channel type is {CL_FLOAT} or {CL_HALF_FLOAT} and any of the
 image elements `T_ijk` or `T_ij` is `INF` or NaN, the behavior of the built-in
@@ -16877,41 +16914,41 @@ mode is `CLK_ADDRESS_MIRRORED_REPEAT`.
 The `CLK_ADDRESS_MIRRORED_REPEAT` addressing mode causes the image to be
 read as if it is tiled at every integer seam with the interpretation of the
 image data flipped at each integer crossing.
-For example, the (_s_,_t_,_r_) coordinates between 2 and 3 are addressed
+For example, the (_s_, _t_, _r_) coordinates between 2 and 3 are addressed
 into the image as coordinates from 1 down to 0.
-If values in (_s_,_t_,_r_) are `INF` or NaN, the behavior of the built-in
+If values in (_s_, _t_, _r_) are `INF` or NaN, the behavior of the built-in
 image read functions is undefined.
 
 *Filter Mode* `CLK_FILTER_NEAREST`
 
 When filter mode is `CLK_FILTER_NEAREST`, the image element at location
-(_i_,_j_,_k_) becomes the image element value, with _i_,_j_ and k computed
+(_i_, _j_, _k_) becomes the image element value, with _i_, _j_ and k computed
 as
 
 [source,opencl_c]
 ----------
-s' = 2.0f * rint(0.5f * s)
-s' = fabs(s - s')
-u = s' * w_t
+s_prime = 2.0f * rint(0.5f * s)
+s_prime = fabs(s - s_prime)
+u = s_prime * w_t
 i = (int)floor(u)
 i = min(i, w_t - 1)
 
-t' = 2.0f * rint(0.5f * t)
-t' = fabs(t - t')
-v = t' * h_t
+t_prime = 2.0f * rint(0.5f * t)
+t_prime = fabs(t - t_prime)
+v = t_prime * h_t
 j = (int)floor(v)
 j = min(j, h_t - 1)
 
-r' = 2.0f * rint(0.5f * r)
-r' = fabs(r - r')
-w = r' * d_t
+r_prime = 2.0f * rint(0.5f * r)
+r_prime = fabs(r - r_prime)
+w = r_prime * d_t
 k = (int)floor(w)
 k = min(k, d_t - 1)
 ----------
 
-For a 3D image, the image element at location (_i_,_j_,_k_) becomes the
+For a 3D image, the image element at location (_i_, _j_, _k_) becomes the
 color value.
-For a 2D image, the image element at location (_i_,_j_) becomes the color
+For a 2D image, the image element at location (_i_, _j_) becomes the color
 value.
 
 *Filter Mode* `CLK_FILTER_LINEAR`
@@ -16925,25 +16962,25 @@ Let
 
 [source,opencl_c]
 ----------
-s' = 2.0f * rint(0.5f * s)
-s' = fabs(s - s')
-u = s' * w_t
+s_prime = 2.0f * rint(0.5f * s)
+s_prime = fabs(s - s_prime)
+u = s_prime * w_t
 i0 = (int)floor(u - 0.5f)
 i1 = i0 + 1
 i0 = max(i0, 0)
 i1 = min(i1, w_t - 1)
 
-t' = 2.0f * rint(0.5f * t)
-t' = fabs(t - t')
-v = t' * h_t
+t_prime = 2.0f * rint(0.5f * t)
+t_prime = fabs(t - t_prime)
+v = t_prime * h_t
 j0 = (int)floor(v - 0.5f)
 j1 = j0 + 1
 j0 = max(j0, 0)
 j1 = min(j1, h_t - 1)
 
-r' = 2.0f * rint(0.5f * r)
-r' = fabs(r - r')
-w = r' * d_t
+r_prime = 2.0f * rint(0.5f * r)
+r_prime = fabs(r - r_prime)
+w = r_prime * d_t
 k0 = (int)floor(w - 0.5f)
 k1 = k0 + 1
 k0 = max(k0, 0)
@@ -16971,7 +17008,7 @@ T = (1 - a) * (1 - b) * (1 - c) * T_i0j0k0
     + a * b * c * T_i1j1k1
 ----------
 
-where `T_ijk` is the image element at location (_i_,_j_,_k_) in the 3D image.
+where `T_ijk` is the image element at location (_i_, _j_, _k_) in the 3D image.
 
 For a 2D image, the image element value is found as
 
@@ -16983,7 +17020,7 @@ T = (1 - a) * (1 - b) * T_i0j0
     + a * b * T_i1j1
 ----------
 
-where `T_ij` is the image element at location (_i_,_j_) in the 2D image.
+where `T_ij` is the image element at location (_i_, _j_) in the 2D image.
 
 For a 1D image, the image element value is found as
 
@@ -17006,7 +17043,7 @@ If the sampler is specified as using unnormalized coordinates
 `CLK_FILTER_NEAREST` and addressing mode set to one of the following modes -
 `CLK_ADDRESS_NONE`, `CLK_ADDRESS_CLAMP_TO_EDGE` or `CLK_ADDRESS_CLAMP`, the
 <<addressing-and-filter-modes,location of the image element in the image>>
-given by (_i_,_j_,_k_) will be computed without any loss of precision.
+given by (_i_, _j_, _k_) will be computed without any loss of precision.
 
 For all other sampler combinations of normalized or unnormalized
 coordinates, filter and addressing modes, the relative error or precision of
@@ -17041,15 +17078,24 @@ to floating-point values and vice-versa.
 [[converting-normalized-integer-channel-data-types-to-floating-point-values]]
 ==== Converting Normalized Integer Channel Data Types to Floating-point Values
 
-For images created with image channel data type of {CL_UNORM_INT8} and
-{CL_UNORM_INT16}, *read_imagef* will convert the channel values from an
-8-bit or 16-bit unsigned integer to normalized floating-point values in the
-range [`0.0f`, `1.0f`].
+For images created with any of the following image channel data types,
+*read_imagef* will convert the channel values from an unsigned integer to
+normalized floating-point values in the range [`0.0f`, `1.0f`].
 
-For images created with image channel data type of {CL_SNORM_INT8} and
-{CL_SNORM_INT16}, *read_imagef* will convert the channel values from an
-8-bit or 16-bit signed integer to normalized floating-point values in the
-range [`-1.0f`, `1.0f`].
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the following image channel data types,
+*read_imagef* will convert the channel values from a signed integer to
+normalized floating-point values in the range [`-1.0f`, `1.0f`].
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 These conversions are performed as follows:
 
@@ -17067,6 +17113,23 @@ These conversions are performed as follows:
 
 [none]
 * normalized `float` value = `(float)c / 65535.0f`
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+{CL_UNORM_INT10X6_EXT} (10-bit unsigned integer) {rightarrow} `float`
+
+[none]
+* normalized `float` value = `(float)c / 1023.0f`
+
+{CL_UNORM_INT12X4_EXT} (12-bit unsigned integer) {rightarrow} `float`
+
+[none]
+* normalized `float` value = `(float)c / 4095.0f`
+
+{CL_UNORM_INT14X2_EXT} (14-bit unsigned integer) {rightarrow} `float`
+
+[none]
+* normalized `float` value = `(float)c / 16383.0f`
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 {CL_SNORM_INT8} (8-bit signed integer) {rightarrow} `float`
 
@@ -17099,6 +17162,26 @@ For {CL_UNORM_INT16}
 * 0 must convert to `0.0f` and
 * 65535 must convert to `1.0f`
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+For {CL_UNORM_INT10X6_EXT}:
+
+[none]
+* 0 must convert to `0.0f`, and
+* 1023 must convert to `1.0f`
+
+For {CL_UNORM_INT12X4_EXT}:
+
+[none]
+* 0 must convert to `0.0f`, and
+* 4095 must convert to `1.0f`
+
+For {CL_UNORM_INT14X2_EXT}:
+
+[none]
+* 0 must convert to `0.0f`, and
+* 16383 must convert to `1.0f`
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 For {CL_SNORM_INT8}
 
 [none]
@@ -17118,16 +17201,27 @@ ifdef::cl_khr_fp16[]
 [[converting-normalized-integer-channel-data-types-to-half-precision-floating-point-values]]
 ==== Converting Normalized Integer Channel Data Types to Half-Precision Floating-Point Values
 
-If the {cl_khr_fp16_EXT} extension is supported, then
-for images created with image channel data type of {CL_UNORM_INT8} and
-{CL_UNORM_INT16}, *read_imageh* will convert the channel values from an
+NOTE: The conversions described in this section require the {cl_khr_fp16_EXT} extension.
+
+For images created with any of the following image channel data types,
+*read_imageh* will convert the channel values from an
 8-bit or 16-bit unsigned integer to normalized half-precision floating-point
 values in the range [`0.0h`, `1.0h`].
 
-For images created with image channel data type of {CL_SNORM_INT8} and
-{CL_SNORM_INT16}, *read_imageh* will convert the channel values from an
-8-bit or 16-bit signed integer to normalized half-precision floating-point
-values in the range [`-1.0h`, `1.0h`].
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the following image channel data types,
+*read_imageh* will convert the channel values from a signed integer to
+normalized half-precision floating-point values in the range [`-1.0h`, `1.0h`].
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 These conversions are performed as follows:
 
@@ -17145,6 +17239,23 @@ These conversions are performed as follows:
 
 [none]
 * normalized `half` value = `round_to_half(c / 65535)`
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+{CL_UNORM_INT10X6_EXT} (10-bit unsigned integer) {rightarrow} `half`
+
+[none]
+* normalized `half` value = `round_to_half(c / 1023)`
+
+{CL_UNORM_INT12X4_EXT} (12-bit unsigned integer) {rightarrow} `half`
+
+[none]
+* normalized `half` value = `round_to_half(c / 4095)`
+
+{CL_UNORM_INT14X2_EXT} (14-bit unsigned integer) {rightarrow} `half`
+
+[none]
+* normalized `half` value = `round_to_half(c / 16383)`
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 {CL_SNORM_INT8} (8-bit signed integer) {rightarrow} `half`
 
@@ -17177,6 +17288,26 @@ For {CL_UNORM_INT16}
 * 0 must convert to `0.0h` and
 * 65535 must convert to `1.0h`
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+For {CL_UNORM_INT10X6_EXT}:
+
+[none]
+* 0 must convert to `0.0h`, and
+* 1023 must convert to `1.0h`
+
+For {CL_UNORM_INT12X4_EXT}:
+
+[none]
+* 0 must convert to `0.0h`, and
+* 4095 must convert to `1.0h`
+
+For {CL_UNORM_INT14X2_EXT}:
+
+[none]
+* 0 must convert to `0.0h`, and
+* 16383 must convert to `1.0h`
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 For {CL_SNORM_INT8}
 
 [none]
@@ -17196,13 +17327,24 @@ endif::cl_khr_fp16[]
 [[converting-floating-point-values-to-normalized-integer-channel-data-types]]
 ==== Converting Floating-Point Values to Normalized Integer Channel Data Types
 
-For images created with image channel data type of {CL_UNORM_INT8} and
-{CL_UNORM_INT16}, *write_imagef* will convert the floating-point color value
-to an 8-bit or 16-bit unsigned integer.
+For images created with any of the following image channel data types,
+*write_imagef* will convert the floating-point color value to an unsigned
+integer.
 
-For images created with image channel data type of {CL_SNORM_INT8} and
-{CL_SNORM_INT16}, *write_imagef* will convert the floating-point color value
-to an 8-bit or 16-bit signed integer.
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the following image channel data types,
+*write_imagef* will convert the floating-point color value to a signed
+integer.
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 The preferred method for how conversions from floating-point values to
 normalized integer values are performed is as follows:
@@ -17221,6 +17363,23 @@ normalized integer values are performed is as follows:
 
 [none]
 * *convert_ushort_sat_rte*(`f * 65535.0f`)
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+`float` {rightarrow} {CL_UNORM_INT10X6_EXT} (10-bit unsigned integer)
+
+[none]
+* *min*(*convert_ushort_sat_rte*(`f * 1023.0f`), `1023`)
+
+`float` {rightarrow} {CL_UNORM_INT12X4_EXT} (12-bit unsigned integer)
+
+[none]
+* *min*(*convert_ushort_sat_rte*(`f * 4095.0f`), `4095`)
+
+`float` {rightarrow} {CL_UNORM_INT14X2_EXT} (14-bit unsigned integer)
+
+[none]
+* *min*(*convert_ushort_sat_rte*(`f * 16383.0f`), `16383`)
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 `float` {rightarrow} {CL_SNORM_INT8} (8-bit signed integer)
 
@@ -17265,6 +17424,32 @@ the result produced by the round to nearest even rounding mode must be {leq}
      `65535.0f`)
 * *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
 
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+`float` {rightarrow} {CL_UNORM_INT10X6_EXT} (10-bit unsigned integer)
+
+[none]
+* Let f~preferred~ = *convert_ushort_sat_rte*(f * `1023.0f`)
+* Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(f *
+     `1023.0f`)
+* *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
+
+`float` {rightarrow} {CL_UNORM_INT12X4_EXT} (12-bit unsigned integer)
+
+[none]
+* Let f~preferred~ = *convert_ushort_sat_rte*(f * `4095.0f`)
+* Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(f *
+     `4095.0f`)
+* *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
+
+`float` {rightarrow} {CL_UNORM_INT14X2_EXT} (14-bit unsigned integer)
+
+[none]
+* Let f~preferred~ = *convert_ushort_sat_rte*(f * `16383.0f`)
+* Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(f *
+     `16383.0f`)
+* *fabs*(f~preferred~ - f~approx~) must be \<= 0.6
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
 `float` {rightarrow} {CL_SNORM_INT8} (8-bit signed integer)
 
 [none]
@@ -17285,14 +17470,25 @@ ifdef::cl_khr_fp16[]
 [[converting-half-precision-floating-point-values-to-normalized-integer-channel-data-types]]
 ==== Converting Half-Precision Floating-point Values to Normalized Integer Channel Data Types
 
-If the {cl_khr_fp16_EXT} extension is supported, then
-for images created with image channel data type of {CL_UNORM_INT8} and
-{CL_UNORM_INT16}, *write_imageh* will convert the floating-point color value
-to an 8-bit or 16-bit unsigned integer.
+NOTE: The conversions described in this section require the {cl_khr_fp16_EXT} extension.
 
-For images created with image channel data type of {CL_SNORM_INT8} and
-{CL_SNORM_INT16}, *write_imageh* will convert the floating-point color value
-to an 8-bit or 16-bit signed integer.
+For images created with any of the following image channel data types,
+*write_imageh* will convert the floating-point color value to an unsigned
+integer.
+
+  * {CL_UNORM_INT8}
+  * {CL_UNORM_INT16}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNORM_INT10X6_EXT}
+  * {CL_UNORM_INT12X4_EXT}
+  * {CL_UNORM_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
+
+For images created with any of the following image channel data types,
+*write_imageh* will convert the floating-point color value to a signed integer.
+
+  * {CL_SNORM_INT8}
+  * {CL_SNORM_INT16}
 
 The preferred conversion uses the round to nearest even (`_rte`) rounding
 mode, but OpenCL implementations may choose to approximate the rounding mode
@@ -17325,6 +17521,35 @@ result of the conversion must satisfy the bound given below.
   * Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(`f *
     65535.0f`)
   * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+`half` {rightarrow} {CL_UNORM_INT10X6_EXT} (10-bit unsigned integer)
+
+[none]
+  * Let f~exact~ = *max*(`0`, *min*(`f * 1023`, `1023`))
+  * Let f~preferred~ = *convert_ushort_sat_rte*(`f * 1023.0f`)
+  * Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(`f *
+    1023.0f`)
+  * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+
+`half` {rightarrow} {CL_UNORM_INT12X4_EXT} (12-bit unsigned integer)
+
+[none]
+  * Let f~exact~ = *max*(`0`, *min*(`f * 4095`, `4095`))
+  * Let f~preferred~ = *convert_ushort_sat_rte*(`f * 4095.0f`)
+  * Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(`f *
+    4095.0f`)
+  * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+
+`half` {rightarrow} {CL_UNORM_INT14X2_EXT} (14-bit unsigned integer)
+
+[none]
+  * Let f~exact~ = *max*(`0`, *min*(`f * 16383`, `16383`))
+  * Let f~preferred~ = *convert_ushort_sat_rte*(`f * 16383.0f`)
+  * Let f~approx~ = *convert_ushort_sat_<impl-rounding-mode>*(`f *
+    16383.0f`)
+  * *fabs*(f~exact~ - f~approx~) must be \<= 0.6
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 `half` {rightarrow} {CL_SNORM_INT8} (8-bit signed integer)
 
@@ -17370,50 +17595,80 @@ channel data type of {CL_FLOAT}.
   * All other values must be preserved.
 
 
-[[conversion-rules-for-signed-and-unsigned-8-bit-16-bit-and-32-bit-integer-channel-data-types]]
-=== Conversion Rules for Signed and Unsigned 8-Bit, 16-Bit and 32-Bit Integer Channel Data Types
+[[conversion-rules-for-signed-and-unsigned-integer-channel-data-types]]
+=== Conversion Rules for Signed and Unsigned Integer Channel Data Types
 
-Calls to *read_imagei* with channel data type values of {CL_SIGNED_INT8},
-{CL_SIGNED_INT16} and {CL_SIGNED_INT32} return the unmodified integer values
-stored in the image at specified location.
+Calls to *read_imagei* with any of the following channel data type values return
+the integer values stored in the image at specified location, after sign
+extension to 32 bits for integer values smaller than 32 bits.
 
-Calls to *read_imageui* with channel data type values of {CL_UNSIGNED_INT8},
-{CL_UNSIGNED_INT16} and {CL_UNSIGNED_INT32} return the unmodified integer
-values stored in the image at specified location.
+  * {CL_SIGNED_INT8}
+  * {CL_SIGNED_INT16}
+  * {CL_SIGNED_INT32}
+
+Calls to *read_imageui* with any of the following channel data type values
+return the integer values stored in the image at specified location, after zero
+extension to 32 bits for integer values smaller than 32 bits.
+
+  * {CL_UNSIGNED_INT8}
+  * {CL_UNSIGNED_INT16}
+  * {CL_UNSIGNED_INT32}
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+  * {CL_UNSIGNED_INT10X6_EXT}
+  * {CL_UNSIGNED_INT12X4_EXT}
+  * {CL_UNSIGNED_INT14X2_EXT}
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 Calls to *write_imagei* will perform one of the following conversions:
 
-32 bit signed integer {rightarrow} 8-bit signed integer
+32 bit signed integer {rightarrow} {CL_SIGNED_INT8} (8-bit signed integer)
 
 [none]
 * *convert_char_sat*(i)
 
-32 bit signed integer {rightarrow} 16-bit signed integer
+32 bit signed integer {rightarrow} {CL_SIGNED_INT16} (16-bit signed integer)
 
 [none]
 * *convert_short_sat*(i)
 
-32 bit signed integer {rightarrow} 32-bit signed integer
+32 bit signed integer {rightarrow} {CL_SIGNED_INT32} (32-bit signed integer)
 
 [none]
 * no conversion is performed
 
 Calls to *write_imageui* will perform one of the following conversions:
 
-32 bit unsigned integer {rightarrow} 8-bit unsigned integer
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT8} (8-bit unsigned integer)
 
 [none]
 * *convert_uchar_sat*(i)
 
-32 bit unsigned integer {rightarrow} 16-bit unsigned integer
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT16} (16-bit unsigned integer)
 
 [none]
 * *convert_ushort_sat*(i)
 
-32 bit unsigned integer {rightarrow} 32-bit unsigned integer
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT32} (32-bit unsigned integer)
 
 [none]
 * no conversion is performed
+
+ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT10X6_EXT} (10-bit unsigned integer)
+
+[none]
+* *clamp*(*convert_ushort_sat*(i), 0, 1023)
+
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT12X4_EXT} (12-bit unsigned integer)
+
+[none]
+* *clamp*(*convert_ushort_sat*(i), 0, 4095)
+
+32 bit unsigned integer {rightarrow} {CL_UNSIGNED_INT14X2_EXT} (14-bit unsigned integer)
+
+[none]
+* *clamp*(*convert_ushort_sat*(i), 0, 16383)
+endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 The conversions described in this section must be correctly saturated.
 
@@ -17498,7 +17753,7 @@ implementation produces and being checked for conformance.
 [[selecting-an-image-from-an-image-array]]
 == Selecting an Image From an Image Array
 
-Let (_u_,_v_,_w_) represent the unnormalized image coordinate values for
+Let (_u_, _v_, _w_) represent the unnormalized image coordinate values for
 reading from and/or writing to a 2D image in a 2D image array.
 
 When read using a sampler, the 2D image layer selected is computed as:
@@ -17514,7 +17769,7 @@ otherwise the layer selected is computed as:
 (since _w_ is already an integer) and the result is undefined if _w_ is not
 one of the integers 0, 1, ... d~t~ - 1.
 
-Let (_u_,_v_) represent the unnormalized image coordinate values for reading
+Let (_u_, _v_) represent the unnormalized image coordinate values for reading
 from and/or writing to a 1D image in a 1D image array.
 
 When read using a sampler, the 1D image layer selected is computed as:
