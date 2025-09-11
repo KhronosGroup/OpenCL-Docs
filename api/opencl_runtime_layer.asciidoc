@@ -1247,8 +1247,8 @@ Otherwise, they return one of the following errors:
     ** if _buffer_origin_, _host_origin_, or _region_ is `NULL`
     ** if the region being read or written specified by _buffer_origin_, _region_, _buffer_row_pitch_, and _buffer_slice_pitch_ is out of bounds
     ** if any _region_ array element is zero
-    ** if _buffer_row_pitch_ is not equal to zero and is less than _region_[0].
-    ** if _buffer_slice_pitch_ is not equal to zero and is less than the_region_[1] times _buffer_row_pitch_
+    ** if _buffer_row_pitch_ is not equal to zero and is less than _region_[0]
+    ** if _buffer_slice_pitch_ is not equal to zero and is less than _region_[1] times _buffer_row_pitch_
     ** if _buffer_slice_pitch_ is not equal to zero and is not a multiple of _buffer_row_pitch_
     ** if _host_row_pitch_ is not equal to zero and is less than _region_[0]
     ** if _host_slice_pitch_ is not equal to zero and is less than _region_[1] times _host_row_pitch_
@@ -1415,7 +1415,7 @@ Otherwise, it returns one of the following errors:
     ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
     ** if event objects in _event_wait_list_ are not valid events
   * {CL_MEM_COPY_OVERLAP}
-    ** if _src_buffer_ and _dst_buffer_ are the same buffer or sub-buffer object and the source and destination regions overlap.
+    ** if _src_buffer_ and _dst_buffer_ are the same buffer or sub-buffer object and the source and destination regions overlap
     ** if _src_buffer_ and _dst_buffer_ are different sub-buffers of the same associated buffer object and they overlap
     ** Refer to <<check-copy-overlap, Checking for Memory Copy Overlap>> for
     details on how to determine if source and destination regions overlap.
@@ -1563,7 +1563,7 @@ Otherwise, it returns one of the following errors:
     ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
     ** if event objects in _event_wait_list_ are not valid events
   * {CL_MEM_COPY_OVERLAP}
-    ** if _src_buffer_ and _dst_buffer_ are the same buffer or sub-buffer object and the source and destination regions overlap.
+    ** if _src_buffer_ and _dst_buffer_ are the same buffer or sub-buffer object and the source and destination regions overlap
     ** if _src_buffer_ and _dst_buffer_ are different sub-buffers of the same associated buffer object and they overlap
     ** Refer to <<check-copy-overlap, Checking for Memory Copy Overlap>> for
     details on how to determine if source and destination regions overlap.
@@ -1657,7 +1657,7 @@ Otherwise, it returns one of the following errors:
   * {CL_INVALID_MEM_OBJECT}
     ** if _buffer_ is not a valid buffer object
   * {CL_INVALID_VALUE}
-    ** if the region being read or written specified by _offset_ and _size_ is out of bounds
+    ** if the region being filled specified by _offset_ and _size_ is out of bounds
     ** if _pattern_ is `NULL`
     ** if _pattern_size_ is zero
     ** if _pattern_size_ is not a power of two
@@ -9806,6 +9806,8 @@ successfully.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_PROGRAM} if _program_ is not a valid program object.
+  * {CL_INVALID_CONTEXT} if the context associated with _program_ and
+    programs in _input_headers_ are not the same.
   * {CL_INVALID_VALUE} if _device_list_ is `NULL` and _num_devices_ is greater
     than zero, or if _device_list_ is not `NULL` and _num_devices_ is zero.
   * {CL_INVALID_VALUE} if _num_input_headers_ is zero and
@@ -9945,6 +9947,8 @@ check if the link was successful or not.
 The list of errors that can be returned are:
 
   * {CL_INVALID_CONTEXT} if _context_ is not a valid context.
+  * {CL_INVALID_CONTEXT} if the context associated with programs in
+    _input_programs_ is not the same as _context_.
   * {CL_INVALID_VALUE} if _device_list_ is `NULL` and _num_devices_ is greater
     than zero, or if _device_list_ is not `NULL` and _num_devices_ is zero.
   * {CL_INVALID_VALUE} if _num_input_programs_ is zero and _input_programs_ is
@@ -14843,9 +14847,16 @@ the recording state.
 Recording:: Initial state of a command-buffer on creation, where commands can be
 recorded to the command-buffer.
 
+[[finalized]]
+Finalized:: State after command recording has finished with
+{clFinalizeCommandBufferKHR}, but there is at least one command for which not
+all arguments or parameters have been set (this is a valid state only for
+mutable command buffers).
+
 [[executable]]
 Executable:: State after command recording has finished with
-{clFinalizeCommandBufferKHR} and the command-buffer may be enqueued.
+{clFinalizeCommandBufferKHR} and all the arguments and parameters of all
+commands have been set. In this state the command-buffer may be enqueued.
 
 // Image generated from the following mermaid diagram description using https://mermaid.live
 // Ideally we'd use the asciidoctor-diagram extension to generate the rendered diagram, but
@@ -14855,7 +14866,9 @@ Executable:: State after command recording has finished with
 // ....
 // stateDiagram-v2
 //     [*] --> Recording: Create
-//     Recording -->Executable: Finalize
+//     Recording -->Finalized: Finalize
+//     Finalized --> Executable: All commands arguments/parameters set
+//     Executable
 // ....
 
 image::images/commandbuffer_lifecycle.png[align="center", title="Lifecycle of a command-buffer."]
@@ -15101,9 +15114,10 @@ include::{generated}/api/version-notes/clFinalizeCommandBufferKHR.asciidoc[]
 
 [NOTE]
 ====
-{clFinalizeCommandBufferKHR} places the command-buffer in the
-<<executable, Executable>> state where commands can no longer be recorded, at
-this point the command-buffer is ready to be enqueued.
+{clFinalizeCommandBufferKHR} places the command-buffer either in the
+<<finalized, Finalized>> or <<executable, Executable>> states where commands can
+no longer be recorded. If the new state is <<executable, Executable>>, the
+command-buffer is ready to be enqueued.
 ====
 
 // refError
@@ -16110,7 +16124,14 @@ ifdef::cl_khr_command_buffer_mutable_dispatch[]
     in the <<ndrange-kernel-properties-table, List of supported properties
     by clCommandNDRangeKernelKHR>> table.
 endif::cl_khr_command_buffer_mutable_dispatch[]
+ifndef::cl_khr_command_buffer_mutable_dispatch[]
   * _kernel_ is a valid kernel object which **must** have its arguments set.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+  * _kernel_ is a valid kernel object, which **must** have its arguments set
+    unless the command has the {CL_MUTABLE_DISPATCH_ARGUMENTS_KHR} property set
+    (see description of argument _mutable_handle_).
+endif::cl_khr_command_buffer_mutable_dispatch[]
     Any changes to _kernel_ after calling {clCommandNDRangeKernelKHR}, such
     as with {clSetKernelArg} or {clSetKernelExecInfo}, have no effect on the
     recorded command.
@@ -16287,6 +16308,14 @@ The starting local ID is always (0, 0, ... 0).
 {clCommandNDRangeKernelKHR} returns {CL_SUCCESS} if the function is executed
 successfully.
 Otherwise, it returns the errors defined by {clEnqueueNDRangeKernel} except:
+
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+{CL_INVALID_KERNEL_ARGS} is replaced with:
+  
+  * {CL_INVALID_KERNEL_ARGS} if the kernel argument values have not been
+    specified and the {CL_MUTABLE_DISPATCH_ARGUMENTS_KHR} flag was not set in
+    the _properties_ parameter.
+endif::cl_khr_command_buffer_mutable_dispatch[]
 
 {CL_INVALID_COMMAND_QUEUE} is replaced with:
 
@@ -16728,6 +16757,13 @@ device occupancy high by avoiding blocking in host code.
 
 [open,refpage='clUpdateMutableCommandsKHR',desc='Modify configuration of mutable-command handles to update behavior for future enqueues',type='protos']
 --
+
+When recording an ND-range kernel command, the kernel's arguments do not have to
+be set, and setting them may be postponed to after the command buffer's
+finalization (in which case, the command buffer is in Finalized state).
+All the arguments must be set before the command buffer can be enqueued
+for execution (Executable state).
+
 To modify the configuration of mutable-command handles returned during
 _command_buffer_ recording, updating the behavior of those commands in
 future enqueues of _command_buffer_, call the function
@@ -16984,8 +17020,15 @@ include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_KHR.asciidoc[]
 
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_RECORDING_KHR.asciidoc[]
 
+        {CL_COMMAND_BUFFER_STATE_FINALIZED_KHR_anchor} is returned when an
+        instance of _command_buffer_ has been finalized, but there is at least
+        one command for which not all arguments or parameters have been set.
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_FINALIZED_KHR.asciidoc[]
+
         {CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR_anchor} is returned when
-        _command_buffer_ has been finalized.
+        _command_buffer_ has been finalized, all the arguments and parameters of
+        all commands have been set.
 
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_STATE_EXECUTABLE_KHR.asciidoc[]
 
