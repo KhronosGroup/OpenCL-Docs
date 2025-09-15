@@ -462,14 +462,27 @@ If _errcode_ret_ is `NULL` then no error code will be returned.
 {clSVMAllocWithPropertiesKHR} will return a valid non-`NULL` address and {CL_SUCCESS} will be returned in _errcode_ret_ if the shared virtual memory is allocated successfully.
 Otherwise, `NULL` will be returned, and _errcode_ret_ will be set to one of the following error values:
 
-* {CL_INVALID_CONTEXT} if _context_ is not a valid context.
-* {CL_INVALID_PROPERTY} if a memory property name in _properties_ is not a supported property name, if the value specified for a supported property name is not valid, or if the same property name is specified more than once.
-* {CL_INVALID_OPERATION} if no devices in _context_ support the SVM type specified by _svm_type_index_, or if a device associated with the SVM allocation does not support the SVM type specified by _svm_type_index_.
-* {CL_INVALID_VALUE} if _svm_type_index_ is greater than the number of SVM types supported the devices in _context_.
-* {CL_INVALID_BUFFER_SIZE} if _size_ is zero or greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for any OpenCL device in _context_ that supports the specified SVM type, or if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for a device associated with the SVM allocation.
-TODO: update depending on the updated queries for available SVM sizes.
-* {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required by the OpenCL implementation on the device.
-* {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources required by the OpenCL implementation on the host.
+  * {CL_INVALID_CONTEXT}
+    ** if _context_ is not a valid OpenCL context
+  * {CL_INVALID_PROPERTY}
+    ** if a memory property name in _properties_ is not a supported property name
+    ** if the value specified for a supported property name is not valid
+    ** if the same property name is specified more than once
+  * {CL_INVALID_OPERATION}
+    ** if no devices in _context_ support the SVM type specified by _svm_type_index_
+    ** if a device associated with the SVM allocation does not support the SVM type specified by _svm_type_index_
+  * {CL_INVALID_VALUE}
+    ** if _svm_type_index_ is greater than the number of SVM types supported the devices in _context_
+  * {CL_INVALID_BUFFER_SIZE}
+// TODO: update depending on the updated queries for available SVM sizes:
+    ** if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for any OpenCL device in _context_ that supports the specified SVM type
+    ** if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for a device associated with the SVM allocation
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 
 TODO: Do we want to document any specific error conditions for invalid property values?
 
@@ -542,12 +555,21 @@ If _ptr_ is `NULL` then no action occurs.
 {clSVMFreeWithPropertiesKHR} will return {CL_SUCCESS} if the function executes successfully.
 Otherwise, it returns one of the following errors:
 
-* {CL_INVALID_CONTEXT} if _context_ is not a valid context.
-* {CL_INVALID_PROPERTY} if a memory property name in _properties_ is not a supported property name, if the value specified for a supported property name is not valid, or if the same property name is specified more than once.
-* {CL_INVALID_VALUE} if _flags_ contains an invalid SVM free flag.
-* {CL_INVALID_VALUE} if _ptr_ is not a value returned by {clSVMAlloc}, {clSVMAllocWithPropertiesKHR}, or a `NULL` pointer.
-* {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required by the OpenCL implementation on the device.
-* {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources required by the OpenCL implementation on the host.
+  * {CL_INVALID_CONTEXT}
+    ** if _context_ is not a valid OpenCL context
+  * {CL_INVALID_PROPERTY}
+    ** if a memory property name in _properties_ is not a supported property name
+    ** if the value specified for a supported property name is not valid
+    ** if the same property name is specified more than once
+  * {CL_INVALID_VALUE}
+    ** if _flags_ contains an invalid SVM free flag
+    ** if _ptr_ is not a value returned by {clSVMAlloc}, {clSVMAllocWithPropertiesKHR}, or a `NULL` pointer
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 
 [NOTE]
 ====
@@ -588,12 +610,22 @@ If _param_value_size_ret_ is `NULL`, it is ignored.
 {clGetSVMPointerInfoKHR} returns {CL_SUCCESS} if the function is executed successfully.
 Otherwise, it will return one of the following error values:
 
-* {CL_INVALID_CONTEXT} if _context_ is not a valid context.
-* {CL_INVALID_DEVICE} if _device_ is not a valid device or is not associated with _context_.
-* {CL_INVALID_VALUE} if _param_name_ is not a valid SVM allocation query.
-* {CL_INVALID_VALUE} if _param_value_ is not `NULL` and _param_value_size_ is smaller than the size of the query return type.
-* {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required by the OpenCL implementation on the device.
-* {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources required by the OpenCL implementation on the host.
+  * {CL_INVALID_CONTEXT}
+    ** if _context_ is not a valid OpenCL context
+  * {CL_INVALID_DEVICE}
+    ** if _device_ is not a valid device
+    ** if _device_ is not associated with _context_
+  * {CL_INVALID_VALUE}
+    ** if _param_name_ is not one of the supported values
+    ** if the size in bytes specified by _param_value_size_ is less than the
+    size of the return type specified in the <<svm-queries-table,SVM queries>>
+    table and _param_value_ is not `NULL`
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 
 [[svm-queries-table]]
 .List of supported param_names by clGetSVMPointerInfoKHR
@@ -680,14 +712,26 @@ The suggested SVM type may be {CL_UINT_MAX}, indicating that there is no SVM all
 
 {clGetSVMSuggestedTypeIndexKHR} returns {CL_SUCCESS} if the query executed successfully.  Otherwise, it returns one of the following errors:
 
-* {CL_INVALID_CONTEXT} if _context_ is not a valid context.
-* {CL_INVALID_PROPERTY} if a memory property name in _properties_ is not a supported property name, if the value specified for a supported property name is not valid, or if the same property name is specified more than once.
-* {CL_INVALID_VALUE} if _required_capabilities_ or _desired_capabilities_ contains an invalid SVM capability.
-* {CL_INVALID_BUFFER_SIZE} if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for any OpenCL device in _context_ or if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for a device associated with the SVM allocation.
-TODO: update depending on the updated queries for available SVM sizes.
-* {CL_INVALID_VALUE} if _suggested_svm_type_index_ is `NULL`.
-* {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required by the OpenCL implementation on the device.
-* {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources required by the OpenCL implementation on the host.
+  * {CL_INVALID_CONTEXT}
+    ** if _context_ is not a valid OpenCL context
+  * {CL_INVALID_PROPERTY}
+    ** if a memory property name in _properties_ is not a supported property name
+    ** if the value specified for a supported property name is not valid
+    ** if the same property name is specified more than once
+  * {CL_INVALID_VALUE}
+    ** if _required_capabilities_ contains an invalid SVM capability
+    ** if _desired_capabilities_ contains an invalid SVM capability
+    ** if _suggested_svm_type_index_ is `NULL`
+  * {CL_INVALID_BUFFER_SIZE}
+// TODO: update depending on the updated queries for available SVM sizes:
+    ** if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for any OpenCL device in _context_ that supports the specified SVM type
+    ** if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for a device associated with the SVM allocation
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 
 ===== Using SVM with Kernels
 
