@@ -1,0 +1,534 @@
+// Copyright 2018-2025 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+include::{generated}/api/api-dictionary.asciidoc[]
+:source-highlighter: coderay
+
+= cl_mobileye_reservation_sets
+:R: pass:q,r[^(R)^]
+Khronos{R} OpenCL Working Group
+
+[float]
+== XXX - Not complete yet!!!
+
+== Name Strings
+
+`cl_mobileye_reservation_sets`
+
+== Contact
+
+Aharon Abramson, Mobileye (aharon 'dot' abramson 'at' mobileye 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Aharon Abramson, Mobileye +
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 1999-2025 Mobileye.  All rights reserved.
+
+== Status
+
+Draft spec, NOT APPROVED!!
+
+== Version
+
+Built On: {docdate} +
+Version: 0.1.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification version 3.0.18 and
+`cl_khr_command_buffer_EXT` extension version 0.9.6.
+
+This extension requires OpenCL 3.0 and the `cl_khr_command_buffer_EXT`
+extension.
+
+== Overview
+
+`cl_mobileye_reservation_sets` provides a mechanism to synchronize between
+kernels that have data dependencies. It enables you to ensure that co-related
+work-groups across a group of kernels are launched together and can communicate
+with each other. This way, you may overcome the memory access bottleneck problem
+by enhancing the locality of these accesses. In the context of command buffers,
+_reservation-sets_ are sets of ND-range kernel commands that are not dependent
+on each other through synchronization points and are guaranteed to execute in
+parallel on compute units that all share part of a cache hierarchy (as defined
+by `cl_device_affinity_domain`). Work-groups within these commands that have the
+same ID can synchronize between them using reservation-set _pipes_ (explained
+below).
+
+=== Rationale
+
+In this extention, we intend to provide a mechanism for communicating and
+synchronizing between concurrently executing kernels.
+
+In many kernels, memory access becomes the bottleneck. For example, consider the
+case of two ND-range kernel commands (command A and command B), A's output is
+B's input. There are two methods for users to implement this:
+
+1. Make B dependent on A.
+2. Make both commands independent, but use pipes in their kernels to synchronize
+the data's production and consumption.
+
+If the two commands work on large buffers that do not fit in the cache, both
+methods might be suboptimal:
+
+1. In this method, since B starts only after A has completed, most of the
+produced data has been evicted from the cache and needs to be reloaded.
+2. In this method, B does not have to wait for A to complete. However, if
+work-groups from the two kernels try to coordinate the production and
+consumption of the same parts of the data, there is no guarantee that these
+work-groups will be executed on the same part of the cache hierarchy, and this
+might cause a significant amount of cache thrashing.
+
+Another motivation for running multiple kernel instances in parallel is to
+minimize latency. A streaming-style execution model of pipes creates
+finer-grained pipelines leading to significant latency improvements.
+
+=== Reservation-set
+
+Within a reservation-set, implementations can run work-groups from different
+commands with the same ID on the compute units that share the specified part of
+the cache hierarchy in parallel. These work-groups can access the same tiles of
+inputs and outputs, which are more likely to stay in the cache of these compute
+units and not be evicted until the work-groups are complete.
+
+All ND-range kernel commands inside a reservation set must have the same number
+of dimensions and the same number of work-groups in each dimension.
+
+=== Reservation-set Pipes
+
+A _reservation-set pipe_ is a memory object that resembles a regular OpenCL
+pipe, and is defined by the size of its packets and the maximum number of
+packets that can be stored in it.
+
+Regarding the memory consistency model, reservation-set pipe read and write
+operations are eventually visible from the producer end to the consumer end of
+the pipe without requiring waiting for the entire producer kernel to complete.
+This guarantees the concurrent progress of both the consumer and producer.
+
+Reservation set pipes are special in such a way that from the host side, they
+are viewed as single objects associated with a reservation-set, but in the
+kernels of that reservation-set, each such object is viewed as separate
+instances per the work-groups of these kernels that have the same ID (even if
+the kernels run on different devices).
+
+image::../images/reservation_set_pipe.png[align="center", title="Reservation-set Pipe", width=50%]
+
+== New API Types
+
+  * `cl_reservation_set_mobileye`
+  * `cl_reservation_set_pipe_mobileye`
+
+== New API Enums
+
+* `cl_device_info`
+ ** `CL_DEVICE_RESERVATION_SET_MAX_SIZE_MOBILEYE`
+ ** `CL_DEVICE_RESERVATION_SET_PIPE_MAX_SIZE_MOBILEYE`
+* New Error Codes
+ ** `CL_INVALID_RESERVATION_SET_MOBILEYE`
+
+== New OpenCL C Feature Names
+
+[source,c]
+----
+__opencl_c_mobileye_reservation_sets
+----
+
+== New OpenCL C Functions
+
+* `read_rs_pipe_mobileye`
+* `write_rs_pipe_mobileye`
+
+---
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 4.2, *Querying Devices*) ::
++
+--
+(Add the following to Table 5, _List of supported param_names by
+*clGetDeviceInfo*)
+--
+
+[cols="1,1,10",options="header"]
+|====
+| `cl_device_info`
+| Return Type
+| Description
+
+| `CL_DEVICE_RESERVATION_SET_MAX_SIZE_MOBILEYE`
+| `cl_uint`
+| Returns the maximum number of commands that can be recorded in a
+  reservation-set on the device. This value is 0 if the device does not support
+  reservation-sets.
+
+| `CL_DEVICE_RESERVATION_SET_PIPE_MAX_SIZE_MOBILEYE`
+| `cl_uint`
+| Returns the maximum number of reservation-set pipes that can be created in a
+  reservation-set on the device. This value is 0 if the device does not support
+  reservation-set pipes.  
+|====
+--
+
+(Modify Section 5.9.2, *Setting Kernel Arguments*) ::
++
+--
+(Change the sentence)
+--
+If the argument is a memory object (buffer, pipe, image or image array), the
+arg_value entry will be a pointer to the appropriate buffer, pipe, image or
+image array object.
+--
+(to)
+--
+If the argument is a memory object (buffer, pipe, image, image array, or
+reservation-set pipe), the arg_value entry will be a pointer to the appropriate
+buffer, pipe, image, image array, or reservation-set pipe object.
+--
+(Add the following paragraphs)
+--
+The memory object specified as argument value must be a reservation-set pipe
+object if the argument is declared with the _rs_pipe_mobileye_ qualifier.
+--
+
+=== New Section "Reservation Sets"
+
+Add a new subsection under Section 5, *The OpenCL Runtime* named *Reservation
+Sets* with the following content:
+--
+[open,refpage='clCreateReservationSetMOBILEYE',desc='Create a reservation-set for ND-range kernel commands inside a command buffer.',type='protos']
+--
+To create a reservation-set for ND-range kernel commands inside a command
+buffer, call the function:
+
+include::{generated}/api/protos/clCreateReservationSetMOBILEYE.txt[]
+include::{generated}/api/version-notes/clCreateReservationSetMOBILEYE.asciidoc[]
+
+  * _command_buffer_ is a valid command buffer object.
+  * _affinity_domain_ is the level of the cache hierarchy that the work-groups
+    in the reservation-set with the same ID are guaranteed to share.For example,
+    if _affinity_domain_ is `CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE`, and there are
+    two ND-range kernel commands in the reservation-set, work-groups with ID 0
+    from the two commands will execute on the same L2 data cache.
+    The value of _affinity_domain_ must be a valid value of
+    `cl_device_affinity_domain`.
+  * _num_sync_points_in_wait_list_ is the number of synchronization points in
+    the wait list.
+  * _sync_point_wait_list_ is a list of synchronization points that the
+    reservation-set must wait for before it can be used. It can be `NULL` if
+    _num_sync_points_in_wait_list_ is 0.
+  * _errcode_ret_ is an optional pointer to a variable that will receive the
+    error code if the function fails. If it is `NULL`, no error code will be
+    returned.
+
+*clCreateReservationSetMOBILEYE* returns a valid non-zero reservation-set and
+_errcode_ret_ is set to `CL_SUCCESS` if the reservation-set is created
+successfully. Otherwise, it returns a `NULL` value with one of the following
+error values returned in _errcode_ret_:
+
+  * `CL_INVALID_COMMAND_BUFFER_KHR` if _command_buffer_ is not a valid command
+    -buffer.
+  * `CL_INVALID_VALUE` if _affinity_domain_ is not a valid value of
+    `cl_device_affinity_domain`.
+  * `CL_INVALID_OPERATION` if _command_buffer_ has been finalized.
+  * `CL_INVALID_SYNC_POINT_WAIT_LIST_KHR` if _sync_point_wait_list_ is not
+    `NULL` and _num_sync_points_in_wait_list_ is 0, or if _sync_point_wait_list_
+    is `NULL` and _num_sync_points_in_wait_list_ is greater than 0, or if the
+    synchronization-point objects in _sync_point_wait_list_ are not valid
+    synchronization-points.
+  * `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clRetainReservationSetMOBILEYE',desc='Increments the reservation-set object reference count.',type='protos']
+--
+To retain a reservation-set object, call the function
+
+include::{generated}/api/protos/clRetainReservationSetMOBILEYE.txt[]
+include::{generated}/api/version-notes/clRetainReservationSetMOBILEYE.asciidoc[]
+
+  * _reservation_set_ specifies the reservation-set object to be retained.
+
+The _reservation_set_ reference count is incremented.
+
+*clRetainReservationSetMOBILEYE* returns `CL_SUCCESS` if the function is
+executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * `CL_INVALID_COMMAND_BUFFER_KHR` if _command_buffer_ is not a valid command
+    -buffer.
+  * `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+--
+
+[open,refpage='clReleaseReservationSetMOBILEYE',desc='Decrements the reservation-set object reference count.',type='protos']
+--
+To release a reservation-set object, call the function
+
+include::{generated}/api/protos/clReleaseReservationSetMOBILEYE.txt[]
+include::{generated}/api/version-notes/clReleaseReservationSetMOBILEYE.asciidoc[]
+
+  * _reservation_set_ specifies the reservation-set object to be released.
+
+The _reservation_set_ reference count is decremented.
+
+*clReleaseReservationSetMOBILEYE* returns `CL_SUCCESS` if the function is
+executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * `CL_INVALID_COMMAND_BUFFER_KHR` if _reservation_set_ is not a valid
+   reservation-set object.
+  * `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources required
+    by the OpenCL implementation on the device.
+  * `CL_OUT_OF_HOST_MEMORY` if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+
+After the _reservation_set_ reference count becomes zero and the command-buffer
+associated with _reservation_set_ is not executing, the reservation-set object
+is deleted.
+--
+
+[open,refpage='clCommandNDRangeKernelReservationSetMOBILEYE',desc='Record an ND-range kernel command into a reservation-set.',type='protos']
+--
+To record an ND-range kernel command into a reservation-set, call the function:
+include::{generated}/api/protos/clCommandNDRangeKernelReservationSetMOBILEYE.txt[]
+include::{generated}/api/version-notes/clCommandNDRangeKernelReservationSetMOBILEYE.asciidoc[]
+
+  * _reservation_set_ is a valid reservation-set object.
+  * _command_queue_ specifies the command-queue the command will be recorded to.
+    If the `cl_khr_command_buffer_multi_device_EXT` extension is not supported,
+    only a single command-queue is supported, and _command_queue_ must be
+    `NULL`. If the `cl_khr_command_buffer_multi_device_EXT` extension is
+    supported and _command_queue_ is `NULL`, then only one command-queue must
+    have been set on _command_buffer_ creation; otherwise, _command_queue_ must
+    not be `NULL`.
+  * _properties_ specifies a list of properties for the kernel command and their
+    corresponding values. Each property name is immediately followed by the
+    corresponding desired value. The list is terminated with 0. If a supported
+    property and its value is not specified in _properties_, its default value
+    will be used. _properties_ may be `NULL`, in which case the default values
+    for supported properties will be used.
+  * _kernel_ is a valid kernel object.
+  * _work_dim_, _global_work_offset_, _global_work_size_, _local_work_size_
+    Refer to *clEnqueueNDRangeKernel*.
+  * _sync_point_ returns a synchronization-point ID that identifies this
+    particular command. Synchronization-point objects are unique and can be used
+    to identify this command later on. _sync_point_ can be `NULL` in which case
+    it will not be possible for the application to record a wait for this
+    command to complete.
+  * _mutable_handle returns a handle to the command. If the
+    `cl_khr_command_buffer_mutable_dispatch` extension is supported, and
+    _mutable_handle_ is not `NULL`, it can be used in the
+    `cl_mutable_dispatch_config_khr` struct to update the command configuration
+    between recordings. The lifetime of this handle is tied to the parent
+    command-buffer, such that freeing the command-buffer will also free this
+    handle.
+
+*clCommandNDRangeKernelReservationSetMOBILEYE* returns `CL_SUCCESS` if the
+function is executed successfully. Otherwise, it returns the errors defined by
+*clEnqueueNDRangeKernel* except::
+
+  * `CL_INVALID_RESERVATION_SET_MOBILEYE` if _reservation_set_ is not a valid
+    reservation-set object.
+
+`CL_INVALID_COMMAND_QUEUE` is replaced with:
+
+  * `CL_INVALID_COMMAND_QUEUE` if the
+    `cl_khr_command_buffer_multi_device_EXT` extension is not supported and
+    _command_queue_ is not `NULL`.
+  * `CL_INVALID_COMMAND_QUEUE` if the
+    `cl_khr_command_buffer_multi_device_EXT` extension is supported; and
+    either _command_queue_ is `NULL` and the command-buffer associated with
+    _reservation_set_ was created with more than one queue, or _command_queue_
+    is not `NULL` and not a command-queue listed on _command_buffer_ creation.
+
+`CL_INVALID_CONTEXT` is replaced with:
+
+  * `CL_INVALID_CONTEXT` if the context associated with the command-buffer
+  associated with _reservation_set_ and _kernel_ is not the same.
+ifdef::cl_khr_command_buffer_multi_device[]
+  * `CL_INVALID_CONTEXT` if _command_queue_ is not `NULL`, and the context
+    associated with _command_queue_ and the command-buffer associated with
+    _reservation_set_ is not the same.
+endif::cl_khr_command_buffer_multi_device[]
+
+New errors:
+
+  * `CL_INVALID_OPERATION` if the command-buffer associated with
+    _reservation_set_ has been finalized.
+  * `CL_INVALID_VALUE` if values specified in _properties_ are not valid.
+  * `CL_INVALID_VALUE` if the `cl_khr_command_buffer_mutable_dispatch_EXT`
+    extension is not supported and _mutable_handle_ is not `NULL`.
+  * `CL_INVALID_OPERATION` if the device associated with _command_queue_
+    does not support `CL_COMMAND_BUFFER_CAPABILITY_KERNEL_PRINTF_KHR` and
+    _kernel_ contains a printf call.
+  * `CL_INVALID_OPERATION` if the device associated with _command_queue_
+    does not support `CL_COMMAND_BUFFER_CAPABILITY_DEVICE_SIDE_ENQUEUE_KHR`
+    and _kernel_ contains a kernel-enqueue call.
+  * `CL_INVALID_OPERATION` if _reservation_set_ already contains as many 
+    commands as the maximum number of commands allowed in a reservation-set
+    on the device associated with _command_queue_, as specified by
+    `CL_DEVICE_RESERVATION_SET_MAX_SIZE_MOBILEYE`.
+
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+If the `cl_khr_command_buffer_mutable_dispatch_EXT` extension is supported:
+
+  * `CL_INVALID_OPERATION` if the requested
+    `CL_MUTABLE_DISPATCH_UPDATABLE_FIELDS_KHR` properties are not reported
+    by `CL_DEVICE_MUTABLE_DISPATCH_CAPABILITIES_KHR` for the device
+    associated with _command_queue_.
+    If _command_queue_ is `NULL`, the device associated with the command-buffer
+    associated with _reservation_set_ must report support for these properties.
+  * `CL_INVALID_VALUE` if the command-buffer associated with _reservation_set_
+    was created with the `CL_COMMAND_BUFFER_MUTABLE_DISPATCH_ASSERTS_KHR`
+    property with `CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR` and
+    _local_work_size_ is `NULL`, or if _properties_ includes the
+    `CL_MUTABLE_DISPATCH_ASSERTS_KHR` property with
+    `CL_MUTABLE_DISPATCH_ASSERT_NO_ADDITIONAL_WORK_GROUPS_KHR` and
+    _local_work_size_ is `NULL`.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+--
+
+[open,refpage='clCreateReservationSetPipeMOBILEYE',desc='Create a reservation-set pipe.',type='protos']
+--
+To create a reservation-set pipe, call the function:
+include::{generated}/api/protos/clCreateReservationSetPipeMOBILEYE.txt[]
+include::{generated}/api/version-notes/clCreateReservationSetPipeMOBILEYE.asciidoc[]
+
+  * _reservation_set_ is a valid reservation-set object.
+  * _packet_size_ is the size of each packet in the pipe. It must be greater
+    than 0.
+  * _num_packets_per_wg_ is the maximum number of packets that can be stored in
+    the pipe. It must be greater than 0.
+  * _errcode_ret_ is an optional pointer to a variable that will receive the
+    error code if the function fails. If it is `NULL`, no error code will be
+    returned.
+
+The *clRetainMemObject* and *clReleaseMemObject* functions can be used to retain
+and release the reservation-set pipe object.
+
+*clCreateReservationSetPipeMOBILEYE* returns a valid non-zero reservation-set
+pipe object and _errcode_ret_ is set to `CL_SUCCESS` if the reservation-set pipe
+is created successfully. Otherwise, it returns a `NULL` value with one of the
+following error values returned in _errcode_ret_:
+
+  * `CL_INVALID_RESERVATION_SET_MOBILEYE` if _reservation_set_ is not a valid
+    reservation-set object.
+  * `CL_INVALID_VALUE` if either _packet_size_ or _max_num_packets_ are 0.
+  * `CL_INVALID_OPERATION` if the command-buffer associated with
+    _reservation_set_ has been finalized.
+  * `CL_INVALID_OPERATION` if _reservation_set_ already contains as many
+    reservation-set pipes as the maximum number of reservation-set pipes
+    allowed in a reservation-set on the device associated with the
+    command-buffer, as specified by
+    `CL_DEVICE_RESERVATION_SET_PIPE_MAX_SIZE_MOBILEYE`.
+  * `CL_OUT_OF_RESOURCES` if there is a failure to allocate resources
+    required by the OpenCL implementation on the device.
+  * `CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
+    required by the OpenCL implementation on the host.
+
+== Modifications to the OpenCL C Specification
+
+[source,c]
+----
+void read_rs_pipe_mobileye(read_only rs_pipe_mobileye pipe, void *packet);
+----
+This function reads a packet from reservation-set pipe _pipe_ into the memory
+location specified by _packet_. The packet's size is as defined when the pipe
+was created by the host. If the pipe is not empty, the function returns after
+the read is complete; otherwise, it blocks until there is a new packet in the
+pipe.
+
+[source,c]
+----
+void write_rs_pipe_mobileye(write_only rs_pipe_mobileye pipe, const void
+*packet);
+----
+This function writes a packet to reservation-set pipe _pipe_ from the memory
+location specified by _packet_. The packet's size is as defined when the pipe
+was created by the host. If the pipe is not full, the function returns after
+the write is complete; otherwise, it blocks until there is space in the pipe.
+
+== Sample Code
+
+Kernel code:
+[source,opencl_c]
+----
+__kernel void producer(rs_pipe_mobileye pipe) {
+  size_t group_linear_id =
+      get_group_id(2) * get_num_groups(1) * get_num_groups(0) +
+      get_group_id(1) * get_num_groups(0) + get_group_id(0);
+
+  const int write_val = group_linear_id;
+  write_rs_pipe_mobileye(pipe, &group_linear_id);
+}
+
+__kernel void consumer(__global int *res, rs_pipe_mobileye pipe) {
+  size_t group_linear_id =
+      get_group_id(2) * get_num_groups(1) * get_num_groups(0) +
+      get_group_id(1) * get_num_groups(0) + get_group_id(0);
+  read_rs_pipe_mobileye(pipe, &res[group_linear_id]);
+}
+----
+
+Host code:
+
+[source,c]
+----
+  cl_context context;
+  cl_command_queue queue;
+  cl_kernel producer_kernel, consumer_kernel;
+  ...
+  const cl_int width = 4;
+  cl_mem res_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE,
+                                     width * sizeof(cl_int), nullptr, nullptr);
+  cl_command_buffer_khr cmd_buf =
+      clCreateCommandBufferKHR(1, &queue, nullptr, nullptr);
+  cl_reservation_set_mobileye reservation_set = clCreateReservationSetMOBILEYE(
+      cmd_buf, CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE, 0, nullptr, nullptr);
+  cl_mem pipe = clCreateReservationSetPipeMOBILEYE(reservation_set,
+                                                   sizeof(cl_int), width,
+                                                   nullptr);
+
+  clSetKernelArg(consumer_kernel, 0, sizeof(cl_mem), &res_buffer);
+  clSetKernelArg(consumer_kernel, 1, sizeof(cl_mem), &pipe);
+
+  clSetKernelArg(producer_kernel, 0, sizeof(cl_mem), &pipe);
+
+  const size_t gwz = width, lwz = 1;
+  clCommandNDRangeKernelReservationSetMOBILEYE(reservation_set, queue, nullptr,
+                                               producer_kernel, 1, nullptr,
+                                               &gwz, &lwz, nullptr, nullptr);
+  clCommandNDRangeKernelReservationSetMOBILEYE(reservation_set, queue, nullptr,
+                                               consumer_kernel, 1, nullptr,
+                                               &gwz, &lwz, nullptr, nullptr);
+  clFinalizeCommandBufferKHR(cmd_buf);
+
+  cl_event event;
+  clEnqueueCommandBufferKHR(1, &queue, cmd_buf, 0, nullptr, &event);
+  clWaitForEvents(1, &event);
+----
+
+== Issues
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 0.1.0   | {docdate}  | Aharon Abramson | *Initial revision*
+|====
