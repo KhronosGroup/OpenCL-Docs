@@ -32,6 +32,8 @@ https://github.com/KhronosGroup/OpenCL-Docs
 
 Alexander Galazin, Imagination Technologies +
 Joe Molleson, Imagination Technologies +
+Robert Quill, Imagination Technologies +
+Tomasz Platek, Imagination Technologies +
 Contributors to `GLSL_KHR_cooperative_matrix`
 
 
@@ -78,7 +80,7 @@ constructs:
 coop_mat -> OpTypeCooperativeMatrixKHR
 coop_mat constructor from scalar value -> OpConstantComposite
 coop_mat constructor from coop_mat -> Op*Convert, OpConvert*To*
-sizeof(coop_mat) -> OpCooperativeMatrixLength
+coop_mat_length -> OpCooperativeMatrixLength
 coop_mat[i] -> OpCompositeExtract/OpCompositeInsert/OpAccessChain
 +, -, *, / -> OpFAdd, OpFNegate/OpFSub, OpFMul/OpMatrixTimesScalar, OpFDiv
               (similarly for integer types)
@@ -91,7 +93,7 @@ CLK_COOPERATIVE_MATRIX_ACCUMULATOR -> MatrixAccumulatorKHR
 CLK_COOPERATIVE_MATRIX_LAYOUT_ROW_MAJOR -> RowMajorKHR
 CLK_COOPERATIVE_MATRIX_LAYOUT_COLUMN_MAJOR ->   ColumnMajorKHR
 CLK_COOPERATIVE_MATRIX_OPERAND_NONE -> NoneKHR
-CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION -> SaturatingAccumulationKHR
+CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_DEFAULT -> SaturatingAccumulationKHR
 ----
 
 == New API Functions
@@ -111,6 +113,7 @@ None
 [source,c]
 ----
 __opencl_c_ext_cooperative_matrix
+__opencl_c_ext_cooperative_matrix_saturation_modes
 ----
 
 == New OpenCL C Enums
@@ -120,8 +123,12 @@ __opencl_c_ext_cooperative_matrix
 
 enum coop_matrix_operands_t
 {
-  CLK_COOPERATIVE_MATRIX_OPERAND_NONE                    = 0,
-  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION = 0x10
+  CLK_COOPERATIVE_MATRIX_OPERAND_NONE                                   = 0,
+  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_DEFAULT        = 0x10,
+  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_INT_SINGLE     = 0x20,
+  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_INT_DOUBLE     = 0x40,
+  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_MINMAX   = 0x80,
+  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_INFINITY = 0x100,
 };
 
 enum coop_matrix_use_t
@@ -136,6 +143,7 @@ enum coop_matrix_layout_t
   CLK_COOPERATIVE_MATRIX_LAYOUT_ROW_MAJOR    = 0,
   CLK_COOPERATIVE_MATRIX_LAYOUT_COLUMN_MAJOR = 1
 };
+
 ----
 
 == New OpenCL C Attribute Specifier
@@ -153,6 +161,7 @@ coop_mat coop_mat_load(const gentype p, const size_t stride, const coop_matrix_l
 void coop_mat_store(coop_mat m, const gentype *p, const size_t _stride, const coop_matrix_layout_t layout);
 coop_mat coop_matmul_add(coop_mat A, coop_mat B, coop_mat C);
 coop_mat coop_matmul_add(coop_mat A, coop_mat B, coop_mat C, coop_matrix_operands_t matrix_operands);
+uint coop_mat_length(coop_mat m);
 ----
 
 == Modifications to the OpenCL API Specification
@@ -170,7 +179,7 @@ freedom in how to optimize matrix multiply operations.
 
 Cooperative matrices are supported in the language by applying the
 `coop_mat` attribute specifier to the base component type.
-The `coop_mat` specifier  is parameterized by four parameters:
+The `coop_mat` specifier is parameterized by four parameters:
 scope, rows, columns, and use.
 
 The base component type must be a scalar numerical type.
@@ -248,7 +257,7 @@ The components of a cooperative matrix are spread across the invocations
 in its scope, in an implementation-dependent manner. The components owned
 by a given invocation can be accessed using array subscripting syntax,
 and the number of components owned by each invocation can be queried
-using the *sizeof* operator. The type returned by *sizeof* is a `size_t`.
+using the **coop_mat_length** function. The type returned by **coop_mat_length** is `uint`.
 There is no compile-time bounds checking of array indices.
 
 This can be used, for example, to perform component-wise operations on
@@ -257,10 +266,10 @@ all components of a cooperative matrix:
 
 [source,c]
 ----
-float m __attribute__((coop_mat(memory_scope_sub_group, 6, 8, CLK_COOPERATIVE_MATRIX_A)));
+float m __attribute__((coop_mat(memory_scope_sub_group, 16, 8, CLK_COOPERATIVE_MATRIX_A)));
 
 ...
-for (int i = 0; i < sizeof(m); ++i) {
+for (int i = 0; i < coop_mat_length(m); ++i) {
 	m[i] = f(m[i]);
 }
 ----
@@ -268,8 +277,8 @@ for (int i = 0; i < sizeof(m); ++i) {
 === (Add to Section 6.5.11. *Sizeof Operator*) :
 
 When the *sizeof* operator is applied to a cooperative matrix type,
-the result is the number of matrix elements accessible to the current work-item.
-This may vary by work-item and is implementation dependent.
+the result is the total size (in bytes) of the cooperative matrix across all invocations in its scope.
+The result is implementation-defined.
 
 === (Add to Section 6.11. *Restrictions*) :
 
@@ -314,7 +323,7 @@ be active or all must be inactive.
 [cols="7,3",options="header",]
 |====
 | Function | Description
-| coop_mat **coop_mat_load**(const gentype *_p_, const size_t _stride_, const coop_matrix_layout_t _layout_);
+| coop_mat **coop_mat_load**(const gentype *_p_, const size_t _stride_, const coop_matrix_layout_t _layout_)
  | Load a cooperative matrix from _p_. +
    If _layout_ is `CLK_COOPERATIVE_MATRIX_LAYOUT_ROW_MAJOR`,
    then elements (row,\*) of the result are taken in
@@ -332,7 +341,7 @@ be active or all must be inactive.
    order from contiguous locations starting at _p_ + _col_*_stride_.
 |====
 
-The following functions are used to perform linear-algebraic  matrix multiplication
+The following functions are used to perform linear-algebraic matrix multiplication
 on cooperative matrices. In the following functions, the generic type
 `coop_mat` can accept a cooperative matrix type with any type parameters.
 
@@ -342,8 +351,8 @@ on cooperative matrices. In the following functions, the generic type
 |====
 | Function | Description
 | coop_mat **coop_matmul_add**(coop_mat _A_, coop_mat _B_, coop_mat _C_) +
-  coop_mat **coop_matmul_add**(coop_mat _A_, coop_mat _B_, coop_mat _C_, coop_matrix_operands_t _matrix_operands_);
- | Linear-algebraic matrix multiply of _A_ by _B_ and then
+  coop_mat **coop_matmul_add**(coop_mat _A_, coop_mat _B_, coop_mat _C_, coop_matrix_operands_t _matrix_operands_)
+ a| Linear-algebraic matrix multiply of _A_ by _B_ and then
    component-wise add _C_. The order of the operations is implementation
    dependent. The dimensions of _A_, _B_, and _C_, must form a valid
    matrix multiply (e.g. the number of columns of _A_ must match the number
@@ -351,19 +360,59 @@ on cooperative matrices. In the following functions, the generic type
    _B_'s type must use `CLK_COOPERATIVE_MATRIX_B`.
    _C_'s type must use `CLK_COOPERATIVE_MATRIX_ACCUMULATOR`.
    The type of the result matches the type of _C_.
-   The _matrix_operands_ operand provides adiditonal limitations on how the matrix components
+   The _matrix_operands_ operand provides additional limitations on how the matrix components
    are treated and/or the matrix multiply function is performed.
-   Be default, the operand is set to `CLK_COOPERATIVE_MATRIX_OPERAND_NONE` and can be ommitted.
+   Be default, the operand is set to `CLK_COOPERATIVE_MATRIX_OPERAND_NONE` and can be omitted.
    The behavior of the `coop_matrix_operands_t` values is described in
    the `SPV_KHR_cooperative_matrix` extension.
+
+The `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_*` _matrix_operands_ allow to set one of the saturation accumulation modes.
+
+If the base component type is an integer and:
+
+* _matrix_operands_ is `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_INT_SINGLE`, then single saturation is applied: +
+output = Saturate(vec<N> + C)
+* _matrix_operands_ is `CLK_COOPERATIVE_MATRIX_SATURATION_INT_DOUBLE`, then double saturation is applied: +
+output = Saturate(Saturate(vec<N/2> + C) + vec<N/2>)
+
+Where N represents the total number of elements to multiply-add for the operation.
+
+Using `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_INT_SINGLE` or
+`CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_INT_DOUBLE` with the base component type that is not an integer causes undefined behaviour.
+
+If the base component type is a floating-point number and:
+
+* _matrix_operands_ is `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_MINMAX`,
+then overflow to the largest magnitude value supported by the `CLK_COOPERATIVE_MATRIX_ACCUMULATOR` matrix is applied,
+with the sign of the intermediate result.
+* _matrix_operands_ is `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_INFINITY`,
+then overflow to +/- ∞ is applied, with the sign of intermediate result.
+
+Using `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_MINMAX` or `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_INFINITY`
+with the base component type that is not a floating-point number causes undefined behaviour.
+
+The default saturation mode is implementation dependent. Setting more than one saturation accumulation mode causes undefined behaviour.
+
+Saturation accumulation modes require that the `__opencl_c_ext_cooperative_matrix_saturation_modes` feature macro is defined.
+
 |====
 
+The following function is used to get the number of components owned by the current invocation.
+The generic type `coop_mat` can accept a cooperative matrix type with any type parameters.
+
+[[table-coopmat-miscellaneous]]
+.Cooperative Matrix Miscellaneous Functions
+[cols="7,3",options="header",]
+|====
+| Function | Description
+| uint **coop_mat_length**(coop_mat _m_)
+ | Return the number of components owned by the current invocation.
+|====
 
 
 === (Add to Section 7.4. *Relative Error as ULPs*) :
 
 **coop_matmul_add** performs its operations in an implementation-dependent order and internal precision.
-
 
 == Modifications to the OpenCL SPIR-V Environment Specification
 
@@ -390,4 +439,3 @@ None
 | Version | Date       | Author       | Changes
 | 1.0.0   | 2024-12-08 | Alexander Galazin | *Initial revision*.
 |====
-
