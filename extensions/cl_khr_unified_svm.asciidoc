@@ -821,27 +821,30 @@ The initial version of this extension will only support allocating host memory.
 +
 --
 `RESOLVED`: The behavior is defined for all queries for this case.
+
+This behavior is tested by the CTS test `unified_svm_api_query_defaults`.
 --
 
 . Do we want separate "memset" APIs to set to different sized "value", such as 8-bits, 16-bits?, 32-bits, or others?  Do we want to go back to a "fill" API?
 +
 --
-`RESOLVED`: We are reusing the "fill" API.
+`RESOLVED`: We are reusing the "fill" API {clEnqueueSVMMemFill}.
 --
 
-. What are the restrictions for the _dst_ptr_ values that can be passed to the "fill" API?
+. What are the restrictions for the _dst_ptr_ values that can be passed to {clEnqueueSVMMemFill}?
 +
 --
 `RESOLVED`:
+However, we should still tidy up the spec text for these cases.
 
 * Can a device "fill" another device's allocation?  (Recommendation: Yes, but finalize as part of multi-device support.)
 * Can a device "fill" arbitrary host memory?  (No, undefined behavior unless system SVM is supported.)
 * Can a device "fill" a USM allocation from another context?  (No, undefined behavior.)
 
-Note, there are no existing CTS tests that pass an arbitrary host allocation to {clEnqueueSVMMemFill}.
+Note, there are not any existing CTS tests that pass an arbitrary host allocation to {clEnqueueSVMMemFill}.
 --
 
-. What are the restrictions for the _src_ptr_ and _dst_ptr_ values that can be passed to the "memcpy" API?
+. What are the restrictions for the _src_ptr_ and _dst_ptr_ values that can be passed to {clEnqueueSVMMemcpy}?
 +
 --
 `RESOLVED`:
@@ -853,6 +856,8 @@ Note, there are no existing CTS tests that pass an arbitrary host allocation to 
 * Can a device "memcpy" from arbitrary host memory?  (Yes, we already have tests.)
 * Can a device "memcpy" from arbitrary host memory to arbitrary host memory?  (Yes, we already have tests.)
 * Can the memory region to copy to overlap the memory region to copy from?  (No, already an error.)
+
+The valid cases are tested by the CTS tests `unified_svm_memcpy` and `unified_svm_corner_case_memcpy`.
 --
 
 . Do we want to support migrating to devices other than the device associated with _command_queue_?
@@ -877,7 +882,7 @@ The initial version of this extension will not extend {clEnqueueSVMMigrateMem}, 
 . Should we allow querying the associated device for a USM allocation using {clGetSVMPointerInfoKHR}?
 +
 --
-`RESOLVED`: Yes, we should.
+`RESOLVED`: Yes, we should, supported by {CL_SVM_INFO_ASSOCIATED_DEVICE_HANDLE_KHR}.
 --
 
 . Should we add explicit mem alloc flags for `CACHED` and `UNCACHED`?
@@ -889,7 +894,7 @@ In a layered extension, we recommend adding cacheability properties instead of c
 The layered extension could add coarse `CACHED` and `UNCACHED` properties, or separate properties for host vs. device, or even separate properties for specific cache levels.
 --
 
-. At least for HOST and SHARED allocations, should we have separate mem alloc flags for the host and the device?
+. At least for `HOST` and `SHARED` allocations, should we have separate mem alloc flags for the host and the device?
 +
 --
 `RESOLVED`: We removed the _flags_ argument entirely.
@@ -901,9 +906,7 @@ Specifically, is `NULL` a valid value for `ptr`?
 Is `size` equal to zero valid?
 +
 --
-*UNRESOLVED*:
-
-Tentative resolution:
+`RESOLVED`:
 
 .. A `size` equal to zero is valid.
 When `size` is zero, the call to {clEnqueueSVMMigrateMem}, {clEnqueueSVMMemFill}, and {clEnqueueSVMMemcpy} trivially succeeds, similar to an enqueued marker.
@@ -923,10 +926,12 @@ For reference, the full set of options we considered were:
 
 .. A `size` equal to zero is valid.  This appears to be the specified behavior for the C `memcpy` and `memset` functions.
 .. [.line-through]#A `size` equal to zero is undefined behavior.#
-.. A `size` equal to zero is an error.
+.. [.line-through]#A `size` equal to zero is an error.#
 .. A `ptr` equal to `NULL` is valid if and only if `size` is equal to zero, otherwise it is an error.
 .. [.line-through]#A `ptr` equal to `NULL` is undefined behavior.  This appears to be the specified behavior for the C `memcpy` and `memset` functions.#
-.. A `ptr` equal to `NULL` is an error.
+.. [.line-through]#A `ptr` equal to `NULL` is an error.#
+
+These cases are tested by the CTS test `unified_svm_corner_case_migrate_mem`.
 --
 
 . Should we add a device query for a maximum supported SVM alignment, or should the maximum supported alignment implicitly be defined by the size of the largest data type supported by the device?
@@ -947,7 +952,8 @@ See internal merge request 198.
 +
 --
 `RESOLVED`:
-The initial version of this extension will not support larger fill patterns.
+The initial version of this extension will not support larger fill patterns, therefore the maximum supported fill pattern size will implicitly be defined by the size of the largest data type supported by the device.
+Supporting larger fill patterns could be added as a layered extension.
 --
 
 . Can a pointer to a device, host, or shared SVM allocation be used to create a {cl_mem_TYPE} using {CL_MEM_USE_HOST_PTR}?
@@ -1009,17 +1015,20 @@ One particular enhancement we may want to consider, though, is whether calling {
 In the current specification, this is explicitly not a synchronization point.
 However, in other APIs, querying the event status and observing that the event is complete is a synchronization point.
 Should we adopt this behavior also, or do we want users to call {clWaitForEvents} to define a synchronization point?
+See internal issue 373.
 --
 
 . Should it be an error to set an unknown pointer as a kernel argument using {clSetKernelArgSVMPointer} if no devices support shared system allocations?
 +
 --
-*UNRESOLVED*:
-Returning an error for an unknown pointer is helpful to identify and diagnose possible programming errors sooner, but passing a pointer to arbitrary memory to a function on the host is not an error until the pointer is dereferenced.
+`RESOLVED`:
+It is not an error to set an unknown pointer as a kernel argument using {clSetKernelArgSVMPointer}.
+This behavior matches passing a pointer to arbitrary memory to a function on the host, where it is not an error until the pointer is dereferenced.
+Similarly, it is not an error to pass an unknown pointer via {clSetKernelExecInfo}({CL_KERNEL_EXEC_INFO_SVM_PTRS}).
 
-If we relax the error condition for {clSetKernelArgSVMPointer} then we could also consider relaxing the error condition for {clSetKernelExecInfo}({CL_KERNEL_EXEC_INFO_SVM_PTRS}) similarly.
+Note that we can still check for possible programming errors via optional USM checking layers, such as the https://github.com/intel/opencl-intercept-layer/blob/master/docs/controls.md#usmchecking-bool[USMChecking] functionality in the https://github.com/intel/opencl-intercept-layer[OpenCL Intercept Layer].
 
-Note that if the error condition is removed we can still check for possible programming errors via optional USM checking layers, such as the https://github.com/intel/opencl-intercept-layer/blob/master/docs/controls.md#usmchecking-bool[USMChecking] functionality in the https://github.com/intel/opencl-intercept-layer[OpenCL Intercept Layer].
+These cases are tested by the CTS tests `unified_svm_corner_case_set_kernel_arg` and `unified_svm_corner_case_set_kernel_exec_info`.
 --
 
 . Should we support a "rect" or "2D" memcpy similar to {clEnqueueCopyBufferRect}?
@@ -1046,8 +1055,9 @@ However, for host allocations, some implementations are able to support larger a
 
 Possible resolutions:
 
-* Add a new query representing the maximum host memory allocation size supported by the device, e.g. `CL_DEVICE_MAX_HOST_MEM_ALLOC_SIZE_KHR`.
-For some devices, this query will return the same value as {CL_DEVICE_MAX_MEM_ALLOC_SIZE}, but for other devices this query will return a larger value.
+* Add a new query representing the maximum device-owned and host-owned memory allocation sizes supported by the device, e.g. `CL_DEVICE_MAX_DEVICE_OWNED_MEM_ALLOC_SIZE_KHR` and `CL_DEVICE_MAX_HOST_OWNED_MEM_ALLOC_SIZE_KHR`.
+For some devices, these queries will return the same value as {CL_DEVICE_MAX_MEM_ALLOC_SIZE}, but for other devices the queries will return a larger value.
+For SVM memory types that are not device-owned or host-owned, the existing limits will continue to apply.
 * Relax the error behavior so implementations may return {CL_INVALID_BUFFER_SIZE}, but they would not be required to return an error if they support larger allocation sizes.
 * Do nothing and keep the existing error behavior.
 --
@@ -1055,13 +1065,12 @@ For some devices, this query will return the same value as {CL_DEVICE_MAX_MEM_AL
 . Should it be an error to allocate zero bytes?
 +
 --
-*UNRESOLVED*:
-
-Tentative resolution: Allow zero-sized allocations and require returning a `NULL` pointer.
+`RESOLVED`:
+We will allow zero-sized allocations and require returning a `NULL` pointer.
 This is considered a successful operation and no error will be returned.
 
 We evaluated many scenarios and determined that there is no clearly correct behavior.
-The scenarios we evaluated were:
+For reference, the scenarios we evaluated were:
 
 * For OpenCL 2.0 SVM, {clSVMAlloc} with a size of zero is specified to return a `NULL` pointer.
 Because {clSVMAlloc} has no mechanism to return an error code, it is unspecified whether this is considered an error.
@@ -1072,7 +1081,7 @@ If a `NULL` pointer is returned then `errno` may be set to an implementation-def
 If a unique non-null pointer is returned then it cannot be dereferenced.
 * Allocating an array of zero elements using `new` must return a non-null pointer, though dereferencing the pointer is undefined.
 
-For reference, the full set of options we considered were:
+Also for reference, the full set of options we considered were:
 
 .. [.line-through]#Allow zero-sized allocations and require returning a non-null pointer that must be freed.#
 .. Allow zero-sized allocations and require returning a `NULL` pointer.
@@ -1080,7 +1089,9 @@ No error will be generated.
 Note, it is not currently an error to free a `NULL` pointer.
 .. [.line-through]#Allow zero-sized allocations but allow returning a `NULL` pointer.  No error would be generated, even if a `NULL` pointer is returned.#
 .. [.line-through]#Specify that this case is implementation-defined.#
-.. Specify that this case is an error.
+.. [.line-through]#Specify that this case is an error.#
+
+This case is tested by the CTS test `unified_svm_corner_case_alloc_free`.
 --
 
 Note: The following issues were added to the KHR USM extension:
