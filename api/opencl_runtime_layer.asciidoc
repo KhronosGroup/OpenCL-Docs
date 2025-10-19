@@ -2330,7 +2330,7 @@ endif::cl_khr_external_memory[]
     ** if there are no devices in _context_ that support _image_format_
 ifdef::cl_khr_external_memory_android_hardware_buffer[]
     ** if _properties_ includes an AHardwareBuffer external memory handle and
-    the AHardwareBuffer format is not supported
+    the AHardwareBuffer format is `AHARDWAREBUFFER_FORMAT_BLOB` or not supported
 endif::cl_khr_external_memory_android_hardware_buffer[]
   * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
     ** if there is a failure to allocate memory for the image object
@@ -11319,20 +11319,18 @@ successfully.
 Otherwise, it returns one of the following errors:
 
   * {CL_INVALID_KERNEL} if _kernel_ is a not a valid kernel object.
-  * {CL_INVALID_OPERATION} for {CL_KERNEL_EXEC_INFO_SVM_PTRS} and
-     {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} if no devices in
-     the context associated with _kernel_ support SVM.
-ifdef::cl_ext_buffer_device_address[]
-  * {CL_INVALID_OPERATION} for {CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT} if no
-  device in the context associated with _kernel_ support the {cl_ext_buffer_device_address_EXT}
-  extension.
-endif::cl_ext_buffer_device_address[]
-  * {CL_INVALID_VALUE} if _param_name_ is not valid, if _param_value_ is
-    `NULL` or if the size specified by _param_value_size_ is not valid.
+  * {CL_INVALID_OPERATION} if _param_name is {CL_KERNEL_EXEC_INFO_SVM_PTRS} and
+    no devices in the context associated with _kernel_ support SVM.
   * {CL_INVALID_OPERATION} if _param_name_ is
     {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM} and _param_value_ is {CL_TRUE}
     and no devices in the context associated with _kernel_ support fine-grain
     system SVM allocations.
+ifdef::cl_ext_buffer_device_address[]
+  * {CL_INVALID_OPERATION} if _param_name_ is
+    {CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT} and no devices in the context
+    associated with _kernel_ support the {cl_ext_buffer_device_address_EXT}
+    extension.
+endif::cl_ext_buffer_device_address[]
   * {CL_INVALID_VALUE} if _param_name_ is not valid, if _param_value_ is
     `NULL` and _param_value_size_ is greater than zero, or if the size specified
     by _param_value_size_ is not valid.
@@ -15169,12 +15167,6 @@ include::{generated}/api/version-notes/clEnqueueCommandBufferKHR.asciidoc[]
     application to wait on this command or query it for profiling
     information.
 
-[NOTE]
-====
-To enqueue a command-buffer it must be in a <<executable, Executable>> state,
-see {clFinalizeCommandBufferKHR}.
-====
-
 // refError
 
 {clEnqueueCommandBufferKHR} returns {CL_SUCCESS} if the command-buffer
@@ -15182,7 +15174,8 @@ execution was successfully queued, or one of the errors below:
 
   * {CL_INVALID_COMMAND_BUFFER_KHR} if _command_buffer_ is not a valid
     command-buffer.
-  * {CL_INVALID_OPERATION} if _command_buffer_ has not been finalized.
+  * {CL_INVALID_OPERATION} if _command_buffer_ is not in the
+    <<executable, Executable>> state.
   * {CL_INVALID_VALUE} if _queues_ is `NULL` and _num_queues_ is > 0, or
     _queues_ is not `NULL` and _num_queues_ is 0.
   * {CL_INVALID_VALUE} if _num_queues_ is > 0 and not the same value as
