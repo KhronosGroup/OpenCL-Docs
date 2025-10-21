@@ -125,7 +125,6 @@ image::../images/reservation_set_pipe.png[align="center", title="Reservation-set
 == New API Types
 
   * `cl_reservation_set_mobileye`
-  * `cl_reservation_set_pipe_mobileye`
 
 == New API Enums
 
@@ -466,20 +465,26 @@ the write is complete; otherwise, it blocks until there is space in the pipe.
 Kernel code:
 [source,opencl_c]
 ----
-__kernel void producer(rs_pipe_mobileye pipe) {
-  size_t group_linear_id =
-      get_group_id(2) * get_num_groups(1) * get_num_groups(0) +
-      get_group_id(1) * get_num_groups(0) + get_group_id(0);
-
-  const int write_val = group_linear_id;
-  write_rs_pipe_mobileye(pipe, &group_linear_id);
+__kernel void producer(__global int *buf, size_t tile_size, size_t subtile_size,
+                       rs_pipe_mobileye pipe) {
+  __global int *tile_addr = &buf[get_group_id(0) * tile_size];
+  for (size_t i = 0; i < tile_size; i += subtile_size) {
+    __global int *subtile_addr = &tile_addr[i];
+    do_production(subtile_addr);
+    unsigned char pipe_data; // dummy data - we only use the pipe is a semaphore
+    write_rs_pipe_mobileye(pipe, &pipe_data);
+  }
 }
 
-__kernel void consumer(__global int *res, rs_pipe_mobileye pipe) {
-  size_t group_linear_id =
-      get_group_id(2) * get_num_groups(1) * get_num_groups(0) +
-      get_group_id(1) * get_num_groups(0) + get_group_id(0);
-  read_rs_pipe_mobileye(pipe, &res[group_linear_id]);
+__kernel void consumer(__global int *buf, size_t tile_size, size_t subtile_size,
+                       rs_pipe_mobileye pipe) {
+  __global int *tile_addr = &buf[get_group_id(0) * tile_size];
+  for (size_t i = 0; i < tile_size; i += subtile_size) {
+    __global int *subtile_addr = &tile_addr[i];
+    unsigned char pipe_data;
+    read_rs_pipe_mobileye(pipe, &pipe_data);
+    do_consumption(subtile_addr);
+  }
 }
 ----
 
@@ -487,38 +492,44 @@ Host code:
 
 [source,c]
 ----
-  cl_context context;
-  cl_command_queue queue;
-  cl_kernel producer_kernel, consumer_kernel;
-  ...
-  const cl_int width = 4;
-  cl_mem res_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE,
-                                     width * sizeof(cl_int), nullptr, nullptr);
-  cl_command_buffer_khr cmd_buf =
-      clCreateCommandBufferKHR(1, &queue, nullptr, nullptr);
-  cl_reservation_set_mobileye reservation_set = clCreateReservationSetMOBILEYE(
-      cmd_buf, CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE, 0, nullptr, nullptr);
-  cl_mem pipe = clCreateReservationSetPipeMOBILEYE(reservation_set,
-                                                   sizeof(cl_int), width,
-                                                   nullptr);
+cl_context context;
+cl_command_queue queue;
+cl_kernel producer_kernel, consumer_kernel;
+// ...
+size_t num_tiles = 4;
+cl_int tile_size = 128, subtile_size = 16;
+cl_mem res_buffer =
+    clCreateBuffer(context, CL_MEM_READ_WRITE,
+                    num_tiles * tile_size * sizeof(cl_int), nullptr, nullptr);
+cl_command_buffer_khr cmd_buf =
+    clCreateCommandBufferKHR(1, &queue, nullptr, nullptr);
+cl_reservation_set_mobileye reservation_set = clCreateReservationSetMOBILEYE(
+    cmd_buf, CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE, 0, nullptr, nullptr);
+cl_mem pipe = clCreateReservationSetPipeMOBILEYE(
+    reservation_set, sizeof(cl_uchar), tile_size / subtile_size, nullptr);
 
-  clSetKernelArg(consumer_kernel, 0, sizeof(cl_mem), &res_buffer);
-  clSetKernelArg(consumer_kernel, 1, sizeof(cl_mem), &pipe);
+clSetKernelArg(consumer_kernel, 0, sizeof(cl_mem), &res_buffer);
+clSetKernelArg(consumer_kernel, 1, sizeof(cl_int), &tile_size);
+clSetKernelArg(consumer_kernel, 2, sizeof(cl_int), &subtile_size);
+clSetKernelArg(consumer_kernel, 3, sizeof(cl_mem), &pipe);
 
-  clSetKernelArg(producer_kernel, 0, sizeof(cl_mem), &pipe);
+clSetKernelArg(producer_kernel, 0, sizeof(cl_mem), &res_buffer);
+clSetKernelArg(producer_kernel, 1, sizeof(cl_int), &tile_size);
+clSetKernelArg(producer_kernel, 2, sizeof(cl_int), &subtile_size);
+clSetKernelArg(producer_kernel, 3, sizeof(cl_mem), &pipe);
 
-  const size_t gwz = width, lwz = 1;
-  clCommandNDRangeKernelReservationSetMOBILEYE(reservation_set, queue, nullptr,
-                                               producer_kernel, 1, nullptr,
-                                               &gwz, &lwz, nullptr, nullptr);
-  clCommandNDRangeKernelReservationSetMOBILEYE(reservation_set, queue, nullptr,
-                                               consumer_kernel, 1, nullptr,
-                                               &gwz, &lwz, nullptr, nullptr);
-  clFinalizeCommandBufferKHR(cmd_buf);
+size_t lwz = 1;
+clCommandNDRangeKernelReservationSetMOBILEYE(
+    reservation_set, queue, nullptr, producer_kernel, 1, nullptr, &num_tiles,
+    &lwz, nullptr, nullptr);
+clCommandNDRangeKernelReservationSetMOBILEYE(
+    reservation_set, queue, nullptr, consumer_kernel, 1, nullptr, &num_tiles,
+    &lwz, nullptr, nullptr);
+clFinalizeCommandBufferKHR(cmd_buf);
 
-  cl_event event;
-  clEnqueueCommandBufferKHR(1, &queue, cmd_buf, 0, nullptr, &event);
-  clWaitForEvents(1, &event);
+cl_event event;
+clEnqueueCommandBufferMOBILEYE(1, &queue, cmd_buf, 0, nullptr, &event);
+clWaitForEvents(1, &event);
 ----
 
 == Issues
