@@ -6,6 +6,7 @@
 :icons: font
 include::../config/attribs.txt[]
 include::{generated}/api/api-dictionary-no-links.asciidoc[]
+include::{generated}/api/ext-dictionary-no-links.asciidoc[]
 :source-highlighter: coderay
 
 = cl_khr_unified_svm
@@ -472,11 +473,7 @@ Otherwise, `NULL` will be returned, and _errcode_ret_ will be set to one of the 
     ** if no devices in _context_ support the SVM type specified by _svm_type_index_
     ** if a device associated with the SVM allocation does not support the SVM type specified by _svm_type_index_
   * {CL_INVALID_VALUE}
-    ** if _svm_type_index_ is greater than the number of SVM types supported the devices in _context_
-  * {CL_INVALID_BUFFER_SIZE}
-// TODO: update depending on the updated queries for available SVM sizes:
-    ** if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for any OpenCL device in _context_ that supports the specified SVM type
-    ** if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for a device associated with the SVM allocation
+    ** if _svm_type_index_ is greater than the number of SVM types supported by the devices in _context_
   * {CL_OUT_OF_RESOURCES}
     ** if there is a failure to allocate resources required by the OpenCL
     implementation on the device
@@ -485,6 +482,14 @@ Otherwise, `NULL` will be returned, and _errcode_ret_ will be set to one of the 
     implementation on the host
 
 TODO: Do we want to document any specific error conditions for invalid property values?
+
+[NOTE]
+====
+When _context_ includes a device that supports {cl_khr_unified_svm_EXT}, _size_ may be zero and may exceed {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for the device, for both {clSVMAlloc} and {clSVMAllocWithPropertiesKHR}.
+
+When _size_ is zero, {clSVMAlloc} and {clSVMAllocWithPropertiesKHR} must return a `NULL` pointer and must not generate an error.
+When _size_ exceeds {CL_DEVICE_MAX_MEM_ALLOC_SIZE}, the allocation may succeed and return a non-`NULL` pointer, or the allocation may fail and return a `NULL` pointer and an implementation-defined error code.
+====
 
 [[svm-alloc-properties-table]]
 [caption="Table X. "]
@@ -1047,19 +1052,16 @@ Note that standard SYCL does not include a "rect" memcpy, though the https://git
 If so, what should the upper limit be?
 +
 --
-*UNRESOLVED*:
-The upper limit is currently defined by {CL_DEVICE_MAX_MEM_ALLOC_SIZE} and if the allocation size exceeds this value then the error code {CL_INVALID_BUFFER_SIZE} is returned.
+`RESOLVED`:
+This extension will not define an upper limit on the size of an SVM allocation.
+Applications may discover the largest SVM allocation size experimentally or use implementation-defined mechanisms to determine the largest SVM allocation size.
+This is consistent with `malloc`, which also has no defined upper or lower bound on the amount of memory that may be allocated, although this is different than both the non-extended {clSVMAlloc} and {clCreateBuffer}, where the upper limit is defined by {CL_DEVICE_MAX_MEM_ALLOC_SIZE}.
 
-This behavior is consistent with {clSVMAlloc} (although {clSVMAlloc} does not return an error code it is specified to return a `NULL` pointer in this case) and {clCreateBuffer}.
-However, for host allocations, some implementations are able to support larger allocation sizes.
+By defining no limit on the size of an SVM allocation, we leave the door open for future mechanisms to query the largest SVM allocation size.
+For example, we may add queries for the maximum device-owned or host-owned memory allocation sizes, or queries for each SVM type, or other more sophisticated queries.
+We also do not constrain the maximum SVM allocation size to {CL_DEVICE_MAX_MEM_ALLOC_SIZE}, especially for implementations that are able to support larger allocation sizes from host memory.
 
-Possible resolutions:
-
-* Add a new query representing the maximum device-owned and host-owned memory allocation sizes supported by the device, e.g. `CL_DEVICE_MAX_DEVICE_OWNED_MEM_ALLOC_SIZE_KHR` and `CL_DEVICE_MAX_HOST_OWNED_MEM_ALLOC_SIZE_KHR`.
-For some devices, these queries will return the same value as {CL_DEVICE_MAX_MEM_ALLOC_SIZE}, but for other devices the queries will return a larger value.
-For SVM memory types that are not device-owned or host-owned, the existing limits will continue to apply.
-* Relax the error behavior so implementations may return {CL_INVALID_BUFFER_SIZE}, but they would not be required to return an error if they support larger allocation sizes.
-* Do nothing and keep the existing error behavior.
+Note that for the non-extended {clSVMAlloc} and {clCreateBuffer}, {CL_DEVICE_MAX_MEM_ALLOC_SIZE} only defines an upper bound on the amount of memory that _may_ be allocated, and there is no guarantee that an allocation of this size will succeed, say due to prior memory allocations, or memory fragmentation, or any other reason.
 --
 
 . Should it be an error to allocate zero bytes?
