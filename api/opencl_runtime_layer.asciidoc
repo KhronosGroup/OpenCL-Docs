@@ -10911,112 +10911,90 @@ include::{generated}/api/protos/clSetKernelArg.txt[]
 include::{generated}/api/version-notes/clSetKernelArg.asciidoc[]
 
   * _kernel_ is a valid kernel object.
-  * _arg_index_ is the argument index.
-    Arguments to the kernel are referred by indices that go from 0 for the
-    leftmost argument to _n_ - 1, where _n_ is the total number of arguments
-    declared by a kernel (see below).
-  * _arg_size_ specifies the size of the argument value.
-    If the argument is a memory object, the _arg_size_ value must be equal to
-    `sizeof({cl_mem_TYPE})`.
-    For arguments declared with the `local` qualifier, the size specified will
-    be the size in bytes of the buffer that must be allocated for the `local`
-    argument.
-    If the argument is of type _sampler_t_, the _arg_size_ value must be equal
-    to `sizeof({cl_sampler_TYPE})`.
-    If the argument is of type _queue_t_, the _arg_size_ value must be equal to
-    `sizeof({cl_command_queue_TYPE})`.
-    For all other arguments, the size will be the size of argument type.
-  * _arg_value_ is a pointer to data that should be used as the argument value
-    for argument specified by _arg_index_.
+  * _arg_index_ is the kernel argument index.
+    Kernel arguments are referred to by indices that go from zero to
+    _n - 1_, where _n_ is the total number of arguments declared by the kernel.
+  * _arg_size_ specifies the size of the kernel argument value.
+  * _arg_value_ is a pointer to the data for the kernel argument.
     The argument data pointed to by _arg_value_ is copied and the _arg_value_
     pointer can therefore be reused by the application after {clSetKernelArg}
     returns.
-    The argument value specified is the value used by all API calls that enqueue
-    _kernel_ ({clEnqueueNDRangeKernel} and {clEnqueueTask}) until the argument
-    value is changed by a call to {clSetKernelArg} for _kernel_.
+    The argument data is used by all API calls that enqueue the kernel until the
+    argument is changed by another call to {clSetKernelArg} for the kernel.
 
-For example, consider the following kernel:
+If the kernel argument being set is a pointer to the `global` or `constant`
+address space, then _arg_value_ must point to a buffer memory object or `NULL`,
+or _arg_value_ must be `NULL`.
+If _arg_value_ is `NULL` or points to `NULL`, then the kernel argument will be
+set to `NULL`.
 
-[source,opencl_c]
-----
-kernel void image_filter (int n,
-                          int m,
-                          constant float *filter_weights,
-                          read_only image2d_t src_image,
-                          write_only image2d_t dst_image)
-{
-...
-}
-----
+If the kernel argument being set is a pointer to the `constant` address space,
+then the size in bytes of the memory object cannot exceed
+{CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE}.
 
-Argument index values for `image_filter` will be 0 for `n`, 1 for `m`, 2 for
-`filter_weights`, 3 for `src_image` and 4 for `dst_image`.
+// TODO: Should CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE be checked when the kernel
+// argument is set or when the kernel is enqueued?
+// If it is checked when the kernel argument is set, then what is the error code
+// if the size is exceeded?
 
-If the argument is a memory object (buffer, pipe, image or image array), the
-_arg_value_ entry will be a pointer to the appropriate buffer, pipe, image
-or image array object.
-The memory object must be created with the context associated with the
-kernel object.
-If the argument is a buffer object, the _arg_value_ pointer can be `NULL` or
-point to a `NULL` value in which case a `NULL` value will be used as the
-value for the argument declared as a pointer to `global` or `constant`
-memory in the kernel.
-If the argument is declared with the `local` qualifier, the _arg_value_
-entry must be `NULL`.
-If the argument is of type _sampler_t_, the _arg_value_ entry must be a
-pointer to the sampler object.
-If the argument is of type _queue_t_, the _arg_value_ entry must be a
-pointer to the device queue object.
+If the kernel argument being set is a pointer to the `local` address space, then
+_arg_value_ must be `NULL`, and _arg_size_ specifies the amount of local memory
+in bytes that are allocated for the kernel argument.
 
+If the kernel argument being set is an image object, then _arg_value_ must point
+to an image memory object.
+Additionally:
+
+* If the kernel argument is a 1D image, then the image memory object must be of
+image type {CL_MEM_OBJECT_IMAGE1D}.
+* If the kernel argument is a 2D image, then the image memory object must be of
+image type {CL_MEM_OBJECT_IMAGE2D}.
+* If the kernel argument is a 3D image, then the image memory object must be of
+image type {CL_MEM_OBJECT_IMAGE3D}.
+* If the kernel argument is a 1D image buffer, then the image memory object must
+be of image type {CL_MEM_OBJECT_IMAGE1D_BUFFER}.
+* If the kernel argument is a 1D image array, then the image memory object must
+be of image type {CL_MEM_OBJECT_IMAGE1D_ARRAY}.
+* If the kernel argument is a 2D image array, then the image memory object must
+be of image type {CL_MEM_OBJECT_IMAGE2D_ARRAY}.
+* If the kernel argument is a 2D depth image, then the image memory object must
+be of image type {CL_MEM_OBJECT_IMAGE2D} and image channel order {CL_DEPTH}.
+* If the kernel argument is a 2D depth image array, then the image memory object
+must be of image type {CL_MEM_OBJECT_IMAGE2D_ARRAY} and image channel order
+{CL_DEPTH}.
 ifdef::cl_khr_gl_msaa_sharing[]
-If the {cl_khr_gl_msaa_sharing_EXT} extension is supported, then:
-If the argument is a multi-sample 2D image, the _arg_value_ entry must be a
-pointer to a multi-sample image object.
-If the argument is a multi-sample 2D depth image, the _arg_value_ entry must
-be a pointer to a multisample depth image object.
-If the argument is a multi-sample 2D image array, the _arg_value_ entry must
-be a pointer to a multi-sample image array object.
-If the argument is a multi-sample 2D depth image array, the _arg_value_
-entry must be a pointer to a multi-sample depth image array object.
+* If the kernel argument is a 2D MSAA image, then the image memory object must
+be of image type {CL_MEM_OBJECT_IMAGE2D}.
+* If the kernel argument is a 2D MSAA image array, then the image memory object
+must be of image type {CL_MEM_OBJECT_IMAGE2D_ARRAY}.
+* If the kernel argument is a 2D MSAA depth image, then the image memory object
+must be of image type {CL_MEM_OBJECT_IMAGE2D} and image channel order
+{CL_DEPTH}.
+* If the kernel argument is a 2D MSAA depth image array, then the image memory
+object must be of image type {CL_MEM_OBJECT_IMAGE2D_ARRAY} and image channel
+order {CL_DEPTH}.
 endif::cl_khr_gl_msaa_sharing[]
 
-If the argument is declared to be a pointer of a built-in scalar or vector
-type, or a user defined structure type in the global or constant address
-space, the memory object specified as argument value must be a buffer object
-(or `NULL`).
-If the argument is declared with the `constant` qualifier, the size in bytes
-of the memory object cannot exceed {CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE} and
-the number of arguments declared as pointers to `constant` memory cannot
-exceed {CL_DEVICE_MAX_CONSTANT_ARGS}.
+Behavior is undefined if the same image memory object is passed as both a
+`read_only` image and a `write_only` image, or as a `read_write` image and
+either a `read_only` image or a `write_only` image.
 
-The memory object specified as argument value must be a pipe object if the
-argument is declared with the _pipe_ qualifier.
+If the kernel argument being set is a sampler, then _arg_value_ must point to a
+sampler object.
 
-The memory object specified as argument value must be a 2D image object if
-the argument is declared to be of type _image2d_t_.
-The memory object specified as argument value must be a 2D image object with
-image channel order = {CL_DEPTH} if the argument is declared to be of type
-_image2d_depth_t_.
-The memory object specified as argument value must be a 3D image object if
-argument is declared to be of type _image3d_t_.
-The memory object specified as argument value must be a 1D image object if
-the argument is declared to be of type _image1d_t_.
-The memory object specified as argument value must be a 1D image buffer
-object if the argument is declared to be of type _image1d_buffer_t_.
-The memory object specified as argument value must be a 1D image array
-object if argument is declared to be of type _image1d_array_t_.
-The memory object specified as argument value must be a 2D image array
-object if argument is declared to be of type _image2d_array_t_.
-The memory object specified as argument value must be a 2D image array
-object with image channel order = {CL_DEPTH} if argument is declared to be of
-type _image2d_array_depth_t_.
+If the kernel argument being set is a device queue, then _arg_value_ must point
+to a device queue object.
 
-Behavior is undefined if the same memory object is passed as both a `read_only`
-image and a `write_only` image, or as a `read_write` image and either a
-`read_only` image or a `write_only` image.
+If the kernel argument being set is a pipe, then _arg_value_ must point to a
+pipe memory object.
 
-For all other kernel arguments, the _arg_value_ entry must be a pointer to
-the actual data to be used as argument value.
+For all other kernel arguments, _arg_value_ points to the data that is used as
+the kernel argument value.
+
+All objects set as kernel arguments must be created from the same context as the
+kernel object.
+
+// TODO: Should this be CL_INVALID_CONTEXT, or should the object be considered invalid?
 
 [NOTE]
 ====
@@ -11036,55 +11014,61 @@ the {cl_mem_TYPE} backing store used with {CL_MEM_USE_HOST_PTR}.
 
 // refError
 
-{clSetKernelArg} returns {CL_SUCCESS} if the function was executed
-successfully.
+{clSetKernelArg} returns {CL_SUCCESS} if the function is executed successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_KERNEL} if _kernel_ is not a valid kernel object.
-  * {CL_INVALID_ARG_INDEX} if _arg_index_ is not a valid argument index.
-  * {CL_INVALID_ARG_VALUE} if _arg_value_ specified is not a valid value.
-  * {CL_INVALID_MEM_OBJECT} for an argument declared to be a memory object
-    when the specified _arg_value_ is not a valid memory object.
-ifdef::cl_khr_depth_images,cl_khr_gl_msaa_sharing[]
-  * {CL_INVALID_MEM_OBJECT} for an argument declared to be a
-ifdef::cl_khr_depth_images[]
-    depth image, depth image array,
-endif::cl_khr_depth_images[]
-ifdef::cl_khr_gl_msaa_sharing[]
-    multi-sample image, multi-sample image array, multi-sample depth image,
-    or a multi-sample depth image array
-endif::cl_khr_gl_msaa_sharing[]
-    when the specified _arg_value_ does not follow the rules described above
-    for a depth memory object or memory array object argument.
-endif::cl_khr_depth_images,cl_khr_gl_msaa_sharing[]
-  * {CL_INVALID_SAMPLER} for an argument declared to be of type _sampler_t_
-    when the specified _arg_value_ is not a valid sampler object.
-  * {CL_INVALID_DEVICE_QUEUE} for an argument declared to be of type _queue_t_
-    when the specified _arg_value_ is not a valid device queue object.
+  * {CL_INVALID_KERNEL}
+    ** if _kernel_ is not a valid kernel
+  * {CL_INVALID_ARG_INDEX}
+    ** if _arg_index_ is not a valid argument index
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _arg_value_ is `NULL` and it must point to a valid memory object
+    ** if _arg_value_ points to `NULL` and it must point to a valid memory object
+    ** if _arg_value_ is not `NULL`, and does not point to `NULL`, and does not
+    point to a valid memory object
+    ** if _arg_value_ points to a valid memory object, but the memory object is
+    not valid for the kernel argument specified by _arg_index_
+  * {CL_INVALID_SAMPLER}
+    ** if the kernel argument is a sampler, but _arg_value_ does not point to a
+    valid sampler object
+  * {CL_INVALID_DEVICE_QUEUE}
+    ** if the kernel argument is a device queue, but _arg_value_ does not point
+    to a valid device queue object.
     This error code is <<unified-spec, missing before>> version 2.0.
   * {CL_INVALID_ARG_SIZE}
-  ** if _arg_size_ does not match the size of the data type for an argument
-     that is not a memory object, or
-  ** if the argument is a memory object and _arg_size_ != `sizeof({cl_mem_TYPE})`, or
-  ** if _arg_size_ is zero and the argument is declared with the `local` qualifier, or
-  ** if the argument is a sampler and _arg_size_ != `sizeof({cl_sampler_TYPE})`.
-  * {CL_MAX_SIZE_RESTRICTION_EXCEEDED} if the size in bytes of the memory
-    object (if the argument is a memory object) or _arg_size_ (if the
-    argument is declared with `local` qualifier) exceeds a language-
-    specified maximum size restriction for this argument, such as the
-    *MaxByteOffset* SPIR-V decoration.
-    This error code is <<unified-spec, missing before>> version 2.2.
+    ** if _arg_value_ points to a memory object and _arg_size_ is not equal to
+    `sizeof({cl_mem_TYPE})`, or
+    ** if _arg_value_ points to a sampler object and _arg_size_ is not equal to
+    `sizeof({cl_sampler_TYPE})`, or
+    ** if _arg_value_ points to a device queue object and _arg_size_ is not
+    equal to `sizeof({cl_command_queue_TYPE})`, or
+    ** if the kernel argument is a pointer to the the `local` address space and
+    _arg_size_ is zero, or
+    ** if _arg_value_ points to the data to be used as the kernel argument value
+    and _arg_size_ does not match the size of the data type for the argument
   * {CL_INVALID_ARG_VALUE}
-  ** if the argument is an image declared with the `read_only` qualifier and
-     _arg_value_ refers to an image object created with _cl_mem_flags_ of
-     {CL_MEM_WRITE_ONLY}, or
-  ** if the image argument is declared with the `write_only` qualifier and
-     _arg_value_ refers to an image object created with _cl_mem_flags_ of
-     {CL_MEM_READ_ONLY}.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+    ** if _arg_value_ is not a valid value.
+    ** if the argument is an image declared with the `read_only` qualifier and
+    _arg_value_ points to an image object created with the memory flag
+    {CL_MEM_WRITE_ONLY}, or
+    ** if the argument is an image declared with the `write_only` qualifier and
+    _arg_value_ points to an image object created with the memory flag
+    {CL_MEM_READ_ONLY}
+ifdef::cl_ext_immutable_memory_objects[]
+    or {CL_MEM_IMMUTABLE_EXT}
+endif::cl_ext_immutable_memory_objects[]
+  * {CL_MAX_SIZE_RESTRICTION_EXCEEDED}
+    ** if the size in bytes of the memory object (if the argument is a memory
+    object) or _arg_size_ (if the argument is declared with `local` qualifier)
+    exceeds a language-specified maximum size restriction for this argument,
+    such as the *MaxByteOffset* SPIR-V decoration.
+    This error code is <<unified-spec, missing before>> version 2.2.
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 
 When {clSetKernelArg} returns an error code different from {CL_SUCCESS}, the
 internal state of _kernel_ may only be modified when that error code is
@@ -11125,7 +11109,7 @@ include::{generated}/api/version-notes/clSetKernelArgSVMPointer.asciidoc[]
 
 // refError
 
-{clSetKernelArgSVMPointer} returns {CL_SUCCESS} if the function was executed
+{clSetKernelArgSVMPointer} returns {CL_SUCCESS} if the function is executed
 successfully.
 Otherwise, it returns one of the following errors:
 
@@ -12504,7 +12488,7 @@ clReleaseMemObject(buf2);
 
 // refError
 
-{clSetUserEventStatus} returns  {CL_SUCCESS} if the function was executed
+{clSetUserEventStatus} returns {CL_SUCCESS} if the function is executed
 successfully.
 Otherwise, it returns one of the following errors:
 
