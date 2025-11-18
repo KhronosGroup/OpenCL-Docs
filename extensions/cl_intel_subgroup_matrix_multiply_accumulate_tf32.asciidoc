@@ -1,0 +1,196 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+
+ifdef::backend-html5[]
+:cl_intel_subgroup_matrix_multiply_accumulate_tf32: cl_intel_{zwsp}subgroup_{zwsp}matrix_{zwsp}multiply_{zwsp}accumulate_tf32
+:cl_intel_subgroup_matrix_multiply_accumulate: cl_intel_{zwsp}subgroup_{zwsp}matrix_{zwsp}multiply_{zwsp}accumulate
+:SPV_INTEL_subgroup_matrix_multiply_accumulate: SPV_INTEL_{zwsp}subgroup_{zwsp}matrix_{zwsp}multiply_{zwsp}accumulate
+:SPV_INTEL_tensor_float32_conversion: SPV_INTEL_{zwsp}tensor_{zwsp}float32_{zwsp}conversion
+endif::[]
+ifndef::backend-html5[]
+:cl_intel_subgroup_matrix_multiply_accumulate_tf32: cl_intel_&#8203;subgroup_&#8203;matrix_&#8203;multiply_&#8203;accumulate_tf32
+:cl_intel_subgroup_matrix_multiply_accumulate: cl_intel_&#8203;subgroup_&#8203;matrix_&#8203;multiply_&#8203;accumulate
+:SPV_INTEL_subgroup_matrix_multiply_accumulate: SPV_INTEL_&#8203;subgroup_&#8203;matrix_&#8203;multiply_&#8203;accumulate
+:SPV_INTEL_tensor_float32_conversion: SPV_INTEL_&#8203;tensor_&#8203;float32_&#8203;conversion
+endif::[]
+
+= {cl_intel_subgroup_matrix_multiply_accumulate_tf32}
+
+== Name Strings
+
+`{cl_intel_subgroup_matrix_multiply_accumulate_tf32}`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel +
+Junjie Gu, Intel +
+Bartosz Koscielak, Intel +
+Yury Plyakhin, Intel +
+Dmitry Sidorov, Intel +
+Lukasz Towarek, Intel +
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2025 Intel Corporation.  All rights reserved.
+
+== Status
+
+Complete
+
+== Version
+
+Built On: 2025-10-22 +
+Revision: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL 3.0 C Language specification, V3.0.19.
+
+This extension builds on and hence requires support for the `{cl_intel_subgroup_matrix_multiply_accumulate}` extension.
+
+== Overview
+
+This extension extends the `{cl_intel_subgroup_matrix_multiply_accumulate}` extension by adding functions that operate on matrices of "TensorFloat-32" data, also known as `tf32` data.
+The `tf32` format has similar dynamic range as the `fp32` or `float` format, and similar precision as the `fp16` or `half` format.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+None.
+
+== New OpenCL C Functions
+
+[source]
+----
+// These functions are available to devices where the minimum subgroup
+// size is 16.  For these devices, the subgroup size must be 16 (the
+// minimum supported subgroup size).  Calling these functions on other
+// devices or from kernels with a different subgroup size is undefined
+// behavior:
+
+float  intel_sub_group_tf32_tf32_matrix_mad_k8(float  a, float8 b, float  acc);
+float2 intel_sub_group_tf32_tf32_matrix_mad_k8(float  a, float8 b, float2 acc);
+float4 intel_sub_group_tf32_tf32_matrix_mad_k8(float2 a, float8 b, float4 acc);
+float8 intel_sub_group_tf32_tf32_matrix_mad_k8(float4 a, float8 b, float8 acc);
+
+// Conversions:
+
+float intel_convert_tfloat32_as_float(float source);
+float2 intel_convert_tfloat322_as_float2(float2 source);
+float3 intel_convert_tfloat323_as_float3(float3 source);
+float4 intel_convert_tfloat324_as_float4(float4 source);
+float8 intel_convert_tfloat328_as_float8(float8 source);
+float16 intel_convert_tfloat3216_as_float16(float16 source);
+----
+
+== Modifications to the OpenCL C Specification
+
+=== Add a new Section 6.3.1.X - The `tf32` Format
+
+The `TensorFloat-32` or `tf32` format is a 32-bit floating-point format, similar to the single-precision `float` format.
+It has one sign bit, eight exponent bits, and 23 mantissa bits.
+Only 10 mantissa bits are used when performing operations on `tf32` data, similar to the half-precision 16-bit `half` format.
+This means that the `tf32` format has similar dynamic range as the `float` format, and similar precision as the `half` format.
+
+The `{cl_intel_subgroup_matrix_multiply_accumulate_tf32}` extension does not add `tf32` as a supported data type for OpenCL kernels, however the matrix multiplication functions added by the extension interpret the `float` operands as `tf32` data when performing the matrix multiplication operation.
+
+A 32-bit `float` can be converted (rounded) to a `tf32` value using the following suite of functions.  For these functions, the only supported rounding mode is the default rounding mode, which is round-to-nearest-even ("rte"):
+
+[source]
+----
+float intel_convert_tfloat32_as_float(float source);
+float2 intel_convert_tfloat322_as_float2(float2 source);
+float3 intel_convert_tfloat323_as_float3(float3 source);
+float4 intel_convert_tfloat324_as_float4(float4 source);
+float8 intel_convert_tfloat328_as_float8(float8 source);
+float16 intel_convert_tfloat3216_as_float16(float16 source);
+----
+
+=== Add a new Section 6.13.X.Y - `tf32` Subgroup Matrix Multiply Accumulate Functions
+
+This section describes a family of built-in functions that multiply two `tf32` matrix sources `a` and `b` and then add a 32-bit `float` matrix accumulation value to produce a 32-bit `float` matrix result value.
+`a` is the first `tf32` matrix operand and has M rows and K columns.
+`b` is the second `tf32` matrix operand and has K rows and N columns.
+`acc` is the `float` matrix accumulation value and has M rows and N columns.
+The result `float` matrix also has M rows and N columns.
+All work items in the subgroup cooperate to perform this operation.
+These functions must be encountered by all work items in the subgroup executing the kernel.
+
+The full list of supported `tf32` functions is described in the overview, above.
+For this list of functions:
+
+* `M` may be equal to 1, 2, 4, or 8.
+* `N` must be equal to 16.
+In other words, the only supported subgroup size is 16.
+* The supported floating-point matrix types for `a` and `b` are 32-bit `float` data that is interpreted as `tf32` data when performing the matrix multiplication operation.
+For these `tf32` matrices, `K` must be equal to 8.
+The accumulation value `acc` and result value are 32-bit `float` values.
+* Because `N` must be equal to 16 and `K` must be equal to 8, each work-item contributes every other row of the matrix `a`.
+For `M` equal to one, only the first `K` work-items contribute to the matrix `a`, and contributions from the remaining work-items are ignored.
+For other values of `M`, the first `K` work-items contribute the even rows of the matrix `a`, and the remaining work-items contribute the odd rows of the matrix `a`.
+
+== Modifications to the OpenCL SPIR-V Environment Specification
+
+=== Add a new section 5.2.X - `{cl_intel_subgroup_matrix_multiply_accumulate_tf32}`
+
+If the OpenCL environment supports the extension `{cl_intel_subgroup_matrix_multiply_accumulate_tf32}`, then the environment must accept modules that declare use of the extension `{SPV_INTEL_subgroup_matrix_multiply_accumulate}` and that declare the SPIR-V capability *SubgroupMatrixMultiplyAccumulateINTEL*.
+
+For devices where the minimum subgroup size is 16, the following matrix dimensions and types are supported.
+For these devices, the subgroup size must be 16 (the minimum subgroup size).
+Behavior is undefined if these functions are called on other devices or from kernels with a different subgroup size:
+
+[cols="^1,^1,^1,^2,^2,^2,^2",width="100%"]
+[options="header"]
+|=====
+| M Dimension | N Dimension | K Dimension | Result Type | Matrix A Type | Matrix B Type | Matrix C Type
+
+// f32 = tf32 x tf32 + f32
+7+<| *tf32 matrix sources, fp32 accumulator*:
+| 1, 2, 4, 8 | 16 | 8 | `M x float32_t`
+| `ceil(M/2) x float32_t` with *MatrixATF32INTEL*
+| `8 x float32_t` with *MatrixBTF32INTEL*
+| `M x float32_t`
+
+|=====
+
+Additionally, if the OpenCL environment supports the extension `{cl_intel_subgroup_matrix_multiply_accumulate_tf32}`, then the environment must accept modules that declare use of the extension `{SPV_INTEL_tensor_float32_conversion}` and that declare the SPIR-V capability *TensorFloat32RoundingINTEL*.
+
+== Issues
+
+None.
+
+// . Issue?
+// +
+// --
+// *UNRESOLVED*: Description.
+// --
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1.0.0|2025-10-23|Ben Ashbaugh|*Initial public revision*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************
