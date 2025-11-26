@@ -21,6 +21,7 @@ interception layers (Layer ICDs) for OpenCL.
 |====
 | *Date*     | *Version* | *Description*
 | 2020-11-04 | 1.0.0     | First assigned version.
+| 2025-11-25 | 1.0.1     | Deinitialization support.
 |====
 
 ==== Contributors
@@ -47,6 +48,26 @@ cl_int clInitLayer(cl_uint                 num_entries,
                    const cl_icd_dispatch **layer_dispatch_ret);
 ----
 
+New in version 1.0.1, a layer supporting explicit deinitialization must also
+expose the two following new entry points. If a layer does not require
+deinitialization, it can omit *clDeinitLayer*. A layer initialized with
+*clInitLayerWithProperties* must not use *atexit* to register a callback or
+use OpenCL functionalities in library destructors. The layer can call into
+the loader provided dispatch table inside *clDeinitLayer*. Layers can support
+both *clInitLayer* and *clInitLayerWithProperties* and their deinitialization
+strategies for backward and forward compatibility.
+
+[source,opencl]
+----
+clInitLayerWithProperties(cl_uint                    num_entries,
+                          const cl_icd_dispatch     *target_dispatch,
+                          cl_uint                   *num_entries_ret,
+                          const cl_icd_dispatch    **layer_dispatch_ret,
+                          const cl_layer_properties *properties);
+
+cl_int clDeinitLayer(void);
+----
+
 [[cl_loader_layers-new-api-types]]
 === New API Types
 
@@ -54,6 +75,13 @@ cl_int clInitLayer(cl_uint                 num_entries,
 ----
 typedef cl_uint cl_layer_info;
 typedef cl_uint cl_layer_api_version;
+----
+
+New in version 1.0.1:
+
+[source,opencl]
+----
+typedef cl_properties cl_layer_properties;
 ----
 
 [[cl_loader_layers-new-enums]]
@@ -71,13 +99,21 @@ Accepted as _param_name_ to the function *clGetLayerInfo*:
 [[cl_loader_layers-new-tokens]]
 === New API Tokens
 
-Returned by *clGetLayerInfo* when supplied *CL_LAYER_API_VERSION*
+Returned by *clGetLayerInfo* when supplied `CL_LAYER_API_VERSION`
 and the corresponding layer implements version 1.0.0 of the layer
 API:
 
 [source,opencl]
 ----
 #define CL_LAYER_API_VERSION_100 100
+----
+
+New in version 1.0.1, used to end the list of properties given to
+*clInitLayerWithProperties*:
+
+[source,opencl]
+----
+#define CL_LAYER_PROPERTIES_LIST_END         ((cl_layer_properties)0)
 ----
 
 [[cl_loader_layers-new-environment-variables]]
@@ -172,6 +208,67 @@ Otherwise, it returns one of the following errors.
   * *CL_INVALID_VALUE* if _num_entries_ is insufficient for the layer or if
     _target_dispatch_ is a `NULL` value, or _num_entries_ret_ is a `NULL`
     value, or _layer_dispatch_ret_ is a `NULL` value.
+
+New in version 1.0.1, to enable support for ICD Loader with deinitialization
+capabilities, a loader can be initialized using *clInitLayerWithProperties*.
+If they require deinitialization, layers that support
+*clInitLayerWithProperties* can also expose *clDeinitLayer*.
+
+[source,opencl]
+----
+clInitLayerWithProperties(cl_uint                    num_entries,
+                          const cl_icd_dispatch     *target_dispatch,
+                          cl_uint                   *num_entries_ret,
+                          const cl_icd_dispatch    **layer_dispatch_ret,
+                          const cl_layer_properties *properties);
+----
+
+  * _num_entries_ is the number of entry provided by the Loader to
+    the layer.
+  * _target_dispatch_ is the dispatch table, provided by the loader, that
+    the layer must redirect it's call to.
+  * _num_entries_ret_ returns the number of entries in the dispatch table the
+    layer will be returning.
+  * _layer_dispatch_ret_ return the address of the layer dispatch table. The
+    table can contain `NULL` value entries, and the loader is responsible for
+    providing the missing entries using the entries from the target dispatch.
+  * _properties_  specifies a list of layer property names and their
+    corresponding values. Each property name is immediately followed by the
+    corresponding desired value. The list is terminated with
+    `CL_LAYER_PROPERTIES_LIST_END`. No properties are supported as of version
+    1.0.1. _properties_ can be NULL, in which case all properties take on
+    their default values.
+
+*clInitLayerWithProperties* returns *CL_SUCCESS* if the function is executed
+successfully.
+Otherwise, it returns one of the following errors.
+
+  * *CL_INVALID_VALUE* if _num_entries_ is insufficient for the layer or if
+    _target_dispatch_ is a `NULL` value, or _num_entries_ret_ is a `NULL`
+    value, or _layer_dispatch_ret_ is a `NULL` value.
+  * *CL_INVALID_PROPERTY* if a layer property name in _properties_ is not a
+    supported property name, if the value specified for a supported property
+    name is not valid, or if the same property name is specified more than
+    once.
+
+==== Layer Deinitialization
+
+[open,refpage='clDeinitLayer',desc='Deinitialize an OpenCL layer',type='protos']
+A Layer initialized using *clInitLayer* can use *atexit* to register a
+destruction callback. This callback can safely call inside the loader
+provided dispatch table.
+
+New in version 1.0.1, a layer initialized using *clInitLayerWithProperties*
+that requires deinitilization can do so by implementing *clDeinitLayer*.
+The layer can safely call inside the loader provided dispatch table while
+in *clDeinitLayer*:
+[source,opencl]
+
+----
+cl_int clDeinitLayer(void);
+----
+
+*clDeinitLayer* returns *CL_SUCCESS* if the function is executed successfully, an error code otherwise.
 
 [[cl_loader_layers-source-code]]
 === Source Code
