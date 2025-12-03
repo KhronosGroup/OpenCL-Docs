@@ -225,6 +225,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_context_safety_properties_img</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_layer_info</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_layer_api_version</name>;</type>
+        <type category="define">typedef <type>cl_properties</type>    <name>cl_layer_properties</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_icdl_info</name>;</type>
         <type category="define">typedef struct _cl_icd_dispatch       <name>cl_icd_dispatch</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_scheduling_controls_capabilities_arm</name>;</type>
@@ -593,8 +594,8 @@ server's OpenCL/api-docs repository.
     </enums>
 
     <enums name="Constants.cl_loader_layers" vendor="Khronos" comment="Defined Layer API version, in cl_layer.h">
-        <enum value="100"           name="CL_LAYER_API_VERSION_100"/>
-        <enum value="200"           name="CL_LAYER_API_VERSION_200"/>
+        <enum value="100"                        name="CL_LAYER_API_VERSION_100"/>
+        <enum value="((cl_layer_properties)0)"   name="CL_LAYER_PROPERTIES_LIST_END"/>
     </enums>
 
     <enums start="0" end="-999" name="ErrorCodes.0" vendor="Khronos" comment="Error codes start at 0 and decrease">
@@ -4486,6 +4487,14 @@ server's OpenCL/api-docs repository.
             <param>const <type>cl_icd_dispatch</type>**                 <name>layer_dispatch_ret</name></param>
         </command>
         <command>
+            <proto><type>cl_int</type>                                  <name>clInitLayerWithProperties</name></proto>
+            <param><type>cl_uint</type>                                 <name>num_entries</name></param>
+            <param>const <type>cl_icd_dispatch</type>*                  <name>target_dispatch</name></param>
+            <param><type>cl_uint</type>*                                <name>num_entries_ret</name></param>
+            <param>const <type>cl_icd_dispatch</type>**                 <name>layer_dispatch_ret</name></param>
+            <param>const <type>cl_layer_properties</type>*              <name>properties</name></param>
+        </command>
+        <command>
             <proto><type>cl_int</type>                                  <name>clDeinitLayer</name></proto>
         </command>
         <command>
@@ -5905,7 +5914,7 @@ server's OpenCL/api-docs repository.
                 <command name="clLogMessagesToStderrAPPLE"/>
             </require>
         </extension>
-        <extension name="cl_khr_icd" revision="2.0.0" supported="opencl" ratified="opencl">
+        <extension name="cl_khr_icd" revision="2.0.1" supported="opencl" ratified="opencl">
             <require>
                 <type name="CL/cl.h"/>
             </require>
@@ -5925,7 +5934,7 @@ server's OpenCL/api-docs repository.
                 <command name="clIcdSetPlatformDispatchDataKHR"/>
             </require>
         </extension>
-        <extension name="cl_loader_layers" revision="2.0.0" supported="opencl">
+        <extension name="cl_loader_layers" revision="1.0.1" supported="opencl">
             <require>
                 <type name="CL/cl_icd.h"/>
             </require>
@@ -5941,11 +5950,12 @@ server's OpenCL/api-docs repository.
             </require>
             <require comment="Misc API enums">
                 <enum name="CL_LAYER_API_VERSION_100"/>
-                <enum name="CL_LAYER_API_VERSION_200"/>
+                <enum name="CL_LAYER_PROPERTIES_LIST_END"/>
             </require>
             <require>
                 <command name="clGetLayerInfo"/>
                 <command name="clInitLayer"/>
+                <command name="clInitLayerWithProperties"/>
                 <command name="clDeinitLayer"/>
             </require>
         </extension>
