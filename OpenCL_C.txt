@@ -4117,6 +4117,91 @@ indicating optional language features. Such macros are listed in the
 --
 
 
+[[preprocessor-directives-for-optional-extensions]]
+=== Preprocessor Directives for Optional Extensions
+
+The *#pragma OPENCL EXTENSION* directive controls the behavior of the OpenCL
+compiler with respect to extensions.
+The *#pragma OPENCL EXTENSION* directive is defined as:
+
+[source,opencl_c]
+----
+#pragma OPENCL EXTENSION <extension_name> : <behavior>
+#pragma OPENCL EXTENSION all : <behavior>
+----
+
+where _extension_name_ is the name of the extension.
+The _extension_name_ will have names of the form *cl_khr_<__name__>* for an
+extension approved by the OpenCL working group and should have names of the
+form *cl_<__vendor_name__>_<__name__>* for vendor extensions.
+The token *all* means that the behavior applies to all extensions supported
+by the compiler.
+The _behavior_ can be set to one of the following values given by the table
+below.
+
+[cols="1,3",options="header",]
+|====
+| *behavior* | *Description*
+| *enable*
+| Behave as specified by the extension _extension_name_.
+
+  Report an error on the *`#pragma OPENCL EXTENSION`* if the
+  _extension_name_ is not supported, or if *all* is specified.
+
+| *disable*
+| Behave (including issuing errors and warnings) as if the extension
+  _extension_name_ is not part of the language definition.
+
+  If *all* is specified, then behavior must revert back to that of the
+  non-extended core version of the language being compiled to.
+
+  Warn on the *`#pragma OPENCL EXTENSION`* if the extension _extension_name_
+  is not supported.
+
+|====
+
+The *`#pragma OPENCL EXTENSION`* directive is a simple, low-level mechanism
+to set the behavior for each extension.
+It does not define policies such as which combinations are appropriate;
+those must be defined elsewhere.
+The order of directives matter in setting the behavior for each extension.
+Directives that occur later override those seen earlier.
+The *all* variant sets the behavior for all extensions, overriding all
+previously issued extension directives, but only if the _behavior_ is set to
+*disable*.
+
+The initial state of the compiler is as if the directive
+
+[source,opencl_c]
+----
+#pragma OPENCL EXTENSION all : disable
+----
+
+was issued, telling the compiler that all error and warning reporting must
+be done according to this specification, ignoring any extensions.
+
+Every extension which affects the OpenCL language semantics, syntax or adds
+built-in functions to the language must create a preprocessor `#define` that
+matches the extension name string.
+This `#define` would be available in the language if and only if the
+extension is supported on a given implementation.
+
+==== Example:
+
+An extension which adds the extension string {cl_khr_3d_image_writes_EXT}
+should also add a preprocessor `#define` called {cl_khr_3d_image_writes_EXT}.
+A kernel can now use this preprocessor `#define` to do something like:
+
+[source,opencl_c]
+----
+#ifdef cl_khr_3d_image_writes
+    // do something using the extension
+#else
+    // do something else or #error!
+#endif
+----
+
+
 [[attribute-qualifiers]]
 == Attribute Qualifiers
 
