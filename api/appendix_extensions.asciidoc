@@ -32,99 +32,110 @@ names.
 OpenCL extensions approved by the OpenCL working group use the following
 naming convention:
 
-  * A unique _name string_ of the form `"*cl_khr_<__name__>*"` is associated
-    with each extension.
+  * A unique _name string_ of the form `*cl_khr_<__name__>*` or
+    `*cl_ext_<__name__>*` is associated with each extension.
     If the extension is supported by an implementation, this string will be
     present in the implementation's {CL_PLATFORM_EXTENSIONS} string or
     {CL_DEVICE_EXTENSIONS} string.
-  * All API functions defined by the extension will have names of the form
-    *cl<__function_name__>KHR*.
   * All enumerants defined by the extension will have names of the form
-    *CL_<__enum_name__>_KHR.*
+    *CL_<__enum_name__>_KHR* or *CL_<__enum_name__>_EXT*.
+  * All types defined by the extension will have names of the form
+    *cl_<__type_name__>_khr* or *cl_<__type_name__>_ext*.
+  * All API functions defined by the extension will have names of the form
+    *cl<__function_name__>KHR* or *cl<__function_name__>EXT*.
 
 Functions and enumerants defined by extensions that are promoted to
-core features will have their *KHR* affix removed.
+core features will have their *KHR* or *EXT* affix removed.
 OpenCL implementations of such later revisions must also export the name
 strings of promoted extensions in the {CL_PLATFORM_EXTENSIONS} or
-{CL_DEVICE_EXTENSIONS} string, and support the *KHR*-affixed versions of
-functions and enumerants as a transition aid.
+{CL_DEVICE_EXTENSIONS} string, and support the *KHR*- or *EXT*-affixed versions
+of functions and enumerants as a transition aid.
 
 Vendor extensions are strongly encouraged to follow a similar naming
 convention:
 
-  * A unique _name string_ of the form `"*cl_<__vendor_name__>_<__name>__*"`
+  * A unique _name string_ of the form `*cl_<__vendor_tag__>_<__name>__*`
     is associated with each extension.
     If the extension is supported by an implementation, this string will be
     present in the implementation's {CL_PLATFORM_EXTENSIONS} string or
     {CL_DEVICE_EXTENSIONS} string.
-  * All API functions defined by the vendor extension will have names of the
-    form *cl<__function_name__><__vendor_name__>*.
-  * All enumerants defined by the vendor extension will have names of the
-    form *CL_<__enum_name__>_<__vendor_name__>.*
+  * All enumerants defined by the vendor extension should have names of the
+    form *CL_<__enum_name__>_<__VENDOR_TAG__>.*
+  * All types defined by the vendor extension should have names of the
+    form *cl_<__type_name__>_<__vendor_tag__>.*
+  * All API functions defined by the vendor extension should have names of the
+    form *cl<__function_name__><__VENDOR_TAG__>*.
 
 
 [[header-conventions-for-optional-extensions]]
 == Header Conventions for Optional Extensions
 
-Function pointer typedefs must be declared for all extensions that add API
+Function pointer typedefs should be declared for all extensions that add API
 entrypoints.
-These typedefs are a required part of the extension interface, to be
-provided in an appropriate header (such as cl_ext.h if the extension is an
-OpenCL extension, or cl_gl_ext.h if the extension is an OpenCL / OpenGL
-sharing extension).
+These typedefs are a required part of the extension interface, and should be
+provided in an appropriate header, such as `cl_ext.h`.
 
-The following convention must be followed for all extensions affecting the
+The following convention should be followed for all extensions affecting the
 host API:
 
 [source,opencl]
 ----
-#ifndef extension_name
-#define extension_name 1
+#define cl_extension_name 1
+#define CL_EXTENSION_NAME_NAME "cl_extension_name"
 
-// all data typedefs, token #defines, prototypes, and
-// function pointer typedefs for this extension
+#define CL_EXTENSION_NAME_VERSION CL_MAKE_VERSION(major, minor, patch)
 
-// function pointer typedefs must use the
-// following naming convention
+// all data typedefs and token #defines for this extension
+#define CL_EXTENSION_ENUM_NAME_TAG    0xXXXX
 
+// function types for extension functions
 typedef return_type
-            (CL_API_CALL *clExtensionFunctionNameTAG_fn)(...);
+clExtensionFunctionNameTAG_t(...);
 
-#endif // _extension_name_
+// function pointer typedefs for extension functions
+typedef clExtensionFunctionNameTAG_t *
+clExtensionFunctionNameTAG_fn;
+
+// extension function prototypes (optional)
+extern return_type
+clExtensionFunctionTAG(...);
 ----
 
 where `TAG` can be `KHR`, `EXT` or `vendor-specific`.
 
-Consider, for example, the {cl_khr_gl_sharing_EXT} extension.
-This extension would add the following to cl_gl_ext.h:
+Consider, for example, the {cl_khr_create_command_queue_EXT} extension.
+This extension adds the following to `cl_ext.h`:
 
 [source,opencl]
 ----
-#ifndef cl_khr_gl_sharing
-#define cl_khr_gl_sharing 1
+#define cl_khr_create_command_queue 1
+#define CL_KHR_CREATE_COMMAND_QUEUE_EXTENSION_NAME \
+    "cl_khr_create_command_queue"
 
-// all data typedefs, token #defines, prototypes, and
-// function pointer typedefs for this extension
-#define CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR  -1000
-#define CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR    0x2006
-#define CL_DEVICES_FOR_GL_CONTEXT_KHR           0x2007
-#define CL_GL_CONTEXT_KHR                       0x2008
-#define CL_EGL_DISPLAY_KHR                      0x2009
-#define CL_GLX_DISPLAY_KHR                      0x200A
-#define CL_WGL_HDC_KHR                          0x200B
-#define CL_CGL_SHAREGROUP_KHR                   0x200C
+#define CL_KHR_CREATE_COMMAND_QUEUE_EXTENSION_VERSION CL_MAKE_VERSION(1, 0, 0)
 
-// function pointer typedefs must use the
-// following naming convention
-typedef cl_int
-        (CL_API_CALL *clGetGLContextInfoKHR_fn)(
-            const cl_context_properties * /* properties */,
-            cl_gl_context_info /* param_name */,
-            size_t /* param_value_size */,
-            void * /* param_value */,
-            size_t * /*param_value_size_ret*/);
+typedef cl_properties       cl_queue_properties_khr;
 
-#endif // cl_khr_gl_sharing
+typedef cl_command_queue CL_API_CALL
+clCreateCommandQueueWithPropertiesKHR_t(
+    cl_context context,
+    cl_device_id device,
+    const cl_queue_properties_khr* properties,
+    cl_int* errcode_ret);
+
+typedef clCreateCommandQueueWithPropertiesKHR_t *
+clCreateCommandQueueWithPropertiesKHR_fn CL_API_SUFFIX__VERSION_1_2;
+
+#if !defined(CL_NO_NON_ICD_DISPATCH_EXTENSION_PROTOTYPES)
+
+extern CL_API_ENTRY cl_command_queue CL_API_CALL
+clCreateCommandQueueWithPropertiesKHR(
+    cl_context context,
+    cl_device_id device,
+    const cl_queue_properties_khr* properties,
+    cl_int* errcode_ret) CL_API_SUFFIX__VERSION_1_2;
+
+#endif /* !defined(CL_NO_NON_ICD_DISPATCH_EXTENSION_PROTOTYPES) */
 ----
 
 

@@ -3850,39 +3850,41 @@ Otherwise, it returns one of the following errors:
 [[getting-opencl-api-extension-function-pointers]]
 == Extension Function Pointers
 
-The function
-indexterm:[clGetExtensionFunctionAddressForPlatform]
-[source,opencl]
-----
-void* clGetExtensionFunctionAddressForPlatform(cl_platform_id platform,
-                                               const char *funcname)
-----
+--
+Extension function pointers for a given platform can be obtained with the function:
 
-returns the address of the extension function named by _funcname_ for a
-given _platform_ The pointer returned should be cast to a function pointer
-type matching the extension function's definition defined in the appropriate
-extension specification and header file.
-A return value of `NULL` indicates that the specified function does not
-exist for the implementation or _platform_ is not a valid platform.
-A non-`NULL` return value for {clGetExtensionFunctionAddressForPlatform}
+include::{generated}/api/protos/clGetExtensionFunctionAddressForPlatform.txt[]
+include::{generated}/api/version-notes/clGetExtensionFunctionAddressForPlatform.asciidoc[]
+
+Or, with the function:
+
+include::{generated}/api/protos/clGetExtensionFunctionAddress.txt[]
+include::{generated}/api/version-notes/clGetExtensionFunctionAddress.asciidoc[]
+
+The returned function pointer should be cast to a function pointer type matching
+the extension function's definition defined in the appropriate extension
+specification and header file.
+
+A return value of `NULL` indicates that _platform_ is not a valid platform or
+that the specified extension function does not exist for the platform.
+
+A non-`NULL` return value from {clGetExtensionFunctionAddressForPlatform}
 does not guarantee that an extension function is actually supported by the
 platform.
-The application must also make a corresponding query using
-{clGetPlatformInfo}(platform, CL_PLATFORM_EXTENSIONS, ...) or
-{clGetDeviceInfo}(device, CL_DEVICE_EXTENSIONS, ...) to determine if an
-extension is supported by the OpenCL implementation.
+The application must also query {CL_PLATFORM_EXTENSIONS} or
+{CL_DEVICE_EXTENSIONS} to determine if an extension is supported by an OpenCL
+platform or device.
 
-Since there is no way to qualify the query with a
-device, the function pointer returned must work for all implementations of
-that extension on different devices for a platform.
+Since there is no way to qualify the {clGetExtensionFunctionAddressForPlatform}
+query with a device, the function pointer returned must work for all
+implementations of and extension on different devices for a platform.
 The behavior of calling a device extension function on a device not
 supporting that extension is undefined.
 
 {clGetExtensionFunctionAddressForPlatform} may not be used to query for core
 (non-extension) functions in OpenCL.
-For extension functions that may be queried using
+For extension functions queried using
 {clGetExtensionFunctionAddressForPlatform}, implementations may also choose to
-export those functions statically from the object libraries
-implementing those functions, however, portable applications cannot rely on
-this behavior.
-
+export those functions statically from the object libraries implementing those
+functions, however, portable applications cannot rely on this behavior.
+--
