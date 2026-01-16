@@ -1,4 +1,4 @@
-# Copyright 2013-2025 The Khronos Group Inc.
+# Copyright 2013-2026 The Khronos Group Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 # OpenCL Specifications Makefile
@@ -517,6 +517,7 @@ CFEATURES      = c/features.txt
 CFUNCTIONS     = c/functions.txt
 GENSCRIPT      = $(SCRIPTS)/gencl.py
 DICTSCRIPT     = $(SCRIPTS)/gen_dictionaries.py
+EXTIFACESSCRIPT= $(SCRIPTS)/gen_extension_interfaces.py
 VERSIONSCRIPT  = $(SCRIPTS)/gen_version_notes.py
 CFEATSCRIPT    = $(SCRIPTS)/gen_dictionary_from_file.py
 CFUNCSCRIPT    = $(SCRIPTS)/gen_dictionary_from_file.py
@@ -542,11 +543,13 @@ $(APIDEPEND): $(APIXML) $(DICTSCRIPT) $(GENSCRIPT) $(VERSIONSCRIPT)
 
 extinc: $(METADEPEND)
 
-$(METADEPEND): $(APIXML) $(GENSCRIPT)
+$(METADEPEND): $(APIXML) $(GENSCRIPT) $(CFEATSCRIPT) $(EXTIFACESSCRIPT)
 	$(QUIET)$(MKDIR) $(METAPATH)
+	$(QUIET)$(MKDIR) $(METAPATH)/interfaces
 	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(METAPATH) extinc
 	$(QUIET)$(PYTHON) $(CFEATSCRIPT) -i $(CFEATURES) -o $(METAPATH)/c-feature-dictionary.asciidoc
 	$(QUIET)$(PYTHON) $(CFUNCSCRIPT) -i $(CFUNCTIONS) -o $(METAPATH)/c-function-dictionary.asciidoc
+	$(QUIET)$(PYTHON) $(EXTIFACESSCRIPT) -registry $(APIXML) -o $(METAPATH)/interfaces
 
 # This generates a single file containing asciidoc attributes for each
 # extension in the spec being built.

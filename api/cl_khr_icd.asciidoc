@@ -1,4 +1,4 @@
-// Copyright 2017-2025 The Khronos Group Inc.
+// Copyright 2017-2026 The Khronos Group Inc.
 // SPDX-License-Identifier: CC-BY-4.0
 
 //@ TODO This should probably be in an appendix? It is a "platform
@@ -9,7 +9,7 @@ include::{generated}/meta/{refprefix}cl_khr_icd.txt[]
 === Other Extension Metadata
 
 *Last Modified Date*::
-    2025-04-01
+    2025-12-15
 *IP Status*::
     No known IP claims.
 
@@ -69,7 +69,7 @@ can be appended.
 Functions which do not have an argument from which the vendor implementation
 may be inferred have been deprecated and may be ignored.
 
-New in version 2.0.0, object that are ICD 2 compatible should also contain
+New in version 2.0.0, objects that are ICD 2 compatible should also contain
 a `dispatch_data` field of type `void *` that the loader is free to modify
 for a platform through the {clIcdSetPlatformDispatchDataKHR} new API entry
 point. In order to distinguish ICD 1 and ICD 2 objects, the pointers to
@@ -246,7 +246,7 @@ pointers to {clGetPlatformIDs} and {clUnloadCompiler} in the dispatch
 structure of a platform is set to `CL_ICD2_TAG_KHR` the platform will be
 deemed ICD 2 compatible and dispatch will be managed by the ICD Loader. If the
 `CL_ICD2_TAG_KHR` tag is present but one of the two functions above is
-missing or it the tag is present in only one of the pointers, the ICD Loader
+missing or if the tag is present in only one of the pointers, the ICD Loader
 will ignore the Vendor ICD and continue on to the next.
 
 During initialization, after calling {clIcdGetPlatformIDsKHR} to query the
@@ -309,6 +309,20 @@ the `NULL` platform.
 --
 *RESOLVED*: As there is no standard mechanism for unloading a vendor
 implementation, do not add one for the ICD Loader.
+
+New in version 2.0.1, the loader now supports deinitialization and platform
+that support unloading their driver can advertise it through the
+{cl_khr_icd_unloadable_EXT} extension.
+--
+
+  . How will the ICD Loader that support deinitialization enable compatibility
+    with old layers.
+
++
+--
+The ICD Loader that support deinitialization will check for the
+`OCL_ICD_FORCE_LEGACY_TERMINATION` environment variable, and revert to the
+legacy behavior if it evaluates to true.
 --
 
   . How will the ICD Loader handle `NULL` objects passed to the OpenCL
@@ -349,3 +363,5 @@ for propagating this information to new objects.
   ** First assigned version.
   * Revision 2.0.0, 2025-04-01
   ** Loader managed dispatch.
+  * Revision 2.0.1, 2025-12-15
+  ** Loader deinitialization.

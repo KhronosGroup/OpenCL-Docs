@@ -1,4 +1,4 @@
-// Copyright 2017-2025 The Khronos Group Inc.
+// Copyright 2017-2026 The Khronos Group Inc.
 // SPDX-License-Identifier: CC-BY-4.0
 
 = The OpenCL Architecture
@@ -578,12 +578,12 @@ Consider the following three domains of synchronization in OpenCL:
     for execution
 
 
-Synchronization across all work-items within a single work-group is carried
-out using a _work-group function_.
-These functions carry out collective operations across all the work-items in
-a work-group.
-Available collective operations are: barrier, reduction, broadcast, prefix
-sum, and evaluation of a predicate.
+Synchronization across work-items within a work-group is done by using a
+_work-group function_.
+These functions perform collective operations across the work-items in a
+work-group.
+Available collective operations include barriers, reductions, broadcast, prefix
+sums, and evaluation of a predicate.
 A work-group function must occur within a converged control flow; i.e. all
 work-items in the work-group must encounter precisely the same work-group
 function.
@@ -592,27 +592,18 @@ must encounter the same work-group function in the same loop iterations.
 All the work-items of a work-group must execute the work-group function and
 complete reads and writes to memory before any are allowed to continue
 execution beyond the work-group function.
-Work-group functions that apply between work-groups are not provided in
+Work-group functions that apply across work-groups are not provided in
 OpenCL since OpenCL does not define forward-progress or ordering relations
 between work-groups, hence collective synchronization operations are not
 well defined.
 
-Synchronization across all work-items within a single sub-group is carried
-out using a _sub-group function_.
-These functions carry out collective operations across all the work-items in
-a sub-group.
-Available collective operations are: barrier, reduction, broadcast, prefix
-sum, and evaluation of a predicate.
-A sub-group function must occur within a converged control flow; i.e. all
-work-items in the sub-group must encounter precisely the same sub-group
-function.
-For example, if a work-group function occurs within a loop, the work-items
-must encounter the same sub-group function in the same loop iterations.
-All the work-items of a sub-group must execute the sub-group function and
-complete reads and writes to memory before any are allowed to continue
-execution beyond the sub-group function.
-Synchronization between sub-groups must either be performed using work-group
-functions, or through memory operations.
+Synchronization across work-items within a sub-group is done by using a
+_sub-group function_.
+These functions perform collective operations across the work-items in a
+sub-group.
+Like work-group functions, sub-group functions must also occur within a
+converged control flow; i.e. all work-items in the sub-group must encounter
+precisely the same sub-group function.
 Using memory operations for sub-group synchronization should be used
 carefully as forward progress of sub-groups relative to each other is only
 supported optionally by OpenCL implementations.
@@ -1157,9 +1148,10 @@ enforced at a synchronization point.
 IMPORTANT: This memory consistency model is <<unified-spec, missing
 before>> version 2.0.
 
-The OpenCL 2.x memory model tells programmers what they can expect from an
-OpenCL 2.x implementation; which memory operations are guaranteed to happen in
-which order and which memory values each read operation will return.
+The OpenCL 2.x memory consistency model tells programmers what they can expect
+from an OpenCL 2.x or newer implementation; which memory operations are
+guaranteed to happen in which order and which memory values each read operation
+will return.
 The memory model tells compiler writers which restrictions they must follow
 when implementing compiler optimizations; which variables they can cache in
 registers and when they can move reads or writes around a barrier or atomic
@@ -1168,7 +1160,7 @@ The memory model also tells hardware designers about limitations on hardware
 optimizations; for example, when they must flush or invalidate hardware
 caches.
 
-The memory consistency model in OpenCL 2.x is based on the memory model from
+The OpenCL 2.x memory consistency model is based on the memory model from
 the ISO C11 programming language.
 To help make the presentation more precise and self-contained, we include
 modified paragraphs taken verbatim from the ISO C11 international standard.
@@ -1184,13 +1176,13 @@ Each access to a memory location sees the last assignment to that location
 in that interleaving.
 While sequential consistency is relatively straightforward for a programmer
 to reason about, implementing sequential consistency is expensive.
-Therefore, OpenCL 2.x implements a relaxed memory consistency model; i.e. it is
-possible to write programs where the loads from memory violate sequential
-consistency.
+Therefore, the OpenCL 2.x memory consistency model is a relaxed memory
+consistency model; i.e. it is possible to write programs where the loads from
+memory violate sequential consistency.
 Fortunately, if a program does not contain any races and if the program only
 uses atomic operations that utilize the sequentially consistent memory order
-(the default memory ordering for OpenCL 2.x), OpenCL programs appear to execute
-with sequential consistency.
+(the default memory ordering for OpenCL C 2.x), OpenCL programs appear to
+execute with sequential consistency.
 
 Programmers can to some degree control how the memory model is relaxed by
 choosing the memory order for synchronization operations.
@@ -1198,10 +1190,10 @@ The precise semantics of synchronization and the memory orders are formally
 defined in <<memory-ordering-rules, Memory Ordering Rules>>.
 Here, we give a high level description of how these memory orders apply to
 atomic operations on atomic objects shared between units of execution.
-OpenCL 2.x memory_order choices are based on those from the ISO C11 standard
+The OpenCL 2.x memory orders are based on those from the ISO C11 standard
 memory model.
-They are specified in certain OpenCL functions through the following
-enumeration constants:
+They are specified in certain OpenCL C functions through the following
+*memory_order* enumeration constants:
 
   * *memory_order_relaxed*: implies no order constraints.
     This memory order can be used safely to increment counters that are
@@ -1239,13 +1231,13 @@ detailed rules for when synchronisation must occur.
     loads and stores from different units of execution appear to be simply
     interleaved.
 
-Regardless of which memory_order is specified, resolving constraints on
+Regardless of which memory order is specified, resolving constraints on
 memory operations across a heterogeneous platform adds considerable overhead
 to the execution of a program.
 An OpenCL platform may be able to optimize certain operations that depend on
 the features of the memory consistency model by restricting the scope of the
 memory operations.
-Distinct memory scopes are defined by the values of the memory_scope
+Distinct memory scopes are defined by the values of the *memory_scope*
 enumeration constant:
 
   * *memory_scope_work_item*: memory-ordering constraints only apply within
@@ -1308,8 +1300,8 @@ detailed rules behind the relaxed memory models and go directly to
 
 === Overview of Atomic and Fence Operations
 
-OpenCL 2.x has a number of _synchronization operations_ that are used to define
-memory order constraints in a program.
+OpenCL C 2.x has a number of _synchronization operations_ that are used to
+define memory order constraints in a program.
 They play a special role in controlling how memory operations in one unit of
 execution (such as work-items or, when using SVM a host thread) are made
 visible to another.
@@ -1319,17 +1311,13 @@ operations_ and _fences_.
 Atomic operations are indivisible.
 They either occur completely or not at all.
 These operations are used to order memory operations between units of
-execution and hence they are parameterized with the memory_order and
-memory_scope parameters defined by the OpenCL memory consistency model.
+execution and hence they are parameterized with the memory order and
+memory scope parameters defined by the OpenCL memory consistency model.
 The atomic operations for OpenCL kernel languages are similar to the
 corresponding operations defined by the C11 standard.
 
-The OpenCL 2.x atomic operations apply to variables of an atomic type (a
-subset of those in the C11 standard) including atomic versions of the int,
-uint, long, ulong, float, double, half, intptr_t, uintptr_t, size_t, and
-ptrdiff_t types.
-However, support for some of these atomic types depends on support for the
-corresponding regular types.
+The OpenCL C 2.x atomic operations apply to variables of an atomic type (a
+subset of those in the C11 standard).
 
 An atomic operation on one or more memory locations is either an acquire
 operation, a release operation, or both an acquire and release operation.
@@ -1345,40 +1333,41 @@ The orders *memory_order_acquire* (used for reads), *memory_order_release*
 (used for writes), and *memory_order_acq_rel* (used for read-modify-write
 operations) are used for simple communication between units of execution
 using shared variables.
-Informally, executing a *memory_order_release* on an atomic object A makes
+Informally, executing a *memory_order_release* on an atomic object *A* makes
 all previous side effects visible to any unit of execution that later
-executes a *memory_order_acquire* on A.
+executes a *memory_order_acquire* on *A*.
 The orders *memory_order_acquire*, *memory_order_release*, and
 *memory_order_acq_rel* do not provide sequential consistency for race-free
 programs because they will not ensure that atomic stores followed by atomic
 loads become visible to other threads in that order.
 
 [[atomic-fence-orders]]
-The fence operation is atomic_work_item_fence, which includes a memory_order
-argument as well as the memory_scope and cl_mem_fence_flags arguments.
-Depending on the memory_order argument, this operation:
+The fence operation is *atomic_work_item_fence*, which includes a memory order
+argument as well as memory scope and memory flag arguments.
+Depending on the memory order argument, this operation:
 
-  * has no effects, if *memory_order_relaxed*;
-  * is an acquire fence, if *memory_order_acquire*;
-  * is a release fence, if *memory_order_release*;
-  * is both an acquire fence and a release fence, if *memory_order_acq_rel*;
+  * has no effects, if the memory order is *memory_order_relaxed*;
+  * is an acquire fence, if the memory order is *memory_order_acquire*;
+  * is a release fence, if the memory order is *memory_order_release*;
+  * is both an acquire fence and a release fence, if the memory order is
+  *memory_order_acq_rel*;
   * is a sequentially-consistent fence with both acquire and release
-    semantics, if *memory_order_seq_cst*.
+    semantics, if the memory order is *memory_order_seq_cst*.
 
 If specified, the cl_mem_fence_flags argument must be `CLK_IMAGE_MEM_FENCE`,
 `CLK_GLOBAL_MEM_FENCE`, `CLK_LOCAL_MEM_FENCE`, or `CLK_GLOBAL_MEM_FENCE |
 CLK_LOCAL_MEM_FENCE`.
 
-The `atomic_work_item_fence(CLK_IMAGE_MEM_FENCE, ...)` built-in function must be
-used to make sure that sampler-less writes are visible to later reads by the
-same work-item.
-Without use of the atomic_work_item_fence function, write-read coherence on
+The *atomic_work_item_fence* built-in function must be used with
+`CLK_IMAGE_MEM_FENCE` to make sure that sampler-less writes are visible to later
+reads by the same work-item.
+Without use of the *atomic_work_item_fence* function, write-read coherence on
 image objects is not guaranteed: if a work-item reads from an image to which
-it has previously written without an intervening atomic_work_item_fence, it
+it has previously written without an intervening *atomic_work_item_fence*, it
 is not guaranteed that those previous writes are visible to the work-item.
 
-The synchronization operations in OpenCL 2.x can be parameterized by a
-memory_scope.
+The synchronization operations in OpenCL C 2.x can be parameterized by a
+memory scope.
 Memory scopes control the extent that an atomic operation or fence is
 visible with respect to the memory model.
 These memory scopes may be used when performing atomic operations and fences
@@ -1509,9 +1498,9 @@ A local memory action *A* local-happens-before a local memory action *B* if
   * For some local memory action *C*, *A* local-happens-before *C* and *C*
     local-happens-before *B*.
 
-An OpenCL 2.x implementation shall ensure that no program execution
-demonstrates a cycle in either the local-happens-before relation or the
-global-happens-before relation.
+An implementation of the OpenCL 2.x memory consistency model shall ensure that
+no program execution demonstrates a cycle in either the local-happens-before
+relation or the global-happens-before relation.
 
 NOTE: The global- and local-happens-before relations are critical to
 defining what values are read and when data races occur.
@@ -1593,12 +1582,12 @@ This requirement is known as write-read coherence.
 This and following sections describe how different program actions in kernel
 C code and the host program contribute to the local- and
 global-happens-before relations.
-This section discusses ordering rules for OpenCL 2.x atomic operations.
+This section discusses ordering rules for OpenCL C 2.x atomic operations.
 
-<<device-side-enqueue, Device-side enqueue>> defines the enumerated type
-memory_order.
+The <<memory-consistency-model>> section defines the enumerated type
+*memory_order*.
 
-  * For *memory_order_relaxed*, no operation orders memory.
+  * For *memory_order_relaxed*, there is no memory ordering.
   * For *memory_order_release*, *memory_order_acq_rel*, and
     *memory_order_seq_cst*, a store operation performs a release operation
     on the affected memory location.
@@ -1723,16 +1712,16 @@ reasonable amount of time.
 <<iso-c11,[C11 standard, Section 7.17.3, paragraph 16.]>>
 
 As long as the following conditions are met, a host program sharing SVM memory
-with a kernel executing on one or more OpenCL 2.x devices may use atomic and
-synchronization operations to ensure that its assignments, and those of the
-kernel, are visible to each other:
+with a kernel executing on one or more OpenCL 2.x or newer devices may use
+atomic and synchronization operations to ensure that its assignments, and those
+of the kernel, are visible to each other:
 
   . Either fine-grained buffer or fine-grained system SVM must be used to
     share memory.
     While coarse-grained buffer SVM allocations may support atomic
     operations, visibility on these allocations is not guaranteed except at
     map and unmap operations.
-  . The optional OpenCL 2.x SVM atomic-controlled visibility specified by
+  . The optional OpenCL SVM atomic-controlled visibility specified by
     provision of the {CL_MEM_SVM_ATOMICS} flag must be supported by the device
     and the flag provided to the SVM buffer on allocation.
   . The host atomic and synchronization operations must be compatible with
@@ -1748,11 +1737,11 @@ all_svm_devices scope.
 [[memory-ordering-fence]]
 ==== Fence Operations
 
-This section describes how the OpenCL 2.x fence operations contribute to the
+This section describes how the OpenCL C 2.x fence operations contribute to the
 local- and global-happens-before relations.
 
 Earlier, we introduced synchronization primitives called fences.
-Fences can utilize the acquire memory_order, release memory_order, or both.
+Fences can utilize the acquire memory order, release memory order, or both.
 A fence with acquire semantics is called an acquire fence; a fence with
 release semantics is called a release fence.  The <<atomic-fence-orders,
 overview of atomic and fence operations>> section describes the memory orders
@@ -1990,8 +1979,6 @@ following:
     command-queue, then the event (including the event implied between *C*
     and *C1* due to the in-order queue) signaling *C*'s completion
     global-synchronizes-with *C1*.
-    Note that in OpenCL 2.x, only a host command-queue can be configured as
-    an in-order queue.
   . If an API call enqueues a marker command *C* with an empty list of
     events upon which *C* should wait, then the events of all commands
     enqueued prior to *C* in the command-queue global-synchronize-with *C*.
@@ -2053,7 +2040,7 @@ In this situation:
     enqueued from the host to a single device is guaranteed under the memory
     ordering rules described earlier in this section.
 
-If fine-grain SVM is used but without support for the OpenCL 2.x atomic
+If fine-grain SVM is used but without support for SVM atomic
 operations, then the host and devices can concurrently read the same memory
 locations and can concurrently update non-overlapping memory regions, but
 attempts to update the same memory locations are undefined.
