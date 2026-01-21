@@ -1,4 +1,4 @@
-// Copyright 2018-2024 The Khronos Group. This work is licensed under a
+// Copyright 2018-2026 The Khronos Group. This work is licensed under a
 // Creative Commons Attribution 4.0 International License; see
 // http://creativecommons.org/licenses/by/4.0/
 
@@ -10,12 +10,6 @@
 = cl_ext_kernel_cooperative_matrix
 :R: pass:q,r[^(R)^]
 Khronos{R} OpenCL Working Group
-
-
-[float]
-== XXX - Not complete yet!!!
-
-
 
 == Name Strings
 
@@ -61,7 +55,7 @@ This extension is written against the OpenCL 3.0 C Language specification and th
 == Overview
 
 This extension adds a new set of types known as "cooperative matrix" types,
-where the load/store operations and computations performed on the matrix are spread
+where the load/store operations and computations performed on such matrix types are spread
 across a set of invocations such as a subgroup. These types give the
 implementation freedom in how to optimize matrix multiply operations.
 
@@ -157,11 +151,11 @@ __attribute__ ((coop_mat(_scope_, _row_, _column_, _use_)))
 
 [source,c]
 ----
-coop_mat coop_mat_load(const gentype p, const size_t stride, const coop_matrix_layout_t layout);
-void coop_mat_store(coop_mat m, const gentype *p, const size_t _stride, const coop_matrix_layout_t layout);
-coop_mat coop_matmul_add(coop_mat A, coop_mat B, coop_mat C);
-coop_mat coop_matmul_add(coop_mat A, coop_mat B, coop_mat C, coop_matrix_operands_t matrix_operands);
-uint coop_mat_length(coop_mat m);
+component_type __attribute__((coop_mat(...))) coop_mat_load(const gentype p, const coop_matrix_layout_t layout, const size_t stride);
+void coop_mat_store(component_type __attribute__((coop_mat(...))) m, const gentype *p, const coop_matrix_layout_t layout, const size_t _stride);
+component_type __attribute__((coop_mat(...))) coop_matmul_add(component_type __attribute__((coop_mat(...))) A, component_type __attribute__((coop_mat(...))) B, component_type __attribute__((coop_mat(...))) C);
+component_type __attribute__((coop_mat(...))) coop_matmul_add(component_type __attribute__((coop_mat(...))) A, component_type __attribute__((coop_mat(...))) B, component_type __attribute__((coop_mat(...))) C, coop_matrix_operands_t matrix_operands);
+uint coop_mat_length(component_type __attribute__((coop_mat(...))) m);
 ----
 
 == Modifications to the OpenCL API Specification
@@ -172,8 +166,8 @@ None
 
 === (Add a new Section 6.3.X, *Cooperative Matrix Type*) :
 
-Cooperative matrix types are matrix types where the storage for, and
-computations performed on, the matrix are spread across a set of
+Cooperative matrix types are types where the load/store operations and
+computations that are performed on the matrix elements are spread across a set of
 invocations such as a subgroup. These types give the implementation
 freedom in how to optimize matrix multiply operations.
 
@@ -246,7 +240,7 @@ divide (/) operate on cooperative matrix types and perform the operation
 component-wise. The operands must have identical types.
 
 The arithmetic binary operator multiply (*) also operates on a cooperative
-matrix type and a scalar (in either order) and performs the multiply
+matrix type and a scalar (in either order) and performs the multiply operation
 component-wise. The scalar type must match the component type of the
 matrix.
 
@@ -279,6 +273,20 @@ for (int i = 0; i < coop_mat_length(m); ++i) {
 When the *sizeof* operator is applied to a cooperative matrix type,
 the result is the total size (in bytes) of the cooperative matrix across all invocations in its scope.
 The result is implementation-defined.
+
+=== (Add to Section 6.7.7. *Initialization*)
+
+Cooperative matrices can be initialized using a single scalar value as follows:
+
+[source,c]
+----
+float vmat1 attribute((coop_mat(memory_scope_sub_group, 8, 8, CLK_COOPERATIVE_MATRIX_A))) = {0.0};
+----
+
+The single scalar value can be any given value (constant or variable) as cooperative matrices
+can be defined in private address space. Type of the scalar value should match the base
+component type of the cooperative matrix, and all components of the matrix are initialized to
+that value.
 
 === (Add to Section 6.11. *Restrictions*) :
 
@@ -323,7 +331,7 @@ be active or all must be inactive.
 [cols="7,3",options="header",]
 |====
 | Function | Description
-| coop_mat **coop_mat_load**(const gentype *_p_, const size_t _stride_, const coop_matrix_layout_t _layout_)
+| coop_mat **coop_mat_load**(const gentype *_p_, const coop_matrix_layout_t _layout_, const size_t _stride_)
  | Load a cooperative matrix from _p_. +
    If _layout_ is `CLK_COOPERATIVE_MATRIX_LAYOUT_ROW_MAJOR`,
    then elements (row,\*) of the result are taken in
@@ -331,7 +339,7 @@ be active or all must be inactive.
    If _layout_ is `CLK_COOPERATIVE_MATRIX_LAYOUT_COLUMN_MAJOR`,
    then elements (*,col) of the result are taken in
    order from contiguous locations starting at _p_ + _col_*_stride_.
-|  void **coop_mat_store**(coop_mat _m_, const gentype *_p_, const size_t _stride_, const coop_matrix_layout_t _layout_);
+|  void **coop_mat_store**(coop_mat _m_, const gentype *_p_, const coop_matrix_layout_t _layout_, const size_t _stride_);
  | Store a cooperative matrix to _p_. +
    If _layout_ is `CLK_COOPERATIVE_MATRIX_LAYOUT_ROW_MAJOR`,
    then elements (row,\*) of _m_ are stored in
