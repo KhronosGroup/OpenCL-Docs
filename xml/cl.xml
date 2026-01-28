@@ -465,6 +465,66 @@ server's OpenCL/api-docs repository.
     CL_SVM_CAPABILITY_CONCURRENT_ATOMIC_ACCESS_KHR | \
     CL_SVM_CAPABILITY_INDIRECT_ACCESS_KHR)</type>
 
+        <type category="funcpointer" name="cl_free_svm_callback">
+            <proto><type>void</type></proto>
+            <param><type>cl_command_queue</type>            <name>queue</name></param>
+            <param><type>cl_uint</type>                     <name>num_svm_pointers</name></param>
+            <param><type>void</type>*                       <name>svm_pointers</name>[]</param>
+            <param><type>void</type>*                       <name>user_data</name></param>
+        </type>
+
+        <type category="funcpointer" name="cl_context_error_callback">
+            <proto><type>void</type></proto>
+            <param>const <type>char</type>*                 <name>errinfo</name></param>
+            <param>const <type>void</type>*                 <name>private_info</name></param>
+            <param><type>size_t</type>                      <name>cb</name></param>
+            <param><type>void</type>*                       <name>user_data</name></param>
+        </type>
+
+        <type category="funcpointer" name="cl_context_destruction_callback">
+            <proto><type>void</type></proto>
+            <param><type>cl_context</type>                  <name>context</name></param>
+            <param><type>void</type>*                       <name>user_data</name></param>
+        </type>
+
+        <type category="funcpointer" name="cl_mem_object_destruction_callback">
+            <proto><type>void</type></proto>
+            <param><type>cl_mem</type>                      <name>memobj</name></param>
+            <param><type>void</type>*                       <name>user_data</name></param>
+        </type>
+
+        <type category="funcpointer" name="cl_program_callback">
+            <proto><type>void</type></proto>
+            <param><type>cl_program</type>                  <name>program</name></param>
+            <param><type>void</type>*                       <name>user_data</name></param>
+        </type>
+
+        <type category="funcpointer" name="cl_program_destruction_callback">
+            <proto><type>void</type></proto>
+            <param><type>cl_program</type>                  <name>program</name></param>
+            <param><type>void</type>*                       <name>user_data</name></param>
+        </type>
+
+        <type category="funcpointer" name="cl_event_status_change_callback">
+            <proto><type>void</type></proto>
+            <param><type>cl_event</type>                    <name>event</name></param>
+            <param><type>cl_int</type>                      <name>event_command_status</name></param>
+            <param><type>void</type>*                       <name>user_data</name></param>
+        </type>
+
+        <type category="funcpointer" name="cl_native_kernel_callback">
+            <proto><type>void</type></proto>
+            <param><type>void</type>*                       <name>user_data</name></param>
+        </type>
+
+        <type category="funcpointer" name="cl_printf_callback">
+            <proto><type>void</type></proto>
+            <param>const <type>char</type>*                 <name>buffer</name></param>
+            <param><type>size_t</type>                      <name>len</name></param>
+            <param><type>size_t</type>                      <name>complete</name></param>
+            <param><type>void</type>*                       <name>user_data</name></param>
+        </type>
+
     </types>
 
     <!-- SECTION: OpenCL enumerant (token) definitions. -->
@@ -2976,7 +3036,7 @@ server's OpenCL/api-docs repository.
             <param><type>cl_command_queue</type>           <name>command_queue</name></param>
             <param><type>cl_uint</type>                    <name>num_svm_pointers</name></param>
             <param><type>void</type>*                      <name>svm_pointers</name>[]</param>
-            <param>void (CL_CALLBACK*                      <name>pfn_free_func</name>)(cl_command_queue queue, cl_uint num_svm_pointers, void * svm_pointers[], void *user_data)</param>
+            <param><type>cl_free_svm_callback</type>       <name>pfn_free_func</name></param>
             <param><type>void</type>*                      <name>user_data</name></param>
             <param><type>cl_uint</type>                    <name>num_events_in_wait_list</name></param>
             <param>const <type>cl_event</type>*            <name>event_wait_list</name></param>
@@ -3624,7 +3684,7 @@ server's OpenCL/api-docs repository.
             <param>const <type>cl_context_properties</type>*            <name>properties</name></param>
             <param><type>cl_uint</type>                                 <name>num_devices</name></param>
             <param>const <type>cl_device_id</type>*                     <name>devices</name></param>
-            <param>void (CL_CALLBACK*                                   <name>pfn_notify</name>)(const char* errinfo, const void* private_info, size_t cb, void* user_data)</param>
+            <param><type>cl_context_error_callback</type>               <name>pfn_notify</name></param>
             <param><type>void</type>*                                   <name>user_data</name></param>
             <param><type>cl_int</type>*                                 <name>errcode_ret</name></param>
         </command>
@@ -3632,7 +3692,7 @@ server's OpenCL/api-docs repository.
             <proto><type>cl_context</type>                              <name>clCreateContextFromType</name></proto>
             <param>const <type>cl_context_properties</type>*            <name>properties</name></param>
             <param><type>cl_device_type</type>                          <name>device_type</name></param>
-            <param>void (CL_CALLBACK*                                   <name>pfn_notify</name>)(const char* errinfo, const void* private_info, size_t cb, void* user_data)</param>
+            <param><type>cl_context_error_callback</type>               <name>pfn_notify</name></param>
             <param><type>void</type>*                                   <name>user_data</name></param>
             <param><type>cl_int</type>*                                 <name>errcode_ret</name></param>
         </command>
@@ -3655,7 +3715,7 @@ server's OpenCL/api-docs repository.
         <command suffix="CL_API_SUFFIX__VERSION_3_0">
             <proto><type>cl_int</type>                                  <name>clSetContextDestructorCallback</name></proto>
             <param><type>cl_context</type>                              <name>context</name></param>
-            <param>void (CL_CALLBACK*                                   <name>pfn_notify</name>)(cl_context context, void* user_data)</param>
+            <param><type>cl_context_destruction_callback</type>         <name>pfn_notify</name></param>
             <param><type>void</type>*                                   <name>user_data</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_2_0">
@@ -3778,13 +3838,13 @@ server's OpenCL/api-docs repository.
         <command suffix="CL_API_SUFFIX__VERSION_1_1">
             <proto><type>cl_int</type>                                  <name>clSetMemObjectDestructorCallback</name></proto>
             <param><type>cl_mem</type>                                  <name>memobj</name></param>
-            <param>void (CL_CALLBACK*                                   <name>pfn_notify</name>)(cl_mem memobj, void* user_data)</param>
+            <param><type>cl_mem_object_destruction_callback</type>      <name>pfn_notify</name></param>
             <param><type>void</type>*                                   <name>user_data</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_0">
             <proto><type>cl_int</type>                                  <name>clSetMemObjectDestructorAPPLE</name></proto>
             <param><type>cl_mem</type>                                  <name>memobj</name></param>
-            <param>void (CL_CALLBACK*                                   <name>pfn_notify</name>)(cl_mem memobj, void* user_data)</param>
+            <param><type>cl_mem_object_destruction_callback</type>      <name>pfn_notify</name></param>
             <param><type>void</type>*                                   <name>user_data</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_2_0">
@@ -3868,7 +3928,7 @@ server's OpenCL/api-docs repository.
             <param><type>cl_uint</type>                                 <name>num_devices</name></param>
             <param>const <type>cl_device_id</type>*                     <name>device_list</name></param>
             <param>const <type>char</type>*                             <name>options</name></param>
-            <param>void (CL_CALLBACK*                                   <name>pfn_notify</name>)(cl_program program, void* user_data)</param>
+            <param><type>cl_program_callback</type>                     <name>pfn_notify</name></param>
             <param><type>void</type>*                                   <name>user_data</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_2">
@@ -3880,7 +3940,7 @@ server's OpenCL/api-docs repository.
             <param><type>cl_uint</type>                                 <name>num_input_headers</name></param>
             <param>const <type>cl_program</type>*                       <name>input_headers</name></param>
             <param>const <type>char</type>**                            <name>header_include_names</name></param>
-            <param>void (CL_CALLBACK*                                   <name>pfn_notify</name>)(cl_program program, void* user_data)</param>
+            <param><type>cl_program_callback</type>                     <name>pfn_notify</name></param>
             <param><type>void</type>*                                   <name>user_data</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_2">
@@ -3891,14 +3951,14 @@ server's OpenCL/api-docs repository.
             <param>const <type>char</type>*                             <name>options</name></param>
             <param><type>cl_uint</type>                                 <name>num_input_programs</name></param>
             <param>const <type>cl_program</type>*                       <name>input_programs</name></param>
-            <param>void (CL_CALLBACK*                                   <name>pfn_notify</name>)(cl_program program, void* user_data)</param>
+            <param><type>cl_program_callback</type>                     <name>pfn_notify</name></param>
             <param><type>void</type>*                                   <name>user_data</name></param>
             <param><type>cl_int</type>*                                 <name>errcode_ret</name></param>
         </command>
         <command prefix="CL_API_PREFIX__VERSION_2_2_DEPRECATED" suffix="CL_API_SUFFIX__VERSION_2_2_DEPRECATED">
             <proto><type>cl_int</type>                                  <name>clSetProgramReleaseCallback</name></proto>
             <param><type>cl_program</type>                              <name>program</name></param>
-            <param>void (CL_CALLBACK*                                   <name>pfn_notify</name>)(cl_program program, void* user_data)</param>
+            <param><type>cl_program_destruction_callback</type>         <name>pfn_notify</name></param>
             <param><type>void</type>*                                   <name>user_data</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_2_2">
@@ -4053,7 +4113,7 @@ server's OpenCL/api-docs repository.
             <proto><type>cl_int</type>                                  <name>clSetEventCallback</name></proto>
             <param><type>cl_event</type>                                <name>event</name></param>
             <param><type>cl_int</type>                                  <name>command_exec_callback_type</name></param>
-            <param>void (CL_CALLBACK*                                   <name>pfn_notify</name>)(cl_event event, cl_int event_command_status, void *user_data)</param>
+            <param><type>cl_event_status_change_callback</type>         <name>pfn_notify</name></param>
             <param><type>void</type>*                                   <name>user_data</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_0">
@@ -4307,7 +4367,7 @@ server's OpenCL/api-docs repository.
         <command suffix="CL_API_SUFFIX__VERSION_1_0">
             <proto><type>cl_int</type>                                  <name>clEnqueueNativeKernel</name></proto>
             <param><type>cl_command_queue</type>                        <name>command_queue</name></param>
-            <param>void (CL_CALLBACK*                                   <name>user_func</name>)(void*)</param>
+            <param><type>cl_native_kernel_callback</type>               <name>user_func</name></param>
             <param><type>void</type>*                                   <name>args</name></param>
             <param><type>size_t</type>                                  <name>cb_args</name></param>
             <param><type>cl_uint</type>                                 <name>num_mem_objects</name></param>
@@ -4336,7 +4396,7 @@ server's OpenCL/api-docs repository.
             <param><type>cl_command_queue</type>                        <name>command_queue</name></param>
             <param><type>cl_uint</type>                                 <name>num_svm_pointers</name></param>
             <param><type>void</type>*                                   <name>svm_pointers</name>[]</param>
-            <param>void (CL_CALLBACK*                                   <name>pfn_free_func</name>)(cl_command_queue queue, cl_uint num_svm_pointers, void* svm_pointers[], void* user_data)</param>
+            <param><type>cl_free_svm_callback</type>                    <name>pfn_free_func</name></param>
             <param><type>void</type>*                                   <name>user_data</name></param>
             <param><type>cl_uint</type>                                 <name>num_events_in_wait_list</name></param>
             <param>const <type>cl_event</type>*                         <name>event_wait_list</name></param>
@@ -4665,6 +4725,9 @@ server's OpenCL/api-docs repository.
             <type name="cl_profiling_info"/>
             <type name="cl_image_format"/>
             <type name="cl_buffer_region"/>
+            <type name="cl_context_error_callback"/>
+            <type name="cl_program_callback"/>
+            <type name="cl_native_kernel_callback"/>
         </require>
         <require comment="Constants">
             <enum name="CL_CHAR_BIT"/>
@@ -5171,6 +5234,8 @@ server's OpenCL/api-docs repository.
     <feature api="opencl" name="CL_VERSION_1_1" number="1.1" comment="OpenCL core API interface definitions">
         <require>
             <type name="cl_buffer_create_type"/>
+            <type name="cl_mem_object_destruction_callback"/>
+            <type name="cl_event_status_change_callback"/>
         </require>
         <require comment="Constants">
             <enum name="CL_NAN"/>
@@ -5437,6 +5502,7 @@ server's OpenCL/api-docs repository.
             <type name="cl_pipe_info"/>
             <type name="cl_sampler_properties"/>
             <type name="cl_kernel_exec_info"/>
+            <type name="cl_free_svm_callback"/>
         </require>
         <require comment="Error codes">
             <enum name="CL_INVALID_PIPE_SIZE"/>
@@ -5598,6 +5664,9 @@ server's OpenCL/api-docs repository.
     </feature>
 
     <feature api="opencl" name="CL_VERSION_2_2" number="2.2" comment="OpenCL core API interface definitions">
+        <require>
+            <type name="cl_program_destruction_callback"/>
+        </require>
         <require comment="Error codes">
             <enum name="CL_INVALID_SPEC_ID"/>
             <enum name="CL_MAX_SIZE_RESTRICTION_EXCEEDED"/>
@@ -5622,6 +5691,7 @@ server's OpenCL/api-docs repository.
             <type name="cl_mem_properties"/>
             <type name="cl_version"/>
             <type name="cl_name_version"/>
+            <type name="cl_context_destruction_callback"/>
         </require>
         <require comment="cl_device_atomic_capabilities - bitfield">
             <enum name="CL_DEVICE_ATOMIC_ORDER_RELAXED"/>
@@ -5903,6 +5973,9 @@ server's OpenCL/api-docs repository.
             <require>
                 <type name="CL/cl.h"/>
             </require>
+            <require condition="!defined(CL_VERSION_1_1)" comment="defined in CL.h for OpenCL 1.1 and newer">
+                <type name="cl_mem_object_destruction_callback"/>
+            </require>
             <require>
                 <command name="clSetMemObjectDestructorAPPLE"/>
             </require>
@@ -6112,6 +6185,9 @@ server's OpenCL/api-docs repository.
         <extension name="cl_arm_printf" revision="0.0.0" supported="opencl">
             <require>
                 <type name="CL/cl.h"/>
+            </require>
+            <require>
+                <type name="cl_printf_callback"/>
             </require>
             <require comment="cl_context_properties">
                 <enum name="CL_PRINTF_CALLBACK_ARM"/>
@@ -6389,6 +6465,9 @@ server's OpenCL/api-docs repository.
                 <type name="cl_svm_mem_flags_arm"/>
                 <type name="cl_kernel_exec_info_arm"/>
                 <type name="cl_device_svm_capabilities_arm"/>
+            </require>
+            <require condition="!defined(CL_VERSION_2_0)" comment="defined in CL.h for OpenCL 2.0 and newer">
+                <type name="cl_free_svm_callback"/>
             </require>
             <require comment="cl_device_info">
                 <enum name="CL_DEVICE_SVM_CAPABILITIES_ARM"/>
