@@ -1,0 +1,186 @@
+= cl_intel_kernel_allocations_info
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
+
+== Name Strings
+
+`cl_intel_kernel_allocations_info`
+
+== Contact
+
+Igor Venevtsev, Intel (igor 'dot' venevtsev 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Ben Ashbaugh, Intel +
+Igor Venevtsev, Intel +
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2026 Intel Corporation.  All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Revision: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL API Specification Version 3.0.19
+
+This extension requires `cl_intel_unified_shared_memory` extension
+for `cl_unified_shared_memory_type_intel` memory types enum.
+
+== Overview
+
+The goal of the extension is to report in unified form GPU memory ranges used by kernel,
+both explicit like kernel arguments and implicit ones made by driver like printf surface,
+scratch surface, etc. This information later can be used for some kernel instrumentation
+to detect out-of-bound accesses, kernel profiling and so on.
+There is a 2-step process to obtain this information. The first step is to find the count
+of memory allocations owned by kernel, so the buffer is large enough to store this number
+of `cl_kernel_allocation_info_intel` structs must be allocated later.
+This is done by providing an input allocation infos pointer with `nullptr` value.
+After allocating a storage array of this size, the user then provides the valid size
+and storage location to retrieve the data.
+
+Information about memory allocation owned by kernel returned in
+`cl_kernel_allocation_info_intel` struct. In case of internal allocation
+(not a kernel argument) `arg_index` will be set to -1.
+
+The following pseudo-code shows how to print information about kernel allocations:
+
+[source, c++]
+----
+size_t sz = 0;
+clGetKernelWorkGroupInfo(kernel, device,
+    CL_KERNEL_ALLOCATIONS_INFO_INTEL,
+    0, nullptr, &sz);
+
+size_t numAllocs = sz / sizeof(cl_kernel_allocation_info_intel);
+std::vector<cl_kernel_allocation_info_intel> allocInfos(numAllocs);
+clGetKernelWorkGroupInfo(kernel, device,
+    CL_KERNEL_ALLOCATIONS_INFO_INTEL,
+    sz, allocInfos.data(), nullptr);
+
+auto toStr = [](cl_unified_shared_memory_type_intel type) {
+    switch (type) {
+    default: return "CL_MEM_TYPE_UNKNOWN_INTEL";
+#define CASE(_X_) case _X_ : return #_X_;
+    CASE(CL_MEM_TYPE_UNKNOWN_INTEL);
+    CASE(CL_MEM_TYPE_HOST_INTEL);
+    CASE(CL_MEM_TYPE_DEVICE_INTEL);
+    CASE(CL_MEM_TYPE_SHARED_INTEL);
+#undef  CASE
+    }
+};
+
+for (uint32_t i = 0; i < numAllocs; ++i) {
+    std::cout << "Allocation " << i << ": " << std::hex << "0x" << allocInfos[i].base << ", size: " << std::dec << allocInfos[i].size
+              << " arg_index: " << allocInfos[i].arg_index << " type: " << toStr(allocInfos[i].type) << "n";
+}
+----
+
+Possible output:
+
+[source, bash]
+----
+Allocation 0: 0x14d9ff00000, size: 65536 arg_index: 0 type: CL_MEM_TYPE_SHARED_INTEL
+Allocation 1: 0x14d9fef0000, size: 65536 arg_index: 2 type: CL_MEM_TYPE_SHARED_INTEL
+Allocation 2: 0x14d9ff20000, size: 4194304 arg_index: -1 type: CL_MEM_TYPE_UNKNOWN_INTEL
+Allocation 3: 0xffff80010010b000, size: 4096 arg_index: -1 type: CL_MEM_TYPE_UNKNOWN_INTEL
+----
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+Accepted value for the _param_name_ parameter to
+*clGetKernelWorkGroupInfo* to query kernel allocationis information:
+
+[source,c]
+----
+#define CL_KERNEL_ALLOCATIONS_INFO_INTEL 0x425A
+----
+
+== New API Types
+
+Returned as the query result value *clGetKernelWorkGroupInfo* for `CL_KERNEL_ALLOCATIONS_INFO_INTEL`:
+
+[source]
+----
+typedef struct _cl_kernel_allocation_info_intel {
+    void* base;
+    size_t size;
+    cl_unified_shared_memory_type_intel type;
+    cl_int arg_index;
+} cl_kernel_allocation_info_intel;
+----
+
+== Modifications to the OpenCL API Specification
+
+=== Section 5.9.4 - Kernel Object Queries:
+
+Add to Table 29 - List of supported param_names by
+*clGetKernelWorkGroupInfo*:
+
+[caption="Table 29. "]
+.List of supported param_names by clGetKernelWorkGroupInfo
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_kernel_info* | Return Type | Info. returned in _param_value_
+| `CL_KERNEL_ALLOCATIONS_INFO_INTEL`
+  | `cl_kernel_allocation_info_intel[]`
+    | Returns an array of `cl_kernel_allocation_info_intel` structures describing kernel memory allocations information.
+    Each structure consists of:
+
+    `base`: Base address of the allocation.
+
+    `size`: Size of allocation in bytes.
+
+    `type`: Type of allocation as described in `cl_unified_shared_memory_type_intel` enum.
+    In case of internal (not a kernel argument) allocation `CL_MEM_TYPE_UNKNOWN_INTEL` will be returned.
+
+    `arg_index`: Kernel argument index corresponding to allocation.
+    In case of internal (not a kernel argument) allocation `-1` will be returned.
+|====
+
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1.0.0|2026-01-20|Igor Venevtsev|First public version
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************
