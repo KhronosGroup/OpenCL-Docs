@@ -481,9 +481,8 @@ ifdef::cl_khr_integer_dot_product[]
 [[cl_khr_integer_dot_product,cl_khr_integer_dot_product]]
 ==== Integer Dot Product
 
-The {cl_khr_integer_dot_product_EXT} extension adds support for SPIR-V
-instructions and OpenCL C built-in functions to compute the dot product of
-vectors of integers.
+The {cl_khr_integer_dot_product_EXT} extension adds OpenCL C built-in functions
+to compute the dot product of vectors of integers.
 The extension provides new <<table-builtin-functions, built-in vector
 integer argument functions>> operating on these types.
 endif::cl_khr_integer_dot_product[]
@@ -492,9 +491,9 @@ ifdef::cl_khr_kernel_clock[]
 [[cl_khr_kernel_clock,cl_khr_kernel_clock]]
 ==== Kernel Clock
 
-The `cl_khr_kernel_clock` extension adds support for SPIR-V instructions and
-OpenCL C built-in functions to sample the value from one of three clocks
-provided by compute units.  The extension provides the following functions:
+The {cl_khr_kernel_clock_EXT} extension adds OpenCL C built-in functions to sample
+the value from one of three clocks provided by compute units.
+The extension provides the following functions:
 
 * <<table-kernel-clock-functions,Built-in Kernel Clock Functions>>
 endif::cl_khr_kernel_clock[]
@@ -5357,7 +5356,7 @@ ifdef::cl_khr_fp16[gentypeh *fmax*(gentypeh _x_, half _y_)]
   gentypef *fmin*(gentypef _x_, float _y_) +
   gentyped *fmin*(gentyped _x_, double _y_)
 
-ifdef::cl_khr_fp16[gentypeh *fmax*(gentypeh _x_, half _y_)]
+ifdef::cl_khr_fp16[gentypeh *fmin*(gentypeh _x_, half _y_)]
     | Returns _y_ if _y_ < _x_, otherwise it returns _x_.
       If one argument is a NaN, *fmin*() returns the other argument.
       If both arguments are NaNs, *fmin*() returns a NaN.
@@ -5523,7 +5522,6 @@ endif::cl_khr_fp16[]
     | *mad* computes _a_ * _b_ + _c_.
       The function may compute _a_ * _b_ + _c_ with reduced accuracy in the
       embedded profile.
-      See the OpenCL SPIR-V Environment Specification for details.
       On some hardware the mad instruction may provide better performance
       than expanded computation of _a_ * _b_ + _c_.
       footnote:[{fn-mad-caution}]
@@ -13385,8 +13383,6 @@ The following behavior is undefined:
 [[enqueuing-kernels]]
 === Enqueuing Kernels
 
-[open,refpage='enqueue_kernel',desc='Enqueuing Kernels',type='freeform',spec='clang',anchor='enqueuing-kernels',xrefs='enqueue_marker']
---
 NOTE: The functionality described in this section <<unified-spec, requires>>
 support for OpenCL C 2.0, or OpenCL C 3.0 or newer and the
 {opencl_c_device_enqueue} feature.
@@ -13396,11 +13392,19 @@ enqueue additional work to the same device, without host interaction.
 A kernel may enqueue code represented by Block syntax, and control execution
 order with event dependencies including user events and markers.
 There are several advantages to using the Block syntax: it is more compact;
-it does not require a cl_kernel object; and enqueuing can be done as a
+it does not require a {cl_kernel_TYPE} object; and enqueuing can be done as a
 single semantic step.
 
+The macro `CLK_NULL_EVENT` refers to an invalid device event.
+The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
+
+[[built-in-functions-enqueuing-a-kernel]]
+==== Built-in Functions - Enqueuing a Kernel
+
+[open,refpage='enqueue_kernel',desc='Built-in Functions - Enqueuing Kernels',type='freeform',spec='clang',anchor='enqueuing-kernels',xrefs='enqueue_marker']
+--
 The following table describes the list of built-in functions that can be
-used to enqueue a kernel(s).
+used to enqueue a kernel.
 
 ifdef::cl_khr_device_enqueue_local_arg_types[]
 When the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is
@@ -13415,21 +13419,7 @@ signatures.
 
 When the  {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is
 not supported, the pointee type of these functions must be `void`.
-
-:localArgType: gentype
 endif::cl_khr_device_enqueue_local_arg_types[]
-
-ifndef::cl_khr_device_enqueue_local_arg_types[]
-:localArgType: void
-endif::cl_khr_device_enqueue_local_arg_types[]
-
-The macro `CLK_NULL_EVENT` refers to an invalid device event.
-The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
---
-
-
-[[built-in-functions-enqueuing-a-kernel]]
-==== Built-in Functions - Enqueuing a Kernel
 
 [[table-builtin-kernel-enqueue]]
 .Built-in Kernel Enqueue Functions
@@ -13444,12 +13434,25 @@ The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
     const clk_event_t *_event_wait_list_, clk_event_t *_event_ret_,
     void (^__block__)(void)) +
   int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
-    const ndrange_t _ndrange_, void (^__block__)(local {localArgType} *, ...),
+    const ndrange_t _ndrange_, void (^__block__)(local void *, ...),
     uint size0, ...) +
   int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
     const ndrange_t _ndrange_, uint _num_events_in_wait_list_,
     const clk_event_t *_event_wait_list_, clk_event_t *_event_ret_,
-    void (^__block__)(local {localArgType} *, ...), uint size0, ...)
+    void (^__block__)(local void *, ...), uint size0, ...)
+
+ifdef::cl_khr_device_enqueue_local_arg_types[]
+  If the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is supported:
+
+  int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
+    const ndrange_t _ndrange_, void (^__block__)(local gentype *, ...),
+    uint size0, ...) +
+  int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
+    const ndrange_t _ndrange_, uint _num_events_in_wait_list_,
+    const clk_event_t *_event_wait_list_, clk_event_t *_event_ret_,
+    void (^__block__)(local gentype *, ...), uint size0, ...)
+endif::cl_khr_device_enqueue_local_arg_types[]
+
     | Enqueue the block for execution to _queue_.
 
       If an event is returned, *enqueue_kernel* performs an implicit retain
@@ -13458,7 +13461,7 @@ The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
 
 The *enqueue_kernel* built-in function allows a work-item to enqueue a
 block.
-Work-items can enqueue multiple blocks to a device queue(s).
+Work-items can enqueue multiple blocks to device queues.
 
 The *enqueue_kernel* built-in function returns `CLK_SUCCESS` if the block is
 enqueued successfully and returns `CLK_ENQUEUE_FAILURE` otherwise.
@@ -13483,6 +13486,7 @@ block:
     could not be allocated.
   * `CLK_OUT_OF_RESOURCES` if there is a failure to queue the block in
     _queue_ because of insufficient resources needed to execute the kernel.
+--
 
 Below are some examples of how to enqueue a block.
 
@@ -13797,7 +13801,14 @@ execution.
 |====
 | Built-in Function | Description
 | uint *get_kernel_work_group_size*(void (^block)(void)) +
-  uint *get_kernel_work_group_size*(void (^block)(local {localArgType} *, ...))
+  uint *get_kernel_work_group_size*(void (^block)(local void *, ...))
+
+ifdef::cl_khr_device_enqueue_local_arg_types[]
+  If the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is supported:
+
+  uint *get_kernel_work_group_size*(void (^block)(local gentype *, ...))
+endif::cl_khr_device_enqueue_local_arg_types[]
+
     | This provides a mechanism to query the maximum work-group size that
       can be used to execute a block on a specific device given by _device_.
 
@@ -13805,7 +13816,15 @@ execution.
 | uint *{get_kernel_preferred_work_group_size_multiple}*(
   void (^block)(void)) +
   uint *{get_kernel_preferred_work_group_size_multiple}*(
-  void (^block)(local {localArgType} *, ...))
+  void (^block)(local void *, ...))
+
+ifdef::cl_khr_device_enqueue_local_arg_types[]
+  If the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is supported:
+
+  uint *{get_kernel_preferred_work_group_size_multiple}*(
+  void (^block)(local gentype *, ...))
+endif::cl_khr_device_enqueue_local_arg_types[]
+
     | Returns the preferred multiple of work-group size for launch.
       This is a performance hint.
       Specifying a work-group size that is not a multiple of the value
