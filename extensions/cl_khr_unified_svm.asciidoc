@@ -1,0 +1,1176 @@
+// Copyright 2025 The Khronos Group. This work is licensed under a
+// Creative Commons Attribution 4.0 International License; see
+// http://creativecommons.org/licenses/by/4.0/
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+include::{generated}/api/api-dictionary-no-links.asciidoc[]
+include::{generated}/api/ext-dictionary-no-links.asciidoc[]
+:source-highlighter: coderay
+
+= cl_khr_unified_svm
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C,
+// for syntax highlighting purposes.
+:language: c
+
+// This is what is needed for C++, since docbook uses c++
+// and everything else uses cpp.  This doesn't work when
+// source blocks are in table cells, though, so don't use
+// C++ unless it is required.
+//:language: {basebackend@docbook:c++:cpp}
+
+== Name Strings
+
+`cl_khr_unified_svm`
+
+== Contact
+
+Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+* Brice Videau, Argonne National Laboratory
+* Kévin Petit, Arm Ltd.
+* Ewan Crawford, Codeplay Software Ltd.
+* Paul Fradgley, Imagination Technologies
+* Pekka Jääskeläinen, Intel
+* Nikhil Joshi, NVIDIA
+* Balaji Calidas, Qualcomm Technologies Inc.
+* TODO
+// spell-checker: enable
+
+== Notice
+
+include::../copyrights.txt[]
+
+== Status
+
+Working Draft
+
+== Version
+
+Built On: {docdate} +
+Revision: 0.9.0
+
+== Dependencies
+
+This extension is written against the OpenCL API Specification Version 3.0.17.
+This extension uses and extends the SVM APIs from OpenCL 2.0 and hence requires an OpenCL 2.0 platform, however it is intended to be implementable by devices supporting many diverse OpenCL versions.
+
+== Overview
+
+This extension adds additional types of Shared Virtual Memory (SVM) to OpenCL.
+Compared to Coarse-Grained and Fine-Grained SVM in OpenCL 2.0 and newer, the additional types of Shared Virtual Memory added by this this extension provide:
+
+* Sufficient functionality to implement "Unified Shared Memory" (USM) in other APIs, such as SYCL.
+
+* Additional control over the ownership and accessibility of SVM allocations, to more precisely choose between application performance and programmer convenience.
+
+* A simpler programming model, by automatically migrating more SVM allocations between devices and the host, or by accessing more SVM allocations on the host without needing to map or unmap the allocation.
+
+Specifically, this extension provides:
+
+* Extensible interfaces to support many types of SVM, including the SVM types defined in core OpenCL, in this extension, and additional SVM types defined by other combinations of SVM capabilities.
+
+* Explicit control over memory placement and migration by supporting device-owned SVM allocations for best performance, host-owned SVM allocations for wide visibility, and shared SVM allocations that may migrate between devices and the host.
+
+* The ability to query detailed SVM capabilities for each SVM allocation type supported by a platform and device.
+
+* Additional properties to control how memory is allocated and freed, including properties to associate an SVM allocation with both a device and a context.
+
+* A mechanism to indicate that a kernel may access SVM allocations indirectly, without passing a set of indirectly accessed SVM allocations to the kernel, improving usability and reducing driver overhead for kernels that access many SVM allocations.
+
+* A new query function to query properties of an SVM allocation.
+
+* A new function to suggest an SVM allocation type for a set of SVM capabilities.
+
+== New API Functions
+
+[source]
+----
+void*   clSVMAllocWithPropertiesKHR(
+            cl_context context,
+            const cl_svm_alloc_properties_khr* properties,
+            cl_uint svm_type_index,
+            size_t size,
+            cl_int* errcode_ret);
+
+cl_int  clSVMFreeWithPropertiesKHR(
+            cl_context context,
+            const cl_svm_free_properties_khr* properties,
+            cl_svm_free_flags_khr flags,
+            void* ptr);
+
+cl_int  clGetSVMPointerInfoKHR(
+            cl_context context,
+            cl_device_id device, // optional - generic input?
+            const void* ptr,
+            cl_svm_pointer_info_khr param_name,
+            size_t param_value_size,
+            void* param_value,
+            size_t* param_value_size_ret);
+
+cl_int clGetSVMSuggestedTypeIndexKHR(
+            cl_context context,
+            cl_svm_capabilities_khr required_capabilities,
+            cl_svm_capabilities_khr desired_capabilities,
+            const cl_svm_alloc_properties_khr* properties,
+            size_t size,
+            cl_uint* suggested_svm_type_index);
+----
+
+== New API Enums
+
+Bitfield type and bits describing the SVM capabilities for a SVM allocation type:
+
+[source]
+----
+typedef cl_bitfield         cl_svm_capabilities_khr;
+
+/* cl_svm_capabilities_khr */
+#define CL_SVM_CAPABILITY_SINGLE_ADDRESS_SPACE_KHR      (1 << 0)
+#define CL_SVM_CAPABILITY_SYSTEM_ALLOCATED_KHR          (1 << 1)
+#define CL_SVM_CAPABILITY_DEVICE_OWNED_KHR              (1 << 2)
+#define CL_SVM_CAPABILITY_DEVICE_UNASSOCIATED_KHR       (1 << 3)
+#define CL_SVM_CAPABILITY_CONTEXT_ACCESS_KHR            (1 << 4)
+#define CL_SVM_CAPABILITY_HOST_OWNED_KHR                (1 << 5)
+#define CL_SVM_CAPABILITY_HOST_READ_KHR                 (1 << 6)
+#define CL_SVM_CAPABILITY_HOST_WRITE_KHR                (1 << 7)
+#define CL_SVM_CAPABILITY_HOST_MAP_KHR                  (1 << 8)
+#define CL_SVM_CAPABILITY_DEVICE_READ_KHR               (1 << 9)
+#define CL_SVM_CAPABILITY_DEVICE_WRITE_KHR              (1 << 10)
+#define CL_SVM_CAPABILITY_DEVICE_ATOMIC_ACCESS_KHR      (1 << 11)
+#define CL_SVM_CAPABILITY_CONCURRENT_ACCESS_KHR         (1 << 12)
+#define CL_SVM_CAPABILITY_CONCURRENT_ATOMIC_ACCESS_KHR  (1 << 13)
+#define CL_SVM_CAPABILITY_INDIRECT_ACCESS_KHR           (1 << 14)
+----
+
+Convenience macros describing required properties for several common SVM allocation types:
+
+[source]
+----
+#define CL_SVM_TYPE_MACRO_COARSE_GRAIN_BUFFER_KHR       /* ... */
+#define CL_SVM_TYPE_MACRO_FINE_GRAIN_BUFFER_KHR         /* ... */
+#define CL_SVM_TYPE_MACRO_DEVICE_KHR                    /* ... */
+#define CL_SVM_TYPE_MACRO_HOST_KHR                      /* ... */
+#define CL_SVM_TYPE_MACRO_SINGLE_DEVICE_SHARED_KHR      /* ... */
+#define CL_SVM_TYPE_MACRO_SYSTEM_KHR                    /* ... */
+----
+
+Accepted value for the _param_name_ parameter to {clGetPlatformInfo} to query combinations of SVM capabilities defining the SVM types supported by an OpenCL platform:
+
+[source]
+----
+/* cl_platform_info */
+#define CL_PLATFORM_SVM_TYPE_CAPABILITIES_KHR           0x0909
+----
+
+Accepted value for the _param_name_ parameter to {clGetDeviceInfo} to query combinations of SVM capabilities defining the SVM types supported by an OpenCL device:
+
+[source]
+----
+/* cl_device_info */
+#define CL_DEVICE_SVM_TYPE_CAPABILITIES_KHR             0x1077
+----
+
+Accepted value for the _param_name_ parameter to {clGetDeviceInfo} to query the size and alignment for concurrent access to SVM allocations:
+
+[source]
+----
+/* cl_device_info */
+#define CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR  0x1078
+----
+
+Type to describe optional SVM allocation properties, and allocation properties added by this extension:
+
+[source]
+----
+typedef cl_properties cl_svm_alloc_properties_khr;
+
+/* cl_svm_alloc_properties_khr */
+#define CL_SVM_ALLOC_ASSOCIATED_DEVICE_HANDLE_KHR       0x2078
+#define CL_SVM_ALLOC_ACCESS_FLAGS_KHR                   0x2079
+#define CL_SVM_ALLOC_ALIGNMENT_KHR                      0x207A
+
+typedef cl_bitfield cl_svm_alloc_access_flags_khr;
+
+/* cl_svm_alloc_access_flags_khr */
+#define CL_SVM_ALLOC_ACCESS_HOST_NOREAD_KHR             (1 << 0)
+#define CL_SVM_ALLOC_ACCESS_HOST_NOWRITE_KHR            (1 << 1)
+/* bits 2 through 7 are reserved for additional host access flags */
+#define CL_SVM_ALLOC_ACCESS_DEVICE_NOREAD_KHR           (1 << 8)
+#define CL_SVM_ALLOC_ACCESS_DEVICE_NOWRITE_KHR          (1 << 9)
+/* bits 10 through 15 are reserved for additional device access flags */
+/* bits 16 and beyond are reserved for future use */
+----
+
+Type to describe optional SVM free properties.
+No SVM free properties are added by this extension:
+
+[source]
+----
+typedef cl_properties cl_svm_free_properties_khr;
+----
+
+Type to describe SVM free flags.
+No SVM free flags are added by this extension:
+
+[source]
+----
+typedef cl_bitfield         cl_svm_free_flags_khr;
+----
+
+Enumeration type and values for the _param_name_ parameter to {clGetSVMPointerInfoKHR} to query information about SVM allocations made by {clSVMAllocWithPropertiesKHR} or {clSVMAlloc}.
+
+[source]
+----
+typedef cl_uint cl_svm_pointer_info_khr;
+
+#define CL_SVM_INFO_TYPE_INDEX_KHR                  0x2088
+#define CL_SVM_INFO_CAPABILITIES_KHR                0x2089
+#define CL_SVM_INFO_PROPERTIES_KHR                  0x208A
+#define CL_SVM_INFO_ACCESS_FLAGS_KHR                0x208B
+#define CL_SVM_INFO_BASE_PTR_KHR                    0x419B
+#define CL_SVM_INFO_SIZE_KHR                        0x419C
+#define CL_SVM_INFO_ASSOCIATED_DEVICE_HANDLE_KHR    0x419D
+----
+
+Accepted values for the _param_name_ parameter to {clSetKernelExecInfo} to enable and disable indirect access to SVM allocations made by {clSVMAllocWithPropertiesKHR} or {clSVMAlloc}:
+
+[source]
+----
+/* cl_kernel_exec_info */
+#define CL_KERNEL_EXEC_INFO_SVM_INDIRECT_ACCESS_KHR 0x11BB
+----
+
+== Modifications to the OpenCL API Specification
+
+=== Section 4.1 - Querying Platform Info:
+
+Add to Table 3 - List of supported param_names by {clGetPlatformInfo}:
+
+[caption="Table 5. "]
+.List of supported param_names by clGetDeviceInfo
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| Device Info | Return Type | Description
+| {CL_PLATFORM_SVM_TYPE_CAPABILITIES_KHR}
+  | {cl_svm_capabilities_khr_TYPE}[]
+      | Queries the combinations of SVM capabilities defining the SVM types supported by OpenCL devices in the OpenCL platform.
+        Returns an array of bitfields, where each bitfield in the array describes the SVM capabilities for one SVM type.
+        Each SVM type must be supported by at least one device in the platform, but may not be supported by all devices in the platform.
+        To determine the combinations of SVM capabilities defining the SVM types supported by a device, use the query {CL_DEVICE_SVM_TYPE_CAPABILITIES_KHR}.
+      
+        Please refer to the <<svm-capabilities-table,SVM capabilities>> table for capability values and their description.
+|====
+
+=== Section 4.2 - Querying Devices:
+
+Add to Table 5 - List of supported param_names by {clGetDeviceInfo}:
+
+[caption="Table 5. "]
+.List of supported param_names by clGetDeviceInfo
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| Device Info | Return Type | Description
+| {CL_DEVICE_SVM_TYPE_CAPABILITIES_KHR}
+  | {cl_svm_capabilities_khr_TYPE}[]
+      | Queries the combinations of SVM capabilities describing the SVM types supported by an OpenCL device.
+        Returns an array of bitfields, where each bitfield in the array describes the SVM capabilities for one SVM type.
+        The size of the returned array must match the size of the array returned by the platform query {CL_PLATFORM_SVM_TYPE_CAPABILITIES_KHR}.
+
+        Each entry in the returned array must be either a super-set of the entry in the array returned by the platform query {CL_PLATFORM_SVM_TYPE_CAPABILITIES_KHR}, indicating that the SVM type is supported by the device, or zero, indicating that the SVM type is not supported by this device.
+
+        Please refer to the <<svm-capabilities-table,SVM capabilities>> table for valid capability values and their description.
+| {CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR}
+  | {size_t_TYPE}
+      | Queries the size and alignment in bytes that bound concurrent access to SVM allocations.
+        The returned value must be zero or a power of two.
+
+        If the device does not support concurrent access to SVM allocations, then the query must return `0`, indicating that concurrent access is not supported.
+        If the query for {CL_DEVICE_SVM_CAPABILITIES} includes {CL_DEVICE_SVM_FINE_GRAIN_BUFFER} or {CL_DEVICE_SVM_FINE_GRAIN_SYSTEM}, then the query must return one, indicating that concurrent access occurs at the granularity of individual bytes within allocations.
+|====
+
+[[svm-capabilities-table]]
+[caption="Table X. "]
+.List of SVM capabilities
+[width="100%",cols="2,3",options="header"]
+|====
+| Capability | Description
+| {CL_SVM_CAPABILITY_SINGLE_ADDRESS_SPACE_KHR}
+  | There is a single address space for this type of SVM.
+    The same pointer may be used on the host and the device; the pointer has _address equivalence_.
+| {CL_SVM_CAPABILITY_SYSTEM_ALLOCATED_KHR}
+  | This type of SVM provides access to the entire host virtual memory, including memory allocated by a system allocator such as `malloc` or `new` or objects allocated on the stack, and does not require calling {clSVMAllocWithPropertiesKHR} or {clSVMAlloc}.
+| {CL_SVM_CAPABILITY_DEVICE_OWNED_KHR}
+  | This type of SVM is owned by an associated device handle and is not intended to migrate to another device or the host.
+    Allocations that are owned by a device generally trade off access limitations for higher performance.
+| {CL_SVM_CAPABILITY_DEVICE_UNASSOCIATED_KHR}
+  | This type of SVM does not need to be associated with a device handle.
+| {CL_SVM_CAPABILITY_CONTEXT_ACCESS_KHR}
+  | This type of SVM is accessible to other devices in the context that support the SVM type.
+| {CL_SVM_CAPABILITY_HOST_OWNED_KHR}
+  | This type of SVM is owned by the host and is not intended to migrate to a device.
+    Allocations that are owned by the host generally trade off wide accessibility for potentially higher per-access costs.
+| {CL_SVM_CAPABILITY_HOST_READ_KHR}
+  | This type of SVM is readable on the host without needing to map or unmap the allocation.
+| {CL_SVM_CAPABILITY_HOST_WRITE_KHR}
+  | This type of SVM is writeable on the host without needing to map or unmap the allocation.
+| {CL_SVM_CAPABILITY_HOST_MAP_KHR}
+  | This type of SVM is accessible on the host but requires mapping and unmapping the allocation.
+| {CL_SVM_CAPABILITY_DEVICE_READ_KHR}
+  | This type of SVM is accessible on the device for reading.
+| {CL_SVM_CAPABILITY_DEVICE_WRITE_KHR}
+  | This type of SVM is accessible on the device for writing.
+| {CL_SVM_CAPABILITY_DEVICE_ATOMIC_ACCESS_KHR}
+  | This type of SVM is accessible on the device using atomic built-in functions.
+| {CL_SVM_CAPABILITY_CONCURRENT_ACCESS_KHR}
+  | This type of SVM supports concurrent access from the host and a device, or from multiple devices.
+    Use {CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR} to determine the supported granularity for concurrent access.
+| {CL_SVM_CAPABILITY_CONCURRENT_ATOMIC_ACCESS_KHR}
+  | This type of SVM supports concurrent atomic access from the host and a device, or from multiple devices.
+| {CL_SVM_CAPABILITY_INDIRECT_ACCESS_KHR}
+  | This type of SVM supports a single kernel enable to indicate that the kernel may allocate any allocation of this type, rather than passing a list of indirectly accessed allocations to the kernel.
+|====
+
+[NOTE]
+====
+* SVM types that are `DEVICE_OWNED` must not be `DEVICE_UNASSOCIATED`.
+* SVM types that are `HOST_OWNED` must be `DEVICE_UNASSOCIATED`.
+* SVM types that are `HOST_OWNED` must be `HOST_ACCESSIBLE`.
+* ...
+====
+
+[NOTE]
+====
+The following table provides a high-level summary of SVM capabilities for some common SVM types:
+
+.High-Level Summary of Shared Virtual Memory Types and Capabilities
+[width="100%",options="header"]
+|====
+| SVM Type | Initial Location 2+| Accessible By 2+| Migratable To
+
+.2+| **Coarse-Grain Buffer SVM** .2+| Unspecified
+| Host | Yes, with Map | Host | Yes, with Map
+| Any Device | Yes | Device | Yes
+
+.2+| **Fine-Grain Buffer SVM** .2+| Unspecified
+| Host | Yes | Host | Yes
+| Any Device | Yes | Device | Yes
+
+.3+| **Device SVM** .3+| Associated Device
+| Host | No | Host | No
+| Associated Device | Yes | Device | N/A
+| Another Device | Not With This Extension | Another Device | No
+
+.2+| **Host SVM** .2+| Host
+| Host | Yes | Host | N/A
+| Any Device | Yes (perhaps over a bus, such as PCIe) | Device | No
+
+.3+| **Shared SVM** .3+| Associated Device or Unspecified
+| Host | Yes | Host | Yes
+| Associated Device | Yes | Device | Yes
+| Another Device | Not With This Extension | Another Device | Not With This Extension
+
+.2+| **Shared System SVM** .2+| Associated Device or Unspecified
+| Host | Yes | Host | Yes
+| Device | Yes | Device | Yes
+
+|====
+====
+
+[NOTE]
+====
+The following table describes the detailed set of SVM capabilities for some common SVM types:
+
+// Table shortcuts:
+:O: Optional
+
+[[minimum-svm-capabilities-table]]
+[caption="Table X. "]
+.Set of SVM Capabilities for Common SVM Types
+[width="100%",cols="2,^1,^1,^1,^1,^1,^1",options="header"]
+|====
+| SVM Capability | Coarse-Grain Buffer SVM | Fine-Grain Buffer SVM | Device SVM | Host SVM | Single-Device Shared SVM | System SVM
+//                                                   CG    FG    Dev  Host   SDS   Sys
+| {CL_SVM_CAPABILITY_SINGLE_ADDRESS_SPACE_KHR}     |  Y  |  Y  |  Y  |  Y  |  Y  |  Y
+| {CL_SVM_CAPABILITY_SYSTEM_ALLOCATED_KHR}         |     |     |     |     |     |  Y
+| {CL_SVM_CAPABILITY_DEVICE_OWNED_KHR}             |     |     |  Y  |     |     |
+| {CL_SVM_CAPABILITY_DEVICE_UNASSOCIATED_KHR}      |  Y  |  Y  |     |  Y  |     |  Y
+| {CL_SVM_CAPABILITY_CONTEXT_ACCESS_KHR}           |  Y  |  Y  |     |  Y  |     |  Y
+| {CL_SVM_CAPABILITY_HOST_OWNED_KHR}               |     |     |     |  Y  |     |
+| {CL_SVM_CAPABILITY_HOST_READ_KHR}                |     |  Y  |     |  Y  |  Y  |  Y
+| {CL_SVM_CAPABILITY_HOST_WRITE_KHR}               |     |  Y  |     |  Y  |  Y  |  Y
+| {CL_SVM_CAPABILITY_HOST_MAP_KHR}                 |  Y  |  Y  |     |     |     |  Y
+| {CL_SVM_CAPABILITY_DEVICE_READ_KHR}              |  Y  |  Y  |  Y  |  Y  |  Y  |  Y
+| {CL_SVM_CAPABILITY_DEVICE_WRITE_KHR}             |  Y  |  Y  |  Y  |  Y  |  Y  |  Y
+| {CL_SVM_CAPABILITY_DEVICE_ATOMIC_ACCESS_KHR}     |  Y  |  Y  |  Y  | {O} | {O} |  Y
+| {CL_SVM_CAPABILITY_CONCURRENT_ACCESS_KHR}        |     |  Y  | {O} | {O} | {O} |  Y
+| {CL_SVM_CAPABILITY_CONCURRENT_ATOMIC_ACCESS_KHR} |     | {O} | {O} | {O} | {O} |  Y
+| {CL_SVM_CAPABILITY_INDIRECT_ACCESS_KHR}          | {O} | {O} |  Y  |  Y  |  Y  |  Y
+|====
+
+In this table:
+
+* The capabilities marked Y are supported by the SVM type.
+* The capabilities marked {O} or blank may be optionally supported capabilities for the SVM type on some devices.
+** The capabilities marked {O} are likely to be supported by some devices supporting the SVM type.
+** The capabilities that are blank may be supported by some devices, but support is likely to be less common.
+
+// Un-set table shortcuts:
+:!O:
+====
+
+=== Section 5.6 - Shared Virtual Memory:
+
+TODO: Probably ought to substantially rewrite portions of Section 5.6.1 and perhaps 5.6.2.
+
+==== Allocating SVM With Properties:
+
+The function
+
+include::{generated}/api/protos/clSVMAllocWithPropertiesKHR.txt[]
+include::{generated}/api/version-notes/clSVMAllocWithPropertiesKHR.asciidoc[]
+
+allocates shared virtual memory with optional properties.
+
+_context_ is a valid OpenCL context used to allocate the shared virtual memory.
+
+_properties_ is an optional list of allocation properties and their corresponding values.
+The list is terminated with the special property `0`.
+If no allocation properties are required, _properties_ may be `NULL`.
+Please refer to the <<svm-alloc-properties-table,SVM allocation properties>> table for valid SVM allocation properties and their description.
+
+_svm_type_index_ is an index into the array of supported SVM types returned by {CL_PLATFORM_SVM_TYPE_CAPABILITIES_KHR} or {CL_DEVICE_SVM_TYPE_CAPABILITIES_KHR} that specifies the type of SVM to allocate.
+
+_size_ is the size in bytes of the requested SVM allocation.
+
+_errcode_ret_ may return an appropriate error code.
+If _errcode_ret_ is `NULL` then no error code will be returned.
+
+{clSVMAllocWithPropertiesKHR} will return a valid non-`NULL` address and {CL_SUCCESS} will be returned in _errcode_ret_ if the shared virtual memory is allocated successfully.
+Otherwise, `NULL` will be returned, and _errcode_ret_ will be set to one of the following error values:
+
+  * {CL_INVALID_CONTEXT}
+    ** if _context_ is not a valid OpenCL context
+  * {CL_INVALID_PROPERTY}
+    ** if a memory property name in _properties_ is not a supported property name
+    ** if the value specified for a supported property name is not valid
+    ** if the same property name is specified more than once
+  * {CL_INVALID_OPERATION}
+    ** if no devices in _context_ support the SVM type specified by _svm_type_index_
+    ** if a device associated with the SVM allocation does not support the SVM type specified by _svm_type_index_
+  * {CL_INVALID_VALUE}
+    ** if _svm_type_index_ is greater than the number of SVM types supported by the devices in _context_
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
+
+TODO: Do we want to document any specific error conditions for invalid property values?
+
+[NOTE]
+====
+When _context_ includes a device that supports {cl_khr_unified_svm_EXT}, _size_ may be zero and may exceed {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for the device, for both {clSVMAlloc} and {clSVMAllocWithPropertiesKHR}.
+
+When _size_ is zero, {clSVMAlloc} and {clSVMAllocWithPropertiesKHR} must return a `NULL` pointer and must not generate an error.
+When _size_ exceeds {CL_DEVICE_MAX_MEM_ALLOC_SIZE}, the allocation may succeed and return a non-`NULL` pointer, or the allocation may fail and return a `NULL` pointer and an implementation-defined error code.
+====
+
+[[svm-alloc-properties-table]]
+[caption="Table X. "]
+.List of supported SVM allocation properties by {clSVMAllocWithPropertiesKHR}
+[width="100%",cols="2,1,3",options="header"]
+|====
+| Allocation Property | Property Value | Description
+| {CL_SVM_ALLOC_ASSOCIATED_DEVICE_HANDLE_KHR}
+  | {cl_device_id_TYPE}
+      | Associates the allocation with a specific device handle.
+        The associated device handle property is required unless the specified
+        SVM type contains {CL_SVM_CAPABILITY_DEVICE_UNASSOCIATED_KHR}.
+
+        The default value is `NULL`, which indicates that the allocation is not
+        associated with a specific device handle.
+| {CL_SVM_ALLOC_ACCESS_FLAGS_KHR}
+  | {cl_svm_alloc_access_flags_khr_TYPE}
+      | Flags specifying access information for the allocation.
+        If these access flags are violated, behavior is undefined.
+        This is a bitfield type that may be set to a combination of the following values:
+
+        {CL_SVM_ALLOC_ACCESS_HOST_NOREAD_KHR}: the host will not read this allocation. +
+        {CL_SVM_ALLOC_ACCESS_HOST_NOWRITE_KHR}: the host will not write this allocation. +
+        {CL_SVM_ALLOC_ACCESS_DEVICE_NOREAD_KHR}: the device will not read this allocation. +
+        {CL_SVM_ALLOC_ACCESS_DEVICE_NOWRITE_KHR}: the device will not write this allocation.
+
+        The default value is `0`, which indicates no special access behavior for
+        the host or the device for this allocation.
+
+| {CL_SVM_ALLOC_ALIGNMENT_KHR}
+  | {size_t_TYPE}
+      | Specifies the minimum alignment in bytes for the SVM allocation.
+        The alignment must be a power of two and must be equal to or smaller
+        than the size of the largest data type supported by any OpenCL device in
+        _context_.
+
+        The default value is `0`, which specifies an alignment that is equal to
+        the size of the largest data type supported by any OpenCL device in
+        _context_.
+
+|====
+
+===== Freeing SVM Allocations
+
+The function
+
+include::{generated}/api/protos/clSVMFreeWithPropertiesKHR.txt[]
+include::{generated}/api/version-notes/clSVMFreeWithPropertiesKHR.asciidoc[]
+
+frees an SVM allocation with optional properties.
+
+_context_ is a valid OpenCL context used to free the SVM allocation.
+
+_properties_ is an optional list of allocation properties and their corresponding values.
+The list is terminated with the special property `0`.
+If no free properties are required, _properties_ may be `NULL`.
+This extension does not define any free properties.
+
+_flags_ is used to specify how the SVM allocation is freed.
+This extension does not define any free flags.
+
+_ptr_ is the SVM allocation to free.
+It must be a value returned by {clSVMAlloc}, {clSVMAllocWithPropertiesKHR}, or a `NULL` pointer.
+It is the responsibility of the application to make sure enqueued commands that use _ptr_ are complete before freeing _ptr_.
+Behavior is undefined if a previously enqueued command that may be using _ptr_ is still executing.
+If _ptr_ is `NULL` then no action occurs.
+
+{clSVMFreeWithPropertiesKHR} will return {CL_SUCCESS} if the function executes successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_CONTEXT}
+    ** if _context_ is not a valid OpenCL context
+  * {CL_INVALID_PROPERTY}
+    ** if a memory property name in _properties_ is not a supported property name
+    ** if the value specified for a supported property name is not valid
+    ** if the same property name is specified more than once
+  * {CL_INVALID_VALUE}
+    ** if _flags_ contains an invalid SVM free flag
+    ** if _ptr_ is not a value returned by {clSVMAlloc}, {clSVMAllocWithPropertiesKHR}, or a `NULL` pointer
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
+
+[NOTE]
+====
+Whether {clSVMFree} or {clSVMFreeWithPropertiesKHR} is blocking or non-blocking is unspecified.
+Applications should not rely on {clSVMFree} or {clSVMFreeWithPropertiesKHR} for synchronization, nor assume that {clSVMFree} or {clSVMFreeWithPropertiesKHR} cannot cause deadlocks.
+====
+
+===== Querying SVM Allocations
+
+The function
+
+include::{generated}/api/protos/clGetSVMPointerInfoKHR.txt[]
+include::{generated}/api/version-notes/clGetSVMPointerInfoKHR.asciidoc[]
+
+queries information about an SVM allocation.
+
+_context_ is a valid OpenCL context to query for information about the SVM allocation.
+
+_device_ is an optional OpenCL device handle to query for information about the SVM allocation.
+If _device_ is `NULL`, the default device is the device associated with the SVM allocation, or all devices in the _context_ if there is no device associated with the SVM allocation.
+
+_ptr_ is a pointer into an SVM allocation to query.
+_ptr_ need not be a value returned by {clSVMAlloc} or {clSVMAllocWithPropertiesKHR}, but the query may be faster if it is.
+
+_param_name_ specifies the information to query.
+The list of supported _param_name_ values and the information returned in _param_value_ is described in the <<svm-queries-table,SVM queries>> table.
+
+_param_value_ is a pointer to memory where the appropriate result being queried is returned.
+If _param_value_ is `NULL`, it is ignored.
+
+_param_value_size_ specifies the size in bytes of memory pointed to by _param_value_.
+This size must be greater than or equal to the size of return type as described in the <<svm-queries-table,SVM queries>> table.
+If _param_value_ is `NULL`, it is ignored.
+
+_param_value_size_ret_ returns the actual size in bytes of data being queried by _param_name_.
+If _param_value_size_ret_ is `NULL`, it is ignored.
+
+{clGetSVMPointerInfoKHR} returns {CL_SUCCESS} if the function is executed successfully.
+Otherwise, it will return one of the following error values:
+
+  * {CL_INVALID_CONTEXT}
+    ** if _context_ is not a valid OpenCL context
+  * {CL_INVALID_DEVICE}
+    ** if _device_ is not a valid device
+    ** if _device_ is not associated with _context_
+  * {CL_INVALID_VALUE}
+    ** if _param_name_ is not one of the supported values
+    ** if the size in bytes specified by _param_value_size_ is less than the
+    size of the return type specified in the <<svm-queries-table,SVM queries>>
+    table and _param_value_ is not `NULL`
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
+
+[[svm-queries-table]]
+.List of supported param_names by clGetSVMPointerInfoKHR
+[width="100%",cols="<34%,<33%,<33%",options="header"]
+|====
+| *cl_svm_pointer_info_khr* | Return type | Info. returned in _param_value_
+| {CL_SVM_INFO_TYPE_INDEX_KHR}
+  | {cl_uint_TYPE}
+      | Returns the SVM type index used to allocate the SVM allocation.
+
+        Returns {CL_UINT_MAX} if _ptr_ does not point into an SVM allocation returned from {clSVMAllocWithPropertiesKHR} or {clSVMAlloc} for _context_.
+
+| {CL_SVM_INFO_CAPABILITIES_KHR}
+  | {cl_svm_capabilities_khr_TYPE}
+      | Returns the SVM capabilities for the SVM allocation for the specified _device_.
+        If _device_ is `NULL` and there is a device associated with the SVM allocation, returns the SVM capabilities for the device associated with the SVM allocation.
+        If _device_ is `NULL` and there is no device associated with the SVM allocation, returns the SVM capabilities for all devices in _context_ supporting the SVM allocation.
+
+        Returns `0` if _ptr_ does not point into an SVM allocation returned from {clSVMAllocWithPropertiesKHR} or {clSVMAlloc} for _context_.
+
+| {CL_SVM_INFO_PROPERTIES_KHR}
+  | {cl_svm_alloc_properties_khr_TYPE}
+      | Returns the properties argument specified in {clSVMAllocWithPropertiesKHR} when _ptr_ was allocated.
+
+        If the properties argument specified in {clSVMAllocWithPropertiesKHR} was not `NULL`, the implementation must return the values specified in the properties argument in the same order and without including additional properties.
+
+        If the properties argument specified in {clSVMAllocWithPropertiesKHR} was `NULL`, or if _ptr_ was allocated using {clSVMAlloc}, or if _ptr_ does not point into an SVM allocation returned from {clSVMAllocWithPropertiesKHR} or {clSVMAlloc} for _context_, the implementation must return _param_value_size_ret_ equal to `0`, indicating that there are no properties to be returned.
+
+| {CL_SVM_INFO_ACCESS_FLAGS_KHR}
+  | {cl_svm_alloc_access_flags_khr_TYPE}
+      | Returns access flags for the SVM allocation, specified by the {CL_SVM_ALLOC_ACCESS_FLAGS_KHR} property.
+
+        Returns `0` if the {CL_SVM_ALLOC_ACCESS_FLAGS_KHR} property was not specified when _ptr_ was allocated, or if _ptr_ does not point into an SVM allocation returned from {clSVMAllocWithPropertiesKHR} or {clSVMAlloc} for _context_.
+
+        TODO: Check if `0` is the right default in all cases.
+        If _ptr_ does not point into an SVM allocation returned from {clSVMAllocWithPropertiesKHR} or {clSVMAlloc} for _context_ should we return `NOREAD \| NOWRITE` instead?
+        What if _device_ is different than the device associated with the SVM allocation?
+
+| {CL_SVM_INFO_BASE_PTR_KHR}
+  | `void*`
+      | Returns the base address of the SVM allocation.
+
+        Returns `NULL` if _ptr_ does not point into an SVM allocation returned from {clSVMAllocWithPropertiesKHR} or {clSVMAlloc} for _context_.
+
+| {CL_SVM_INFO_SIZE_KHR}
+  | {size_t_TYPE}
+      | Returns the size in bytes of the SVM allocation.
+
+        Returns `0` if _ptr_ does not point into an SVM allocation returned from {clSVMAllocWithPropertiesKHR} or {clSVMAlloc} for _context_.
+
+| {CL_SVM_INFO_ASSOCIATED_DEVICE_HANDLE_KHR}
+  | {cl_device_id_TYPE}
+      | Returns the device associated with the SVM allocation.
+
+        Returns `NULL` if the SVM allocation has no associated device handle, or if _ptr_ does not point into an SVM allocation returned from {clSVMAllocWithPropertiesKHR} or {clSVMAlloc} for _context_.
+|====
+
+===== Suggesting an SVM Type
+
+The function
+
+include::{generated}/api/protos/clGetSVMSuggestedTypeIndexKHR.txt[]
+include::{generated}/api/version-notes/clGetSVMSuggestedTypeIndexKHR.asciidoc[]
+
+suggests an SVM allocation type that meets the required SVM capabilities.
+
+_context_ is a valid OpenCL context to query.
+
+_required_capabilities_ specifies SVM capabilities that must be supported by the suggested SVM type.
+
+_desired_capabilities_ specifies additional desired SVM capabilities that may influence the suggested SVM type, but that may not be supported by the suggested SVM type.
+_desired_capabilities_ may be zero if no capabilities are desired other than those specified by _required_capabilities_.
+
+_properties_ is an optional list of allocation properties and their corresponding values.
+The list is terminated with the special property `0`.
+If no allocation properties are required, _properties_ may be `NULL`.
+Please refer to the <<svm-alloc-properties-table,SVM allocation properties>> table for valid SVM allocation properties and their description.
+
+_size_ is the size in bytes for the suggestion.
+If  _size_ is `0`, it is ignored.
+
+_suggested_svm_type_index_ is a pointer that will contain the result of the query.
+The suggested SVM type may be {CL_UINT_MAX}, indicating that there is no SVM allocation type for the _context_ and devices in _device_list_ that support the _required_capabilities_ and _properties_.
+
+{clGetSVMSuggestedTypeIndexKHR} returns {CL_SUCCESS} if the query executed successfully.  Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_CONTEXT}
+    ** if _context_ is not a valid OpenCL context
+  * {CL_INVALID_PROPERTY}
+    ** if a memory property name in _properties_ is not a supported property name
+    ** if the value specified for a supported property name is not valid
+    ** if the same property name is specified more than once
+  * {CL_INVALID_VALUE}
+    ** if _required_capabilities_ contains an invalid SVM capability
+    ** if _desired_capabilities_ contains an invalid SVM capability
+    ** if _suggested_svm_type_index_ is `NULL`
+  * {CL_INVALID_BUFFER_SIZE}
+// TODO: update depending on the updated queries for available SVM sizes:
+    ** if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for any OpenCL device in _context_ that supports the specified SVM type
+    ** if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for a device associated with the SVM allocation
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
+
+===== Using SVM with Kernels
+
+SVM allocations may be accessed by kernels indirectly, without passing a pointer to the allocation as a kernel argument.
+The new _param_name_ values described below may be used with the existing {clSetKernelExecInfo} function to describe how SVM allocations are accessed indirectly by a kernel:
+
+[caption="Table 28. "]
+.List of supported param_names by clSetKernelExecInfo
+[width="100%",cols="<34%,<33%,<33%",options="header"]
+|====
+| *cl_kernel_exec_info* | Type | Description
+| {CL_KERNEL_EXEC_INFO_SVM_INDIRECT_ACCESS_KHR}
+  | {cl_bool_TYPE}
+      | Specifies whether SVM allocations from {clSVMAlloc} or {clSVMAllocWithPropertiesKHR} may be accessed indirectly within a kernel.
+
+        When {CL_KERNEL_EXEC_INFO_SVM_INDIRECT_ACCESS_KHR} is {CL_FALSE}, the kernel may only access SVM allocations from {clSVMAlloc} or {clSVMAllocWithPropertiesKHR} that are explicitly passed as kernel arguments or using {CL_KERNEL_EXEC_INFO_SVM_PTRS}.
+
+        When {CL_KERNEL_EXEC_INFO_SVM_INDIRECT_ACCESS_KHR} is {CL_TRUE}, the kernel may access any SVM pointers allocated by {clSVMAlloc} or {clSVMAllocWithPropertiesKHR} on any device where the SVM allocation type includes {CL_SVM_CAPABILITY_INDIRECT_ACCESS_KHR}.
+
+        By default, indirect access is disabled for all SVM allocations (except fine-grain system SVM allocations, see {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM}), indicating that the kernel will only access SVM allocations that are explicitly passed as kernel arguments or using {CL_KERNEL_EXEC_INFO_SVM_PTRS}.
+|====
+
+The following errors may be returned by {clSetKernelExecInfo} for these new _param_name_ values:
+
+* {CL_INVALID_OPERATION} if _param_name_ is {CL_KERNEL_EXEC_INFO_SVM_INDIRECT_ACCESS_KHR} and no devices in the context associated with _kernel_ support SVM.
+
+== Interactions with Other Extensions
+
+TODO
+
+`cl_intel_unified_shared_memory`:
+
+* Need to document interaction with individual indirect access enable flags.
+* Plus more interactions.
+
+Interactions with command buffers?
+
+== Issues
+
+. Is there a minimum supported granularity for concurrent access?  For example, might it be possible to concurrently access different pages of an allocation, but not different bytes within the same page?
++
+--
+*UNRESOLVED*:
+Added a device query for {CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR}.
+
+Still TODO:
+
+* What should the return type be for this query?  Specifically, should it be a {size_t_TYPE} or a {cl_uint_TYPE}?
+* Do we want to distinguish between host concurrent access and device concurrent access, even if the only query we define for now is for host concurrent access?
+* Are we OK with a single query for all types of SVM, or do we need a separate query for each SVM type?
+* Is this only for concurrent access without atomic access?
+--
+
+. What other SVM allocation properties should we support?
++
+--
+`RESOLVED`: We decided not to accept any {cl_mem_flags_TYPE} or {cl_svm_mem_flags_TYPE}, and added access properties instead.
+--
+
+. Do we need separate "concurrent access" capabilities for host access vs. device access?
++
+--
+`RESOLVED`:
+The initial version of this extension will only have a single capability for all types of concurrent access.
+--
+
+. What would we need to add to support system allocations?
++
+--
+`RESOLVED`: No longer applicable.
+--
+
+. Do we need the ability to "register" or "use" an existing host allocations?
++
+--
+`RESOLVED`:
+The initial version of this extension will only support allocating host memory.
+--
+
+. Do we want to support both a _flags_ argument and a _properties_ argument to the USM allocation APIs?
++
+--
+`RESOLVED`: No, we will not support a _flags_ argument, and we will only support _properties_.
+--
+
+. What should behavior be for {clGetSVMPointerInfoKHR} if the passed-in _ptr_ is `NULL` or doesn't point into an SVM allocation?
++
+--
+`RESOLVED`: The behavior is defined for all queries for this case.
+
+This behavior is tested by the CTS test `unified_svm_api_query_defaults`.
+--
+
+. Do we want separate "memset" APIs to set to different sized "value", such as 8-bits, 16-bits?, 32-bits, or others?  Do we want to go back to a "fill" API?
++
+--
+`RESOLVED`: We are reusing the "fill" API {clEnqueueSVMMemFill}.
+--
+
+. What are the restrictions for the _dst_ptr_ values that can be passed to {clEnqueueSVMMemFill}?
++
+--
+`RESOLVED`:
+However, we should still tidy up the spec text for these cases.
+
+* Can a device "fill" another device's allocation?  (Recommendation: Yes, but finalize as part of multi-device support.)
+* Can a device "fill" arbitrary host memory?  (No, undefined behavior unless system SVM is supported.)
+* Can a device "fill" a USM allocation from another context?  (No, undefined behavior.)
+
+Note, there are not any existing CTS tests that pass an arbitrary host allocation to {clEnqueueSVMMemFill}.
+--
+
+. What are the restrictions for the _src_ptr_ and _dst_ptr_ values that can be passed to {clEnqueueSVMMemcpy}?
++
+--
+`RESOLVED`:
+
+* Can a device "memcpy" from another device's allocation?  (Recommendation: Yes, but finalize as part of multi-device support.)
+* Can a device "memcpy" to another device's allocation?  (Recommendation: Yes, but finalize as part of multi-device support.)
+* Can a device "memcpy" to or from a SVM allocation in another context?  (No, undefined behavior.)
+* Can a device "memcpy" to arbitrary host memory?  (Yes, we already have tests.)
+* Can a device "memcpy" from arbitrary host memory?  (Yes, we already have tests.)
+* Can a device "memcpy" from arbitrary host memory to arbitrary host memory?  (Yes, we already have tests.)
+* Can the memory region to copy to overlap the memory region to copy from?  (No, already an error.)
+
+The valid cases are tested by the CTS tests `unified_svm_memcpy` and `unified_svm_corner_case_memcpy`.
+--
+
+. Do we want to support migrating to devices other than the device associated with _command_queue_?
++
+--
+`RESOLVED`:
+The initial version of this extension will not extend {clEnqueueSVMMigrateMem}, and hence will only support migrating to the device or to the host.
+--
+
+. Should we support migrating an array of pointers with one API call?
++
+--
+`RESOLVED`: This is supported by {clEnqueueSVMMigrateMem}.
+--
+
+. Could the associated device be `NULL` if there is no need to associate a shared allocation to a specific device?
++
+--
+`RESOLVED`: Yes, the associated device may be `NULL`, if the SVM type supports the {CL_SVM_CAPABILITY_DEVICE_UNASSOCIATED_KHR} capability.
+--
+
+. Should we allow querying the associated device for a USM allocation using {clGetSVMPointerInfoKHR}?
++
+--
+`RESOLVED`: Yes, we should, supported by {CL_SVM_INFO_ASSOCIATED_DEVICE_HANDLE_KHR}.
+--
+
+. Should we add explicit mem alloc flags for `CACHED` and `UNCACHED`?
++
+--
+`RESOLVED`:
+Support for cacheability controls will not be included in this extension but they can be supported in a layered extension, if desired.
+In a layered extension, we recommend adding cacheability properties instead of cacheability capabilities to avoid an explosion of capability combinations.
+The layered extension could add coarse `CACHED` and `UNCACHED` properties, or separate properties for host vs. device, or even separate properties for specific cache levels.
+--
+
+. At least for `HOST` and `SHARED` allocations, should we have separate mem alloc flags for the host and the device?
++
+--
+`RESOLVED`: We removed the _flags_ argument entirely.
+--
+
+. What are invalid values for `ptr` and `size` for {clEnqueueSVMMigrateMem}?
+How about {clEnqueueSVMMemFill} and {clEnqueueSVMMemcpy}?
+Specifically, is `NULL` a valid value for `ptr`?
+Is `size` equal to zero valid?
++
+--
+`RESOLVED`:
+
+.. A `size` equal to zero is valid.
+When `size` is zero, the call to {clEnqueueSVMMigrateMem}, {clEnqueueSVMMemFill}, and {clEnqueueSVMMemcpy} trivially succeeds, similar to an enqueued marker.
+This appears to be the specified behavior for the C `memcpy` and `memset` functions.
+.. A `ptr` equal to `NULL` is valid if and only if `size` is equal to zero, otherwise it is an error.
+
+Allowing `size` to be zero and `ptr` to be `NULL` provides the most flexibility for other language runtimes built on top of OpenCL and the additional testing is manageable.
+
+Note that in the current OpenCL spec, it is unconditionally a {CL_INVALID_VALUE} error to pass `ptr` equal to `NULL` for {clEnqueueSVMMigrateMem}, {clEnqueueSVMMemcpy}, or {clEnqueueSVMMemFill}, so this will need to be explicitly relaxed for implementations supporting this extension.
+
+There is currently no defined error behavior for `size` equal to zero, so this will not need to be explicitly relaxed in this extension, but it will need to be stated explicitly and tested.
+
+We should carefully consider whether we need additional restrictions around mutating a memory fill or a copy in a command buffer from a nonzero size to a size of zero, or vice versa
+This is not a problem today, but it could be a problem when we have the proposed `cl_khr_command_buffer_mutable_memory_commands` extension.
+
+For reference, the full set of options we considered were:
+
+.. A `size` equal to zero is valid.  This appears to be the specified behavior for the C `memcpy` and `memset` functions.
+.. [.line-through]#A `size` equal to zero is undefined behavior.#
+.. [.line-through]#A `size` equal to zero is an error.#
+.. A `ptr` equal to `NULL` is valid if and only if `size` is equal to zero, otherwise it is an error.
+.. [.line-through]#A `ptr` equal to `NULL` is undefined behavior.  This appears to be the specified behavior for the C `memcpy` and `memset` functions.#
+.. [.line-through]#A `ptr` equal to `NULL` is an error.#
+
+These cases are tested by the CTS test `unified_svm_corner_case_migrate_mem`.
+--
+
+. Should we add a device query for a maximum supported SVM alignment, or should the maximum supported alignment implicitly be defined by the size of the largest data type supported by the device?
+Should we allow implementation-defined behavior for alignments larger than the size of the largest data type supported by the device?
++
+--
+*UNRESOLVED*:
+A device query would allow for larger supported alignments, such as page alignment.
+Note that supported alignments should always be a power of two.
+
+Note that there are no maximum supported alignments defined for `posix_memalign` or `_aligned_alloc`, and supported alignments for the standard `aligned_alloc` and `std::aligned_alloc` are implementation-defined.
+
+Suggest adding a device query, perhaps as a layered extension, and use it to determine the maximum supported alignment error code.
+See internal merge request 198.
+--
+
+. Should we add a device query for a maximum supported SVM fill pattern size, or should the maximum supported fill pattern size implicitly be defined by the size of the largest data type supported by the device?
++
+--
+`RESOLVED`:
+The initial version of this extension will not support larger fill patterns, therefore the maximum supported fill pattern size will implicitly be defined by the size of the largest data type supported by the device.
+Supporting larger fill patterns could be added as a layered extension.
+--
+
+. Can a pointer to a device, host, or shared SVM allocation be used to create a {cl_mem_TYPE} using {CL_MEM_USE_HOST_PTR}?
++
+--
+*UNRESOLVED*:
+Trending "no" in all cases.
+If the SVM allocation is from the same context this could be an error, such as {CL_INVALID_HOST_PTR}.
+If the SVM allocation is from a different context then behavior could be undefined.
+--
+
+. Can a pointer to a device, host, or shared SVM allocation be used to create a {cl_mem_TYPE} buffer using {CL_MEM_COPY_HOST_PTR}?
++
+--
+*UNRESOLVED*:
+Trending "no" for device and shared USM allocations.
+If the USM allocation is from the same context this could be an error, such as {CL_INVALID_HOST_PTR}.
+If the USM allocation is from a different context then behavior could be undefined.
+
+Trending "yes" for host USM allocations, both when the host USM allocation is from this context and from another context.
+--
+
+. Can a pointer to a device, host, or shared SVM allocation be passed to API functions to read from or write to {cl_mem_TYPE} objects, such as {clEnqueueReadBuffer} or {clEnqueueWriteImage}?
++
+--
+*UNRESOLVED*:
+Trending "yes" for device SVM allocations, so long as the device SVM allocation is accessible by the device associated with the command-queue, and the device allocation was made against the context associated with the command-queue.
+
+Trending "yes" for host USM allocations, both when the host USM allocation is from this context and from another context.
+
+Trending "no" for shared USM allocations.
+If the shared USM allocation is from the same context this could be an error, such as {CL_INVALID_HOST_PTR}.
+If the shared USM allocation is from a different context then behavior could be undefined.
+--
+
+. Can a pointer to a device, host, or shared USM allocation be passed as the `pattern` argument to API functions to fill a {cl_mem_TYPE}, SVM allocation, or USM allocation, such as {clEnqueueFillBuffer}?
++
+--
+*UNRESOLVED*:
+Trending "no" for device and shared allocations.
+If the USM allocation is from the same context this could be an error, such as {CL_INVALID_HOST_PTR}.
+If the USM allocation is from a different context then behavior could be undefined.
+
+Trending "yes" for host USM allocations, both when the host USM allocation is from this context and from another context.
+--
+
+. Should we support passing traditional {cl_mem_flags_TYPE} via the USM allocation properties?
++
+--
+`RESOLVED`: We decided not to accept any {cl_mem_flags_TYPE} or {cl_svm_mem_flags_TYPE}, and added access properties instead.
+--
+
+. Exactly how do the additional SVM types affect the memory model?
++
+--
+*UNRESOLVED*: This issue may be easier to resolve now that this is a "unified SVM" extension vs. a "USM" extension, but it will still need more thought.
+
+One particular enhancement we may want to consider, though, is whether calling {clGetEventInfo} and passing {CL_EVENT_COMMAND_EXECUTION_STATUS} to query the event status is a synchronization point.
+In the current specification, this is explicitly not a synchronization point.
+However, in other APIs, querying the event status and observing that the event is complete is a synchronization point.
+Should we adopt this behavior also, or do we want users to call {clWaitForEvents} to define a synchronization point?
+See internal issue 373.
+--
+
+. Should it be an error to set an unknown pointer as a kernel argument using {clSetKernelArgSVMPointer} if no devices support shared system allocations?
++
+--
+`RESOLVED`:
+It is not an error to set an unknown pointer as a kernel argument using {clSetKernelArgSVMPointer}.
+This behavior matches passing a pointer to arbitrary memory to a function on the host, where it is not an error until the pointer is dereferenced.
+Similarly, it is not an error to pass an unknown pointer via {clSetKernelExecInfo}({CL_KERNEL_EXEC_INFO_SVM_PTRS}).
+
+Note that we can still check for possible programming errors via optional USM checking layers, such as the https://github.com/intel/opencl-intercept-layer/blob/master/docs/controls.md#usmchecking-bool[USMChecking] functionality in the https://github.com/intel/opencl-intercept-layer[OpenCL Intercept Layer].
+
+These cases are tested by the CTS tests `unified_svm_corner_case_set_kernel_arg` and `unified_svm_corner_case_set_kernel_exec_info`.
+--
+
+. Should we support a "rect" or "2D" memcpy similar to {clEnqueueCopyBufferRect}?
++
+--
+*UNRESOLVED*:
+
+Tentative resolution:
+Do not include a "rect" memcpy in the initial version of this extension.
+A "rect" memcpy can always be added with a layered extension later, if desired.
+
+Note that standard SYCL does not include a "rect" memcpy, though the https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_memcpy2d.asciidoc[sycl_ext_onapi_memcpy2d] extension does include 2D memory copies and memory fills.
+--
+
+. Should there be an upper limit on the size of an SVM allocation?
+If so, what should the upper limit be?
++
+--
+`RESOLVED`:
+This extension will not define an upper limit on the size of an SVM allocation.
+Applications may discover the largest SVM allocation size experimentally or use implementation-defined mechanisms to determine the largest SVM allocation size.
+This is consistent with `malloc`, which also has no defined upper or lower bound on the amount of memory that may be allocated, although this is different than both the non-extended {clSVMAlloc} and {clCreateBuffer}, where the upper limit is defined by {CL_DEVICE_MAX_MEM_ALLOC_SIZE}.
+
+By defining no limit on the size of an SVM allocation, we leave the door open for future mechanisms to query the largest SVM allocation size.
+For example, we may add queries for the maximum device-owned or host-owned memory allocation sizes, or queries for each SVM type, or other more sophisticated queries.
+We also do not constrain the maximum SVM allocation size to {CL_DEVICE_MAX_MEM_ALLOC_SIZE}, especially for implementations that are able to support larger allocation sizes from host memory.
+
+Note that for the non-extended {clSVMAlloc} and {clCreateBuffer}, {CL_DEVICE_MAX_MEM_ALLOC_SIZE} only defines an upper bound on the amount of memory that _may_ be allocated, and there is no guarantee that an allocation of this size will succeed, say due to prior memory allocations, or memory fragmentation, or any other reason.
+--
+
+. Should it be an error to allocate zero bytes?
++
+--
+`RESOLVED`:
+We will allow zero-sized allocations and require returning a `NULL` pointer.
+This is considered a successful operation and no error will be returned.
+
+We evaluated many scenarios and determined that there is no clearly correct behavior.
+For reference, the scenarios we evaluated were:
+
+* For OpenCL 2.0 SVM, {clSVMAlloc} with a size of zero is specified to return a `NULL` pointer.
+Because {clSVMAlloc} has no mechanism to return an error code, it is unspecified whether this is considered an error.
+* For `cl_intel_unified_shared_memory`, calling {clDeviceMemAllocINTEL}, etc. returns {CL_INVALID_BUFFER_SIZE} if the size to allocate is zero.
+* For CUDA, calling *cuMemAlloc*, etc. returns an error if the size to allocate is zero.
+* The result of calling `malloc(0)` is implementation-defined: it can either return a `NULL` pointer or a unique non-null pointer that must be freed.
+If a `NULL` pointer is returned then `errno` may be set to an implementation-defined value.
+If a unique non-null pointer is returned then it cannot be dereferenced.
+* Allocating an array of zero elements using `new` must return a non-null pointer, though dereferencing the pointer is undefined.
+
+Also for reference, the full set of options we considered were:
+
+.. [.line-through]#Allow zero-sized allocations and require returning a non-null pointer that must be freed.#
+.. Allow zero-sized allocations and require returning a `NULL` pointer.
+No error will be generated.
+Note, it is not currently an error to free a `NULL` pointer.
+.. [.line-through]#Allow zero-sized allocations but allow returning a `NULL` pointer.  No error would be generated, even if a `NULL` pointer is returned.#
+.. [.line-through]#Specify that this case is implementation-defined.#
+.. [.line-through]#Specify that this case is an error.#
+
+This case is tested by the CTS test `unified_svm_corner_case_alloc_free`.
+--
+
+Note: The following issues were added to the KHR USM extension:
+
+[start=30]
+. Should we add a synchronous memadvise function?  Do we need to support memadvise at all?
++
+--
+`RESOLVED`:
+We decided not to support a memadvise function in the initial version of this specification.
+
+For reference, for other APIs:
+
+* The Level Zero memadvise function `zeCommandListAppendMemAdvise` appears to be asynchronous, but the implementation actually seems to be synchronous.
+* It is unclear whether the CUDA memadvise functions `cudaMemAdvise` / `cuMemAdvise` are synchronous or asynchronous.
+--
+
+. What about devices and sub-devices?
++
+--
+`RESOLVED`:
+In this extension, there is no implicit requirement that an allocation owned by a sub-device is accessible to its parent device or that an allocation owned by a parent device is accessible to its sub-device.
+
+The query for {clGetSVMPointerInfoKHR}({CL_SVM_ALLOC_ACCESS_FLAGS_KHR}) can be used to determine whether an allocation is accessible to a parent device or a sub-device, just like for any other device.
+--
+
+. Should we move more of the {clSVMAllocWithPropertiesKHR} arguments to properties?
++
+--
+`RESOLVED`:
+We moved the access flags and alignment to properties, so the only required arguments are now the properties, the SVM type index, and the SVM allocation size.
+--
+
+. Does the {clGetSVMSuggestedTypeIndexKHR} query apply to _all_ of the devices in the device list or context, or to _any_ of the devices in the device list or context?
++
+--
+*UNRESOLVED*: The query should probably apply to _all_ of the devices in the device list or context, though other interpretations may make sense in some cases.
+
+This is especially important if the required SVM capabilities contains e.g. "device owned".
+--
+
+. Should we support a mechanism to enable indirect access for all SVM allocation types with a single call?
++
+--
+`RESOLVED`: Yes, we should.  We now have:
+
+* {CL_KERNEL_EXEC_INFO_SVM_INDIRECT_ACCESS_KHR}, added by this extension, which enables indirect access for all SVM allocations made through the driver (by calling {clSVMAlloc} or {clSVMAllocWithPropertiesKHR}).
+Indirect access for these types of allocations is **disabled** by default.
+* {CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM}, already in the core specification, which enables indirect access for SVM allocations made using a system allocator.
+Indirect access for these types of allocations is **enabled** by default, though it is ignored for devices that do not support system SVM.
+--
+
+. How should an SVM allocation with the access flag *NOWRITE* be initialized?
++
+--
+`RESOLVED`: For this extension, if an allocation is created with the *HOST_NOWRITE* flag, then it can only be initialized on the device.
+If an allocation is created with the *DEVICE_NOWRITE* flag, then it can only be initialized on the host.
+This extension does not support initialize an allocation with both the *HOST_NOWRITE* and *DEVICE_NOWRITE* flags.
+
+If desired, a layered extension could add a new property to {clSVMAllocWithPropertiesKHR} that would specify a pointer with the initial contents of an SVM allocation with both the *HOST_NOWRITE* and *DEVICE_NOWRITE* access flags.
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Version|Date|Author|Changes
+|0.9.0|2024-10-29|Ben Ashbaugh|Initial public revision.
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************
