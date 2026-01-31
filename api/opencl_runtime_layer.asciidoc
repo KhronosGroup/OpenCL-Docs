@@ -14748,16 +14748,16 @@ usage>>.
 
 Simultaneous use is defined using the _prerequisite_ terminology from the
 <<_execution_model, execution model>>.
-ifndef::cl_khr_command_buffer_multi_device[]
+ifndef::cl_khr_command_buffer_mutable_dispatch[]
 A command-buffer exhibits undefined behavior if a simultaneous use
 pattern occurs.
-endif::cl_khr_command_buffer_multi_device[]
-ifdef::cl_khr_command_buffer_multi_device[]
+endif::cl_khr_command_buffer_mutable_dispatch[]
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
 Simultaneous use is an optional feature for devices to support concurrent
-executions of a command-buffer which have been updated between submissions.
-A command-buffer must be created with {CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR}
-to avoid undefined behavior if a simultaneous use pattern occurs.
-endif::cl_khr_command_buffer_multi_device[]
+executions of a command-buffer. A command-buffer must be created with 
+{CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR} to avoid undefined behavior if a 
+simultaneous use pattern occurs.
+endif::cl_khr_command_buffer_mutable_dispatch[]
 
 [[simultaneous-use]]
 Simultaneous Use:: When a command-buffer is submitted for
@@ -14771,6 +14771,28 @@ command-buffer to a single out-of-order queue, without any events or barriers
 used to express a dependency between the two enqueue calls. Using a single
 in-order queue, events, or barriers to express dependencies between submissions
 of the same command-buffer would each be ways to avoid simultaneous use.
+====
+
+ifndef::cl_khr_command_buffer_mutable_dispatch[]
+A command-buffer exhibits undefined behavior if a simultaneous update
+pattern occurs.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+ifdef::cl_khr_command_buffer_mutable_dispatch[]
+Simultaneous update is an optional feature for devices to support updating a 
+command-buffer while all the previous submissions of the same command-buffer
+have not finished. A command-buffer must be created with
+{CL_COMMAND_BUFFER_SIMULTANEOUS_UPDATE_KHR} to avoid undefined behavior if a
+simultaneous update pattern occurs.
+endif::cl_khr_command_buffer_mutable_dispatch[]
+
+[[simultaneous-update]]
+Simultaneous Update:: When a command-buffer is updated while any of the previous
+submissions of the same command-buffer is not in the {CL_COMPLETE} state.
+
+[NOTE]
+====
+An example of simultaneous update would be calling {clUpdateMutableCommandsKHR}
+after submitting a command-buffer without waiting on the submission event.
 ====
 
 ifdef::cl_khr_command_buffer_multi_device[]
@@ -14897,6 +14919,14 @@ ifdef::cl_khr_command_buffer_mutable_dispatch[]
         {CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_USE_KHR}.
 
 include::{generated}/api/version-notes/CL_COMMAND_BUFFER_SIMULTANEOUS_USE_KHR.asciidoc[]
+
+        {CL_COMMAND_BUFFER_SIMULTANEOUS_UPDATE_KHR_anchor} - Allow an
+        instance of the command-buffer to be updated in a usage pattern that 
+        exhibits <<simultaneous-update, simultaneous update>>. If set,
+        devices must support {CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_UPDATE_KHR}.
+
+include::{generated}/api/version-notes/CL_COMMAND_BUFFER_SIMULTANEOUS_UPDATE_KHR.asciidoc[]
+
 endif::cl_khr_command_buffer_mutable_dispatch[]
 
 ifdef::cl_khr_command_buffer_multi_device[]
@@ -16774,6 +16804,14 @@ one of the errors below is returned:
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
     required by the OpenCL implementation on the host.
+
+If the implementation supports the
+{CL_COMMAND_BUFFER_CAPABILITY_SIMULTANEOUS_UPDATE_KHR} capability, and the
+command-buffer was created with the {CL_COMMAND_BUFFER_SIMULTANEOUS_UPDATE_KHR}
+flag, {clUpdateMutableCommandsKHR} can be called without waiting for previous
+submissions of the command-buffer to be completed. If this capability is not
+supported, updating the command-buffer in a <<simultaneous-update, simultaneous-
+update>> pattern will result in undefined behavior.
 
 [NOTE]
 ====
