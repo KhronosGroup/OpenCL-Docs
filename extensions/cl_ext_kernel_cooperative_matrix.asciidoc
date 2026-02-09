@@ -87,7 +87,11 @@ CLK_COOPERATIVE_MATRIX_ACCUMULATOR -> MatrixAccumulatorKHR
 CLK_COOPERATIVE_MATRIX_LAYOUT_ROW_MAJOR -> RowMajorKHR
 CLK_COOPERATIVE_MATRIX_LAYOUT_COLUMN_MAJOR ->   ColumnMajorKHR
 CLK_COOPERATIVE_MATRIX_OPERAND_NONE -> NoneKHR
-CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_DEFAULT -> SaturatingAccumulationKHR
+CLK_COOPERATIVE_MATRIX_OPERAND_MATRIX_A_SIGNED -> MatrixASignedComponentsKHR
+CLK_COOPERATIVE_MATRIX_OPERAND_MATRIX_B_SIGNED -> MatrixBSignedComponentsKHR
+CLK_COOPERATIVE_MATRIX_OPERAND_MATRIX_C_SIGNED -> MatrixCSignedComponentsKHR
+CLK_COOPERATIVE_MATRIX_OPERAND_MATRIX_RESULT_SIGNED -> MatrixResultSignedComponentsKHR
+CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION -> SaturatingAccumulationKHR
 ----
 
 == New API Functions
@@ -118,11 +122,11 @@ __opencl_c_ext_cooperative_matrix_saturation_modes
 enum coop_matrix_operands_t
 {
   CLK_COOPERATIVE_MATRIX_OPERAND_NONE                                   = 0,
-  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_DEFAULT        = 0x10,
-  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_INT_SINGLE     = 0x20,
-  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_INT_DOUBLE     = 0x40,
-  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_MINMAX   = 0x80,
-  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_INFINITY = 0x100,
+  CLK_COOPERATIVE_MATRIX_OPERAND_MATRIX_A_SIGNED                        = 0x10,
+  CLK_COOPERATIVE_MATRIX_OPERAND_MATRIX_B_SIGNED                        = 0x20,
+  CLK_COOPERATIVE_MATRIX_OPERAND_MATRIX_C_SIGNED                        = 0x40,
+  CLK_COOPERATIVE_MATRIX_OPERAND_MATRIX_RESULT_SIGNED                   = 0x80,
+  CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION                = 0x100
 };
 
 enum coop_matrix_use_t
@@ -373,35 +377,6 @@ on cooperative matrices. In the following functions, the generic type
    Be default, the operand is set to `CLK_COOPERATIVE_MATRIX_OPERAND_NONE` and can be omitted.
    The behavior of the `coop_matrix_operands_t` values is described in
    the `SPV_KHR_cooperative_matrix` extension.
-
-The `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_*` _matrix_operands_ allow to set one of the saturation accumulation modes.
-
-If the base component type is an integer and:
-
-* _matrix_operands_ is `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_INT_SINGLE`, then single saturation is applied: +
-output = Saturate(vec<N> + C)
-* _matrix_operands_ is `CLK_COOPERATIVE_MATRIX_SATURATION_INT_DOUBLE`, then double saturation is applied: +
-output = Saturate(Saturate(vec<N/2> + C) + vec<N/2>)
-
-Where N represents the total number of elements to multiply-add for the operation.
-
-Using `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_INT_SINGLE` or
-`CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_INT_DOUBLE` with the base component type that is not an integer causes undefined behaviour.
-
-If the base component type is a floating-point number and:
-
-* _matrix_operands_ is `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_MINMAX`,
-then overflow to the largest magnitude value supported by the `CLK_COOPERATIVE_MATRIX_ACCUMULATOR` matrix is applied,
-with the sign of the intermediate result.
-* _matrix_operands_ is `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_INFINITY`,
-then overflow to +/- ∞ is applied, with the sign of intermediate result.
-
-Using `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_MINMAX` or `CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION_FLOAT_INFINITY`
-with the base component type that is not a floating-point number causes undefined behaviour.
-
-The default saturation mode is implementation dependent. Setting more than one saturation accumulation mode causes undefined behaviour.
-
-Saturation accumulation modes require that the `__opencl_c_ext_cooperative_matrix_saturation_modes` feature macro is defined.
 
 |====
 
