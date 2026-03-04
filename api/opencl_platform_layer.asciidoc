@@ -2212,6 +2212,21 @@ include::{generated}/api/version-notes/CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_
     | Returns the version of the C++ for OpenCL language supported by the
       device compiler.
 endif::cl_ext_cxx_for_opencl[]
+
+ifdef::cl_khr_cooperative_matrix[]
+| {CL_DEVICE_COOPERATIVE_MATRIX_POINTER_ALIGNMENT_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_COOPERATIVE_MATRIX_POINTER_ALIGNMENT_KHR.asciidoc[]
+  | {cl_uint_TYPE}
+    | Returns the minimum pointer alignment in bytes required for cooperative matrix load/store operations.
+
+| {CL_DEVICE_COOPERATIVE_MATRIX_STRIDE_MULTIPLE_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_COOPERATIVE_MATRIX_STRIDE_MULTIPLE_KHR.asciidoc[]
+  | {cl_uint_TYPE}
+    | Returns the size in bytes strides used in cooperative matrix load/store operations must be a multiple of.
+endif::cl_khr_cooperative_matrix[]
+
 |====
 
 ifdef::cl_khr_integer_dot_product[]
@@ -2341,6 +2356,136 @@ include::{generated}/api/structs/cl_device_pci_bus_info_khr.txt[]
   * _pci_function_ is the PCI device function identifier of the device.
 --
 endif::cl_khr_pci_bus_info[]
+
+ifdef::cl_khr_cooperative_matrix[]
+[open,refpage='clGetDeviceCooperativeMatrixInfoKHR',desc='Returns information about cooperative matrix for a device.',type='protos']
+--
+To return information about cooperative matrix for a device, call the function
+
+include::{generated}/api/protos/clGetDeviceCooperativeMatrixInfoKHR.txt[]
+include::{generated}/api/version-notes/clGetDeviceCooperativeMatrixInfoKHR.asciidoc[]
+
+  * _device_ may be a device returned by {clGetDeviceIDs} or a sub-device
+    created by {clCreateSubDevices}. If device is a sub-device, the specific
+    information for the sub-device will be returned.
+  * _param_name_ specifies the information to query.
+    The list of supported _param_name_ types and the information returned in
+    _param_value_ by {clGetDeviceCooperativeMatrixInfoKHR} is described in the
+    <<device-cooperative-matrix-info-table,Device Cooperative Matrix Queries>> table.
+  * _input_value_size_ is used to specify the size in bytes of memory pointed to
+    by _input_value_.
+    This size must be equal to the size of input type as described in the table below.
+  * _input_value_ is a pointer to memory where the appropriate parameterization
+    of the query is passed from.
+    If _input_value_ is `NULL`, it is ignored.
+  * _param_value_size_ specifies the size in bytes of memory pointed to by
+    _param_value_.
+    This size must be greater than or equal to the size of the return type
+    specified in the <<device-cooperative-matrix-info-table, Device Cooperative Matrix Queries>> table.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_ is a pointer to memory where the appropriate result being
+    queried is returned.
+    If _param_value_ is `NULL`, it is ignored.
+  * _param_value_size_ret_ returns the actual size in bytes of data being
+    queried by _param_name_.
+    If _param_value_size_ret_ is `NULL`, it is ignored.
+
+[[device-cooperative-matrix-info-table]]
+.List of supported param_names by {clGetDeviceCooperativeMatrixInfoKHR}
+[width="100%",cols="<25%,<25%,<25%,<25%",options="header"]
+|====
+| Device Cooperative Matrix Info | Input Type | Return Type | Description
+
+| {CL_DEVICE_COOPERATIVE_MATRIX_DEFAULT_SUB_GROUP_VARIANTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_COOPERATIVE_MATRIX_DEFAULT_SUB_GROUP_VARIANTS_KHR.asciidoc[]
+  | -
+  | `cl_device_cooperative_matrix_variant_khr[]`
+    | Describe the list of cooperative matrix operation sub-group scope variants
+      supported by the device for the default sub-group size.
+
+| {CL_DEVICE_COOPERATIVE_MATRIX_SUB_GROUP_VARIANTS_KHR_anchor}
+
+include::{generated}/api/version-notes/CL_DEVICE_COOPERATIVE_MATRIX_SUB_GROUP_VARIANTS_KHR.asciidoc[]
+  | {cl_uint_TYPE}
+  | `cl_device_cooperative_matrix_variant_khr[]`
+    | Describe the list of cooperative matrix operation sub-group scope variants
+      supported by the device for the sub-group size provided via _input_value_.
+|====
+
+// refError
+
+{clGetDeviceCooperativeMatrixInfoKHR} returns {CL_SUCCESS} if the function is
+executed successfully.
+Otherwise, it returns one of the following errors:
+
+  * {CL_INVALID_DEVICE}
+  ** if _device_ is not a valid device
+  * {CL_INVALID_OPERATION}
+  ** if _device_ does not support the `cl_khr_cooperatrive_matrix` extension.
+  * {CL_INVALID_VALUE}
+  ** if _param_name_ is not one of the supported values
+  ** if the size in bytes specified by _param_value_size_ is less than size of
+    the return type specified in the
+    <<device-cooperative-matrix-info-table, Device Cooperative Matrix Queries>> table
+    and _param_value_ is not `NULL`.
+  ** if _param_name_ requires an _input_value_ and _input_value_ is `NULL`.
+  ** if _param_name_ requires an _input_value_ and the size in bytes specified by 
+    _input_value_size_ does not match the size of the input type specified in the
+    <<device-cooperative-matrix-info-table, Device Cooperative Matrix Queries>> table.
+  * {CL_OUT_OF_RESOURCES}
+  ** if there is a failure to allocate resources required by the OpenCL
+     implementation on the device.
+  * {CL_OUT_OF_HOST_MEMORY}
+  ** if there is a failure to allocate resources required by the OpenCL
+     implementation on the host.
+--
+
+[open,refpage='cl_device_cooperative_matrix_variant_khr',desc='Structure describing a supported cooperative matrix variant',type='structs']
+--
+[[cooperative-matrix-variant]]
+Each {cl_device_cooperative_matrix_variant_khr_TYPE} structure describes a
+single supported combination of matrix sizes, component types, and
+saturation behavior supported by a device for cooperative matrix multiply/add
+operations:
+
+include::{generated}/api/structs/cl_device_cooperative_matrix_variant_khr.txt[]
+
+ * _m_size_ is number of rows in matrices `A`, `C`, and `Result`.
+ * _n_size_ is number of columns in matrices `B`, `C`, and `Result`.
+ * _k_size_ is number of columns in matrix `A` and rows in matrix `B`.
+ * _a_type_ is the component type of matrix `A`, of type {cl_device_cooperative_matrix_component_type_khr_TYPE}.
+ * _b_type_ is the component type of matrix `B`, of type {cl_device_cooperative_matrix_component_type_khr_TYPE}.
+ * _c_type_ is the component type of matrix `C`, of type {cl_device_cooperative_matrix_component_type_khr_TYPE}.
+ * _result_type_ is the component type of matrix `Result`, of type {cl_device_cooperative_matrix_component_type_khr_TYPE}.
+ * _saturating_accumulation_ indicates whether the `SaturatingAccumulation`
+   operand to `OpCooperativeMatrixMulAddKHR` must be present. If it is
+   {CL_TRUE}, the `SaturatingAccumulation` operand must be present. If it
+   is {CL_FALSE}, the `SaturatingAccumulation` operand must not be present.
+--
+
+[open,refpage='cl_device_cooperative_matrix_component_type_khr',desc='Enumeration describing the component type of a cooperative matrix',type='defines']
+--
+The {cl_device_cooperative_matrix_component_type_khr_TYPE} enumeration
+describes the component type of a cooperative matrix:
+
+include::{generated}/api/defines/cl_device_cooperative_matrix_component_type_khr.txt[]
+
+ * {CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_FP16_KHR_anchor} corresponds to SPIR-V `OpTypeFloat 16`.
+ * {CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_FP32_KHR_anchor} corresponds to SPIR-V `OpTypeFloat 32`.
+ * {CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_FP64_KHR_anchor} corresponds to SPIR-V `OpTypeFloat 64`.
+ * {CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT8_KHR_anchor} corresponds to SPIR-V `OpTypeInt 8 0`.
+ * {CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT16_KHR_anchor} corresponds to SPIR-V `OpTypeInt 16 0`.
+ * {CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT32_KHR_anchor} corresponds to SPIR-V `OpTypeInt 32 0`.
+ * {CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT64_KHR_anchor} corresponds to SPIR-V `OpTypeInt 64 0`.
+ * {CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT8_KHR_anchor} corresponds to SPIR-V `OpTypeInt 8 0`.
+ * {CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT16_KHR_anchor} corresponds to SPIR-V `OpTypeInt 16 0`.
+ * {CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT32_KHR_anchor} corresponds to SPIR-V `OpTypeInt 32 0`.
+ * {CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT64_KHR_anchor} corresponds to SPIR-V `OpTypeInt 64 0`.
+--
+
+endif::cl_khr_cooperative_matrix[]
+
 
 [open,refpage='clGetDeviceAndHostTimer',desc='Query synchronized host and device timestamps',type='protos']
 --

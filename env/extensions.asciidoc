@@ -412,6 +412,75 @@ If the OpenCL environment supports the extension `cl_khr_spirv_queries`, then:
 * For each of the capabilities returned by the query `CL_DEVICE_SPIRV_CAPABILITIES_KHR`, it is valid to declare the SPIR-V capability in a SPIR-V module using *OpCapability*.
 Some capabilities may additionally require a specific SPIR-V version, or a SPIR-V extension to be declared via *OpExtension*.
 
+==== `cl_khr_cooperative_matrix`
+
+If the OpenCL environment supports the extension `cl_khr_cooperative_matrix`, then the environment must
+accept modules that declare use of the extension `SPV_KHR_cooperative_matrix` via *OpExtension*.
+
+If the OpenCL environment supports the extension `cl_khr_cooperative_matrix` and use of the SPIR-V extension `SPV_KHR_cooperative_matrix` is declared in the module via *OpExtension*, then the environment must accept modules that declare the following SPIR-V capability:
+
+* *CooperativeMatrixKHR*
+
+For *OpTypeCooperativeMatrixKHR*, the component type, number of rows and number
+of columns must match one of the supported combinations reported via the
+{clGetDeviceCooperativeMatrixInfoKHR} device query, otherwise
+the behavior of the program is undefined.
+
+For *OpTypeCooperativeMatrixMulAddKHR*, the operands must match a supported
+{cl_device_cooperative_matrix_variant_khr_TYPE} such that:
+
+* The type of _A_ must have _Rows_ match `cl_device_cooperative_matrix_variant_khr::m_size`,
+_Columns_ match `cl_device_cooperative_matrix_variant_khr::k_size`, _Use_ be *MatrixAKHR*,
+and _ComponentType_ match `cl_device_cooperative_matrix_variant_khr::a_type`.
+
+* The type of _B_ must have _Rows_ match `cl_device_cooperative_matrix_variant_khr::k_size`,
+_Columns_ match `cl_device_cooperative_matrix_variant_khr::n_size`, _Use_ be *MatrixBKHR*,
+and _ComponentType_ match `cl_device_cooperative_matrix_variant_khr::b_type`.
+
+* The type of _C_ must have _Rows_ match `cl_device_cooperative_matrix_variant_khr::m_size`,
+_Columns_ match `cl_device_cooperative_matrix_variant_khr::n_size`, _Use_ be *MatrixAccumulatorKHR*,
+and _ComponentType_ match `cl_device_cooperative_matrix_variant_khr::c_type`.
+
+* The type of _Result_ must have _Rows_ match `cl_device_cooperative_matrix_variant_khr::m_size`,
+_Columns_ match `cl_device_cooperative_matrix_variant_khr::n_size`, _Use_ be *MatrixAccumulatorKHR*,
+and _ComponentType_ match `cl_device_cooperative_matrix_variant_khr::result_type`.
+
+* If and only if `cl_device_cooperative_matrix_variant_khr::a_type` is a signed
+integer type, *MatrixASignedComponents* must be used.
+
+* If and only if `cl_device_cooperative_matrix_variant_khr::b_type` is a signed
+integer type, *MatrixBSignedComponents* must be used.
+
+* If and only if `cl_device_cooperative_matrix_variant_khr::c_type` is a signed
+integer type, *MatrixCSignedComponents* must be used.
+
+* If and only if `cl_device_cooperative_matrix_variant_khr::result_type` is a signed
+integer type, *MatrixResultSignedComponents* must be used.
+
+* If and only if `cl_device_cooperative_matrix_variant_khr::saturating_accumulation`
+is `CL_TRUE`, *SaturatingAccumulationKHR* must be used.
+
+* If and only if `cl_device_cooperative_matrix_variant_khr::saturating_accumulation`
+is `CL_FALSE`, *SaturatingAccumulationKHR* must not be used.
+
+* The scope of all cooperative matrix operands must be *Subgroup*.
+
+* Behavior is undefined if *OpCooperativeMatrixLoadKHR*,
+*OpCooperativeMatrixStoreKHR*, or *OpCooperativeMatrixMulAddKHR* acting on
+cooperative matrix objects with *Subgroup* scope are dynamically executed
+by a kernel that does not use full subgroups.
+
+For *OpCooperativeMatrixLoadKHR* or *OpCooperativeMatrixStoreKHR*:
+
+* the _Storage Class_ of the _Pointer_ operand must be limited to *Workgroup* or
+  *CrossWorkgroup*.
+* _Pointer_ must be aligned to at least the larger of the size of the elements
+  of the matrix or {CL_DEVICE_COOPERATIVE_MATRIX_POINTER_ALIGNMENT_KHR} for the
+  device.
+* _Stride_ must be a multiple of the larger of the size of the elements of the
+  matrix or {CL_DEVICE_COOPERATIVE_MATRIX_STRIDE_MULTIPLE_KHR}, divided by the
+  size of the type pointed to by _Pointer_.
+
 === Embedded Profile Extensions
 
 ==== `cles_khr_int64`

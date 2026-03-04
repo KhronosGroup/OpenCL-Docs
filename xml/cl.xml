@@ -266,6 +266,8 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_properties</type>    <name>cl_svm_free_properties_khr</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_svm_free_flags_khr</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_svm_pointer_info_khr</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_device_cooperative_matrix_component_type_khr</name>;</type>
+        <type category="define">typedef <type>cl_uint</type>          <name>cl_device_cooperative_matrix_info_khr</name>;</type>
 
             <comment>Structure types</comment>
         <type category="struct" name="cl_dx9_surface_info_khr">
@@ -471,6 +473,16 @@ server's OpenCL/api-docs repository.
     CL_SVM_CAPABILITY_CONCURRENT_ATOMIC_ACCESS_KHR | \
     CL_SVM_CAPABILITY_INDIRECT_ACCESS_KHR)</type>
 
+        <type category="struct" name="cl_device_cooperative_matrix_variant_khr">
+            <member><type>cl_uint</type>    <name>m_size</name></member>
+            <member><type>cl_uint</type>    <name>n_size</name></member>
+            <member><type>cl_uint</type>    <name>k_size</name></member>
+            <member><type>cl_device_cooperative_matrix_component_type_khr</type> <name>a_type</name></member>
+            <member><type>cl_device_cooperative_matrix_component_type_khr</type> <name>b_type</name></member>
+            <member><type>cl_device_cooperative_matrix_component_type_khr</type> <name>c_type</name></member>
+            <member><type>cl_device_cooperative_matrix_component_type_khr</type> <name>result_type</name></member>
+            <member><type>cl_bool</type>    <name>saturating_accumulation</name></member>
+        </type>
     </types>
 
     <!-- SECTION: OpenCL enumerant (token) definitions. -->
@@ -1525,6 +1537,19 @@ server's OpenCL/api-docs repository.
         <enum bitpos="2"            name="CL_DEVICE_KERNEL_CLOCK_SCOPE_SUB_GROUP_KHR"/>
             <unused start="3" end="63"/>
     </enums>
+    <enums name="cl_device_cooperative_matrix_component_type_khr" vendor="Khronos">
+        <enum value="0"             name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_FP16_KHR"/>
+        <enum value="1"             name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_FP32_KHR"/>
+        <enum value="2"             name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_FP64_KHR"/>
+        <enum value="3"             name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT8_KHR"/>
+        <enum value="4"             name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT16_KHR"/>
+        <enum value="5"             name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT32_KHR"/>
+        <enum value="6"             name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT64_KHR"/>
+        <enum value="7"             name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT8_KHR"/>
+        <enum value="8"             name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT16_KHR"/>
+        <enum value="9"             name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT32_KHR"/>
+        <enum value="10"             name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT64_KHR"/>
+    </enums>
 
     <enums name="cl_svm_free_flags_khr" vendor="Khronos" type="bitmask">
             <unused start="0" end="31"/>
@@ -1693,7 +1718,11 @@ server's OpenCL/api-docs repository.
         <enum value="0x1075"        name="CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR"/>
         <enum value="0x1076"        name="CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR"/>
         <enum value="0x1077"        name="CL_DEVICE_SVM_TYPE_CAPABILITIES_KHR"/>
-            <unused start="0x1078" end="0x107F" comment="Reserved for cl_device_info"/>
+        <enum value="0x1078"        name="CL_DEVICE_COOPERATIVE_MATRIX_DEFAULT_SUB_GROUP_VARIANTS_KHR"/>
+        <enum value="0x1079"        name="CL_DEVICE_COOPERATIVE_MATRIX_SUB_GROUP_VARIANTS_KHR"/>
+        <enum value="0x107A"        name="CL_DEVICE_COOPERATIVE_MATRIX_POINTER_ALIGNMENT_KHR"/>
+        <enum value="0x107B"        name="CL_DEVICE_COOPERATIVE_MATRIX_STRIDE_MULTIPLE_KHR"/>
+            <unused start="0x107C" end="0x107F" comment="Reserved for cl_device_info"/>
         <enum value="0x1080"        name="CL_CONTEXT_REFERENCE_COUNT"/>
         <enum value="0x1081"        name="CL_CONTEXT_DEVICES"/>
         <enum value="0x1082"        name="CL_CONTEXT_PROPERTIES"/>
@@ -4608,6 +4637,16 @@ server's OpenCL/api-docs repository.
             <proto><type>cl_int</type>                                  <name>clSetPerfHintQCOM</name></proto>
             <param><type>cl_context</type>                             <name>context</name></param>
             <param><type>cl_perf_hint_qcom</type>                            <name>perf_hint</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                                  <name>clGetDeviceCooperativeMatrixInfoKHR</name></proto>
+            <param><type>cl_device_id</type>                            <name>device</name></param>
+            <param><type>cl_device_cooperative_matrix_info_khr</type>   <name>param_name</name></param>
+            <param><type>size_t</type>                                  <name>input_value_size</name></param>
+            <param>const <type>void</type>*                             <name>input_value</name></param>
+            <param><type>size_t</type>                                  <name>param_value_size</name></param>
+            <param><type>void</type>*                                   <name>param_value</name></param>
+            <param><type>size_t</type>*                                 <name>param_value_size_ret</name></param>
         </command>
     </commands>
 
@@ -8051,6 +8090,37 @@ server's OpenCL/api-docs repository.
             </require>
             <require comment="cl_kernel_workgroup_info">
                 <enum name="CL_KERNEL_ALLOCATIONS_INFO_INTEL"/>
+            </require>
+        </extension>
+        <extension name="cl_khr_cooperative_matrix" revision="1.0.0" supported="opencl">
+            <require comment="cl_device_info">
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_POINTER_ALIGNMENT_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_STRIDE_MULTIPLE_KHR"/>
+            </require>
+            <require comment="cl_device_cooperative_matrix_info_khr">
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_DEFAULT_SUB_GROUP_VARIANTS_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_SUB_GROUP_VARIANTS_KHR"/>
+            </require>
+            <require>
+                <type name="cl_device_cooperative_matrix_variant_khr"/>
+                <type name="cl_device_cooperative_matrix_component_type_khr"/>
+                <type name="cl_device_cooperative_matrix_info_khr"/>
+            </require>
+            <require comment="cl_device_cooperative_matrix_component_type_khr">
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_FP16_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_FP32_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_FP64_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT8_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT16_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT32_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_SINT64_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT8_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT16_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT32_KHR"/>
+                <enum name="CL_DEVICE_COOPERATIVE_MATRIX_COMPONENT_TYPE_UINT64_KHR"/>
+            </require>
+            <require>
+                <command name="clGetDeviceCooperativeMatrixInfoKHR"/>
             </require>
         </extension>
     </extensions>
