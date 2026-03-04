@@ -9,7 +9,7 @@ include::{generated}/meta/{refprefix}cl_khr_icd.txt[]
 === Other Extension Metadata
 
 *Last Modified Date*::
-    2025-12-15
+    2026-02-09
 *IP Status*::
     No known IP claims.
 
@@ -255,6 +255,21 @@ query dispatchable entry points using {clIcdGetFunctionAddressForPlatformKHR}
 and then set the platform dispatch data using
 {clIcdSetPlatformDispatchDataKHR}.
 
+New in version 2.0.2, the ICD Loader will also query the following functions
+from the library: {clIcdCreateInstancePlatformKHR} and
+{clIcdDestroyInstancePlatformKHR}.  If these two functions are present and the
+library's platforms are ICD 2 compatible, these platforms will be deemed
+*instance compatible*. In this case, rather than using the platform directly,
+the ICD Loader will first create an instance platform and then query
+dispatchable entry points for this instance platform using
+{clIcdGetFunctionAddressForPlatformKHR} and then set the platform dispatch data
+using {clIcdSetPlatformDispatchDataKHR}. Devices returned by {clGetDeviceIDs}
+used on an instance platform will be instance devices.  This created instance
+platform will be destroyed during loader deinitialization unless legacy
+behavior is enabled. Each instance platform (and attached instance devices)
+must support having a different dispatch information set through
+{clIcdSetPlatformDispatchDataKHR}.
+
 === New Commands
 
   * {clIcdGetPlatformIDsKHR}
@@ -263,6 +278,11 @@ New in version 2.0.0:
 
   * {clIcdGetFunctionAddressForPlatformKHR}
   * {clIcdSetPlatformDispatchDataKHR}
+
+New in version 2.0.2:
+
+  * {clIcdCreateInstancePlatformKHR}
+  * {clIcdDestroyInstancePlatformKHR}
 
 === New Enums
 
@@ -278,6 +298,11 @@ New in version 2.0.0, used as a value in the pointers to {clGetPlatformIDs}
 and {clUnloadCompiler} in the dispatch structure:
 
   * `CL_ICD2_TAG_KHR`
+
+New in version 2.0.2, accepted as terminator to the _properties_ list of
+{clIcdCreateInstancePlatformKHR}.
+
+  * {CL_INSTANCE_PLATFORM_PROPERTIES_LIST_END_KHR}
 
 === Issues
 
@@ -365,3 +390,5 @@ for propagating this information to new objects.
   ** Loader managed dispatch.
   * Revision 2.0.1, 2025-12-15
   ** Loader deinitialization.
+  * Revision 2.0.2, 2026-02-09
+  ** Instance platform support.
