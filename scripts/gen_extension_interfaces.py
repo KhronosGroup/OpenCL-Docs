@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2025 The Khronos Group Inc.
+# Copyright 2025-2026 The Khronos Group Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -16,7 +16,7 @@ def parse_xml(path):
         return tree
 
 def GetHeader():
-    return """// Copyright 2025 The Khronos Group.
+    return """// Copyright 2025-2026 The Khronos Group.
 // SPDX-License-Identifier: CC-BY-4.0
 
 """

@@ -1,4 +1,4 @@
-// Copyright 2017-2025 The Khronos Group.
+// Copyright 2017-2026 The Khronos Group.
 // SPDX-License-Identifier: CC-BY-4.0
 
 // Extensions to enable
@@ -96,8 +96,8 @@ what versions of OpenCL C specify that feature.
      is used, it has the identical meaning.
   * Requires support for OpenCL C 2.0, or OpenCL C 3.0 or newer and the
     {opencl_c_feature_name} feature:
-    Features that were introduced in OpenCL C 2.0 as mandatory, but made
-    <<optional-functionality, optional>> in OpenCL C 3.0.
+    Features that were introduced in OpenCL C 2.0 as mandatory, but are
+    <<optional-functionality, optional>> in OpenCL C 3.0 or newer.
     Compilers for versions of OpenCL C 1.2 or below will not provide these
     features, compilers for OpenCL C 2.0 will provide these features,
     compilers for OpenCL C 3.0 or newer may provide these features.
@@ -282,13 +282,14 @@ corresponding optional functionality.
 === Extensions
 
 Other optional functionality may be described by language extensions to OpenCL
-C. Extensions are described in the <<opencl-extension-spec,OpenCL Extension
-Specification>>.  When an OpenCL C extension is supported an associated
-__extension macro__ will be predefined.  Please refer to the OpenCL Extension
-Specification for more information about predefined extension macros.
-
-Prior to OpenCL C 3.0, support for some optional core language features was
-indicated using predefined extension macros.
+C.
+Extensions to OpenCL C are described in the OpenCL C specification or in
+vendor-provided documentation.
+When an OpenCL C extension is supported an associated extension macro will be
+predefined.
+Please refer to <<preprocessor-directives-for-optional-extensions,Preprocessor
+Directives for Optional Extensions>> for more information about predefined
+extension macros.
 
 When an optional core language feature began as an extension it may have both an
 associated feature macro and an associated extension macro.  If an optional core
@@ -480,9 +481,8 @@ ifdef::cl_khr_integer_dot_product[]
 [[cl_khr_integer_dot_product,cl_khr_integer_dot_product]]
 ==== Integer Dot Product
 
-The {cl_khr_integer_dot_product_EXT} extension adds support for SPIR-V
-instructions and OpenCL C built-in functions to compute the dot product of
-vectors of integers.
+The {cl_khr_integer_dot_product_EXT} extension adds OpenCL C built-in functions
+to compute the dot product of vectors of integers.
 The extension provides new <<table-builtin-functions, built-in vector
 integer argument functions>> operating on these types.
 endif::cl_khr_integer_dot_product[]
@@ -491,9 +491,9 @@ ifdef::cl_khr_kernel_clock[]
 [[cl_khr_kernel_clock,cl_khr_kernel_clock]]
 ==== Kernel Clock
 
-The `cl_khr_kernel_clock` extension adds support for SPIR-V instructions and
-OpenCL C built-in functions to sample the value from one of three clocks
-provided by compute units.  The extension provides the following functions:
+The {cl_khr_kernel_clock_EXT} extension adds OpenCL C built-in functions to sample
+the value from one of three clocks provided by compute units.
+The extension provides the following functions:
 
 * <<table-kernel-clock-functions,Built-in Kernel Clock Functions>>
 endif::cl_khr_kernel_clock[]
@@ -3980,6 +3980,7 @@ ifdef::cl_khr_initialize_memory[]
 endif::cl_khr_initialize_memory[]
 
 
+[[EXTENSION]]
 [[preprocessor-directives-and-macros]]
 == Preprocessor Directives and Macros
 
@@ -4009,10 +4010,6 @@ following forms whose meanings are described elsewhere:
 ----------
 // on-off-switch is one of ON, OFF, or DEFAULT
 #pragma OPENCL FP_CONTRACT on-off-switch
-
-#pragma OPENCL EXTENSION extensionname : behavior
-
-#pragma OPENCL EXTENSION all : behavior
 ----------
 
 The following predefined macro names are available.
@@ -4115,6 +4112,86 @@ In OpenCL C 3.0 or newer there are a number of optional predefined macros
 indicating optional language features. Such macros are listed in the
 <<table-optional-lang-features, optional features in OpenCL C 3.0 table>>.
 --
+
+
+[[preprocessor-directives-for-optional-extensions]]
+=== Preprocessor Directives for Optional Extensions
+
+The *#pragma OPENCL EXTENSION* directive controls the behavior of the OpenCL
+compiler with respect to extensions.
+The *#pragma OPENCL EXTENSION* directive is defined as:
+
+[source,opencl_c]
+----
+#pragma OPENCL EXTENSION <extension_name> : <behavior>
+#pragma OPENCL EXTENSION all : <behavior>
+----
+
+where _extension_name_ is the name of the extension.
+The token *all* means that the behavior applies to all extensions supported
+by the compiler.
+The _behavior_ can be set to one of the following values given by the table
+below.
+
+[cols="1,3",options="header",]
+|====
+| *behavior* | *Description*
+| *enable*
+| Behave as specified by the extension _extension_name_.
+
+  Report an error on the *`#pragma OPENCL EXTENSION`* if the
+  _extension_name_ is not supported, or if *all* is specified.
+
+| *disable*
+| Behave (including issuing errors and warnings) as if the extension
+  _extension_name_ is not part of the language definition.
+
+  If *all* is specified, then behavior must revert back to that of the
+  non-extended core version of the language being compiled to.
+
+  Warn on the *`#pragma OPENCL EXTENSION`* if the extension _extension_name_
+  is not supported.
+
+|====
+
+The *`#pragma OPENCL EXTENSION`* directive is a simple, low-level mechanism
+to set the behavior for each extension.
+It does not define policies such as which combinations are appropriate;
+those must be defined elsewhere.
+The order of directives matter in setting the behavior for each extension.
+Directives that occur later override those seen earlier.
+The *all* variant sets the behavior for all extensions, overriding all
+previously issued extension directives, but only if the _behavior_ is set to
+*disable*.
+
+The initial state of the compiler is as if the directive
+
+[source,opencl_c]
+----
+#pragma OPENCL EXTENSION all : disable
+----
+
+was issued, telling the compiler that all error and warning reporting must
+be done according to this specification, ignoring any extensions.
+
+Every extension which affects the OpenCL language semantics, syntax or adds
+built-in functions to the language must create a preprocessor `#define` that
+matches the extension name string.
+This `#define` would be available in the language if and only if the
+extension is supported on a given implementation.
+
+For example, compilers that support the {cl_khr_3d_image_writes_EXT} extension
+will add a preprocessor `#define` called {cl_khr_3d_image_writes_EXT}.
+A kernel can now use this preprocessor `#define` to do something like:
+
+[source,opencl_c]
+----
+#ifdef cl_khr_3d_image_writes
+    // do something using the extension
+#else
+    // do something else or #error!
+#endif
+----
 
 
 [[attribute-qualifiers]]
@@ -4580,26 +4657,6 @@ my_kernel( ... )
 The above example is invalid because the loop unroll factor is not a
 compile-time constant expression.
 --
-
-
-[[extending-attribute-qualifiers]]
-=== Extending Attribute Qualifiers
-
-The attribute syntax can be extended for standard language extensions and
-vendor specific extensions.
-Any extensions should follow the naming conventions outlined in the
-introduction to <<opencl-extension-spec,section 9 in the OpenCL 2.0
-Extension Specification>>.
-
-Attributes are intended as useful hints to the compiler.
-It is our intention that a particular implementation of OpenCL be free to
-ignore all attributes and the resulting executable binary will produce the
-same result.
-This does not preclude an implementation from making use of the additional
-information provided by attributes and performing optimizations or other
-transformations as it sees fit.
-In this case it is the programmer's responsibility to guarantee that the
-information provided is in some sense correct.
 
 
 [[blocks]]
@@ -5282,7 +5339,7 @@ ifdef::cl_khr_fp16[gentypeh *fmax*(gentypeh _x_, half _y_)]
   gentypef *fmin*(gentypef _x_, float _y_) +
   gentyped *fmin*(gentyped _x_, double _y_)
 
-ifdef::cl_khr_fp16[gentypeh *fmax*(gentypeh _x_, half _y_)]
+ifdef::cl_khr_fp16[gentypeh *fmin*(gentypeh _x_, half _y_)]
     | Returns _y_ if _y_ < _x_, otherwise it returns _x_.
       If one argument is a NaN, *fmin*() returns the other argument.
       If both arguments are NaNs, *fmin*() returns a NaN.
@@ -5448,7 +5505,6 @@ endif::cl_khr_fp16[]
     | *mad* computes _a_ * _b_ + _c_.
       The function may compute _a_ * _b_ + _c_ with reduced accuracy in the
       embedded profile.
-      See the OpenCL SPIR-V Environment Specification for details.
       On some hardware the mad instruction may provide better performance
       than expanded computation of _a_ * _b_ + _c_.
       footnote:[{fn-mad-caution}]
@@ -12386,7 +12442,7 @@ endif::cl_khr_mipmap_image_writes[]
 [[built-in-image-query-functions]]
 ==== Built-in Image Query Functions
 
-[open,refpage='imageQueryFunctions',desc='Built-in Image Query Functions',type='freeform',spec='clang',anchor='built-in-image-query-functions',xrefs='imageReadFunctions imageSamplerlessReadFunctions imageWriteFunctions',alias='get_image_width get_image_height get_image_depth get_image_channel_data_type get_image_channel_order get_image_dim get_image_array_size']
+[open,refpage='imageQueryFunctions',desc='Built-in Image Query Functions',type='freeform',spec='clang',anchor='built-in-image-query-functions',xrefs='imageReadFunctions imageSamplerlessReadFunctions imageWriteFunctions',alias='get_image_width get_image_height get_image_depth get_image_channel_data_type get_image_channel_order get_image_dim get_image_array_size get_image_num_samples get_image_num_mip_levels']
 --
 
 The following built-in function calls to query image information are
@@ -13310,8 +13366,6 @@ The following behavior is undefined:
 [[enqueuing-kernels]]
 === Enqueuing Kernels
 
-[open,refpage='enqueue_kernel',desc='Enqueuing Kernels',type='freeform',spec='clang',anchor='enqueuing-kernels',xrefs='enqueue_marker']
---
 NOTE: The functionality described in this section <<unified-spec, requires>>
 support for OpenCL C 2.0, or OpenCL C 3.0 or newer and the
 {opencl_c_device_enqueue} feature.
@@ -13321,11 +13375,19 @@ enqueue additional work to the same device, without host interaction.
 A kernel may enqueue code represented by Block syntax, and control execution
 order with event dependencies including user events and markers.
 There are several advantages to using the Block syntax: it is more compact;
-it does not require a cl_kernel object; and enqueuing can be done as a
+it does not require a {cl_kernel_TYPE} object; and enqueuing can be done as a
 single semantic step.
 
+The macro `CLK_NULL_EVENT` refers to an invalid device event.
+The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
+
+[[built-in-functions-enqueuing-a-kernel]]
+==== Built-in Functions - Enqueuing a Kernel
+
+[open,refpage='enqueue_kernel',desc='Built-in Functions - Enqueuing Kernels',type='freeform',spec='clang',anchor='enqueuing-kernels',xrefs='enqueue_marker']
+--
 The following table describes the list of built-in functions that can be
-used to enqueue a kernel(s).
+used to enqueue a kernel.
 
 ifdef::cl_khr_device_enqueue_local_arg_types[]
 When the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is
@@ -13340,21 +13402,7 @@ signatures.
 
 When the  {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is
 not supported, the pointee type of these functions must be `void`.
-
-:localArgType: gentype
 endif::cl_khr_device_enqueue_local_arg_types[]
-
-ifndef::cl_khr_device_enqueue_local_arg_types[]
-:localArgType: void
-endif::cl_khr_device_enqueue_local_arg_types[]
-
-The macro `CLK_NULL_EVENT` refers to an invalid device event.
-The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
---
-
-
-[[built-in-functions-enqueuing-a-kernel]]
-==== Built-in Functions - Enqueuing a Kernel
 
 [[table-builtin-kernel-enqueue]]
 .Built-in Kernel Enqueue Functions
@@ -13369,12 +13417,25 @@ The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
     const clk_event_t *_event_wait_list_, clk_event_t *_event_ret_,
     void (^__block__)(void)) +
   int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
-    const ndrange_t _ndrange_, void (^__block__)(local {localArgType} *, ...),
+    const ndrange_t _ndrange_, void (^__block__)(local void *, ...),
     uint size0, ...) +
   int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
     const ndrange_t _ndrange_, uint _num_events_in_wait_list_,
     const clk_event_t *_event_wait_list_, clk_event_t *_event_ret_,
-    void (^__block__)(local {localArgType} *, ...), uint size0, ...)
+    void (^__block__)(local void *, ...), uint size0, ...)
+
+ifdef::cl_khr_device_enqueue_local_arg_types[]
+  If the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is supported:
+
+  int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
+    const ndrange_t _ndrange_, void (^__block__)(local gentype *, ...),
+    uint size0, ...) +
+  int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
+    const ndrange_t _ndrange_, uint _num_events_in_wait_list_,
+    const clk_event_t *_event_wait_list_, clk_event_t *_event_ret_,
+    void (^__block__)(local gentype *, ...), uint size0, ...)
+endif::cl_khr_device_enqueue_local_arg_types[]
+
     | Enqueue the block for execution to _queue_.
 
       If an event is returned, *enqueue_kernel* performs an implicit retain
@@ -13383,7 +13444,7 @@ The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
 
 The *enqueue_kernel* built-in function allows a work-item to enqueue a
 block.
-Work-items can enqueue multiple blocks to a device queue(s).
+Work-items can enqueue multiple blocks to device queues.
 
 The *enqueue_kernel* built-in function returns `CLK_SUCCESS` if the block is
 enqueued successfully and returns `CLK_ENQUEUE_FAILURE` otherwise.
@@ -13408,6 +13469,7 @@ block:
     could not be allocated.
   * `CLK_OUT_OF_RESOURCES` if there is a failure to queue the block in
     _queue_ because of insufficient resources needed to execute the kernel.
+--
 
 Below are some examples of how to enqueue a block.
 
@@ -13722,7 +13784,14 @@ execution.
 |====
 | Built-in Function | Description
 | uint *get_kernel_work_group_size*(void (^block)(void)) +
-  uint *get_kernel_work_group_size*(void (^block)(local {localArgType} *, ...))
+  uint *get_kernel_work_group_size*(void (^block)(local void *, ...))
+
+ifdef::cl_khr_device_enqueue_local_arg_types[]
+  If the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is supported:
+
+  uint *get_kernel_work_group_size*(void (^block)(local gentype *, ...))
+endif::cl_khr_device_enqueue_local_arg_types[]
+
     | This provides a mechanism to query the maximum work-group size that
       can be used to execute a block on a specific device given by _device_.
 
@@ -13730,7 +13799,15 @@ execution.
 | uint *{get_kernel_preferred_work_group_size_multiple}*(
   void (^block)(void)) +
   uint *{get_kernel_preferred_work_group_size_multiple}*(
-  void (^block)(local {localArgType} *, ...))
+  void (^block)(local void *, ...))
+
+ifdef::cl_khr_device_enqueue_local_arg_types[]
+  If the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is supported:
+
+  uint *{get_kernel_preferred_work_group_size_multiple}*(
+  void (^block)(local gentype *, ...))
+endif::cl_khr_device_enqueue_local_arg_types[]
+
     | Returns the preferred multiple of work-group size for launch.
       This is a performance hint.
       Specifying a work-group size that is not a multiple of the value
@@ -17816,10 +17893,6 @@ one of the integers 0, 1, ... h~t~ - 1.
     "`Image Format Descriptor`" section (5.3.1.1), and the individual
     channel data types are defined in the "`List of supported Image Channel
     Data Types" table (5.7) of that Specification.
-  . [[opencl-extension-spec]] "`The OpenCL Extension Specification, Version
-    3.0, Unified`", https://www.khronos.org/registry/OpenCL/ .
-    References are to sections and tables of this specific version, although
-    other versions exists.
   . [[sRGB-spec]] "`IEC 61966-2-1:1999 Multimedia systems and equipment -
     Colour measurement and management - Part 2-1: Colour management -
     Default RGB colour space - sRGB`",

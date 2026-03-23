@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <registry>
     <comment>
-Copyright 2013-2025 The Khronos Group Inc.
+Copyright 2013-2026 The Khronos Group Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -225,8 +225,10 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_context_safety_properties_img</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_layer_info</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_layer_api_version</name>;</type>
+        <type category="define">typedef <type>cl_properties</type>    <name>cl_layer_properties</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_icdl_info</name>;</type>
         <type category="define">typedef struct _cl_icd_dispatch       <name>cl_icd_dispatch</name>;</type>
+        <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_scheduling_controls_capabilities_img</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_scheduling_controls_capabilities_arm</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_device_controlled_termination_capabilities_arm</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_command_queue_capabilities_intel</name>;</type>
@@ -332,6 +334,12 @@ server's OpenCL/api-docs repository.
             <member><type>cl_command_queue_capabilities_intel</type>    <name>capabilities</name></member>
             <member><type>cl_uint</type>                                <name>count</name></member>
             <member><type>char</type> <name>name</name>[<enum>CL_QUEUE_FAMILY_MAX_NAME_SIZE_INTEL</enum>]</member>
+        </type>
+        <type category="struct" name="cl_kernel_allocation_info_intel">
+            <member><type>void</type>*                                  <name>base</name></member>
+            <member><type>size_t</type>                                 <name>size</name></member>
+            <member><type>cl_unified_shared_memory_type_intel</type>    <name>type</name></member>
+            <member><type>cl_int</type>                                 <name>arg_index</name></member>
         </type>
 
         <type category="define">#define <name>CL_VERSION_MAJOR_MASK</name> ((1 &lt;&lt; CL_VERSION_MAJOR_BITS) - 1)</type>
@@ -593,7 +601,8 @@ server's OpenCL/api-docs repository.
     </enums>
 
     <enums name="Constants.cl_loader_layers" vendor="Khronos" comment="Defined Layer API version, in cl_layer.h">
-        <enum value="100"           name="CL_LAYER_API_VERSION_100"/>
+        <enum value="100"                        name="CL_LAYER_API_VERSION_100"/>
+        <enum value="((cl_layer_properties)0)"   name="CL_LAYER_PROPERTIES_LIST_END"/>
     </enums>
 
     <enums start="0" end="-999" name="ErrorCodes.0" vendor="Khronos" comment="Error codes start at 0 and decrease">
@@ -1551,7 +1560,8 @@ server's OpenCL/api-docs repository.
         <enum value="0x0909"        name="CL_PLATFORM_SVM_TYPE_CAPABILITIES_KHR"/>
             <unused start="0x090A" end="0x091F" comment="Reserved to Khronos"/>
         <enum value="0x0920"        name="CL_PLATFORM_ICD_SUFFIX_KHR"/>
-            <unused start="0x0921" end="0x09FF" comment="Vendor extensions"/>
+        <enum value="0x0921"        name="CL_PLATFORM_UNLOADABLE_KHR"/>
+            <unused start="0x0922" end="0x09FF" comment="Vendor extensions"/>
     </enums>
 
     <enums start="0x1000" end="0x107F" name="cl_device_info" vendor="Khronos">
@@ -2395,7 +2405,9 @@ server's OpenCL/api-docs repository.
         <enum value="0x41F1"        name="CL_KERNEL_EXEC_INFO_COMPUTE_UNIT_MAX_QUEUED_BATCHES_ARM"/>
         <unused start="0x41F2" end="0x41F2" comment="Reserved for cl_arm_core_builtins"/>
         <enum value="0x41F3"        name="CL_QUEUE_COMPUTE_UNIT_LIMIT_ARM"/>
-            <unused start="0x41F4" end="0x41FF"/>
+        <unused start="0x41F4" end="0x41F4" comment="Reserved"/>
+        <unused start="0x41F5" end="0x41F6" comment="Reserved"/>
+            <unused start="0x41F7" end="0x41FF"/>
     </enums>
 
     <enums start="0x4200" end="0x420F" name="enums.4200" vendor="Intel">
@@ -2471,7 +2483,9 @@ server's OpenCL/api-docs repository.
         <enum value="0x4254"        name="CL_DEVICE_NUM_EUS_PER_SUB_SLICE_INTEL"/>
         <enum value="0x4255"        name="CL_DEVICE_NUM_THREADS_PER_EU_INTEL"/>
         <enum value="0x4256"        name="CL_DEVICE_FEATURE_CAPABILITIES_INTEL"/>
-            <unused start="0x4257" end="0x425F"/>
+            <unused start="0x4257" end="0x4259"/>
+        <enum value="0x425A"        name="CL_KERNEL_ALLOCATIONS_INFO_INTEL"/>
+            <unused start="0x425B" end="0x425F"/>
     </enums>
 
     <enums start="0x4260" end="0x426F" name="enums.4260" vendor="Codeplay">
@@ -4485,6 +4499,17 @@ server's OpenCL/api-docs repository.
             <param>const <type>cl_icd_dispatch</type>**                 <name>layer_dispatch_ret</name></param>
         </command>
         <command>
+            <proto><type>cl_int</type>                                  <name>clInitLayerWithProperties</name></proto>
+            <param><type>cl_uint</type>                                 <name>num_entries</name></param>
+            <param>const <type>cl_icd_dispatch</type>*                  <name>target_dispatch</name></param>
+            <param><type>cl_uint</type>*                                <name>num_entries_ret</name></param>
+            <param>const <type>cl_icd_dispatch</type>**                 <name>layer_dispatch_ret</name></param>
+            <param>const <type>cl_layer_properties</type>*              <name>properties</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                                  <name>clDeinitLayer</name></proto>
+        </command>
+        <command>
             <proto><type>cl_int</type>                                  <name>clGetICDLoaderInfoOCLICD</name></proto>
             <param><type>cl_icdl_info</type>                            <name>param_name</name></param>
             <param><type>size_t</type>                                  <name>param_value_size</name></param>
@@ -5901,7 +5926,7 @@ server's OpenCL/api-docs repository.
                 <command name="clLogMessagesToStderrAPPLE"/>
             </require>
         </extension>
-        <extension name="cl_khr_icd" revision="2.0.0" supported="opencl" ratified="opencl">
+        <extension name="cl_khr_icd" revision="2.0.1" supported="opencl" ratified="opencl">
             <require>
                 <type name="CL/cl.h"/>
             </require>
@@ -5920,7 +5945,15 @@ server's OpenCL/api-docs repository.
                 <command name="clIcdSetPlatformDispatchDataKHR"/>
             </require>
         </extension>
-        <extension name="cl_loader_layers" revision="1.0.0" supported="opencl">
+        <extension name="cl_khr_icd_unloadable" revision="1.0.0" supported="opencl">
+            <require>
+                <type name="CL/cl.h"/>
+            </require>
+            <require comment="cl_platform_info">
+                <enum name="CL_PLATFORM_UNLOADABLE_KHR"/>
+            </require>
+        </extension>
+        <extension name="cl_loader_layers" revision="1.0.1" supported="opencl">
             <require>
                 <type name="CL/cl_icd.h"/>
             </require>
@@ -5929,6 +5962,7 @@ server's OpenCL/api-docs repository.
                 <!-- <type name="cl_icd_dispatch"/> -->
                 <type name="cl_layer_info"/>
                 <type name="cl_layer_api_version"/>
+                <type name="cl_layer_properties"/>
             </require>
             <require comment="cl_layer_info">
                 <enum name="CL_LAYER_API_VERSION"/>
@@ -5936,10 +5970,13 @@ server's OpenCL/api-docs repository.
             </require>
             <require comment="Misc API enums">
                 <enum name="CL_LAYER_API_VERSION_100"/>
+                <enum name="CL_LAYER_PROPERTIES_LIST_END"/>
             </require>
             <require>
                 <command name="clGetLayerInfo"/>
                 <command name="clInitLayer"/>
+                <command name="clInitLayerWithProperties"/>
+                <command name="clDeinitLayer"/>
             </require>
         </extension>
         <extension name="cl_loader_info" revision="1.0.0" supported="opencl">
@@ -6401,7 +6438,7 @@ server's OpenCL/api-docs repository.
                 <command name="clSetKernelExecInfoARM"/>
             </require>
         </extension>
-        <extension name="cl_arm_get_core_id" revision="0.0.0" condition="defined(CL_VERSION_1_2)" supported="opencl">
+        <extension name="cl_arm_core_id" revision="0.0.0" condition="defined(CL_VERSION_1_2)" supported="opencl">
             <require>
                 <type name="CL/cl.h"/>
             </require>
@@ -8002,6 +8039,20 @@ server's OpenCL/api-docs repository.
                 <enum name="CL_COMMAND_QUEUE_SCHEDULING_WORK_GROUP_SCHEDULING_ALGORITHM_IMG"/>
                 <enum name="CL_COMMAND_QUEUE_SCHEDULING_WORK_GROUP_ARBITRATION_ALGORITHM_IMG"/>
                 <enum name="CL_COMMAND_QUEUE_SCHEDULING_WORK_GROUP_EXECUTE_COUNT_IMG"/>
+            </require>
+        </extension>
+        <extension name="cl_intel_kernel_allocations_info" revision="1.0.0" supported="opencl">
+            <require>
+                <type name="CL/cl.h"/>
+            </require>
+            <require>
+                <type name="cl_unified_shared_memory_type_intel"/>
+            </require>
+            <require>
+                <type name="cl_kernel_allocation_info_intel"/>
+            </require>
+            <require comment="cl_kernel_workgroup_info">
+                <enum name="CL_KERNEL_ALLOCATIONS_INFO_INTEL"/>
             </require>
         </extension>
     </extensions>
