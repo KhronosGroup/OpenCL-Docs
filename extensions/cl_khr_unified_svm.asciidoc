@@ -809,8 +809,6 @@ The suggested SVM type may be {CL_UINT_MAX}, indicating that there is no SVM all
     ** if the value specified for a supported property name is not valid
     ** if the same property name is specified more than once
   * {CL_INVALID_VALUE}
-    ** if _required_capabilities_ contains an invalid SVM capability
-    ** if _desired_capabilities_ contains an invalid SVM capability
     ** if _suggested_svm_type_index_ is `NULL`
   * {CL_OUT_OF_RESOURCES}
     ** if there is a failure to allocate resources required by the OpenCL
@@ -1280,6 +1278,16 @@ If an allocation is created with the *DEVICE_NOWRITE* flag, then it can only be 
 This extension does not support initialize an allocation with both the *HOST_NOWRITE* and *DEVICE_NOWRITE* flags.
 
 If desired, a layered extension could add a new property to {clSVMAllocWithPropertiesKHR} that would specify a pointer with the initial contents of an SVM allocation with both the *HOST_NOWRITE* and *DEVICE_NOWRITE* access flags.
+--
+
+. What should happen if an unsupported or unknown capability is passed as a required capability to {clGetSVMSuggestedTypeIndexKHR}?
++
+--
+`RESOLVED`: If an unknown or unsupported capability is passed as a required capability to {clGetSVMSuggestedTypeIndexKHR}, then the returned suggested SVM type index must be {CL_UINT_MAX}, since there is no SVM allocation type that supports the capability.
+Note that this is not an error, and it is also not an error to pass an unsupported or unknown capability as a desired capability.
+If this were an error instead, then it would make {clGetSVMSuggestedTypeIndexKHR} harder to use, because it would require checking for the set of supported capabilities before performing the query to ensure no error is generated.
+
+This behavior is tested by the CTS test `unified_svm_api_suggested_type_index`.
 --
 
 == Revision History
