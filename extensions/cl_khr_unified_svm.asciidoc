@@ -48,6 +48,7 @@ Ben Ashbaugh, Intel (ben 'dot' ashbaugh 'at' intel 'dot' com)
 * Pekka Jääskeläinen, Intel
 * Nikhil Joshi, NVIDIA
 * Balaji Calidas, Qualcomm Technologies Inc.
+* Jose Lopez, Qualcomm Technologies Inc.
 * TODO
 // spell-checker: enable
 
@@ -437,6 +438,90 @@ In this table:
 
 TODO: Probably ought to substantially rewrite portions of Section 5.6.1 and perhaps 5.6.2.
 
+==== Section 5.6.1 - SVM Sharing Granularity: Coarse- and Fine- Grained Sharing
+
+Change the {clSVMAlloc} error condition from:
+
+* _size_ is 0 or > {CL_DEVICE_MAX_MEM_ALLOC_SIZE} value for any device in _context_.
+
+to:
+
+* _size_ is 0 or > {CL_DEVICE_MAX_MEM_ALLOC_SIZE} value for any device in _context_, unless the device supports {cl_khr_unified_svm_EXT}.
+When a device supports {cl_khr_unified_svm_EXT}, there is no defined upper limit on the size of an SVM allocation.
+
+
+Modify the description of {clSVMFree} to refer both to allocations made by {clSVMAlloc} and {clSVMAllocWithPropertiesKHR}.
+
+
+Modify the description of {clEnqueueSVMFree} to refer both to allocations made by {clSVMAlloc} and {clSVMAllocWithPropertiesKHR}.
+Additionally, modify the description of _svm_pointers_ from:
+
+  * _svm_pointers_ and _num_svm_pointers_ specify shared virtual memory pointers
+    to be freed. ...
+
+to:
+
+  * _svm_pointers_ and _num_svm_pointers_ specify shared virtual memory pointers
+    to be freed. ... +
+    If a pointer in _svm_pointers_ is a `NULL` pointer, then no action occurs for that pointer.
+
+
+Modify the description of {clEnqueueSVMMemcpy} to refer both to allocations made by {clSVMAlloc} and {clSVMAllocWithPropertiesKHR}.
+Additionally, change the {clEnqueueSVMMemcpy} error conditions from:
+
+  * {CL_INVALID_VALUE}
+    ** if _dst_ptr_ is `NULL`
+    ** if _src_ptr_ is `NULL`
+
+to:
+
+  * {CL_INVALID_VALUE}
+    ** if _dst_ptr_ is `NULL` and either _size_ is non-zero or the device associated with _command_queue_ does not support {cl_khr_unified_svm_EXT}
+    ** if _src_ptr_ is `NULL` and either _size_ is non-zero or the device associated with _command_queue_ does not support {cl_khr_unified_svm_EXT}
+
+
+Modify the description of {clEnqueueSVMMemFill} to refer both to allocations made by {clSVMAlloc} and {clSVMAllocWithPropertiesKHR}.
+Change the {clEnqueueSVMMemFill} error condition from:
+
+  * {CL_INVALID_VALUE}
+    ** if _svm_ptr_ is `NULL`
+
+to:
+
+  * {CL_INVALID_VALUE}
+    ** if _svm_ptr_ is `NULL` and either _size_ is non-zero or the device associated with _command_queue_ does not support {cl_khr_unified_svm_EXT}
+
+
+Modify the description of {clEnqueueSVMMemFill} to refer both to allocations made by {clSVMAlloc} and {clSVMAllocWithPropertiesKHR}.
+Change the {clEnqueueSVMMemFill} error condition from:
+
+  * {CL_INVALID_VALUE}
+    ** if _svm_ptr_ is `NULL`
+
+to:
+
+  * {CL_INVALID_VALUE}
+    ** if _svm_ptr_ is `NULL` and either _size_ is non-zero or the device associated with _command_queue_ does not support {cl_khr_unified_svm_EXT}
+
+
+Modify the descriptions of {clEnqueueSVMMap} and {clEnqueueSVMUnmap} to refer both to allocations made by {clSVMAlloc} and {clSVMAllocWithPropertiesKHR}.
+Additionally, add a new error condition:
+
+  * {CL_INVALID_VALUE}
+    ** if _svm_ptr_ does not support mapping and unmapping for access on the host
+
+
+Modify the description of {clEnqueueSVMMigrateMem} to refer both to allocations made by {clSVMAlloc} and {clSVMAllocWithPropertiesKHR}.
+Additionally, modify the description of _svm_pointers_ from:
+
+  * _svm_pointers_ is a pointer to an array of pointers. ...
+
+to:
+
+  * _svm_pointers_ is a pointer to an array of pointers to migrate. ... +
+    If a pointer in _svm_pointers_ is a `NULL` pointer and either _sizes_ is `NULL` or the size in _sizes_ is zero, then it is ignored.
+
+
 ==== Allocating SVM With Properties:
 
 The function
@@ -727,10 +812,6 @@ The suggested SVM type may be {CL_UINT_MAX}, indicating that there is no SVM all
     ** if _required_capabilities_ contains an invalid SVM capability
     ** if _desired_capabilities_ contains an invalid SVM capability
     ** if _suggested_svm_type_index_ is `NULL`
-  * {CL_INVALID_BUFFER_SIZE}
-// TODO: update depending on the updated queries for available SVM sizes:
-    ** if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for any OpenCL device in _context_ that supports the specified SVM type
-    ** if _size_ is greater than {CL_DEVICE_MAX_MEM_ALLOC_SIZE} for a device associated with the SVM allocation
   * {CL_OUT_OF_RESOURCES}
     ** if there is a failure to allocate resources required by the OpenCL
     implementation on the device
@@ -762,6 +843,51 @@ The new _param_name_ values described below may be used with the existing {clSet
 The following errors may be returned by {clSetKernelExecInfo} for these new _param_name_ values:
 
 * {CL_INVALID_OPERATION} if _param_name_ is {CL_KERNEL_EXEC_INFO_SVM_INDIRECT_ACCESS_KHR} and no devices in the context associated with _kernel_ support SVM.
+
+=== Section 5.9 - Kernel Objects
+
+==== Section 5.9.2 - Setting Kernel Arguments
+
+Change the {clSetKernelArgSVMPointer} error condition from:
+
+  * {CL_INVALID_ARG_VALUE}
+    ** if _arg_value_ specified is not a valid value
+
+to:
+
+  * {CL_INVALID_ARG_VALUE}
+    ** if _arg_value_ specified is not a valid value and no devices in the context associated with _kernel_ support {cl_khr_unified_svm_EXT}
+
+
+Update the first paragraph of description of {CL_KERNEL_EXEC_INFO_SVM_PTRS} from:
+
+Specifies a set of pointers to SVM allocations that may be accessed
+by the kernel in addition to those set directly as kernel arguments.
+Each of the pointers can be the pointer returned by {clSVMAlloc} or can
+be a pointer to the middle of an SVM allocation.
+It is sufficient to specify one pointer for each SVM allocation.
+
+to:
+
+Specifies a set of pointers to SVM allocations that may be accessed
+by the kernel in addition to those set directly as kernel arguments.
+Each of the pointers can be the pointer returned by {clSVMAlloc} or {clSVMAllocWithPropertiesKHR} or can
+be a pointer to the middle of a SVM allocation.
+If a pointer is `NULL` or does not point into a SVM allocation returned by
+{clSVMAlloc} or {clSVMAllocWithPropertiesKHR} then it is ignored.
+It is sufficient to specify one pointer for each SVM allocation.
+
+
+Add an informative note after to the description of {clSetKernelExecInfo}:
+
+[NOTE]
+====
+When the context associated with _kernel_ includes a device that supports {cl_khr_unified_svm_EXT}, any pointer value is considered valid and may be passed directly to a kernel by calling {clSetKernelArgSVMPointer} or indirectly by calling {clSetKernelExecInfo} with {CL_KERNEL_EXEC_INFO_SVM_PTRS}.
+
+In this definition, a valid pointer value means that the function will not return an error.
+It still may not be valid to dereference the pointer inside of a kernel if the memory that the pointer points to is not accessible on the device.
+====
+
 
 == Interactions with Other Extensions
 
