@@ -9145,20 +9145,12 @@ include::{generated}/api/version-notes/clCreateProgramWithSource.asciidoc[]
   * _errcode_ret_ will return an appropriate error code.
     If _errcode_ret_ is `NULL`, no error code is returned.
 
-The source code specified by _strings_ will be loaded into the program
-object.
-
 The devices associated with the program object are the devices associated
 with _context_.
-The source code specified by _strings_ is either an OpenCL C program source,
-header or implementation-defined source for custom devices that support an
-online compiler.
-OpenCL {cpp} is not supported as an online-compiled kernel language through
-this interface.
-ifdef::cl_ext_cxx_for_opencl[]
-If the {cl_ext_cxx_for_opencl_EXT} extension is supported, the source code
-specified by _strings_ may also be a C++ for OpenCL program source or header.
-endif::cl_ext_cxx_for_opencl[]
+
+The source code specified by _strings_ are loaded into the program object.
+The source languages supported for _strings_ are defined by device queries such
+as {CL_DEVICE_OPENCL_C_ALL_VERSIONS}.
 
 // refError
 
@@ -11501,22 +11493,19 @@ include::{generated}/api/version-notes/clGetKernelWorkGroupInfo.asciidoc[]
 
 include::{generated}/api/version-notes/CL_KERNEL_GLOBAL_WORK_SIZE.asciidoc[]
   | {size_t_TYPE}[3]
-      | This provides a mechanism for the application to query the maximum
-        global size that can be used to execute a kernel (i.e. the
-        _global_work_size_ argument to {clEnqueueNDRangeKernel}) on a custom
-        device given by _device_ or a built-in kernel on an OpenCL device
-        given by _device_.
+      | Provides a mechanism for the application to query the maximum
+        global size that can be used to execute a built-in kernel on a
+        specific device given by _device_.
 
-        If _device_ is not a custom device and _kernel_ is not a built-in
-        kernel, {clGetKernelWorkGroupInfo} returns the error
-        {CL_INVALID_VALUE}.
+        If _kernel_ is not a built-in kernel, querying
+        {CL_KERNEL_GLOBAL_WORK_SIZE) returns the error {CL_INVALID_VALUE}.
 | {CL_KERNEL_WORK_GROUP_SIZE_anchor}
 
 include::{generated}/api/version-notes/CL_KERNEL_WORK_GROUP_SIZE.asciidoc[]
   | {size_t_TYPE}
-      | This provides a mechanism for the application to query the maximum
+      | Provides a mechanism for the application to query the maximum
         work-group size that can be used to execute the kernel on a specific
-        device given by device.
+        device given by _device_.
         The OpenCL implementation uses the resource requirements of the
         kernel (register usage etc.) to determine what this work-group size
         should be.
@@ -11587,7 +11576,7 @@ Otherwise, it returns one of the following errors:
     <<kernel-workgroup-info-table, Kernel Object Device Queries>> table
     and _param_value_ is not `NULL`.
   * {CL_INVALID_VALUE} if _param_name_ is {CL_KERNEL_GLOBAL_WORK_SIZE} and
-    _device_ is not a custom device and _kernel_ is not a built-in kernel.
+    _kernel_ is not a built-in kernel.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
     by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
