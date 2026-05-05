@@ -43,11 +43,11 @@ The host code portion of an OpenCL application runs on a host processor
 according to the models native to the host platform.
 The OpenCL application host code submits the kernel code as commands from
 the host to OpenCL devices.
-An OpenCL device executes the commands computation on the processing
-elements within the device.
+An OpenCL device executes the commands on the processing elements within the
+device.
 
 An OpenCL device has considerable latitude on how computations are mapped
-onto the devices processing elements.
+onto the device's processing elements.
 When processing elements within a compute unit execute the same sequence of
 statements across the processing elements, the control flow is said to be
 _converged_.
@@ -69,7 +69,7 @@ the SPIR-V intermediate language, or as implementation-defined binary objects.
 An OpenCL platform provides a compiler to translate programs of these
 forms into executable program objects.
 The device code compiler may be _online_ or _offline_.
-An _online_ _compiler_ is available during host program execution using
+An _online compiler_ is available during host program execution using
 standard APIs.
 An _offline compiler_ is invoked outside of host program control, using
 platform-specific methods.
@@ -80,8 +80,8 @@ device program executable.
 OpenCL defines two kinds of platform profiles: a _full profile_ and a
 reduced-functionality _embedded profile_.
 A full profile platform must provide an online compiler for all its devices.
-An embedded platform may provide an online compiler, but is not required to
-do so.
+An embedded profile platform may provide an online compiler, but is not required
+to do so.
 
 A device may expose special purpose functionality as a _built-in kernel_.
 The platform provides APIs for enumerating and invoking the built-in
@@ -159,7 +159,7 @@ each command passes through six states.
     For the case of a kernel-enqueue command, one or more work-groups
     associated with the command start to execute.
   . *Ended*: Execution of a command ends.
-    When a Kernel-enqueue command ends, all of the work-groups associated
+    When a kernel-enqueue command ends, all of the work-groups associated
     with that command have finished their execution.
     _Immediate side effects_, i.e. those associated with the kernel but not
     necessarily with its child kernels, are visible to other units of
@@ -182,7 +182,7 @@ These <<profiled-states-image, profiled states>> are shown below.
 [[profiled-states-image]]
 image::images/profiled_states.png[align="center", title="The states and transitions between states defined in the OpenCL execution model. A subset of these transitions is exposed through the <<profiling-operations, profiling interface>>."]
 
-Commands communicate their status through _Event objects_.
+Commands communicate their status through _event objects_.
 Successful completion is indicated by setting the event status associated
 with a command to {CL_COMPLETE}.
 Unsuccessful completion results in abnormal termination of the command which
@@ -211,7 +211,7 @@ These prerequisites have three sources:
     devices.
   * The third source of prerequisites can be the presence of non-trivial C
     initializers or {cpp} constructors for program scope global variables.
-    In this case, OpenCL C/{cpp} compiler shall generate program
+    In this case, the OpenCL C/{cpp} compiler must generate program
     initialization kernels that perform C initialization or {cpp}
     construction.
     These kernels must be executed by OpenCL runtime on a device before any
@@ -285,13 +285,13 @@ for each point in the defined index space.
 Each of these executing kernel functions is called a _work-item_.
 The work-items associated with a given kernel-instance are managed by the
 device in groups called _work-groups_.
-These work-groups define a coarse grained decomposition of the Index space.
+These work-groups define a coarse-grained decomposition of the index space.
 Work-groups are further divided into _sub-groups_, which provide an
 additional level of control over execution.
 
 NOTE: Sub-groups are <<unified-spec, missing before>> version 2.1.
 
-Work-items have a global ID based on their coordinates within the Index
+Work-items have a global ID based on their coordinates within the index
 space.
 They can also be defined in terms of their work-group and the local ID
 within a work-group.
@@ -303,7 +303,7 @@ The details of this mapping are described in the following section.
 The index space supported by OpenCL is called an ND-range.
 An ND-range is an N-dimensional index space, where N is one, two or three.
 The ND-range is decomposed into work-groups forming blocks that cover the
-Index space.
+index space.
 An ND-range is defined by three integer arrays of length N:
 
   * The extent of the index space (or global size) in each dimension.
@@ -311,7 +311,7 @@ An ND-range is defined by three integer arrays of length N:
     dimension (zero by default).
   * The size of a work-group (local size) in each dimension.
 
-Each work-items global ID is an N-dimensional tuple.
+Each work-item's global ID is an N-dimensional tuple.
 The global ID components are values in the range from F, to F plus the
 number of elements in that dimension minus one.
 
@@ -353,7 +353,7 @@ For example, consider the <<index-space-image, 2-dimensional index space>>
 shown below.
 We input the index space for the work-items (G~x~, G~y~), the size of each
 work-group (S~x~, S~y~) and the global ID offset (F~x~, F~y~).
-The global indices define an G~x~by G~y~ index space where the total number
+The global indices define a G~x~by G~y~ index space where the total number
 of work-items is the product of G~x~ and G~y~.
 The local indices define an S~x~ by S~y~ index space where the number of
 work-items in a single work-group is the product of S~x~ and S~y~.
@@ -383,7 +383,7 @@ is computed as:
 image::images/index_space.jpg[align="center", title="An example of an ND-range index space showing work-items, their global IDs and their mapping onto the pair of work-group and local IDs. In this case, we assume that in each dimension, the size of the work-group evenly divides the global ND-range size (i.e. all work-groups have the same size) and that the offset is equal to zero."]
 
 Within a work-group work-items may be divided into sub-groups.
-The mapping of work-items to sub-groups is implementation-defined and may be
+The mapping of work-items to sub-groups is implementation-defined, and may be
 queried at runtime.
 While sub-groups may be used in multi-dimensional work-groups, each
 sub-group is 1-dimensional and any given work-item may query which sub-group
@@ -393,7 +393,7 @@ NOTE: Sub-groups are <<unified-spec, missing before>> version 2.1.
 
 Work-items are mapped into sub-groups through a combination of compile-time
 decisions and the parameters of the dispatch.
-The mapping to sub-groups is invariant for the duration of a kernels
+The mapping to sub-groups is invariant for the duration of a kernel's
 execution, across dispatches of a given kernel with the same work-group
 dimensions, between dispatches and query operations consistent with the
 dispatch parameterization, and from one work-group to another within the
@@ -405,7 +405,7 @@ of the work-group is not evenly divisible by the size of the sub-groups.
 
 In the degenerate case, a single sub-group must be supported for each
 work-group.
-In this situation all sub-group scope functions are equivalent to their
+In this degenerate case all sub-group scope functions are equivalent to their
 work-group level equivalents.
 
 
@@ -430,7 +430,7 @@ commands in the queue or to commands in other queues within the same
 context.
 
 A kernel-instance is submitted to a device.
-For an in-order command-queue, the kernel instances appear to launch and
+For an in-order command-queue, the kernel-instances appear to launch and
 then execute in that same order; where we use the term appear to emphasize
 that when there are no dependencies between commands and hence differences
 in the order that commands execute cannot be observed in a program, an
@@ -541,7 +541,7 @@ enforce order constraints just as for the command-queue on the host.
 These events, however, are only visible to the parent kernel running on the
 device.
 When these prerequisite events take on the value {CL_COMPLETE}, the
-work-groups associated with the child kernel are launched into the devices
+work-groups associated with the child kernel are launched into the device's
 work pool.
 The device then schedules them for execution on the compute units of the
 device.
@@ -552,10 +552,10 @@ signaled completion by setting any associated events to the value
 {CL_COMPLETE}.
 Should any child kernel complete with an event status set to a negative
 value (i.e. abnormally terminate), the parent kernel will abnormally
-terminate and propagate the childs negative event value as the value of the
+terminate and propagate the child's negative event value as the value of the
 parents event.
 If there are multiple children that have an event status set to a negative
-value, the selection of which childs negative event value is propagated is
+value, the selection of which child's negative event value is propagated is
 implementation-defined.
 
 
@@ -567,12 +567,12 @@ between two or more units of execution.
 Consider the following three domains of synchronization in OpenCL:
 
   * Work-group synchronization: Constraints on the order of execution for
-    work-items in a single work-group
+    work-items in a single work-group.
   * Sub-group synchronization: Constraints on the order of execution for
     work-items in a single sub-group.
     Note: Sub-groups are <<unified-spec, missing before>> version 2.1
   * Command synchronization: Constraints on the order of commands launched
-    for execution
+    for execution.
 
 
 Synchronization across work-items within a work-group is done by using a
@@ -679,9 +679,9 @@ The OpenCL execution model supports three types of kernels:
     semantics of native kernels are implementation-defined.
     The OpenCL API includes functions to query capabilities of a device
     to determine if this capability is supported.
-  * *Built-in kernels* are tied to particular device and are not built at
+  * *Built-in kernels* are tied to a particular device and are not built at
     runtime from source code in a program object.
-    The common use of built in kernels is to expose fixed-function hardware
+    The common use of built-in kernels is to expose fixed-function hardware
     or firmware associated with a particular OpenCL device.
     The semantics of a built-in kernel are defined outside of OpenCL and
     hence are implementation-defined.
@@ -800,7 +800,7 @@ NOTE: The generic address space is <<unified-spec, missing before>> version
 2.0.
 
 The addresses of memory associated with memory objects in Global memory are
-not preserved between kernel instances, between a device and the host, and
+not preserved between kernel-instances, between a device and the host, and
 between devices.
 In this regard global memory acts as a global pool of memory objects rather
 than an address space.
@@ -839,7 +839,7 @@ classes.
 
   * *Buffer*: A memory object stored as a block of contiguous memory and
     used as a general purpose object to hold data used in an OpenCL program.
-    The types of the values within a buffer may be any of the built in types
+    The types of the values within a buffer may be any of the built-in types
     (such as int, float), vector types, or user-defined structures.
     The buffer can be manipulated through pointers much as one would with
     any block of memory in C.
@@ -860,9 +860,9 @@ classes.
     data items.
     A pipe has two endpoints: a write endpoint into which data items are
     inserted, and a read endpoint from which data items are removed.
-    At any one time, only one kernel instance may write into a pipe, and
-    only one kernel instance may read from a pipe.
-    To support the producer consumer design pattern, one kernel instance
+    At any one time, only one kernel-instance may write into a pipe, and
+    only one kernel-instance may read from a pipe.
+    To support the producer consumer design pattern, one kernel-instance
     connects to the write endpoint (the producer) while another kernel
     instance connects to the reading endpoint (the consumer).
     Note: The _pipe_ memory object is <<unified-spec, missing before>>
@@ -959,7 +959,7 @@ kernel-instances is restricted.
 The basic principle is that multiple read operations on memory objects from
 multiple kernel-instances that overlap in time are allowed, but mixing
 overlapping reads and writes into the same memory objects from different
-kernel instances is only allowed when fine grained synchronization is used
+kernel-instances is only allowed when fine grained synchronization is used
 with <<shared-virtual-memory, Shared Virtual Memory>>.
 
 When global memory is manipulated by multiple kernel-instances running on
@@ -967,7 +967,7 @@ multiple devices, the OpenCL runtime system must manage the association of
 memory objects with a given device.
 In most cases the OpenCL runtime will implicitly associate a memory object
 with a device.
-A kernel instance is naturally associated with the command-queue to which
+A kernel-instance is naturally associated with the command-queue to which
 the kernel was submitted.
 Since a command-queue can only access a single device, the queue uniquely
 defines which device is involved with any given kernel-instance; hence
@@ -1116,7 +1116,7 @@ Coarse-Grained buffer SVM is a required feature for OpenCL 2.0, 2.1, or 2.2
 devices and an optional feature for OpenCL 3.0 or newer devices.
 Fine-Grained SVM is an optional feature for all OpenCL devices.
 The various SVM mechanisms to access host memory from the work-items
-associated with a kernel instance are <<svm-summary-table, summarized
+associated with a kernel-instance are <<svm-summary-table, summarized
 above>>.
 
 === Memory Consistency Model for OpenCL 1.x
@@ -1378,21 +1378,26 @@ When used on local memory, visibility is bounded by the work-group and, as a
 result, memory_scope with wider visibility than *memory_scope_work_group*
 will be reduced to *memory_scope_work_group*.
 
-Two actions *A* and *B* are defined to have an inclusive scope if they have
-the same scope *P* such that:
+Two actions *A* and *B* are defined to have an inclusive scope if:
 
-  * *P* is *memory_scope_sub_group* and *A* and *B* are executed by
-    work-items within the same sub-group.
-  * *P* is *memory_scope_work_group* and *A* and *B* are executed by
-    work-items within the same work-group.
-  * *P* is *memory_scope_device* and *A* and *B* are executed by work-items
-    on the same device when *A* and *B* apply to an SVM allocation or *A*
-    and *B* are executed by work-items in the same kernel or one of its
-    children when *A* and *B* apply to a {cl_mem_TYPE} buffer.
-  * *P* is *memory_scope_all_svm_devices* if *A* and *B* are executed by
-    host threads or by work-items on one or more devices that can share SVM
-    memory with each other and the host process.
+  * *A* and *B* are executed by work-items within the same sub-group and the
+    memory scope of *A* and *B* is *memory_scope_sub_group* or wider.
+  * *A* and *B* are executed by work-items within the same work-group and the
+    memory scope of *A* and *B* is *memory_scope_work_group* or wider.
+  * *A* and *B* are executed by work-items in the same kernel-instance or a
+    child-kernel of the kernel-instance, and the memory scope of *A* and *B* is
+    *memory_scope_device* or wider.
+  * *A* and *B* are executed by work-items on the same device, *A* and *B*
+    operate on an SVM allocation, and the memory scope of *A* and *B* is
+    *memory_scope_device* or wider.
+  * *A* and *B* are executed by a host thread or by work-items on one or more
+    devices that support SVM atomic operations, *A* and *B* operate on an SVM
+    allocation, and the memory scope of *A* and *B* is
+    *memory_scope_all_svm_devices* or *memory_scope_all_devices*.
 
+Prior to OpenCL 3.1, the memory scope of *A* and *B* must additionally be the
+same for the actions to have an inclusive scope.
+For OpenCL 3.1 and newer, the memory scope of *A* and *B* may be different.
 
 [[memory-ordering-rules]]
 === Memory Ordering Rules
@@ -1963,7 +1968,7 @@ following:
     the kernel to that buffer region will global- happen-before subsequent
     memory operations made by the host thread.
   . If a command *C* has an event *E* that signals its completion, then *C*
-    global- synchronizes-with *E*.
+    global-synchronizes-with *E*.
   . For a command *C* enqueued to a host-side command-queue, if *C* has an
     event *E* that signals its completion, then *E* global-synchronizes-with
     an API call *X* that waits on *E*.
@@ -1971,6 +1976,11 @@ following:
     wait-for-events function on *E* (e.g. the {clWaitForEvents} function
     called from a host thread), then *E* global-synchronizes-with that
     wait-for-events function call.
+    ** Additionally, for OpenCL 3.1 and newer, *E* global-synchronizes-with an
+       API call *X* that observes that the status of *E* is complete.
+       For example, if a host thread queries the execution status of *E* using
+       {clGetEventInfo}, and the execution status is {CL_COMPLETE}, then *E*
+       global-synchronizes-with that call to {clGetEventInfo}.
   . If commands *C* and *C1* are enqueued in that sequence onto an in-order
     command-queue, then the event (including the event implied between *C*
     and *C1* due to the in-order queue) signaling *C*'s completion
@@ -2001,12 +2011,12 @@ following:
     Note that callback procedures are only defined for commands within host
     command-queues.
   . If *C* is a command that waits for an event *E*'s completion, and API
-    function call *X* sets the status of a user event *E*'s status to
+    function call *X* sets user event *E*'s status to
     {CL_COMPLETE} (for example, from a host thread using a
     {clSetUserEventStatus} function), then *X* global-synchronizes-with *C*.
   . If a device enqueues a command *C* with the
     `CLK_ENQUEUE_FLAGS_WAIT_KERNEL` flag, then the end state of the parent
-    kernel instance global-synchronizes with *C*.
+    kernel-instance global-synchronizes with *C*.
   . If a work-group enqueues a command *C* with the
     `CLK_ENQUEUE_FLAGS_WAIT_WORK_GROUP` flag, then the end state of the
     work-group global-synchronizes with *C*.
@@ -2021,18 +2031,18 @@ provide the necessary global-synchronizes-with relation.
 In this situation:
 
   * access to shared locations or disjoint locations in a single {cl_mem_TYPE}
-    object when using atomic operations from different kernel instances
+    object when using atomic operations from different kernel-instances
     enqueued from the host such that one or more of the atomic operations is
     a write is implementation-defined and correct behavior is not guaranteed
     except at synchronization points.
   * access to shared locations or disjoint locations in a single {cl_mem_TYPE}
-    object when using atomic operations from different kernel instances
+    object when using atomic operations from different kernel-instances
     consisting of a parent kernel and any number of child kernels enqueued
     by that kernel is guaranteed under the memory ordering rules described
     earlier in this section.
   * access to shared locations or disjoint locations in a single program
     scope global variable, coarse-grained SVM allocation or fine-grained SVM
-    allocation when using atomic operations from different kernel instances
+    allocation when using atomic operations from different kernel-instances
     enqueued from the host to a single device is guaranteed under the memory
     ordering rules described earlier in this section.
 
@@ -2071,7 +2081,7 @@ may be overwritten by the map operation.
 Access to non-SVM {cl_mem_TYPE} buffers and coarse-grained SVM allocations is
 ordered at synchronization points between host commands.
 In the presence of an out-of-order command-queue or a set of command-queues
-mapped to the same device, multiple kernel instances may execute
+mapped to the same device, multiple kernel-instances may execute
 concurrently on the same device.
 
 
@@ -2097,7 +2107,7 @@ The framework contains the following components:
 
 === Mixed Version Support
 
-NOTE: Mixed version support <<unified-spec, missing before>> version 1.1.
+NOTE: Mixed version support is <<unified-spec, missing before>> version 1.1.
 
 OpenCL supports devices with different capabilities under a single platform.
 This includes devices which conform to different versions of the OpenCL
@@ -2155,6 +2165,7 @@ The new version of OpenCL C must be explicitly requested via the `-cl-std=` buil
 +
 Whenever an OpenCL C feature is optional in the new version of the OpenCL C programming language, it will be paired with a feature macro, such as {opencl_c_feature_name}, and a corresponding API query.
 If a feature macro is defined then the feature is supported by the OpenCL C compiler, otherwise the optional feature is not supported.
+* An OpenCL 3.1 device must support all the requirements of an OpenCL 3.0 device in addition to the OpenCL C 3.1 programming language and the SPIR-V 1.0, SPIR-V 1.1, SPIR-V 1.2, SPIR-V 1.3, and SPIR-V 1.4 intermediate languages (ILs).
 
 In order to allow future versions of OpenCL to support new types of
 devices, minor releases of OpenCL may add new profiles where some
@@ -2173,10 +2184,10 @@ they are running on in order to remain robust to future changes.
 === Versioning
 
 The OpenCL specification is regularly updated with bug fixes and clarifications.
-Occasionally new functionality is added to the core and extensions. In order to
+Occasionally, new functionality is added to the core and extensions. In order to
 indicate to developers how and when these changes are made to the specification,
 and to provide a way to identify each set of changes, the OpenCL API, C language,
-intermediate languages and extensions maintain a version number. Built-in kernels
+intermediate languages, and extensions maintain a version number. Built-in kernels
 are also versioned.
 
 
@@ -2261,7 +2272,7 @@ the semantic version of the extension. If no semantic version is defined for
 the extension, then the value of the macro is set to `0` to represent semantic
 version `0.0.0`.
 
-Applications can use these version macros along with the convience macros
+Applications can use these version macros along with the convenience macros
 defined in this section to guard their code against breaking changes to the API
 of extensions, in particular experimental KHR extensions which have yet to
 finalize an API.
