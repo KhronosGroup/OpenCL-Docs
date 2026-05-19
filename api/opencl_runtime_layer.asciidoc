@@ -12946,13 +12946,16 @@ endif::cl_khr_semaphore[]
 
 |====
 
-Prior to OpenCL 3.1, using {clGetEventInfo} to determine if a command identified
-by _event_ has finished execution (i.e. whether
-{CL_EVENT_COMMAND_EXECUTION_STATUS} returns {CL_COMPLETE}) is not a
-synchronization point.
-For OpenCL 3.1 and newer, if a call to {clGetEventInfo} to determine the
-execution status of a command identified by _event_ returns {CL_COMPLETE}, then
-the call to {clGetEventInfo} is a synchronization point.
+[NOTE]
+====
+Calling {clGetEventInfo} with {CL_EVENT_COMMAND_EXECUTION_STATUS} is intended to
+be a lightweight query, therefore it is not a host synchronization point.
+This means that _event_ does not global-synchronize-with the call to
+{clGetEventInfo}, even if the returned execution status is {CL_COMPLETE}.
+When a host synchronization point is needed, call a function that waits on the
+event instead, such as {clWaitForEvents}.
+Refer to the <<memory-consistency-model, memory consistency model>> for details.
+====
 
 // refError
 
