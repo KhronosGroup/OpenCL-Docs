@@ -173,15 +173,13 @@ $(OUTDIR)/katex/README.md: katex/README.md
 	$(QUIET)$(RMRF)  $(OUTDIR)/katex
 	$(QUIET)$(CP) -rf katex $(OUTDIR)
 
-all: api env ext extensions cxx c icdinst
+all: api env extensions cxx c icdinst
 
 allman: manhtmlpages
 
 api: apihtml apipdf
 
 env: envhtml envpdf
-
-ext: exthtml extpdf
 
 extensions: extensionshtml extensionspdf
 
@@ -193,13 +191,13 @@ c: chtml cpdf
 
 icdinst: icdinsthtml icdinstpdf
 
-html: apihtml envhtml exthtml extensionshtml cxxhtml chtml icdinsthtml
+html: apihtml envhtml extensionshtml cxxhtml chtml icdinsthtml
 
 # PDF optimizer - usage $(OPTIMIZEPDF) in.pdf out.pdf
 # OPTIMIZEPDFOPTS=--compress-pages is slightly better, but much slower
 OPTIMIZEPDF = hexapdf optimize $(OPTIMIZEPDFOPTS)
 
-pdf: apipdf envpdf extpdf extensionspdf cxxpdf cpdf icdinstpdf
+pdf: apipdf envpdf extensionspdf cxxpdf cpdf icdinstpdf
 
 # Spec targets.
 # There is some complexity to try and avoid short virtual targets like
@@ -254,24 +252,6 @@ $(PDFDIR)/$(ENVSPEC).pdf: $(ENVSPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
 	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(ENVSPEC).txt
-	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
-
-# Extensions spec
-EXTSPEC = OpenCL_Ext
-EXTSPECSRC = $(EXTSPEC).txt $(GENDEPENDS) \
-    $(shell scripts/find_adoc_deps $(EXTSPEC).txt $(GENERATED))
-
-exthtml: $(HTMLDIR)/$(EXTSPEC).html $(EXTSPECSRC)
-
-$(HTMLDIR)/$(EXTSPEC).html: $(EXTSPECSRC) $(KATEXINST)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTSPEC).txt
-
-extpdf: $(PDFDIR)/$(EXTSPEC).pdf $(EXTSPECSRC)
-
-$(PDFDIR)/$(EXTSPEC).pdf: $(EXTSPECSRC)
-	$(QUIET)$(MKDIR) $(PDFDIR)
-	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(EXTSPEC).txt
 	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # Individual extensions spec(s)
