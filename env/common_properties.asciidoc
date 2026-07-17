@@ -16,17 +16,17 @@ version number, as described in the SPIR-V specification.
 
 === Supported SPIR-V Versions
 
-An OpenCL environment describes the versions of SPIR-V modules that it
+An OpenCL device describes the versions of SPIR-V modules that it
 supports using the {CL_DEVICE_IL_VERSION} query in OpenCL 2.1 or newer,
 the {CL_DEVICE_ILS_WITH_VERSION} query in OpenCL 3.0 or newer, or the
 {CL_DEVICE_IL_VERSION_KHR} query in the {cl_khr_il_program_EXT} extension.
 
-OpenCL environments that support the {cl_khr_il_program_EXT} extension or
-OpenCL 2.1 must support SPIR-V 1.0 modules.  OpenCL environments that support
+OpenCL devices that support the {cl_khr_il_program_EXT} extension or
+OpenCL 2.1 must support SPIR-V 1.0 modules.  OpenCL devices that support
 OpenCL 2.2 must support SPIR-V 1.0, 1.1, and 1.2 modules.
-Use the {CL_DEVICE_IL_VERSION} or {CL_DEVICE_ILS_WITH_VERSION} query
-to determine the versions of SPIR-V modules that are supported by
-OpenCL environments that support OpenCL 3.0.
+There is no requirement for an OpenCL 3.0 device to support SPIR-V.
+OpenCL devices that support OpenCL 3.1 must support SPIR-V 1.0, 1.1, 1.2,
+1.3, and 1.4 modules.
 
 === Extended Instruction Sets
 
@@ -616,6 +616,11 @@ Behavior is undefined unless the source operand type for an additional argument
 matches the supported operand types for the format specifier in the following
 table.
 
+In this table, `size_t` and `ptrdiff_t` are used as generic types to represent:
+
+  * *OpTypeInt* with _Width_ equal to 32 if the _Addressing Model_ declared in *OpMemoryModel* is *Physical32*.
+  * *OpTypeInt* with _Width_ equal to 64 if the _Addressing Model_ declared in *OpMemoryModel* is *Physical64*.
+
 [cols="1,1,1,3",options="header"]
 |====
 |*Vector Specifier*
@@ -685,4 +690,35 @@ table.
 | *a*, *A*, *e*, *E*, *f*, *F*, *g*, *G*
   | *OpTypeVector* with _n_ components of *OpTypeFloat* with _Width_ equal to 64
 
+4+| For devices supporting OpenCL 3.1 or newer:
+
+// Scalar size_t:
+
+| (none)
+| *z*
+| *d*, *i*, *o*, *u*, *x*, *X*
+  | `size_t`
+
+// Scalar ptrdiff_t:
+
+| (none)
+| *t*
+| *d*, *i*, *o*, *u*, *x*, *X*
+  | `ptrdiff_t`
+
 |====
+
+The following additional restrictions also apply to the *printf* instruction in
+the *OpenCL.std* extended instruction set for OpenCL:
+
+* Behavior is undefined for the asterisk *** field width modifier.
+* Behavior is undefined when the *l* length modifier is followed by the *c*
+  conversion specifier or the *s* conversion specifier.
+* Behavior is undefined for the *ll*, *j*, and *L* length modifiers.
+  Prior to OpenCL 3.1, behavior is additionally undefined for the *z* and *t*
+  length modifiers.
+* Behavior is undefined for the *n* conversion specifier.
+* Behavior is undefined for the *l* length modifier when 64-bit integers are not
+  supported.
+* Behavior is undefined for the conversion specifier *s* when the operand is not
+  a literal string.

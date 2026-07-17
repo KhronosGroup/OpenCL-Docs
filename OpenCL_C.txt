@@ -96,8 +96,8 @@ what versions of OpenCL C specify that feature.
      is used, it has the identical meaning.
   * Requires support for OpenCL C 2.0, or OpenCL C 3.0 or newer and the
     {opencl_c_feature_name} feature:
-    Features that were introduced in OpenCL C 2.0 as mandatory, but made
-    <<optional-functionality, optional>> in OpenCL C 3.0.
+    Features that were introduced in OpenCL C 2.0 as mandatory, but are
+    <<optional-functionality, optional>> in OpenCL C 3.0 or newer.
     Compilers for versions of OpenCL C 1.2 or below will not provide these
     features, compilers for OpenCL C 2.0 will provide these features,
     compilers for OpenCL C 3.0 or newer may provide these features.
@@ -128,8 +128,9 @@ IMPORTANT: Feature test macros <<unified-spec, require>> support for OpenCL C
 
 Optional core language features are described in this document. They are
 optional from OpenCL C 3.0 onwards and therefore are not supported by all
-implementations. When an OpenCL C 3.0 optional feature is supported, an
-associated __feature test macro__ will be predefined.
+implementations.
+When an optional OpenCL C 3.0 or newer feature is supported, an associated
+__feature test macro__ will be predefined.
 
 The following table describes OpenCL C 3.0 or newer features and their
 meaning. The naming convention for the feature macros is
@@ -219,18 +220,13 @@ of work-items.
 | The OpenCL C compiler supports built-in functions that perform collective
 operations across a work-group.
 
-ifdef::cl_khr_integer_dot_product[]
-| {opencl_c_integer_dot_product_input_4x8bit_packed} +
-  (when the {cl_khr_integer_dot_product_EXT} extension macro is defined)
-
+| {opencl_c_integer_dot_product_input_4x8bit_packed}
 | The OpenCL C compiler supports built-in functions that perform dot
 products on 4x8 bit packed integer vectors.
 
-| {opencl_c_integer_dot_product_input_4x8bit} +
-  (when the {cl_khr_integer_dot_product_EXT} extension macro is defined)
+| {opencl_c_integer_dot_product_input_4x8bit}
 | The OpenCL C compiler supports built-in functions that perform dot
 products on 4x8 bit integer vectors.
-endif::cl_khr_integer_dot_product[]
 
 ifdef::cl_khr_kernel_clock[]
 | {opencl_c_kernel_clock_scope_device}
@@ -282,13 +278,14 @@ corresponding optional functionality.
 === Extensions
 
 Other optional functionality may be described by language extensions to OpenCL
-C. Extensions are described in the <<opencl-extension-spec,OpenCL Extension
-Specification>>.  When an OpenCL C extension is supported an associated
-__extension macro__ will be predefined.  Please refer to the OpenCL Extension
-Specification for more information about predefined extension macros.
-
-Prior to OpenCL C 3.0, support for some optional core language features was
-indicated using predefined extension macros.
+C.
+Extensions to OpenCL C are described in the OpenCL C specification or in
+vendor-provided documentation.
+When an OpenCL C extension is supported an associated extension macro will be
+predefined.
+Please refer to <<preprocessor-directives-for-optional-extensions,Preprocessor
+Directives for Optional Extensions>> for more information about predefined
+extension macros.
 
 When an optional core language feature began as an extension it may have both an
 associated feature macro and an associated extension macro.  If an optional core
@@ -302,8 +299,8 @@ ifdef::cl_khr_3d_image_writes[]
 [[cl_khr_3d_image_writes,cl_khr_3d_image_writes]]
 ==== 3D Image Writes
 
-The {cl_khr_3d_image_writes_EXT} extension was promoted to OpenCL 2.0, and to
-OpenCL 3.0 as the {opencl_c_3d_image_writes} feature.
+The {cl_khr_3d_image_writes_EXT} extension was promoted to OpenCL C 2.0, and to
+OpenCL C 3.0 and newer as the {opencl_c_3d_image_writes} feature.
 The extension adds <<built-in-image-write-functions, Built-in Image Write
 Functions>> that allow a kernel to write to 3D image objects in addition to
 2D image objects.
@@ -373,9 +370,9 @@ ifdef::cl_khr_extended_bit_ops[]
 [[cl_khr_extended_bit_ops,cl_khr_extended_bit_ops]]
 ==== Extended Bit Operations
 
-The {cl_khr_extended_bit_ops_EXT} extension provides additional
-<<extended-bit-operations, Extended Bit Operations>> including bitfield
-insert, bitfield extract, and bit reverse.
+The {cl_khr_extended_bit_ops_EXT} extension was promoted to OpenCL C 3.1.
+The extension provides additional <<extended-bit-operations, Extended Bit
+Operations>> including bitfield insert, bitfield extract, and bit reverse.
 endif::cl_khr_extended_bit_ops[]
 
 
@@ -450,7 +447,7 @@ of kernel execution.
 
 There is one <<restrictions-initialize-memory, restriction>> on the timing
 of this initialization discussed in this document, although most of the
-extension is defined by the OpenCL 3.0 API Specification.
+extension is defined by the OpenCL API Specification.
 endif::cl_khr_initialize_memory[]
 
 
@@ -480,20 +477,19 @@ ifdef::cl_khr_integer_dot_product[]
 [[cl_khr_integer_dot_product,cl_khr_integer_dot_product]]
 ==== Integer Dot Product
 
-The {cl_khr_integer_dot_product_EXT} extension adds support for SPIR-V
-instructions and OpenCL C built-in functions to compute the dot product of
-vectors of integers.
-The extension provides new <<table-builtin-functions, built-in vector
-integer argument functions>> operating on these types.
+The {cl_khr_integer_dot_product_EXT} extension was promoted to OpenCL C 3.1.
+The extension adds support for OpenCL C built-in functions to compute the dot
+product of vectors of integers, as described in the <<table-builtin-functions,
+built-in vector integer argument functions>> table.
 endif::cl_khr_integer_dot_product[]
 
 ifdef::cl_khr_kernel_clock[]
 [[cl_khr_kernel_clock,cl_khr_kernel_clock]]
 ==== Kernel Clock
 
-The `cl_khr_kernel_clock` extension adds support for SPIR-V instructions and
-OpenCL C built-in functions to sample the value from one of three clocks
-provided by compute units.  The extension provides the following functions:
+The {cl_khr_kernel_clock_EXT} extension adds OpenCL C built-in functions to sample
+the value from one of three clocks provided by compute units.
+The extension provides the following functions:
 
 * <<table-kernel-clock-functions,Built-in Kernel Clock Functions>>
 endif::cl_khr_kernel_clock[]
@@ -628,11 +624,10 @@ ifdef::cl_khr_subgroup_extended_types[]
 [[cl_khr_subgroup_extended_types,cl_khr_subgroup_extended_types]]
 ==== Sub-Group Extended Types
 
-The {cl_khr_subgroup_extended_types_EXT} extension adds <<sub-group-functions,
-additional supported data types>> to the existing
-<<table-collective-functions, sub-group broadcast, scan, and reduction
-functions>>.
-
+The {cl_khr_subgroup_extended_types_EXT} extension was promoted to OpenCL C 3.1.
+The extension adds <<sub-group-functions, additional supported data types>> to
+the existing <<table-collective-functions, sub-group broadcast, scan, and
+reduction functions>>.
 endif::cl_khr_subgroup_extended_types[]
 
 
@@ -676,9 +671,9 @@ ifdef::cl_khr_subgroup_rotate[]
 [[cl_khr_subgroup_rotate,cl_khr_subgroup_rotate]]
 ==== Sub-Group Rotation
 
-The {cl_khr_subgroup_rotate_EXT} extension adds support for a new sub-group data
-exchange operation that makes it possible to rotate values through the work
-items in a sub-group.
+The {cl_khr_subgroup_rotate_EXT} extension was promoted to OpenCL C 3.1.
+The extension adds support for a new sub-group data exchange operation that
+makes it possible to rotate values through the work items in a sub-group.
 
 The extension provides the following functions:
 
@@ -691,8 +686,9 @@ ifdef::cl_khr_subgroup_shuffle[]
 [[cl_khr_subgroup_shuffle,cl_khr_subgroup_shuffle]]
 ==== Sub-Group General Purpose Shuffles
 
-The {cl_khr_subgroup_shuffle_EXT} extension adds additional ways to exchange
-data among work items in a sub-group.
+The {cl_khr_subgroup_shuffle_EXT} extension was promoted to OpenCL C 3.1.
+The extension adds support for flexibly exchanging data among work items in a
+sub-group.
 
 The extension provides the following functions:
 
@@ -705,9 +701,9 @@ ifdef::cl_khr_subgroup_shuffle_relative[]
 [[cl_khr_subgroup_shuffle_relative,cl_khr_subgroup_shuffle_relative]]
 ==== Sub-Group Relative Shuffles
 
-The {cl_khr_subgroup_shuffle_relative_EXT} extension adds specialized ways to
-exchange data among work items in a sub-group that may perform better on
-some implementations.
+The {cl_khr_subgroup_shuffle_relative_EXT} was promoted to OpenCL C 3.1.
+The extension adds specialized ways to exchange data among work items
+in a sub-group that may perform better on some implementations.
 
 The extension provides the following functions:
 
@@ -848,9 +844,8 @@ application:
 ==== Double-Precision Floating-Point Support
 
 Double-precision floating-point is supported if
-ifdef::cl_khr_fp64[the {cl_khr_fp64_EXT} extension macro is supported, or if]
-OpenCL 1.2 or newer is supported.
-In OpenCL 3.0, it also requires support for the {opencl_c_fp64} feature,
+ifdef::cl_khr_fp64[the {cl_khr_fp64_EXT} extension is supported, or if]
+OpenCL 3.0 or newer and the {opencl_c_fp64} feature is supported.
 
 If double-precision is not supported, implementations may
 implicitly cast double-precision floating-point literals to
@@ -1189,8 +1184,10 @@ are also reserved.
 | Type | Description
 | `bool__n__`
     | A boolean vector.
+ifndef::cl_khr_fp16[]
 | `half__n__`
     | A 16-bit floating-point vector.
+endif::cl_khr_fp16[]
 | `quad`, `quad__n__`
     | A 128-bit floating-point scalar and vector.
 | `complex half`, `complex half__n__`
@@ -1332,8 +1329,8 @@ Vector data types with two or more components, such as `char2`, can access `.xy`
 Vector data types with three or more components, such as `uint3`, can access `.xyz` elements.
 Vector data types with four or more components, such as `ulong4` or `float8`, can access `.xyzw` elements.
 
-In OpenCL C 3.0, the components of vector data types can also be addressed as
-`<vector_data_type>.rgba`.
+In OpenCL C 3.0 or newer, the components of vector data types can also be
+addressed as `<vector_data_type>.rgba`.
 Vector data types with two or more components can access `.rg` elements.
 Vector data types with three or more components can access `.rgb` elements.
 Vector data types with four or more components can access `.rgba` elements.
@@ -1345,12 +1342,12 @@ so, for example:
 ----------
 float2 coord;
 coord.x = 1.0f; // is legal
-coord.r = 1.0f; // is legal in OpenCL C 3.0
+coord.r = 1.0f; // is legal in OpenCL C 3.0 or newer
 coord.z = 1.0f; // is illegal, since coord only has two components
 
 float3 pos;
 pos.z = 1.0f; // is legal
-pos.b = 1.0f; // is legal in OpenCL C 3.0
+pos.b = 1.0f; // is legal in OpenCL C 3.0 or newer
 pos.w = 1.0f; // is illegal, since pos only has three components
 ----------
 
@@ -1804,13 +1801,13 @@ specified by <<C99-spec,section 6.3 of the C99 Specification>>.
 When converting from a floating-point type to integer type, the behavior is
 implementation-defined.
 
-Conversions to integer type may opt to convert using the optional saturated
+Conversions to integer types may opt to convert using the optional saturated
 mode by appending the `_sat` modifier to the conversion function name.
 When in saturated mode, values that are outside the representable range
-shall clamp to the nearest representable value in the destination format.
-(NaN should be converted to 0).
+are clamped to the nearest representable value in the destination format,
+and NaN is converted to zero.
 
-Conversions to floating-point type shall conform to IEEE-754 rounding rules.
+Conversions to floating-point types conform to IEEE-754 rounding rules.
 The `_sat` modifier may not be used for conversions to floating-point
 formats.
 
@@ -1824,7 +1821,7 @@ Example 1:
 ----------
 short4 s;
 
-// negative values clamped to 0
+// negative values clamped to zero
 ushort4 u = convert_ushort4_sat( s );
 
 // values > CHAR_MAX converted to CHAR_MAX
@@ -1843,7 +1840,7 @@ float4 f;
 int4 i = convert_int4( f );
 
 // values > INT_MAX clamp to INT_MAX, values < INT_MIN clamp
-// to INT_MIN. NaN should produce 0.
+// to INT_MIN, and NaN is converted to zero
 // The _rtz_ rounding mode is used to produce the integer values.
 int4 i2 = convert_int4_sat( f );
 
@@ -2194,7 +2191,7 @@ operands if the source operands are vector types.
 Vector source operands of type `char__n__` and `uchar__n__` return a
 `char__n__` result; vector source operands of type
 ifdef::cl_khr_fp16[]
-`_half__n__` footnote:[{fn-half-supported}],
+`half__n__` footnote:[{fn-half-supported}],
 endif::cl_khr_fp16[]
 `short__n__` and
 `ushort__n__` return a `short__n__` result; vector source operands of type
@@ -2242,7 +2239,7 @@ operands if the source operands are vector types.
 Vector source operands of type `char__n__` and `uchar__n__` return a
 `char__n__` result; vector source operands of type
 ifdef::cl_khr_fp16[]
-`_half__n__` footnote:[{fn-half-supported}],
+`half__n__` footnote:[{fn-half-supported}],
 endif::cl_khr_fp16[]
 `short__n__` and
 `ushort__n__` return a `short__n__` result; vector source operands of type
@@ -2279,7 +2276,7 @@ The scalar type is then widened to a vector that has the same number of
 components as the vector operand.
 The operation is done component-wise resulting in the same size vector.
 ifdef::cl_khr_fp16[]
-Vector source operands of type `_half__n__` footnote:[{fn-half-supported}]
+Vector source operands of type `half__n__` footnote:[{fn-half-supported}]
 return a `short__n__` result.
 endif::cl_khr_fp16[]
 --
@@ -2313,7 +2310,7 @@ operands if the source operands are vector types.
 Vector source operands of type `char__n__` and `uchar__n__` return a
 `char__n__` result; vector source operands of type
 ifdef::cl_khr_fp16[]
-`_half__n__` footnote:[{fn-half-supported}],
+`half__n__` footnote:[{fn-half-supported}],
 endif::cl_khr_fp16[]
 `short__n__` and
 `ushort__n__` return a `short__n__` result; vector source operands of type
@@ -2343,7 +2340,7 @@ operands if the source operands are vector types.
 Vector source operands of type `char__n__` and `uchar__n__` return a
 `char__n__` result; vector source operands of type
 ifdef::cl_khr_fp16[]
-`_half__n__` footnote:[{fn-half-supported}],
+`half__n__` footnote:[{fn-half-supported}],
 endif::cl_khr_fp16[]
 `short__n__` and
 `ushort__n__` return a `short__n__` result; vector source operands of type
@@ -2659,8 +2656,9 @@ void foo (...)
 }
 ----------
 
-For OpenCL C 2.0, or OpenCL C 3.0 with the {opencl_c_generic_address_space}
-feature macro, there is an additional unnamed generic address space.
+For OpenCL C 2.0, or OpenCL C 3.0 or newer with the
+{opencl_c_generic_address_space} feature macro, there is an additional unnamed
+generic address space.
 
 Most of the restrictions from section 5.1.2 and section 5.3 of the
 <<embedded-c-spec, Embedded C Specification>> apply in OpenCL C, e.g. address
@@ -2851,12 +2849,12 @@ kernel void foo(...)
 [open,refpage='genericAddressSpace',desc='The Generic Address Space',type='freeform',spec='clang',anchor='the-generic-address-space',xrefs='addressSpaceQualifiers constant global local private']
 --
 
-The generic address space requires support for OpenCL C 2.0 or OpenCL C 3.0 with
-the {opencl_c_generic_address_space} feature. It can be used with pointer
-types and it represents a placeholder for any of the named address spaces
-- `global`, `local` or `private`. It signals that a pointer points to an object
-in one of these concrete named address spaces. The exact address space
-resolution can occur dynamically during the kernel execution.
+The generic address space requires support for either OpenCL C 2.0, or OpenCL C
+3.0 or newer with the {opencl_c_generic_address_space} feature.
+It can be used with pointer types and it represents a placeholder for any of the
+named address spaces - `global`, `local` or `private`. It signals that a pointer
+points to an object in one of these concrete named address spaces. The exact
+address space resolution can occur dynamically during the kernel execution.
 
 [source,opencl_c]
 ----------
@@ -2902,10 +2900,11 @@ kernel void my_func(...)
 Program scope variables or variables with a `extern` or `static` storage class
 specifier:
 
-  * Must be qualified by `{constant}` in OpenCL C prior to 2.0 or OpenCL C 3.0
-    without {opencl_c_program_scope_global_variables} feature.
-  * Can be qualified by either `{constant}` or `{global}` for OpenCL C 2.0 or
-    OpenCL C 3.0 with {opencl_c_program_scope_global_variables} feature.
+  * Must be qualified by `{constant}` prior to OpenCL C 2.0, or for OpenCL C 3.0
+    or newer without {opencl_c_program_scope_global_variables} feature.
+  * Can be qualified by either `{constant}` or `{global}` for OpenCL C 2.0, or
+    OpenCL C 3.0 or newer with {opencl_c_program_scope_global_variables}
+    feature.
 
 Examples:
 
@@ -3000,13 +2999,13 @@ on the declaration scope and the object type.
 There is no syntax to provide address space in the source for some situations,
 therefore only the default address space is applicable.
 
-For OpenCL C 2.0 or with the {opencl_c_program_scope_global_variables}
-feature, the address space for a variable at program scope or a `static`
-or `extern` variable inside a function are inferred to be `{global}`.
+For OpenCL C 2.0, or OpenCL C 3.0 or newer with the
+{opencl_c_program_scope_global_variables} feature, the address space for a
+variable at program scope or a `static` or `extern` variable inside a function
+are inferred to be `{global}`.
 
-If the generic address space is supported i.e. for OpenCL C 2.0 or OpenCL C 3.0
-with {opencl_c_generic_address_space} feature, pointers that are declared
-without pointing to a named address space point to the generic address space.
+If the generic address space is supported, pointers that are declared without
+pointing to a named address space point to the generic address space.
 
 All string literal storage shall be in the `{constant}` address space.
 
@@ -3036,14 +3035,14 @@ static int foo;         // Inferred to be in the global address space.
 
 int *ptr;               // ptr is inferred to be in the global address space.
                         // ptr points to a location in (1) the generic address
-                        // space for OpenCL C 2.0 or OpenCL C 3.0 with
-                        // __opencl_c_generic_address_space feature or
+                        // space for OpenCL C 2.0, or OpenCL C 3.0 or newer with
+                        // the __opencl_c_generic_address_space feature, or
                         // in (2) the private address space otherwise.
 
 int *global ptr;        // ptr is declared to be in the global address space.
-                        // ptr points to an location in (1) the generic address
-                        // space for OpenCL C 2.0 or OpenCL C 3.0 with
-                        // __opencl_c_generic_address_space feature or
+                        // ptr points to a location in (1) the generic address
+                        // space for OpenCL C 2.0, or OpenCL C 3.0 or newer with
+                        // __opencl_c_generic_address_space feature, or
                         // in (2) the private address space otherwise.
 
 constant int *ptr =
@@ -3055,8 +3054,8 @@ void func(int param)    // param is allocated in the private address space.
     static int foo;     // foo is allocated in the global address space.
     int *ptr;           // ptr is allocated in the private address space.
                         // ptr points to a location in (1) the generic address
-                        // space for OpenCL C 2.0 or OpenCL C 3.0 with
-                        // __opencl_c_generic_address_space feature or
+                        // space for OpenCL C 2.0, or OpenCL C 3.0 or newer with
+                        // __opencl_c_generic_address_space feature, or
                         // in (2) the private address space otherwise.
     ...
 }
@@ -3066,9 +3065,9 @@ void func(int param)    // param is allocated in the private address space.
 ====
 Qualifiers must be explicitly specified for:
 
-  * Program scope variables or variables inside functions with
-    a `static` or `extern` type specifier for OpenCL C prior to version 2.0 or
-    OpenCL C 3.0 without {opencl_c_program_scope_global_variables} feature,
+  * Program scope variables or variables inside functions with a `static` or
+    `extern` type specifier prior to OpenCL C 2.0, or for OpenCL C 3.0 or newer
+    without {opencl_c_program_scope_global_variables} feature.
 
   * Pointers used as arguments to kernel functions (the address space pointed
     to must be specified explicitly).
@@ -3081,20 +3080,20 @@ Qualifiers must be explicitly specified for:
 | Address Space | Supported Usage | Initialization | Inference
 
 | `{global}`
-  | Program scope variables, for OpenCL C 2.0 or
-    OpenCL C 3.0 with the {opencl_c_program_scope_global_variables} feature,
+  | Program scope variables, for OpenCL C 2.0, or
+    OpenCL C 3.0 or newer with the {opencl_c_program_scope_global_variables} feature,
 
-    `static` or `extern` local variables, for OpenCL C 2.0 or
-    OpenCL C 3.0 with the {opencl_c_program_scope_global_variables} feature,
+    `static` or `extern` local variables, for OpenCL C 2.0, or
+    OpenCL C 3.0 or newer with the {opencl_c_program_scope_global_variables} feature,
 
     Pointers.
   | Optional constant initializers, 0-initialized by default.
 
-  | Program scope variables, for OpenCL C 2.0 or
-    OpenCL C 3.0 with the {opencl_c_program_scope_global_variables} feature.
+  | Program scope variables, for OpenCL C 2.0, or
+    OpenCL C 3.0 or newer with the {opencl_c_program_scope_global_variables} feature.
 
-    `static` or `extern` local variables, for OpenCL C 2.0 or
-    OpenCL C 3.0 with the {opencl_c_program_scope_global_variables} feature.
+    `static` or `extern` local variables, for OpenCL C 2.0, or
+    OpenCL C 3.0 or newer with the {opencl_c_program_scope_global_variables} feature.
 
 | `{private}`
   | Local scope variables,
@@ -3109,7 +3108,7 @@ Qualifiers must be explicitly specified for:
     Function arguments and return types,
 
     Pointers in which the address space they point to is not given explicitly,
-    for OpenCL C prior to version 2.0 or OpenCL C 3.0 without the
+    prior to OpenCL C 2.0, or for OpenCL C 3.0 or newer without the
     {opencl_c_generic_address_space} feature.
 
 | `{constant}`
@@ -3131,12 +3130,12 @@ Qualifiers must be explicitly specified for:
   | Not supported.
 
 | Generic
-  | Pointers, for OpenCL C 2.0 or OpenCL C 3.0 with the
+  | Pointers, for OpenCL C 2.0, or OpenCL C 3.0 or newer with the
     {opencl_c_generic_address_space} feature
   | Not applicable.
   | Pointers in which the address space they point to is not given explicitly,
-    for OpenCL C 2.0 or OpenCL C 3.0 with the {opencl_c_generic_address_space}
-    feature.
+    prior to OpenCL C 2.0, or for OpenCL C 3.0 or newer with the
+    {opencl_c_generic_address_space} feature.
 |====
 --
 
@@ -3980,6 +3979,7 @@ ifdef::cl_khr_initialize_memory[]
 endif::cl_khr_initialize_memory[]
 
 
+[[EXTENSION]]
 [[preprocessor-directives-and-macros]]
 == Preprocessor Directives and Macros
 
@@ -4009,10 +4009,6 @@ following forms whose meanings are described elsewhere:
 ----------
 // on-off-switch is one of ON, OFF, or DEFAULT
 #pragma OPENCL FP_CONTRACT on-off-switch
-
-#pragma OPENCL EXTENSION extensionname : behavior
-
-#pragma OPENCL EXTENSION all : behavior
 ----------
 
 The following predefined macro names are available.
@@ -4053,6 +4049,10 @@ The following predefined macro names are available.
 `CL_VERSION_3_0` ::
     Substitutes the integer 300 reflecting the OpenCL 3.0 version.
     <<unified-spec, Requires>> support for OpenCL C 3.0 or newer.
+
+`CL_VERSION_3_1` ::
+    Substitutes the integer 310 reflecting the OpenCL 3.1 version.
+    <<unified-spec, Requires>> support for OpenCL C 3.1 or newer.
 
 `+__OPENCL_C_VERSION__+` ::
     Substitutes an integer reflecting the OpenCL C version specified by the
@@ -4113,8 +4113,88 @@ The predefined identifier `+__func__+` is available.
 
 In OpenCL C 3.0 or newer there are a number of optional predefined macros
 indicating optional language features. Such macros are listed in the
-<<table-optional-lang-features, optional features in OpenCL C 3.0 table>>.
+<<table-optional-lang-features, optional features in OpenCL C 3.0 or newer table>>.
 --
+
+
+[[preprocessor-directives-for-optional-extensions]]
+=== Preprocessor Directives for Optional Extensions
+
+The *#pragma OPENCL EXTENSION* directive controls the behavior of the OpenCL
+compiler with respect to extensions.
+The *#pragma OPENCL EXTENSION* directive is defined as:
+
+[source,opencl_c]
+----
+#pragma OPENCL EXTENSION <extension_name> : <behavior>
+#pragma OPENCL EXTENSION all : <behavior>
+----
+
+where _extension_name_ is the name of the extension.
+The token *all* means that the behavior applies to all extensions supported
+by the compiler.
+The _behavior_ can be set to one of the following values given by the table
+below.
+
+[cols="1,3",options="header",]
+|====
+| *behavior* | *Description*
+| *enable*
+| Behave as specified by the extension _extension_name_.
+
+  Report an error on the *`#pragma OPENCL EXTENSION`* if the
+  _extension_name_ is not supported, or if *all* is specified.
+
+| *disable*
+| Behave (including issuing errors and warnings) as if the extension
+  _extension_name_ is not part of the language definition.
+
+  If *all* is specified, then behavior must revert back to that of the
+  non-extended core version of the language being compiled to.
+
+  Warn on the *`#pragma OPENCL EXTENSION`* if the extension _extension_name_
+  is not supported.
+
+|====
+
+The *`#pragma OPENCL EXTENSION`* directive is a simple, low-level mechanism
+to set the behavior for each extension.
+It does not define policies such as which combinations are appropriate;
+those must be defined elsewhere.
+The order of directives matter in setting the behavior for each extension.
+Directives that occur later override those seen earlier.
+The *all* variant sets the behavior for all extensions, overriding all
+previously issued extension directives, but only if the _behavior_ is set to
+*disable*.
+
+The initial state of the compiler is as if the directive
+
+[source,opencl_c]
+----
+#pragma OPENCL EXTENSION all : disable
+----
+
+was issued, telling the compiler that all error and warning reporting must
+be done according to this specification, ignoring any extensions.
+
+Every extension which affects the OpenCL language semantics, syntax or adds
+built-in functions to the language must create a preprocessor `#define` that
+matches the extension name string.
+This `#define` would be available in the language if and only if the
+extension is supported on a given implementation.
+
+For example, compilers that support the {cl_khr_3d_image_writes_EXT} extension
+will add a preprocessor `#define` called {cl_khr_3d_image_writes_EXT}.
+A kernel can now use this preprocessor `#define` to do something like:
+
+[source,opencl_c]
+----
+#ifdef cl_khr_3d_image_writes
+    // do something using the extension
+#else
+    // do something else or #error!
+#endif
+----
 
 
 [[attribute-qualifiers]]
@@ -4582,26 +4662,6 @@ compile-time constant expression.
 --
 
 
-[[extending-attribute-qualifiers]]
-=== Extending Attribute Qualifiers
-
-The attribute syntax can be extended for standard language extensions and
-vendor specific extensions.
-Any extensions should follow the naming conventions outlined in the
-introduction to <<opencl-extension-spec,section 9 in the OpenCL 2.0
-Extension Specification>>.
-
-Attributes are intended as useful hints to the compiler.
-It is our intention that a particular implementation of OpenCL be free to
-ignore all attributes and the resulting executable binary will produce the
-same result.
-This does not preclude an implementation from making use of the additional
-information provided by attributes and performing optimizations or other
-transformations as it sees fit.
-In this case it is the programmer's responsibility to guarantee that the
-information provided is in some sense correct.
-
-
 [[blocks]]
 == Blocks
 
@@ -5017,7 +5077,7 @@ identifier of each work-item when this kernel is being executed on a device.
       Valid values of _dimindx_ are 0 to *get_work_dim*() - 1.
       For other values of _dimindx_, *get_enqueued_local_size*() returns 1.
 
-      <<unified-spec, Requires>> support for OpenCL 2.0 or newer.
+      <<unified-spec, Requires>> support for OpenCL C 2.0 or newer.
 | size_t *get_local_id*(uint _dimindx_)
     | Returns the unique local work-item ID, i.e. a work-item within a
       specific work-group for dimension identified by _dimindx_.
@@ -5059,7 +5119,7 @@ identifier of each work-item when this kernel is being executed on a device.
       {plus} +((+*get_global_id*(1) - *get_global_offset*(1)+)+ * *get_global_size*(0)+)+
       {plus} (*get_global_id*(0) - *get_global_offset*(0)+)+.
 
-      <<unified-spec, Requires>> support for OpenCL 2.0 or newer.
+      <<unified-spec, Requires>> support for OpenCL C 2.0 or newer.
 | size_t *get_local_linear_id*()
     | Returns the work-items 1-dimensional local ID.
 
@@ -5076,12 +5136,12 @@ identifier of each work-item when this kernel is being executed on a device.
       (*get_local_id*(2) * *get_local_size*(1) * *get_local_size*(0)) {plus}
       (*get_local_id*(1) * *get_local_size*(0)) {plus} *get_local_id*(0).
 
-      <<unified-spec, Requires>> support for OpenCL 2.0 or newer.
+      <<unified-spec, Requires>> support for OpenCL C 2.0 or newer.
 |====
 
 NOTE: The functionality described in the following table <<unified-spec,
 requires>> support for
-ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension macro; or for]
+ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension, or]
 OpenCL C 3.0 or newer and the {opencl_c_subgroups} feature.
 
 The following table describes the list of built-in work-item functions that
@@ -5282,7 +5342,7 @@ ifdef::cl_khr_fp16[gentypeh *fmax*(gentypeh _x_, half _y_)]
   gentypef *fmin*(gentypef _x_, float _y_) +
   gentyped *fmin*(gentyped _x_, double _y_)
 
-ifdef::cl_khr_fp16[gentypeh *fmax*(gentypeh _x_, half _y_)]
+ifdef::cl_khr_fp16[gentypeh *fmin*(gentypeh _x_, half _y_)]
     | Returns _y_ if _y_ < _x_, otherwise it returns _x_.
       If one argument is a NaN, *fmin*() returns the other argument.
       If both arguments are NaNs, *fmin*() returns a NaN.
@@ -5448,7 +5508,6 @@ endif::cl_khr_fp16[]
     | *mad* computes _a_ * _b_ + _c_.
       The function may compute _a_ * _b_ + _c_ with reduced accuracy in the
       embedded profile.
-      See the OpenCL SPIR-V Environment Specification for details.
       On some hardware the mad instruction may provide better performance
       than expanded computation of _a_ * _b_ + _c_.
       footnote:[{fn-mad-caution}]
@@ -6101,8 +6160,7 @@ explicitly specified as an actual type.
       If _x_ is 0, returns the size in bits of the type of _x_ or component
       type of _x_, if _x_ is a vector.
 
-      <<unified-spec, Requires>> support for OpenCL 2.0 or newer.
-ifdef::cl_khr_integer_dot_product[]
+      <<unified-spec, Requires>> support for OpenCL C 2.0 or newer.
 | uint *dot*(uchar4 a, uchar4 b) +
   int *dot*(char4 a, char4 b) +
   int *dot*(uchar4 a, char4 b) +
@@ -6114,8 +6172,8 @@ ifdef::cl_khr_integer_dot_product[]
       All the components of the resulting vectors are added together to form
       the final result.
 
-      <<unified-spec, Requires>> that the
-      {opencl_c_integer_dot_product_input_4x8bit} feature macro is defined,
+      <<unified-spec, Requires>> support for the
+      {opencl_c_integer_dot_product_input_4x8bit} feature.
 
 | uint *dot_acc_sat*(uchar4 a, uchar4 b, uint acc) +
   int *dot_acc_sat*(char4 a, char4 b, int acc) +
@@ -6128,8 +6186,8 @@ product = dot(a,b);
 result = add_sat(product, acc);
 ----
 
-<<unified-spec, Requires>> that the
-{opencl_c_integer_dot_product_input_4x8bit} feature macro is defined,
+<<unified-spec, Requires>> support for the 
+{opencl_c_integer_dot_product_input_4x8bit} feature.
 
 | uint *dot_4x8packed_uu_uint*(uint a, uint b) +
   int *dot_4x8packed_ss_int*(uint a, uint b) +
@@ -6137,9 +6195,8 @@ result = add_sat(product, acc);
   int *dot_4x8packed_su_int*(uint a, uint b)
     | Returns *dot* for 4x8 bit input vectors packed into a 32-bit word.
 
-      <<unified-spec, Requires>> that the
-      {opencl_c_integer_dot_product_input_4x8bit_packed} feature macro is
-      defined,
+      <<unified-spec, Requires>> support for the
+      {opencl_c_integer_dot_product_input_4x8bit_packed} feature.
 
 | uint *dot_acc_sat_4x8packed_uu_uint*(uint a, uint b, uint acc) +
   int *dot_acc_sat_4x8packed_ss_int*(uint a, uint b, int acc) +
@@ -6148,10 +6205,8 @@ result = add_sat(product, acc);
     | Returns *dot_acc_set* for 4x8 bit input vectors packed into a 32-bit
       word.
 
-      <<unified-spec, Requires>> that the
-      {opencl_c_integer_dot_product_input_4x8bit_packed} feature macro is
-      defined,
-endif::cl_khr_integer_dot_product[]
+      <<unified-spec, Requires>> support for the
+      {opencl_c_integer_dot_product_input_4x8bit_packed} feature.
 
 | gentype *mad_hi*(gentype _a_, gentype _b_, gentype _c_)
     | Returns *mul_hi*(_a_, _b_) + _c_.
@@ -6233,16 +6288,17 @@ take `int`, `int2`, `int3`, `int4`, `int8`, `int16`, `uint`, `uint2`,
 --
 
 
-ifdef::cl_khr_extended_bit_ops[]
 [[extended-bit-operations]]
 ==== Extended Bit Operations
 
 [open,refpage='extendedBitOperations',desc='Extended Bit Operations',type='freeform',spec='clang',anchor='extended-bit-operations',xrefs='commonFunctions',alias='bitfield_insert bitfield_extract_signed bitfield_extract_unsigned bit_reverse']
 --
-If the {cl_khr_extended_bit_ops_EXT} extension macro is supported, the
-functions described in the <<table-builtin-extended-bit-operations, Built-in
-Scalar and Vector Extended Bit Operations>> table can be used with built-in
-scalar or vector integer types to perform extended bit operations.
+If
+ifdef::cl_khr_extended_bit_ops[the {cl_khr_extended_bit_ops_EXT} extension macro or]
+OpenCL C 3.1 or newer is supported, the functions described in the
+<<table-builtin-extended-bit-operations, Built-in Scalar and Vector Extended Bit
+Operations>> table can be used with built-in scalar or vector integer types to
+perform extended bit operations.
 The functions that operate on vector types operate component-wise.
 The description is per-component.
 
@@ -6257,6 +6313,11 @@ The generic type name `ugentype` refers to the built-in unsigned integer
 types `uchar`, `uchar__n__`, `ushort`, `ushort__n__`, `uint`, `uint__n__`,
 `ulong`, and `ulong__n__`.
 _n_ is 2, 3, 4, 8, or 16.
+
+NOTE: The functionality described in the following table <<unified-spec,
+requires>> support for
+ifdef::cl_khr_subgroups[the {cl_khr_extended_bit_ops_EXT} extension macro or]
+OpenCL C 3.1 or newer.
 
 [[table-builtin-extended-bit-operations]]
 .Built-in Scalar and Vector Extended Bit Operations
@@ -6287,9 +6348,6 @@ gentype bitfield_insert(
       If _count_ or _offset_ or _offset_ + _count_ is greater than number of
       bits in `gentype` (for scalar types) or components of `gentype` (for
       vector types), the result is undefined.
-
-      <<unified-spec, Requires>> support for the
-      {cl_khr_extended_bit_ops_EXT} extension macro.
 a|
 [source,opencl_c]
 ----
@@ -6312,9 +6370,6 @@ igentype bitfield_extract_signed(
       If the _count_ or _offset_ or _offset_ + _count_ is greater than
       number of bits in `gentype` (for scalar types) or components of
       `gentype` (for vector types), the result is undefined.
-
-      <<unified-spec, Requires>> support for the
-      {cl_khr_extended_bit_ops_EXT} extension macro.
 a|
 [source,opencl_c]
 ----
@@ -6336,9 +6391,6 @@ ugentype bitfield_extract_unsigned(
       If the _count_ or _offset_ or _offset_ + _count_ is greater than
       number of bits in `gentype` (for scalar types) or components of
       `gentype` (for vector types), the result is undefined.
-
-      <<unified-spec, Requires>> support for the
-      {cl_khr_extended_bit_ops_EXT} extension macro.
 a|
 [source,opencl_c]
 ----
@@ -6351,12 +6403,8 @@ gentype bit_reverse(
       component of _base_ (for vector types), where _width_ is number of
       bits of `gentype` (for scalar types) or components of `gentype` (for
       vector types).
-
-      <<unified-spec, Requires>> support for the
-      {cl_khr_extended_bit_ops_EXT} extension macro.
 |===
 --
-endif::cl_khr_extended_bit_ops[]
 
 
 [[integer-macros]]
@@ -6865,14 +6913,16 @@ endif::cl_khr_fp16[]
 
 Scalar inputs to *any* are <<unified-spec, deprecated by>> OpenCL C version
 3.0.
-    | Returns 1 if the most significant bit of _x_ (for scalar inputs) or
-      any component of _x_ (for vector inputs) is set; otherwise returns 0.
+    | Returns 1 if the most significant bit of _x_ is set for scalar inputs, or
+      if the most significant bit is set for any component of _x_ for vector
+      inputs; otherwise returns 0.
 | int *all*(igentype _x_)
 
 Scalar inputs to *all* are <<unified-spec, deprecated by>> OpenCL C version
 3.0.
-    | Returns 1 if the most significant bit of _x_ (for scalar inputs) or
-      all components of _x_ (for vector inputs) is set; otherwise returns 0.
+    | Returns 1 if the most significant bit of _x_ is set for scalar inputs, or
+      if the most significant bit is set for all components of _x_ for vector
+      inputs; otherwise returns 0.
 | |
 | gentype *bitselect*(gentype _a_, gentype _b_, gentype _c_)
    | Each bit of the result is the corresponding bit of _a_ if the
@@ -7326,7 +7376,7 @@ in a work-group.
 
 NOTE: The functionality described in the following table <<unified-spec,
 requires>> support for
-ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension macro; or for]
+ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension, or]
 OpenCL 3.0 or newer and the {opencl_c_subgroups} feature.
 
 The following table describes built-in functions to synchronize the work-items
@@ -7831,7 +7881,7 @@ endif::cl_khr_extended_async_copies[]
 === Atomic Functions
 
 IMPORTANT: The C11 style atomic functions in this sub-section <<unified-spec,
-require>> support for OpenCL 2.0 or newer.  However, this statement does not
+require>> support for OpenCL C 2.0 or newer.  However, this statement does not
 apply to the <<atomic-legacy, "OpenCL C 1.x Legacy Atomics">> descriptions at
 the end of this sub-section.
 
@@ -8062,7 +8112,7 @@ The following table lists the enumeration constants:
       <<unified-spec, Requires>> support for OpenCL C 2.0 or newer.
 | `memory_scope_sub_group`
     | <<unified-spec, Requires>> support for
-ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension macro; or for]
+ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension, or]
       OpenCL C 3.0 or newer and the {opencl_c_subgroups} feature.
 | `memory_scope_work_group`
     | <<unified-spec, Requires>> support for OpenCL C 2.0 or newer.
@@ -8202,7 +8252,7 @@ void atomic_store_explicit(volatile __local A *object,
                            C desired,
                            memory_order order)
 
-// Requires OpenCL C 2.0 or OpenCL C 3.0 or newer and both the
+// Requires OpenCL C 2.0, or OpenCL C 3.0 or newer and both the
 // __opencl_c_generic_address_space and __opencl_c_atomic_scope_device
 // features.
 void atomic_store_explicit(volatile A *object,
@@ -8298,7 +8348,7 @@ Memory is affected according to the value of _order_.
 Atomically returns the value pointed to by _object_.
 
 NOTE: The non-explicit `atomic_load` function <<unified-spec, requires>>
-support for OpenCL C 2.0 or OpenCL C 3.0 or newer and both the
+support for OpenCL C 2.0, or OpenCL C 3.0 or newer and both the
 {opencl_c_atomic_order_seq_cst} and {opencl_c_atomic_scope_device}
 features.
 For the explicit variants, memory order and scope enumerations must respect the
@@ -8337,7 +8387,7 @@ C atomic_exchange_explicit(volatile __local A *object,
                            C desired,
                            memory_order order)
 
-// Requires OpenCL C 2.0 or OpenCL C 3.0 or newer and both the
+// Requires OpenCL C 2.0, or OpenCL C 3.0 or newer and both the
 // __opencl_c_generic_address_space and __opencl_c_atomic_scope_device
 // feature.
 C atomic_exchange_explicit(volatile A *object,
@@ -8370,7 +8420,7 @@ Atomically returns the value pointed to by `object` immediately before the
 effects.
 
 NOTE: The non-explicit `atomic_exchange` function <<unified-spec, requires>>
-support for OpenCL C 2.0 or OpenCL C 3.0 or newer and both the
+support for OpenCL C 2.0, or OpenCL C 3.0 or newer and both the
 {opencl_c_atomic_order_seq_cst} and {opencl_c_atomic_scope_device}
 features.
 For the explicit variants, memory order and scope enumerations must respect the
@@ -8754,7 +8804,7 @@ C atomic_fetch_key_explicit(volatile __local A *object,
                             M operand,
                             memory_order order)
 
-// Requires OpenCL C 2.0 or OpenCL C 3.0 or newer and both the
+// Requires OpenCL C 2.0, or OpenCL C 3.0 or newer and both the
 // __opencl_c_generic_address_space and __opencl_c_atomic_scope_device
 // features.
 C atomic_fetch_key_explicit(volatile A *object,
@@ -8864,7 +8914,7 @@ bool atomic_flag_test_and_set_explicit(
     volatile __local atomic_flag *object,
     memory_order order)
 
-// Requires OpenCL C 2.0 or OpenCL C 3.0 or newer and both the
+// Requires OpenCL C 2.0, or OpenCL C 3.0 or newer and both the
 // __opencl_c_generic_address_space and __opencl_c_atomic_scope_device
 // features.
 bool atomic_flag_test_and_set_explicit(
@@ -9398,7 +9448,7 @@ endif::cl_khr_int64_base_atomics,cl_khr_int64_extended_atomics[]
     newer and the {opencl_c_atomic_order_seq_cst} feature.
   * Using `memory_scope_sub_group` with any built-in atomic function
     <<unified-spec, requires>> support for
-ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension macro; or for]
+ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension, or]
     OpenCL C 3.0 or newer and the {opencl_c_subgroups} feature.
   * Using `memory_scope_device` <<unified-spec, requires>> support for OpenCL
     C 2.0, or OpenCL C 3.0 or newer and the
@@ -9689,6 +9739,16 @@ The *l* modifier is supported by the full profile.
 For the embedded profile, the *l* modifier is supported only if 64-bit
 integers are supported by the device.
 
+*z* Specifies that a following *d*, *i*, *o*, *u*, *x*, or *X* conversion
+specifier applies to a `size_t` argument.
+The *z* length modifier <<unified-spec, requires>> support for OpenCL C 3.1 or
+newer.
+
+*t* Specifies that a following *d*, *i*, *o*, *u*, *x*, or *X* conversion
+specifier applies to a `ptrdiff_t` argument.
+The *t* length modifier <<unified-spec, requires>> support for OpenCL C 3.1 or
+newer.
+
 If the vector specifier is used, the length modifiers and their meanings
 are:
 
@@ -9930,13 +9990,16 @@ kernel void my_kernel(global char *s, ... )
 [[differences-between-opencl-c-and-c99-printf]]
 ==== Differences Between OpenCL C and C99 printf
 
+  * The asterisk *** field width specifier is not supported by OpenCL C.
   * The *l* modifier followed by a *c* conversion specifier or *s*
     conversion specifier is not supported by OpenCL C.
-  * The *ll*, *j*, *z*, *t*, and *L* length modifiers are not supported by
-    OpenCL C but are reserved.
+  * The *ll*, *j*, and *L* length modifiers are not supported by OpenCL C but
+    are reserved.
+    Prior to OpenCL C 3.1, the *z* and *t* length modifiers additionally are not
+    supported by OpenCL C but are reserved.
   * The *n* conversion specifier is not supported by OpenCL C but is
     reserved.
-  * OpenCL C adds the optional *v*__n__ vector specifier to support printing
+  * OpenCL C adds the optional **v**__n__ vector specifier to support printing
     of vector types.
   * The conversion specifiers *f*, *F*, *e*, *E*, *g*, *G*, *a*, *A* convert
     a `float` argument to a `double` only if the `double` data type is
@@ -12386,7 +12449,7 @@ endif::cl_khr_mipmap_image_writes[]
 [[built-in-image-query-functions]]
 ==== Built-in Image Query Functions
 
-[open,refpage='imageQueryFunctions',desc='Built-in Image Query Functions',type='freeform',spec='clang',anchor='built-in-image-query-functions',xrefs='imageReadFunctions imageSamplerlessReadFunctions imageWriteFunctions',alias='get_image_width get_image_height get_image_depth get_image_channel_data_type get_image_channel_order get_image_dim get_image_array_size']
+[open,refpage='imageQueryFunctions',desc='Built-in Image Query Functions',type='freeform',spec='clang',anchor='built-in-image-query-functions',xrefs='imageReadFunctions imageSamplerlessReadFunctions imageWriteFunctions',alias='get_image_width get_image_height get_image_depth get_image_channel_data_type get_image_channel_order get_image_dim get_image_array_size get_image_num_samples get_image_num_mip_levels']
 --
 
 The following built-in function calls to query image information are
@@ -13310,8 +13373,6 @@ The following behavior is undefined:
 [[enqueuing-kernels]]
 === Enqueuing Kernels
 
-[open,refpage='enqueue_kernel',desc='Enqueuing Kernels',type='freeform',spec='clang',anchor='enqueuing-kernels',xrefs='enqueue_marker']
---
 NOTE: The functionality described in this section <<unified-spec, requires>>
 support for OpenCL C 2.0, or OpenCL C 3.0 or newer and the
 {opencl_c_device_enqueue} feature.
@@ -13321,11 +13382,19 @@ enqueue additional work to the same device, without host interaction.
 A kernel may enqueue code represented by Block syntax, and control execution
 order with event dependencies including user events and markers.
 There are several advantages to using the Block syntax: it is more compact;
-it does not require a cl_kernel object; and enqueuing can be done as a
+it does not require a {cl_kernel_TYPE} object; and enqueuing can be done as a
 single semantic step.
 
+The macro `CLK_NULL_EVENT` refers to an invalid device event.
+The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
+
+[[built-in-functions-enqueuing-a-kernel]]
+==== Built-in Functions - Enqueuing a Kernel
+
+[open,refpage='enqueue_kernel',desc='Built-in Functions - Enqueuing Kernels',type='freeform',spec='clang',anchor='enqueuing-kernels',xrefs='enqueue_marker']
+--
 The following table describes the list of built-in functions that can be
-used to enqueue a kernel(s).
+used to enqueue a kernel.
 
 ifdef::cl_khr_device_enqueue_local_arg_types[]
 When the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is
@@ -13340,21 +13409,7 @@ signatures.
 
 When the  {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is
 not supported, the pointee type of these functions must be `void`.
-
-:localArgType: gentype
 endif::cl_khr_device_enqueue_local_arg_types[]
-
-ifndef::cl_khr_device_enqueue_local_arg_types[]
-:localArgType: void
-endif::cl_khr_device_enqueue_local_arg_types[]
-
-The macro `CLK_NULL_EVENT` refers to an invalid device event.
-The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
---
-
-
-[[built-in-functions-enqueuing-a-kernel]]
-==== Built-in Functions - Enqueuing a Kernel
 
 [[table-builtin-kernel-enqueue]]
 .Built-in Kernel Enqueue Functions
@@ -13369,12 +13424,25 @@ The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
     const clk_event_t *_event_wait_list_, clk_event_t *_event_ret_,
     void (^__block__)(void)) +
   int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
-    const ndrange_t _ndrange_, void (^__block__)(local {localArgType} *, ...),
+    const ndrange_t _ndrange_, void (^__block__)(local void *, ...),
     uint size0, ...) +
   int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
     const ndrange_t _ndrange_, uint _num_events_in_wait_list_,
     const clk_event_t *_event_wait_list_, clk_event_t *_event_ret_,
-    void (^__block__)(local {localArgType} *, ...), uint size0, ...)
+    void (^__block__)(local void *, ...), uint size0, ...)
+
+ifdef::cl_khr_device_enqueue_local_arg_types[]
+  If the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is supported:
+
+  int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
+    const ndrange_t _ndrange_, void (^__block__)(local gentype *, ...),
+    uint size0, ...) +
+  int **enqueue_kernel**(queue_t _queue_, kernel_enqueue_flags_t _flags_,
+    const ndrange_t _ndrange_, uint _num_events_in_wait_list_,
+    const clk_event_t *_event_wait_list_, clk_event_t *_event_ret_,
+    void (^__block__)(local gentype *, ...), uint size0, ...)
+endif::cl_khr_device_enqueue_local_arg_types[]
+
     | Enqueue the block for execution to _queue_.
 
       If an event is returned, *enqueue_kernel* performs an implicit retain
@@ -13383,7 +13451,7 @@ The macro `CLK_NULL_QUEUE` refers to an invalid device queue.
 
 The *enqueue_kernel* built-in function allows a work-item to enqueue a
 block.
-Work-items can enqueue multiple blocks to a device queue(s).
+Work-items can enqueue multiple blocks to device queues.
 
 The *enqueue_kernel* built-in function returns `CLK_SUCCESS` if the block is
 enqueued successfully and returns `CLK_ENQUEUE_FAILURE` otherwise.
@@ -13408,6 +13476,7 @@ block:
     could not be allocated.
   * `CLK_OUT_OF_RESOURCES` if there is a failure to queue the block in
     _queue_ because of insufficient resources needed to execute the kernel.
+--
 
 Below are some examples of how to enqueue a block.
 
@@ -13671,7 +13740,7 @@ following table>>:
       executing and all immediate footnote:[{fn-dse-immediate-definition}] side
       effects committed before the enqueued child kernel may begin execution.
 | `CLK_ENQUEUE_FLAGS_WAIT_WORK_GROUP`
-    | Indicates that the enqueued kernels wait only for the workgroup that
+    | Indicates that the enqueued kernels wait only for the work-group that
       enqueued the kernels to finish before they begin execution.
       footnote:[{fn-dse-CLK_ENQUEUE_FLAGS_WAIT_WORK_GROUP}]
 |====
@@ -13722,7 +13791,14 @@ execution.
 |====
 | Built-in Function | Description
 | uint *get_kernel_work_group_size*(void (^block)(void)) +
-  uint *get_kernel_work_group_size*(void (^block)(local {localArgType} *, ...))
+  uint *get_kernel_work_group_size*(void (^block)(local void *, ...))
+
+ifdef::cl_khr_device_enqueue_local_arg_types[]
+  If the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is supported:
+
+  uint *get_kernel_work_group_size*(void (^block)(local gentype *, ...))
+endif::cl_khr_device_enqueue_local_arg_types[]
+
     | This provides a mechanism to query the maximum work-group size that
       can be used to execute a block on a specific device given by _device_.
 
@@ -13730,7 +13806,15 @@ execution.
 | uint *{get_kernel_preferred_work_group_size_multiple}*(
   void (^block)(void)) +
   uint *{get_kernel_preferred_work_group_size_multiple}*(
-  void (^block)(local {localArgType} *, ...))
+  void (^block)(local void *, ...))
+
+ifdef::cl_khr_device_enqueue_local_arg_types[]
+  If the {cl_khr_device_enqueue_local_arg_types_EXT} extension macro is supported:
+
+  uint *{get_kernel_preferred_work_group_size_multiple}*(
+  void (^block)(local gentype *, ...))
+endif::cl_khr_device_enqueue_local_arg_types[]
+
     | Returns the preferred multiple of work-group size for launch.
       This is a performance hint.
       Specifying a work-group size that is not a multiple of the value
@@ -14011,7 +14095,7 @@ foo(queue_t q, ...)
 --
 NOTE: The functionality described in this section <<unified-spec, requires>>
 support for
-ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension macro; or for]
+ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension, or]
 OpenCL C 3.0 or newer and the {opencl_c_subgroups} feature.
 
 The <<table-collective-functions, following table>> describes OpenCL C
@@ -14024,16 +14108,15 @@ footnote:[{fn-int64-supported}], `ulong`, `half`
 footnote:[{fn-half-supported}], `float`, and `double`
 footnote:[{fn-double-supported}].
 
-ifdef::cl_khr_subgroup_extended_types[]
-NOTE: If the {cl_khr_subgroup_extended_types_EXT} extension is supported, the
-generic type name `gentype` may additionally be `char`, `uchar`, `short`, and
-`ushort`.
+NOTE: If
+ifdef::cl_khr_subgroup_extended_types[the {cl_khr_subgroup_extended_types_EXT} extension macro or]
+OpenCL C 3.1 or newer is supported, the generic type name `gentype` may
+additionally be `char`, `uchar`, `short`, and `ushort`.
 For the `sub_group_broadcast` function, `gentype` may additionally be one of
 the supported built-in vector data types `char__n__`, `uchar__n__`,
 `short__n__`, `ushort__n__`, `int__n__`, `uint__n__`, `long__n__`,
 `ulong__n__`, `float__n__`, `half__n__` footnote:[{fn-half-supported}], or
-`double__n__` footnote:[{fn-double-supported}]
-endif::cl_khr_subgroup_extended_types[]
+`double__n__` footnote:[{fn-double-supported}].
 
 [[table-collective-functions]]
 .Built-in Sub-Group Collective Functions
@@ -14106,8 +14189,8 @@ The order of these floating-point operations is also non-deterministic for a giv
 ====
 
 NOTE: The functionality described in the following table <<unified-spec,
-requires>> support
-ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension macro; or for]
+requires>> support for
+ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension, or]
 OpenCL C 3.0 or newer and the {opencl_c_subgroups} and {opencl_c_pipes}
 features.
 
@@ -14162,7 +14245,7 @@ groups is implementation-defined.
 
 NOTE: The functionality described in the following table <<unified-spec,
 requires>> support
-ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension macro; or for]
+ifdef::cl_khr_subgroups[the {cl_khr_subgroups_EXT} extension, or]
 OpenCL C 3.0 or newer and the {opencl_c_subgroups} and
 {opencl_c_device_enqueue} features.
 
@@ -14416,9 +14499,6 @@ size _n_, the _n_ work items in the sub-group with the smallest sub-group
 local IDs are assigned to the first cluster, then the _n_ remaining work
 items with the smallest sub-group local IDs are assigned to the next
 cluster, and so on.
-Behavior is undefined if the specified cluster size is not an integer
-constant expression, is not a power-of-two, or is greater than the maximum
-size of a sub-group within the dispatch.
 
 
 ===== Arithmetic Operations
@@ -14453,6 +14533,10 @@ gentype sub_group_clustered_reduce_max(
   | Returns the summation, multiplication, minimum, or maximum of _value_
     for all active work items in the sub-group within a cluster of the
     specified _clustersize_.
+
+    Behavior is undefined if _clustersize_ is not an integer constant
+    expression, is not a power-of-two, or is greater than the maximum size of a
+    sub-group within the dispatch.
 |====
 
 Note: The order of floating-point operations is not guaranteed for the
@@ -14488,6 +14572,10 @@ gentype sub_group_clustered_reduce_xor(
 ----
   | Returns the bitwise *and*, *or*, or *xor* of _value_ for all active work
     items in the sub-group within a cluster of the specified _clustersize_.
+
+    Behavior is undefined if _clustersize_ is not an integer constant
+    expression, is not a power-of-two, or is greater than the maximum size of a
+    sub-group within the dispatch.
 |====
 
 
@@ -14519,6 +14607,10 @@ int sub_group_clustered_reduce_logical_xor(
   | Returns the logical *and*, *or*, or *xor* of _predicate_ for all active
     work items in the sub-group within a cluster of the specified
     _clustersize_.
+
+    Behavior is undefined if _clustersize_ is not an integer constant
+    expression, is not a power-of-two, or is greater than the maximum size of a
+    sub-group within the dispatch.
 |====
 
 endif::cl_khr_subgroup_clustered_reduce[]
@@ -14822,16 +14914,14 @@ int sub_group_non_uniform_all_equal(
 endif::cl_khr_subgroup_non_uniform_vote[]
 
 
-ifdef::cl_khr_subgroup_rotate[]
 [[sub-group-rotate-functions]]
 ==== Built-in Sub-Group Rotation Functions
 
-NOTE: The functionality described in this section <<unified-spec, requires>>
-support for the {cl_khr_subgroup_rotate_EXT} extension.
-
-The <<table-rotate-functions, following table>> describes a specialized
-OpenCL C programming language built-in function that allow work items in a
-sub-group to exchange data.
+If
+ifdef::cl_khr_subgroup_rotate[the {cl_khr_subgroup_rotate_EXT} extension macro or]
+OpenCL C 3.1 or newer is supported, the functions described in the
+<<table-rotate-functions, Built-in Sub-Group Rotation Functions>> table can be
+used to exchange data by rotating values through the work-items in a sub-group.
 This function need not be encountered by all work items in a sub-group
 executing the kernel.
 For the functions below, the generic type name `gentype` may be one of the
@@ -14839,6 +14929,11 @@ supported built-in scalar data types `char`, `uchar`, `short`, `ushort`,
 `int`, `uint`, `long`, `ulong`, `float`, `half`
 footnote:[{fn-half-supported}], and `double`
 footnote:[{fn-double-supported}].
+
+NOTE: The functionality described in the following table <<unified-spec, requires>>
+support for
+ifdef::cl_khr_subgroup_rotate[the {cl_khr_subgroup_rotate_EXT} extension macro or]
+OpenCL C 3.1 or newer.
 
 [[table-rotate-functions]]
 .Built-in Sub-Group Rotation Functions
@@ -14873,26 +14968,23 @@ gentype sub_group_clustered_rotate(
     The value of _delta_ is required to be dynamically-uniform for all work
     items in the sub-group, otherwise the behavior is undefined.
 
-    _clustersize_ must be an integer constant expression and a power of two,
-    smaller than or equal to the maximum sub-group size, otherwise the
-    behavior is undefined.
+    Behavior is undefined if _clustersize_ is not an integer constant
+    expression, is not a power-of-two, or is greater than the maximum size of a
+    sub-group within the dispatch.
 
     The return value is undefined if the work item with sub-group local ID
     equal to the calculated index is inactive.
 |====
 
-endif::cl_khr_subgroup_rotate[]
 
-
-ifdef::cl_khr_subgroup_shuffle[]
 ==== Built-in Sub-Group General Purpose Shuffle Functions
 
-NOTE: The functionality described in this section <<unified-spec, requires>>
-support for the {cl_khr_subgroup_shuffle_EXT} extension.
-
-The <<table-shuffle-functions, following table>> describes the OpenCL C
-programming language built-in functions that allow work items in a sub-group
-to exchange data.
+If
+ifdef::cl_khr_subgroup_shuffle[the {cl_khr_subgroup_shuffle_EXT} extension macro or]
+OpenCL C 3.1 or newer is supported, the functions described in the
+<<table-shuffle-functions, Built-in Sub-Group General Purpose Shuffle
+Functions>> table can be used to flexibly exchange data among work-items in a
+sub-group.
 These functions need not be encountered by all work items in a sub-group
 executing the kernel.
 For the functions below, the generic type name `gentype` may be one of the
@@ -14900,6 +14992,11 @@ supported built-in scalar data types `char`, `uchar`, `short`, `ushort`,
 `int`, `uint`, `long`, `ulong`, `float`, `half`
 footnote:[{fn-half-supported}], and `double`
 footnote:[{fn-double-supported}].
+
+NOTE: The functionality described in this section <<unified-spec, requires>>
+support for
+ifdef::cl_khr_subgroup_shuffle[the {cl_khr_subgroup_shuffle_EXT} extension macro or]
+OpenCL C 3.1 or newer.
 
 [[table-shuffle-functions]]
 .Built-in Sub-Group General Purpose Shuffle Functions
@@ -14937,14 +15034,15 @@ gentype sub_group_shuffle_xor(
     equivalent `sub_group_shuffle` on some implementations.
 |====
 
-endif::cl_khr_subgroup_shuffle[]
 
-
-ifdef::cl_khr_subgroup_shuffle_relative[]
 ==== Built-in Sub-Group Relative Shuffle Functions
 
-The table below describes specialized OpenCL C programming language built-in
-functions that allow work items in a sub-group to exchange data.
+If
+ifdef::cl_khr_subgroup_shuffle_relative[the {cl_khr_subgroup_shuffle_relative_EXT} extension macro or]
+OpenCL C 3.1 or newer is supported, the functions described in the
+<<table-shuffle-relative-functionss, Built-in Sub-Group Relative Shuffle
+Functions>> table can be used to exchange data among relative work-items in a
+sub-group.
 These functions need not be encountered by all work items in a sub-group
 executing the kernel.
 For the functions below, the generic type name `gentype` may be one of the
@@ -14952,6 +15050,11 @@ supported built-in scalar data types `char`, `uchar`, `short`, `ushort`,
 `int`, `uint`, `long`, `ulong`, `float`, `half`
 footnote:[{fn-half-supported}], and `double`
 footnote:[{fn-double-supported}].
+
+NOTE: The functionality described in this section <<unified-spec, requires>>
+support for
+ifdef::cl_khr_subgroup_shuffle_relative[the {cl_khr_subgroup_shuffle_relative_EXT} extension macro or]
+OpenCL C 3.1 or newer.
 
 [[table-shuffle-relative-functions]]
 .Built-in Sub-Group Relative Shuffle Functions
@@ -14992,7 +15095,6 @@ gentype sub_group_shuffle_down(
     This is a specialized function that may perform better than the
     equivalent `sub_group_shuffle` on some implementations.
 |====
-endif::cl_khr_subgroup_shuffle_relative[]
 
 
 [[extended-sub-groups-mapping]]
@@ -15007,7 +15109,9 @@ This section is informational and non-normative.
 |====
 | OpenCL C Function | SPIR-V BuiltIn or Instruction | Enabling SPIR-V Capability
 
-3+| For OpenCL 2.1 or {cl_khr_subgroups_EXT}:
+3+| For OpenCL C 2.1, OpenCL C 3.0 and the {opencl_c_subgroups} feature,
+ifdef::cl_khr_subgroups[OpenCL C 3.1 or newer, or {cl_khr_subgroups_EXT}:]
+ifndef::cl_khr_subgroups[or OpenCL C 3.1 or newer:]
 
 | `{get_sub_group_size}`
        | *SubgroupSize*
@@ -15180,45 +15284,6 @@ ifdef::cl_khr_subgroup_clustered_reduce[]
             | *GroupNonUniformClustered*
 endif::cl_khr_subgroup_clustered_reduce[]
 
-ifdef::cl_khr_subgroup_extended_types[]
-3+| For {cl_khr_subgroup_extended_types_EXT}: +
-    Note: This extension adds new types to uniform sub-group operations.
-
-| `{sub_group_broadcast}`
-        | *OpGroupBroadcast*
-            | *Groups*
-
-| `{sub_group_reduce_add}`
-        | *OpGroupIAdd*, *OpGroupFAdd*
-            | *Groups*
-| `{sub_group_reduce_min}`
-        | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
-            | *Groups*
-| `{sub_group_reduce_max}`
-        | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
-            | *Groups*
-
-| `{sub_group_scan_exclusive_add}`
-        | *OpGroupIAdd*, *OpGroupFAdd*
-            | *Groups*
-| `{sub_group_scan_exclusive_min}`
-        | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
-            | *Groups*
-| `{sub_group_scan_exclusive_max}`
-        | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
-            | *Groups*
-
-| `{sub_group_scan_inclusive_add}`
-        | *OpGroupIAdd*, *OpGroupFAdd*
-            | *Groups*
-| `{sub_group_scan_inclusive_min}`
-        | *OpGroupSMin*, *OpGroupUMin*, *OpGroupFMin*
-            | *Groups*
-| `{sub_group_scan_inclusive_max}`
-        | *OpGroupSMax*, *OpGroupUMax*, *OpGroupFMax*
-            | *Groups*
-endif::cl_khr_subgroup_extended_types[]
-
 ifdef::cl_khr_subgroup_non_uniform_arithmetic[]
 3+| For {cl_khr_subgroup_non_uniform_arithmetic_EXT}:
 
@@ -15333,8 +15398,21 @@ ifdef::cl_khr_subgroup_non_uniform_vote[]
             | *GroupNonUniformVote*
 endif::cl_khr_subgroup_non_uniform_vote[]
 
-ifdef::cl_khr_subgroup_shuffle[]
-3+| For {cl_khr_subgroup_shuffle_EXT}:
+
+3+| For OpenCL C 3.1 or newer
+ifdef::cl_khr_subgroup_rotate[or {cl_khr_subgroup_rotate_EXT}:]
+ifndef::cl_khr_subgroup_rotate[:]
+
+| `{sub_group_rotate}`
+        | *OpGroupNonUniformRotateKHR*
+            | *GroupNonUniformRotateKHR*
+| `{sub_group_clustered_rotate}`
+        | *OpGroupNonUniformRotateKHR*
+            | *GroupNonUniformRotateKHR*
+
+3+| For OpenCL C 3.1 or newer
+ifdef::cl_khr_subgroup_shuffle[or {cl_khr_subgroup_shuffle_EXT}:]
+ifndef::cl_khr_subgroup_shuffle[:]
 
 | `{sub_group_shuffle}`
         | *OpGroupNonUniformShuffle*
@@ -15342,10 +15420,10 @@ ifdef::cl_khr_subgroup_shuffle[]
 | `{sub_group_shuffle_xor}`
         | *OpGroupNonUniformShuffleXor*
             | *GroupNonUniformShuffle*
-endif::cl_khr_subgroup_shuffle[]
 
-ifdef::cl_khr_subgroup_shuffle_relative[]
-3+| For {cl_khr_subgroup_shuffle_relative_EXT}:
+3+| For OpenCL C 3.1 or newer
+ifdef::cl_khr_subgroup_shuffle_relative[or {cl_khr_subgroup_shuffle_relative_EXT}:]
+ifndef::cl_khr_subgroup_shuffle_relative[:]
 
 | `{sub_group_shuffle_up}`
         | *OpGroupNonUniformShuffleUp*
@@ -15353,7 +15431,6 @@ ifdef::cl_khr_subgroup_shuffle_relative[]
 | `{sub_group_shuffle_down}`
         | *OpGroupNonUniformShuffleDown*
             | *GroupNonUniformShuffleRelative*
-endif::cl_khr_subgroup_shuffle_relative[]
 
 |====
 
@@ -17816,10 +17893,6 @@ one of the integers 0, 1, ... h~t~ - 1.
     "`Image Format Descriptor`" section (5.3.1.1), and the individual
     channel data types are defined in the "`List of supported Image Channel
     Data Types" table (5.7) of that Specification.
-  . [[opencl-extension-spec]] "`The OpenCL Extension Specification, Version
-    3.0, Unified`", https://www.khronos.org/registry/OpenCL/ .
-    References are to sections and tables of this specific version, although
-    other versions exists.
   . [[sRGB-spec]] "`IEC 61966-2-1:1999 Multimedia systems and equipment -
     Colour measurement and management - Part 2-1: Colour management -
     Default RGB colour space - sRGB`",
