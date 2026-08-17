@@ -1278,18 +1278,14 @@ layer = v
 
 === Coordinate Format for Reading and Writing Images
 
-This section describes valid types for the _Coordinate_ operand used by image
+This section describes supported types for the _Coordinate_ operand used by image
 read instructions (such as *OpImageRead*) or image write instructions (such as
 *OpImageWrite*).
-The valid operand types are determined by the *OpImageType* for the image and
+The supported operand types are determined by the *OpImageType* for the image and
 whether the image is being read from or written to.
 
-The following table describes the valid types for the _Coordinate_ operand when
-reading from the specified image type.
-The integer types for the _Coordinate_ operand are only valid when the image is
-read without a sampler (such as *OpImageRead*), or with a sampler using
-non-normalized texel coordinates, *Nearest* filtering, and either the *None*,
-*ClampToEdge*, or *Clamp* addressing mode.
+When reading from an image of the following image types, behavior is undefined
+unless the _Coordinate_ operand is one of the supported coordinate types:
 
 ._Mapping Image Types to Coordinate Types for Reading_
 [cols="1,1,1,6",options="header"]
@@ -1349,8 +1345,13 @@ non-normalized texel coordinates, *Nearest* filtering, and either the *None*,
 
 |====
 
-The following table describes the valid types for the _Coordinate_ operand when
-writing to the specified image type.
+For the integer types for the _Coordinate_ operand, behavior is undefined unless
+the image is read without a sampler (such as *OpImageRead*), or with a sampler
+using non-normalized texel coordinates, *Nearest* filtering, and either the
+*None*, *ClampToEdge*, or *Clamp* addressing mode.
+
+When writing to an image of the following image types, behavior is undefined
+unless the _Coordinate_ operand is one of the supported coordinate types:
 
 ._Mapping Image Types to Coordinate Types for Writing_
 [cols="1,1,1,6",options="header"]
@@ -1408,14 +1409,17 @@ This section describes how image element data is returned by an
 image read instruction or passed as the _Texel_ data that is
 written by an image write instruction:
 
-For the following image channel orders, the data is a four
-component vector type:
+Whether the image element data is a vector or a scalar depends on the image
+channel order.
+For the following image channel orders, the image element data is mapped to
+components of a vector, and behavior is undefined unless the image element data
+is a four component vector type:
 
 ._Mapping Image Data to Vector Components_
 [cols=",",options="header",]
 |====
 |*Image Channel Order*
-|*Components*
+|*Vector Components*
 
 |`R`, `Rx`
 |(R, 0, 0, 1)
@@ -1440,7 +1444,8 @@ component vector type:
 
 |====
 
-For the following image channel orders, the data is a scalar type:
+For the following image channel orders, behavior is undefined unless the image
+element data is a scalar type:
 
 ._Scalar Image Data_
 [cols=",",options="header",]
@@ -1456,10 +1461,12 @@ For the following image channel orders, the data is a scalar type:
 
 |====
 
-The following table describes the mapping from image channel data type
-to the data vector component type or scalar type:
+The vector component data type or scalar data type is dependent on the image
+channel data type.
+For the following image channel data types, behavior is undefined unless the
+image element data type is the specified data type:
 
-._Mapping Image Data Types to Data Types_
+._Mapping Image Channel Data Types to Data Types_
 [cols=",",options="header",]
 |====
 |*Image Channel Data Type*
@@ -1474,17 +1481,21 @@ to the data vector component type or scalar type:
 `UnormInt101010`,
 `UnormInt101010_2`, +
 `UnormInt24`, +
-`HalfFloat`, +
-`Float`
- +
+`HalfFloat`,
+`Float` +
 ifdef::cl_ext_image_unorm_int_2_101010[]
+ +
 Additionally if the {cl_ext_image_unorm_int_2_101010_EXT} extension is
-supported: `UnormInt2_101010EXT`
+supported: +
+`UnormInt2_101010EXT` +
 endif::cl_ext_image_unorm_int_2_101010[]
-
 ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+ +
 Additionally if the {cl_ext_image_unsigned_10x6_12x4_14x2_EXT} extension is
-supported: `UnormInt10X6EXT`,`UnormInt12X4EXT`,`UnormInt14X2EXT`
+supported: +
+`UnormInt10X6EXT`,
+`UnormInt12X4EXT`,
+`UnormInt14X2EXT` +
 endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 |*OpTypeFloat*, with _Width_ equal to 16 or 32.
@@ -1494,9 +1505,9 @@ endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 `SignedInt32`, +
 `UnsignedInt8`,
 `UnsignedInt16`,
-`UnsignedInt32`
- +
+`UnsignedInt32` +
 ifdef::cl_ext_image_unsigned_10x6_12x4_14x2[]
+ +
 Additionally if the {cl_ext_image_unsigned_10x6_12x4_14x2_EXT} extension is
 supported: `UnsignedInt10X6EXT`,`UnsignedInt12X4EXT`, `UnsignedInt14X2EXT`
 endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
@@ -1505,6 +1516,9 @@ endif::cl_ext_image_unsigned_10x6_12x4_14x2[]
 
 |====
 
+For the image channel data types that return integer data, when reading from an
+image with a sampler, behavior is undefined unless the sampler is using
+*Nearest* filtering.
 
 === Sampled and Sampler-less Reads
 
