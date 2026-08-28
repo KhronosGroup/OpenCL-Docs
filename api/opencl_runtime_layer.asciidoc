@@ -3177,13 +3177,9 @@ endif::cl_ext_immutable_memory_objects[]
 
 {clGetSupportedImageFormats} returns a union of image formats supported by
 all devices in the context.
-
-// The following information about an image memory object
-// is specified:
-//
-//   * Context
-//   * Image type 1D, 2D, or 3D image, 1D image buffer, 1D or 2D image array.
-//   * Image object allocation information
+If no devices in _context_ support images ({CL_DEVICE_IMAGE_SUPPORT} returns
+{CL_FALSE} for all devices), then no image formats are supported and
+{clGetSupportedImageFormats} must return an empty list.
 
 // refError
 
@@ -3203,15 +3199,6 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY}
     ** if there is a failure to allocate resources required by the OpenCL
     implementation on the host
-
-If {CL_DEVICE_IMAGE_SUPPORT} specified in the <<device-queries-table,Device
-Queries>> table is {CL_TRUE}, the values assigned to
-{CL_DEVICE_MAX_READ_IMAGE_ARGS}, {CL_DEVICE_MAX_WRITE_IMAGE_ARGS}
-{CL_DEVICE_IMAGE2D_MAX_WIDTH}, {CL_DEVICE_IMAGE2D_MAX_HEIGHT}
-{CL_DEVICE_IMAGE3D_MAX_WIDTH}, {CL_DEVICE_IMAGE3D_MAX_HEIGHT}
-{CL_DEVICE_IMAGE3D_MAX_DEPTH}, and {CL_DEVICE_MAX_SAMPLERS} by the implementation
-must be greater than or equal to the minimum values specified in the
-<<device-queries-table,Device Queries>> table.
 --
 
 
@@ -3224,9 +3211,12 @@ The tables below describe the required minimum lists of supported image
 formats.
 To query all image formats supported by an implementation, call the function {clGetSupportedImageFormats}.
 
-For full profile devices supporting OpenCL 2.0, 2.1, or 2.2, the minimum
-list of supported image formats for either reading or writing in a kernel
-is:
+For devices that do not support images ({CL_DEVICE_IMAGE_SUPPORT} returns
+{CL_FALSE}), the list of supported image formats must be empty.
+
+For full profile devices that support images and OpenCL 2.0, 2.1, or 2.2, the
+minimum list of supported image formats for either reading or writing in a
+kernel is:
 
 [[min-supported-image-formats-2.0]]
 .Minimum list of supported image formats for reading or writing (OpenCL 2.0, 2.1, or 2.2)
@@ -3300,9 +3290,9 @@ endif::cl_khr_gl_depth_images[]
       | {CL_UNORM_INT8}
 |====
 
-For full profile devices supporting other OpenCL versions, such as OpenCL 1.2,
-OpenCL 3.0, or OpenCL 3.1, the minimum list of supported image formats for
-either reading or writing in a kernel is:
+For full profile devices that support images and other OpenCL versions, such as
+OpenCL 1.2, OpenCL 3.0, or OpenCL 3.1, the minimum list of supported image
+formats for either reading or writing in a kernel is:
 
 // Note, differences are:
 // * No {CL_R} images.
