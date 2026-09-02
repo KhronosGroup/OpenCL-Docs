@@ -9484,29 +9484,18 @@ include::{generated}/api/version-notes/clSetProgramSpecializationConstant.asciid
     set.
   * _spec_size_ specifies the size in bytes of the data pointed to by
     _spec_value_.
-    This should be 1 for boolean constants.
-    For all other constant types this should match the size of the
-    specialization constant in the module.
-  * _spec_value_ is a pointer to the memory location that contains the value of
-    the specialization constant.
-    The data pointed to by _spec_value_ are copied and can be safely reused by
-    the application after {clSetProgramSpecializationConstant} returns.
-    This specialization value will be used by subsequent calls to
-    {clBuildProgram} until another call to {clSetProgramSpecializationConstant}
-    changes it.
-    If a specialization constant is a boolean constant, _spec_value_ should be a
-    pointer to a {cl_uchar_TYPE} value.
-    A value of zero will set the specialization constant to false; any other
-    value will set it to true.
+  * _spec_value_ is a pointer to value of the specialization constant.
+    The specialization constant value pointed to by _spec_value_ is copied and
+    can therefore can be reused or freed after the function returns.
 
-Calling this function multiple times for the same specialization constant
-shall cause the last provided value to override any previously specified
-value.
-The values are used by a subsequent {clBuildProgram} call for the _program_.
+The values that are set for specialization constants affect the next time the _program_ is compiled using {clCompileProgram} or built using {clBuildProgram}.
 
-Application is not required to provide values for every specialization
-constant contained in the module. If the value is not set by this API
-call, default values will be used during the build.
+{clSetProgramSpecializationConstant} may be called multiple times for the same specialization constant, with each call replacing the previous value of the specialization constant.
+If no call to {clSetProgramSpecializationConstant} is made to set a specialization constant, then the default value in the _program_ is used for the specialization constant.
+
+For boolean specialization constants, _spec_size_ must be one byte.
+If the byte pointed to by _spec_value_ is zero, then the boolean specialization constant will be set to false, otherwise it will be set to true.
+For all other specialization constant types, _spec_size_ must match the size of the specialization constant in the _program_.
 
 // refError
 
@@ -9540,7 +9529,7 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clBuildProgram',desc='Builds (compiles and links) a program executable from the program source or binary.',type='protos']
 --
-To build (compile & link) a program executable, call the function
+To build (compile and link) a program executable, call the function
 
 include::{generated}/api/protos/clBuildProgram.txt[]
 include::{generated}/api/version-notes/clBuildProgram.asciidoc[]
