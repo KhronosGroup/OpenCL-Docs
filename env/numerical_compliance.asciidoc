@@ -1602,20 +1602,15 @@ profile.
 === Edge Case Behavior
 
 The edge case behavior of the math functions shall conform to sections F.9
-and G.6 of ISO/IEC 9899:TC 2, except where noted below in the
+and G.6 of ISO/IEC 9899:TC2, except where noted below in the
 __<<additional-requirements-beyond-isoiec-9899tc2,Additional Requirements
 Beyond ISO/IEC 9899:TC2>> section__.
-
-[[additional-requirements-beyond-isoiec-9899tc2]]
-==== Additional Requirements Beyond ISO/IEC 9899:TC2
-
-All functions that return a NaN should return a quiet NaN.
 
 The usual allowances for rounding error (__<<relative-error-as-ulps,Relative
 Error as ULPs>> section__) or flushing behavior
 (__<<edge-case-behavior-in-flush-to-zero-mode,Edge Case Behavior in Flush To
 Zero Mode>> section__) shall not apply for those values for which _section
-F.9_ of ISO/IEC 9899:,TC2, or
+F.9_ of ISO/IEC 9899:TC2, or
 __<<additional-requirements-beyond-isoiec-9899tc2,Additional Requirements
 Beyond ISO/IEC 9899:TC2>>__ and
 __<<edge-case-behavior-in-flush-to-zero-mode,Edge Case Behavior in Flush To
@@ -1626,37 +1621,239 @@ Where the {plusmn} symbol is used, the sign shall be preserved.
 For example, sin({plusmn}0) = {plusmn}0 shall be interpreted to mean sin(+0)
 is +0 and sin(-0) is -0.
 
+Some of the required edge case behavior described in sections sections F.9
+and G.6 of ISO/IEC 9899:TC2 is:
+
+  * *OpExtInst* *acos*:
+  ** acos( 1 ) returns +0.
+  ** acos( x ) returns a NaN for | x | > 1.
+
+  * *OpExtInst* *acosh*:
+  ** acosh( 1 ) returns +0.
+  ** acosh( x ) returns a NaN for x < 1.
+  ** acosh( +{inf} ) returns +{inf}.
+
+  * *OpExtInst* *asin*:
+  ** asin( {plusmn}0 ) returns {plusmn}0.
+  ** asin( x ) returns a NaN for | x | > 1.
+
+  * *OpExtInst* *asinh*:
+  ** asinh( {plusmn}0 ) returns {plusmn}0.
+  ** asinh( {plusmn}{inf} ) returns {plusmn}{inf}.
+
+  * *OpExtInst* *atan*:
+  ** atan( {plusmn}0 ) returns {plusmn}0.
+  ** atan( {plusmn}{inf} ) returns {plusmn}{pi} / 2.
+
+  * *OpExtInst* *atanh*:
+  ** atanh( {plusmn}0 ) returns {plusmn}0.
+  ** atanh( {plusmn}1 ) returns {plusmn}{inf}.
+  ** atanh( x ) returns a NaN and for | x | > 1.
+
+  * *OpExtInst* *atan2*:
+  ** atan2( {plusmn}0, -0 ) returns {plusmn}{pi}.
+  ** atan2( {plusmn}0, +0 ) returns {plusmn}0.
+  ** atan2( {plusmn}0, x ) returns {plusmn}{pi} for x < 0.
+  ** atan2( {plusmn}0, x ) returns {plusmn}0 for x > 0.
+  ** atan2( y, {plusmn}0 ) returns -{pi} / 2 for y < 0.
+  ** atan2( y, {plusmn}0 ) returns {pi} / 2 for y > 0.
+  ** atan2( {plusmn}y, -{inf} ) returns {plusmn}{pi} for finite y > 0.
+  ** atan2( {plusmn}y, +{inf} ) returns {plusmn}0 for finite y > 0.
+  ** atan2( {plusmn}{inf}, x ) returns {plusmn}{pi} / 2 for finite x.
+  ** atan2( {plusmn}{inf}, -{inf} ) returns {plusmn}3 times {pi} / 4.
+  ** atan2( {plusmn}{inf}, +{inf} ) returns {plusmn}{pi} / 4.
+
+  * *OpExtInst* *cbrt*:
+  ** cbrt( {plusmn}0 ) returns {plusmn}0.
+  ** cbrt( {plusmn}{inf} ) returns {plusmn}{inf}.
+
+  * *OpExtInst* *ceil*:
+  ** ceil( {plusmn}0 ) returns {plusmn}0.
+  ** ceil( {plusmn}{inf} ) returns {plusmn}{inf}.
+
+  * *OpExtInst* *cos*:
+  ** cos( {plusmn}0 ) returns 1.
+  ** cos( {plusmn}{inf} ) returns a NaN.
+
+  * *OpExtInst* *cosh*:
+  ** cosh( {plusmn}0 ) returns 1.
+  ** cosh( {plusmn}{inf} ) returns +{inf}.
+
+  * *OpExtInst* *erfc*:
+  ** erfc( -{inf} ) returns 2.
+  ** erfc( +{inf} ) returns +0.
+
+  * *OpExtInst* *erf*:
+  ** erf( {plusmn}0 ) returns {plusmn}0.
+  ** erf( {plusmn}{inf} ) returns {plusmn}1.
+
+  * *OpExtInst* *exp*:
+  ** exp( {plusmn}0 ) returns 1.
+  ** exp( -{inf} ) returns +0.
+  ** exp( +{inf} ) returns +{inf}.
+
+  * *OpExtInst* *exp2*:
+  ** exp2( {plusmn}0 ) returns 1.
+  ** exp2( -{inf} ) returns +0.
+  ** exp2( +{inf} ) returns +{inf}.
+
+  * *OpExtInst* *expm1*:
+  ** expm1( {plusmn}0 ) returns {plusmn}0.
+  ** expm1( -{inf} ) returns -1.
+  ** expm1( +{inf} ) returns +{inf}.
+
+  * *OpExtInst* *fabs*:
+  ** fabs( {plusmn}0 ) returns +0.
+  ** fabs( {plusmn}{inf} ) returns +{inf}.
+
+  * *OpExtInst* *floor*:
+  ** floor( {plusmn}0 ) returns {plusmn}0.
+  ** floor( {plusmn}{inf} ) returns {plusmn}{inf}.
+
+  * *OpExtInst* *fma*:
+  ** fma(x, y, z) returns a NaN if one of x and y is infinite and the other is zero.
+  ** fma(x, y, z) returns a NaN if one of x and y is infinite and the other is zero.
+  ** fma(x, y, z) returns a NaN if x times y is an exact infinity and z is also an infinity but with the opposite sign.
+
+  * *OpExtInst* *fmod*:
+  ** fmod( {plusmn}0, y ) returns {plusmn}0 for y not zero.
+  ** fmod( x, y ) returns a NaN for x infinite or y zero.
+  ** fmod( x, {plusmn}{inf} ) returns x for x not infinite.
+
+  * *OpExtInst* *frexp*:
+  ** frexp( {plusmn}0, exp ) returns {plusmn}0, and stores 0 in the object pointed to by exp.
+
+  * *OpExtInst* *hypot*:
+  ** hypot( x, y ), hypot( y, x ), and hypot( x, -y ) are equivalent.
+  ** hypot( x, {plusmn}0 ) is equivalent to fabs(x).
+  ** hypot( {plusmn}{inf}, y ) returns +{inf}, even if y is a NaN.
+
+  * *OpExtInst* *lgamma*:
+  ** lgamma( 1 ) returns +0.
+  ** lgamma( 2 ) returns +0.
+  ** lgamma( x ) returns +{inf} for x a negative integer or zero.
+  ** lgamma( -{inf} ) returns +{inf}.
+  ** lgamma( +{inf} ) returns +{inf}.
+
+  * *OpExtInst* *log*:
+  ** log( {plusmn}0 ) returns -{inf}.
+  ** log( 1 ) returns +0.
+  ** log( x ) returns a NaN for x < 0.
+  ** log( +{inf} ) returns +{inf}.
+
+  * *OpExtInst* *log2*:
+  ** log2( {plusmn}0 ) returns -{inf}.
+  ** log2( 1 ) returns +0.
+  ** log2( x ) returns a NaN for x < 0.
+  ** log2( +{inf} ) returns +{inf}.
+
+  * *OpExtInst* *log10*:
+  ** log10( {plusmn}0 ) returns -{inf}.
+  ** log10( 1 ) returns +0.
+  ** log10( x ) returns a NaN for x < 0.
+  ** log10( +{inf} ) returns +{inf}.
+
+  * *OpExtInst* *log1p*:
+  ** log1p( {plusmn}0 ) returns {plusmn}0.
+  ** log1p( -1 ) returns -{inf}.
+  ** log1p( x ) returns a NaN for x < -1.
+  ** log1p( +{inf} ) returns +{inf}.
+
+  * *OpExtInst* *logb*:
+  ** logb( {plusmn}0 ) returns -{inf}.
+  ** logb( {plusmn}{inf} ) returns +{inf}.
+
+  * *OpExtInst* *modf*:
+  ** modf( {plusmn}x, iptr ) returns a result with the same sign as x.
+  ** modf( {plusmn}{inf}, iptr ) returns {plusmn}0 and stores {plusmn}{inf} in the object pointed to by iptr.
+  ** modf( NaN, iptr ) stores a NaN in the object pointed to by iptr (and returns a NaN).
+
+  * *OpExtInst* *pow*:
+  ** pow( {plusmn}0, y ) returns {plusmn}{inf} for y an odd integer < 0.
+  ** pow( {plusmn}0, y ) returns +{inf} for y < 0 and not an odd integer.
+  ** pow( {plusmn}0, y ) returns {plusmn}0 for y an odd integer > 0.
+  ** pow( {plusmn}0, y ) returns +0 for y > 0 and not an odd integer.
+  ** pow( -1, {plusmn}{inf} ) returns 1.
+  ** pow( +1, y ) returns 1 for any y, even a NaN.
+  ** pow( x, {plusmn}0 ) returns 1 for any x, even a NaN.
+  ** pow( x, y ) returns a NaN for finite x < 0 and finite non-integer y.
+  ** pow( x, -{inf} ) returns +{inf} for | x | < 1.
+  ** pow( x, -{inf} ) returns +0 for | x | > 1.
+  ** pow( x, +{inf} ) returns +0 for | x | < 1.
+  ** pow( x, +{inf} ) returns +{inf} for | x | > 1.
+  ** pow( -{inf}, y ) returns -0 for y an odd integer < 0.
+  ** pow( -{inf}, y ) returns +0 for y < 0 and not an odd integer.
+  ** pow( -{inf}, y ) returns -{inf} for y an odd integer > 0.
+  ** pow( -{inf}, y ) returns +{inf} for y > 0 and not an odd integer.
+  ** pow( +{inf}, y ) returns +0 for y < 0.
+  ** pow( +{inf}, y ) returns +{inf} for y > 0.
+
+  * *OpExtInst* *round*:
+  ** round( {plusmn}0 ) returns {plusmn}0.
+  ** round( {plusmn}{inf} ) returns {plusmn}{inf}.
+
+  * *OpExtInst* *sin*:
+  ** sin( {plusmn}0 ) returns {plusmn}0.
+  ** sin( {plusmn}{inf} ) returns a NaN.
+
+  * *OpExtInst* *sinh*:
+  ** sinh( {plusmn}0 ) returns {plusmn}0.
+  ** sinh( {plusmn}{inf} ) returns {plusmn}{inf}.
+
+  * *OpExtInst* *tan*:
+  ** tan( {plusmn}0 ) returns {plusmn}0.
+  ** tan( {plusmn}{inf} ) returns a NaN.
+
+  * *OpExtInst* *tanh*:
+  ** tanh( {plusmn}0 ) returns {plusmn}0.
+  ** tanh( {plusmn}{inf} ) returns {plusmn}1.
+
+  * *OpExtInst* *tgamma*:
+  ** tgamma( {plusmn}0 ) returns {plusmn}{inf}.
+  ** tgamma( x ) returns a NaN for x a negative integer.
+  ** tgamma( -{inf} ) returns a NaN.
+  ** tgamma( +{inf} ) returns +{inf}.
+
+  * *OpExtInst* *trunc*:
+  ** trunc( {plusmn}0 ) returns {plusmn}0.
+  ** trunc( {plusmn}{inf} ) returns {plusmn}{inf}.
+
+[[additional-requirements-beyond-isoiec-9899tc2]]
+==== Additional Requirements Beyond ISO/IEC 9899:TC2
+
+All functions that return a NaN should return a quiet NaN.
+
   * *OpExtInst* *acospi*:
-  ** acospi( 1 ) = +0.
+  ** acospi( 1 ) returns +0.
   ** acospi( x ) returns a NaN for | x | > 1.
 
   * *OpExtInst* *asinpi*:
-  ** asinpi( {plusmn}0 ) = {plusmn}0.
+  ** asinpi( {plusmn}0 ) returns {plusmn}0.
   ** asinpi( x ) returns a NaN for | x | > 1.
 
   * *OpExtInst* *atanpi*:
-  ** atanpi( {plusmn}0 ) = {plusmn}0.
-  ** atanpi ( {plusmn}{inf} ) = {plusmn}0.5.
+  ** atanpi( {plusmn}0 ) returns {plusmn}0.
+  ** atanpi( {plusmn}{inf} ) returns {plusmn}0.5.
 
   * *OpExtInst* *atan2pi*:
-  ** atan2pi ( {plusmn}0, -0 ) = {plusmn}1.
-  ** atan2pi ( {plusmn}0, +0 ) = {plusmn} 0.
-  ** atan2pi ( {plusmn}0, x ) returns {plusmn} 1 for x < 0.
-  ** atan2pi ( {plusmn}0, x) returns {plusmn} 0 for x > 0.
-  ** atan2pi ( y, {plusmn}0 ) returns -0.5 for y < 0.
-  ** atan2pi ( y, {plusmn}0 ) returns 0.5 for y > 0.
-  ** atan2pi ( {plusmn}y, -{inf} ) returns {plusmn} 1 for finite y > 0.
-  ** atan2pi ( {plusmn}y, +{inf} ) returns {plusmn} 0 for finite y > 0.
-  ** atan2pi ( {plusmn}{inf}, x ) returns {plusmn} 0.5 for finite x.
-  ** atan2pi ({plusmn}{inf}, -{inf} ) returns {plusmn}0.75.
-  ** atan2pi ({plusmn}{inf}, +{inf} ) returns {plusmn}0.25.
+  ** atan2pi( {plusmn}0, -0 ) returns {plusmn}1.
+  ** atan2pi( {plusmn}0, +0 ) returns {plusmn}0.
+  ** atan2pi( {plusmn}0, x ) returns {plusmn}1 for x < 0.
+  ** atan2pi( {plusmn}0, x) returns {plusmn}0 for x > 0.
+  ** atan2pi( y, {plusmn}0 ) returns -0.5 for y < 0.
+  ** atan2pi( y, {plusmn}0 ) returns 0.5 for y > 0.
+  ** atan2pi( {plusmn}y, -{inf} ) returns {plusmn}1 for finite y > 0.
+  ** atan2pi( {plusmn}y, +{inf} ) returns {plusmn}0 for finite y > 0.
+  ** atan2pi( {plusmn}{inf}, x ) returns {plusmn}0.5 for finite x.
+  ** atan2pi( {plusmn}{inf}, -{inf} ) returns {plusmn}0.75.
+  ** atan2pi( {plusmn}{inf}, +{inf} ) returns {plusmn}0.25.
 
   * *OpExtInst* *ceil*:
   ** ceil( -1 < x < 0 ) returns -0.
 
   * *OpExtInst* *cospi*:
-  ** cospi( {plusmn}0 ) returns 1
-  ** cospi( n + 0.5 ) is +0 for any integer n where n + 0.5 is
+  ** cospi( {plusmn}0 ) returns 1.
+  ** cospi( n + 0.5 ) returns +0 for any integer n where n + 0.5 is
      representable.
   ** cospi( {plusmn}{inf} ) returns a NaN.
 
@@ -1666,15 +1863,15 @@ is +0 and sin(-0) is -0.
   ** exp10( +{inf} ) returns +{inf}.
 
   * *OpExtInst* *distance*:
-  ** distance(x, y) calculates the distance from x to y without overflow or
+  ** distance( x, y ) calculates the distance from x to y without overflow or
      extraordinary precision loss due to underflow.
 
   * *OpExtInst* *fdim*:
-  ** fdim( any, NaN ) returns NaN.
-  ** fdim( NaN, any ) returns NaN.
+  ** fdim( any, NaN ) returns a NaN.
+  ** fdim( NaN, any ) returns a NaN.
 
   * *OpExtInst* *fmod*:
-  ** fmod( {plusmn}0, NaN ) returns NaN.
+  ** fmod( {plusmn}0, NaN ) returns a NaN.
 
   * *OpExtInst* *fract*:
   ** fract( x, iptr) shall not return a value greater than or equal to 1.0,
@@ -1683,11 +1880,11 @@ is +0 and sin(-0) is -0.
   ** fract( -0, iptr ) returns -0 and -0 in iptr.
   ** fract( +inf, iptr ) returns +0 and +inf in iptr.
   ** fract( -inf, iptr ) returns -0 and -inf in iptr.
-  ** fract( NaN, iptr ) returns the NaN and NaN in iptr.
+  ** fract( NaN, iptr ) returns a NaN and a NaN in iptr.
 
   * *OpExtInst* *frexp*:
   ** frexp( {plusmn}{inf}, exp ) returns {plusmn}{inf} and stores 0 in exp.
-  ** frexp( NaN, exp ) returns the NaN and stores 0 in exp.
+  ** frexp( NaN, exp ) returns a NaN and stores 0 in exp.
 
   * *OpExtInst* *length*:
   ** length calculates the length of a vector without overflow or
@@ -1720,24 +1917,24 @@ for( i = 0; i < sizeof(v) / sizeof(v[0] ); i++ )
   ** pow( {plusmn}0, -{inf} ) returns +{inf}
 
   * *OpExtInst* *pown*:
-  ** pown( x, 0 ) is 1 for any x, even zero, NaN or infinity.
-  ** pown( {plusmn}0, n ) is {plusmn}{inf} for odd n < 0.
-  ** pown( {plusmn}0, n ) is +{inf} for even n < 0.
-  ** pown( {plusmn}0, n ) is +0 for even n > 0.
-  ** pown( {plusmn}0, n ) is {plusmn}0 for odd n > 0.
+  ** pown( x, 0 ) returns 1 for any x, even zero, NaN or infinity.
+  ** pown( {plusmn}0, n ) returns {plusmn}{inf} for odd n < 0.
+  ** pown( {plusmn}0, n ) returns +{inf} for even n < 0.
+  ** pown( {plusmn}0, n ) returns +0 for even n > 0.
+  ** pown( {plusmn}0, n ) returns {plusmn}0 for odd n > 0.
 
   * *OpExtInst* *powr*:
-  ** powr( x, {plusmn}0 ) is 1 for finite x > 0.
-  ** powr( {plusmn}0, y ) is +{inf} for finite y < 0.
-  ** powr( {plusmn}0, -{inf}) is +{inf}.
-  ** powr( {plusmn}0, y ) is +0 for y > 0.
-  ** powr( +1, y ) is 1 for finite y.
-  ** powr( x, y ) returns NaN for x < 0.
-  ** powr( {plusmn}0, {plusmn}0 ) returns NaN.
-  ** powr( +{inf}, {plusmn}0 ) returns NaN.
-  ** powr( +1, {plusmn}{inf} ) returns NaN.
-  ** powr( x, NaN ) returns the NaN for x >= 0.
-  ** powr( NaN, y ) returns the NaN.
+  ** powr( x, {plusmn}0 ) returns 1 for finite x > 0.
+  ** powr( {plusmn}0, y ) returns +{inf} for finite y < 0.
+  ** powr( {plusmn}0, -{inf}) returns +{inf}.
+  ** powr( {plusmn}0, y ) returns +0 for y > 0.
+  ** powr( +1, y ) returns 1 for finite y.
+  ** powr( x, y ) returns a NaN for x < 0.
+  ** powr( {plusmn}0, {plusmn}0 ) returns a NaN.
+  ** powr( +{inf}, {plusmn}0 ) returns a NaN.
+  ** powr( +1, {plusmn}{inf} ) returns a NaN.
+  ** powr( x, NaN ) returns a NaN for x >= 0.
+  ** powr( NaN, y ) returns a NaN.
 
   * *OpExtInst* *rint*:
   ** rint( -0.5 \<= x < 0 ) returns -0.
@@ -1748,10 +1945,10 @@ for( i = 0; i < sizeof(v) / sizeof(v[0] ); i++ )
      NaN.
 
   * *OpExtInst* *rootn*:
-  ** rootn( {plusmn}0, n ) is {plusmn}{inf} for odd n < 0.
-  ** rootn( {plusmn}0, n ) is +{inf} for even n < 0.
-  ** rootn( {plusmn}0, n ) is +0 for even n > 0.
-  ** rootn( {plusmn}0, n ) is {plusmn}0 for odd n > 0.
+  ** rootn( {plusmn}0, n ) returns {plusmn}{inf} for odd n < 0.
+  ** rootn( {plusmn}0, n ) returns +{inf} for even n < 0.
+  ** rootn( {plusmn}0, n ) returns +0 for even n > 0.
+  ** rootn( {plusmn}0, n ) returns {plusmn}0 for odd n > 0.
   ** rootn( x, n ) returns a NaN for x < 0 and n is even.
   ** rootn( x, 0 ) returns a NaN.
 
@@ -1760,25 +1957,23 @@ for( i = 0; i < sizeof(v) / sizeof(v[0] ); i++ )
 
   * *OpExtInst* *sinpi*:
   ** sinpi( {plusmn}0 ) returns {plusmn}0.
-  ** sinpi( +n) returns +0 for positive integers n.
+  ** sinpi( +n ) returns +0 for positive integers n.
   ** sinpi( -n ) returns -0 for negative integers n.
   ** sinpi( {plusmn}{inf} ) returns a NaN.
 
   * *OpExtInst* *tanpi*:
   ** tanpi( {plusmn}0 ) returns {plusmn}0.
   ** tanpi( {plusmn}{inf} ) returns a NaN.
-  ** tanpi( n ) is copysign( 0.0, n ) for even integers n.
-  ** tanpi( n ) is copysign( 0.0, - n) for odd integers n.
-  ** tanpi( n + 0.5 ) for even integer n is +{inf} where n + 0.5 is
-     representable.
-  ** tanpi( n + 0.5 ) for odd integer n is -{inf} where n + 0.5 is
-     representable.
+  ** tanpi( n ) returns copysign( 0.0, n ) for even integers n.
+  ** tanpi( n ) returns copysign( 0.0, -n ) for odd integers n.
+  ** tanpi( n + 0.5 ) returns +{inf} for even integer n where n + 0.5 is representable.
+  ** tanpi( n + 0.5 ) returns -{inf} for odd integer n where n + 0.5 is representable.
 
   * *OpExtInst* *trunc*:
   ** trunc( -1 < x < 0 ) returns -0.
 
 [[changes-to-isoiec-9899-tc2-behavior]]
-==== Changes to ISO/IEC 9899: TC2 Behavior
+==== Changes to ISO/IEC 9899:TC2 Behavior
 
 *OpExtInst* *modf* behaves as though implemented by:
 
@@ -1816,10 +2011,10 @@ following edge cases for *OpExtInst* *nextafter* instead of those listed in
 __<<additional-requirements-beyond-isoiec-9899tc2,Additional Requirements
 Beyond ISO/IEC 9899:TC2>> section__:
 
-  * nextafter ( +smallest normal, y < +smallest normal ) = +0.
-  * nextafter ( -smallest normal, y > -smallest normal ) = -0.
-  * nextafter ( -0, y > 0 ) returns smallest positive normal value.
-  * nextafter ( +0, y < 0 ) returns smallest negative normal value.
+  * nextafter( +smallest normal, y < +smallest normal ) returns +0.
+  * nextafter( -smallest normal, y > -smallest normal ) returns -0.
+  * nextafter( -0, y > 0 ) returns smallest positive normal value.
+  * nextafter( +0, y < 0 ) returns smallest negative normal value.
 
 For clarity, subnormals or denormals are defined to be the set of
 representable numbers in the range 0 < x < TYPE_MIN and -TYPE_MIN < x < -0.
