@@ -1750,11 +1750,8 @@ of the mapped region using the pointer returned by {clEnqueueMapBuffer}.
 
 // refError
 
-{clEnqueueMapBuffer} will return a pointer to the mapped region.
-The _errcode_ret_ is set to {CL_SUCCESS}.
-
-A `NULL` pointer is returned otherwise with one of the following error
-values returned in _errcode_ret_:
+{clEnqueueMapBuffer} returns a pointer to the mapped region and _errcode_ret_ is set to {CL_SUCCESS} if the buffer is mapped successfully.
+Otherwise, it returns a `NULL` pointer with one of the following error values returned in _errcode_ret_:
 
   * {CL_INVALID_COMMAND_QUEUE}
     ** if _command_queue_ is not a valid host command-queue
@@ -3381,7 +3378,8 @@ are permitted.
     {CL_MEM_READ_WRITE}, +
     {CL_MEM_KERNEL_READ_AND_WRITE}
 ifdef::cl_ext_immutable_memory_objects[]
-    Additionally, if the {cl_ext_immutable_memory_objects_EXT} extension is supported:
+
+    Additionally, if the {cl_ext_immutable_memory_objects_EXT} extension is supported: +
     {CL_MEM_IMMUTABLE_EXT}
 endif::cl_ext_immutable_memory_objects[]
 | `write_only`
@@ -4463,11 +4461,8 @@ of the mapped region using the pointer returned by {clEnqueueMapImage}.
 
 // refError
 
-{clEnqueueMapImage} will return a pointer to the mapped region.
-The _errcode_ret_ is set to {CL_SUCCESS}.
-
-A `NULL` pointer is returned otherwise with one of the following error
-values returned in _errcode_ret_:
+{clEnqueueMapImage} returns a pointer to the mapped region and _errcode_ret_ is set to {CL_SUCCESS} if the image is mapped successfully.
+Otherwise, it returns a `NULL` pointer with with one of the following error values returned in _errcode_ret_:
 
   * {CL_INVALID_COMMAND_QUEUE}
     ** if _command_queue_ is not a valid host command-queue
@@ -10446,12 +10441,12 @@ include::{generated}/api/version-notes/CL_PROGRAM_SOURCE.asciidoc[]
         If _program_ is created using {clCreateProgramWithBinary},
         {clCreateProgramWithIL},
 ifdef::cl_khr_il_program[{clCreateProgramWithILKHR},]
-        or {clCreateProgramWithBuiltInKernels}, a null string or the
-        appropriate program source code is returned depending on whether or
-        not the program source code is stored in the binary.
+        or {clCreateProgramWithBuiltInKernels}, and no program source code is
+        stored in the binary, then the returned value may be a null string (zero
+        characters) or an empty string (a string with just the null terminator).
 
-        The actual number of characters that represents the program source
-        code including the null terminator is returned in
+        The total number of characters that represents the program source
+        code, including the null terminator, is returned in
         _param_value_size_ret_.
 | {CL_PROGRAM_IL_anchor}
 
@@ -11832,9 +11827,9 @@ include::{generated}/api/version-notes/CL_KERNEL_ARG_TYPE_NAME.asciidoc[]
         _arg_index_.
         The type name returned will be the argument type name as it was
         declared with any whitespace removed.
-        If argument type name is an unsigned scalar type (i.e. unsigned
-        char, unsigned short, unsigned int, unsigned long), uchar, ushort,
-        uint and ulong will be returned.
+        If argument type name is an unsigned scalar type (i.e. `unsigned char`,
+        `unsigned short`, `unsigned int`, `unsigned long`), `uchar`, `ushort`,
+        `uint` or `ulong` will be returned.
         The argument type name returned does not include any type
         qualifiers.
 | {CL_KERNEL_ARG_TYPE_QUALIFIER_anchor}
@@ -12076,6 +12071,9 @@ An ND-range kernel command may require uniform work-groups or may support non-un
 To support non-uniform work-groups:
 
 . The device associated with _command_queue_ must support non-uniform work-groups.
+Specifically, this means:
+.. The device is an OpenCL 2.0, OpenCL 2.1, or OpenCL 2.2 device.
+.. The device is an OpenCL 3.0 or newer device and the device returns {CL_TRUE} for {CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT}.
 . The program object associated with _kernel_ must support non-uniform work-groups.
 Specifically, this means:
 .. If the program was created with {clCreateProgramWithSource}, then the program must be compiled for OpenCL C 2.0 or newer (e.g. by using the `-cl-std=CL2.0` or newer build option), and without the `-cl-uniform-work-group-size` build option.
