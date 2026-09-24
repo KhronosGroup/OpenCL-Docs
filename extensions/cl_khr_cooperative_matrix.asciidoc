@@ -7,13 +7,13 @@
 :icons: font
 :source-highlighter: coderay
 
-= cl_ext_kernel_cooperative_matrix
+= cl_khr_cooperative_matrix
 :R: pass:q,r[^(R)^]
 Khronos{R} OpenCL Working Group
 
 == Name Strings
 
-`cl_ext_kernel_cooperative_matrix`
+`cl_khr_cooperative_matrix`
 
 
 == Contact
@@ -72,15 +72,15 @@ constructs:
 [source,c]
 ----
 coop_mat -> OpTypeCooperativeMatrixKHR
-coop_mat constructor from scalar value -> OpConstantComposite
-coop_mat constructor from coop_mat -> Op*Convert, OpConvert*To*
+coop_mat_init(scalar value) -> OpConstantComposite
+coop_mat_init(coop_mat) -> Op*Convert, OpConvert*To*
 coop_mat_length -> OpCooperativeMatrixLength
 coop_mat[i] -> OpCompositeExtract/OpCompositeInsert/OpAccessChain
 +, -, *, / -> OpFAdd, OpFNegate/OpFSub, OpFMul/OpMatrixTimesScalar, OpFDiv
               (similarly for integer types)
 coop_mat_load -> OpCooperativeMatrixLoadKHR
 coop_mat_store -> OpCooperativeMatrixStoreKHR
-coop_matmul_add -> OpCooperativeMatrixMulAddKHR
+coop_mat_mulAdd -> OpCooperativeMatrixMulAddKHR
 CLK_COOPERATIVE_MATRIX_A -> MatrixAKHR
 CLK_COOPERATIVE_MATRIX_B -> MatrixBKHR
 CLK_COOPERATIVE_MATRIX_ACCUMULATOR -> MatrixAccumulatorKHR
@@ -92,6 +92,7 @@ CLK_COOPERATIVE_MATRIX_OPERAND_MATRIX_B_SIGNED -> MatrixBSignedComponentsKHR
 CLK_COOPERATIVE_MATRIX_OPERAND_MATRIX_C_SIGNED -> MatrixCSignedComponentsKHR
 CLK_COOPERATIVE_MATRIX_OPERAND_MATRIX_RESULT_SIGNED -> MatrixResultSignedComponentsKHR
 CLK_COOPERATIVE_MATRIX_OPERAND_SATURATING_ACCUMULATION -> SaturatingAccumulationKHR
+CLK_COOPERATIVE_MATRIX_SCOPE_SUBGROUP -> Subgroup
 ----
 
 == New API Functions
@@ -156,8 +157,8 @@ __attribute__ ((coop_mat(_scope_, _row_, _column_, _use_)))
 ----
 component_type __attribute__((coop_mat(...))) coop_mat_load(const gentype p, const coop_matrix_layout_t layout, const size_t stride);
 void coop_mat_store(const gentype *p, component_type __attribute__((coop_mat(...))) m, const coop_matrix_layout_t layout, const size_t _stride);
-component_type __attribute__((coop_mat(...))) coop_matmul_add(component_type __attribute__((coop_mat(...))) A, component_type __attribute__((coop_mat(...))) B, component_type __attribute__((coop_mat(...))) C);
-component_type __attribute__((coop_mat(...))) coop_matmul_add(component_type __attribute__((coop_mat(...))) A, component_type __attribute__((coop_mat(...))) B, component_type __attribute__((coop_mat(...))) C, coop_matrix_operands_t matrix_operands);
+component_type __attribute__((coop_mat(...))) coop_mat_mulAdd(component_type __attribute__((coop_mat(...))) A, component_type __attribute__((coop_mat(...))) B, component_type __attribute__((coop_mat(...))) C);
+component_type __attribute__((coop_mat(...))) coop_mat_mulAdd(component_type __attribute__((coop_mat(...))) A, component_type __attribute__((coop_mat(...))) B, component_type __attribute__((coop_mat(...))) C, coop_matrix_operands_t matrix_operands);
 uint coop_mat_length(component_type __attribute__((coop_mat(...))) m);
 ----
 
@@ -201,7 +202,7 @@ The use parameter must be one of the following predefined enums:
 
 |====
 
-The use parameter controls which operand of **coop_matmul_add** the
+The use parameter controls which operand of **coop_mat_mulAdd** the
 type can be used as.
 
 
@@ -213,10 +214,10 @@ Examples of cooperative matrix declarations:
 
 [source,c]
 ----
-float vmat1 __attribute__((coop_mat(memory_scope_sub_group, 8, 8, CLK_COOPERATIVE_MATRIX_A)));
+float vmat1 __attribute__((coop_mat(CLK_COOPERATIVE_MATRIX_SCOPE_SUBGROUP, 8, 8, CLK_COOPERATIVE_MATRIX_A)));
 
 
-typedef half chmat44 __attribute__((coop_mat(memory_scope_sub_group, 4, 4, CLK_COOPERATIVE_MATRIX_B)));
+typedef half chmat44 __attribute__((coop_mat(CLK_COOPERATIVE_MATRIX_SCOPE_SUBGROUP, 4, 4, CLK_COOPERATIVE_MATRIX_B)));
 chmat44 vmat2;
 
 ----
@@ -263,7 +264,7 @@ all components of a cooperative matrix:
 
 [source,c]
 ----
-float m __attribute__((coop_mat(memory_scope_sub_group, 16, 8, CLK_COOPERATIVE_MATRIX_A)));
+float m __attribute__((coop_mat(CLK_COOPERATIVE_MATRIX_SCOPE_SUBGROUP, 16, 8, CLK_COOPERATIVE_MATRIX_A)));
 
 ...
 for (int i = 0; i < coop_mat_length(m); ++i) {
@@ -283,7 +284,8 @@ Cooperative matrices can be initialized using a single scalar value as follows:
 
 [source,c]
 ----
-float vmat1 attribute((coop_mat(memory_scope_sub_group, 8, 8, CLK_COOPERATIVE_MATRIX_A))) = {0.0};
+float vmat1 attribute((coop_mat(CLK_COOPERATIVE_MATRIX_SCOPE_SUBGROUP, 8, 8, CLK_COOPERATIVE_MATRIX_A)));
+vmat1 = coop_mat_init(0.0);
 ----
 
 The single scalar value can be any given value (constant or variable) as cooperative matrices
@@ -361,8 +363,8 @@ on cooperative matrices. In the following functions, the generic type
 [cols="7,3",options="header",]
 |====
 | Function | Description
-| coop_mat **coop_matmul_add**(coop_mat _A_, coop_mat _B_, coop_mat _C_) +
-  coop_mat **coop_matmul_add**(coop_mat _A_, coop_mat _B_, coop_mat _C_, coop_matrix_operands_t _matrix_operands_)
+| coop_mat **coop_mat_mulAdd**(coop_mat _A_, coop_mat _B_, coop_mat _C_) +
+  coop_mat **coop_mat_mulAdd**(coop_mat _A_, coop_mat _B_, coop_mat _C_, coop_matrix_operands_t _matrix_operands_)
  a| Linear-algebraic matrix multiply of _A_ by _B_ and then
    component-wise add _C_. The order of the operations is implementation
    dependent. The dimensions of _A_, _B_, and _C_, must form a valid
@@ -394,7 +396,7 @@ The generic type `coop_mat` can accept a cooperative matrix type with any type p
 
 === (Add to Section 7.4. *Relative Error as ULPs*) :
 
-**coop_matmul_add** performs its operations in an implementation-dependent order and internal precision.
+**coop_mat_mulAdd** performs its operations in an implementation-dependent order and internal precision.
 
 == Modifications to the OpenCL SPIR-V Environment Specification
 
