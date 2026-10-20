@@ -1603,15 +1603,9 @@ include::{generated}/api/version-notes/clEnqueueFillBuffer.asciidoc[]
   * _pattern_ is a pointer to the data pattern of size _pattern_size_ in bytes.
     _pattern_ will be used to fill a region in _buffer_ starting at _offset_ and
     is _size_ bytes in size.
-    The data pattern must be a scalar or vector integer or floating-point data
-    type supported by OpenCL as described in <<scalar-data-types, Shared
-    Application Scalar Data Types>> and <<vector-data-types, Supported
-    Application Vector Data Types>>.
-    For example, if _buffer_ is to be filled with a pattern of `float4` values,
-    then _pattern_ will be a pointer to a `cl_float4` value and _pattern_size_
-    will be `sizeof(cl_float4)`.
-    The maximum value of _pattern_size_ is the size of the largest integer or
-    floating-point vector data type supported by the OpenCL device.
+    _pattern_size_ must be a power of two and the maximum value of
+    _pattern_size_ is the size of the largest integer or floating-point vector
+    data type supported by the OpenCL device.
     The memory associated with _pattern_ can be reused or freed after the
     function returns.
   * _offset_ is the location in bytes of the region being filled in _buffer_ and
@@ -8283,10 +8277,8 @@ To enqueue a command to do a memcpy operation, call the function
 include::{generated}/api/protos/clEnqueueSVMMemcpy.txt[]
 include::{generated}/api/version-notes/clEnqueueSVMMemcpy.asciidoc[]
 
-  * _command_queue_ refers to the host command-queue in which the read / write
+  * _command_queue_ refers to the host command-queue in which the memory copy
     command will be queued.
-    If either _dst_ptr_ or _src_ptr_ is allocated using {clSVMAlloc} then the
-    OpenCL context allocated against must match that of _command_queue_.
   * _blocking_copy_ indicates if the copy operation is _blocking_ or
     _non-blocking_.
   * If _blocking_copy_ is {CL_TRUE} i.e. the copy command is blocking,
@@ -8327,9 +8319,9 @@ execution status of the read command.
 When the copy command has completed, the contents of the buffer that
 _dst_ptr_ points to can be used by the application.
 
-If the memory allocation(s) containing _dst_ptr_ and/or _src_ptr_ are
-allocated using {clSVMAlloc} and either is not allocated from the same
-context from which _command_queue_ was created the behavior is undefined.
+If either _dst_ptr_ or _src_ptr_ were allocated using {clSVMAlloc}, and either
+were allocated from a different context then the context specified when
+_command_queue_ was created, then behavior is undefined.
 
 // refError
 
@@ -8373,28 +8365,18 @@ include::{generated}/api/version-notes/clEnqueueSVMMemFill.asciidoc[]
 
   * _command_queue_ refers to the host command-queue in which the fill command
     will be queued.
-    The OpenCL context associated with _command_queue_ and SVM pointer referred
-    to by _svm_ptr_ must be the same.
   * _svm_ptr_ is a pointer to a memory region that will be filled with
     _pattern_.
     It must be aligned to _pattern_size_ bytes.
-    If _svm_ptr_ is allocated using {clSVMAlloc} then it must be allocated from
-    the same context from which _command_queue_ was created.
-    Otherwise the behavior is undefined.
   * _pattern_ is a pointer to the data pattern of size _pattern_size_ in bytes.
-    _pattern_ will be used to fill a region in _buffer_ starting at _svm_ptr_
-    and is _size_ bytes in size.
-    The data pattern must be a scalar or vector integer or floating-point data
-    type supported by OpenCL as described in <<scalar-data-types, Shared
-    Application Scalar Data Types>> and <<vector-data-types, Supported
-    Application Vector Data Types>>.
-    For example, if region pointed to by _svm_ptr_ is to be filled with a
-    pattern of float4 values, then _pattern_ will be a pointer to a cl_float4
-    value and _pattern_size_ will be `sizeof(cl_float4)`.
-    The maximum value of _pattern_size_ is the size of the largest integer or
-    floating-point vector data type supported by the OpenCL device.
+    _pattern_ will be used to fill a memory region starting at _svm_ptr_ that is
+    _size_ bytes in size.
+    _pattern_size_ must be a power of two and the maximum value of
+    _pattern_size_ is the size of the largest integer or floating-point vector
+    data type supported by the OpenCL device.
     The memory associated with _pattern_ can be reused or freed after the
     function returns.
+    Behavior is undefined if _pattern_ is allocated using {clSVMAlloc}.
   * _size_ is the size in bytes of region being filled starting with _svm_ptr_
     and must be a multiple of _pattern_size_.
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
@@ -8417,6 +8399,14 @@ include::{generated}/api/version-notes/clEnqueueSVMMemFill.asciidoc[]
     command or to wait for this command to complete.
     If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
     to an element of the _event_wait_list_ array.
+
+If _svm_ptr_ was allocated using {clSVMAlloc}, and it was allocated from a
+different context than the context specified when _command_queue_ was created,
+then behavior is undefined.
+
+If _svm_ptr_ was not allocated using {clSVMAlloc}, and the device associated
+with _command_queue_ does not support fine-grain system SVM, then behavior is
+undefined.
 
 // refError
 
@@ -8465,9 +8455,6 @@ include::{generated}/api/version-notes/clEnqueueSVMMap.asciidoc[]
     <<memory-map-flags-table,Memory Map Flags>> table.
   * _svm_ptr_ and _size_ are a pointer to a memory region and size in bytes that
     will be updated by the host.
-    If _svm_ptr_ is allocated using {clSVMAlloc} then it must be allocated from
-    the same context from which _command_queue_ was created.
-    Otherwise the behavior is undefined.
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
     complete before this particular command can be executed.
     If _event_wait_list_ is `NULL`, then this particular command does not wait
@@ -8489,6 +8476,14 @@ include::{generated}/api/version-notes/clEnqueueSVMMap.asciidoc[]
     If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
     to an element of the _event_wait_list_ array.
 
+If _svm_ptr_ was allocated using {clSVMAlloc}, and it was allocated from a
+different context than the context specified when _command_queue_ was created,
+then behavior is undefined.
+
+If _svm_ptr_ was not allocated using {clSVMAlloc}, and the device associated
+with _command_queue_ does not support fine-grain system SVM, then behavior is
+undefined.
+
 If _blocking_map_ is {CL_TRUE}, {clEnqueueSVMMap} does not return until the
 application can access the contents of the SVM region specified by _svm_ptr_
 and _size_ on the host.
@@ -8500,9 +8495,6 @@ The _event_ argument returns an event object which can be used to query the
 execution status of the map command.
 When the map command is completed, the application can access the contents
 of the region specified by _svm_ptr_ and _size_.
-
-Note that since we are enqueuing a command with a SVM buffer, the region is
-already mapped in the host address space.
 
 // refError
 
@@ -8547,9 +8539,6 @@ include::{generated}/api/version-notes/clEnqueueSVMUnmap.asciidoc[]
   * _command_queue_ must be a valid host command-queue.
   * _svm_ptr_ is a pointer that was specified in a previous call to
     {clEnqueueSVMMap}.
-    If _svm_ptr_ is allocated using {clSVMAlloc} then it must be allocated from
-    the same context from which _command_queue_ was created.
-    Otherwise the behavior is undefined.
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
     complete before {clEnqueueSVMUnmap} can be executed.
     If _event_wait_list_ is `NULL`, then {clEnqueueSVMUnmap} does not wait on any
@@ -8570,6 +8559,14 @@ include::{generated}/api/version-notes/clEnqueueSVMUnmap.asciidoc[]
     command or to wait for this command to complete.
     If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
     to an element of the _event_wait_list_ array.
+
+If _svm_ptr_ was allocated using {clSVMAlloc}, and it was allocated from a
+different context than the context specified when _command_queue_ was created,
+then behavior is undefined.
+
+If _svm_ptr_ was not allocated using {clSVMAlloc}, and the device associated
+with _command_queue_ does not support fine-grain system SVM, then behavior is
+undefined.
 
 {clEnqueueSVMMap} and {clEnqueueSVMUnmap} act as synchronization points for
 the region of the SVM buffer specified in these calls.
@@ -16483,25 +16480,18 @@ endif::cl_khr_command_buffer_multi_device[]
     corresponding desired value. The list is terminated with 0. The
     {cl_khr_command_buffer_EXT} extension does not define any properties, but
     supported properties may be defined by layered extensions in future.
-  * _svm_ptr_ is a pointer to a (if the device supports system SVM)
-    or SVM memory region that will be filled with _pattern_.
+  * _svm_ptr_ is a pointer to a memory region that will be filled with
+    _pattern_.
     It must be aligned to _pattern_size_ bytes.
-    If _svm_ptr_ is allocated using {clSVMAlloc}, then it must be allocated
-    from the same context from which _command_queue_ was created.
-    Otherwise the behavior is undefined.
-  * _pattern_ is a pointer to the data pattern of size _pattern_size_ in
-    bytes.
-    _pattern_ will be used to fill a region in _buffer_ starting at
-    _svm_ptr_ and is _size_ bytes in size.
-    The data pattern must be a scalar or vector integer or floating-point
-    data type supported by OpenCL.
-    For example, if the region pointed to by _svm_ptr_ is to be filled with
-    a pattern of `float4` values, then _pattern_ will be a pointer to a
-    `cl_float4` value and _pattern_size_ will be `sizeof(cl_float4)`.
-    The maximum value of _pattern_size_ is the size of the largest integer
-    or floating-point vector data type supported by the OpenCL device.
+  * _pattern_ is a pointer to the data pattern of size _pattern_size_ in bytes.
+    _pattern_ will be used to fill a memory region starting at _svm_ptr_ that is
+    _size_ bytes in size.
+    _pattern_size_ must be a power of two and the maximum value of
+    _pattern_size_ is the size of the largest integer or floating-point vector
+    data type supported by the OpenCL device.
     The memory associated with _pattern_ can be reused or freed after the
     function returns.
+    Behavior is undefined if _pattern_ is allocated using {clSVMAlloc}.
   * _size_ is the size in bytes of region being filled starting with
     _svm_ptr_ and must be a multiple of _pattern_size_.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -16530,6 +16520,10 @@ after the function returns.
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
     This parameter is unused, and **must** be `NULL`.
+
+If _svm_ptr_ was allocated using {clSVMAlloc}, and it was allocated from a
+different context than the context specified when _command_buffer_ was created,
+then behavior is undefined.
 
 // refError
 
