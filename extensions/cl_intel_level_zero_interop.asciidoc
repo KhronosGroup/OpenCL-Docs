@@ -1,0 +1,800 @@
+= cl_intel_level_zero_interop
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+
+:blank: pass:[ +]
+
+// Set the default source code type in this document to C++,
+// for syntax highlighting purposes.  This is needed because
+// docbook uses c++ and html5 uses cpp.
+:language: {basebackend@docbook:c++:cpp}
+
+== Name Strings
+
+`cl_intel_level_zero_interop`
+
+== Contact
+
+Lukasz Jobczyk, Intel (lukasz 'dot' jobczyk 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Lukasz Jobczyk, Intel
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2026 Intel Corporation.  All rights reserved.
+
+== Status
+
+Shipping
+
+== Version
+
+Built On: {docdate} +
+Revision: 1.0.0
+
+== Dependencies
+
+This extension is written against the OpenCL API Specification Version 3.0.
+
+This extension requires OpenCL 3.0 or later.
+
+This extension is written against the oneAPI Level Zero Specification Version 1.9.
+
+oneAPI Level Zero 1.9 or later is required.
+The Level Zero types used by this extension, such as `ze_context_handle_t`, `ze_command_list_handle_t` and `ze_image_handle_t`, are defined by the Level Zero API header `ze_api.h`, which an application must include in addition to the OpenCL headers.
+
+== Overview
+
+Many Intel GPU compute applications use both OpenCL and oneAPI Level Zero (L0) APIs, either because different components of an application use different APIs, or because an application is transitioning from one API to the other.
+In such cases, it is desirable to share GPU resources between the two APIs to avoid costly data copies and redundant resource allocation.
+
+This extension enables interoperability between OpenCL and oneAPI Level Zero by providing mechanisms to:
+
+* Create OpenCL objects from existing Level Zero handles, so that Level Zero resources may be used with OpenCL operations.
+* Query the underlying Level Zero handles from OpenCL objects, so that OpenCL resources may be used with Level Zero operations.
+
+The following Level Zero resources can be shared with OpenCL:
+
+* *Contexts*: A Level Zero context (`ze_context_handle_t`) can be used to create an OpenCL context.
+* *Immediate command lists*: A Level Zero immediate command list (`ze_command_list_handle_t`) can be used to create an OpenCL command queue.
+* *Memory allocations and images*: Level Zero device memory allocations (`void*`) and images (`ze_image_handle_t`) can be used to create OpenCL buffer and image objects.
+
+The following Level Zero handles can be queried from existing OpenCL objects:
+
+* *Contexts*: The Level Zero context handle can be queried from an OpenCL context.
+* *Immediate command lists*: The Level Zero immediate command list handle can be queried from an OpenCL command queue.
+* *Events*: The Level Zero event handle can be queried from an OpenCL event.
+* *Buffers*: The underlying Level Zero device pointer can be queried from an OpenCL buffer object.
+* *Images*: The underlying Level Zero image handle (or handles, for a multi-device context) can be queried from an OpenCL image object.
+* *Devices*: The Level Zero device handle can be queried from an OpenCL device.
+* *Drivers*: The Level Zero driver handle can be queried from an OpenCL platform.
+
+This enables mixed-API workloads where operations enqueued via Level Zero and OpenCL can share device resources without data movement.
+
+Note that USM pointers obtained from OpenCL USM allocation functions (*clDeviceMemAllocINTEL*, *clSharedMemAllocINTEL*, *clHostMemAllocINTEL*) and Level Zero memory allocation functions (*zeMemAllocDevice*, *zeMemAllocShared*, *zeMemAllocHost*) are directly interoperable between the two APIs without any additional steps, provided that both APIs operate on the same underlying device and context.
+USM pointers can be passed as kernel arguments or used with enqueue operations in either API.
+This extension is not required for USM pointer interoperability; it is only needed for sharing opaque handles such as contexts, command lists, images, and events.
+
+== New API Functions
+
+None.
+
+== New API Types
+
+None.
+
+== New API Enums
+
+Accepted as a property name in the _properties_ parameter to *clCreateContext* and as the _param_name_ parameter to *clGetContextInfo*:
+
+[source]
+----
+#define CL_CONTEXT_L0_HANDLE_INTEL                   0x42B0
+----
+
+Accepted as a property name in the _properties_ parameter to *clCreateCommandQueueWithProperties* and as the _param_name_ parameter to *clGetCommandQueueInfo*:
+
+[source]
+----
+#define CL_QUEUE_L0_IMMEDIATE_CMD_LIST_HANDLE_INTEL  0x42B1
+----
+
+Accepted as the _param_name_ parameter to *clGetEventInfo*:
+
+[source]
+----
+#define CL_EVENT_L0_HANDLE_INTEL                     0x42B2
+----
+
+Accepted as a property name in the _properties_ parameter to *clCreateBufferWithProperties* (or *clCreateBufferWithPropertiesINTEL*) and as the _param_name_ parameter to *clGetMemObjectInfo*:
+
+[source]
+----
+#define CL_MEM_L0_HANDLE_INTEL                       0x42B3
+----
+
+Accepted as a property name in the _properties_ parameter to *clCreateImageWithProperties* and as the _param_name_ parameter to *clGetImageInfo*:
+
+[source]
+----
+#define CL_IMAGE_L0_HANDLE_INTEL                     0x42B6
+----
+
+Used to terminate the handle list of the `CL_IMAGE_L0_HANDLE_INTEL` property:
+
+[source]
+----
+#define CL_IMAGE_L0_HANDLE_LIST_END_INTEL            0
+----
+
+Accepted as the _param_name_ parameter to *clGetDeviceInfo*:
+
+[source]
+----
+#define CL_DEVICE_L0_HANDLE_INTEL                    0x42B4
+----
+
+Accepted as the _param_name_ parameter to *clGetPlatformInfo*:
+
+[source]
+----
+#define CL_PLATFORM_L0_DRIVER_HANDLE_INTEL           0x42B5
+----
+
+[[cl_intel_level_zero_interop-handle-list-encoding]]
+== Handle List Property Encoding
+
+The `CL_IMAGE_L0_HANDLE_INTEL` memory object property is a _handle list_ property.
+Unlike an ordinary property, which consists of a name followed by exactly one value, a handle list property consists of a name followed by a variable number of Level Zero handles, terminated by `CL_IMAGE_L0_HANDLE_LIST_END_INTEL`.
+This encoding follows the convention established by the `CL_MEM_DEVICE_HANDLE_LIST_KHR` property in the `cl_khr_external_memory` extension.
+
+[source]
+----
+cl_mem_properties props[] = {
+    CL_IMAGE_L0_HANDLE_INTEL,
+        handleForFirstDevice,
+        handleForSecondDevice,
+        CL_IMAGE_L0_HANDLE_LIST_END_INTEL,
+    0
+};
+----
+
+Because `CL_IMAGE_L0_HANDLE_LIST_END_INTEL` has the same value as the terminator of the property list itself, a handle list must always be explicitly terminated by `CL_IMAGE_L0_HANDLE_LIST_END_INTEL` before the final `0` that terminates the property list.
+
+The _i_-th handle of the list corresponds to the _i_-th device of the OpenCL context, in the order in which the devices were passed to *clCreateContext*, with devices that belong to the same root device collapsed into a single entry.
+A handle list must contain exactly one handle for each device of the context, so that every device is backed by its own Level Zero image.
+
+Handle lists are stored verbatim, including the `CL_IMAGE_L0_HANDLE_LIST_END_INTEL` terminator, and are returned in this form by the `CL_MEM_PROPERTIES` query of *clGetMemObjectInfo*.
+
+Only images use this encoding.
+`CL_MEM_L0_HANDLE_INTEL` is an ordinary property with a single value, because a Level Zero memory allocation, unlike a Level Zero image, is not created separately for each device, so there is never more than one handle to supply for a buffer object.
+
+== Modifications to the OpenCL API Specification
+
+=== Modifications to Context Creation (Section 4.4)
+
+(Add to the list of supported properties in Table 6 - List of supported properties by *clCreateContext*) ::
++
+--
+[caption="Table 6. "]
+.List of supported properties by clCreateContext
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_context_properties* | Property Value | Description
+
+| `CL_CONTEXT_L0_HANDLE_INTEL`
+  | `intptr_t`
+      | Specifies a Level Zero context handle (`ze_context_handle_t`) to use as the underlying context for the newly created OpenCL context.
+
+        When this property is specified, the OpenCL implementation will use the provided Level Zero context instead of creating a new one.
+        The application is responsible for ensuring that the Level Zero context remains valid for the lifetime of the OpenCL context.
+
+        The Level Zero context must have been created for a driver and device that are compatible with the OpenCL device(s) specified in the *clCreateContext* call.
+
+        All other context properties are interpreted and validated as they would be for a context that is not created from a Level Zero handle.
+|====
+
+--
+
+(Add to the list of error conditions for *clCreateContext*) ::
++
+--
+* `CL_INVALID_PROPERTY` if the `CL_CONTEXT_L0_HANDLE_INTEL` property value is not a valid Level Zero context handle, or if the Level Zero context is not compatible with the specified device(s).
+--
+
+=== Modifications to Context Queries (Section 4.4)
+
+(Add to Table 7 - List of supported param_names by *clGetContextInfo*) ::
++
+--
+[caption="Table 7. "]
+.List of supported param_names by clGetContextInfo
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_context_info* | Return Type | Description
+
+| `CL_CONTEXT_L0_HANDLE_INTEL`
+  | `ze_context_handle_t`
+      | Returns the Level Zero context handle associated with this OpenCL context.
+
+        The returned handle is valid for the lifetime of the OpenCL context.
+|====
+--
+
+=== Modifications to Command Queue Creation (Section 5.1)
+
+(Add to Table 9 - List of supported queue creation properties by *clCreateCommandQueueWithProperties*) ::
++
+--
+[caption="Table 9. "]
+.List of supported queue creation properties by clCreateCommandQueueWithProperties
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *Queue Property* | Property Value | Description
+
+| `CL_QUEUE_L0_IMMEDIATE_CMD_LIST_HANDLE_INTEL`
+  | `cl_properties`
+      | Specifies a Level Zero immediate command list handle (`ze_command_list_handle_t`) to use as the underlying command submission mechanism for the newly created OpenCL command queue.
+
+        When this property is specified, the OpenCL implementation will use the provided Level Zero immediate command list instead of creating a new one.
+        The application is responsible for ensuring that the Level Zero immediate command list remains valid for the lifetime of the OpenCL command queue.
+
+        The Level Zero immediate command list must have been created for the same device and context that are associated with the OpenCL command queue being created.
+
+        When this property is specified, all other queue creation properties must still be valid and are validated as they would be if this property were not present, but with the exception of `CL_QUEUE_PROFILING_ENABLE` they do not affect how the command queue is created.
+        See <<cl_intel_level_zero_interop-import-property-behavior,Behavior of Other Properties When Importing a Level Zero Handle>>.
+|====
+
+--
+
+(Add to the list of error conditions for *clCreateCommandQueueWithProperties*) ::
++
+--
+* `CL_INVALID_PROPERTY` if the `CL_QUEUE_L0_IMMEDIATE_CMD_LIST_HANDLE_INTEL` property value is not a valid Level Zero immediate command list handle.
+* `CL_INVALID_PROPERTY` if the Level Zero immediate command list was not created for the same device and context associated with the command queue being created.
+--
+
+=== Modifications to Command Queue Queries (Section 5.1)
+
+(Add to Table 10 - List of supported param_names by *clGetCommandQueueInfo*) ::
++
+--
+[caption="Table 10. "]
+.List of supported param_names by clGetCommandQueueInfo
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_command_queue_info* | Return Type | Description
+
+| `CL_QUEUE_L0_IMMEDIATE_CMD_LIST_HANDLE_INTEL`
+  | `ze_command_list_handle_t`
+      | Returns the Level Zero immediate command list handle associated with this OpenCL command queue.
+
+        The returned handle is valid for the lifetime of the OpenCL command queue.
+|====
+--
+
+For a command queue created from a Level Zero immediate command list, the `CL_QUEUE_PROPERTIES` query describes how the command queue behaves rather than which properties were passed to create it.
+It returns `CL_QUEUE_PROFILING_ENABLE` if profiling was requested at creation, together with `CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE` if the imported Level Zero immediate command list is an out-of-order command list.
+No other queue property is reported.
+
+=== Modifications to Buffer Object Creation (Section 5.2.1)
+
+(Add to the list of supported properties for *clCreateBufferWithProperties*) ::
++
+--
+[caption="Table. "]
+.Additional supported buffer creation properties
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_mem_properties* | Property Value | Description
+
+| `CL_MEM_L0_HANDLE_INTEL`
+  | `cl_mem_properties`
+      | Specifies a Level Zero device memory pointer (`void*`) to use as the underlying storage for the newly created OpenCL buffer object.
+
+        A single pointer is specified rather than one pointer per device, because a Level Zero memory allocation, unlike a Level Zero image, is not created separately for each device.
+
+        When this property is specified, the OpenCL implementation will use the provided Level Zero device memory allocation instead of creating a new one.
+        The application is responsible for ensuring that the Level Zero memory allocation remains valid for the lifetime of the OpenCL buffer object, and that the allocation is large enough for the requested buffer size.
+        The _size_ argument is not validated against the size of the imported allocation.
+
+        The Level Zero memory allocation must have been allocated from the same Level Zero context that is associated with the OpenCL context.
+
+        Because the resulting buffer object must be accessible from every device of the OpenCL context, the kind of Level Zero allocation that may be imported depends on how many devices the context contains.
+        If the OpenCL context contains more than one device, only a Level Zero host allocation (*zeMemAllocHost*) or a shared allocation (*zeMemAllocShared*) that is accessible from all devices of the context may be imported.
+        A Level Zero device allocation (*zeMemAllocDevice*) may only be imported if it was allocated for the same device as the one associated with the OpenCL context.
+
+        Importing an allocation that is not accessible from every device of the OpenCL context results in undefined behavior.
+        This mirrors the allocation that the implementation would have made had the property not been specified: a device allocation for a single-device context, and an allocation that is accessible from all devices otherwise.
+
+        See <<cl_intel_level_zero_interop-import-property-behavior,Behavior of Other Properties When Importing a Level Zero Handle>> for the treatment of the _flags_ argument and of the other buffer creation properties.
+|====
+
+--
+
+(Add to the list of error conditions for *clCreateBufferWithProperties*) ::
++
+--
+* `CL_INVALID_PROPERTY` if the `CL_MEM_L0_HANDLE_INTEL` property value is not a valid Level Zero device memory pointer.
+* `CL_INVALID_PROPERTY` if the `CL_IMAGE_L0_HANDLE_INTEL` property is specified, because that property may only be used to create image objects.
+--
+
+=== Modifications to Image Object Creation (Section 5.3.1)
+
+(Add to the list of supported properties for *clCreateImageWithProperties*) ::
++
+--
+[caption="Table. "]
+.Additional supported image creation properties
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_mem_properties* | Property Value | Description
+
+| `CL_IMAGE_L0_HANDLE_INTEL`
+  | handle list
+      | Specifies one or more Level Zero image handles (`ze_image_handle_t`) to use as the underlying storage for the newly created OpenCL image object.
+
+        The property value is a handle list, as described in <<cl_intel_level_zero_interop-handle-list-encoding,Handle List Property Encoding>>.
+        The list must contain exactly one handle for each device in the OpenCL context.
+        Each handle of the list is associated with the corresponding device of the context, so that a single OpenCL image object is backed by one Level Zero image per device of a multi-device context.
+
+        When this property is specified, the OpenCL implementation will use the provided Level Zero images instead of creating new ones.
+        The application is responsible for ensuring that the Level Zero images remain valid for the lifetime of the OpenCL image object.
+
+        The Level Zero images must have been created for the same context, and for the devices, that are associated with the OpenCL image being created.
+
+        The image format and dimensions of the resulting OpenCL image object are derived from the imported Level Zero image, not from the _image_format_ and _image_desc_ arguments.
+        See <<cl_intel_level_zero_interop-import-property-behavior,Behavior of Other Properties When Importing a Level Zero Handle>>.
+|====
+
+--
+
+(Add to the list of error conditions for *clCreateImageWithProperties*) ::
++
+--
+* `CL_INVALID_PROPERTY` if the handle list of the `CL_IMAGE_L0_HANDLE_INTEL` property does not contain exactly one handle for each device in _context_.
+* `CL_INVALID_PROPERTY` if a value in the `CL_IMAGE_L0_HANDLE_INTEL` handle list is not a valid Level Zero image handle.
+* `CL_INVALID_PROPERTY` if the `CL_MEM_L0_HANDLE_INTEL` property is specified, because that property may only be used to create buffer objects.
+--
+
+=== Modifications to Memory Object Queries (Section 5.4.5)
+
+(Add to Table 23 - List of supported param_names by *clGetMemObjectInfo*) ::
++
+--
+[caption="Table 23. "]
+.List of supported param_names by clGetMemObjectInfo
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_mem_info* | Return Type | Description
+
+| `CL_MEM_L0_HANDLE_INTEL`
+  | `void*`
+      | Returns the Level Zero device memory pointer that backs this buffer object.
+        The size of the returned data is `sizeof(void*)`.
+
+        The returned pointer is valid for the lifetime of the OpenCL buffer object.
+
+        This query is only valid for buffer objects.
+        Use the `CL_IMAGE_L0_HANDLE_INTEL` query of *clGetImageInfo* to obtain the Level Zero handle of an image object.
+|====
+--
+
+(Add to the list of error conditions for *clGetMemObjectInfo*) ::
++
+--
+* `CL_INVALID_VALUE` if _param_name_ is `CL_MEM_L0_HANDLE_INTEL` and _memobj_ is not a buffer object.
+--
+
+The `CL_MEM_PROPERTIES` query returns the property list that was passed at creation time, including any handle list and its `CL_IMAGE_L0_HANDLE_LIST_END_INTEL` terminator.
+
+=== Modifications to Image Object Queries (Section 5.3.5)
+
+(Add to Table 22 - List of supported param_names by *clGetImageInfo*) ::
++
+--
+[caption="Table 22. "]
+.List of supported param_names by clGetImageInfo
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_image_info* | Return Type | Description
+
+| `CL_IMAGE_L0_HANDLE_INTEL`
+  | `ze_image_handle_t[]`
+      | Returns the Level Zero image handles that back this image object, one handle per device of the OpenCL context, in the device order described in <<cl_intel_level_zero_interop-handle-list-encoding,Handle List Property Encoding>>.
+
+        For an image object in a single-device context, one handle is returned and the size of the returned data is `sizeof(ze_image_handle_t)`.
+        For an image object in a multi-device context, the size of the returned data is the number of devices in the context multiplied by `sizeof(ze_image_handle_t)`.
+        The handle reported for each device is the handle that was supplied for that device when the image object was created.
+
+        Applications that cannot assume a single-device context should query the required size first by passing `NULL` as _param_value_.
+
+        The returned handles are valid for the lifetime of the OpenCL image object.
+|====
+--
+
+=== Modifications to Event Queries (Section 5.9)
+
+(Add to Table 28 - List of supported param_names by *clGetEventInfo*) ::
++
+--
+[caption="Table 28. "]
+.List of supported param_names by clGetEventInfo
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_event_info* | Return Type | Description
+
+| `CL_EVENT_L0_HANDLE_INTEL`
+  | `ze_event_handle_t`
+      | Returns the Level Zero event handle associated with this OpenCL event.
+
+        The returned Level Zero event handle can be used with Level Zero APIs such as *zeEventQueryKernelTimestamp* to obtain profiling information that is consistent with timestamps obtained through *clGetEventProfilingInfo*.
+
+        The returned handle is valid for the lifetime of the OpenCL event.
+|====
+--
+
+=== Modifications to Device Queries (Section 4.2)
+
+(Add to Table 5 - OpenCL Device Queries in Section 4.2 - Querying Devices) ::
++
+--
+[caption="Table 5. "]
+.List of supported param_names by clGetDeviceInfo
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_device_info* | Return Type | Description
+
+| `CL_DEVICE_L0_HANDLE_INTEL`
+  | `ze_device_handle_t`
+      | Returns the Level Zero device handle corresponding to this OpenCL device.
+
+        The returned handle may be used with Level Zero APIs to query device properties or to create Level Zero resources for interoperability with this OpenCL device.
+|====
+--
+
+=== Modifications to Platform Queries (Section 4.1)
+
+(Add to Table 3 - List of supported param_names by *clGetPlatformInfo*) ::
++
+--
+[caption="Table 3. "]
+.List of supported param_names by clGetPlatformInfo
+[width="100%",cols="<30%,<20%,<50%",options="header"]
+|====
+| *cl_platform_info* | Return Type | Description
+
+| `CL_PLATFORM_L0_DRIVER_HANDLE_INTEL`
+  | `ze_driver_handle_t`
+      | Returns the Level Zero driver handle associated with this OpenCL platform.
+
+        The returned handle may be used with Level Zero APIs to enumerate devices, query driver properties, or to create Level Zero contexts for interoperability.
+|====
+--
+
+[[cl_intel_level_zero_interop-import-property-behavior]]
+== Behavior of Other Properties When Importing a Level Zero Handle
+
+When an OpenCL object is created from an existing Level Zero handle, the OpenCL implementation does not allocate the underlying resource.
+Any property whose only purpose is to control that allocation therefore has nothing to act on and has no effect on the created object.
+Such a property must still be valid: unless stated otherwise below, properties are validated as they would be if no import property were present, so importing a handle changes what a property does, not whether it must be valid.
+Properties that describe the OpenCL object itself, rather than the allocation behind it, continue to apply.
+
+This section describes how the remaining arguments and properties of the creation functions are treated when an import property is present.
+
+=== Buffer Objects
+
+When `CL_MEM_L0_HANDLE_INTEL` is specified for *clCreateBufferWithProperties*:
+
+* The _flags_ argument, and the `CL_MEM_FLAGS` and `CL_MEM_FLAGS_INTEL` properties, are parsed and validated as usual, and the resulting access flags apply to the OpenCL buffer object.
+  For example, `CL_MEM_HOST_NO_ACCESS` continues to restrict host access through *clEnqueueMapBuffer*, *clEnqueueReadBuffer* and *clEnqueueWriteBuffer*.
+* Properties and flags that only influence how memory would have been allocated are accepted but have no effect, because no allocation is performed.
+  This includes `CL_MEM_FORCE_HOST_MEMORY_INTEL` (see `cl_intel_mem_force_host_memory`), `CL_MEM_ALLOC_FLAGS_INTEL` and `CL_MEM_ALLOC_USE_HOST_PTR_INTEL`.
+  The placement, compression state and other allocation attributes of the buffer are those of the imported Level Zero allocation.
+  This is a consequence of importing an allocation, not of the property itself; the same properties continue to be validated as they would be for a buffer that the implementation allocates.
+* `CL_MEM_COPY_HOST_PTR` and `CL_MEM_USE_HOST_PTR` remain effective: the contents of _host_ptr_ are copied into the imported Level Zero allocation before *clCreateBufferWithProperties* returns.
+  `CL_MEM_USE_HOST_PTR` does not cause the imported allocation to be replaced by, or aliased with, the host memory; the imported allocation is always the storage of the buffer object.
+* The _size_ argument determines the size reported by the `CL_MEM_SIZE` query and the extent of OpenCL operations on the buffer.
+  It is not validated against the size of the imported allocation; specifying a size larger than the imported allocation results in undefined behavior.
+
+=== Image Objects
+
+When `CL_IMAGE_L0_HANDLE_INTEL` is specified for *clCreateImageWithProperties*:
+
+* The _image_format_ argument is ignored.
+  The channel order and channel data type of the resulting OpenCL image object are derived from the format of the imported Level Zero image, including whether that image is sRGB, and it is the derived format that is reported by the `CL_IMAGE_FORMAT` query.
+* The _image_desc_ argument is not validated, and its _image_type_, _image_width_, _image_height_, _image_depth_, _image_array_size_ and _num_mip_levels_ members are ignored.
+  The `CL_IMAGE_WIDTH`, `CL_IMAGE_HEIGHT`, `CL_IMAGE_DEPTH`, `CL_IMAGE_ARRAY_SIZE`, `CL_IMAGE_ROW_PITCH` and `CL_IMAGE_SLICE_PITCH` queries report the properties of the imported Level Zero image.
+* The _mem_object_ member of _image_desc_ is ignored, so an imported image is never created as an image from a buffer or as a view of another image.
+  The `CL_IMAGE_BUFFER` query returns `NULL`.
+* The _image_row_pitch_ and _image_slice_pitch_ members of _image_desc_ are retained only as the host row and slice pitch used for transfers between host memory and the image, such as the initial copy described below and subsequent *clEnqueueReadImage* and *clEnqueueWriteImage* operations.
+* The _flags_ argument, and the `CL_MEM_FLAGS` and `CL_MEM_FLAGS_INTEL` properties, are parsed and validated as usual and apply to the OpenCL image object.
+* The consistency requirement between _host_ptr_ and the host pointer flags is still enforced: it is an error to pass a non-`NULL` _host_ptr_ without `CL_MEM_COPY_HOST_PTR` or `CL_MEM_USE_HOST_PTR`, or to pass either of those flags with a `NULL` _host_ptr_, and `CL_INVALID_HOST_PTR` is returned.
+* `CL_MEM_COPY_HOST_PTR` and `CL_MEM_USE_HOST_PTR` remain effective: the contents of _host_ptr_ are copied into the imported Level Zero image before *clCreateImageWithProperties* returns.
+  The region that is written is the full extent of the imported Level Zero image.
+* Properties that only influence how an image would have been allocated are accepted but have no effect, for the reasons given for buffer objects.
+
+=== Command Queues
+
+When `CL_QUEUE_L0_IMMEDIATE_CMD_LIST_HANDLE_INTEL` is specified for *clCreateCommandQueueWithProperties*:
+
+* Every queue creation property must be valid.
+  Properties are validated exactly as they would be if `CL_QUEUE_L0_IMMEDIATE_CMD_LIST_HANDLE_INTEL` were not specified.
+  For example, a property name that is not recognized still causes *clCreateCommandQueueWithProperties* to fail with `CL_INVALID_VALUE`, and `CL_QUEUE_ON_DEVICE` is still rejected, exactly as they are when no command list handle is imported.
+* `CL_QUEUE_PROFILING_ENABLE` is the only property that affects how the command queue is created.
+* Every other queue creation property that is accepted, including `CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE`, `CL_QUEUE_SIZE`, `CL_QUEUE_PRIORITY_KHR`, `CL_QUEUE_THROTTLE_KHR`, the `CL_QUEUE_FAMILY_INTEL` and `CL_QUEUE_INDEX_INTEL` properties of `cl_intel_command_queue_families`, and the MDAPI properties, has no effect on the created command queue.
+  These properties describe how a command list would have been created, and the command list already exists.
+* Whether the queue behaves as an in-order or an out-of-order queue is determined by the imported Level Zero immediate command list, that is, by whether it was created with `ZE_COMMAND_QUEUE_FLAG_IN_ORDER`, and not by `CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE`.
+* The `CL_QUEUE_PROPERTIES` query of *clGetCommandQueueInfo* reports how the created command queue behaves, not which properties were passed to create it.
+  It reports `CL_QUEUE_PROFILING_ENABLE` if profiling was requested, and `CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE` if the imported command list is an out-of-order command list.
+  Consequently `CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE` is reported for a queue created from an out-of-order command list even when it was not passed at creation, and is not reported for a queue created from an in-order command list even when it was.
+  This allows an application to determine whether it must order its commands explicitly.
+
+=== Contexts
+
+When `CL_CONTEXT_L0_HANDLE_INTEL` is specified for *clCreateContext*:
+
+* The remaining context properties, such as `CL_CONTEXT_PLATFORM`, `CL_CONTEXT_INTEROP_USER_SYNC` and `CL_CONTEXT_SHOW_DIAGNOSTICS_INTEL`, are interpreted and validated exactly as they are for a context that is not created from a Level Zero handle.
+* The device list passed to *clCreateContext* determines the devices of the OpenCL context and the device order used by handle lists and by the `CL_IMAGE_L0_HANDLE_INTEL` query.
+
+== Lifetime and Ownership Rules
+
+This section describes the resource ownership semantics for interop objects.
+
+=== Objects Created from Level Zero Handles
+
+When an OpenCL object is created from an existing Level Zero handle (via a creation-time property), the OpenCL implementation does *not* take ownership of the underlying Level Zero resource.
+The application is responsible for:
+
+* Ensuring that the Level Zero resource remains valid for at least the entire lifetime of the OpenCL object created from it.
+* Destroying the Level Zero resource only after the OpenCL object has been released (and all operations referencing it have completed).
+
+The OpenCL implementation will not call any Level Zero destruction functions (such as *zeContextDestroy*, *zeCommandListDestroy*, *zeMemFree*, or *zeImageDestroy*) on externally-provided handles when the corresponding OpenCL object is released.
+For an image object created from a handle list, this applies to every handle of the list, not only to the first one.
+
+=== Handles Queried from OpenCL Objects
+
+Level Zero handles retrieved via query functions (*clGetContextInfo*, *clGetCommandQueueInfo*, *clGetEventInfo*, *clGetMemObjectInfo*, *clGetImageInfo*, *clGetDeviceInfo*, *clGetPlatformInfo*) are owned by the OpenCL implementation.
+The application must *not* destroy these handles.
+The returned handles are valid only for the lifetime of the OpenCL object from which they were queried.
+
+[[cl_intel_level_zero_interop-sharing-acquire-release]]
+=== Memory Objects Created from Other Sharing Extensions
+
+An OpenCL memory object that was created from another API through one of the OpenCL sharing extensions, such as `cl_khr_gl_sharing`, `cl_khr_d3d10_sharing`, `cl_khr_d3d11_sharing`, `cl_intel_dx9_media_sharing` or `cl_khr_va_api_media_sharing`, belongs to that other API until OpenCL acquires it.
+Querying `CL_MEM_L0_HANDLE_INTEL` or `CL_IMAGE_L0_HANDLE_INTEL` on such a memory object neither acquires it nor changes its ownership.
+The Level Zero handle obtained this way may therefore only be used while the memory object is acquired by OpenCL: the application must bracket its use on the Level Zero side with *clEnqueueAcquireGLObjects* and *clEnqueueReleaseGLObjects*, or with the equivalent acquire and release functions of the sharing extension that the memory object came from, exactly as it must for its use on the OpenCL side.
+Using the exported Level Zero handle outside of an acquire and release pair results in undefined behavior.
+Note that the release is what makes the results of the preceding work visible to the other API, and that it only synchronizes work that was enqueued through the OpenCL command queue, so the application must ensure that any Level Zero work using the exported handle has completed before the corresponding release is enqueued.
+
+=== Synchronization
+
+When both OpenCL and Level Zero operations access shared resources, the application is responsible for ensuring proper synchronization.
+In particular:
+
+* Operations enqueued via an OpenCL command queue that wraps a Level Zero immediate command list execute on that same command list.
+  The application must not concurrently submit work to the same Level Zero immediate command list from both OpenCL and Level Zero APIs without external synchronization.
+* For shared memory objects, the application must ensure that concurrent access from OpenCL and Level Zero operations does not result in data races.
+  Proper synchronization may be achieved by using *clFinish* or *clWaitForEvents* on the OpenCL side and *zeCommandListHostSynchronize* or *zeEventHostSynchronize* on the Level Zero side.
+
+== Interactions with Other Extensions
+
+If `cl_intel_create_buffer_with_properties` is supported, the `CL_MEM_L0_HANDLE_INTEL` property may be used with *clCreateBufferWithPropertiesINTEL* in addition to the OpenCL 3.0 *clCreateBufferWithProperties* API.
+
+If `cl_intel_command_queue_families` is supported, the `CL_QUEUE_FAMILY_INTEL` and `CL_QUEUE_INDEX_INTEL` properties have no effect on the created command queue when `CL_QUEUE_L0_IMMEDIATE_CMD_LIST_HANDLE_INTEL` is specified, because the queue family and index of the imported command list are fixed when the Level Zero immediate command list is created.
+
+If `cl_khr_external_memory` is supported, note that the handle list encoding of `CL_IMAGE_L0_HANDLE_INTEL` matches the encoding of `CL_MEM_DEVICE_HANDLE_LIST_KHR`, and that `CL_IMAGE_L0_HANDLE_LIST_END_INTEL` and `CL_MEM_DEVICE_HANDLE_LIST_END_KHR` have the same value.
+
+If a memory object sharing extension is supported, the Level Zero handle exported from a shared memory object may only be used while that memory object is acquired by OpenCL; see <<cl_intel_level_zero_interop-sharing-acquire-release,Memory Objects Created from Other Sharing Extensions>>.
+
+== Sample Usage
+
+The following example demonstrates basic interoperability between Level Zero and OpenCL.
+Error checking is omitted for brevity.
+
+=== Querying Level Zero Handles from OpenCL
+
+[source]
+----
+// Get the Level Zero device handle from an OpenCL device
+ze_device_handle_t l0Device;
+clGetDeviceInfo(clDevice, CL_DEVICE_L0_HANDLE_INTEL,
+    sizeof(ze_device_handle_t), &l0Device, NULL);
+
+// Get the Level Zero driver handle from an OpenCL platform
+ze_driver_handle_t l0Driver;
+clGetPlatformInfo(clPlatform, CL_PLATFORM_L0_DRIVER_HANDLE_INTEL,
+    sizeof(ze_driver_handle_t), &l0Driver, NULL);
+
+// Get the Level Zero context handle from an OpenCL context
+ze_context_handle_t l0Context;
+clGetContextInfo(clContext, CL_CONTEXT_L0_HANDLE_INTEL,
+    sizeof(ze_context_handle_t), &l0Context, NULL);
+
+// Get the Level Zero device pointer backing an OpenCL buffer
+void* l0DevicePtr;
+clGetMemObjectInfo(clBuffer, CL_MEM_L0_HANDLE_INTEL,
+    sizeof(void*), &l0DevicePtr, NULL);
+
+// Get the Level Zero image handles backing an OpenCL image,
+// one handle per device of the context
+size_t numBytes = 0;
+clGetImageInfo(clImage, CL_IMAGE_L0_HANDLE_INTEL, 0, NULL, &numBytes);
+std::vector<ze_image_handle_t> l0Images(
+    numBytes / sizeof(ze_image_handle_t));
+clGetImageInfo(clImage, CL_IMAGE_L0_HANDLE_INTEL,
+    numBytes, l0Images.data(), NULL);
+----
+
+=== Creating OpenCL Objects from Level Zero Handles
+
+[source]
+----
+// Create an OpenCL context from a Level Zero context
+cl_context_properties ctxProps[] = {
+    CL_CONTEXT_L0_HANDLE_INTEL, (intptr_t)l0Context,
+    0
+};
+cl_context clContext = clCreateContext(ctxProps, 1, &clDevice,
+    NULL, NULL, NULL);
+
+// Create an OpenCL command queue from a Level Zero immediate command
+// list. CL_QUEUE_PROFILING_ENABLE is the only property that affects the
+// created queue; any other property must still be valid, but has no effect.
+cl_queue_properties queueProps[] = {
+    CL_QUEUE_L0_IMMEDIATE_CMD_LIST_HANDLE_INTEL, (cl_properties)l0CmdList,
+    CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE,
+    0
+};
+cl_command_queue clQueue = clCreateCommandQueueWithProperties(
+    clContext, clDevice, queueProps, NULL);
+
+// Create an OpenCL buffer from a Level Zero device allocation
+cl_mem_properties bufProps[] = {
+    CL_MEM_L0_HANDLE_INTEL, (cl_mem_properties)l0DevicePtr,
+    0
+};
+cl_mem clBuffer = clCreateBufferWithProperties(clContext, bufProps,
+    0, bufferSize, NULL, NULL);
+
+// Create an OpenCL image from a Level Zero image. The image format and
+// the image descriptor are taken from the imported Level Zero image, so
+// clFormat and clImageDesc are ignored.
+cl_mem_properties imgProps[] = {
+    CL_IMAGE_L0_HANDLE_INTEL,
+        (cl_mem_properties)l0Image,
+        CL_IMAGE_L0_HANDLE_LIST_END_INTEL,
+    0
+};
+cl_mem clImage = clCreateImageWithProperties(clContext, imgProps,
+    CL_MEM_READ_WRITE, &clFormat, &clImageDesc, NULL, NULL);
+----
+
+=== Importing Per-Device Level Zero Images
+
+[source]
+----
+// A multi-device context, with one Level Zero image per device.
+// The order of the handles matches the order of the devices that were
+// passed to clCreateContext.
+cl_mem_properties imgProps[] = {
+    CL_IMAGE_L0_HANDLE_INTEL,
+        (cl_mem_properties)l0ImageForDevice0,
+        (cl_mem_properties)l0ImageForDevice1,
+        CL_IMAGE_L0_HANDLE_LIST_END_INTEL,
+    0
+};
+cl_mem clImage = clCreateImageWithProperties(clContext, imgProps,
+    CL_MEM_READ_WRITE, &clFormat, &clImageDesc, NULL, NULL);
+----
+
+=== Querying Level Zero Event Handle for Profiling
+
+[source]
+----
+// After enqueuing an OpenCL operation with profiling enabled:
+cl_event clEvent;
+clEnqueueNDRangeKernel(clQueue, kernel, 1, NULL, &gws, NULL,
+    0, NULL, &clEvent);
+clFinish(clQueue);
+
+// Query the underlying Level Zero event for kernel timestamps
+ze_event_handle_t l0Event;
+clGetEventInfo(clEvent, CL_EVENT_L0_HANDLE_INTEL,
+    sizeof(ze_event_handle_t), &l0Event, NULL);
+
+ze_kernel_timestamp_result_t tsResult;
+zeEventQueryKernelTimestamp(l0Event, &tsResult);
+----
+
+== Issues
+
+. What happens when the Level Zero handle passed during creation becomes invalid before the OpenCL object is released?
++
+--
+*RESOLVED*: This is undefined behavior.
+The application is responsible for ensuring that Level Zero handles passed during object creation remain valid for the lifetime of the OpenCL object.
+The OpenCL implementation does not take ownership of externally-provided handles.
+--
+
+. Should a single property name be used to import both Level Zero memory allocations and Level Zero images?
++
+--
+*RESOLVED*: No, `CL_MEM_L0_HANDLE_INTEL` imports Level Zero device memory allocations into buffer objects and `CL_IMAGE_L0_HANDLE_INTEL` imports Level Zero images into image objects.
+The two kinds of handle are not interchangeable, and the object being created is known from the creation function that is used, so a shared property name would only make it possible to express combinations that are always invalid.
+Passing `CL_MEM_L0_HANDLE_INTEL` to *clCreateImageWithProperties*, or `CL_IMAGE_L0_HANDLE_INTEL` to *clCreateBufferWithProperties*, is an error.
+--
+
+. How is the underlying Level Zero handle queried from an OpenCL memory object?
++
+--
+*RESOLVED*: For buffer objects, `CL_MEM_L0_HANDLE_INTEL` is queried through *clGetMemObjectInfo* and returns a `void*` representing the Level Zero USM device pointer.
+This is because Level Zero buffers are represented as USM allocations (plain device pointers) rather than opaque handles.
+For image objects, `CL_IMAGE_L0_HANDLE_INTEL` is queried through *clGetImageInfo* and returns one `ze_image_handle_t` per device of the context.
+The queries are separate so that neither one has a return type that depends on the type of the memory object.
+--
+
+. How can an OpenCL image object in a multi-device context be created from Level Zero images?
++
+--
+*RESOLVED*: The `CL_IMAGE_L0_HANDLE_INTEL` property accepts a list of handles rather than a single handle, so that one Level Zero image per device can be supplied.
+The list is terminated by `CL_IMAGE_L0_HANDLE_LIST_END_INTEL`, following the convention of `CL_MEM_DEVICE_HANDLE_LIST_KHR` in `cl_khr_external_memory`.
+Buffer objects do not use this encoding, because a Level Zero memory allocation is not created separately for each device, so `CL_MEM_L0_HANDLE_INTEL` is an ordinary single-valued property.
+For a multi-device context this places a requirement on the kind of allocation that may be imported instead of on the number of handles; see the description of `CL_MEM_L0_HANDLE_INTEL`.
+--
+
+. What happens to the other properties and arguments of the creation functions when a Level Zero handle is imported?
++
+--
+*RESOLVED*: Properties that describe the OpenCL object continue to apply, and properties that only control how the underlying resource would have been allocated have no effect, because no allocation takes place.
+Such properties are still validated as they would be without an import property, so importing a handle relaxes what a property does, never whether it must be valid.
+For images, the format and the descriptor of the imported Level Zero image take precedence over _image_format_ and _image_desc_.
+For command queues, every property must be valid, but only `CL_QUEUE_PROFILING_ENABLE` affects the created command queue.
+See <<cl_intel_level_zero_interop-import-property-behavior,Behavior of Other Properties When Importing a Level Zero Handle>> for the complete description.
+An alternative would have been to reject any property that cannot be satisfied, but that would make it harder to reuse an existing property list when switching an allocation from OpenCL to Level Zero, and several of the affected properties are hints that an implementation is already allowed to ignore.
+--
+
+. How should synchronization between OpenCL and Level Zero operations be handled?
++
+--
+*RESOLVED*: Synchronization is the application's responsibility.
+The extension provides the ability to query Level Zero event handles from OpenCL events, which enables cross-API synchronization.
+Applications should use *clFinish* or *clWaitForEvents* on the OpenCL side and Level Zero synchronization primitives on the Level Zero side to ensure ordering.
+--
+
+. Should this extension support wrapping regular (non-immediate) Level Zero command lists?
++
+--
+*RESOLVED*: No.
+This extension only supports immediate command lists because they map most naturally to the OpenCL command queue execution model.
+Regular Level Zero command lists have explicit close/execute semantics that do not align with the OpenCL model where commands are submitted individually.
+--
+
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1.0.0|2026-09-28|Lukasz Jobczyk|*Initial revision*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************
