@@ -1,0 +1,123 @@
+cl_ext_relaxed_printf_address_space
+====================================
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+:blank: pass:[ +]
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+== Name Strings
+
++cl_ext_relaxed_printf_address_space+
+
+== Contact
+
+Pekka Jääskeläinen, Parmance (pekka /at/ parmance /dot/ com)
+
+== Contributors
+
+Pekka Jääskeläinen, Parmance +
+Henry Linjamäki, Parmance +
+Brice Videau, Argonne National Laboratory +
+Anastasia Stulova, Arm
+
+== Notice
+
+Copyright (c) 2022 Parmance and Argonne National Laboratory.
+
+== Status
+
+Early Draft
+
+== Version
+
+Built On: {docdate} +
+Revision: 3
+
+== Dependencies
+
+This extension is written against the OpenCL Specification Version 1.2, Revision 19 and
+the OpenCL C 2.0 Specification, Revision 29.
+
+The extension works with OpenCL 1.2 for the overloads that do not require generic address
+space support, and requires at least OpenCL 2.0 for the generic address space one.
+
+== Overview
+
+The printf as originally defined in OpenCL 1.2 deviates from the C99 printf
+enough that makes using it as a drop-in function for programs originally
+written in C99 that use printf sometimes cumbersome.
+
+This extension addresses a major gap in this regard by allowing the format
+string specifier and the arguments to the %s conversion specifier to originate
+from any address space, not only from the constant address space as specified
+in the OpenCL 1.2 specification.
+
+This relaxation implies that the format strings and the strings passed as %s
+arguments can be dynamically produced during the execution time of the kernel.
+
+== Modifications to the OpenCL C 1.2 Specification
+
+=== Modify Table 6.21
+
+Add new function overloads (added to the bottom left cell of Table 6.21): ::
++
+
+[source,c]
+----
+int printf(global char * restrict format, ...)
+int printf(local char * restrict format, ...)
+int printf(private char * restrict format, ...)
+----
+
+=== Modify Section 6.12.13.3 - "Differences between OpenCL C and C99 printf"
+
+Remove the last bullet point: ::
+
+----
+* In OpenCL C, the conversion specifier s can only be used for arguments that
+are literal strings.
+----
+
+== Modifications to the OpenCL C 2.0 Specification
+
+=== Modify Table 20 - "Built-in printf Function"
+
+Add new function overloads (added to the bottom left cell of the Table): ::
++
+
+[source,c]
+----
+int printf(global char * restrict format, ...)
+int printf(local char * restrict format, ...)
+int printf(private char * restrict format, ...)
+int printf(char * restrict format, ...)
+----
+
+=== Modify Subsection of 6.13.13, "Differences between OpenCL C and C99 printf"
+
+Remove the last bullet point: ::
+
+----
+* In OpenCL C, the conversion specifier s can only be used for arguments that
+are literal strings.
+----
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author             | Changes
+| 3       | 2022-06-13 | Pekka Jääskeläinen, Anastasia Stulova | *Added OpenCL C 2.0 'generic' address space overload.*
+| 2       | 2022-05-14 | Pekka Jääskeläinen, Brice Videau | *Changed to an 'ext' extension for multi-vendor adoption promotion.*
+| 1       | 2022-04-08 | Pekka Jääskeläinen | *Initial revision for comments.*
+|====
