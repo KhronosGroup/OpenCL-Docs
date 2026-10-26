@@ -356,7 +356,7 @@ if __name__ == "__main__":
         #
         # // cl_khr_fp64
         #:cl_khr_fp64_EXT_label: pass:q[`cl_khr_fp64`]
-        #:cl_khr_fp64_EXT: https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#cl_khr_fp64[{cl_khr_fp64_EXT_label}^]
+        #:cl_khr_fp64_EXT: https://www.khronos.org/registry/OpenCL/specs/unified/html/OpenCL_API.html#cl_khr_fp64[{cl_khr_fp64_EXT_label}^]
         extFullLinkFile.write('// ' + name + '\n')
         extFullLinkFile.write('ifdef::backend-html5[]\n')
         extFullLinkFile.write(':' + attribName + '_label: pass:q[`' + htmlName + '`]\n')
@@ -364,7 +364,7 @@ if __name__ == "__main__":
         extFullLinkFile.write('ifndef::backend-html5[]\n')
         extFullLinkFile.write(':' + attribName + '_label: pass:q[`' + otherName + '`]\n')
         extFullLinkFile.write('endif::[]\n')
-        extFullLinkFile.write(':' + attribName + ': https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#' + name + '[{' + attribName + '_label}^]\n')
+        extFullLinkFile.write(':' + attribName + ': https://www.khronos.org/registry/OpenCL/specs/unified/html/OpenCL_API.html#' + name + '[{' + attribName + '_label}^]\n')
         extFullLinkFile.write('\n')
 
         # Example with local link:

@@ -162,9 +162,9 @@ class OpenCLConventions(ConventionsBase):
            None.
         """
         if spectype == 'api' or spectype is None:
-            return 'https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html'
+            return 'https://www.khronos.org/registry/OpenCL/specs/unified/html/OpenCL_API.html'
         elif spectype == 'clang':
-            return 'https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_C.html'
+            return 'https://www.khronos.org/registry/OpenCL/specs/unified/html/OpenCL_C.html'
         else:
             return None
 

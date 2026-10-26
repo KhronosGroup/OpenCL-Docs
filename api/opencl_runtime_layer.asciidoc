@@ -550,7 +550,6 @@ Otherwise, it returns one of the following errors:
     implementation on the host
 --
 
-
 == Buffer Objects
 
 A _buffer_ object stores a one-dimensional collection of elements.
@@ -609,6 +608,8 @@ storage.
 Locations in the buffers underlying shared memory can be operated on using
 atomic operations to the devices level of support as defined in the memory
 model.
+If _host_ptr_ is a pointer offset into an SVM allocation, rather than the
+pointer returned by {clSVMAlloc}, then behavior is undefined.
 
 [[external-buffer-memory-properties-table]]
 .List of supported buffer creation properties
@@ -870,10 +871,11 @@ include::{generated}/api/version-notes/CL_MEM_HOST_NO_ACCESS.asciidoc[]
 | {CL_MEM_KERNEL_READ_AND_WRITE_anchor}
 
 include::{generated}/api/version-notes/CL_MEM_KERNEL_READ_AND_WRITE.asciidoc[]
-  | This flag is only used by {clGetSupportedImageFormats} to query image
+  | This flag is only valid for {clGetSupportedImageFormats} to query image
     formats that may be both read from and written to by the same kernel
     instance.
-    To create a memory object that may be read from and written to use
+    It must not be used to create a memory object.
+    To create a memory object that may be read from and written to, use
     {CL_MEM_READ_WRITE}.
 
 ifdef::cl_ext_immutable_memory_objects[]
@@ -1603,15 +1605,9 @@ include::{generated}/api/version-notes/clEnqueueFillBuffer.asciidoc[]
   * _pattern_ is a pointer to the data pattern of size _pattern_size_ in bytes.
     _pattern_ will be used to fill a region in _buffer_ starting at _offset_ and
     is _size_ bytes in size.
-    The data pattern must be a scalar or vector integer or floating-point data
-    type supported by OpenCL as described in <<scalar-data-types, Shared
-    Application Scalar Data Types>> and <<vector-data-types, Supported
-    Application Vector Data Types>>.
-    For example, if _buffer_ is to be filled with a pattern of `float4` values,
-    then _pattern_ will be a pointer to a `cl_float4` value and _pattern_size_
-    will be `sizeof(cl_float4)`.
-    The maximum value of _pattern_size_ is the size of the largest integer or
-    floating-point vector data type supported by the OpenCL device.
+    _pattern_size_ must be a power of two and the maximum value of
+    _pattern_size_ is the size of the largest integer or floating-point vector
+    data type supported by the OpenCL device.
     The memory associated with _pattern_ can be reused or freed after the
     function returns.
   * _offset_ is the location in bytes of the region being filled in _buffer_ and
@@ -1750,11 +1746,8 @@ of the mapped region using the pointer returned by {clEnqueueMapBuffer}.
 
 // refError
 
-{clEnqueueMapBuffer} will return a pointer to the mapped region.
-The _errcode_ret_ is set to {CL_SUCCESS}.
-
-A `NULL` pointer is returned otherwise with one of the following error
-values returned in _errcode_ret_:
+{clEnqueueMapBuffer} returns a pointer to the mapped region and _errcode_ret_ is set to {CL_SUCCESS} if the buffer is mapped successfully.
+Otherwise, it returns a `NULL` pointer with one of the following error values returned in _errcode_ret_:
 
   * {CL_INVALID_COMMAND_QUEUE}
     ** if _command_queue_ is not a valid host command-queue
@@ -3177,13 +3170,9 @@ endif::cl_ext_immutable_memory_objects[]
 
 {clGetSupportedImageFormats} returns a union of image formats supported by
 all devices in the context.
-
-// The following information about an image memory object
-// is specified:
-//
-//   * Context
-//   * Image type 1D, 2D, or 3D image, 1D image buffer, 1D or 2D image array.
-//   * Image object allocation information
+If no devices in _context_ support images ({CL_DEVICE_IMAGE_SUPPORT} returns
+{CL_FALSE} for all devices), then no image formats are supported and
+{clGetSupportedImageFormats} must return an empty list.
 
 // refError
 
@@ -3203,15 +3192,6 @@ Otherwise, it returns one of the following errors:
   * {CL_OUT_OF_HOST_MEMORY}
     ** if there is a failure to allocate resources required by the OpenCL
     implementation on the host
-
-If {CL_DEVICE_IMAGE_SUPPORT} specified in the <<device-queries-table,Device
-Queries>> table is {CL_TRUE}, the values assigned to
-{CL_DEVICE_MAX_READ_IMAGE_ARGS}, {CL_DEVICE_MAX_WRITE_IMAGE_ARGS}
-{CL_DEVICE_IMAGE2D_MAX_WIDTH}, {CL_DEVICE_IMAGE2D_MAX_HEIGHT}
-{CL_DEVICE_IMAGE3D_MAX_WIDTH}, {CL_DEVICE_IMAGE3D_MAX_HEIGHT}
-{CL_DEVICE_IMAGE3D_MAX_DEPTH}, and {CL_DEVICE_MAX_SAMPLERS} by the implementation
-must be greater than or equal to the minimum values specified in the
-<<device-queries-table,Device Queries>> table.
 --
 
 
@@ -3224,9 +3204,12 @@ The tables below describe the required minimum lists of supported image
 formats.
 To query all image formats supported by an implementation, call the function {clGetSupportedImageFormats}.
 
-For full profile devices supporting OpenCL 2.0, 2.1, or 2.2, the minimum
-list of supported image formats for either reading or writing in a kernel
-is:
+For devices that do not support images ({CL_DEVICE_IMAGE_SUPPORT} returns
+{CL_FALSE}), the list of supported image formats must be empty.
+
+For full profile devices that support images and OpenCL 2.0, 2.1, or 2.2, the
+minimum list of supported image formats for either reading or writing in a
+kernel is:
 
 [[min-supported-image-formats-2.0]]
 .Minimum list of supported image formats for reading or writing (OpenCL 2.0, 2.1, or 2.2)
@@ -3300,9 +3283,9 @@ endif::cl_khr_gl_depth_images[]
       | {CL_UNORM_INT8}
 |====
 
-For full profile devices supporting other OpenCL versions, such as OpenCL 1.2,
-OpenCL 3.0, or OpenCL 3.1, the minimum list of supported image formats for
-either reading or writing in a kernel is:
+For full profile devices that support images and other OpenCL versions, such as
+OpenCL 1.2, OpenCL 3.0, or OpenCL 3.1, the minimum list of supported image
+formats for either reading or writing in a kernel is:
 
 // Note, differences are:
 // * No {CL_R} images.
@@ -3391,7 +3374,8 @@ are permitted.
     {CL_MEM_READ_WRITE}, +
     {CL_MEM_KERNEL_READ_AND_WRITE}
 ifdef::cl_ext_immutable_memory_objects[]
-    Additionally, if the {cl_ext_immutable_memory_objects_EXT} extension is supported:
+
+    Additionally, if the {cl_ext_immutable_memory_objects_EXT} extension is supported: +
     {CL_MEM_IMMUTABLE_EXT}
 endif::cl_ext_immutable_memory_objects[]
 | `write_only`
@@ -4473,11 +4457,8 @@ of the mapped region using the pointer returned by {clEnqueueMapImage}.
 
 // refError
 
-{clEnqueueMapImage} will return a pointer to the mapped region.
-The _errcode_ret_ is set to {CL_SUCCESS}.
-
-A `NULL` pointer is returned otherwise with one of the following error
-values returned in _errcode_ret_:
+{clEnqueueMapImage} returns a pointer to the mapped region and _errcode_ret_ is set to {CL_SUCCESS} if the image is mapped successfully.
+Otherwise, it returns a `NULL` pointer with with one of the following error values returned in _errcode_ret_:
 
   * {CL_INVALID_COMMAND_QUEUE}
     ** if _command_queue_ is not a valid host command-queue
@@ -5886,12 +5867,14 @@ The _memobj_ reference count is incremented.
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_MEM_OBJECT} if _memobj_ is not a valid memory object (buffer
-    or image object).
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _memobj_ is not a valid memory object
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 
 {clCreateBuffer}, {clCreateBufferWithProperties}, {clCreateSubBuffer},
 {clCreateImage}, {clCreateImageWithProperties}, {clCreateImage2D},
@@ -5915,11 +5898,14 @@ The _memobj_ reference count is decremented.
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_MEM_OBJECT} if _memobj_ is not a valid memory object.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _memobj_ is not a valid memory object
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 
 After the _memobj_ reference count becomes zero and commands queued for
 execution on a command-queue(s) that use _memobj_ have finished, the memory
@@ -5970,12 +5956,16 @@ _memobj_ was created and used as the storage bits for the memory object.
 executed successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_MEM_OBJECT} if _memobj_ is not a valid memory object.
-  * {CL_INVALID_VALUE} if _pfn_notify_ is `NULL`.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _memobj_ is not a valid memory object
+  * {CL_INVALID_VALUE}
+    ** if _pfn_notify_ is `NULL`
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 
 [[callback-functions]]
 [NOTE]
@@ -6095,31 +6085,32 @@ its completion event.
 is executed successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _num_mem_objects_ is zero and _mem_objects_ is not
-    a `NULL` value, or if _num_mem_objects_ is greater than 0 and
-    _mem_objects_ is `NULL`.
-  * {CL_INVALID_MEM_OBJECT} if any of the memory objects in _mem_objects_ is
-    not a valid OpenCL memory object created using an external memory
-    handle.
   * {CL_INVALID_COMMAND_QUEUE}
-  ** if _command_queue_ is not a valid command-queue, or
-  ** if device associated with _command_queue_ is not one of the devices
-     specified by {CL_MEM_DEVICE_HANDLE_LIST_KHR} at the time of creating
-     one or more of _mem_objects_, or
-  ** if one or more of _mem_objects_ belong to a context that does not
-     contain a device associated with _command_queue_.
+    ** if _command_queue_ is not a valid host command-queue
+    ** if the device associated with _command_queue_ is not one of the devices
+    specified by {CL_MEM_DEVICE_HANDLE_LIST_KHR} at the time of creating
+    one or more of _mem_objects_
+    ** if one or more of _mem_objects_ belong to a context that does not
+    contain a device associated with _command_queue_
+  * {CL_INVALID_VALUE}
+    ** if _num_mem_objects_ is zero and _mem_objects_ is not `NULL`
+    ** if _num_mem_objects_ is greater than zero and _mem_objects_ is `NULL`
+  * {CL_INVALID_MEM_OBJECT}
+    ** if any of the memory objects in _mem_objects_ is not a valid OpenCL memory object created using an external memory handle
   * {CL_INVALID_EVENT_WAIT_LIST}
-  ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ is not 0,
-     or
-  ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is 0,
-     or
-  ** if event objects in _event_wait_list_ are not valid events.
-  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the execution status
-    of any of the events in _event_wait_list_ is a negative integer value.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
-    required by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ is greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+// TODO: Do we want this to be an error?  For other APIs, it is only an error when the API is blocking.
+  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST}
+    ** if the execution status of any of the events in _event_wait_list_ is a negative integer value indicating an error.
+    This error code is <<unified-spec, missing before>> version 1.1.
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 --
 
 [open,refpage='clEnqueueReleaseExternalMemObjectsKHR',desc='Enqueue a command to release OpenCL memory objects created from external memory handles',type='protos']
@@ -6192,31 +6183,32 @@ its completion event.
 is executed successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_VALUE} if _num_mem_objects_ is zero and _mem_objects_ is not
-    a `NULL` value, or if _num_mem_objects_ is greater than 0 and
-    _mem_objects_ is `NULL`.
-  * {CL_INVALID_MEM_OBJECT} if any of the memory objects in _mem_objects_ is
-    not a valid OpenCL memory object created using an external memory
-    handle.
   * {CL_INVALID_COMMAND_QUEUE}
-  ** if _command_queue_ is not a valid command-queue, or
-  ** if device associated with _command_queue_ is not one of the devices
-     specified by {CL_MEM_DEVICE_HANDLE_LIST_KHR} at the time of creating
-     one or more of _mem_objects_, or
-  ** if one or more of _mem_objects_ belong to a context that does not
-     contain a device associated with _command_queue_.
+    ** if _command_queue_ is not a valid host command-queue
+    ** if device associated with _command_queue_ is not one of the devices
+    specified by {CL_MEM_DEVICE_HANDLE_LIST_KHR} at the time of creating
+    one or more of _mem_objects_
+    ** if one or more of _mem_objects_ belong to a context that does not
+    contain a device associated with _command_queue_
+  * {CL_INVALID_VALUE}
+    ** if _num_mem_objects_ is zero and _mem_objects_ is not `NULL`
+    ** if _num_mem_objects_ is greater than zero and _mem_objects_ is `NULL`
+  * {CL_INVALID_MEM_OBJECT}
+    ** if any of the memory objects in _mem_objects_ is not a valid OpenCL memory object created using an external memory handle
   * {CL_INVALID_EVENT_WAIT_LIST}
-  ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ is not 0,
-     or
-  ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is 0,
-     or
-  ** if event objects in _event_wait_list_ are not valid events.
-  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST} if the execution status
-    of any of the events in _event_wait_list_ is a negative integer value.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
-    required by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ is greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+// TODO: Do we want this to be an error?  For other APIs, it is only an error when the API is blocking.
+  * {CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST}
+    ** if the execution status of any of the events in _event_wait_list_ is a negative integer value indicating an error.
+    This error code is <<unified-spec, missing before>> version 1.1.
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 --
 
 
@@ -6402,23 +6394,26 @@ for a region of the buffer object being mapped.
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
-    command-queue.
-  * {CL_INVALID_MEM_OBJECT} if _memobj_ is not a valid memory object or is a
-    pipe object.
-  * {CL_INVALID_VALUE} if _mapped_ptr_ is not a valid pointer returned by
-    {clEnqueueMapBuffer} or {clEnqueueMapImage} for _memobj_.
-  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
-    _num_events_in_wait_list_ > 0, or if _event_wait_list_ is not `NULL` and
-    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
-    are not valid events.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
-  * {CL_INVALID_CONTEXT} if context associated with _command_queue_ and
-    _memobj_ are not the same or if the context associated with
-    _command_queue_ and events in _event_wait_list_ are not the same.
+  * {CL_INVALID_COMMAND_QUEUE}
+    ** if _command_queue_ is not a valid host command-queue
+  * {CL_INVALID_CONTEXT}
+    ** if the context associated with _command_queue_ and _memobj_ are not the same
+    ** if the context associated with _command_queue_ and events in _event_wait_list_ are not the same
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _memobj_ is not a valid memory object
+    ** if _memobj_ is a pipe object
+  * {CL_INVALID_VALUE}
+    ** if _mapped_ptr_ is not a pointer returned by {clEnqueueMapBuffer} or {clEnqueueMapImage} for _memobj_
+  * {CL_INVALID_EVENT_WAIT_LIST}
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ is greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 --
 
 
@@ -6576,32 +6571,34 @@ Improperly specified event dependencies passed to
 
 // refError
 
-{clEnqueueMigrateMemObjects} return {CL_SUCCESS} if the function is executed
+{clEnqueueMigrateMemObjects} returns {CL_SUCCESS} if the function is executed
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
-    command-queue.
-  * {CL_INVALID_CONTEXT} if the context associated with _command_queue_ and
-    memory objects in _mem_objects_ are not the same or if the context
-    associated with _command_queue_ and events in _event_wait_list_ are not
-    the same.
-  * {CL_INVALID_MEM_OBJECT} if any of the memory objects in _mem_objects_ is
-    not a valid memory object.
-  * {CL_INVALID_VALUE} if _num_mem_objects_ is zero or if _mem_objects_ is
-    `NULL`.
-  * {CL_INVALID_VALUE} if _flags_ is not 0 or is not any of the values
-    described in the table above.
-  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
-    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
-    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
-    are not valid events.
-  * {CL_MEM_OBJECT_ALLOCATION_FAILURE} if there is a failure to allocate
-    memory for the specified set of memory objects in _mem_objects_.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+  * {CL_INVALID_COMMAND_QUEUE}
+    ** if _command_queue_ is not a valid host command-queue
+  * {CL_INVALID_CONTEXT}
+    ** if the context associated with _command_queue_ and memory objects in _mem_objects_ are not the same
+    ** if the context associated with _command_queue_ and events in _event_wait_list_ are not the same
+  * {CL_INVALID_MEM_OBJECT}
+    ** if any of the memory objects in _mem_objects_ is not a valid memory object
+  * {CL_INVALID_VALUE}
+    ** if _num_mem_objects_ is zero
+    ** if _mem_objects_ is `NULL`
+    ** if _flags_ is not zero and is not a valid combination of the values
+    described in the <<migration-flags-table, Memory migration Flags>> table
+  * {CL_INVALID_EVENT_WAIT_LIST}
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ is greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+  * {CL_MEM_OBJECT_ALLOCATION_FAILURE}
+    ** if there is a failure to allocate memory for the data store associated with a memory object in _mem_objects_
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 --
 
 
@@ -6824,51 +6821,46 @@ endif::cl_ext_buffer_device_address[]
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_MEM_OBJECT} if _memobj_ is a not a valid memory object.
-ifdef::cl_ext_buffer_device_address[]
-  * {CL_INVALID_OPERATION} is returned for the {CL_MEM_DEVICE_ADDRESS_EXT} query if
-     the {cl_ext_buffer_device_address_EXT} is not supported or if the
-     buffer was not allocated with {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT}.
-endif::cl_ext_buffer_device_address[]
-  * {CL_INVALID_VALUE} if _param_name_ is not one of the supported values, or
-    if the size in bytes specified by _param_value_size_ is less than size of
+  * {CL_INVALID_MEM_OBJECT}
+    ** if _memobj_ is a not a valid memory object
+  * {CL_INVALID_VALUE}
+    ** if _param_name_ is not one of the supported values
+    ** if the size in bytes specified by _param_value_size_ is less than size of
     the return type specified in the
     <<mem-info-table, Memory Object Queries>> table
-    and _param_value_ is not `NULL`.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
-
+    and _param_value_ is not `NULL`
+ifdef::cl_ext_buffer_device_address[]
+  * {CL_INVALID_OPERATION}
+    ** if the {cl_ext_buffer_device_address_EXT} extension is supported, if
+    _param_name_ is {CL_MEM_DEVICE_ADDRESS_EXT}, and if _memobj_ was not created
+    with the {CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT} property set to {CL_TRUE}
+endif::cl_ext_buffer_device_address[]
 ifdef::cl_khr_dx9_media_sharing[]
-The following errors may be returned if the {cl_khr_dx9_media_sharing_EXT}
-extension is supported:
-
-  * {CL_INVALID_DX9_MEDIA_SURFACE_KHR} if _param_name_ is
-    {CL_MEM_DX9_MEDIA_SURFACE_INFO_KHR} and _memobj_ was not created by
-    calling {clCreateFromDX9MediaSurfaceKHR} from a Direct3D9 surface.
+  * {CL_INVALID_DX9_MEDIA_SURFACE_KHR}
+    ** if the {cl_khr_dx9_media_sharing_EXT} extension is supported, if
+    _param_name_ is {CL_MEM_DX9_MEDIA_SURFACE_INFO_KHR}, and if _memobj_ was not
+    created by calling {clCreateFromDX9MediaSurfaceKHR}
 endif::cl_khr_dx9_media_sharing[]
-
 ifdef::cl_khr_d3d10_sharing[]
-The following errors may be returned if the {cl_khr_d3d10_sharing_EXT}
-extension is supported:
-
-  * {CL_INVALID_D3D10_RESOURCE_KHR} if _param_name_ is
-    {CL_MEM_D3D10_RESOURCE_KHR} and _memobj_ was not created by calling
+  * {CL_INVALID_D3D10_RESOURCE_KHR}
+    ** if the {cl_khr_d3d10_sharing_EXT} extension is supported, if _param_name_
+    is {CL_MEM_D3D10_RESOURCE_KHR}, and if _memobj_ was not created by calling
     {clCreateFromD3D10BufferKHR}, {clCreateFromD3D10Texture2DKHR}, or
-    {clCreateFromD3D10Texture3DKHR}.
+    {clCreateFromD3D10Texture3DKHR}
 endif::cl_khr_d3d10_sharing[]
-
 ifdef::cl_khr_d3d11_sharing[]
-The following errors may be returned if the {cl_khr_d3d11_sharing_EXT}
-extension is supported:
-
-  * {CL_INVALID_D3D11_RESOURCE_KHR} if _param_name_ is
-    {CL_MEM_D3D11_RESOURCE_KHR} and _memobj_ was not created by calling
+  * {CL_INVALID_D3D11_RESOURCE_KHR}
+    ** if the {cl_khr_d3d11_sharing_EXT} extension is supported, if _param_name_
+    is {CL_MEM_D3D11_RESOURCE_KHR} and if _memobj_ was not created by calling
     {clCreateFromD3D11BufferKHR}, {clCreateFromD3D11Texture2DKHR}, or
-    {clCreateFromD3D11Texture3DKHR}.
+    {clCreateFromD3D11Texture3DKHR}
 endif::cl_khr_d3d11_sharing[]
-
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 --
 
 
@@ -8144,25 +8136,22 @@ and writes in a kernel.
 {clSVMAlloc} returns a valid non-`NULL` shared virtual memory address if the
 SVM buffer is successfully allocated.
 Otherwise, like *malloc*, it returns a `NULL` pointer value.
-{clSVMAlloc} will fail if
+{clSVMAlloc} will fail if:
 
-  * _context_ is not a valid context, or no devices in _context_ support SVM.
-  * _flags_ does not contain {CL_MEM_SVM_FINE_GRAIN_BUFFER} but does contain
-    {CL_MEM_SVM_ATOMICS}.
+  * _context_ is not a valid context
+  * no devices in _context_ support SVM
+  * values specified in _flags_ do not match those defined in the <<svm-flags-table, SVM Memory Flags>> table
+  * values specified in _flags_ do not follow rules described for supported values in the <<svm-flags-table, SVM Memory Flags>> table
+  * _flags_ contains {CL_MEM_SVM_ATOMICS} and does not contain {CL_MEM_SVM_FINE_GRAIN_BUFFER}
 ifdef::cl_ext_immutable_memory_objects[]
-  * _flags_ contains {CL_MEM_IMMUTABLE_EXT}.
+  * _flags_ contains {CL_MEM_IMMUTABLE_EXT}
 endif::cl_ext_immutable_memory_objects[]
-  * Values specified in _flags_ do not follow rules described for supported
-    values in the <<svm-flags-table,SVM Memory Flags>> table.
-  * {CL_MEM_SVM_FINE_GRAIN_BUFFER} or {CL_MEM_SVM_ATOMICS} is specified in
-    _flags_ and these are not supported by at least one device in _context_.
-  * The values specified in _flags_ are not valid, i.e. do not match those
-    defined in the <<svm-flags-table,SVM Memory Flags>> table.
-  * _size_ is 0 or > {CL_DEVICE_MAX_MEM_ALLOC_SIZE} value for any device in
-    _context_.
-  * _alignment_ is not a power of two or the OpenCL implementation cannot
-    support the specified alignment for at least one device in _context_.
-  * There was a failure to allocate resources.
+  * _flags_ contains {CL_MEM_SVM_FINE_GRAIN_BUFFER} or {CL_MEM_SVM_ATOMICS} and these flags are not supported by at least one device in _context_
+  * _size_ is 0 or greater than or equal to {CL_DEVICE_MAX_MEM_ALLOC_SIZE} value for any device in _context_
+  * _alignment_ is not a power of two
+  * _alignment_ is not supported for at least one device in _context_
+  * there was a failure to allocate resources on the device
+  * there was a failure to allocate resources on the host
 --
 
 [open,refpage='clSVMFree',desc='Frees a shared virtual memory buffer allocated using clSVMAlloc.',type='protos']
@@ -8261,20 +8250,26 @@ include::{generated}/api/version-notes/clEnqueueSVMFree.asciidoc[]
 successfully.
 Otherwise, it returns one of the following errors:
 
-  * {CL_INVALID_COMMAND_QUEUE} if _command_queue_ is not a valid host
-    command-queue.
-  * {CL_INVALID_OPERATION} if the device associated with _command_queue_ does not support SVM.
-  * {CL_INVALID_VALUE} if _num_svm_pointers_ is 0 and _svm_pointers_ is
-    non-`NULL`, _or_ if _svm_pointers_ is `NULL` and _num_svm_pointers_ is
-    not 0.
-  * {CL_INVALID_EVENT_WAIT_LIST} if _event_wait_list_ is `NULL` and
-    _num_events_in_wait_list_ > 0, or _event_wait_list_ is not `NULL` and
-    _num_events_in_wait_list_ is 0, or if event objects in _event_wait_list_
-    are not valid events.
-  * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources required
-    by the OpenCL implementation on the device.
-  * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
-    required by the OpenCL implementation on the host.
+  * {CL_INVALID_COMMAND_QUEUE}
+    ** if _command_queue_ is not a valid host command-queue
+  * {CL_INVALID_OPERATION}
+    ** if the device associated with _command_queue_ does not support SVM
+  * {CL_INVALID_CONTEXT}
+    ** if the context associated with _command_queue_ and events in _event_wait_list_ are not the same
+  * {CL_INVALID_VALUE}
+    ** if _svm_pointers_ is `NULL` and _num_svm_pointers_ is greater than zero
+    ** if _svm_pointers_ is not `NULL` and _num_svm_pointers_ is zero
+// TODO: error condition for invalid SVM pointers?
+  * {CL_INVALID_EVENT_WAIT_LIST}
+    ** if _event_wait_list_ is `NULL` and _num_events_in_wait_list_ is greater than zero
+    ** if _event_wait_list_ is not `NULL` and _num_events_in_wait_list_ is zero
+    ** if event objects in _event_wait_list_ are not valid events
+  * {CL_OUT_OF_RESOURCES}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the device
+  * {CL_OUT_OF_HOST_MEMORY}
+    ** if there is a failure to allocate resources required by the OpenCL
+    implementation on the host
 --
 
 [open,refpage='clEnqueueSVMMemcpy',desc='Enqueues a command to do a memcpy operation.',type='protos']
@@ -8284,10 +8279,8 @@ To enqueue a command to do a memcpy operation, call the function
 include::{generated}/api/protos/clEnqueueSVMMemcpy.txt[]
 include::{generated}/api/version-notes/clEnqueueSVMMemcpy.asciidoc[]
 
-  * _command_queue_ refers to the host command-queue in which the read / write
+  * _command_queue_ refers to the host command-queue in which the memory copy
     command will be queued.
-    If either _dst_ptr_ or _src_ptr_ is allocated using {clSVMAlloc} then the
-    OpenCL context allocated against must match that of _command_queue_.
   * _blocking_copy_ indicates if the copy operation is _blocking_ or
     _non-blocking_.
   * If _blocking_copy_ is {CL_TRUE} i.e. the copy command is blocking,
@@ -8328,9 +8321,9 @@ execution status of the read command.
 When the copy command has completed, the contents of the buffer that
 _dst_ptr_ points to can be used by the application.
 
-If the memory allocation(s) containing _dst_ptr_ and/or _src_ptr_ are
-allocated using {clSVMAlloc} and either is not allocated from the same
-context from which _command_queue_ was created the behavior is undefined.
+If either _dst_ptr_ or _src_ptr_ were allocated using {clSVMAlloc}, and either
+were allocated from a different context then the context specified when
+_command_queue_ was created, then behavior is undefined.
 
 // refError
 
@@ -8374,28 +8367,18 @@ include::{generated}/api/version-notes/clEnqueueSVMMemFill.asciidoc[]
 
   * _command_queue_ refers to the host command-queue in which the fill command
     will be queued.
-    The OpenCL context associated with _command_queue_ and SVM pointer referred
-    to by _svm_ptr_ must be the same.
   * _svm_ptr_ is a pointer to a memory region that will be filled with
     _pattern_.
     It must be aligned to _pattern_size_ bytes.
-    If _svm_ptr_ is allocated using {clSVMAlloc} then it must be allocated from
-    the same context from which _command_queue_ was created.
-    Otherwise the behavior is undefined.
   * _pattern_ is a pointer to the data pattern of size _pattern_size_ in bytes.
-    _pattern_ will be used to fill a region in _buffer_ starting at _svm_ptr_
-    and is _size_ bytes in size.
-    The data pattern must be a scalar or vector integer or floating-point data
-    type supported by OpenCL as described in <<scalar-data-types, Shared
-    Application Scalar Data Types>> and <<vector-data-types, Supported
-    Application Vector Data Types>>.
-    For example, if region pointed to by _svm_ptr_ is to be filled with a
-    pattern of float4 values, then _pattern_ will be a pointer to a cl_float4
-    value and _pattern_size_ will be `sizeof(cl_float4)`.
-    The maximum value of _pattern_size_ is the size of the largest integer or
-    floating-point vector data type supported by the OpenCL device.
+    _pattern_ will be used to fill a memory region starting at _svm_ptr_ that is
+    _size_ bytes in size.
+    _pattern_size_ must be a power of two and the maximum value of
+    _pattern_size_ is the size of the largest integer or floating-point vector
+    data type supported by the OpenCL device.
     The memory associated with _pattern_ can be reused or freed after the
     function returns.
+    Behavior is undefined if _pattern_ is allocated using {clSVMAlloc}.
   * _size_ is the size in bytes of region being filled starting with _svm_ptr_
     and must be a multiple of _pattern_size_.
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
@@ -8418,6 +8401,14 @@ include::{generated}/api/version-notes/clEnqueueSVMMemFill.asciidoc[]
     command or to wait for this command to complete.
     If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
     to an element of the _event_wait_list_ array.
+
+If _svm_ptr_ was allocated using {clSVMAlloc}, and it was allocated from a
+different context than the context specified when _command_queue_ was created,
+then behavior is undefined.
+
+If _svm_ptr_ was not allocated using {clSVMAlloc}, and the device associated
+with _command_queue_ does not support fine-grain system SVM, then behavior is
+undefined.
 
 // refError
 
@@ -8466,9 +8457,6 @@ include::{generated}/api/version-notes/clEnqueueSVMMap.asciidoc[]
     <<memory-map-flags-table,Memory Map Flags>> table.
   * _svm_ptr_ and _size_ are a pointer to a memory region and size in bytes that
     will be updated by the host.
-    If _svm_ptr_ is allocated using {clSVMAlloc} then it must be allocated from
-    the same context from which _command_queue_ was created.
-    Otherwise the behavior is undefined.
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
     complete before this particular command can be executed.
     If _event_wait_list_ is `NULL`, then this particular command does not wait
@@ -8490,6 +8478,14 @@ include::{generated}/api/version-notes/clEnqueueSVMMap.asciidoc[]
     If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
     to an element of the _event_wait_list_ array.
 
+If _svm_ptr_ was allocated using {clSVMAlloc}, and it was allocated from a
+different context than the context specified when _command_queue_ was created,
+then behavior is undefined.
+
+If _svm_ptr_ was not allocated using {clSVMAlloc}, and the device associated
+with _command_queue_ does not support fine-grain system SVM, then behavior is
+undefined.
+
 If _blocking_map_ is {CL_TRUE}, {clEnqueueSVMMap} does not return until the
 application can access the contents of the SVM region specified by _svm_ptr_
 and _size_ on the host.
@@ -8501,9 +8497,6 @@ The _event_ argument returns an event object which can be used to query the
 execution status of the map command.
 When the map command is completed, the application can access the contents
 of the region specified by _svm_ptr_ and _size_.
-
-Note that since we are enqueuing a command with a SVM buffer, the region is
-already mapped in the host address space.
 
 // refError
 
@@ -8548,9 +8541,6 @@ include::{generated}/api/version-notes/clEnqueueSVMUnmap.asciidoc[]
   * _command_queue_ must be a valid host command-queue.
   * _svm_ptr_ is a pointer that was specified in a previous call to
     {clEnqueueSVMMap}.
-    If _svm_ptr_ is allocated using {clSVMAlloc} then it must be allocated from
-    the same context from which _command_queue_ was created.
-    Otherwise the behavior is undefined.
   * _event_wait_list_ and _num_events_in_wait_list_ specify events that need to
     complete before {clEnqueueSVMUnmap} can be executed.
     If _event_wait_list_ is `NULL`, then {clEnqueueSVMUnmap} does not wait on any
@@ -8571,6 +8561,14 @@ include::{generated}/api/version-notes/clEnqueueSVMUnmap.asciidoc[]
     command or to wait for this command to complete.
     If _event_wait_list_ and _event_ are not `NULL`, _event_ must not refer
     to an element of the _event_wait_list_ array.
+
+If _svm_ptr_ was allocated using {clSVMAlloc}, and it was allocated from a
+different context than the context specified when _command_queue_ was created,
+then behavior is undefined.
+
+If _svm_ptr_ was not allocated using {clSVMAlloc}, and the device associated
+with _command_queue_ does not support fine-grain system SVM, then behavior is
+undefined.
 
 {clEnqueueSVMMap} and {clEnqueueSVMUnmap} act as synchronization points for
 the region of the SVM buffer specified in these calls.
@@ -9480,29 +9478,18 @@ include::{generated}/api/version-notes/clSetProgramSpecializationConstant.asciid
     set.
   * _spec_size_ specifies the size in bytes of the data pointed to by
     _spec_value_.
-    This should be 1 for boolean constants.
-    For all other constant types this should match the size of the
-    specialization constant in the module.
-  * _spec_value_ is a pointer to the memory location that contains the value of
-    the specialization constant.
-    The data pointed to by _spec_value_ are copied and can be safely reused by
-    the application after {clSetProgramSpecializationConstant} returns.
-    This specialization value will be used by subsequent calls to
-    {clBuildProgram} until another call to {clSetProgramSpecializationConstant}
-    changes it.
-    If a specialization constant is a boolean constant, _spec_value_ should be a
-    pointer to a {cl_uchar_TYPE} value.
-    A value of zero will set the specialization constant to false; any other
-    value will set it to true.
+  * _spec_value_ is a pointer to value of the specialization constant.
+    The specialization constant value pointed to by _spec_value_ is copied and
+    can therefore can be reused or freed after the function returns.
 
-Calling this function multiple times for the same specialization constant
-shall cause the last provided value to override any previously specified
-value.
-The values are used by a subsequent {clBuildProgram} call for the _program_.
+The values that are set for specialization constants affect the next time the _program_ is compiled using {clCompileProgram} or built using {clBuildProgram}.
 
-Application is not required to provide values for every specialization
-constant contained in the module. If the value is not set by this API
-call, default values will be used during the build.
+{clSetProgramSpecializationConstant} may be called multiple times for the same specialization constant, with each call replacing the previous value of the specialization constant.
+If no call to {clSetProgramSpecializationConstant} is made to set a specialization constant, then the default value in the _program_ is used for the specialization constant.
+
+For boolean specialization constants, _spec_size_ must be one byte.
+If the byte pointed to by _spec_value_ is zero, then the boolean specialization constant will be set to false, otherwise it will be set to true.
+For all other specialization constant types, _spec_size_ must match the size of the specialization constant in the _program_.
 
 // refError
 
@@ -9536,7 +9523,7 @@ Otherwise, it returns one of the following errors:
 
 [open,refpage='clBuildProgram',desc='Builds (compiles and links) a program executable from the program source or binary.',type='protos']
 --
-To build (compile & link) a program executable, call the function
+To build (compile and link) a program executable, call the function
 
 include::{generated}/api/protos/clBuildProgram.txt[]
 include::{generated}/api/version-notes/clBuildProgram.asciidoc[]
@@ -10453,12 +10440,12 @@ include::{generated}/api/version-notes/CL_PROGRAM_SOURCE.asciidoc[]
         If _program_ is created using {clCreateProgramWithBinary},
         {clCreateProgramWithIL},
 ifdef::cl_khr_il_program[{clCreateProgramWithILKHR},]
-        or {clCreateProgramWithBuiltInKernels}, a null string or the
-        appropriate program source code is returned depending on whether or
-        not the program source code is stored in the binary.
+        or {clCreateProgramWithBuiltInKernels}, and no program source code is
+        stored in the binary, then the returned value may be a null string (zero
+        characters) or an empty string (a string with just the null terminator).
 
-        The actual number of characters that represents the program source
-        code including the null terminator is returned in
+        The total number of characters that represents the program source
+        code, including the null terminator, is returned in
         _param_value_size_ret_.
 | {CL_PROGRAM_IL_anchor}
 
@@ -11839,9 +11826,9 @@ include::{generated}/api/version-notes/CL_KERNEL_ARG_TYPE_NAME.asciidoc[]
         _arg_index_.
         The type name returned will be the argument type name as it was
         declared with any whitespace removed.
-        If argument type name is an unsigned scalar type (i.e. unsigned
-        char, unsigned short, unsigned int, unsigned long), uchar, ushort,
-        uint and ulong will be returned.
+        If argument type name is an unsigned scalar type (i.e. `unsigned char`,
+        `unsigned short`, `unsigned int`, `unsigned long`), `uchar`, `ushort`,
+        `uint` or `ulong` will be returned.
         The argument type name returned does not include any type
         qualifiers.
 | {CL_KERNEL_ARG_TYPE_QUALIFIER_anchor}
@@ -12083,6 +12070,9 @@ An ND-range kernel command may require uniform work-groups or may support non-un
 To support non-uniform work-groups:
 
 . The device associated with _command_queue_ must support non-uniform work-groups.
+Specifically, this means:
+.. The device is an OpenCL 2.0, OpenCL 2.1, or OpenCL 2.2 device.
+.. The device is an OpenCL 3.0 or newer device and the device returns {CL_TRUE} for {CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT}.
 . The program object associated with _kernel_ must support non-uniform work-groups.
 Specifically, this means:
 .. If the program was created with {clCreateProgramWithSource}, then the program must be compiled for OpenCL C 2.0 or newer (e.g. by using the `-cl-std=CL2.0` or newer build option), and without the `-cl-uniform-work-group-size` build option.
@@ -13932,7 +13922,7 @@ be provided for semaphores created from
 {clEnqueueWaitSemaphoresKHR} and {clEnqueueSignalSemaphoresKHR} may return
 {CL_INVALID_VALUE} if _sema_objects_ list has one or more semaphores
 obtained from {CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR} and _sema_payload_list_
-is NULL.
+is `NULL`.
 
 endif::cl_khr_external_semaphore_dx_fence[]
 
@@ -16492,25 +16482,18 @@ endif::cl_khr_command_buffer_multi_device[]
     corresponding desired value. The list is terminated with 0. The
     {cl_khr_command_buffer_EXT} extension does not define any properties, but
     supported properties may be defined by layered extensions in future.
-  * _svm_ptr_ is a pointer to a (if the device supports system SVM)
-    or SVM memory region that will be filled with _pattern_.
+  * _svm_ptr_ is a pointer to a memory region that will be filled with
+    _pattern_.
     It must be aligned to _pattern_size_ bytes.
-    If _svm_ptr_ is allocated using {clSVMAlloc}, then it must be allocated
-    from the same context from which _command_queue_ was created.
-    Otherwise the behavior is undefined.
-  * _pattern_ is a pointer to the data pattern of size _pattern_size_ in
-    bytes.
-    _pattern_ will be used to fill a region in _buffer_ starting at
-    _svm_ptr_ and is _size_ bytes in size.
-    The data pattern must be a scalar or vector integer or floating-point
-    data type supported by OpenCL.
-    For example, if the region pointed to by _svm_ptr_ is to be filled with
-    a pattern of `float4` values, then _pattern_ will be a pointer to a
-    `cl_float4` value and _pattern_size_ will be `sizeof(cl_float4)`.
-    The maximum value of _pattern_size_ is the size of the largest integer
-    or floating-point vector data type supported by the OpenCL device.
+  * _pattern_ is a pointer to the data pattern of size _pattern_size_ in bytes.
+    _pattern_ will be used to fill a memory region starting at _svm_ptr_ that is
+    _size_ bytes in size.
+    _pattern_size_ must be a power of two and the maximum value of
+    _pattern_size_ is the size of the largest integer or floating-point vector
+    data type supported by the OpenCL device.
     The memory associated with _pattern_ can be reused or freed after the
     function returns.
+    Behavior is undefined if _pattern_ is allocated using {clSVMAlloc}.
   * _size_ is the size in bytes of region being filled starting with
     _svm_ptr_ and must be a multiple of _pattern_size_.
   * _sync_point_wait_list_, _num_sync_points_in_wait_list_ specify
@@ -16539,6 +16522,10 @@ after the function returns.
     _sync_point_wait_list_ array.
   * _mutable_handle_ returns a handle to the command.
     This parameter is unused, and **must** be `NULL`.
+
+If _svm_ptr_ was allocated using {clSVMAlloc}, and it was allocated from a
+different context than the context specified when _command_buffer_ was created,
+then behavior is undefined.
 
 // refError
 
@@ -16783,7 +16770,7 @@ one of the errors below is returned:
     _configs_ is not `NULL` and _num_configs_ is 0.
   * {CL_INVALID_VALUE} if any element of _config_types_ is not a valid
     {cl_command_buffer_update_type_khr_TYPE} enum.
-  * {CL_INVALID_VALUE} if any element of _configs_ is NULL.
+  * {CL_INVALID_VALUE} if any element of _configs_ is `NULL`.
   * {CL_OUT_OF_RESOURCES} if there is a failure to allocate resources
     required by the OpenCL implementation on the device.
   * {CL_OUT_OF_HOST_MEMORY} if there is a failure to allocate resources
