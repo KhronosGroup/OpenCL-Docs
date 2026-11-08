@@ -1,0 +1,214 @@
+
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+include::{generated}/api/api-dictionary-no-links.asciidoc[]
+:source-highlighter: coderay
+
+= cl_arm_memory_controls
+
+== Name Strings
+
+`cl_arm_memory_controls`
+
+== Contact
+
+Kevin Petit (kevin.petit 'at' arm.com)
+
+== Contributors
+
+Kevin Petit, Arm Ltd. +
+
+== Notice
+
+Copyright (c) 2025-2026 Arm Ltd.
+
+== Status
+
+Complete
+
+== Version
+
+Built On: {docdate} +
+Version: 0.2.0
+
+== Dependencies
+
+This extension is written against the OpenCL Specification v3.0.19.
+
+This extension requires OpenCL 3.0.
+
+== Overview
+
+This extension gives applications explicit control over some aspects of memory
+management. It can be used for performance tuning or debugging.
+
+== New API Enums
+
+Accepted value for the _param_name_ parameter to *clGetDeviceInfo*:
+
+[source,c]
+----
+CL_DEVICE_MEMORY_CONTROLS_CAPABILITIES_ARM             0x41F5
+
+CL_DEVICE_MEMORY_CONTROLS_COHERENCY_ARM                (1 << 0)
+CL_DEVICE_MEMORY_CONTROLS_LOCAL_MEMORY_ARM             (1 << 1)
+----
+
+Accepted value for the _properties_ parameter to *clCreateBufferWithProperties* and *clCreateImageWithProperties*:
+
+[source,c]
+----
+CL_MEM_COHERENCY_ARM    0x41F6
+
+CL_MEM_COHERENCY_INNER_SHAREABLE_ARM (1 << 0)
+CL_MEM_COHERENCY_OUTER_SHAREABLE_ARM (1 << 1)
+----
+
+Accepted value for the _param_name_ parameter to *clSetKernelExecInfo*:
+
+[source,c]
+----
+CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_ARM 0x41F7
+
+typedef enum {
+  CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_GLOBAL_ARM       = 1,
+  CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_COMPUTE_UNIT_ARM = 2,
+  CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_AUTO_ARM         = 3,
+} cl_kernel_exec_info_local_memory_backing_arm;
+
+CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_HASHING_ARM 0x41F8
+----
+
+== Modifications to the OpenCL API Specification
+
+(Modify Section 4.2, *Querying Devices*) ::
++
+--
+
+(Add the following to Table 5, _Device Queries_) ::
++
+--
+
+[cols="1,1,4",options="header"]
+|====
+| cl_device_info
+| Return Type
+| Description
+
+| {CL_DEVICE_MEMORY_CONTROLS_CAPABILITIES_ARM}
+| {cl_device_memory_controls_capabilities_arm_TYPE}
+| Returns a bitfield of the memory controls this device supports:
+ +
+- {CL_DEVICE_MEMORY_CONTROLS_COHERENCY_ARM} is set when the device supports
+  {CL_MEM_COHERENCY_ARM}. +
+- {CL_DEVICE_MEMORY_CONTROLS_LOCAL_MEMORY_ARM} is set when the device supports
+  {CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_ARM} and
+  {CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_HASHING_ARM}. +
+|====
+
+--
+--
+
+(Modify Section 5.2.1, *Creating Buffer Objects* and Section 5.3.1, *Creating Image Objects* ) ::
++
+--
+
+(Add the following to Table 18, _List of supported buffer creation properties_ and Table 22, _List of supported image creation properties_) ::
++
+--
+[cols="1,1,4",options="header"]
+|====
+| Property
+| Property Value
+| Description
+
+| {CL_MEM_COHERENCY_ARM}
+| {cl_mem_coherency_flags_arm_TYPE}
+| Override the coherency settings selected by the implementation.
+ +
+- {CL_MEM_COHERENCY_INNER_SHAREABLE_ARM}, when set, enables inner shareability
+  for the memory that backs the memory object. If it is not set, then inner
+  shareability is disabled. Inner shareability is always supported. +
+- {CL_MEM_COHERENCY_OUTER_SHAREABLE_ARM}, when set, enables outer shareability
+  for the memory that backs the memory object. If it is not set, then outer
+  shareability is disabled. If it is set and one or more devices do not support
+  outer shareability then memory object creation will fail. If it is set then
+  {CL_MEM_COHERENCY_INNER_SHAREABLE_ARM} must be set. +
+|====
+--
+
+(Add the following to the list of error conditions for *clCreateBufferWithProperties* and *clCreateImageWithProperties*)::
++
+--
+* {CL_INVALID_PROPERTY}
+** if {CL_MEM_COHERENCY_ARM} with {CL_MEM_COHERENCY_OUTER_SHAREABLE_ARM} set is
+included in _properties_ and one or more devices in the context do not support
+outer shareability.
+** if {CL_MEM_COHERENCY_ARM} is included in _properties_ with
+{CL_MEM_COHERENCY_OUTER_SHAREABLE_ARM} set but {CL_MEM_COHERENCY_INNER_SHAREABLE_ARM}
+not set.
+** if {CL_MEM_COHERENCY_ARM} is included in _properties_ and _host_ptr_ is an SVM
+pointer and {CL_MEM_USE_HOST_PTR} is set in _flags_.
+--
+
+--
+
+(Modify Section 5.9, *Kernel Objects*) ::
++
+--
+
+(Add the following to Table 31, _List of param_values accepted by *clSetKernelExecInfo*_) ::
++
+--
+[cols="1,1,4",options="header"]
+|====
+| cl_kernel_exec_info
+| Type
+| Description
+
+| {CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_ARM}
+| {cl_kernel_exec_info_local_memory_backing_arm_TYPE}
+| Selects the backing for local memory. Valid values are: +
+ +
+- {CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_GLOBAL_ARM} specifies that local
+  memory is backed with global memory. +
+- {CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_COMPUTE_UNIT_ARM} specifies that
+  local memory is backed by memory wihin the compute unit. +
+- {CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_AUTO_ARM} specifies that the
+  implementation selects the backing for local memory. +
+
+| {CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_HASHING_ARM}
+| {cl_bool_TYPE}
+| Enables or disables address hashing when local memory is backed within the
+  compute unit ({CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_COMPUTE_UNIT_ARM}
+  or {CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_AUTO_ARM}). This control
+  has no effect otherwise. +
+ +
+- {CL_FALSE} specifies that address hashing is disabled. +
+- {CL_TRUE} specifies that address hashing is enabled. +
+
+|====
+--
+
+--
+
+== Interactions with Other Extensions
+
+None.
+
+== Issues
+
+None.
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author       | Changes
+| 0.2.0   | 2026-03-02 | Kévin Petit  | Add support for local memory controls
+| 0.1.0   | 2025-08-04 | Kévin Petit  | Initial version
+|====
+
