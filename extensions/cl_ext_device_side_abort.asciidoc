@@ -1,0 +1,125 @@
+cl_ext_device_side_abort
+=========================
+
+// This section needs to be after the document title.
+:doctype: book
+:toc2:
+:toc: left
+:encoding: utf-8
+:lang: en
+:blank: pass:[ +]
+:data-uri:
+:icons: font
+include::../config/attribs.txt[]
+:source-highlighter: coderay
+
+== Name Strings
+
++cl_ext_device_side_abort+
+
+== Contact
+
+Pekka Jääskeläinen, Parmance (pekka /at/ parmance /dot/ com)
+
+== Contributors
+
+Pekka Jääskeläinen, Parmance +
+Henry Linjamäki, Parmance +
+Brice Videau, Argonne National Laboratory
+
+== Notice
+
+Copyright (c) 2021-2022 Parmance and Argonne National Laboratory.
+
+== Status
+
+Draft
+
+== Version
+
+Built On: {docdate} +
+Revision: 3
+
+== Dependencies
+
+This extension is written against the OpenCL Specification Version 1.2, Revision 19.
+
+This extension requires OpenCL 1.2.
+
+== Overview
+
+With the device side abort extension, a work-item (WI) can return from the kernel
+execution at any point and cause abnormal unrecoverable termination of the host
+process.
+
+This extension differs from the cl_arm_controlled_kernel_termination extension
+in that the abort in the device side is expected to behave like a call to the
+POSIX abort() in the host side, terminating also the host process immediately.
+
+== New OpenCL C Types and Functions
+
+[source,c]
+----
+void abort_platform(void);
+----
+
+== Modifications to the OpenCL C Specification
+
+=== Add a new Section 6.12.X - "Device-side invoked platform-wide program abort"
+
+A new function: ::
++
+--
+
+[source,c]
+----
+void abort_platform(void);
+----
+
+Stops the kernel execution and causes an abnormal unrecoverable termination of
+the host process, thus causing abortion of execution of the whole program at
+the platform level.
+
+Calling the device side abort also causes the printf buffer to be flushed on the
+host program's standard output before aborting the host process. This allows to
+implement device side assertion functionality by using the OpenCL C printf
+function and this extension.
+
+The host should abort the process at latest when the kernel command that called
+the function has finished execution, which means that all the WIs will
+either call abort_platform() or return from the kernel command otherwise.
+
+The host process is expected to call the standard abort function of the host
+operating system. In POSIX/C99-compliant systems, this must be implemented by
+a call to abort() which implies that the SIGABRT signal is raised and can be
+caught by defining a signal handler. This means that a minimal implementation
+of a device-side abort with a CPU device can simply call the standard abort()
+directly to implement compliant behavior.
+
+The results of an aborted kernel command are undefined. Device side abort is
+guaranteed to stop the kernel command as soon as possible, even in the presence
+of deadlocks or partially reached barriers in the kernel command.
+
+The control flow behavior within the work-group of a kernel command with
+a WI that called the device side abort is the same as immediately
+returning from the kernel for the abort-calling WI at the abort call site.
+For possible WIs that do not call abort, the return time is undefined and can
+adhere to the original control flow of the kernel as long as all the WIs
+eventually finish the execution and allow the host runtime to abort the
+process also in a single-threaded/non-interrupting implementation.
+
+--
+
+== Version History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|====
+| Version | Date       | Author             | Changes
+| 3       | 2022-05-14 | Pekka Jääskeläinen, Brice Videau |
+*Changed to an 'ext' extension to promote multi-vendor adoption.*
+| 2       | 2022-04-25 | Pekka Jääskeläinen, Brice Videau, Henry Linjamäki |
+State explicitly that a compliant CPU device implementation can call abort() directly. Clarified the control flow behavior.
+| 1       | 2022-04-08 | Pekka Jääskeläinen | *Initial revision for comments*
+|====
