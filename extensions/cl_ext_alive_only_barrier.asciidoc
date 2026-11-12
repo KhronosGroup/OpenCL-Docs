@@ -1,0 +1,156 @@
+:data-uri:
+:sectanchors:
+:icons: font
+:source-highlighter: coderay
+// TODO: try rouge?
+
+= cl_ext_alive_only_barrier
+
+== Name Strings
+
+`cl_ext_alive_only_barrier`
+
+== Contact
+
+Pekka Jääskeläinen, Intel (pekka 'dot' jaaskelainen 'at' intel 'dot' com)
+
+== Contributors
+
+// spell-checker: disable
+Pekka Jääskeläinen, Intel +
+// spell-checker: enable
+
+== Notice
+
+Copyright (c) 2024-2025 Intel Corporation. All rights reserved.
+
+== Status
+
+Draft
+
+== Version
+
+Built On: {docdate} +
+Version: 0.1.1
+
+== Dependencies
+
+This extension is written against the OpenCL 3.0 C Language specification and the OpenCL SPIR-V Environment specification, V3.0.10.
+
+This extension requires OpenCL 1.0.
+
+Some OpenCL C function overloads added by this extension require OpenCL C 2.0 or newer.
+
+== Overview
+
+This extension adds a new built-in function to perform barrier synchronization across the work-group even if some of the work-items are not "alive" anymore due to having returned from the kernel.
+
+The motivation for this "alive work-items only barrier" is the following: The original work-group barrier of OpenCL C defines semantics where either all work-items of the work-group must encounter the barrier or none of them should. It is, however, a common SPMD programming idiom to have, for example, a bounds check in the beginning of the kernel due to which a subset of work-items return early. In such cases, it is not possible to use the default OpenCL barrier in the rest of the kernel code for the "alive" work-items only, making implementing more complex kernels cumbersome.
+
+== New API Functions
+
+None.
+
+== New API Enums
+
+None.
+
+== New API Types
+
+None.
+
+== New OpenCL C Functions
+
+[source]
+----
+void work_group_barrier_alive_onlyEXT(cl_mem_fence_flags flags);
+
+// For OpenCL C 2.0 or newer:
+void work_group_barrier_alive_onlyEXT(cl_mem_fence_flags flags, memory_scope scope);
+----
+
+== Modifications to the OpenCL C Specification
+
+=== Add to Table 19 - Built-in Work-group Synchronization Functions
+
+[caption="Table 19. "]
+.Built-in Work-group synchronization Functions
+[cols="1a,2",options="header"]
+|====
+| *Function*
+| *Description*
+
+|[source]
+----
+void work_group_barrier_alive_onlyEXT(
+    cl_mem_fence_flags flags);
+
+// For OpenCL C 2.0 or newer:
+void work_group_barrier_alive_onlyEXT(
+    cl_mem_fence_flags flags,
+    memory_scope scope);
+----
+| For these functions, if any work-item in a work-group arrives at a barrier, behavior is undefined unless all "alive" work-items in the work-group (those that have not returned from the kernel function) arrive at the barrier. Otherwise, the
+semantics, requirements and arguments are the same as in the OpenCL C work_group_barrier() function.
+|====
+
+== Modifications to the OpenCL SPIR-V Environment Specification
+
+=== Add a new section 5.2.X - `cl_ext_alive_only_barrier`
+
+If the OpenCL environment supports the extension `cl_ext_alive_only_barrier` then the environment must accept modules that declare use of the extension `SPV_EXT_alive_only_barrier` and that declare the SPIR-V capability *AliveOnlyBarrierEXT*.
+
+For the instructions *OpControlAliveOnlyBarrierEXT* added by the extension:
+
+  * _Scope_ for _Execution_ must be *WorkGroup*.
+  * Valid values for _Scope_ for _Memory_ are the same as for *OpControlBarrier*.
+
+== Issues
+
+. Do we need to support sub-group alive only barriers?
++
+--
+*RESOLVED*: It would be useful, but it should be a separate extension.
+--
+
+. Could it be a device-wide property?
++
+--
+*RESOLVED*: It would be an option to add a device info for denoting that
+all barriers are, in fact, "alive only barriers" for the device. However, this
+is only useful for targets which happen to have cheap alive only barrier
+semantics in hardware, and not suitable for those where the barrier semantics
+incurs extra overheads to implement. For example, with some CPU vector ISAs,
+additional vector masking likely needs to be introduced to implement the
+semantics in the general case of work-group vectorization.
+--
+
+. Could it be a kernel attribute?
++
+--
+*RESOLVED*: This could be an option, but it doesn't seem to add much to the built-in
+version. The built-in option enables more fine-grain optimization within the
+higher-level programming model; programmers can utilize (cheaper) normal barriers up
+until a point there are diverging exits in the kernel, after which one can only use
+alive-only-barriers for well-defined behavior.
+--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Version|Date|Author|Changes
+|0.1.1|2025-05-19|Pekka Jääskeläinen|*Added notes of a couple of other considered options to the Issues section.*
+|0.1.0|2024-07-23|Pekka Jääskeläinen|*Initial revision*
+|========================================
+
+//************************************************************************
+//Other formatting suggestions:
+//
+//* Use *bold* text for host APIs, or [source] syntax highlighting.
+//* Use `mono` text for device APIs, or [source] syntax highlighting.
+//* Use `mono` text for extension names, types, or enum values.
+//* Use _italics_ for parameters.
+//************************************************************************
