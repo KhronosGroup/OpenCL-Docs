@@ -24,12 +24,12 @@ https://github.com/KhronosGroup/OpenCL-Docs
 
 == Contributors
 
+Arvind Sudarsanam, Qualcomm Technologies, Inc. +
 Alexander Galazin, Imagination Technologies +
 Joe Molleson, Imagination Technologies +
 Robert Quill, Imagination Technologies +
 Tomasz Platek, Imagination Technologies +
 Contributors to `GLSL_KHR_cooperative_matrix`
-
 
 == Notice
 
@@ -44,13 +44,12 @@ Draft spec, NOT APPROVED!!
 == Version
 
 Built On: {docdate} +
-Version: 1.0.0
+Version: 2.0.0
 
 
 == Dependencies
 
-This extension is written against the OpenCL 3.0 C Language specification and the OpenCL SPIR-V Environment specification, V3.0.8.
-
+This extension is written against the OpenCL 3.0 C Language specification and the OpenCL SPIR-V Environment specification, V3.0.8 and the OpenCL cl_khr_cooperative_matrix extension specification, V1.0.0 (draft version).
 
 == Overview
 
@@ -111,7 +110,7 @@ None
 
 [source,c]
 ----
-__opencl_c_ext_cooperative_matrix
+__opencl_c_khr_cooperative_matrix
 ----
 
 == New OpenCL C Enums
@@ -155,10 +154,29 @@ __attribute__ ((coop_mat(_scope_, _row_, _column_, _use_)))
 
 [source,c]
 ----
-component_type __attribute__((coop_mat(...))) coop_mat_load(const gentype p, const coop_matrix_layout_t layout, const uint stride);
-void coop_mat_store(const gentype *p, component_type __attribute__((coop_mat(...))) m, const coop_matrix_layout_t layout, const uint stride);
-component_type __attribute__((coop_mat(...))) coop_mat_mulAdd(component_type __attribute__((coop_mat(...))) A, component_type __attribute__((coop_mat(...))) B, component_type __attribute__((coop_mat(...))) C);
-component_type __attribute__((coop_mat(...))) coop_mat_mulAdd(component_type __attribute__((coop_mat(...))) A, component_type __attribute__((coop_mat(...))) B, component_type __attribute__((coop_mat(...))) C, coop_matrix_operands_t matrix_operands);
+component_type __attribute__((coop_mat(...))) coop_mat_init(component_type value);
+
+component_type __attribute__((coop_mat(...)))
+coop_mat_init(component_type __attribute__((coop_mat(...))) m);
+
+component_type __attribute__((coop_mat(...)))
+coop_mat_load(const gentype p, component_type __attribute__((coop_mat(...))) m,
+const coop_matrix_layout_t layout, const uint stride);
+
+void coop_mat_store(gentype *p, component_type __attribute__((coop_mat(...))) m,
+const coop_matrix_layout_t layout, const uint stride);
+
+component_type __attribute__((coop_mat(...)))
+coop_mat_mulAdd(component_type __attribute__((coop_mat(...))) A,
+component_type __attribute__((coop_mat(...))) B,
+component_type __attribute__((coop_mat(...))) C);
+
+component_type __attribute__((coop_mat(...))) 
+coop_mat_mulAdd(component_type __attribute__((coop_mat(...))) A,
+component_type __attribute__((coop_mat(...))) B,
+component_type __attribute__((coop_mat(...))) C,
+coop_matrix_operands_t matrix_operands);
+
 uint coop_mat_length(component_type __attribute__((coop_mat(...))) m);
 ----
 
@@ -168,7 +186,7 @@ None
 
 == Modifications to the OpenCL C Specification
 
-=== (Add a new Section 6.3.X, *Cooperative Matrix Type*) :
+=== (Add a new Section 6.3.X, *Cooperative Matrix Types*) :
 
 Cooperative matrix types are types where the load/store operations and
 computations that are performed on the matrix elements are spread across a set of
@@ -180,12 +198,13 @@ Cooperative matrices are supported in the language by applying the
 The `coop_mat` specifier is parameterized by four parameters:
 scope, rows, columns, and use.
 
-The base component type must be a scalar numerical type.
+The base component type must be one of the following types: `char`, `short`, `int`, `long`, `float`, `double`, `half`, `uchar`, `ushort`, `uint`, `ulong`.
 
 The scope parameter must be one of the supported memory scopes as
-defined in the 'Memory Scope' section. Only one of the OpenCL memory scopes(memory_scope_sub_group) is supported for cooperative matrix.
+defined in the 'Memory Scope' section. Only the `memory_scope_sub_group` scope
+is supported for cooperative matrix.
 
-The rows and columns parameters must be constant expressions,
+The rows and columns parameters must be constant integer expressions,
 and no error checking is performed on their values at compile time.
 
 The use parameter must be one of the following predefined enums:
@@ -205,7 +224,6 @@ The use parameter must be one of the following predefined enums:
 The use parameter controls which operand of **coop_mat_mulAdd** the
 type can be used as.
 
-
 Cooperative matrix types can be used as local variables, function parameters,
 and function return values.
 They must not be used as kernel arguments.
@@ -215,13 +233,12 @@ Examples of cooperative matrix declarations:
 [source,c]
 ----
 float vmat1 __attribute__((coop_mat(memory_scope_sub_group, 8, 8, CLK_COOPERATIVE_MATRIX_A)));
-
+Declares vmat1 as an 8 × 8 cooperative matrix with float components, subgroup scope, and role A in a mulAdd operation.
 
 typedef half chmat44 __attribute__((coop_mat(memory_scope_sub_group, 4, 4, CLK_COOPERATIVE_MATRIX_B)));
 chmat44 vmat2;
-
+Defines chmat44 as a 4 × 4 cooperative matrix type with half components, subgroup scope, and role B in a mulAdd operation and then declares vmat2 with that type.
 ----
-
 
 === (Add to Section 6.4.1. *Implicit Conversions*) :
 
@@ -233,7 +250,7 @@ Explicit casts between cooperative matrix types are disallowed.
 
 === (Add to Section 6.4.3. *Explicit Conversions*) :
 
-Conversions are allowed between cooperative matrix type only if
+Conversions are allowed via coop_mat_init between cooperative matrix type only if
 the scope, row, column, and use parameters are the same.
 
 
@@ -241,7 +258,7 @@ the scope, row, column, and use parameters are the same.
 
 The arithmetic binary operators add (+), subtract (-), multiply (*), and
 divide (/) operate on cooperative matrix types and perform the operation
-component-wise. The operands must have identical types.
+component-wise. The operands must be cooperative matrices with same scope, row, column, and use parameters.
 
 The arithmetic binary operator multiply (*) also operates on a cooperative
 matrix type and a scalar (in either order) and performs the multiply operation
@@ -281,17 +298,21 @@ The result is implementation-defined.
 === (Add to Section 6.7.7. *Initialization*)
 
 Cooperative matrices can be initialized using a single scalar value as follows:
-
 [source,c]
 ----
 float vmat1 attribute((coop_mat(memory_scope_sub_group, 8, 8, CLK_COOPERATIVE_MATRIX_A)));
 vmat1 = coop_mat_init(0.0);
 ----
+The single scalar value can be any given value (constant or variable). The type of the scalar value should match the base component type of the cooperative matrix, and all components of the matrix are initialized to that value.
 
-The single scalar value can be any given value (constant or variable) as cooperative matrices
-can be defined in private address space. Type of the scalar value should match the base
-component type of the cooperative matrix, and all components of the matrix are initialized to
-that value.
+Cooperative matrices can be initialized using another cooperative matrix as follows:
+[source,c]
+----
+float vmat0 attribute((coop_mat(memory_scope_sub_group, 8, 8, CLK_COOPERATIVE_MATRIX_A)));
+float vmat1 attribute((coop_mat(memory_scope_sub_group, 8, 8, CLK_COOPERATIVE_MATRIX_A)));
+vmat1 = coop_mat_init(vmat0);
+----
+The cooperative matrix used for initialization must have the same scope, row, column, and use parameters as the cooperative matrix being initialized.
 
 === (Add to Section 6.11. *Restrictions*) :
 
@@ -299,7 +320,7 @@ The following restrictions apply to cooperative matrix type:
 
  - Pointers to cooperative matrices are not allowed;
  - Arrays of cooperative matrices are not allowed;
- - Cooperative matrix is not allowed to be a member of a struct or union;
+ - Cooperative matrices are not allowed as members of a struct or union;
  - The address operator can not be applied to a cooperative matrix or an element of a cooperative matrix;
  - Cooperative matrices must not be used as kernel arguments or global variables;
  - Cooperative matrices can only be declared in the private address space.
@@ -315,15 +336,13 @@ The `+__attribute__ ((coop_mat(scope, row, column, use)))+` declares a cooperati
 The following functions are used to load and store cooperative matrix
 values from and to memory. In memory, the matrices are stored as arrays
 of their element type and size. In the following functions, the generic type
-`coop_mat` can accept a cooperative matrix type with any type parameters.
+`coop_mat` indicates the function argument can be a cooperative matrix type with any type parameters.
 
-The _p_ is a pointer to the element of the array to load from/store to.
-The element type of the array can be any scalar or vector numerical type and is
+The _p_ argument is a pointer to the element of the array to load from/store to.
+The element type of the array must be a scalar or vector numerical type and is
 indicated as `gentype`.
 
-The _layout_ indicates the layout of the matrix values in memory. It can accept
-one of the predefined enums: `CLK_COOPERATIVE_MATRIX_LAYOUT_ROW_MAJOR` or
-`CLK_COOPERATIVE_MATRIX_LAYOUT_COLUMN_MAJOR`
+The _layout_ argument indicates the layout of the matrix values in memory. It must be one of the predefined enums: `CLK_COOPERATIVE_MATRIX_LAYOUT_ROW_MAJOR` or `CLK_COOPERATIVE_MATRIX_LAYOUT_COLUMN_MAJOR`
 
 For all of these functions, for a given dynamic instance of the function
 call, all function parameters must be the same for all invocations in a
@@ -336,15 +355,15 @@ be active or all must be inactive.
 [cols="7,3",options="header",]
 |====
 | Function | Description
-| coop_mat **coop_mat_load**(const gentype *_p_, const coop_matrix_layout_t _layout_, const uint _stride_)
- | Load a cooperative matrix from _p_. +
+| coop_mat **coop_mat_load**(const gentype *_p_, coop_mat _m_, const coop_matrix_layout_t _layout_, const uint _stride_)
+ | Load a cooperative matrix from _p_. Argument _m_ is used only for the purpose of determining the type of the matrix to load and is not evaluated. +
    If _layout_ is `CLK_COOPERATIVE_MATRIX_LAYOUT_ROW_MAJOR`,
    then elements (row,\*) of the result are taken in
    order from contiguous locations starting at _p_ + _row_*_stride_. +
    If _layout_ is `CLK_COOPERATIVE_MATRIX_LAYOUT_COLUMN_MAJOR`,
    then elements (*,col) of the result are taken in
    order from contiguous locations starting at _p_ + _col_*_stride_.
-|  void **coop_mat_store**(const gentype *_p_, coop_mat _m_, const coop_matrix_layout_t _layout_, const uint _stride_);
+|  void **coop_mat_store**(gentype *_p_, coop_mat _m_, const coop_matrix_layout_t _layout_, const uint _stride_);
  | Store a cooperative matrix to _p_. +
    If _layout_ is `CLK_COOPERATIVE_MATRIX_LAYOUT_ROW_MAJOR`,
    then elements (row,\*) of _m_ are stored in
@@ -356,14 +375,15 @@ be active or all must be inactive.
 
 The following functions are used to perform linear-algebraic matrix multiplication
 on cooperative matrices. In the following functions, the generic type
-`coop_mat` can accept a cooperative matrix type with any type parameters.
+`coop_mat` indicates the function argument can be a cooperative matrix type with any type parameters.
 
 [[table-coopmat-muladd]]
 .Cooperative Matrix Multiply Functions
 [cols="7,3",options="header",]
 |====
 | Function | Description
-| coop_mat **coop_mat_mulAdd**(coop_mat _A_, coop_mat _B_, coop_mat _C_) +
+| coop_mat **coop_mat_mulAdd**(coop_mat _A_, coop_mat _B_, coop_mat _C_)
+
   coop_mat **coop_mat_mulAdd**(coop_mat _A_, coop_mat _B_, coop_mat _C_, coop_matrix_operands_t _matrix_operands_)
  a| Linear-algebraic matrix multiply of _A_ by _B_ and then
    component-wise add _C_. The order of the operations is implementation
@@ -375,14 +395,14 @@ on cooperative matrices. In the following functions, the generic type
    The type of the result matches the type of _C_.
    The _matrix_operands_ operand provides additional limitations on how the matrix components
    are treated and/or the matrix multiply function is performed.
-   Be default, the operand is set to `CLK_COOPERATIVE_MATRIX_OPERAND_NONE` and can be omitted.
+   By default, the operand is set to `CLK_COOPERATIVE_MATRIX_OPERAND_NONE` and can be omitted.
    The behavior of the `coop_matrix_operands_t` values is described in
    the `SPV_KHR_cooperative_matrix` extension.
 
 |====
 
-The following function is used to get the number of components owned by the current invocation.
-The generic type `coop_mat` can accept a cooperative matrix type with any type parameters.
+The following function is used to get the number of components owned by the calling work-item.
+The generic type `coop_mat` indicates the function argument can be a cooperative matrix type with any type parameters.
 
 [[table-coopmat-miscellaneous]]
 .Cooperative Matrix Miscellaneous Functions
@@ -390,7 +410,7 @@ The generic type `coop_mat` can accept a cooperative matrix type with any type p
 |====
 | Function | Description
 | uint **coop_mat_length**(coop_mat _m_)
- | Return the number of components owned by the current invocation.
+ | Return the number of components owned by the calling work-item. Result is implementation-defined.
 |====
 
 
