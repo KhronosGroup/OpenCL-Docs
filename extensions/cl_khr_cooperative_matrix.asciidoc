@@ -71,8 +71,8 @@ constructs:
 [source,c]
 ----
 coop_mat -> OpTypeCooperativeMatrixKHR
-coop_mat_init(scalar value) -> OpConstantComposite
-coop_mat_init(coop_mat) -> Op*Convert, OpConvert*To*
+coop_mat_init(..., scalar value) -> OpConstantComposite
+coop_mat_init(..., coop_mat) -> Op*Convert, OpConvert*To*
 coop_mat_length -> OpCooperativeMatrixLength
 coop_mat[i] -> OpCompositeExtract/OpCompositeInsert/OpAccessChain
 +, -, *, / -> OpFAdd, OpFNegate/OpFSub, OpFMul/OpMatrixTimesScalar, OpFDiv
@@ -154,10 +154,12 @@ __attribute__ ((coop_mat(_scope_, _row_, _column_, _use_)))
 
 [source,c]
 ----
-component_type __attribute__((coop_mat(...))) coop_mat_init(component_type value);
+component_type __attribute__((coop_mat(...)))
+coop_mat_init(component_type __attribute__((coop_mat(...))) ret_val_ref, component_type value);
 
 component_type __attribute__((coop_mat(...)))
-coop_mat_init(component_type __attribute__((coop_mat(...))) m);
+coop_mat_init(component_type __attribute__((coop_mat(...))) ret_val_ref,
+              component_type __attribute__((coop_mat(...))) m);
 
 component_type __attribute__((coop_mat(...)))
 coop_mat_load(const gentype p, component_type __attribute__((coop_mat(...))) m,
@@ -301,7 +303,7 @@ Cooperative matrices can be initialized using a single scalar value as follows:
 [source,c]
 ----
 float vmat1 attribute((coop_mat(memory_scope_sub_group, 8, 8, CLK_COOPERATIVE_MATRIX_A)));
-vmat1 = coop_mat_init(0.0);
+vmat1 = coop_mat_init(vmat1, 0.0);
 ----
 The single scalar value can be any given value (constant or variable). The type of the scalar value should match the base component type of the cooperative matrix, and all components of the matrix are initialized to that value.
 
@@ -310,7 +312,7 @@ Cooperative matrices can be initialized using another cooperative matrix as foll
 ----
 float vmat0 attribute((coop_mat(memory_scope_sub_group, 8, 8, CLK_COOPERATIVE_MATRIX_A)));
 float vmat1 attribute((coop_mat(memory_scope_sub_group, 8, 8, CLK_COOPERATIVE_MATRIX_A)));
-vmat1 = coop_mat_init(vmat0);
+vmat1 = coop_mat_init(vmat1, vmat0);
 ----
 The cooperative matrix used for initialization must have the same scope, row, column, and use parameters as the cooperative matrix being initialized.
 
