@@ -1,0 +1,86 @@
+name: Publish Extension HTML
+
+permissions:
+  contents: read
+
+# Build the extension HTML files whenever extension files change, so the
+# generated HTML can be inspected as a workflow artifact before it is
+# published.  Only pushes to main deploy to GitHub Pages.
+on:
+  push:
+    paths:
+      - 'extensions/**'
+      - '.github/workflows/publish-extensions.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'extensions/**'
+      - '.github/workflows/publish-extensions.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build extension HTML
+    runs-on: ubuntu-latest
+    # Refer to the build container by its SHA instead of the name, to
+    # prevent caching problems when updating the image.
+    # container: khronosgroup/docker-images:asciidoctor-spec.20240702
+    container: khronosgroup/docker-images@sha256:4aab96a03ef292439c9bd0f972adfa29cdf838d0909b1cb4ec2a6d7b2d14a37f
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          # If fetch-depth: 0 is not specified, then
+          #     git describe --tags --dirty
+          # fails.
+          # This could also affect SPECREVISION in the Makefile.
+          fetch-depth: 0
+
+      # Ownerships in the working directory are odd.
+      # . is owned by UID 1001, while repo files are owned by root.
+      # The 'git config' is a brute-force workaround.
+      - name: Git safe directory workaround
+        run: |
+            git config --global --add safe.directory '*'
+
+      # KATEXDIR is the relative runtime path from the HTML files to the
+      # KaTeX files.  Override it so the HTML files and KaTeX files can be
+      # published side by side, i.e. <site>/cl_khr_foo.html and <site>/katex/.
+      - name: Generate extension HTML
+        run: |
+          python3 makeSpec -clean -spec khr+ext OUTDIR=out.extensions KATEXDIR=katex -j -O extensionshtml
+
+      - name: Stage site
+        run: |
+          mkdir -p _site
+          cp out.extensions/html/*.html _site/
+          cp -r out.extensions/katex _site/
+
+      # The Pages artifact is uploaded for every run so the generated HTML
+      # can be inspected, but it is only deployed for pushes to main.
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
