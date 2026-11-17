@@ -687,9 +687,16 @@ include::{generated}/api/version-notes/CL_DEVICE_ADDRESS_BITS.asciidoc[]
 
 include::{generated}/api/version-notes/CL_DEVICE_MAX_MEM_ALLOC_SIZE.asciidoc[]
   | {cl_ulong_TYPE}
-      | Max size of memory object allocation in bytes.
-        The minimum value is max(min(1024 {times} 1024 {times} 1024, 1/4^th^
-        of {CL_DEVICE_GLOBAL_MEM_SIZE}), 32 {times} 1024 {times} 1024).
+      | The maximum size of a single memory object allocation in bytes.
+        The returned value must be no less than 32 MB.
+        If {CL_DEVICE_GLOBAL_MEM_SIZE} is less than 4 GB, the returned value
+        must be no less than 1/4th {CL_DEVICE_GLOBAL_MEM_SIZE}, otherwise the
+        value reported must be no less than 1 GB.
+
+        Implementations should report the largest allocation size that the
+        device is capable of handling, rather than a conservative estimate, so
+        that applications can make effective use of available device memory.
+
 | {CL_DEVICE_IMAGE_SUPPORT_anchor}
 
 include::{generated}/api/version-notes/CL_DEVICE_IMAGE_SUPPORT.asciidoc[]
@@ -926,7 +933,7 @@ include::{generated}/api/version-notes/CL_DEVICE_PIPE_MAX_PACKET_SIZE.asciidoc[]
       | The maximum size of pipe packet in bytes.
 
         Support for pipes is required for an OpenCL 2.0, 2.1, or 2.2 device.
-        The minimum value is 1024 bytes if the device supports pipes, and must be
+        The minimum value is 1 KB if the device supports pipes, and must be
         0 for devices that do not support pipes.
 | {CL_DEVICE_MAX_PARAMETER_SIZE_anchor}
 
@@ -934,7 +941,7 @@ include::{generated}/api/version-notes/CL_DEVICE_MAX_PARAMETER_SIZE.asciidoc[]
   | {size_t_TYPE}
       | Max size in bytes of all arguments that can be passed to a kernel.
 
-        The minimum value is 1024.
+        The minimum value is 1 KB.
         For this minimum value, only a maximum of 128 arguments can be
         passed to a kernel.
         For all other values, a maximum of 255 arguments can be passed
