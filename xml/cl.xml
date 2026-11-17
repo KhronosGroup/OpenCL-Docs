@@ -266,6 +266,7 @@ server's OpenCL/api-docs repository.
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_svm_alloc_access_flags_khr</name>;</type>
         <type category="define">typedef <type>cl_properties</type>    <name>cl_svm_free_properties_khr</name>;</type>
         <type category="define">typedef <type>cl_bitfield</type>      <name>cl_svm_free_flags_khr</name>;</type>
+        <type category="define">typedef <type>cl_properties</type>    <name>cl_svm_copy_properties_khr</name>;</type>
         <type category="define">typedef <type>cl_uint</type>          <name>cl_svm_pointer_info_khr</name>;</type>
 
             <comment>Structure types</comment>
@@ -424,7 +425,8 @@ server's OpenCL/api-docs repository.
     CL_SVM_CAPABILITY_HOST_MAP_KHR              | \
     CL_SVM_CAPABILITY_DEVICE_READ_KHR           | \
     CL_SVM_CAPABILITY_DEVICE_WRITE_KHR          | \
-    CL_SVM_CAPABILITY_DEVICE_ATOMIC_ACCESS_KHR)</type>
+    CL_SVM_CAPABILITY_DEVICE_ATOMIC_ACCESS_KHR  | \
+    CL_SVM_CAPABILITY_CREATE_BUFFER_KHR)</type>
 
         <type category="define">#define <name>CL_SVM_TYPE_MACRO_FINE_GRAIN_BUFFER_KHR</name> \
     (CL_SVM_CAPABILITY_SINGLE_ADDRESS_SPACE_KHR | \
@@ -436,7 +438,8 @@ server's OpenCL/api-docs repository.
     CL_SVM_CAPABILITY_DEVICE_READ_KHR           | \
     CL_SVM_CAPABILITY_DEVICE_WRITE_KHR          | \
     CL_SVM_CAPABILITY_DEVICE_ATOMIC_ACCESS_KHR  | \
-    CL_SVM_CAPABILITY_CONCURRENT_ACCESS_KHR)</type>
+    CL_SVM_CAPABILITY_CONCURRENT_ACCESS_KHR     | \
+    CL_SVM_CAPABILITY_CREATE_BUFFER_KHR)</type>
 
         <type category="define">#define <name>CL_SVM_TYPE_MACRO_DEVICE_KHR</name> \
     (CL_SVM_CAPABILITY_SINGLE_ADDRESS_SPACE_KHR | \
@@ -478,7 +481,8 @@ server's OpenCL/api-docs repository.
     CL_SVM_CAPABILITY_DEVICE_ATOMIC_ACCESS_KHR  | \
     CL_SVM_CAPABILITY_CONCURRENT_ACCESS_KHR     | \
     CL_SVM_CAPABILITY_CONCURRENT_ATOMIC_ACCESS_KHR | \
-    CL_SVM_CAPABILITY_INDIRECT_ACCESS_KHR)</type>
+    CL_SVM_CAPABILITY_INDIRECT_ACCESS_KHR       | \
+    CL_SVM_CAPABILITY_CREATE_BUFFER_KHR)</type>
 
     </types>
 
@@ -1364,6 +1368,7 @@ server's OpenCL/api-docs repository.
         <enum bitpos="12"           name="CL_SVM_CAPABILITY_CONCURRENT_ACCESS_KHR"/>
         <enum bitpos="13"           name="CL_SVM_CAPABILITY_CONCURRENT_ATOMIC_ACCESS_KHR"/>
         <enum bitpos="14"           name="CL_SVM_CAPABILITY_INDIRECT_ACCESS_KHR"/>
+        <enum bitpos="15"           name="CL_SVM_CAPABILITY_CREATE_BUFFER_KHR"/>
     </enums>
 
     <enums name="cl_mem_alloc_flags_intel" vendor="Intel" type="bitmask">
@@ -1727,7 +1732,8 @@ server's OpenCL/api-docs repository.
         <enum value="0x1075"        name="CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED"/>
         <enum value="0x1076"        name="CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR"/>
         <enum value="0x1077"        name="CL_DEVICE_SVM_TYPE_CAPABILITIES_KHR"/>
-            <unused start="0x1078" end="0x107F" comment="Reserved for cl_device_info"/>
+        <enum value="0x1078"        name="CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR"/>
+            <unused start="0x1079" end="0x107F" comment="Reserved for cl_device_info"/>
         <enum value="0x1080"        name="CL_CONTEXT_REFERENCE_COUNT"/>
         <enum value="0x1081"        name="CL_CONTEXT_DEVICES"/>
         <enum value="0x1082"        name="CL_CONTEXT_PROPERTIES"/>
@@ -3617,6 +3623,18 @@ server's OpenCL/api-docs repository.
             <param>const <type>cl_svm_alloc_properties_khr</type>*  <name>properties</name></param>
             <param><type>size_t</type>                          <name>size</name></param>
             <param><type>cl_uint</type>*                        <name>suggested_svm_type_index</name></param>
+        </command>
+        <command>
+            <proto><type>cl_int</type>                          <name>clEnqueueSVMMemcpyWithPropertiesKHR</name></proto>
+            <param><type>cl_command_queue</type>                <name>command_queue</name></param>
+            <param><type>cl_svm_copy_properties_khr</type>*     <name>properties</name></param>
+            <param><type>cl_bool</type>                         <name>blocking_copy</name></param>
+            <param><type>void</type>*                           <name>dst_ptr</name></param>
+            <param>const <type>void</type>*                     <name>src_ptr</name></param>
+            <param><type>size_t</type>                          <name>size</name></param>
+            <param><type>cl_uint</type>                         <name>num_events_in_wait_list</name></param>
+            <param>const <type>cl_event</type>*                 <name>event_wait_list</name></param>
+            <param><type>cl_event</type>*                       <name>event</name></param>
         </command>
         <command suffix="CL_API_SUFFIX__VERSION_1_0">
             <proto><type>cl_int</type>                                  <name>clGetPlatformIDs</name></proto>
@@ -8050,12 +8068,13 @@ server's OpenCL/api-docs repository.
                 <enum name="CL_SEMAPHORE_FAST_PATH_IMG"/>
             </require>
         </extension>
-        <extension name="cl_khr_unified_svm" revision="0.9.0" condition="defined(CL_VERSION_2_0)" supported="opencl" experimental="true">
+        <extension name="cl_khr_unified_svm" revision="0.9.1" condition="defined(CL_VERSION_2_0)" supported="opencl" experimental="true">
             <require comment="cl_platform_info">
                 <enum name="CL_PLATFORM_SVM_TYPE_CAPABILITIES_KHR"/>
             </require>
             <require comment="cl_device_info">
                 <enum name="CL_DEVICE_SVM_TYPE_CAPABILITIES_KHR"/>
+                <enum name="CL_DEVICE_SVM_CONCURRENT_ACCESS_ATOM_SIZE_KHR"/>
             </require>
             <require>
                 <type name="cl_svm_capabilities_khr"/>
@@ -8076,12 +8095,14 @@ server's OpenCL/api-docs repository.
                 <enum name="CL_SVM_CAPABILITY_CONCURRENT_ACCESS_KHR"/>
                 <enum name="CL_SVM_CAPABILITY_CONCURRENT_ATOMIC_ACCESS_KHR"/>
                 <enum name="CL_SVM_CAPABILITY_INDIRECT_ACCESS_KHR"/>
+                <enum name="CL_SVM_CAPABILITY_CREATE_BUFFER_KHR"/>
             </require>
             <require>
                 <type name="cl_svm_alloc_properties_khr"/>
                 <type name="cl_svm_alloc_access_flags_khr"/>
                 <type name="cl_svm_free_properties_khr"/>
                 <type name="cl_svm_free_flags_khr"/>
+                <type name="cl_svm_copy_properties_khr"/>
                 <type name="cl_svm_pointer_info_khr"/>
             </require>
             <require comment="cl_svm_alloc_properties_khr">
@@ -8120,6 +8141,7 @@ server's OpenCL/api-docs repository.
                 <command name="clSVMFreeWithPropertiesKHR"/>
                 <command name="clGetSVMPointerInfoKHR"/>
                 <command name="clGetSVMSuggestedTypeIndexKHR"/>
+                <command name="clEnqueueSVMMemcpyWithPropertiesKHR"/>
             </require>
         </extension>
         <extension name="cl_img_scheduling_controls" revision="0.3.0" supported="opencl">
