@@ -5,7 +5,7 @@ to the OpenCL API, OpenCL C, and OpenCL C++ specifications.
 
 The process for extending OpenCL is described below.  The recommended
 format of an OpenCL extension is documented in the
-[cl_extension_template.asciidoc](cl_extension_template.asciidoc) file, in this
+[cl_extension_template.adoc](cl_extension_template.adoc) file, in this
 repository.
 
 ## Format and Lifecycle of an Extension
@@ -20,7 +20,7 @@ Rationale:
 > details of integrating the changes into the main text.  Only the specification
 > editors need to be concerned with those mechanical details.
 
-The file name is the name of the extension followed by the `.asciidoc` suffix.
+The file name is the name of the extension followed by the `.adoc` suffix.
 It is stored in the Khronos repository at
 [https://github.com/KhronosGroup/OpenCL-Docs](https://github.com/KhronosGroup/OpenCL-Docs).
 Successive revisions of an extension are stored as

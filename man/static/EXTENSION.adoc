@@ -1,0 +1,101 @@
+// Copyright 2014-2026 The Khronos Group Inc.
+// SPDX-License-Identifier: CC-BY-4.0
+
+:data-uri:
+:icons: font
+include::{config}/attribs.adoc[]
+
+= EXTENSION(3)
+
+== Name
+
+EXTENSION - A #pragma directive to set the behavior for OpenCL extensions.
+
+== C Specification
+
+[source,c]
+----
+#pragma OPENCL EXTENSION extension_name : behavior
+#pragma OPENCL EXTENSION all : behavior
+----
+
+== Parameters
+
+  * _extension_name_ - The name of the extension. The token *all*
+    means that the behavior applies to all extensions supported by the
+    compiler.
+  * _behavior_ - One of the following values:
++
+--
+[cols="1,1", options="header"]
+|====
+| *behavior* | *Description*
+| *enable*
+    | Behave as specified by the extension _extension_name_.
+
+      Report an error on the *`#pragma OPENCL EXTENSION`* if the
+      _extension_name_ is not supported, or if *all* is specified.
+| *disable*
+    | Behave (including issuing errors and warnings) as if the extension
+      _extension_name_ is not part of the language definition.
+
+      If *all* is specified, then behavior must revert back to that of the
+      non-extended core version of the language being compiled to.
+
+      Warn on the *`#pragma OPENCL EXTENSION`* if the extension
+      _extension_name_ is not supported.
+|====
+--
+
+== Description
+
+The *`#pragma OPENCL EXTENSION`* directive is a simple, low-level mechanism to set the behavior for each extension.
+It does not define policies such as which combinations are appropriate; those must be defined elsewhere.
+The order of directives matter in setting the behavior for each extension.
+Directives that occur later override those seen earlier.
+The *all* variant sets the behavior for all extensions, overriding all
+previously issued extension directives, but only if the _behavior_ is set to
+*disable*.
+
+The initial state of the compiler is as if the directive *`#pragma OPENCL EXTENSION all : disable`* was issued, telling the compiler that all error and warning reporting must be done according to this specification, ignoring any extensions.
+
+Every extension which affects the OpenCL language semantics, syntax or adds built-in functions to the language must create a preprocessor `#define` that matches the extension name string.
+This `#define` would be available in the language if and only if the extension is supported on a given implementation.
+
+For example, compilers that support the *cl_khr_3d_image_writes* extension
+will add a preprocessor `#define` called *cl_khr_3d_image_writes*.
+A kernel can now use this preprocessor `#define` to do something like:
+
+[source,opencl_c]
+----
+#ifdef cl_khr_3d_image_writes
+    // do something using the extension
+#else
+    // do something else or #error!
+#endif
+----
+
+== Notes
+
+Optional extensions may be supported by some OpenCL devices.
+Optional extensions are not required to be supported by a conformant OpenCL implementation, but are expected to be widely available; they define functionality that is likely to move into the required feature set in a future revision of the OpenCL specification
+
+OpenCL extensions approved by the OpenCL working group can be promoted to required core features in later revisions of OpenCL.
+When this occurs, the extension specifications are merged into the core specification.
+Functions and enumerants that are part of such promoted extensions will have the `KHR` affix removed.
+OpenCL implementations of such later revisions must also export the name strings of promoted extensions in the `CL_PLATFORM_EXTENSIONS` or `CL_DEVICE_EXTENSIONS` string, and support the KHR-affixed versions of functions and enumerants as a transition aid.
+
+
+== See Also
+
+flink:clGetExtensionFunctionAddressForPlatform
+
+== Document Notes
+
+For more information, see the OpenCL C Specification at URL
+
+https://www.khronos.org/registry/OpenCL/specs/unified/html/OpenCL_C.html#EXTENSION
+
+== Copyright
+
+include::footer.adoc[]

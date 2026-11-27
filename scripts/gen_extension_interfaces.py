@@ -42,7 +42,7 @@ if __name__ == "__main__":
     for extension in spec.findall('extensions/extension'):
         extname = extension.get('name')
         #print(extname)
-        iface_file = open(os.path.join(args.directory, extname + '.txt'), 'w')
+        iface_file = open(os.path.join(args.directory, extname + '.adoc'), 'w')
 
         iface_file.write(GetHeader())
 
