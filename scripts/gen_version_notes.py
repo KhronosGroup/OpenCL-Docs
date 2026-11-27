@@ -110,7 +110,7 @@ def process_xml(spec, entry_type, note_printer):
 
                 seen_apis.add(name)
 
-                versionFileName = os.path.join(args.directory, name + ".asciidoc")
+                versionFileName = os.path.join(args.directory, name + ".adoc")
                 with open(versionFileName, 'w') as versionFile:
                     versionFile.write(GetHeader())
                     versionFile.write(note_printer(name, is_extension, added_in, deprecated_by))

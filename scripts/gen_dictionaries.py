@@ -41,13 +41,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    apiLinkFileName      = args.directory + '/api-dictionary.asciidoc'
-    apiNoLinkFileName    = args.directory + '/api-dictionary-no-links.asciidoc'
+    apiLinkFileName      = args.directory + '/api-dictionary.adoc'
+    apiNoLinkFileName    = args.directory + '/api-dictionary-no-links.adoc'
     apiTypeFileName      = args.directory + '/api-types.txt'
 
-    extNoLinkFileName    = args.directory + '/ext-dictionary-no-links.asciidoc'
-    extFullLinkFileName  = args.directory + '/ext-dictionary-full-links.asciidoc'
-    extLocalLinkFileName = args.directory + '/ext-dictionary-local-links.asciidoc'
+    extNoLinkFileName    = args.directory + '/ext-dictionary-no-links.adoc'
+    extFullLinkFileName  = args.directory + '/ext-dictionary-full-links.adoc'
+    extLocalLinkFileName = args.directory + '/ext-dictionary-local-links.adoc'
 
     specpath = args.registry
     #specpath = "https://raw.githubusercontent.com/KhronosGroup/OpenCL-Registry/main/xml/cl.xml"

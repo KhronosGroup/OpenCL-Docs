@@ -192,7 +192,7 @@ class OpenCLConventions(ConventionsBase):
 
         # Normally this would use self.file_suffix, but the OpenCL spec
         # currently uses a variety of suffixing conventions.
-        return f'{name}.asciidoc'
+        return f'{name}.adoc'
 
     def extension_include_string(self, name):
         """Return format string for include:: line for an extension appendix
@@ -206,14 +206,14 @@ class OpenCLConventions(ConventionsBase):
     def extra_refpage_headers(self):
         """Return any extra text to add to refpage headers."""
         return 'include::{config}/attribs.txt[]\n' + \
-            'include::{config}/opencl.asciidoc[]\n' + \
-            'include::{config}/version-full-links.asciidoc[]\n' + \
-            'include::{generated}/api/api-dictionary-no-links.asciidoc[]\n' + \
-            'include::{generated}/api/ext-dictionary-no-links.asciidoc[]\n' + \
-            'include::{generated}/meta/c-function-dictionary.asciidoc[]\n' + \
-            'include::{cspec}/feature-dictionary.asciidoc[]\n' + \
-            'include::{apispec}/footnotes.asciidoc[]\n' + \
-            'include::{cspec}/footnotes.asciidoc[]\n'
+            'include::{config}/opencl.adoc[]\n' + \
+            'include::{config}/version-full-links.adoc[]\n' + \
+            'include::{generated}/api/api-dictionary-no-links.adoc[]\n' + \
+            'include::{generated}/api/ext-dictionary-no-links.adoc[]\n' + \
+            'include::{generated}/meta/c-function-dictionary.adoc[]\n' + \
+            'include::{cspec}/feature-dictionary.adoc[]\n' + \
+            'include::{apispec}/footnotes.adoc[]\n' + \
+            'include::{cspec}/footnotes.adoc[]\n'
 
     @property
     def extension_index_prefixes(self):

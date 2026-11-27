@@ -261,9 +261,9 @@ EXTENSIONSSPECSRC = $(EXTDIR)/$(EXTENSIONSSPEC).txt ${GENDEPENDS} \
     $(shell scripts/find_adoc_deps $(EXTDIR)/$(EXTENSIONSSPEC).txt $(GENERATED))
 
 # Included extension documents
-EXTDOCS := $(notdir $(wildcard $(EXTDIR)/[A-Za-z]*.asciidoc))
-EXTENSIONS_HTML = $(patsubst %.asciidoc,$(HTMLDIR)/%.html,$(EXTDOCS))
-EXTENSIONS_PDF = $(patsubst %.asciidoc,$(PDFDIR)/%.pdf,$(EXTDOCS))
+EXTDOCS := $(notdir $(wildcard $(EXTDIR)/[A-Za-z]*.adoc))
+EXTENSIONS_HTML = $(patsubst %.adoc,$(HTMLDIR)/%.html,$(EXTDOCS))
+EXTENSIONS_PDF = $(patsubst %.adoc,$(PDFDIR)/%.pdf,$(EXTDOCS))
 
 extensionshtml: $(HTMLDIR)/$(EXTENSIONSSPEC).html $(EXTENSIONSSPECSRC) $(EXTENSIONS_HTML)
 
@@ -273,9 +273,9 @@ $(HTMLDIR)/$(EXTENSIONSSPEC).html: $(EXTENSIONSSPECSRC) $(KATEXINST)
 # I don't know why the pattern rule below requires vpath be overridden
 # to point to the extensions/ directory, since the rule itself already
 # points there.
-vpath %.asciidoc $(EXTDIR)
+vpath %.adoc $(EXTDIR)
 
-$(HTMLDIR)/%.html: $(EXTDIR)/%.asciidoc $(GENDEPENDS)
+$(HTMLDIR)/%.html: $(EXTDIR)/%.adoc $(GENDEPENDS)
 	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $<
 
 extensionspdf: $(PDFDIR)/$(EXTENSIONSSPEC).pdf $(EXTENSIONSSPECSRC)
@@ -426,7 +426,7 @@ MANSOURCES   = $(filter-out $(REFPATH)/apispec.txt $(REFPATH)/footer.txt $(wildc
 # Should pass in $(EXTOPTIONS) to determine which pages to generate.
 # For now, all core and extension ref pages are extracted by genRef.py.
 ## Temporary - eventually should be all spec asciidoctor source files
-SPECFILES = $(wildcard api/[A-Za-z]*.asciidoc) $(wildcard c/[A-Za-z]*.asciidoc) OpenCL_API.txt OpenCL_C.txt
+SPECFILES = $(wildcard api/[A-Za-z]*.adoc) $(wildcard c/[A-Za-z]*.adoc) OpenCL_API.txt OpenCL_C.txt
 GENREF = $(SCRIPTS)/genRef.py
 LOGFILE = $(REFPATH)/refpage.log
 
@@ -527,8 +527,8 @@ $(METADEPEND): $(APIXML) $(GENSCRIPT) $(CFEATSCRIPT) $(EXTIFACESSCRIPT)
 	$(QUIET)$(MKDIR) $(METAPATH)
 	$(QUIET)$(MKDIR) $(METAPATH)/interfaces
 	$(QUIET)$(PYTHON) $(GENSCRIPT) $(GENSCRIPTOPTS) -o $(METAPATH) extinc
-	$(QUIET)$(PYTHON) $(CFEATSCRIPT) -i $(CFEATURES) -o $(METAPATH)/c-feature-dictionary.asciidoc
-	$(QUIET)$(PYTHON) $(CFUNCSCRIPT) -i $(CFUNCTIONS) -o $(METAPATH)/c-function-dictionary.asciidoc
+	$(QUIET)$(PYTHON) $(CFEATSCRIPT) -i $(CFEATURES) -o $(METAPATH)/c-feature-dictionary.adoc
+	$(QUIET)$(PYTHON) $(CFUNCSCRIPT) -i $(CFUNCTIONS) -o $(METAPATH)/c-function-dictionary.adoc
 	$(QUIET)$(PYTHON) $(EXTIFACESSCRIPT) -registry $(APIXML) -o $(METAPATH)/interfaces
 
 # This generates a single file containing asciidoc attributes for each
