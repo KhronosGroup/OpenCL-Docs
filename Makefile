@@ -218,47 +218,47 @@ src:
 
 # Top-level spec source file
 APISPEC = OpenCL_API
-APISPECSRC = $(APISPEC).txt $(GENDEPENDS) \
-    $(shell scripts/find_adoc_deps $(APISPEC).txt $(GENERATED))
+APISPECSRC = $(APISPEC).adoc $(GENDEPENDS) \
+    $(shell scripts/find_adoc_deps $(APISPEC).adoc $(GENERATED))
 
 apihtml: $(HTMLDIR)/$(APISPEC).html $(APISPECSRC)
 
 $(HTMLDIR)/$(APISPEC).html: $(APISPECSRC) $(KATEXINST)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(APISPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(APISPEC).adoc
 
 apipdf: $(PDFDIR)/$(APISPEC).pdf $(APISPECSRC)
 
 $(PDFDIR)/$(APISPEC).pdf: $(APISPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(APISPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(APISPEC).adoc
 	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # Environment spec
 
 # Top-level spec source file
 ENVSPEC = OpenCL_Env
-ENVSPECSRC = $(ENVSPEC).txt $(GENDEPENDS) \
-    $(shell scripts/find_adoc_deps $(ENVSPEC).txt $(GENERATED))
+ENVSPECSRC = $(ENVSPEC).adoc $(GENDEPENDS) \
+    $(shell scripts/find_adoc_deps $(ENVSPEC).adoc $(GENERATED))
 
 envhtml: $(HTMLDIR)/$(ENVSPEC).html $(ENVSPECSRC)
 
 $(HTMLDIR)/$(ENVSPEC).html: $(ENVSPECSRC) $(KATEXINST)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(ENVSPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(ENVSPEC).adoc
 
 envpdf: $(PDFDIR)/$(ENVSPEC).pdf $(ENVSPECSRC)
 
 $(PDFDIR)/$(ENVSPEC).pdf: $(ENVSPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(ENVSPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(ENVSPEC).adoc
 	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # Individual extensions spec(s)
 EXTDIR = extensions
 EXTENSIONSSPEC = extensions
-EXTENSIONSSPECSRC = $(EXTDIR)/$(EXTENSIONSSPEC).txt ${GENDEPENDS} \
-    $(shell scripts/find_adoc_deps $(EXTDIR)/$(EXTENSIONSSPEC).txt $(GENERATED))
+EXTENSIONSSPECSRC = $(EXTDIR)/$(EXTENSIONSSPEC).adoc ${GENDEPENDS} \
+    $(shell scripts/find_adoc_deps $(EXTDIR)/$(EXTENSIONSSPEC).adoc $(GENERATED))
 
 # Included extension documents
 EXTDOCS := $(notdir $(wildcard $(EXTDIR)/[A-Za-z]*.adoc))
@@ -268,7 +268,7 @@ EXTENSIONS_PDF = $(patsubst %.adoc,$(PDFDIR)/%.pdf,$(EXTDOCS))
 extensionshtml: $(HTMLDIR)/$(EXTENSIONSSPEC).html $(EXTENSIONSSPECSRC) $(EXTENSIONS_HTML)
 
 $(HTMLDIR)/$(EXTENSIONSSPEC).html: $(EXTENSIONSSPECSRC) $(KATEXINST)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTDIR)/$(EXTENSIONSSPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(EXTDIR)/$(EXTENSIONSSPEC).adoc
 
 # I don't know why the pattern rule below requires vpath be overridden
 # to point to the extensions/ directory, since the rule itself already
@@ -283,97 +283,97 @@ extensionspdf: $(PDFDIR)/$(EXTENSIONSSPEC).pdf $(EXTENSIONSSPECSRC)
 $(PDFDIR)/$(EXTENSIONSSPEC).pdf: $(EXTENSIONSSPECSRC) $(GENDEPENDS)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(EXTDIR)/$(EXTENSIONSSPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(EXTDIR)/$(EXTENSIONSSPEC).adoc
 	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # Language Extensions spec
 CEXTDOC = OpenCL_LangExt
-CEXTDOCSRC = $(CEXTDOC).txt $(GENDEPENDS) \
-    $(shell scripts/find_adoc_deps $(CEXTDOC).txt $(GENERATED))
+CEXTDOCSRC = $(CEXTDOC).adoc $(GENDEPENDS) \
+    $(shell scripts/find_adoc_deps $(CEXTDOC).adoc $(GENERATED))
 
 cexthtml: $(HTMLDIR)/$(CEXTDOC).html $(CEXTDOCSRC)
 
 $(HTMLDIR)/$(CEXTDOC).html: $(CEXTDOCSRC) $(KATEXINST)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CEXTDOC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CEXTDOC).adoc
 
 cextpdf: $(PDFDIR)/$(CEXTDOC).pdf $(CEXTDOCSRC)
 
 $(PDFDIR)/$(CEXTDOC).pdf: $(CEXTDOCSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CEXTDOC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CEXTDOC).adoc
 	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # C++ (cxx) spec
 CXXSPEC = OpenCL_Cxx
-CXXSPECSRC = $(CXXSPEC).txt $(GENDEPENDS) \
-    $(shell scripts/find_adoc_deps $(CXXSPEC).txt $(GENERATED))
+CXXSPECSRC = $(CXXSPEC).adoc $(GENDEPENDS) \
+    $(shell scripts/find_adoc_deps $(CXXSPEC).adoc $(GENERATED))
 
 cxxhtml: $(HTMLDIR)/$(CXXSPEC).html $(CXXSPECSRC)
 
 $(HTMLDIR)/$(CXXSPEC).html: $(CXXSPECSRC) $(KATEXINST)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CXXSPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CXXSPEC).adoc
 
 cxxpdf: $(PDFDIR)/$(CXXSPEC).pdf $(CXXSPECSRC)
 
 $(PDFDIR)/$(CXXSPEC).pdf: $(CXXSPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CXXSPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CXXSPEC).adoc
 	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # C spec
 CSPEC = OpenCL_C
-CSPECSRC = $(CSPEC).txt $(GENDEPENDS) \
-    $(shell scripts/find_adoc_deps $(CSPEC).txt   $(GENERATED))
+CSPECSRC = $(CSPEC).adoc $(GENDEPENDS) \
+    $(shell scripts/find_adoc_deps $(CSPEC).adoc   $(GENERATED))
 
 chtml: $(HTMLDIR)/$(CSPEC).html $(CSPECSRC)
 
 $(HTMLDIR)/$(CSPEC).html: $(CSPECSRC) $(KATEXINST)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CSPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CSPEC).adoc
 
 cpdf: $(PDFDIR)/$(CSPEC).pdf $(CSPECSRC)
 
 $(PDFDIR)/$(CSPEC).pdf: $(CSPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CSPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CSPEC).adoc
 	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # C++ for OpenCL doc
 CXX4OPENCLDOC = CXX_for_OpenCL
-CXX4OPENCLDOCSRC = $(CXX4OPENCLDOC).txt $(GENDEPENDS) \
-    $(shell scripts/find_adoc_deps $(CXX4OPENCLDOC).txt $(GENERATED))
+CXX4OPENCLDOCSRC = $(CXX4OPENCLDOC).adoc $(GENDEPENDS) \
+    $(shell scripts/find_adoc_deps $(CXX4OPENCLDOC).adoc $(GENERATED))
 
 cxx4openclhtml: $(HTMLDIR)/$(CXX4OPENCLDOC).html $(CXX4OPENCLDOCSRC)
 
 $(HTMLDIR)/$(CXX4OPENCLDOC).html: $(CXX4OPENCLDOCSRC) $(KATEXINST)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(CXX4OPENCL_ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CXX4OPENCLDOC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(CXX4OPENCL_ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(CXX4OPENCLDOC).adoc
 
 cxx4openclpdf: $(PDFDIR)/$(CXX4OPENCLDOC).pdf $(CXX4OPENCLDOCSRC)
 
 $(PDFDIR)/$(CXX4OPENCLDOC).pdf: $(CXX4OPENCLDOCSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(CXX4OPENCL_ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CXX4OPENCLDOC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(CXX4OPENCL_ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(CXX4OPENCLDOC).adoc
 	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # ICD installation guidelines
 ICDINSTSPEC = OpenCL_ICD_Installation
-ICDINSTSPECSRC = $(ICDINSTSPEC).txt \
-    $(shell scripts/find_adoc_deps $(ICDINSTSPEC).txt $(GENERATED))
+ICDINSTSPECSRC = $(ICDINSTSPEC).adoc \
+    $(shell scripts/find_adoc_deps $(ICDINSTSPEC).adoc $(GENERATED))
 
 icdinsthtml: $(HTMLDIR)/$(ICDINSTSPEC).html $(ICDINSTSPECSRC)
 
 $(HTMLDIR)/$(ICDINSTSPEC).html: $(ICDINSTSPECSRC) $(KATEXINST)
-	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(ICDINSTSPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) -o $@ $(ICDINSTSPEC).adoc
 
 icdinstpdf: $(PDFDIR)/$(ICDINSTSPEC).pdf $(ICDINSTSPECSRC)
 
 $(PDFDIR)/$(ICDINSTSPEC).pdf: $(ICDINSTSPECSRC)
 	$(QUIET)$(MKDIR) $(PDFDIR)
 	$(QUIET)$(MKDIR) $(PDFMATHDIR)
-	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(ICDINSTSPEC).txt
+	$(QUIET)$(ASCIIDOCTOR) -b pdf $(ADOCOPTS) $(ADOCPDFOPTS) -o $@ $(ICDINSTSPEC).adoc
 	$(QUIET)$(OPTIMIZEPDF) $@ $@.out.pdf && mv $@.out.pdf $@
 
 # Clean generated and output files
@@ -409,12 +409,12 @@ MANSECTION  := 3
 # These lists should be autogenerated
 
 # Ref page sources for all CL interfaces
-# Most are autogenerated; man/static/*.txt are hand-coded at present
+# Most are autogenerated; man/static/*.adoc are hand-coded at present
 
 # MANSOURCES is the list of individual refpage sources, excluding the
 # single-page index, boilerplate document footer, and include files.
 # For now, always build all refpages.
-MANSOURCES   = $(filter-out $(REFPATH)/apispec.txt $(REFPATH)/footer.txt $(wildcard $(REFPATH)/*Inc.txt), $(wildcard $(REFPATH)/*.txt))
+MANSOURCES   = $(filter-out $(REFPATH)/apispec.adoc $(REFPATH)/footer.adoc $(wildcard $(REFPATH)/*Inc.adoc), $(wildcard $(REFPATH)/*.adoc))
 
 # Generation of ref page asciidoctor sources by extraction from the
 # specification(s).
@@ -426,12 +426,12 @@ MANSOURCES   = $(filter-out $(REFPATH)/apispec.txt $(REFPATH)/footer.txt $(wildc
 # Should pass in $(EXTOPTIONS) to determine which pages to generate.
 # For now, all core and extension ref pages are extracted by genRef.py.
 ## Temporary - eventually should be all spec asciidoctor source files
-SPECFILES = $(wildcard api/[A-Za-z]*.adoc) $(wildcard c/[A-Za-z]*.adoc) OpenCL_API.txt OpenCL_C.txt
+SPECFILES = $(wildcard api/[A-Za-z]*.adoc) $(wildcard c/[A-Za-z]*.adoc) OpenCL_API.adoc OpenCL_C.adoc
 GENREF = $(SCRIPTS)/genRef.py
 LOGFILE = $(REFPATH)/refpage.log
 
-refpages: $(REFPATH)/apispec.txt
-$(REFPATH)/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(PYAPIMAP)
+refpages: $(REFPATH)/apispec.adoc
+$(REFPATH)/apispec.adoc: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(PYAPIMAP)
 	$(QUIET)$(MKDIR) $(REFPATH)
 	$(PYTHON) $(GENREF) -genpath $(GENERATED) -basedir $(REFPATH) \
 	    -rewrite $(REFPATH)/rewritebody -toc $(REFPATH)/tocbody \
@@ -441,19 +441,19 @@ $(REFPATH)/apispec.txt: $(SPECFILES) $(GENREF) $(SCRIPTS)/reflib.py $(PYAPIMAP)
 	(cat $(MANDIR)/rewritehead ; \
 	 echo ; echo "# Aliases hard-coded in refpage markup" ; \
 	 sort < $(REFPATH)/rewritebody) > $(REFPATH)/.htaccess
-	$(CP) $(MANDIR)/static/*.txt $(REFPATH)
+	$(CP) $(MANDIR)/static/*.adoc $(REFPATH)
 
 # These targets are HTML5 ref pages
 #
 # The recursive $(MAKE) is an apparently unavoidable hack, since the
 # actual list of man page sources isn't known until after
-# $(REFPATH)/apispec.txt is generated. $(GENDEPENDS) is generated before
+# $(REFPATH)/apispec.adoc is generated. $(GENDEPENDS) is generated before
 # running the recursive make, so it doesn't trigger twice
 # $(SUBMAKEOPTIONS) suppresses the redundant "Entering / leaving"
 # messages make normally prints out, similarly to suppressing make
 # command output logging in the individual refpage actions below.
 SUBMAKEOPTIONS = --no-print-directory
-manhtmlpages: $(REFPATH)/apispec.txt $(GENDEPENDS)
+manhtmlpages: $(REFPATH)/apispec.adoc $(GENDEPENDS)
 	$(QUIET) echo "manhtmlpages: building HTML refpages with these options:"
 	$(QUIET) echo $(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) \
 	    $(ADOCREFOPTS) -o REFPAGE.html REFPAGE.adoc
@@ -462,21 +462,21 @@ manhtmlpages: $(REFPATH)/apispec.txt $(GENDEPENDS)
 	$(CP) $(REFPATH)/.htaccess $(REFPATH)/*.html $(MANHTMLDIR)
 
 MANHTMLDIR  = $(OUTDIR)/man/html
-MANHTML     = $(MANSOURCES:$(REFPATH)/%.txt=$(MANHTMLDIR)/%.html)
+MANHTML     = $(MANSOURCES:$(REFPATH)/%.adoc=$(MANHTMLDIR)/%.html)
 
 buildmanpages: $(MANHTML)
 
 # The refpage build process normally generates far too much output, so
 # use VERYQUIET instead of QUIET
 $(MANHTMLDIR)/%.html: KATEXDIR = ../../katex
-$(MANHTMLDIR)/%.html: $(REFPATH)/%.txt $(MANCOPYRIGHT) $(GENDEPENDS) $(KATEXINST)
+$(MANHTMLDIR)/%.html: $(REFPATH)/%.adoc $(MANCOPYRIGHT) $(GENDEPENDS) $(KATEXINST)
 	$(VERYQUIET)echo "Building $@ from $< using default options"
 	$(VERYQUIET)$(MKDIR) $(MANHTMLDIR)
 	$(VERYQUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) \
 	    $(ADOCREFOPTS) -o $@ $<
 
 # This is not formatted as a refpage, so needs a different build rule
-$(MANHTMLDIR)/intro.html: $(REFPATH)/intro.txt $(MANCOPYRIGHT)
+$(MANHTMLDIR)/intro.html: $(REFPATH)/intro.adoc $(MANCOPYRIGHT)
 	$(VERYQUIET)echo "Building $@ from $< using default options"
 	$(VERYQUIET)$(MKDIR) $(MANHTMLDIR)
 	$(VERYQUIET)$(ASCIIDOCTOR) -b html5 $(ADOCOPTS) $(ADOCHTMLOPTS) \
@@ -493,8 +493,8 @@ $(MANHTMLDIR)/intro.html: $(REFPATH)/intro.txt $(MANCOPYRIGHT)
 
 REGISTRY       = $(ROOTDIR)/xml
 APIXML	       = $(REGISTRY)/cl.xml
-CFEATURES      = c/features.txt
-CFUNCTIONS     = c/functions.txt
+CFEATURES      = c/features.adoc
+CFUNCTIONS     = c/functions.adoc
 GENSCRIPT      = $(SCRIPTS)/gencl.py
 DICTSCRIPT     = $(SCRIPTS)/gen_dictionaries.py
 EXTIFACESSCRIPT= $(SCRIPTS)/gen_extension_interfaces.py

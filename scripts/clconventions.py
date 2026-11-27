@@ -71,7 +71,7 @@ class OpenCLConventions(ConventionsBase):
     @property
     def file_suffix(self):
         """Return suffix of generated Asciidoctor files"""
-        return '.txt'
+        return '.adoc'
 
     def api_name(self, spectype='api'):
         """Return API or specification name for citations in ref pages.ref
@@ -205,7 +205,7 @@ class OpenCLConventions(ConventionsBase):
     @property
     def extra_refpage_headers(self):
         """Return any extra text to add to refpage headers."""
-        return 'include::{config}/attribs.txt[]\n' + \
+        return 'include::{config}/attribs.adoc[]\n' + \
             'include::{config}/opencl.adoc[]\n' + \
             'include::{config}/version-full-links.adoc[]\n' + \
             'include::{generated}/api/api-dictionary-no-links.adoc[]\n' + \

@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     apiLinkFileName      = args.directory + '/api-dictionary.adoc'
     apiNoLinkFileName    = args.directory + '/api-dictionary-no-links.adoc'
-    apiTypeFileName      = args.directory + '/api-types.txt'
+    apiTypeFileName      = args.directory + '/api-types.adoc'
 
     extNoLinkFileName    = args.directory + '/ext-dictionary-no-links.adoc'
     extFullLinkFileName  = args.directory + '/ext-dictionary-full-links.adoc'
